@@ -7,7 +7,7 @@ import { getSpeakingTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Play, Pause, Square, Save, Mic, X, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { calcEntryPoints, calcGradeSummary } from '../utils/gradeCalc';
+import { calcEntryPoints, calcGradeSummary, criterionMaxPoints } from '../utils/gradeCalc';
 import { nanoid } from '../utils/nanoid';
 import RecordingControls from '../components/Recordings/RecordingControls';
 import { loadSupabaseConfig } from '../services/database';
@@ -488,7 +488,7 @@ export default function SpeakingSession() {
                         {criteria.map((criterion) => {
                             const entry = entries.find((e) => e.criterionId === criterion.id);
                             const points = entry ? calcEntryPoints(entry, criterion) : 0;
-                            const maxPts = Math.max(...criterion.levels.map((l) => l.maxPoints));
+                            const maxPts = criterionMaxPoints(criterion);
                             return (
                                 <div
                                     key={criterion.id}

@@ -22,6 +22,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
+import { sanitizeFilename } from './exportDataPrep';
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
@@ -268,5 +269,5 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
+    saveAs(blob, `${sanitizeFilename(rubric.name)}_rubric.docx`);
 }

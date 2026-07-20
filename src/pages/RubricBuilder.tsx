@@ -65,6 +65,7 @@ import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor'
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
+import { sanitizeFilename } from '../utils/exportDataPrep';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
@@ -326,7 +327,7 @@ export default function RubricBuilder() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}.json`;
+            a.download = `${sanitizeFilename(rubric.name)}.json`;
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 100);
             logAuditEvent('export', 'export_json', 'rubric', rubric.id);

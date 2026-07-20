@@ -25,11 +25,12 @@ import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary, calcEntryPoints } from '../utils/gradeCalc';
+import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CriterionRadarChart from '../components/Statistics/CriterionRadarChart';
 import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
-import { CEFR_LEVELS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import { cefrLevelOrdinal } from '../utils/cefrOrdinal';
 import { getGrammarItemById } from '../data/grammarStandards';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import {
@@ -77,14 +78,12 @@ function scrollToSection(id: string) {
 
 function criterionPct(
     h: { sr: { entries: ScoreEntry[] }; rubric: { criteria: RubricCriterion[] } },
-    criterionId: string,
-    levels: { maxPoints: number }[]
+    criterionId: string
 ): number {
     const entry = h.sr.entries.find((e) => e.criterionId === criterionId);
     const criterion = h.rubric.criteria.find((c) => c.id === criterionId);
-    if (!entry || !criterion) return 0;
-    const max = Math.max(...levels.map((l) => l.maxPoints), 1);
-    return (calcEntryPoints(entry, criterion) / max) * 100;
+    if (!criterion) return 0;
+    return criterionPercentage(entry, criterion);
 }
 
 export default function StudentPortalPage() {
@@ -252,7 +251,7 @@ export default function StudentPortalPage() {
                     threshold,
                 };
             })
-            .sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
+            .sort((a, b) => cefrLevelOrdinal(a.level) - cefrLevelOrdinal(b.level));
     }, [student, history]);
 
     // Per-rubric radars a student can pick between, plus one "combined" view averaging
@@ -274,7 +273,7 @@ export default function StudentPortalPage() {
             for (const c of h.rubric.criteria) {
                 const key = c.title.trim().toLowerCase();
                 if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
-                byTitle.get(key)!.scores.push(criterionPct(h, c.id, c.levels));
+                byTitle.get(key)!.scores.push(criterionPct(h, c.id));
             }
         }
         return Array.from(byTitle.values()).map(({ display, scores }) => ({
@@ -292,7 +291,7 @@ export default function StudentPortalPage() {
             for (const c of h.rubric.criteria) {
                 const key = c.title.trim().toLowerCase();
                 if (!byTitle.has(key)) byTitle.set(key, { display: c.title, scores: [] });
-                byTitle.get(key)!.scores.push(criterionPct(h, c.id, c.levels));
+                byTitle.get(key)!.scores.push(criterionPct(h, c.id));
             }
         }
         return Array.from(byTitle.values()).map(({ display, scores }) => ({

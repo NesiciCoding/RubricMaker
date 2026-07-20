@@ -66,6 +66,19 @@ export function calcMaxRawScore(criteria: RubricCriterion[]): number {
     }, 0);
 }
 
+/** Maximum points for a single criterion (uses maxPoints per level) */
+export function criterionMaxPoints(criterion: RubricCriterion): number {
+    return Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
+}
+
+/** Percentage 0–100 a single scored entry earned against its criterion's max points */
+export function criterionPercentage(entry: ScoreEntry | undefined, criterion: RubricCriterion): number {
+    const max = criterionMaxPoints(criterion);
+    if (max === 0) return 0;
+    if (!entry) return 0;
+    return (calcEntryPoints(entry, criterion) / max) * 100;
+}
+
 /** Weighted score as percentage 0–100 */
 export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriterion[]): number {
     const totalWeight = criteria.reduce((s, c) => s + c.weight, 0);

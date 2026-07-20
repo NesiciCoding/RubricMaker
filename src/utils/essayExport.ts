@@ -28,12 +28,9 @@ import type {
 } from '../types';
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
 import { printHtml, buildRubricHTML } from './pdfExport';
+import { sanitizeFilename } from './exportDataPrep';
 
 type EssayLike = Pick<EssayAssignment, 'title'>;
-
-function safeFilename(name: string): string {
-    return name.replace(/[^a-z0-9]/gi, '_');
-}
 
 export function escapeHtml(value: string): string {
     return value
@@ -407,7 +404,7 @@ export async function exportEssayMarkdown(assignment: EssayLike, student: Studen
     const md = `# ${assignment.title}\n\n_${essayHeaderLine(assignment, student, submission)}_\n\n${htmlToMarkdown(submission.contentHtml)}\n`;
     saveAs(
         new Blob([md], { type: 'text/markdown' }),
-        `${safeFilename(student.name)}_${safeFilename(assignment.title)}.md`
+        `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.md`
     );
 }
 
@@ -429,7 +426,7 @@ export async function exportEssayDocx(
         ],
     });
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${safeFilename(student.name)}_${safeFilename(assignment.title)}.docx`);
+    saveAs(blob, `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`);
 }
 
 export async function exportEssayPdf(assignment: EssayLike, student: Student, submission: EssaySubmission) {
@@ -557,7 +554,7 @@ export async function exportEssayWithRubric(
             sections: [{ children }],
         });
         const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${safeFilename(student.name)}_${safeFilename(assignment.title)}_with_rubric.docx`);
+        saveAs(blob, `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}_with_rubric.docx`);
         return;
     }
 

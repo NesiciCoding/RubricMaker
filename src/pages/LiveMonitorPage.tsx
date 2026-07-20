@@ -12,6 +12,7 @@ import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
+import { stripCommentHtml } from '../utils/exportDataPrep';
 import type { ProctorEvent, TestAnswer } from '../types';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
@@ -461,7 +462,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                     lastActivityAt={row.live.lastUpdateAt ?? undefined}
                                     draftText={
                                         row.live.snapshot?.text !== undefined
-                                            ? stripHtml(row.live.snapshot.text)
+                                            ? stripCommentHtml(row.live.snapshot.text)
                                             : undefined
                                     }
                                 />
@@ -476,11 +477,4 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             </div>
         </>
     );
-}
-
-function stripHtml(html: string): string {
-    return html
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
 }

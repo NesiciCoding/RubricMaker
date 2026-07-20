@@ -45,6 +45,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -1568,12 +1569,7 @@ export default function GradeStudent() {
                                 </div>
                                 {anchorRubric?.criteria.map((c) => {
                                     const entry = anchorSR.entries.find((e) => e.criterionId === c.id);
-                                    const comment = entry?.comment
-                                        ? entry.comment
-                                              .replace(/<[^>]*>/g, ' ')
-                                              .replace(/\s+/g, ' ')
-                                              .trim()
-                                        : '';
+                                    const comment = entry?.comment ? stripCommentHtml(entry.comment) : '';
                                     const levelLabel = entry?.singlePointOutcome
                                         ? entry.singlePointOutcome === 'exceeds'
                                             ? '▲ Exceeds'

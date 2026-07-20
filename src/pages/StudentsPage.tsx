@@ -33,17 +33,16 @@ import { useTranslation, Trans } from 'react-i18next';
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, isAdjacentTrack, getTrackBadgeColor } from '../data/voTracks';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../data/schoolYears';
 import type { VoTrack, SchoolYear, StudentRubric, Rubric, GradeScale } from '../types';
-import { calcGradeSummary, calcEntryPoints, calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
+import {
+    calcGradeSummary,
+    calcEntryPoints,
+    calcLetterGrade,
+    calcGradeColor,
+    criterionMaxPoints,
+} from '../utils/gradeCalc';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { generateStudentPassword } from '../utils/studentPassword';
-
-/** Strip HTML tags from TiptapEditor output for plain-text summary export. */
-function stripHtml(html: string): string {
-    return html
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
+import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
 
 /** Build a plain-text rubric summary for one student, suitable for pasting into a tracking system. */
 function buildStudentSummary(
@@ -81,17 +80,17 @@ function buildStudentSummary(
                 }
                 const level = entry.levelId ? c.levels.find((l) => l.id === entry.levelId) : null;
                 const pts = calcEntryPoints(entry, c);
-                const max = Math.max(...c.levels.map((l) => l.maxPoints), 1);
+                const max = criterionMaxPoints(c) || 1;
                 const levelLabel = level ? `${level.label} (${pts}/${max} pts)` : `${pts}/${max} pts`;
                 lines.push(`  ${c.title}: ${levelLabel}`);
                 if (entry.comment) {
-                    const plain = stripHtml(entry.comment);
+                    const plain = stripCommentHtml(entry.comment);
                     if (plain) lines.push(`    → ${plain}`);
                 }
             });
 
             if (sr.overallComment) {
-                const plain = stripHtml(sr.overallComment);
+                const plain = stripCommentHtml(sr.overallComment);
                 if (plain) {
                     lines.push('');
                     lines.push(`Feedback: ${plain}`);
@@ -377,7 +376,7 @@ export default function StudentsPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `summaries_${className.replace(/[^a-z0-9]/gi, '_')}.txt`;
+        a.download = `summaries_${sanitizeFilename(className)}.txt`;
         a.click();
     }
 

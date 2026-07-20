@@ -26,6 +26,7 @@ export interface LearningGoalAggregate {
 
 import { Rubric, StudentRubric, LinkedStandard, SchoolYear, VoTrack, StandardMasteryTarget } from '../types';
 import type { ProgressStatus } from './cefrOrdinal';
+import { criterionMaxPoints } from './gradeCalc';
 
 function findMasteryTarget(
     masteryTargets: StandardMasteryTarget[] | undefined,
@@ -103,7 +104,7 @@ export function getStudentGoalScores(
             if (entry.overridePoints !== undefined) {
                 // If there's an override, we just have the override points vs max points of the criterion
                 criterionEarned = entry.overridePoints;
-                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints));
+                criterionMax = criterionMaxPoints(criterion);
 
                 // Track standard scores for criterion-level
                 activeStandards.forEach((std) => {
@@ -170,7 +171,7 @@ export function getStudentGoalScores(
             } else if (selectedLevel) {
                 // Just level based scoring points
                 criterionEarned = entry.selectedPoints !== undefined ? entry.selectedPoints : selectedLevel.minPoints; // use min points as fallback if no precision selected
-                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints));
+                criterionMax = criterionMaxPoints(criterion);
 
                 activeStandards.forEach((std) => {
                     standardInfo.set(std.guid, {

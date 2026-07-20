@@ -38,7 +38,8 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
-import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
+import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
+import { cefrLevelOrdinal } from '../utils/cefrOrdinal';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
 import type { CefrLevel, CefrSkill, GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
@@ -211,7 +212,7 @@ export default function StudentProfilePage() {
                     threshold,
                 };
             })
-            .sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
+            .sort((a, b) => cefrLevelOrdinal(a.level) - cefrLevelOrdinal(b.level));
     }, [student, history]);
 
     const portfolioTimeline = useMemo(() => {

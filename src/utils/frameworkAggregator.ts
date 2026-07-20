@@ -1,4 +1,4 @@
-import { calcEntryPoints } from './gradeCalc';
+import { criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { BLOOM_LEVELS } from '../data/bloomsTaxonomy';
 import { IB_ATTRIBUTES } from '../data/ibLearnerProfile';
 import type { AssessmentFramework, RubricCriterion, StudentRubric } from '../types';
@@ -25,11 +25,9 @@ export function aggregateFrameworkScores(
             const entry = sr.entries.find((e) => e.criterionId === criterion.id);
             if (!entry) continue;
 
-            const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-            if (maxPoints === 0) continue;
+            if (criterionMaxPoints(criterion) === 0) continue;
 
-            const earned = calcEntryPoints(entry, criterion);
-            const pct = (earned / maxPoints) * 100;
+            const pct = criterionPercentage(entry, criterion);
 
             for (const fd of criterion.frameworkDescriptors ?? []) {
                 if (fd.framework !== framework) continue;

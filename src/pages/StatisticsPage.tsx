@@ -11,7 +11,15 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
-import { calcGradeSummary, calcClassStats, calcEntryPoints, type GradeSummary } from '../utils/gradeCalc';
+import {
+    calcGradeSummary,
+    calcClassStats,
+    calcEntryPoints,
+    criterionMaxPoints,
+    criterionPercentage,
+    type GradeSummary,
+} from '../utils/gradeCalc';
+import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, SchoolYear, StudentTest, Test } from '../types';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
@@ -196,7 +204,7 @@ export default function StatisticsPage() {
                     if (!entry) return 0;
                     return calcEntryPoints(entry, c);
                 });
-            const max = Math.max(...c.levels.map((l) => l.maxPoints), 1);
+            const max = criterionMaxPoints(c) || 1;
             const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
             return { name: c.title, avg: parseFloat(((avg / max) * 100).toFixed(1)), max };
         });
@@ -369,9 +377,7 @@ export default function StatisticsPage() {
             result[student.id] = {};
             rubric.criteria.forEach((c) => {
                 const entry = sr.entries.find((e) => e.criterionId === c.id);
-                const pts = entry ? calcEntryPoints(entry, c) : 0;
-                const max = Math.max(...c.levels.map((l) => l.maxPoints), 1);
-                result[student.id][c.id] = parseFloat(((pts / max) * 100).toFixed(1));
+                result[student.id][c.id] = parseFloat(criterionPercentage(entry, c).toFixed(1));
             });
         });
         return result;
@@ -494,7 +500,7 @@ export default function StatisticsPage() {
                     const e = s.entries.find((e) => e.criterionId === c.id);
                     return e ? calcEntryPoints(e, c) : 0;
                 });
-            const max = Math.max(...c.levels.map((l) => l.maxPoints), 1);
+            const max = criterionMaxPoints(c) || 1;
             classAvgMap[c.id] =
                 scores.length > 0
                     ? parseFloat(((scores.reduce((a, b) => a + b, 0) / scores.length / max) * 100).toFixed(1))
@@ -509,12 +515,10 @@ export default function StatisticsPage() {
         ];
 
         return r.criteria.map((c) => {
-            const max = Math.max(...c.levels.map((l) => l.maxPoints), 1);
             const point: CriterionRadarDataPoint = { name: c.title, avg: classAvgMap[c.id] ?? 0 };
             allSRs.forEach((s) => {
                 const e = s.entries.find((e) => e.criterionId === c.id);
-                const pts = e ? calcEntryPoints(e, c) : 0;
-                point[s.studentId] = parseFloat(((pts / max) * 100).toFixed(1));
+                point[s.studentId] = parseFloat(criterionPercentage(e, c).toFixed(1));
             });
             return point;
         });
@@ -555,7 +559,7 @@ export default function StatisticsPage() {
             return base;
         });
         const csv = Papa.unparse(rows);
-        const filename = `${t('statistics.csv_filename')}_${rubric.name.replace(/[^a-z0-9]/gi, '_')}.csv`;
+        const filename = `${t('statistics.csv_filename')}_${sanitizeFilename(rubric.name)}.csv`;
         saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
     }
 

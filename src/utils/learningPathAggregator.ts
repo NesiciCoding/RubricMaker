@@ -12,7 +12,7 @@ import type {
     Test,
 } from '../types';
 import type { CefrCellData } from './cefrStudentAggregator';
-import { calcEntryPoints } from './gradeCalc';
+import { calcEntryPoints, criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { autoScoreResponse } from './testCalc';
 
 export const DEFAULT_LEARNING_PATH_CONFIG: LearningPathConfig = {
@@ -137,10 +137,9 @@ export function getCriterionInterventionFlags(
         for (const entry of sr.entries) {
             const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
             if (!criterion) continue;
-            const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-            if (maxPoints === 0) continue;
+            if (criterionMaxPoints(criterion) === 0) continue;
 
-            const pct = (calcEntryPoints(entry, criterion) / maxPoints) * 100;
+            const pct = criterionPercentage(entry, criterion);
             const list = scoresByCriterion.get(criterion.id) ?? [];
             list.push({ score: pct, gradedAt: sr.gradedAt! });
             scoresByCriterion.set(criterion.id, list);
@@ -263,9 +262,8 @@ export function getGrammarRecommendations(
             const grammarDescriptors = criterion.frameworkDescriptors?.filter((d) => d.framework === 'grammar');
             if (!grammarDescriptors?.length) continue;
 
-            const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-            if (maxPoints === 0) continue;
-            const pct = (calcEntryPoints(entry, criterion) / maxPoints) * 100;
+            if (criterionMaxPoints(criterion) === 0) continue;
+            const pct = criterionPercentage(entry, criterion);
 
             for (const desc of grammarDescriptors) {
                 const list = scoresByGrammarItem.get(desc.descriptorId) ?? [];
