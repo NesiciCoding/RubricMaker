@@ -24,8 +24,12 @@ import type {
     Test,
     TestStrengthBucket,
 } from '../types';
-import { calcGradeSummary } from './gradeCalc';
+import { calcGradeSummary, orderedLevels } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
+import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
+
+// Re-exported for existing call sites that import stripHtmlTags from here.
+export { stripHtmlTags } from './exportDataPrep';
 
 /** Extracts the first font name from a CSS font-family stack (e.g. "'Playfair Display', Georgia, serif" -> "Playfair Display"). */
 export function extractDocxFontName(fontFamily?: string): string | undefined {
@@ -73,9 +77,7 @@ export function buildDocxStyles(fontFamily?: string, styleTemplate?: DocxStyleTe
 
 export async function exportRubricToDocx(rubric: Rubric) {
     const fmt = rubric.format;
-
-    // Helper to get ordered levels
-    const getLevels = (c: RubricCriterion) => (fmt.levelOrder === 'worst-first' ? [...c.levels].reverse() : c.levels);
+    const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
 
     const headerLevels = rubric.criteria[0] ? getLevels(rubric.criteria[0]) : [];
 
@@ -138,9 +140,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
                 shading: { fill: fmt.headerColor.replace('#', '') },
             }),
             ...headerLevels.map((l) => {
-                const pointsStr = fmt.showPoints
-                    ? ` (${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`} pts)`
-                    : '';
+                const pointsStr = fmt.showPoints ? ` (${formatPointsRange(l.minPoints, l.maxPoints)} pts)` : '';
                 return new TableCell({
                     width: { size: 75 / headerLevels.length, type: WidthType.PERCENTAGE },
                     children: [
@@ -214,7 +214,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
                                       new Paragraph({
                                           children: [
                                               new TextRun({
-                                                  text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`} pts`,
+                                                  text: `${formatPointsRange(l.minPoints, l.maxPoints)} pts`,
                                                   bold: true,
                                               }),
                                           ],
@@ -277,49 +277,7 @@ export async function exportRubricToDocx(rubric: Rubric) {
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_rubric.docx`);
-}
-
-const HTML_BLOCK_TAGS = new Set([
-    'P',
-    'DIV',
-    'LI',
-    'TR',
-    'H1',
-    'H2',
-    'H3',
-    'H4',
-    'H5',
-    'H6',
-    'BLOCKQUOTE',
-    'UL',
-    'OL',
-    'TABLE',
-    'TD',
-    'TH',
-    'BR',
-]);
-
-// Strip HTML tags from TipTap output via DOMParser — shared by parseMdSimple and any plain-text
-// label (e.g. a table cell) that embeds a TipTap-authored field like TestQuestion.prompt. A regex
-// approach would leave entities like &amp; encoded and could misparse literal "<"/">" in plain text
-// (e.g. "x < y") as a tag; DOMParser handles both correctly. Plain .textContent would also collapse
-// list items/paragraphs together with no separator, so block elements insert a trailing space.
-export function stripHtmlTags(text: string): string {
-    if (!text) return '';
-    const doc = new DOMParser().parseFromString(text, 'text/html');
-    let result = '';
-    const walk = (node: ChildNode) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            result += node.textContent ?? '';
-            return;
-        }
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        node.childNodes.forEach(walk);
-        if (HTML_BLOCK_TAGS.has((node as Element).tagName)) result += ' ';
-    };
-    doc.body.childNodes.forEach(walk);
-    return result.replace(/\s+/g, ' ').trim();
+    saveAs(blob, `${sanitizeFilename(rubric.name)}_rubric.docx`);
 }
 
 function parseMdSimple(text: string): TextRun[] {
@@ -388,12 +346,7 @@ export function buildRubricGridDocxChildren(
               ...effectiveRubric.criteria.map((c) => {
                   const entry = sr.entries.find((e) => e.criterionId === c.id);
                   const outcome = entry?.singlePointOutcome;
-                  const comment = entry?.comment
-                      ? entry.comment
-                            .replace(/<[^>]*>/g, ' ')
-                            .replace(/\s+/g, ' ')
-                            .trim()
-                      : '';
+                  const comment = entry?.comment ? stripCommentHtml(entry.comment) : '';
                   const profDesc = c.levels[0]?.description ?? c.description ?? '';
 
                   const notYetRuns: TextRun[] = [
@@ -466,12 +419,7 @@ export function buildRubricGridDocxChildren(
                       const level = c.levels.find((l) => l.id === entry.levelId);
                       levelLabel = level ? level.label : '—';
                   }
-                  const comment = entry?.comment
-                      ? entry.comment
-                            .replace(/<[^>]*>/g, ' ')
-                            .replace(/\s+/g, ' ')
-                            .trim()
-                      : '';
+                  const comment = entry?.comment ? stripCommentHtml(entry.comment) : '';
                   return new TableRow({
                       children: [
                           new TableCell({
@@ -501,10 +449,7 @@ export function buildRubricGridDocxChildren(
 
     // Overall comment
     if (sr.overallComment) {
-        const overall = sr.overallComment
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+        const overall = stripCommentHtml(sr.overallComment);
         children.push(
             new Paragraph({
                 children: [new TextRun({ text: 'Overall comment: ', bold: true }), new TextRun(overall)],
@@ -553,7 +498,7 @@ export async function exportBatchDocx(
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.docx`);
+    saveAs(blob, `${sanitizeFilename(rubric.name)}_grades.docx`);
 }
 
 /** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */
@@ -684,7 +629,7 @@ export async function exportTestSummaryDocx(
     });
     const blob = await Packer.toBlob(doc);
     const namePart = student ? student.name : 'class';
-    saveAs(blob, `${test.name.replace(/[^a-z0-9]/gi, '_')}_${namePart.replace(/[^a-z0-9]/gi, '_')}_summary.docx`);
+    saveAs(blob, `${sanitizeFilename(test.name)}_${sanitizeFilename(namePart)}_summary.docx`);
 }
 
 export async function exportBatchTestSummaryDocx(
@@ -700,5 +645,5 @@ export async function exportBatchTestSummaryDocx(
 
     const doc = new Document({ sections: [{ children }] });
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${test.name.replace(/[^a-z0-9]/gi, '_')}_summary_batch.docx`);
+    saveAs(blob, `${sanitizeFilename(test.name)}_summary_batch.docx`);
 }

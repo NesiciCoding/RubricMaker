@@ -25,6 +25,7 @@ import type {
 } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import { buildDocxStyles } from './docxExport';
+import { sanitizeFilename, stripCommentHtml } from './exportDataPrep';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
 export interface PeriodReportEntry {
@@ -43,15 +44,6 @@ export interface PeriodReportInput {
 
 const BORDER = { style: BorderStyle.SINGLE, size: 1, color: 'D1D5DB' };
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-
-// Comment text is free-form and may contain pasted HTML; strip tags so they never show up literally
-// in the exported document (TextRun renders text literally, it doesn't parse markup).
-function stripHtml(text: string): string {
-    return text
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
 
 function gradeColor(pct: number): string {
     if (pct >= 75) return 'DCFCE7'; // green-100
@@ -353,7 +345,9 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
             if (s.sr.overallComment) {
                 blocks.push(
                     new Paragraph({
-                        children: [new TextRun({ text: stripHtml(s.sr.overallComment), size: 20, color: '374151' })],
+                        children: [
+                            new TextRun({ text: stripCommentHtml(s.sr.overallComment), size: 20, color: '374151' }),
+                        ],
                         spacing: { after: 60 },
                     })
                 );
@@ -368,7 +362,7 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
                     new Paragraph({
                         children: [
                             new TextRun({ text: `${criterion.title}: `, bold: true, size: 20 }),
-                            new TextRun({ text: stripHtml(entry.comment ?? ''), size: 20, color: '374151' }),
+                            new TextRun({ text: stripCommentHtml(entry.comment ?? ''), size: 20, color: '374151' }),
                         ],
                         spacing: { after: 40 },
                     })
@@ -396,7 +390,7 @@ export async function exportPeriodReport(input: PeriodReportInput, styleTemplate
 
     const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
-    const safeName = student.name.replace(/[^a-z0-9]/gi, '_');
+    const safeName = sanitizeFilename(student.name);
     saveAs(blob, `${safeName}_period_report.docx`);
 }
 
@@ -648,7 +642,7 @@ export async function exportReportCard(data: ReportCardData, styleTemplate?: Exp
     const blocks = await buildReportCardSections(data);
     const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
-    const safeName = data.studentName.replace(/[^a-z0-9]/gi, '_');
+    const safeName = sanitizeFilename(data.studentName);
     saveAs(blob, `${safeName}_report_card.docx`);
 }
 

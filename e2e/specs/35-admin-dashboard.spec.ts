@@ -87,8 +87,8 @@ test.describe('Admin dashboard — Schools tab', () => {
         } finally {
             const schoolCard = supabasePage.locator('.card').filter({ hasText: schoolName });
             if (await schoolCard.count()) {
-                supabasePage.once('dialog', (dialog) => dialog.accept());
                 await schoolCard.getByRole('button', { name: 'Delete' }).click();
+                await supabasePage.getByRole('button', { name: /^confirm$/i }).click();
             }
         }
 

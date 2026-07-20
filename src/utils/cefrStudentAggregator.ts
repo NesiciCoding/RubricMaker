@@ -14,10 +14,10 @@ import type {
     Test,
     StudentTest,
 } from '../types';
-import { CEFR_DESCRIPTORS, CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { CEFR_DESCRIPTORS, CEFR_SKILLS } from '../data/cefrDescriptors';
 import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
-import { compareToRange, type ProgressStatus } from './cefrOrdinal';
-import { calcGradeSummary } from './gradeCalc';
+import { compareToRange, cefrLevelOrdinal, type ProgressStatus } from './cefrOrdinal';
+import { calcGradeSummary, criterionMaxPoints } from './gradeCalc';
 import { profileText } from './cefrVocabularyProfiler';
 import { profileGrammar } from './grammarChecker';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
@@ -30,7 +30,7 @@ export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): C
     const achieved = skillCells.filter((c) => c.state === 'achieved');
     const pool = achieved.length > 0 ? achieved : skillCells;
     return pool.reduce<CefrLevel>(
-        (best, c) => (CEFR_LEVELS.indexOf(c.level) > CEFR_LEVELS.indexOf(best) ? c.level : best),
+        (best, c) => (cefrLevelOrdinal(c.level) > cefrLevelOrdinal(best) ? c.level : best),
         pool[0].level
     );
 }
@@ -40,9 +40,64 @@ export function overallLevel(cells: CefrCellData[], skills: CefrSkill[] = CEFR_S
     const perSkill = skills.map((sk) => highestLevelForSkill(cells, sk)).filter((l): l is CefrLevel => l !== null);
     if (perSkill.length === 0) return null;
     return perSkill.reduce<CefrLevel>(
-        (worst, l) => (CEFR_LEVELS.indexOf(l) < CEFR_LEVELS.indexOf(worst) ? l : worst),
+        (worst, l) => (cefrLevelOrdinal(l) < cefrLevelOrdinal(worst) ? l : worst),
         perSkill[0]
     );
+}
+
+export interface CefrProgressEntry {
+    level: CefrLevel;
+    skill: CefrSkill;
+    avgScore: number;
+    count: number;
+    achieved: boolean;
+    threshold: number;
+    /** Most recent `dateStr` seen for this skill+level group, when the caller provides one. */
+    lastDate?: string;
+}
+
+/**
+ * Groups a student's graded rubric history by CEFR skill+level, averaging score and
+ * achieve-threshold per group. Shared by the student portal's own-progress view and the
+ * teacher-facing student profile page, which both build this from a `history` list of the
+ * same shape.
+ */
+export function aggregateCefrProgress(
+    history: {
+        rubric: Pick<Rubric, 'cefrTargetLevel' | 'cefrSkill' | 'cefrAchieveThreshold'>;
+        score: number;
+        dateStr?: string;
+    }[]
+): CefrProgressEntry[] {
+    const cefrHistory = history.filter((h) => h.rubric.cefrTargetLevel);
+    const groups = new Map<
+        string,
+        { scores: number[]; thresholds: number[]; skill: CefrSkill; level: CefrLevel; lastDate?: string }
+    >();
+    for (const h of cefrHistory) {
+        const level = h.rubric.cefrTargetLevel as CefrLevel;
+        const skill = (h.rubric.cefrSkill ?? 'writing') as CefrSkill;
+        const key = `${skill}__${level}`;
+        if (!groups.has(key)) groups.set(key, { scores: [], thresholds: [], skill, level, lastDate: h.dateStr });
+        groups.get(key)!.scores.push(h.score);
+        groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
+        groups.get(key)!.lastDate = h.dateStr;
+    }
+    return Array.from(groups.values())
+        .map((g) => {
+            const avgScore = g.scores.reduce((a, b) => a + b, 0) / g.scores.length;
+            const threshold = g.thresholds.reduce((a, b) => a + b, 0) / g.thresholds.length;
+            return {
+                level: g.level,
+                skill: g.skill,
+                avgScore,
+                count: g.scores.length,
+                achieved: avgScore >= threshold,
+                threshold,
+                lastDate: g.lastDate,
+            };
+        })
+        .sort((a, b) => cefrLevelOrdinal(a.level) - cefrLevelOrdinal(b.level));
 }
 
 export interface CefrTrackYearProgress {
@@ -302,7 +357,7 @@ export function getCefrStudentOverview(
 
             if (entry.overridePoints !== undefined) {
                 criterionEarned = entry.overridePoints;
-                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
+                criterionMax = criterionMaxPoints(criterion);
                 activeStandards.forEach((std) => {
                     standardInfo.set(std.guid, std);
                     pointsEarned.set(std.guid, (pointsEarned.get(std.guid) ?? 0) + criterionEarned);
@@ -333,7 +388,7 @@ export function getCefrStudentOverview(
                 });
             } else if (selectedLevel) {
                 criterionEarned = entry.selectedPoints ?? selectedLevel.minPoints;
-                criterionMax = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
+                criterionMax = criterionMaxPoints(criterion);
                 activeStandards.forEach((std) => {
                     standardInfo.set(std.guid, std);
                     pointsEarned.set(std.guid, (pointsEarned.get(std.guid) ?? 0) + criterionEarned);
@@ -505,7 +560,6 @@ export function getCefrStudentOverview(
     // Maps cell key → highest estimated levels from any analysis result for that cell
     const textVocabMap = new Map<string, CefrLevel>();
     const textGrammarMap = new Map<string, CefrLevel>();
-    const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
     if (analysisResults?.length) {
         const studentAnalyses = analysisResults.filter((ar) => ar.studentId === studentId && ar.extractedText);
@@ -523,11 +577,11 @@ export function getCefrStudentOverview(
             const vocabProfile = cached.vocab;
             const grammarProfile = cached.grammar;
             const prevVocab = textVocabMap.get(key);
-            if (!prevVocab || LEVEL_ORDER.indexOf(vocabProfile.estimatedLevel) > LEVEL_ORDER.indexOf(prevVocab)) {
+            if (!prevVocab || cefrLevelOrdinal(vocabProfile.estimatedLevel) > cefrLevelOrdinal(prevVocab)) {
                 textVocabMap.set(key, vocabProfile.estimatedLevel);
             }
             const prevGrammar = textGrammarMap.get(key);
-            if (!prevGrammar || LEVEL_ORDER.indexOf(grammarProfile.estimatedLevel) > LEVEL_ORDER.indexOf(prevGrammar)) {
+            if (!prevGrammar || cefrLevelOrdinal(grammarProfile.estimatedLevel) > cefrLevelOrdinal(prevGrammar)) {
                 textGrammarMap.set(key, grammarProfile.estimatedLevel);
             }
         }

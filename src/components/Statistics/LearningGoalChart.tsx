@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useTranslation } from 'react-i18next';
 import type { LearningGoalAggregate } from '../../utils/learningGoalsAggregator';
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../../utils/cefrOrdinal';
+import { formatShortDate } from '../../utils/dateInput';
 
 interface Props {
     goals: LearningGoalAggregate[];
@@ -26,11 +27,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
     const chartData = useMemo(() => {
         if (!activeGoal) return [];
         return activeGoal.history.map((h) => {
-            const dateStr = new Date(h.gradedAt).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            });
+            const dateStr = formatShortDate(h.gradedAt);
             return {
                 name: dateStr,
                 rubricName: h.rubricName,

@@ -1,6 +1,8 @@
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
+import { formatPointsRange, stripCommentHtml } from './exportDataPrep';
+import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 
 function parseMd(text: string) {
     if (!text) return text;
@@ -19,12 +21,7 @@ function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         .map((c, i) => {
             const entry = sr?.entries.find((e) => e.criterionId === c.id);
             const outcome = entry?.singlePointOutcome;
-            const comment = entry?.comment
-                ? entry.comment
-                      .replace(/<[^>]*>/g, ' ')
-                      .replace(/\s+/g, ' ')
-                      .trim()
-                : '';
+            const comment = entry?.comment ? stripCommentHtml(entry.comment) : '';
 
             const isNotYet = outcome === 'not-yet';
             const isMeets = outcome === 'meets';
@@ -71,8 +68,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
     if (rubric.scoringMode === 'single-point') return buildSinglePointGridHtml(rubric, sr);
 
     const fmt = rubric.format;
-    const orderedLevels = (criterion: (typeof rubric.criteria)[0]) =>
-        fmt.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+    const orderedLevels = (criterion: (typeof rubric.criteria)[0]) => sharedOrderedLevels(criterion, fmt);
 
     const rows = rubric.criteria
         .map((c, i) => {
@@ -106,7 +102,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
 
                     return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
         ${parseMd(l.description) || '–'}
-        ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts</small>` : ''}
+        ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${formatPointsRange(l.minPoints, l.maxPoints)}pts</small>` : ''}
         ${subItemsHtml}
       </td>`;
                 })
@@ -133,7 +129,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         .map(
             (l) =>
                 `<th style="padding:12px 14px;text-align:${fmt.headerTextAlign || 'center'};border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.levelColWidth}px;font-size:12px">
-      ${parseMd(l.label)}${fmt.showPoints ? ` (${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}-${l.maxPoints}`}pts)` : ''}
+      ${parseMd(l.label)}${fmt.showPoints ? ` (${formatPointsRange(l.minPoints, l.maxPoints)}pts)` : ''}
     </th>`
         )
         .join('');

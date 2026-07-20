@@ -26,6 +26,8 @@ import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
+import Avatar from '../components/ui/Avatar';
+import { formatShortDate } from '../utils/dateInput';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -36,12 +38,12 @@ import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
-import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
+import { getCefrStudentOverview, aggregateCefrProgress } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
-import { CEFR_LEVELS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
+import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
-import type { CefrLevel, CefrSkill, GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
+import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../types';
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -94,11 +96,7 @@ export default function StudentProfilePage() {
                     rubric,
                     scale,
                     summary,
-                    dateStr: new Date(sr.gradedAt!).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                    }),
+                    dateStr: formatShortDate(sr.gradedAt!),
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 };
             })
@@ -162,56 +160,9 @@ export default function StudentProfilePage() {
     // ── CEFR progress ──────────────────────────────────────────────────────────
     // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
 
-    interface CefrEntry {
-        level: CefrLevel;
-        skill: CefrSkill;
-        avgScore: number;
-        count: number;
-        achieved: boolean;
-        lastDate: string;
-        threshold: number;
-    }
-
-    const cefrProgress = useMemo((): CefrEntry[] => {
+    const cefrProgress = useMemo(() => {
         if (!student) return [];
-        // Only consider rubrics that have a cefrTargetLevel set
-        const cefrHistory = history.filter((h) => h.rubric.cefrTargetLevel);
-
-        // Group by skill + level
-        type GroupKey = string;
-        const groups = new Map<
-            GroupKey,
-            { scores: number[]; thresholds: number[]; skill: CefrSkill; level: CefrLevel; lastDate: string }
-        >();
-
-        for (const h of cefrHistory) {
-            const level = h.rubric.cefrTargetLevel as CefrLevel;
-            const skill = (h.rubric.cefrSkill || 'writing') as CefrSkill;
-            const key = `${skill}__${level}`;
-            if (!groups.has(key)) {
-                groups.set(key, { scores: [], thresholds: [], skill, level, lastDate: h.dateStr });
-            }
-            groups.get(key)!.scores.push(h.score);
-            groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
-            groups.get(key)!.lastDate = h.dateStr;
-        }
-
-        return Array.from(groups.values())
-            .map((g) => {
-                const avgScore = g.scores.reduce((a, b) => a + b, 0) / g.scores.length;
-                // Use the average threshold across all rubrics in this group
-                const threshold = g.thresholds.reduce((a, b) => a + b, 0) / g.thresholds.length;
-                return {
-                    level: g.level,
-                    skill: g.skill,
-                    avgScore,
-                    count: g.scores.length,
-                    achieved: avgScore >= threshold,
-                    lastDate: g.lastDate,
-                    threshold,
-                };
-            })
-            .sort((a, b) => CEFR_LEVELS.indexOf(a.level) - CEFR_LEVELS.indexOf(b.level));
+        return aggregateCefrProgress(history);
     }, [student, history]);
 
     const portfolioTimeline = useMemo(() => {
@@ -287,11 +238,7 @@ export default function StudentProfilePage() {
             entries.push({
                 kind: 'speaking',
                 date: new Date(s.gradedAt),
-                dateStr: new Date(s.gradedAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                }),
+                dateStr: formatShortDate(s.gradedAt),
                 rubricName: rubric?.name ?? s.rubricId,
                 score: summary ? parseFloat(summary.modifiedPercentage.toFixed(1)) : null,
                 letterGrade: summary?.letterGrade ?? null,
@@ -308,11 +255,7 @@ export default function StudentProfilePage() {
             entries.push({
                 kind: 'selfAssess',
                 date: new Date(sa.submittedAt),
-                dateStr: new Date(sa.submittedAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                }),
+                dateStr: formatShortDate(sa.submittedAt),
                 rubricName,
                 confidentPct,
                 saId: sa.id,
@@ -483,22 +426,7 @@ export default function StudentProfilePage() {
                     data-tour="sprofile-header"
                     style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
                 >
-                    <div
-                        style={{
-                            width: 72,
-                            height: 72,
-                            borderRadius: '50%',
-                            background: 'var(--accent-soft)',
-                            color: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.8rem',
-                            fontWeight: 700,
-                        }}
-                    >
-                        {student.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Avatar name={student.name} size={72} />
                     <div>
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.6rem' }}>{student.name}</h2>
                         <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>

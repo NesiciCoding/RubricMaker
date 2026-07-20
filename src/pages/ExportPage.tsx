@@ -27,6 +27,7 @@ import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
+import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { ReportCardConfig, Student } from '../types';
 import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
 
@@ -374,7 +375,7 @@ export default function ExportPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_${gradebookPreset}_grades.csv`;
+            a.download = `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`;
             a.click();
             URL.revokeObjectURL(url);
             logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
@@ -434,7 +435,7 @@ export default function ExportPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}_grades.csv`;
+        a.download = `${sanitizeFilename(rubric.name)}_grades.csv`;
         a.click();
         URL.revokeObjectURL(url);
         logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });

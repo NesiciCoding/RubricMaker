@@ -43,7 +43,6 @@ test.describe('Rubric version history', () => {
         // Reopen version history to access restore buttons
         await builder.openVersionHistory();
 
-        // Restore the snapshot — dialog.accept() is wired in restoreVersion
         await builder.restoreVersion(0);
 
         // Rubric name should revert

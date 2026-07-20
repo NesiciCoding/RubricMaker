@@ -1,5 +1,5 @@
 import type { Test, StudentTest, CefrLevel } from '../types';
-import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import { cefrLevelOrdinal } from './cefrOrdinal';
 import { scoreSectionPct } from './placementRouting';
 import { isStaircaseTest, computeStaircaseState } from './placementStaircase';
 
@@ -52,11 +52,10 @@ export function estimatePlacement(test: Test, studentTest: StudentTest): Placeme
 
     const level =
         passed.length > 0
-            ? passed.reduce((best, step) =>
-                  CEFR_LEVELS.indexOf(step.level) > CEFR_LEVELS.indexOf(best.level) ? step : best
-              ).level
+            ? passed.reduce((best, step) => (cefrLevelOrdinal(step.level) > cefrLevelOrdinal(best.level) ? step : best))
+                  .level
             : taggedSteps.reduce((worst, step) =>
-                  CEFR_LEVELS.indexOf(step.level) < CEFR_LEVELS.indexOf(worst.level) ? step : worst
+                  cefrLevelOrdinal(step.level) < cefrLevelOrdinal(worst.level) ? step : worst
               ).level;
 
     return { level, provisional: true, path };

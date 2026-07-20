@@ -1,6 +1,21 @@
-import type { RubricCriterion, ScoreEntry, GradeScale, GradeRange, StudentRubric, Modifier, Rubric } from '../types';
+import type {
+    RubricCriterion,
+    RubricLevel,
+    RubricFormat,
+    ScoreEntry,
+    GradeScale,
+    GradeRange,
+    StudentRubric,
+    Modifier,
+    Rubric,
+} from '../types';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
+
+/** A criterion's levels in display order — reversed when the rubric format is 'worst-first'. */
+export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFormat, 'levelOrder'>): RubricLevel[] {
+    return format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
+}
 
 /**
  * Points earned for a single criterion entry.
@@ -60,10 +75,25 @@ export function calcRawScore(entries: ScoreEntry[], criteria: RubricCriterion[])
 
 /** Maximum possible raw score (uses maxPoints per level) */
 export function calcMaxRawScore(criteria: RubricCriterion[]): number {
-    return criteria.reduce((sum, c) => {
-        const max = Math.max(...c.levels.map((l) => l.maxPoints), 0);
-        return sum + max;
-    }, 0);
+    return criteria.reduce((sum, c) => sum + criterionMaxPoints(c), 0);
+}
+
+/** Maximum points for a single criterion (uses maxPoints per level) */
+export function criterionMaxPoints(criterion: RubricCriterion): number {
+    return Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
+}
+
+/** Same as criterionMaxPoints, but floors at 1 to safely divide averaged (multi-student) scores. */
+export function criterionMaxPointsOrOne(criterion: RubricCriterion): number {
+    return criterionMaxPoints(criterion) || 1;
+}
+
+/** Percentage 0–100 a single scored entry earned against its criterion's max points */
+export function criterionPercentage(entry: ScoreEntry | undefined, criterion: RubricCriterion): number {
+    const max = criterionMaxPoints(criterion);
+    if (max === 0) return 0;
+    if (!entry) return 0;
+    return (calcEntryPoints(entry, criterion) / max) * 100;
 }
 
 /** Weighted score as percentage 0–100 */

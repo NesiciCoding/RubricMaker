@@ -42,6 +42,8 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import LoginButtons from '../components/auth/LoginButtons';
+import { useConfirm } from '../hooks/useConfirm';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import type { DbUser } from '../services/database/types';
 import type { School as SchoolType, RubricShare, ClassMember, AuditCategory, AuditRow } from '../types';
 
@@ -168,6 +170,7 @@ function UsersTab() {
 function SchoolsTab() {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolMembers, removeSchoolMember } = useApp();
     const [schools, setSchools] = useState<SchoolType[]>([]);
     const [loading, setLoading] = useState(true);
@@ -222,7 +225,11 @@ function SchoolsTab() {
     }
 
     async function handleDelete(schoolId: string) {
-        if (!window.confirm(t('admin.btn_delete_confirm'))) return;
+        const ok = await confirm({
+            title: t('admin.btn_delete_confirm_title'),
+            message: t('admin.btn_delete_confirm'),
+        });
+        if (!ok) return;
         await deleteSchool(schoolId);
         logAuditEvent('admin', 'school_delete', 'school', schoolId);
         await load();
@@ -413,6 +420,7 @@ function SchoolsTab() {
                     )}
                 </div>
             ))}
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }
@@ -1414,6 +1422,7 @@ function IntegrationsTab() {
 
 function DataTab() {
     const { t } = useTranslation();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { students, anonymizeStudent, deleteStudent } = useApp();
     const [search, setSearch] = useState('');
 
@@ -1424,13 +1433,21 @@ function DataTab() {
           })
         : students;
 
-    function handleAnonymize(id: string) {
-        if (!window.confirm(t('admin.anonymize_confirm'))) return;
+    async function handleAnonymize(id: string) {
+        const ok = await confirm({
+            title: t('admin.anonymize_confirm_title'),
+            message: t('admin.anonymize_confirm'),
+        });
+        if (!ok) return;
         anonymizeStudent(id);
     }
 
-    function handleDelete(id: string) {
-        if (!window.confirm(t('admin.delete_student_confirm'))) return;
+    async function handleDelete(id: string) {
+        const ok = await confirm({
+            title: t('admin.delete_student_confirm_title'),
+            message: t('admin.delete_student_confirm'),
+        });
+        if (!ok) return;
         deleteStudent(id);
     }
 
@@ -1516,6 +1533,7 @@ function DataTab() {
                     </div>
                 </div>
             ))}
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }
@@ -1726,6 +1744,7 @@ function AuditTab() {
 
 function ArchiveTab() {
     const { t } = useTranslation();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const {
         archivedStudents,
         restoreStudent,
@@ -1740,6 +1759,15 @@ function ArchiveTab() {
     const classMap = new Map(classes.map((c) => [c.id, c.name]));
     const studentMap = new Map([...students, ...archivedStudents].map((s) => [s.id, s.name]));
     const rubricMap = new Map(rubrics.map((r) => [r.id, r.name]));
+
+    async function handleAnonymize(id: string) {
+        const ok = await confirm({
+            title: t('admin.anonymize_confirm_title'),
+            message: t('admin.anonymize_confirm'),
+        });
+        if (!ok) return;
+        anonymizeStudent(id);
+    }
 
     if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
         return (
@@ -1841,10 +1869,7 @@ function ArchiveTab() {
                                                 <button
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ color: 'var(--red, #ef4444)' }}
-                                                    onClick={() => {
-                                                        if (window.confirm(t('admin.anonymize_confirm')))
-                                                            anonymizeStudent(s.id);
-                                                    }}
+                                                    onClick={() => handleAnonymize(s.id)}
                                                     title={t('admin.anonymize_btn')}
                                                 >
                                                     <UserMinus size={14} /> {t('admin.anonymize_btn')}
@@ -1858,6 +1883,7 @@ function ArchiveTab() {
                     </table>
                 </>
             )}
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }

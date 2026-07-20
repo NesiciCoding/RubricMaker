@@ -9,7 +9,7 @@ import type {
     CefrLevel,
 } from '../types';
 import { GRAMMAR_CATEGORIES } from '../data/grammarStandards';
-import { calcEntryPoints } from './gradeCalc';
+import { criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { autoScoreResponse } from './testCalc';
 import { isMastered } from './flashcardScheduler';
 import { State } from 'ts-fsrs';
@@ -159,12 +159,11 @@ function writingEvidenceByItem(
         for (const criterion of rubric.criteria) {
             const grammarLinks = (criterion.frameworkDescriptors ?? []).filter((d) => d.framework === 'grammar');
             if (grammarLinks.length === 0) continue;
-            const maxPts = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-            if (maxPts === 0) continue;
+            if (criterionMaxPoints(criterion) === 0) continue;
             for (const sr of srs) {
                 const entry = sr.entries.find((e) => e.criterionId === criterion.id);
                 if (!entry) continue;
-                const pct = (calcEntryPoints(entry, criterion) / maxPts) * 100;
+                const pct = criterionPercentage(entry, criterion);
                 for (const link of grammarLinks) {
                     const s = sums.get(link.descriptorId) ?? { total: 0, count: 0 };
                     s.total += pct;

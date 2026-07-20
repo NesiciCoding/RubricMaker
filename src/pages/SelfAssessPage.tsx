@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Check, AlertCircle, Save, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { useApp } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
@@ -214,23 +215,7 @@ export default function SelfAssessPage() {
             <div className="page-content fade-in">
                 {/* Header */}
                 <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
-                    <div
-                        style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: '50%',
-                            background: 'var(--accent-soft)',
-                            color: 'var(--accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.4rem',
-                            fontWeight: 700,
-                            flexShrink: 0,
-                        }}
-                    >
-                        {student.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Avatar name={student.name} size={56} />
                     <div style={{ flex: 1 }}>
                         <h2 style={{ margin: '0 0 4px' }}>{student.name}</h2>
                         <div

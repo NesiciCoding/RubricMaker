@@ -130,7 +130,7 @@ describe('periodReportExport', () => {
         });
         const texts = vi.mocked(TextRun).mock.calls.map((call) => (call[0] as { text?: string }).text ?? '');
         expect(texts.some((t) => t.includes('<'))).toBe(false);
-        expect(texts).toContain('Well done !');
+        expect(texts).toContain('Well done!');
         expect(texts).toContain('Nice work');
     });
 

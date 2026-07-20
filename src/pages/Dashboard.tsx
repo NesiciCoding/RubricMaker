@@ -24,6 +24,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { getGrammarRecommendations } from '../utils/learningPathAggregator';
 import { nanoid } from '../utils/nanoid';
 import { useToast } from '../hooks/useToast';
+import { formatShortDate } from '../utils/dateInput';
 
 function dayKey(iso: string): string {
     return new Date(iso).toDateString();
@@ -33,7 +34,7 @@ export function dateGroupLabel(iso: string, t: TFunction): string {
     const key = dayKey(iso);
     if (key === new Date().toDateString()) return t('dashboard.date_today', 'Today');
     if (key === new Date(Date.now() - 86_400_000).toDateString()) return t('dashboard.date_yesterday', 'Yesterday');
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return formatShortDate(iso);
 }
 
 function timeAgo(iso: string): string {

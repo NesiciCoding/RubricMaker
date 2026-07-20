@@ -6,6 +6,7 @@ import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getCefrOverviewTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
+import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
@@ -313,23 +314,7 @@ export default function CefrOverviewPage() {
                                                         }}
                                                     >
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <div
-                                                                style={{
-                                                                    width: 26,
-                                                                    height: 26,
-                                                                    borderRadius: '50%',
-                                                                    background: 'var(--accent-soft)',
-                                                                    color: 'var(--accent)',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    fontSize: '0.75rem',
-                                                                    fontWeight: 700,
-                                                                    flexShrink: 0,
-                                                                }}
-                                                            >
-                                                                {s.name.charAt(0).toUpperCase()}
-                                                            </div>
+                                                            <Avatar name={s.name} size={26} fontSize="0.75rem" />
                                                             <div>
                                                                 <div style={{ fontSize: '0.85rem' }}>{s.name}</div>
                                                                 {sc && (
@@ -593,23 +578,7 @@ export default function CefrOverviewPage() {
                                         className="card"
                                         style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
                                     >
-                                        <div
-                                            style={{
-                                                width: 48,
-                                                height: 48,
-                                                borderRadius: '50%',
-                                                background: 'var(--accent-soft)',
-                                                color: 'var(--accent)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '1.2rem',
-                                                fontWeight: 700,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            {student.name.charAt(0).toUpperCase()}
-                                        </div>
+                                        <Avatar name={student.name} size={48} />
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <h2 style={{ margin: '0 0 4px', fontSize: '1.2rem' }}>{student.name}</h2>
                                             <div

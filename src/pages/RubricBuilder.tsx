@@ -65,10 +65,12 @@ import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor'
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { exportRubricToDocx } from '../utils/docxExport';
+import { sanitizeFilename } from '../utils/exportDataPrep';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -210,6 +212,7 @@ export default function RubricBuilder() {
         cefrAchieveThreshold,
     ]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     // Version history lives outside rubric/AppContext state (Phase 18.4) — fetch it
     // only while the panel is actually open.
@@ -326,7 +329,7 @@ export default function RubricBuilder() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${rubric.name.replace(/[^a-z0-9]/gi, '_')}.json`;
+            a.download = `${sanitizeFilename(rubric.name)}.json`;
             a.click();
             setTimeout(() => URL.revokeObjectURL(url), 100);
             logAuditEvent('export', 'export_json', 'rubric', rubric.id);
@@ -1262,10 +1265,14 @@ export default function RubricBuilder() {
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
                                     <button
                                         className="btn btn-secondary btn-sm"
-                                        onClick={() => {
-                                            const msg =
-                                                criteria.length > 0 ? t('rubricBuilder.insert_speaking_confirm') : null;
-                                            if (!msg || window.confirm(msg)) {
+                                        onClick={async () => {
+                                            const ok =
+                                                criteria.length === 0 ||
+                                                (await confirm({
+                                                    title: t('rubricBuilder.insert_speaking_confirm_title'),
+                                                    message: t('rubricBuilder.insert_speaking_confirm'),
+                                                }));
+                                            if (ok) {
                                                 const dims = getSpeakingDimensions('');
                                                 setCriteria(criteria.length > 0 ? dims : dims);
                                             }
@@ -3429,8 +3436,12 @@ export default function RubricBuilder() {
                                             </button>
                                             <button
                                                 className="btn btn-secondary btn-sm"
-                                                onClick={() => {
-                                                    if (!window.confirm(t('rubricBuilder.confirm_restore'))) return;
+                                                onClick={async () => {
+                                                    const ok = await confirm({
+                                                        title: t('rubricBuilder.confirm_restore_title'),
+                                                        message: t('rubricBuilder.confirm_restore'),
+                                                    });
+                                                    if (!ok) return;
                                                     restoreRubricVersion(id, v.snapshot);
                                                     setShowVersionHistory(false);
                                                     window.location.reload();
@@ -3495,6 +3506,7 @@ export default function RubricBuilder() {
                 </div>
             )}
             <ConfirmDialog {...unsavedDialogProps} />
+            <ConfirmDialog {...confirmDialogProps} />
         </>
     );
 }

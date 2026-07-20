@@ -4,3 +4,7 @@ export function toLocalDatetimeInput(iso: string): string {
     const offsetMs = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
+
+export function formatShortDate(iso: string): string {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
