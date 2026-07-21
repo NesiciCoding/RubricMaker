@@ -243,8 +243,11 @@ export default function FlashcardDeckPage() {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {draft.cards.map((card, i) => (
-                                <div key={card.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    <span className="text-dim text-xs" style={{ width: 24, textAlign: 'right' }}>
+                                <div key={card.id} className="flex flex-wrap" style={{ gap: 8, alignItems: 'center' }}>
+                                    <span
+                                        className="text-dim text-xs"
+                                        style={{ width: 24, textAlign: 'right', flexShrink: 0 }}
+                                    >
                                         {i + 1}
                                     </span>
                                     <input
@@ -253,7 +256,7 @@ export default function FlashcardDeckPage() {
                                         placeholder={frontLabel}
                                         aria-label={frontLabel}
                                         onChange={(e) => patchCard(card.id, { front: e.target.value })}
-                                        style={{ flex: 1 }}
+                                        style={{ flex: 1, minWidth: 160 }}
                                     />
                                     <input
                                         className="input"
@@ -261,7 +264,7 @@ export default function FlashcardDeckPage() {
                                         placeholder={backLabel}
                                         aria-label={backLabel}
                                         onChange={(e) => patchCard(card.id, { back: e.target.value })}
-                                        style={{ flex: 1 }}
+                                        style={{ flex: 1, minWidth: 160 }}
                                     />
                                     <input
                                         className="input"
@@ -269,22 +272,24 @@ export default function FlashcardDeckPage() {
                                         placeholder={t('flashcards.card_example')}
                                         aria-label={t('flashcards.card_example')}
                                         onChange={(e) => patchCard(card.id, { example: e.target.value })}
-                                        style={{ flex: 1 }}
+                                        style={{ flex: 1, minWidth: 160 }}
                                     />
                                     {draft.deckKind === 'grammar' && (
-                                        <GrammarItemSelect
-                                            value={card.linkedGrammarItemId}
-                                            onChange={(linkedGrammarItemId) =>
-                                                patchCard(card.id, { linkedGrammarItemId })
-                                            }
-                                            aria-label={t('flashcards.card_grammar_item_label')}
-                                        />
+                                        <div style={{ width: 180, flexShrink: 0 }}>
+                                            <GrammarItemSelect
+                                                value={card.linkedGrammarItemId}
+                                                onChange={(linkedGrammarItemId) =>
+                                                    patchCard(card.id, { linkedGrammarItemId })
+                                                }
+                                                aria-label={t('flashcards.card_grammar_item_label')}
+                                            />
+                                        </div>
                                     )}
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
                                         title={t('flashcards.remove_card')}
                                         aria-label={t('flashcards.remove_card')}
-                                        style={{ color: 'var(--red)' }}
+                                        style={{ color: 'var(--red)', flexShrink: 0 }}
                                         onClick={() => removeCard(card.id)}
                                     >
                                         <Trash2 size={14} />
