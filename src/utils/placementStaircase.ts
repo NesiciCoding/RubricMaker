@@ -27,12 +27,12 @@ export const MAX_QUESTIONS = 12;
 export const DEFAULT_ELO_RATING = 1200;
 export const ELO_K_FACTOR = 24;
 export const LEVEL_TO_ELO: Record<CefrLevel, number> = {
-    A1: 800,
-    A2: 1000,
+    A1: 600,
+    A2: 900,
     B1: 1200,
-    B2: 1400,
-    C1: 1600,
-    C2: 1800,
+    B2: 1500,
+    C1: 1800,
+    C2: 2100,
 };
 
 /** Probability the item is answered correctly, standard logistic Elo expectation. */

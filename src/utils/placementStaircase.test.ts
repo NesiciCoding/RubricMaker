@@ -249,11 +249,11 @@ describe('updateItemElo', () => {
 describe('resolveNextStaircaseQuestion — Elo-based selection', () => {
     it('prefers the unseen item whose rating is closest to the level anchor', () => {
         const test = makeTest({ A2: 3 });
-        // Anchor for A2 is 1000; make q-A2-1 the closest unseen rating.
-        test.questions.find((q) => q.id === 'q-A2-0')!.eloRating = 700;
-        test.questions.find((q) => q.id === 'q-A2-1')!.eloRating = 950;
-        test.questions.find((q) => q.id === 'q-A2-2')!.eloRating = 1600;
-        expect(LEVEL_TO_ELO.A2).toBe(1000);
+        // Anchor for A2 is 900; make q-A2-1 the closest unseen rating.
+        test.questions.find((q) => q.id === 'q-A2-0')!.eloRating = 600;
+        test.questions.find((q) => q.id === 'q-A2-1')!.eloRating = 850;
+        test.questions.find((q) => q.id === 'q-A2-2')!.eloRating = 1500;
+        expect(LEVEL_TO_ELO.A2).toBe(900);
 
         const result = resolveNextStaircaseQuestion(test, [], 'code1');
         expect(result?.question.id).toBe('q-A2-1');
