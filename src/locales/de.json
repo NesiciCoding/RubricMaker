@@ -2211,7 +2211,10 @@
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",
-        "switchToPageView": "A4-Seitenansicht"
+        "switchToPageView": "A4-Seitenansicht",
+        "tableOfContents": "Inhaltsverzeichnis",
+        "untitledHeading": "Unbenannte Überschrift",
+        "dragToReorder": "Ziehen zum Umsortieren"
     },
     "docs": {
         "section_title": "Dokumentation",
@@ -2453,6 +2456,7 @@
         "rb_tests_hottext_body3": "Teilpunkte erlauben",
         "rb_tests_hottext_body4": "vergibt Punkte pro Fragment statt Alles-oder-Nichts.",
         "rb_tests_due_date_body": "Legen Sie im Testeditor ein Fälligkeitsdatum fest, um in der Testliste ein „Überfällig“-Badge anzuzeigen, sobald das Datum verstrichen ist, und um das Ablaufdatum beim Erstellen von Schüler-Freigabelinks standardmäßig zu setzen.",
+        "rb_tests_passage_editor_body": "Der Editor für Lese-/Hörtexte unterstützt einen Ziehgriff zum Umsortieren von Blöcken, eine Inhaltsverzeichnis-Seitenleiste für lange Texte sowie das Ziehen oder Einfügen eines Bildes zum Einbetten inline.",
         "rb_tests_student_view_title": "Was Schüler sehen",
         "rb_tests_student_view_item_seb": "Wenn der Test Safe Exam Browser erfordert, sehen Schüler einen Sperrbildschirm, bis sie den Link innerhalb von SEB öffnen.",
         "rb_tests_student_view_item_timer": "Ein Countdown-Timer (falls eingestellt) zeigt die verbleibende Zeit an und reicht den Test automatisch ein, wenn er Null erreicht.",
@@ -2643,6 +2647,12 @@
         "es_editor_body_prefix": "Schüler schreiben in einem TipTap-basierten Editor mit vollständiger Formatierungsleiste: fett, kursiv, Überschriften, Listen, Tabellen, Textfarbe, Hervorhebung, hochgestellt und mehr. Schalte",
         "es_editor_page_view": "Seitenansicht",
         "es_editor_body_suffix": "in der Symbolleiste um, um zu einem A4-Papierlayout mit realistischen Rändern zu wechseln — ideal für Aufsatzschreibübungen.",
+        "es_editor_item_placeholder": "Platzhaltertext zeigt Schülern, was sie schreiben können, bevor sie zu tippen beginnen.",
+        "es_editor_item_drag": "Ein Ziehgriff neben jedem Block lässt Schüler und Lehrkräfte Absätze, Überschriften und Listen ohne Ausschneiden und Einfügen neu anordnen.",
+        "es_editor_item_toc": "Eine Inhaltsverzeichnis-Seitenleiste listet die Überschriften des Dokuments auf und springt beim Klick dorthin — hilfreich bei langen Aufsätzen und Lesetexten.",
+        "es_editor_item_emoji": "Tippen Sie :shortcode: (z. B. :smile:) oder fügen Sie ein Emoji direkt ein, für eine konsistente, plattformübergreifende Emoji-Darstellung.",
+        "es_editor_item_invisibles": "Die Schaltfläche \"Formatierungszeichen anzeigen\" in der Symbolleiste zeigt Leerzeichen, Tabulatoren und Absatzumbrüche zum Korrekturlesen an.",
+        "es_editor_item_image": "Lehrkräfte können ein Bild direkt in einen Testtext oder eine Fragestellung ziehen oder einfügen, um es inline einzubetten (im Schüler-Aufsatzeditor nicht verfügbar).",
         "es_doc_analysis_title": "Dokumentenanalyse",
         "es_doc_analysis_item_upload": "Lade eine DOCX- oder PDF-Datei hoch, um Text in den Editor zu importieren.",
         "es_doc_analysis_item_ocr": "OCR über Tesseract.js für gescannte Bilder oder PDFs.",

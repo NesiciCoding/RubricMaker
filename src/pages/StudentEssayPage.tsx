@@ -889,6 +889,8 @@ export default function StudentEssayPage() {
                     onChange={setHtml}
                     editable={!submitted || !(resolvedContent?.readOnlyAfterSubmit ?? assignment.readOnlyAfterSubmit)}
                     placeholder={t('essay.editor_placeholder')}
+                    showDragHandle
+                    showTableOfContents
                 />
 
                 {/* Submit row */}

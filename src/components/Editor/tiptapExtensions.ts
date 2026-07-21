@@ -1,3 +1,4 @@
+import type { Editor } from '@tiptap/core';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -11,6 +12,13 @@ import Link from '@tiptap/extension-link';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import InvisibleCharacters from '@tiptap/extension-invisible-characters';
+import UniqueId from '@tiptap/extension-unique-id';
+import { Placeholder } from '@tiptap/extension-placeholder';
+import Image from '@tiptap/extension-image';
+import { FileHandler } from '@tiptap/extension-file-handler';
+import { TableOfContents, type TableOfContentData } from '@tiptap/extension-table-of-contents';
+import { createEmojiExtension } from './emojiExtension';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -196,6 +204,7 @@ export const TIPTAP_CONTENT_STYLES = `
     .essay-editor-content ul[data-type="taskList"] li > label { margin-top: 0.2em; flex-shrink: 0; cursor: pointer; }
     .essay-editor-content ul[data-type="taskList"] li > div { flex: 1; }
     .essay-editor-content .is-empty::before { content: attr(data-placeholder); color: var(--text-dim, #94a3b8); pointer-events: none; position: absolute; }
+    .essay-editor-content img { max-width: 100%; height: auto; border-radius: 4px; }
     .essay-editor-content sup { font-size: 0.72em; vertical-align: super; }
     .essay-editor-content sub { font-size: 0.72em; vertical-align: sub; }
     .essay-editor-content .comment-highlight { background: rgba(99, 102, 241, 0.15); border-bottom: 2px solid rgba(99, 102, 241, 0.45); cursor: pointer; }
@@ -223,5 +232,80 @@ export function getTipTapExtensions() {
         FontFamily,
         FontSize,
         LineHeight,
+        InvisibleCharacters,
+        // Headings only — this is what TableOfContents' click-to-scroll and stable anchors rely on;
+        // harmless to include even where no TOC/emoji feature is opted into (read-only viewers included).
+        UniqueId.configure({ types: ['heading'] }),
+        createEmojiExtension(),
+    ];
+}
+
+/**
+ * Placeholder text shown when the editor (or, with `showOnlyWhenEditable`'s default of true,
+ * only while editable) is empty. Opt-in per caller via `EssayEditor`'s existing `placeholder`
+ * prop — this is the extension the pre-existing `.is-empty::before` CSS rule and dormant
+ * `placeholder` prop were always waiting on (roadmap Phase 26.4).
+ */
+export function createPlaceholderExtension(placeholder: string) {
+    return Placeholder.configure({ placeholder });
+}
+
+/**
+ * Renders a heading outline as `TableOfContentData` via `onUpdate`, for a caller-owned sidebar
+ * (roadmap Phase 26.4). Relies on `UniqueId`'s heading ids (already in the shared extension set)
+ * for stable anchors rather than TableOfContents' own content-hash fallback.
+ */
+export function createTableOfContentsExtension(onUpdate: (data: TableOfContentData) => void) {
+    return TableOfContents.configure({ onUpdate });
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+/** Matches `MAX_FILE_SIZE_BYTES` in `questionBankImport.ts` — the project's existing size-cap convention. Images embed as base64 data URIs in the stored `content` HTML, so an oversized one bloats the synced jsonb document the same way an unbounded import file would. */
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** Inserts each dropped/pasted image file as a data URI, mirroring `TestQuestion.imageUrl`'s existing "public URL or data URI" convention — no upload step or attachment record needed. Non-image and oversized files are ignored. */
+function insertImageFiles(editor: Editor, files: File[], pos?: number) {
+    // Captured synchronously, before the async FileReader resolves — the paste path has no
+    // caller-supplied `pos`, so if this read `editor.state.selection.anchor` from inside the
+    // `.then()` instead, a selection change while the file is still being read would insert the
+    // image at the wrong (later) cursor position.
+    const insertPos = pos ?? editor.state.selection.anchor;
+    files.forEach((file) => {
+        if (!file.type.startsWith('image/') || file.size > MAX_IMAGE_BYTES) return;
+        readFileAsDataUrl(file)
+            .then((src) => {
+                editor
+                    .chain()
+                    .insertContentAt(insertPos, { type: 'image', attrs: { src, alt: file.name } })
+                    .focus()
+                    .run();
+            })
+            .catch(() => {
+                // Unreadable file (corrupt blob) — nothing was inserted, nothing to roll back.
+            });
+    });
+}
+
+/**
+ * Inline image embedding for teacher-authoring surfaces only (Test Builder passage editor,
+ * Question Bank section editor, Question Editor prompts) — roadmap Phase 26.4. Deliberately not
+ * wired into student essay writing/answering.
+ */
+export function createImageEmbedExtension() {
+    return [
+        Image.configure({ HTMLAttributes: { style: 'max-width: 100%; height: auto;' } }),
+        FileHandler.configure({
+            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'],
+            onDrop: (editor, files, pos) => insertImageFiles(editor, files, pos),
+            onPaste: (editor, files) => insertImageFiles(editor, files),
+        }),
     ];
 }

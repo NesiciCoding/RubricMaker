@@ -18,6 +18,35 @@ export const CONVERGE_AFTER_REVERSALS = 2;
 /** Safety cap so a misconfigured or genuinely oscillating run can't ask forever. */
 export const MAX_QUESTIONS = 12;
 
+/**
+ * Elo-based within-level self-calibration (roadmap Phase 25.4) — item ratings only, no persisted
+ * per-student rating. Each level has a fixed Elo "opponent" anchor derived from `computeStaircaseState`'s
+ * current level, standing in for the student; this keeps the mechanism a pure refinement of item
+ * ordering within a level; the staircase itself still owns level progression.
+ */
+export const DEFAULT_ELO_RATING = 1200;
+export const ELO_K_FACTOR = 24;
+export const LEVEL_TO_ELO: Record<CefrLevel, number> = {
+    A1: 600,
+    A2: 900,
+    B1: 1200,
+    B2: 1500,
+    C1: 1800,
+    C2: 2100,
+};
+
+/** Probability the item is answered correctly, standard logistic Elo expectation. */
+export function eloExpectedScore(itemRating: number, opponentRating: number): number {
+    return 1 / (1 + 10 ** ((itemRating - opponentRating) / 400));
+}
+
+/** Updates a single item's rating from one response. `correct` moves the rating down (item was "beaten"); a miss moves it up. */
+export function updateItemElo(itemRating: number, opponentRating: number, correct: boolean): number {
+    const expected = eloExpectedScore(itemRating, opponentRating);
+    const actual = correct ? 1 : 0;
+    return itemRating - ELO_K_FACTOR * (actual - expected);
+}
+
 export interface StaircaseState {
     level: CefrLevel;
     consecutiveCorrect: number;
@@ -78,6 +107,10 @@ export function computeStaircaseState(steps: Pick<StaircaseStep, 'level' | 'corr
  * Resolves the next question for a staircase test given the steps taken so far. Returns null
  * when the run has converged, or when the current level's pool has no unseen auto-scorable
  * questions left (an exhausted pool is itself a safety-valve convergence).
+ *
+ * Among unseen items, prefers the one whose `eloRating` (Phase 25.4) sits closest to the current
+ * level's Elo anchor — the seeded shuffle order remains the tiebreak, so with unrated (default-rating)
+ * items this reduces to the pre-25.4 seeded-draw behavior exactly.
  */
 export function resolveNextStaircaseQuestion(
     test: SectionedTest,
@@ -91,8 +124,15 @@ export function resolveNextStaircaseQuestion(
     if (pool.length === 0) return null;
 
     const askedIds = new Set(steps.map((s) => s.questionId));
-    const next = seededShuffle(pool, `${code}-${state.level}`).find((q) => !askedIds.has(q.id));
-    if (!next) return null;
+    const unseen = seededShuffle(pool, `${code}-${state.level}`).filter((q) => !askedIds.has(q.id));
+    if (unseen.length === 0) return null;
+
+    const anchor = LEVEL_TO_ELO[state.level];
+    const next = unseen.reduce((best, q) => {
+        const bestDistance = Math.abs((best.eloRating ?? DEFAULT_ELO_RATING) - anchor);
+        const qDistance = Math.abs((q.eloRating ?? DEFAULT_ELO_RATING) - anchor);
+        return qDistance < bestDistance ? q : best;
+    });
 
     return { sectionId: next.sectionId!, level: state.level, question: next };
 }

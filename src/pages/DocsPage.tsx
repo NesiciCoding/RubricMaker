@@ -867,6 +867,9 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_due_date_body')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.rb_tests_passage_editor_body')}
+                </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_tests_student_view_title')}
                 </h3>
@@ -1338,6 +1341,16 @@ function EssaysTab() {
                     {t('docs.es_editor_body_prefix')} <strong>{t('docs.es_editor_page_view')}</strong>{' '}
                     {t('docs.es_editor_body_suffix')}
                 </p>
+                <FeatureList
+                    items={[
+                        t('docs.es_editor_item_placeholder'),
+                        t('docs.es_editor_item_drag'),
+                        t('docs.es_editor_item_toc'),
+                        t('docs.es_editor_item_emoji'),
+                        t('docs.es_editor_item_invisibles'),
+                        t('docs.es_editor_item_image'),
+                    ]}
+                />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.es_doc_analysis_title')}

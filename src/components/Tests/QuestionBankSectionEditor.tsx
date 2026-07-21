@@ -63,6 +63,9 @@ export default function QuestionBankSectionEditor({ section, onChange }: Props) 
                     minHeight={160}
                     allowPageMode={false}
                     ariaLabelledBy="bank-section-passage-label"
+                    showDragHandle
+                    showTableOfContents
+                    allowImageEmbedding
                 />
             </div>
 

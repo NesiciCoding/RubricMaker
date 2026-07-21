@@ -1020,6 +1020,8 @@ export interface TestQuestion {
     explanation?: string;
     /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */
     maxRecordingSeconds?: number;
+    /** Elo-style item rating for staircase placement tests, self-calibrated from response history (roadmap Phase 25.4). Defaults to `DEFAULT_ELO_RATING` when absent. */
+    eloRating?: number;
 }
 
 export interface Test {

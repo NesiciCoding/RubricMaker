@@ -2,7 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { AnyExtension, Editor } from '@tiptap/core';
-import { getTipTapExtensions, TIPTAP_CONTENT_STYLES } from './tiptapExtensions';
+import { DragHandle } from '@tiptap/extension-drag-handle-react';
+import type { TableOfContentData } from '@tiptap/extension-table-of-contents';
+import {
+    getTipTapExtensions,
+    TIPTAP_CONTENT_STYLES,
+    createPlaceholderExtension,
+    createTableOfContentsExtension,
+    createImageEmbedExtension,
+} from './tiptapExtensions';
+import TableOfContentsSidebar from './TableOfContentsSidebar';
 import {
     Bold,
     Italic,
@@ -27,6 +36,7 @@ import {
     RemoveFormatting,
     Unlink,
     FileText,
+    GripVertical,
 } from 'lucide-react';
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -74,10 +84,16 @@ interface EssayEditorProps {
      * lets a caller render something alongside this editor (e.g. a BubbleMenu) that needs direct
      * access to the instance, without this component having to know about that concern itself. */
     onEditorReady?: (editor: Editor | null) => void;
+    /** Shows a drag handle for reordering blocks (roadmap Phase 26.4). Editable contexts only. */
+    showDragHandle?: boolean;
+    /** Shows a heading-outline sidebar alongside the editor (roadmap Phase 26.4). Editable contexts only. */
+    showTableOfContents?: boolean;
+    /** Lets dropped/pasted image files be embedded inline as data URIs (roadmap Phase 26.4) — teacher-authoring surfaces only, never student essay writing/answering. */
+    allowImageEmbedding?: boolean;
 }
 
 function Divider() {
-    return <div style={{ width: 1, height: 22, background: '#e2e8f0', margin: '0 4px', flexShrink: 0 }} />;
+    return <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px', flexShrink: 0 }} />;
 }
 
 interface ToolbarBtnProps {
@@ -103,8 +119,8 @@ function ToolbarBtn({ active, onClick, title, disabled, children }: ToolbarBtnPr
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: active ? '#e0e7ff' : 'transparent',
-                color: active ? '#6366f1' : '#1e293b',
+                background: active ? 'var(--accent-soft)' : 'transparent',
+                color: active ? 'var(--accent)' : 'var(--text)',
                 opacity: disabled ? 0.4 : 1,
                 flexShrink: 0,
             }}
@@ -118,9 +134,9 @@ const selectStyle: React.CSSProperties = {
     fontSize: '0.82rem',
     padding: '3px 6px',
     borderRadius: 5,
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-    color: '#1e293b',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-card)',
+    color: 'var(--text)',
     cursor: 'pointer',
     height: 28,
 };
@@ -136,6 +152,9 @@ export default function EssayEditor({
     ariaLabelledBy,
     extraExtensions,
     onEditorReady,
+    showDragHandle = false,
+    showTableOfContents = false,
+    allowImageEmbedding = false,
 }: EssayEditorProps) {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -143,9 +162,16 @@ export default function EssayEditor({
     const [showInvisibles, setShowInvisibles] = useState(false);
     const [pageMode, setPageMode] = useState(allowPageMode && defaultPageMode);
     const lastTableInsertRef = useRef(0);
+    const [tocData, setTocData] = useState<TableOfContentData>([]);
 
     const editor = useEditor({
-        extensions: extraExtensions ? [...getTipTapExtensions(), ...extraExtensions] : getTipTapExtensions(),
+        extensions: [
+            ...getTipTapExtensions(),
+            ...(placeholder ? [createPlaceholderExtension(placeholder)] : []),
+            ...(showTableOfContents ? [createTableOfContentsExtension(setTocData)] : []),
+            ...(allowImageEmbedding ? createImageEmbedExtension() : []),
+            ...(extraExtensions ?? []),
+        ],
         content,
         editable,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -201,11 +227,11 @@ export default function EssayEditor({
     return (
         <div
             style={{
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border)',
                 borderRadius: 10,
                 overflow: 'hidden',
-                background: '#fff',
-                color: '#1e293b',
+                background: 'var(--bg-card)',
+                color: 'var(--text)',
             }}
         >
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
@@ -217,8 +243,8 @@ export default function EssayEditor({
                         alignItems: 'center',
                         gap: 2,
                         padding: '8px 10px',
-                        borderBottom: '1px solid #e2e8f0',
-                        background: '#f8fafc',
+                        borderBottom: '1px solid var(--border)',
+                        background: 'var(--bg-elevated)',
                         rowGap: 6,
                     }}
                 >
@@ -370,7 +396,7 @@ export default function EssayEditor({
                                 alignItems: 'center',
                                 gap: 1,
                                 background: 'transparent',
-                                color: '#1e293b',
+                                color: 'var(--text)',
                                 flexShrink: 0,
                             }}
                             title="Text colour"
@@ -381,7 +407,7 @@ export default function EssayEditor({
                                     width: 14,
                                     height: 3,
                                     borderRadius: 2,
-                                    background: editor.getAttributes('textStyle').color ?? '#000',
+                                    background: editor.getAttributes('textStyle').color ?? 'var(--text)',
                                 }}
                             />
                         </button>
@@ -414,8 +440,8 @@ export default function EssayEditor({
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                background: editor.isActive('highlight') ? '#e0e7ff' : 'transparent',
-                                color: '#1e293b',
+                                background: editor.isActive('highlight') ? 'var(--accent-soft)' : 'transparent',
+                                color: 'var(--text)',
                                 flexShrink: 0,
                             }}
                             title="Highlight"
@@ -556,7 +582,10 @@ export default function EssayEditor({
                     {/* ── Show invisibles ── */}
                     <ToolbarBtn
                         active={showInvisibles}
-                        onClick={() => setShowInvisibles((v) => !v)}
+                        onClick={() => {
+                            setShowInvisibles((v) => !v);
+                            editor.commands.toggleInvisibleCharacters();
+                        }}
                         title="Show formatting marks"
                     >
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
@@ -580,40 +609,59 @@ export default function EssayEditor({
             )}
 
             {/* ── Editor area ── */}
-            {pageMode ? (
-                // Deliberately hardcoded to a light "paper" look, matching the rest of this
-                // editor's chrome (toolbar, borders) — this component always renders like a
-                // white document regardless of app theme. Previously this used theme vars,
-                // which under the dark theme made the page background near-black while the
-                // text stayed the editor's hardcoded dark colour, i.e. unreadable.
-                <div
-                    style={{
-                        background: '#f1f5f9',
-                        padding: '32px 24px',
-                        minHeight: 500,
-                    }}
-                    className={showInvisibles ? 'show-invisibles' : ''}
-                >
-                    <div
-                        style={{
-                            width: '100%',
-                            maxWidth: 794,
-                            minHeight: 1123,
-                            margin: '0 auto',
-                            background: '#fff',
-                            boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
-                            borderRadius: 2,
-                            padding: '96px 96px 96px',
-                            boxSizing: 'border-box',
-                        }}
-                    >
-                        <EditorContent editor={editor} placeholder={placeholder} />
-                    </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    {pageMode ? (
+                        // Deliberately hardcoded to a light "paper" look, matching the rest of this
+                        // editor's chrome (toolbar, borders) — this component always renders like a
+                        // white document regardless of app theme. Previously this used theme vars,
+                        // which under the dark theme made the page background near-black while the
+                        // text stayed the editor's hardcoded dark colour, i.e. unreadable.
+                        <div
+                            style={{
+                                background: '#f1f5f9',
+                                padding: '32px 24px',
+                                minHeight: 500,
+                            }}
+                            className={showInvisibles ? 'show-invisibles' : ''}
+                        >
+                            <div
+                                style={{
+                                    width: '100%',
+                                    maxWidth: 794,
+                                    minHeight: 1123,
+                                    margin: '0 auto',
+                                    background: '#fff',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
+                                    borderRadius: 2,
+                                    padding: '96px 96px 96px',
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                <EditorContent editor={editor} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            style={{ padding: '18px 22px', minHeight }}
+                            className={showInvisibles ? 'show-invisibles' : ''}
+                        >
+                            <EditorContent editor={editor} />
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div style={{ padding: '18px 22px', minHeight }} className={showInvisibles ? 'show-invisibles' : ''}>
-                    <EditorContent editor={editor} placeholder={placeholder} />
-                </div>
+                {editable && showTableOfContents && <TableOfContentsSidebar data={tocData} />}
+            </div>
+
+            {editable && showDragHandle && (
+                <DragHandle editor={editor}>
+                    <GripVertical
+                        size={14}
+                        color="var(--text-dim)"
+                        style={{ cursor: 'grab' }}
+                        aria-label={t('editor.dragToReorder')}
+                    />
+                </DragHandle>
             )}
 
             {/* ── Table context controls (shown when cursor is inside a table) ── */}
@@ -625,12 +673,12 @@ export default function EssayEditor({
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         padding: '8px 12px',
-                        borderTop: '1px solid #e2e8f0',
-                        background: '#f8fafc',
+                        borderTop: '1px solid var(--border)',
+                        background: 'var(--bg-elevated)',
                         fontSize: '0.75rem',
                     }}
                 >
-                    <span style={{ color: '#64748b', fontWeight: 600, marginRight: 4 }}>Table:</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600, marginRight: 4 }}>Table:</span>
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"
@@ -666,7 +714,7 @@ export default function EssayEditor({
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"
-                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: '#ef4444' }}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red)' }}
                         onClick={() => editor.chain().focus().deleteTable().run()}
                     >
                         Delete table
@@ -679,8 +727,8 @@ export default function EssayEditor({
                 ${TIPTAP_CONTENT_STYLES}
 
                 /* ── Show invisibles ── */
-                .show-invisibles .essay-editor-content p::after { content: '¶'; color: #94a3b8; font-weight: 400; margin-left: 2px; pointer-events: none; }
-                .show-invisibles .essay-editor-content br::after { content: '↵'; color: #94a3b8; pointer-events: none; }
+                .show-invisibles .essay-editor-content p::after { content: '¶'; color: var(--text-dim); font-weight: 400; margin-left: 2px; pointer-events: none; }
+                .show-invisibles .essay-editor-content br::after { content: '↵'; color: var(--text-dim); pointer-events: none; }
             `}</style>
         </div>
     );

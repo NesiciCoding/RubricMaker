@@ -2211,7 +2211,10 @@
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
-        "switchToPageView": "Vue page A4"
+        "switchToPageView": "Vue page A4",
+        "tableOfContents": "Table des matières",
+        "untitledHeading": "Titre sans nom",
+        "dragToReorder": "Glisser pour réorganiser"
     },
     "docs": {
         "section_title": "Documentation",
@@ -2453,6 +2456,7 @@
         "rb_tests_hottext_body3": "Autoriser le crédit partiel",
         "rb_tests_hottext_body4": "attribue des points par fragment au lieu de tout ou rien.",
         "rb_tests_due_date_body": "Définissez une date limite dans le générateur de tests pour afficher un badge « en retard » dans la liste des tests une fois la date dépassée, et pour préremplir la date d'expiration lors de la génération des liens de partage pour les élèves.",
+        "rb_tests_passage_editor_body": "L'éditeur de texte de lecture/écoute prend en charge une poignée de déplacement pour réorganiser les blocs, une barre latérale de table des matières pour les textes longs, et le glisser-déposer ou le collage d'une image pour l'intégrer en ligne.",
         "rb_tests_student_view_title": "Ce que voient les élèves",
         "rb_tests_student_view_item_seb": "Si le test exige Safe Exam Browser, les élèves voient un écran de blocage jusqu'à ce qu'ils ouvrent le lien dans SEB.",
         "rb_tests_student_view_item_timer": "Un minuteur (s'il est défini) affiche le temps restant et soumet automatiquement le test lorsqu'il atteint zéro.",
@@ -2643,6 +2647,12 @@
         "es_editor_body_prefix": "Les élèves écrivent dans un éditeur propulsé par TipTap avec une barre d'outils de mise en forme complète : gras, italique, titres, listes, tableaux, couleur de texte, surlignage, exposant et plus. Activez la",
         "es_editor_page_view": "Vue page",
         "es_editor_body_suffix": "dans la barre d'outils pour passer à une mise en page papier au format A4 avec des marges réalistes — idéal pour les exercices de rédaction.",
+        "es_editor_item_placeholder": "Un texte d'espace réservé guide les élèves sur ce qu'il faut écrire avant qu'ils ne commencent à taper.",
+        "es_editor_item_drag": "Une poignée de déplacement à côté de chaque bloc permet aux élèves et aux enseignants de réorganiser paragraphes, titres et listes sans couper-coller.",
+        "es_editor_item_toc": "Une barre latérale de table des matières liste les titres du document et y accède en un clic — utile pour les longs essais et textes de lecture.",
+        "es_editor_item_emoji": "Tapez :shortcode: (ex. :smile:) ou collez directement un emoji pour un rendu cohérent sur toutes les plateformes.",
+        "es_editor_item_invisibles": "Le bouton \"afficher les marques de mise en forme\" révèle les espaces, tabulations et sauts de paragraphe pour la relecture.",
+        "es_editor_item_image": "Les enseignants peuvent glisser-déposer ou coller une image directement dans un texte de test ou un énoncé de question pour l'intégrer en ligne (non disponible dans l'éditeur d'essai des élèves).",
         "es_doc_analysis_title": "Analyse de documents",
         "es_doc_analysis_item_upload": "Téléchargez un DOCX ou un PDF pour importer du texte dans l'éditeur.",
         "es_doc_analysis_item_ocr": "OCR via Tesseract.js pour les images ou PDF numérisés.",

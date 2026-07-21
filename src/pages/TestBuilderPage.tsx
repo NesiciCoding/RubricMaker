@@ -1056,6 +1056,9 @@ export default function TestBuilderPage() {
                                                             placeholder={t('tests.section_passage_placeholder')}
                                                             minHeight={160}
                                                             allowPageMode={false}
+                                                            showDragHandle
+                                                            showTableOfContents
+                                                            allowImageEmbedding
                                                         />
                                                         <div className="form-group" style={{ marginTop: 8 }}>
                                                             <label

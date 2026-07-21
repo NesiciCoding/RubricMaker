@@ -72,6 +72,7 @@ interface MinimalQuestion {
     numericTolerance?: number;
     partialCredit?: boolean;
     correctBoolean?: boolean;
+    eloRating?: number;
 }
 interface MinimalSection {
     id: string;
@@ -390,6 +391,32 @@ function replayStaircaseLevels(correctFlags: boolean[]): { levelBeforeStep: stri
     return { levelBeforeStep, askedAfterConverged };
 }
 
+// ── Elo self-calibration (roadmap Phase 25.4, mirrors src/utils/placementStaircase.ts) ─────
+// Item-only ratings, no persisted per-student rating — each level's fixed anchor stands in for
+// the student. Runs only after the level path itself has been validated below, using the same
+// levelBeforeStep/correctFlags the replay already computed, so a forged path can't skew ratings.
+
+const DEFAULT_ELO_RATING = 1200;
+const ELO_K_FACTOR = 24;
+const LEVEL_TO_ELO: Record<string, number> = {
+    A1: 600,
+    A2: 900,
+    B1: 1200,
+    B2: 1500,
+    C1: 1800,
+    C2: 2100,
+};
+
+function eloExpectedScore(itemRating: number, opponentRating: number): number {
+    return 1 / (1 + 10 ** ((itemRating - opponentRating) / 400));
+}
+
+function updateItemElo(itemRating: number, opponentRating: number, correct: boolean): number {
+    const expected = eloExpectedScore(itemRating, opponentRating);
+    const actual = correct ? 1 : 0;
+    return itemRating - ELO_K_FACTOR * (actual - expected);
+}
+
 /** Structural checks only (ids exist, no repeats, question/section/level agree) — score/level correctness is verified separately once the real answers are in scope. */
 function isStructurallyValidLevelPath(
     test: MinimalTest,
@@ -504,6 +531,10 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
+    // Set below once a staircase levelPath has been validated and its items' Elo ratings
+    // recomputed, so the update can be persisted after the (unrelated) submission insert below.
+    let eloUpdate: { testId: string; data: MinimalTest } | null = null;
+
     if (sectionPath || levelPath) {
         const { data: testRow, error: testErr } = await admin
             .from('tests')
@@ -545,6 +576,15 @@ serve(async (req) => {
                 if (askedAfterConverged || !levelBeforeStep.every((lvl, i) => lvl === levelPath[i].level)) {
                     return json({ error: 'Invalid level path' }, 400);
                 }
+
+                levelPath.forEach((step, i) => {
+                    const question = questionsById.get(step.questionId);
+                    if (!question) return;
+                    const opponentRating = LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING;
+                    const currentRating = question.eloRating ?? DEFAULT_ELO_RATING;
+                    question.eloRating = updateItemElo(currentRating, opponentRating, correctFlags[i]);
+                });
+                eloUpdate = { testId: assignment.test_id, data: test };
             }
         } catch (e) {
             console.error('submit-test placement path replay failed:', e);
@@ -597,7 +637,18 @@ serve(async (req) => {
             },
         });
 
-        if (!insertErr) return json({ success: true });
+        if (!insertErr) {
+            // Best-effort: item ratings are an internal refinement, not authoritative data — a
+            // failed update here should never fail an otherwise-successful submission.
+            if (eloUpdate) {
+                const { error: eloErr } = await admin
+                    .from('tests')
+                    .update({ data: eloUpdate.data })
+                    .eq('id', eloUpdate.testId);
+                if (eloErr) console.error('submit-test elo rating update failed:', eloErr);
+            }
+            return json({ success: true });
+        }
 
         if (insertErr.code === '23505') {
             if (isPractice && retry < maxAttempts - 1) continue;
