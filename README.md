@@ -63,7 +63,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 
 - **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
 - **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
-- **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar.
+- **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar, placeholder text, a drag handle for reordering blocks, a table-of-contents sidebar for long documents, `:shortcode:`/pasted-emoji normalization, and a "show formatting marks" toggle for spaces/tabs/paragraph breaks. Test Builder and Question Bank passage/prompt editors additionally support dropping or pasting an image to embed it inline (not available in the student essay editor).
 - **Submission codes**: Anonymous essay access via shareable codes — students submit without logging in.
 - **Document analysis**: OCR via Tesseract.js and DOCX parsing via Mammoth; vocabulary and grammar checking on uploaded documents.
 - **Essay import**: Import student essay text from uploaded DOCX or PDF files.

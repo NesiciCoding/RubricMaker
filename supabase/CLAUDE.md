@@ -60,7 +60,7 @@ Located in `supabase/functions/`. Written in TypeScript for Deno.
 Current functions:
 
 - `submit-essay` — validates and persists a student essay submission server-side (word-count, expiry, and duplicate-submission checks the client could otherwise bypass)
-- `submit-test` — mirrors `submit-essay` for test submissions: server-side expiry check and duplicate-submission guard (backed by the unique index on `student_tests.assignment_id`)
+- `submit-test` — mirrors `submit-essay` for test submissions: server-side expiry check and duplicate-submission guard (backed by the unique index on `student_tests.assignment_id`). Also replays a staircase placement test's `levelPath` for validation and, on success, best-effort recomputes each asked question's Elo `eloRating` (roadmap Phase 25.4 self-calibration) back onto the `tests` row.
 - `get-essay-assignment` — returns the student-facing content of an essay assignment; the only way anonymous/portal students can read assignment content, since direct REST access is blocked
 - `get-test-assignment` — mirrors `get-essay-assignment` for test content on a bare share-code link
 - `notify-student-graded` — emails a student when a teacher saves a grade, if the student has an email on file and SMTP is configured

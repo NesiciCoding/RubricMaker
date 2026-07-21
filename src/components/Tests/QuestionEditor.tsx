@@ -441,6 +441,7 @@ export default function QuestionEditor({
                         onChange={(html) => update({ prompt: html })}
                         minHeight={80}
                         allowPageMode={false}
+                        allowImageEmbedding
                     />
                 )}
             </div>

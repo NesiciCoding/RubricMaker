@@ -5,10 +5,14 @@ import {
     computeStaircaseState,
     resolveNextStaircaseQuestion,
     staircaseMaxPoints,
+    eloExpectedScore,
+    updateItemElo,
     STAIRCASE_START_LEVEL,
     STEP_UP_AFTER_CORRECT,
     CONVERGE_AFTER_REVERSALS,
     MAX_QUESTIONS,
+    DEFAULT_ELO_RATING,
+    LEVEL_TO_ELO,
 } from './placementStaircase';
 import type { Test, TestQuestion, CefrLevel } from '../types';
 
@@ -213,6 +217,54 @@ describe('resolveNextStaircaseQuestion', () => {
         expect(a?.question.id).toBe(aAgain?.question.id);
         expect(a).not.toBeNull();
         expect(b).not.toBeNull();
+    });
+});
+
+describe('eloExpectedScore', () => {
+    it('returns 0.5 when item and opponent ratings are equal', () => {
+        expect(eloExpectedScore(1200, 1200)).toBeCloseTo(0.5);
+    });
+
+    it('returns a higher expectation for an item rated below the opponent', () => {
+        expect(eloExpectedScore(1000, 1200)).toBeGreaterThan(0.5);
+        expect(eloExpectedScore(1400, 1200)).toBeLessThan(0.5);
+    });
+});
+
+describe('updateItemElo', () => {
+    it('lowers the item rating on a correct answer (item was "beaten")', () => {
+        expect(updateItemElo(1200, 1200, true)).toBeLessThan(1200);
+    });
+
+    it('raises the item rating on a miss', () => {
+        expect(updateItemElo(1200, 1200, false)).toBeGreaterThan(1200);
+    });
+
+    it('moves by exactly K * (actual - expected)', () => {
+        const expected = eloExpectedScore(1200, 1200);
+        expect(updateItemElo(1200, 1200, true)).toBeCloseTo(1200 - 24 * (1 - expected));
+    });
+});
+
+describe('resolveNextStaircaseQuestion — Elo-based selection', () => {
+    it('prefers the unseen item whose rating is closest to the level anchor', () => {
+        const test = makeTest({ A2: 3 });
+        // Anchor for A2 is 1000; make q-A2-1 the closest unseen rating.
+        test.questions.find((q) => q.id === 'q-A2-0')!.eloRating = 700;
+        test.questions.find((q) => q.id === 'q-A2-1')!.eloRating = 950;
+        test.questions.find((q) => q.id === 'q-A2-2')!.eloRating = 1600;
+        expect(LEVEL_TO_ELO.A2).toBe(1000);
+
+        const result = resolveNextStaircaseQuestion(test, [], 'code1');
+        expect(result?.question.id).toBe('q-A2-1');
+    });
+
+    it('falls back to seeded-shuffle order when all ratings are equal (default rating, pre-25.4 behavior)', () => {
+        const test = makeTest({ A2: 6 });
+        test.questions.forEach((q) => expect(q.eloRating ?? DEFAULT_ELO_RATING).toBe(DEFAULT_ELO_RATING));
+        const result = resolveNextStaircaseQuestion(test, [], 'code1');
+        const again = resolveNextStaircaseQuestion(test, [], 'code1');
+        expect(result?.question.id).toBe(again?.question.id);
     });
 });
 

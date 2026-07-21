@@ -2211,7 +2211,10 @@
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
-        "switchToPageView": "Switch to A4 page view"
+        "switchToPageView": "Switch to A4 page view",
+        "tableOfContents": "Table of contents",
+        "untitledHeading": "Untitled heading",
+        "dragToReorder": "Drag to reorder"
     },
     "docs": {
         "section_title": "Documentation",
@@ -2451,6 +2454,7 @@
         "rb_tests_hottext_body3": "Allow partial credit",
         "rb_tests_hottext_body4": "awards points per fragment instead of all-or-nothing.",
         "rb_tests_due_date_body": "Set a due date in the test builder to show an overdue badge in the test list once it passes, and to default the expiry date when generating student share links.",
+        "rb_tests_passage_editor_body": "The reading/listening passage editor supports a drag handle for reordering blocks, a table-of-contents sidebar for long passages, and dropping or pasting an image to embed it inline.",
         "rb_tests_student_view_title": "What students see",
         "rb_tests_student_view_item_seb": "If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.",
         "rb_tests_student_view_item_timer": "A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.",
@@ -2641,6 +2645,12 @@
         "es_editor_body_prefix": "Students write in a TipTap-powered editor with a full formatting toolbar: bold, italic, headings, lists, tables, text colour, highlight, superscript, and more. Toggle",
         "es_editor_page_view": "Page view",
         "es_editor_body_suffix": "in the toolbar to switch to an A4-sized paper layout with realistic margins — ideal for essay writing practice.",
+        "es_editor_item_placeholder": "Placeholder text guides students on what to write before they start typing.",
+        "es_editor_item_drag": "A drag handle next to each block lets students and teachers reorder paragraphs, headings, and lists without cutting and pasting.",
+        "es_editor_item_toc": "A table-of-contents sidebar lists the document's headings and jumps to them on click — helpful for long essays and reading passages.",
+        "es_editor_item_emoji": "Type :shortcode: (e.g. :smile:) or paste an emoji directly for consistent, cross-platform emoji rendering.",
+        "es_editor_item_invisibles": "The \"show formatting marks\" toolbar button reveals spaces, tabs, and paragraph breaks for proofreading.",
+        "es_editor_item_image": "Teachers can drop or paste an image directly into a test passage or question prompt to embed it inline (not available in the student essay editor).",
         "es_doc_analysis_title": "Document analysis",
         "es_doc_analysis_item_upload": "Upload a DOCX or PDF to import text into the editor.",
         "es_doc_analysis_item_ocr": "OCR via Tesseract.js for scanned images or PDFs.",

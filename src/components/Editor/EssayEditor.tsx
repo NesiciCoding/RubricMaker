@@ -2,7 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { AnyExtension, Editor } from '@tiptap/core';
-import { getTipTapExtensions, TIPTAP_CONTENT_STYLES } from './tiptapExtensions';
+import { DragHandle } from '@tiptap/extension-drag-handle-react';
+import type { TableOfContentData } from '@tiptap/extension-table-of-contents';
+import {
+    getTipTapExtensions,
+    TIPTAP_CONTENT_STYLES,
+    createPlaceholderExtension,
+    createTableOfContentsExtension,
+    createImageEmbedExtension,
+} from './tiptapExtensions';
+import TableOfContentsSidebar from './TableOfContentsSidebar';
 import {
     Bold,
     Italic,
@@ -27,6 +36,7 @@ import {
     RemoveFormatting,
     Unlink,
     FileText,
+    GripVertical,
 } from 'lucide-react';
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -74,6 +84,12 @@ interface EssayEditorProps {
      * lets a caller render something alongside this editor (e.g. a BubbleMenu) that needs direct
      * access to the instance, without this component having to know about that concern itself. */
     onEditorReady?: (editor: Editor | null) => void;
+    /** Shows a drag handle for reordering blocks (roadmap Phase 26.4). Editable contexts only. */
+    showDragHandle?: boolean;
+    /** Shows a heading-outline sidebar alongside the editor (roadmap Phase 26.4). Editable contexts only. */
+    showTableOfContents?: boolean;
+    /** Lets dropped/pasted image files be embedded inline as data URIs (roadmap Phase 26.4) — teacher-authoring surfaces only, never student essay writing/answering. */
+    allowImageEmbedding?: boolean;
 }
 
 function Divider() {
@@ -136,6 +152,9 @@ export default function EssayEditor({
     ariaLabelledBy,
     extraExtensions,
     onEditorReady,
+    showDragHandle = false,
+    showTableOfContents = false,
+    allowImageEmbedding = false,
 }: EssayEditorProps) {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -143,9 +162,16 @@ export default function EssayEditor({
     const [showInvisibles, setShowInvisibles] = useState(false);
     const [pageMode, setPageMode] = useState(allowPageMode && defaultPageMode);
     const lastTableInsertRef = useRef(0);
+    const [tocData, setTocData] = useState<TableOfContentData>([]);
 
     const editor = useEditor({
-        extensions: extraExtensions ? [...getTipTapExtensions(), ...extraExtensions] : getTipTapExtensions(),
+        extensions: [
+            ...getTipTapExtensions(),
+            ...(placeholder ? [createPlaceholderExtension(placeholder)] : []),
+            ...(showTableOfContents ? [createTableOfContentsExtension(setTocData)] : []),
+            ...(allowImageEmbedding ? createImageEmbedExtension() : []),
+            ...(extraExtensions ?? []),
+        ],
         content,
         editable,
         onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -556,7 +582,10 @@ export default function EssayEditor({
                     {/* ── Show invisibles ── */}
                     <ToolbarBtn
                         active={showInvisibles}
-                        onClick={() => setShowInvisibles((v) => !v)}
+                        onClick={() => {
+                            setShowInvisibles((v) => !v);
+                            editor.commands.toggleInvisibleCharacters();
+                        }}
                         title="Show formatting marks"
                     >
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
@@ -580,40 +609,59 @@ export default function EssayEditor({
             )}
 
             {/* ── Editor area ── */}
-            {pageMode ? (
-                // Deliberately hardcoded to a light "paper" look, matching the rest of this
-                // editor's chrome (toolbar, borders) — this component always renders like a
-                // white document regardless of app theme. Previously this used theme vars,
-                // which under the dark theme made the page background near-black while the
-                // text stayed the editor's hardcoded dark colour, i.e. unreadable.
-                <div
-                    style={{
-                        background: '#f1f5f9',
-                        padding: '32px 24px',
-                        minHeight: 500,
-                    }}
-                    className={showInvisibles ? 'show-invisibles' : ''}
-                >
-                    <div
-                        style={{
-                            width: '100%',
-                            maxWidth: 794,
-                            minHeight: 1123,
-                            margin: '0 auto',
-                            background: '#fff',
-                            boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
-                            borderRadius: 2,
-                            padding: '96px 96px 96px',
-                            boxSizing: 'border-box',
-                        }}
-                    >
-                        <EditorContent editor={editor} placeholder={placeholder} />
-                    </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    {pageMode ? (
+                        // Deliberately hardcoded to a light "paper" look, matching the rest of this
+                        // editor's chrome (toolbar, borders) — this component always renders like a
+                        // white document regardless of app theme. Previously this used theme vars,
+                        // which under the dark theme made the page background near-black while the
+                        // text stayed the editor's hardcoded dark colour, i.e. unreadable.
+                        <div
+                            style={{
+                                background: '#f1f5f9',
+                                padding: '32px 24px',
+                                minHeight: 500,
+                            }}
+                            className={showInvisibles ? 'show-invisibles' : ''}
+                        >
+                            <div
+                                style={{
+                                    width: '100%',
+                                    maxWidth: 794,
+                                    minHeight: 1123,
+                                    margin: '0 auto',
+                                    background: '#fff',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
+                                    borderRadius: 2,
+                                    padding: '96px 96px 96px',
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                <EditorContent editor={editor} />
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            style={{ padding: '18px 22px', minHeight }}
+                            className={showInvisibles ? 'show-invisibles' : ''}
+                        >
+                            <EditorContent editor={editor} />
+                        </div>
+                    )}
                 </div>
-            ) : (
-                <div style={{ padding: '18px 22px', minHeight }} className={showInvisibles ? 'show-invisibles' : ''}>
-                    <EditorContent editor={editor} placeholder={placeholder} />
-                </div>
+                {editable && showTableOfContents && <TableOfContentsSidebar data={tocData} />}
+            </div>
+
+            {editable && showDragHandle && (
+                <DragHandle editor={editor}>
+                    <GripVertical
+                        size={14}
+                        color="#94a3b8"
+                        style={{ cursor: 'grab' }}
+                        aria-label={t('editor.dragToReorder')}
+                    />
+                </DragHandle>
             )}
 
             {/* ── Table context controls (shown when cursor is inside a table) ── */}

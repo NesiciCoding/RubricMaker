@@ -2211,7 +2211,10 @@
     },
     "editor": {
         "switchToCompactView": "Compact weergave",
-        "switchToPageView": "A4-paginaweergave"
+        "switchToPageView": "A4-paginaweergave",
+        "tableOfContents": "Inhoudsopgave",
+        "untitledHeading": "Naamloze kop",
+        "dragToReorder": "Sleep om te herschikken"
     },
     "docs": {
         "section_title": "Documentatie",
@@ -2453,6 +2456,7 @@
         "rb_tests_hottext_body3": "Deelpunten toestaan",
         "rb_tests_hottext_body4": "kent punten toe per fragment in plaats van alles-of-niets.",
         "rb_tests_due_date_body": "Stel een inleverdatum in bij het maken van de toets om een badge 'te laat' te tonen in de toetsenlijst zodra de datum is verstreken, en om de verloopdatum van gedeelde links standaard op deze datum te zetten.",
+        "rb_tests_passage_editor_body": "De editor voor lees-/luisterteksten ondersteunt een sleepgreep om blokken te herschikken, een inhoudsopgave-zijbalk voor lange teksten, en het slepen of plakken van een afbeelding om deze inline in te sluiten.",
         "rb_tests_student_view_title": "Wat leerlingen zien",
         "rb_tests_student_view_item_seb": "Als de toets Safe Exam Browser vereist, zien leerlingen een blokkerend scherm totdat ze de link binnen SEB openen.",
         "rb_tests_student_view_item_timer": "Een afteltimer (indien ingesteld) toont de resterende tijd en dient de toets automatisch in zodra deze nul bereikt.",
@@ -2643,6 +2647,12 @@
         "es_editor_body_prefix": "Leerlingen schrijven in een door TipTap aangedreven editor met een volledige opmaakwerkbalk: vet, cursief, koppen, lijsten, tabellen, tekstkleur, markering, superscript en meer. Schakel",
         "es_editor_page_view": "Paginaweergave",
         "es_editor_body_suffix": "in de werkbalk om over te schakelen naar een A4-papierindeling met realistische marges — ideaal voor essayschrijfoefeningen.",
+        "es_editor_item_placeholder": "Plaatshouder-tekst laat leerlingen zien wat ze kunnen schrijven voordat ze beginnen te typen.",
+        "es_editor_item_drag": "Een sleepgreep naast elk blok laat leerlingen en docenten alinea's, koppen en lijsten herschikken zonder te knippen en plakken.",
+        "es_editor_item_toc": "Een inhoudsopgave-zijbalk toont de koppen van het document en springt ernaartoe bij een klik — handig bij lange essays en leesteksten.",
+        "es_editor_item_emoji": "Typ :shortcode: (bijv. :smile:) of plak een emoji direct voor consistente emoji-weergave op elk platform.",
+        "es_editor_item_invisibles": "De knop \"opmaaktekens tonen\" in de werkbalk toont spaties, tabs en alinea-einden voor het nalezen.",
+        "es_editor_item_image": "Docenten kunnen een afbeelding direct in een toetstekst of vraagprompt slepen of plakken om deze inline in te sluiten (niet beschikbaar in de leerling-essay-editor).",
         "es_doc_analysis_title": "Documentanalyse",
         "es_doc_analysis_item_upload": "Upload een DOCX of PDF om tekst in de editor te importeren.",
         "es_doc_analysis_item_ocr": "OCR via Tesseract.js voor gescande afbeeldingen of PDF's.",

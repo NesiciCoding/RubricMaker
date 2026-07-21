@@ -2211,7 +2211,10 @@
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
-        "switchToPageView": "Vista página A4"
+        "switchToPageView": "Vista página A4",
+        "tableOfContents": "Tabla de contenidos",
+        "untitledHeading": "Encabezado sin título",
+        "dragToReorder": "Arrastrar para reordenar"
     },
     "docs": {
         "section_title": "Documentación",
@@ -2453,6 +2456,7 @@
         "rb_tests_hottext_body3": "Permitir crédito parcial",
         "rb_tests_hottext_body4": "otorga puntos por fragmento en lugar de todo o nada.",
         "rb_tests_due_date_body": "Establece una fecha límite en el creador de pruebas para mostrar una insignia de \"vencida\" en la lista de pruebas una vez pasada la fecha, y para usarla como fecha de expiración predeterminada al generar enlaces para compartir con los alumnos.",
+        "rb_tests_passage_editor_body": "El editor de textos de lectura/escucha admite un asa de arrastre para reordenar bloques, una barra lateral de tabla de contenidos para textos largos, y arrastrar o pegar una imagen para incrustarla en línea.",
         "rb_tests_student_view_title": "Lo que ven los alumnos",
         "rb_tests_student_view_item_seb": "Si la prueba requiere Safe Exam Browser, los alumnos ven una pantalla de bloqueo hasta que abren el enlace dentro de SEB.",
         "rb_tests_student_view_item_timer": "Un temporizador de cuenta atrás (si se establece) muestra el tiempo restante y entrega automáticamente la prueba cuando llega a cero.",
@@ -2643,6 +2647,12 @@
         "es_editor_body_prefix": "Los alumnos escriben en un editor basado en TipTap con una barra de herramientas de formato completa: negrita, cursiva, encabezados, listas, tablas, color de texto, resaltado, superíndice y más. Activa la",
         "es_editor_page_view": "Vista de página",
         "es_editor_body_suffix": "en la barra de herramientas para cambiar a un diseño de papel A4 con márgenes realistas — ideal para prácticas de redacción.",
+        "es_editor_item_placeholder": "El texto de marcador de posición orienta a los estudiantes sobre qué escribir antes de que empiecen a teclear.",
+        "es_editor_item_drag": "Un asa de arrastre junto a cada bloque permite a estudiantes y profesores reordenar párrafos, encabezados y listas sin cortar y pegar.",
+        "es_editor_item_toc": "Una barra lateral de tabla de contenidos enumera los encabezados del documento y salta a ellos al hacer clic — útil para ensayos largos y textos de lectura.",
+        "es_editor_item_emoji": "Escribe :shortcode: (p. ej. :smile:) o pega un emoji directamente para una representación consistente entre plataformas.",
+        "es_editor_item_invisibles": "El botón \"mostrar marcas de formato\" de la barra de herramientas revela espacios, tabulaciones y saltos de párrafo para la revisión.",
+        "es_editor_item_image": "Los profesores pueden soltar o pegar una imagen directamente en un texto de examen o en el enunciado de una pregunta para incrustarla en línea (no disponible en el editor de redacción del estudiante).",
         "es_doc_analysis_title": "Análisis de documentos",
         "es_doc_analysis_item_upload": "Sube un DOCX o PDF para importar texto al editor.",
         "es_doc_analysis_item_ocr": "OCR mediante Tesseract.js para imágenes o PDF escaneados.",
