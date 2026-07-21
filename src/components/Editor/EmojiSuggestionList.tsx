@@ -23,6 +23,7 @@ const EmojiSuggestionList = forwardRef<EmojiSuggestionListRef, EmojiSuggestionLi
 
     useImperativeHandle(ref, () => ({
         onKeyDown: ({ event }) => {
+            if (items.length === 0) return false;
             if (event.key === 'ArrowUp') {
                 setSelectedIndex((i) => (i + items.length - 1) % items.length);
                 return true;
@@ -49,9 +50,9 @@ const EmojiSuggestionList = forwardRef<EmojiSuggestionListRef, EmojiSuggestionLi
                 gap: 2,
                 padding: 6,
                 borderRadius: 8,
-                border: '1px solid #e2e8f0',
-                background: '#fff',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.16)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                boxShadow: 'var(--shadow)',
                 maxWidth: 220,
             }}
         >
@@ -68,7 +69,7 @@ const EmojiSuggestionList = forwardRef<EmojiSuggestionListRef, EmojiSuggestionLi
                         borderRadius: 6,
                         border: 'none',
                         cursor: 'pointer',
-                        background: index === selectedIndex ? '#e0e7ff' : 'transparent',
+                        background: index === selectedIndex ? 'var(--accent-soft)' : 'transparent',
                     }}
                 >
                     {item.emoji}

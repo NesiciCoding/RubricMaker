@@ -93,7 +93,7 @@ interface EssayEditorProps {
 }
 
 function Divider() {
-    return <div style={{ width: 1, height: 22, background: '#e2e8f0', margin: '0 4px', flexShrink: 0 }} />;
+    return <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px', flexShrink: 0 }} />;
 }
 
 interface ToolbarBtnProps {
@@ -119,8 +119,8 @@ function ToolbarBtn({ active, onClick, title, disabled, children }: ToolbarBtnPr
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: active ? '#e0e7ff' : 'transparent',
-                color: active ? '#6366f1' : '#1e293b',
+                background: active ? 'var(--accent-soft)' : 'transparent',
+                color: active ? 'var(--accent)' : 'var(--text)',
                 opacity: disabled ? 0.4 : 1,
                 flexShrink: 0,
             }}
@@ -134,9 +134,9 @@ const selectStyle: React.CSSProperties = {
     fontSize: '0.82rem',
     padding: '3px 6px',
     borderRadius: 5,
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-    color: '#1e293b',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-card)',
+    color: 'var(--text)',
     cursor: 'pointer',
     height: 28,
 };
@@ -227,11 +227,11 @@ export default function EssayEditor({
     return (
         <div
             style={{
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border)',
                 borderRadius: 10,
                 overflow: 'hidden',
-                background: '#fff',
-                color: '#1e293b',
+                background: 'var(--bg-card)',
+                color: 'var(--text)',
             }}
         >
             {/* ── Toolbar ─────────────────────────────────────────────────── */}
@@ -243,8 +243,8 @@ export default function EssayEditor({
                         alignItems: 'center',
                         gap: 2,
                         padding: '8px 10px',
-                        borderBottom: '1px solid #e2e8f0',
-                        background: '#f8fafc',
+                        borderBottom: '1px solid var(--border)',
+                        background: 'var(--bg-elevated)',
                         rowGap: 6,
                     }}
                 >
@@ -396,7 +396,7 @@ export default function EssayEditor({
                                 alignItems: 'center',
                                 gap: 1,
                                 background: 'transparent',
-                                color: '#1e293b',
+                                color: 'var(--text)',
                                 flexShrink: 0,
                             }}
                             title="Text colour"
@@ -407,7 +407,7 @@ export default function EssayEditor({
                                     width: 14,
                                     height: 3,
                                     borderRadius: 2,
-                                    background: editor.getAttributes('textStyle').color ?? '#000',
+                                    background: editor.getAttributes('textStyle').color ?? 'var(--text)',
                                 }}
                             />
                         </button>
@@ -440,8 +440,8 @@ export default function EssayEditor({
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                background: editor.isActive('highlight') ? '#e0e7ff' : 'transparent',
-                                color: '#1e293b',
+                                background: editor.isActive('highlight') ? 'var(--accent-soft)' : 'transparent',
+                                color: 'var(--text)',
                                 flexShrink: 0,
                             }}
                             title="Highlight"
@@ -657,7 +657,7 @@ export default function EssayEditor({
                 <DragHandle editor={editor}>
                     <GripVertical
                         size={14}
-                        color="#94a3b8"
+                        color="var(--text-dim)"
                         style={{ cursor: 'grab' }}
                         aria-label={t('editor.dragToReorder')}
                     />
@@ -673,12 +673,12 @@ export default function EssayEditor({
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         padding: '8px 12px',
-                        borderTop: '1px solid #e2e8f0',
-                        background: '#f8fafc',
+                        borderTop: '1px solid var(--border)',
+                        background: 'var(--bg-elevated)',
                         fontSize: '0.75rem',
                     }}
                 >
-                    <span style={{ color: '#64748b', fontWeight: 600, marginRight: 4 }}>Table:</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600, marginRight: 4 }}>Table:</span>
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"
@@ -714,7 +714,7 @@ export default function EssayEditor({
                     <button
                         type="button"
                         className="btn btn-ghost btn-sm"
-                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: '#ef4444' }}
+                        style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red)' }}
                         onClick={() => editor.chain().focus().deleteTable().run()}
                     >
                         Delete table
@@ -727,8 +727,8 @@ export default function EssayEditor({
                 ${TIPTAP_CONTENT_STYLES}
 
                 /* ── Show invisibles ── */
-                .show-invisibles .essay-editor-content p::after { content: '¶'; color: #94a3b8; font-weight: 400; margin-left: 2px; pointer-events: none; }
-                .show-invisibles .essay-editor-content br::after { content: '↵'; color: #94a3b8; pointer-events: none; }
+                .show-invisibles .essay-editor-content p::after { content: '¶'; color: var(--text-dim); font-weight: 400; margin-left: 2px; pointer-events: none; }
+                .show-invisibles .essay-editor-content br::after { content: '↵'; color: var(--text-dim); pointer-events: none; }
             `}</style>
         </div>
     );

@@ -15,6 +15,7 @@ import {
     LEVEL_TO_ELO,
 } from './placementStaircase';
 import type { Test, TestQuestion, CefrLevel } from '../types';
+import { seededShuffle } from './seededShuffle';
 
 const mcQuestion = (id: string, sectionId: string, correctOptionId = 'right'): TestQuestion => ({
     id,
@@ -263,6 +264,8 @@ describe('resolveNextStaircaseQuestion — Elo-based selection', () => {
         const test = makeTest({ A2: 6 });
         test.questions.forEach((q) => expect(q.eloRating ?? DEFAULT_ELO_RATING).toBe(DEFAULT_ELO_RATING));
         const result = resolveNextStaircaseQuestion(test, [], 'code1');
+        expect(result?.question.id).toBe(seededShuffle(test.questions, 'code1-A2')[0].id);
+
         const again = resolveNextStaircaseQuestion(test, [], 'code1');
         expect(result?.question.id).toBe(again?.question.id);
     });

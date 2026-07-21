@@ -268,13 +268,20 @@ function readFileAsDataUrl(file: File): Promise<string> {
     });
 }
 
-/** Inserts each dropped/pasted image file as a data URI, mirroring `TestQuestion.imageUrl`'s existing "public URL or data URI" convention — no upload step or attachment record needed. Non-image files are ignored. */
+/** Matches `MAX_FILE_SIZE_BYTES` in `questionBankImport.ts` — the project's existing size-cap convention. Images embed as base64 data URIs in the stored `content` HTML, so an oversized one bloats the synced jsonb document the same way an unbounded import file would. */
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** Inserts each dropped/pasted image file as a data URI, mirroring `TestQuestion.imageUrl`'s existing "public URL or data URI" convention — no upload step or attachment record needed. Non-image and oversized files are ignored. */
 function insertImageFiles(editor: Editor, files: File[], pos?: number) {
+    // Captured synchronously, before the async FileReader resolves — the paste path has no
+    // caller-supplied `pos`, so if this read `editor.state.selection.anchor` from inside the
+    // `.then()` instead, a selection change while the file is still being read would insert the
+    // image at the wrong (later) cursor position.
+    const insertPos = pos ?? editor.state.selection.anchor;
     files.forEach((file) => {
-        if (!file.type.startsWith('image/')) return;
+        if (!file.type.startsWith('image/') || file.size > MAX_IMAGE_BYTES) return;
         readFileAsDataUrl(file)
             .then((src) => {
-                const insertPos = pos ?? editor.state.selection.anchor;
                 editor
                     .chain()
                     .insertContentAt(insertPos, { type: 'image', attrs: { src, alt: file.name } })
@@ -282,7 +289,7 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
                     .run();
             })
             .catch(() => {
-                // Unreadable file (corrupt/oversized blob) — nothing was inserted, nothing to roll back.
+                // Unreadable file (corrupt blob) — nothing was inserted, nothing to roll back.
             });
     });
 }
