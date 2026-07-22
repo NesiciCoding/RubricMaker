@@ -49,6 +49,13 @@ describe('parseQuestionBankJson', () => {
         expect(result.items[1].question!.eloRating).toBeUndefined();
     });
 
+    it('rejects a non-finite eloRating (e.g. 1e999, which JSON.parse coerces to Infinity)', () => {
+        // Authored as a raw JSON string, not JSON.stringify(...) — Infinity can't round-trip through
+        // JSON.stringify (it serializes to "null"), so this is the only way to exercise the case.
+        const result = parseQuestionBankJson('{"items":[{"question":{"prompt":"Q","type":"open","eloRating":1e999}}]}');
+        expect(result.items[0].question!.eloRating).toBeUndefined();
+    });
+
     it('rejects invalid JSON', () => {
         const result = parseQuestionBankJson('not json');
         expect(result.items).toEqual([]);

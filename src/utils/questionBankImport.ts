@@ -221,7 +221,7 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (raw.linkedGrammarItemId) question.linkedGrammarItemId = raw.linkedGrammarItemId;
     if (raw.explanation) question.explanation = raw.explanation;
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
-    if (typeof raw.eloRating === 'number') question.eloRating = raw.eloRating;
+    if (typeof raw.eloRating === 'number' && Number.isFinite(raw.eloRating)) question.eloRating = raw.eloRating;
 
     return question;
 }
