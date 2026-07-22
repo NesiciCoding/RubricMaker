@@ -40,13 +40,15 @@ interface RawQuestion {
     expectedAnswer?: unknown;
     correctBoolean?: unknown;
     hotTextCorrectIndices?: unknown;
+    eloRating?: unknown;
     [key: string]: unknown;
 }
 
-// Removes fields that only exist to score an answer, not to render the
-// question — options[].isCorrect, expectedAnswer, correctBoolean and
-// hotTextCorrectIndices are read by testCalc.ts server/teacher-side only, so a
-// student reading this response (e.g. via devtools) must never see them.
+// Removes fields that only exist to score an answer or calibrate item difficulty, not to render
+// the question — options[].isCorrect, expectedAnswer, correctBoolean, hotTextCorrectIndices and
+// eloRating (roadmap Phase 25.4/25.5 staircase self-calibration, teacher-only) are read
+// server/teacher-side only, so a student reading this response (e.g. via devtools) must never
+// see them.
 //
 // matchingPairs/orderItems/categorizeItems are NOT stripped here: their
 // correctness is structurally inherent to the same fields StudentTestPage's
@@ -60,7 +62,14 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
     return {
         ...test,
         questions: test.questions.map((q) => {
-            const { expectedAnswer: _ea, correctBoolean: _cb, hotTextCorrectIndices: _hci, options, ...rest } = q;
+            const {
+                expectedAnswer: _ea,
+                correctBoolean: _cb,
+                hotTextCorrectIndices: _hci,
+                eloRating: _er,
+                options,
+                ...rest
+            } = q;
             return options ? { ...rest, options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : rest;
         }),
     };

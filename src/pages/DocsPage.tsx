@@ -1121,6 +1121,7 @@ function GradingTab() {
                         t('docs.gr_placement_item_taking'),
                         t('docs.gr_placement_item_results'),
                         t('docs.gr_placement_item_provisional'),
+                        t('docs.gr_placement_item_elo'),
                     ]}
                 />
 
@@ -1419,6 +1420,7 @@ function AnalyticsTab() {
                         t('docs.an_stats_item_compare'),
                         t('docs.an_stats_item_filters'),
                         t('docs.an_stats_item_custom_views'),
+                        t('docs.an_stats_item_elo_chart'),
                     ]}
                 />
             </FeatureSection>

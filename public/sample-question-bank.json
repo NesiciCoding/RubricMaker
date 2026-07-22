@@ -1,0 +1,73 @@
+{
+    "items": [
+        {
+            "tags": ["grammar", "present-simple"],
+            "cefrLevel": "A2",
+            "question": {
+                "prompt": "She ___ to school every day.",
+                "type": "multiple-choice",
+                "points": 1,
+                "options": [
+                    { "text": "go", "isCorrect": false },
+                    { "text": "goes", "isCorrect": true },
+                    { "text": "going", "isCorrect": false }
+                ],
+                "eloRating": 850
+            }
+        },
+        {
+            "tags": ["vocabulary", "phrasal-verbs"],
+            "cefrLevel": "B1",
+            "question": {
+                "prompt": "\"To put off\" a meeting means to ___ it.",
+                "type": "multiple-choice",
+                "points": 1,
+                "options": [
+                    { "text": "cancel", "isCorrect": false },
+                    { "text": "postpone", "isCorrect": true },
+                    { "text": "attend", "isCorrect": false }
+                ],
+                "eloRating": 1250
+            }
+        },
+        {
+            "tags": ["writing", "essay"],
+            "cefrLevel": "C1",
+            "question": {
+                "prompt": "Write a short argumentative paragraph on whether homework should be mandatory. (80-120 words)",
+                "type": "open",
+                "points": 10,
+                "eloRating": 1800
+            }
+        },
+        {
+            "tags": ["reading", "listening"],
+            "cefrLevel": "B1",
+            "kind": "section",
+            "section": {
+                "title": "A weekend trip",
+                "content": "<p>Last weekend, Tom and his family drove to the coast. They stayed in a small hotel near the beach and spent two days swimming, walking along the shore, and eating fish and chips at a local restaurant. On Sunday evening they drove home, tired but happy.</p>",
+                "questions": [
+                    {
+                        "prompt": "Where did Tom's family stay?",
+                        "type": "multiple-choice",
+                        "points": 1,
+                        "options": [
+                            { "text": "A small hotel", "isCorrect": true },
+                            { "text": "A campsite", "isCorrect": false },
+                            { "text": "With relatives", "isCorrect": false }
+                        ],
+                        "eloRating": 1150
+                    },
+                    {
+                        "prompt": "True or false: they went home on Saturday.",
+                        "type": "true-false",
+                        "points": 1,
+                        "correctBoolean": false,
+                        "eloRating": 1300
+                    }
+                ]
+            }
+        }
+    ]
+}

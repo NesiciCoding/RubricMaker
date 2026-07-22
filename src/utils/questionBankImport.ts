@@ -62,6 +62,8 @@ interface RawQuestion {
     linkedGrammarItemId?: string;
     explanation?: string;
     maxRecordingSeconds?: number;
+    /** Elo-style item rating for staircase placement tests (roadmap Phase 25.4/25.5) — see LEVEL_TO_ELO in placementStaircase.ts for the per-CEFR-level anchor this is meant to sit near. */
+    eloRating?: number;
 }
 
 /** Shape of a question bank JSON export — loosely typed since it's untrusted file input. */
@@ -219,6 +221,7 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (raw.linkedGrammarItemId) question.linkedGrammarItemId = raw.linkedGrammarItemId;
     if (raw.explanation) question.explanation = raw.explanation;
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
+    if (typeof raw.eloRating === 'number' && Number.isFinite(raw.eloRating)) question.eloRating = raw.eloRating;
 
     return question;
 }
