@@ -44,7 +44,10 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                 </button>
             </div>
             <p className="text-muted text-sm" style={{ marginTop: 0 }}>
-                {t('questionBank.import_instructions')}
+                {t('questionBank.import_instructions')}{' '}
+                <a href="sample-question-bank.json" download="sample-question-bank.json">
+                    {t('questionBank.import_download_sample')}
+                </a>
             </p>
             <input
                 ref={fileInputRef}

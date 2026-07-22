@@ -31,6 +31,8 @@ import ScoreHistogram from '../components/Statistics/ScoreHistogram';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import ClassTrendChart from '../components/Statistics/ClassTrendChart';
 import MultiClassTrendChart from '../components/Statistics/MultiClassTrendChart';
+import EloProgressChart from '../components/Statistics/EloProgressChart';
+import { buildEloProgress } from '../utils/eloProgressAggregator';
 import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/classComparisonAggregator';
 import { ChartSkeleton } from '../components/ui/Skeleton';
 import { STATS_PRESETS, type PresetChartPoint } from '../utils/statsChartPresets';
@@ -427,6 +429,15 @@ export default function StatisticsPage() {
                     pct: number;
                 } => d !== null
             );
+    }, [viewMode, selectedStudentId, studentTests, tests]);
+
+    // Elo-scaled CEFR progression across the selected student's placement-test attempts (roadmap Phase 25.5)
+    const eloProgressPoints = useMemo(() => {
+        if (viewMode !== 'student' || !selectedStudentId) return [];
+        return buildEloProgress(
+            studentTests.filter((st) => st.studentId === selectedStudentId),
+            tests
+        );
     }, [viewMode, selectedStudentId, studentTests, tests]);
 
     // Class-level test averages (for the rubric view)
@@ -1678,6 +1689,13 @@ export default function StatisticsPage() {
                                                 ))}
                                             </tbody>
                                         </table>
+                                    </div>
+                                )}
+
+                                {/* Elo-scaled CEFR progression across placement-test attempts */}
+                                {eloProgressPoints.length > 0 && (
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <EloProgressChart points={eloProgressPoints} />
                                     </div>
                                 )}
 

@@ -35,6 +35,19 @@ export const LEVEL_TO_ELO: Record<CefrLevel, number> = {
     C2: 2100,
 };
 
+/**
+ * Half-width of each level's Elo band (roadmap Phase 25.5, teacher-facing rating UI): half the
+ * 300-point gap between adjacent `LEVEL_TO_ELO` anchors, so bands tile the Elo axis exactly with
+ * no overlap (e.g. A2's [750, 1050] ends exactly where B1's [1050, 1350] begins).
+ */
+export const CEFR_ELO_BAND_HALF_WIDTH = 150;
+
+/** The non-overlapping Elo range associated with a CEFR level, centered on its `LEVEL_TO_ELO` anchor. */
+export function cefrEloRange(level: CefrLevel): { min: number; max: number } {
+    const anchor = LEVEL_TO_ELO[level];
+    return { min: anchor - CEFR_ELO_BAND_HALF_WIDTH, max: anchor + CEFR_ELO_BAND_HALF_WIDTH };
+}
+
 /** Probability the item is answered correctly, standard logistic Elo expectation. */
 export function eloExpectedScore(itemRating: number, opponentRating: number): number {
     return 1 / (1 + 10 ** ((itemRating - opponentRating) / 400));

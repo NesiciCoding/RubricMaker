@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseQuestionBankJson } from './questionBankImport';
 
@@ -32,6 +34,19 @@ describe('parseQuestionBankJson', () => {
         expect(question!.options?.[1].isCorrect).toBe(true);
         expect(question!.id).toBeTruthy();
         expect(question!.options?.every((o) => o.id)).toBe(true);
+    });
+
+    it('parses an eloRating and ignores a non-numeric one', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({
+                items: [
+                    { question: { prompt: 'Rated question', type: 'open', eloRating: 950 } },
+                    { question: { prompt: 'Unrated question', type: 'open', eloRating: 'high' } },
+                ],
+            })
+        );
+        expect(result.items[0].question!.eloRating).toBe(950);
+        expect(result.items[1].question!.eloRating).toBeUndefined();
     });
 
     it('rejects invalid JSON', () => {
@@ -302,5 +317,21 @@ describe('parseQuestionBankJson', () => {
             key: 'questionBank.import_warn_too_many_items',
             params: { max: 500, dropped: 5 },
         });
+    });
+});
+
+describe('public/sample-question-bank.json', () => {
+    it('parses with no warnings and carries an eloRating on every question', () => {
+        const text = readFileSync(resolve(__dirname, '../../public/sample-question-bank.json'), 'utf8');
+        const result = parseQuestionBankJson(text);
+
+        expect(result.warnings).toEqual([]);
+        expect(result.items.length).toBeGreaterThan(0);
+
+        const allQuestions = result.items.flatMap((item) =>
+            item.kind === 'section' && item.section ? item.section.questions : item.question ? [item.question] : []
+        );
+        expect(allQuestions.length).toBeGreaterThan(0);
+        expect(allQuestions.every((q) => typeof q.eloRating === 'number')).toBe(true);
     });
 });

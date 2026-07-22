@@ -16,6 +16,7 @@ import {
     ChevronUp,
     ChevronDown,
     BookmarkPlus,
+    Gauge,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
@@ -28,6 +29,7 @@ import CefrPickerModal from '../CEFR/CefrPickerModal';
 import GrammarItemSelect from '../CEFR/GrammarItemSelect';
 import HelpPopover from './HelpPopover';
 import { parseClozeGaps, parseHotTextFragments, type HotTextFragmentSegment } from '../../utils/clozeParse';
+import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import type {
     TestQuestion,
     TestQuestionType,
@@ -1193,6 +1195,50 @@ export default function QuestionEditor({
                     </p>
                 </div>
             )}
+
+            {/* Elo rating for staircase placement self-calibration (roadmap Phase 25.5) — only
+                meaningful once the question's section has a CEFR level, since resolveNextStaircaseQuestion
+                only ever compares an item's rating against its own level's Elo anchor. */}
+            {(() => {
+                const sectionLevel = sections.find((s) => s.id === question.sectionId)?.cefrLevel;
+                if (!sectionLevel) {
+                    return (
+                        <p className="text-muted text-xs" style={{ margin: 0 }}>
+                            {t('tests.elo_rating_no_level')}
+                        </p>
+                    );
+                }
+                const range = cefrEloRange(sectionLevel);
+                return (
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label
+                            htmlFor={`question-elo-${question.id}`}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <Gauge size={14} /> {t('tests.elo_rating_label')}{' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                ({t('essay_assignment.optional')})
+                            </span>{' '}
+                            <HelpPopover title={t('tests.elo_rating_label')}>{t('tests.elo_rating_help')}</HelpPopover>
+                        </label>
+                        <input
+                            id={`question-elo-${question.id}`}
+                            type="number"
+                            min={range.min}
+                            max={range.max}
+                            value={question.eloRating ?? ''}
+                            onChange={(e) =>
+                                update({ eloRating: e.target.value === '' ? undefined : Number(e.target.value) })
+                            }
+                            placeholder={String(LEVEL_TO_ELO[sectionLevel])}
+                            style={{ width: 140 }}
+                        />
+                        <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                            {t('tests.elo_rating_range_hint', { min: range.min, max: range.max })}
+                        </p>
+                    </div>
+                );
+            })()}
 
             {/* Standards + CEFR linking */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
