@@ -393,7 +393,21 @@
         "my_templates": "Mis plantillas",
         "built_in_templates": "Plantillas integradas",
         "builtin_templates": "Plantillas integradas",
-        "remove_template": "Eliminar plantilla"
+        "remove_template": "Eliminar plantilla",
+        "greeting_morning": "Buenos días",
+        "greeting_afternoon": "Buenas tardes",
+        "greeting_evening": "Buenas noches",
+        "header_meta": "{{rubrics}} rúbricas · {{classes}} clases · {{students}} estudiantes",
+        "this_week": "Esta semana",
+        "needs_grading": "Por calificar",
+        "needs_grading_empty": "Nada pendiente de calificar",
+        "view_queue": "Ver cola",
+        "trend_this_week": "+{{count}} esta semana",
+        "trend_none": "Sin cambios",
+        "class_cefr_title": "CEFR de la clase — Escritura",
+        "class_cefr_sub_class": "{{class}} · {{rubric}}",
+        "class_cefr_sub_all": "Todas las clases · {{rubric}}",
+        "class_cefr_empty": "Aún no hay una rúbrica calificada"
     },
     "rubricList": {
         "title": "Rúbricas",

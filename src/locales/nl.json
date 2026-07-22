@@ -393,7 +393,21 @@
         "my_templates": "Mijn sjablonen",
         "built_in_templates": "Ingebouwde sjablonen",
         "builtin_templates": "Ingebouwde sjablonen",
-        "remove_template": "Sjabloon verwijderen"
+        "remove_template": "Sjabloon verwijderen",
+        "greeting_morning": "Goedemorgen",
+        "greeting_afternoon": "Goedemiddag",
+        "greeting_evening": "Goedenavond",
+        "header_meta": "{{rubrics}} rubrieken · {{classes}} klassen · {{students}} leerlingen",
+        "this_week": "Deze week",
+        "needs_grading": "Nog na te kijken",
+        "needs_grading_empty": "Niets om na te kijken",
+        "view_queue": "Bekijk wachtrij",
+        "trend_this_week": "+{{count}} deze week",
+        "trend_none": "Geen verandering",
+        "class_cefr_title": "Klas CEFR — Schrijven",
+        "class_cefr_sub_class": "{{class}} · {{rubric}}",
+        "class_cefr_sub_all": "Alle klassen · {{rubric}}",
+        "class_cefr_empty": "Nog geen becijferde rubriek"
     },
     "rubricList": {
         "title": "Rubrieken",

@@ -393,7 +393,21 @@
         "my_templates": "Meine Vorlagen",
         "built_in_templates": "Eingebaute Vorlagen",
         "builtin_templates": "Integrierte Vorlagen",
-        "remove_template": "Vorlage entfernen"
+        "remove_template": "Vorlage entfernen",
+        "greeting_morning": "Guten Morgen",
+        "greeting_afternoon": "Guten Tag",
+        "greeting_evening": "Guten Abend",
+        "header_meta": "{{rubrics}} Rubriken · {{classes}} Klassen · {{students}} Schüler",
+        "this_week": "Diese Woche",
+        "needs_grading": "Zu bewerten",
+        "needs_grading_empty": "Nichts zu bewerten",
+        "view_queue": "Warteschlange anzeigen",
+        "trend_this_week": "+{{count}} diese Woche",
+        "trend_none": "Keine Änderung",
+        "class_cefr_title": "Klassen-CEFR — Schreiben",
+        "class_cefr_sub_class": "{{class}} · {{rubric}}",
+        "class_cefr_sub_all": "Alle Klassen · {{rubric}}",
+        "class_cefr_empty": "Noch keine bewertete Rubrik"
     },
     "rubricList": {
         "title": "Rubriken",

@@ -6,10 +6,12 @@ import {
     FileText,
     Plus,
     ArrowRight,
+    ArrowUpRight,
     ChevronRight,
     TrendingUp,
     CheckCircle,
     AlertTriangle,
+    ClipboardList,
     Clock,
     Layers,
     Mail,
@@ -20,7 +22,7 @@ import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
 import { useApp } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcEntryPoints, calcGradeSummary, criterionMaxPointsOrOne } from '../utils/gradeCalc';
 import { getGrammarRecommendations } from '../utils/learningPathAggregator';
 import { nanoid } from '../utils/nanoid';
 import { useToast } from '../hooks/useToast';
@@ -45,6 +47,42 @@ function timeAgo(iso: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function greetingKey(hour: number): string {
+    if (hour < 12) return 'dashboard.greeting_morning';
+    if (hour < 18) return 'dashboard.greeting_afternoon';
+    return 'dashboard.greeting_evening';
+}
+
+function isWithinLastWeek(iso: string | undefined): boolean {
+    if (!iso) return false;
+    return Date.now() - new Date(iso).getTime() < 7 * 86_400_000;
+}
+
+function TrendBadge({ count, t }: { count: number; t: TFunction }) {
+    if (count <= 0) {
+        return (
+            <span className="text-muted text-xs" style={{ fontWeight: 600 }}>
+                {t('dashboard.trend_none')}
+            </span>
+        );
+    }
+    return (
+        <span
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                color: 'var(--green)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+            }}
+        >
+            <ArrowUpRight size={13} />
+            {t('dashboard.trend_this_week', { count })}
+        </span>
+    );
+}
+
 export default function Dashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -55,6 +93,8 @@ export default function Dashboard() {
         studentRubrics,
         studentTests,
         tests,
+        classes,
+        essaySubmissions,
         flashcardDecks,
         gradeScales,
         settings,
@@ -126,6 +166,86 @@ export default function Dashboard() {
             return sr.entries.every((e) => e.levelId !== null || e.overridePoints !== undefined);
         }).length;
     }, [studentRubrics, rubrics]);
+
+    // Submitted essays awaiting a grade: an EssaySubmission with no corresponding graded StudentRubric yet
+    const needsGrading = useMemo(() => {
+        const byKey = new Map<
+            string,
+            {
+                studentId: string;
+                studentName: string;
+                rubricId: string;
+                rubricName: string;
+                className?: string;
+                submittedAt: string;
+            }
+        >();
+        for (const sub of essaySubmissions) {
+            const key = `${sub.assignmentRubricId}_${sub.assignmentStudentId}`;
+            const alreadyGraded = studentRubrics.some(
+                (sr) =>
+                    sr.rubricId === sub.assignmentRubricId && sr.studentId === sub.assignmentStudentId && sr.gradedAt
+            );
+            if (alreadyGraded) continue;
+            const rubric = rubrics.find((r) => r.id === sub.assignmentRubricId);
+            const student = students.find((s) => s.id === sub.assignmentStudentId);
+            if (!rubric || !student) continue;
+            const cls = classes.find((c) => c.id === student.classId);
+            const existing = byKey.get(key);
+            if (existing && existing.submittedAt >= sub.submittedAt) continue;
+            byKey.set(key, {
+                studentId: student.id,
+                studentName: student.name,
+                rubricId: rubric.id,
+                rubricName: rubric.name,
+                className: cls?.name,
+                submittedAt: sub.submittedAt,
+            });
+        }
+        return Array.from(byKey.values()).sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
+    }, [essaySubmissions, studentRubrics, rubrics, students, classes]);
+
+    // "This week" trend counts feeding the stat-card badges — real counts, not fabricated percentages
+    const weeklyTrends = useMemo(
+        () => ({
+            rubrics: rubrics.filter((r) => isWithinLastWeek(r.createdAt)).length,
+            students: students.filter((s) => isWithinLastWeek(s.updatedAt)).length,
+            grades: studentRubrics.filter((sr) => isWithinLastWeek(sr.gradedAt)).length,
+            needsGrading: needsGrading.filter((n) => isWithinLastWeek(n.submittedAt)).length,
+        }),
+        [rubrics, students, studentRubrics, needsGrading]
+    );
+
+    // "Class CEFR — Writing": per-criterion class averages for the most recently graded rubric,
+    // scoped to the global active-class selector (settings.activeClassId) when one is set
+    const classCriterionAverages = useMemo(() => {
+        const inActiveClass = (studentId: string) =>
+            !settings.activeClassId || students.find((s) => s.id === studentId)?.classId === settings.activeClassId;
+
+        const candidateGradings = studentRubrics
+            .filter((sr) => sr.gradedAt && !sr.notHandedIn && inActiveClass(sr.studentId))
+            .sort((a, b) => (b.gradedAt as string).localeCompare(a.gradedAt as string));
+        const latestRubricId = candidateGradings[0]?.rubricId;
+        const rubric = latestRubricId ? rubrics.find((r) => r.id === latestRubricId) : undefined;
+        if (!rubric) return { rubric: null, bars: [] as { name: string; pct: number }[] };
+
+        const gradingsForRubric = candidateGradings.filter((sr) => sr.rubricId === rubric.id);
+        const bars = rubric.criteria.map((c) => {
+            const scores = gradingsForRubric.map((sr) => {
+                const entry = sr.entries.find((e) => e.criterionId === c.id);
+                return entry ? calcEntryPoints(entry, c) : 0;
+            });
+            const max = criterionMaxPointsOrOne(c);
+            const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+            return { name: c.title, pct: parseFloat(((avg / max) * 100).toFixed(1)) };
+        });
+        return { rubric, bars };
+    }, [studentRubrics, rubrics, students, settings.activeClassId]);
+
+    const activeClassName = useMemo(
+        () => (settings.activeClassId ? classes.find((c) => c.id === settings.activeClassId)?.name : undefined),
+        [classes, settings.activeClassId]
+    );
 
     // At-risk: students with 2+ recent grades below 55%, plus feedback age per student
     const { atRiskStudents, feedbackAge } = useMemo(() => {
@@ -245,8 +365,55 @@ export default function Dashboard() {
                 }
             />
             <div className="page-content fade-in dashboard-container">
+                {/* Greeting header */}
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        justifyContent: 'space-between',
+                        marginBottom: 20,
+                    }}
+                >
+                    <div>
+                        <div
+                            style={{
+                                fontFamily: 'var(--font-display)',
+                                fontSize: '1.55rem',
+                                fontWeight: 700,
+                                letterSpacing: '-0.02em',
+                            }}
+                        >
+                            {t(greetingKey(new Date().getHours()))}
+                        </div>
+                        <div className="text-muted text-sm" style={{ marginTop: 3 }}>
+                            {t('dashboard.header_meta', {
+                                rubrics: rubrics.length,
+                                classes: classes.length,
+                                students: students.length,
+                            })}
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            height: 32,
+                            padding: '0 12px',
+                            borderRadius: 8,
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border)',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--text-muted)',
+                            flexShrink: 0,
+                        }}
+                    >
+                        {t('dashboard.this_week')}
+                    </div>
+                </div>
+
                 {/* Stat cards */}
-                <div className="grid-3 mb-4">
+                <div className="grid-4 mb-4">
                     <div
                         className="card hoverable"
                         onClick={() => navigate('/rubrics')}
@@ -260,6 +427,9 @@ export default function Dashboard() {
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{rubrics.length}</div>
                                 <div className="text-muted text-sm">{t('dashboard.rubrics')}</div>
                             </div>
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                            <TrendBadge count={weeklyTrends.rubrics} t={t} />
                         </div>
                     </div>
                     <div
@@ -276,6 +446,9 @@ export default function Dashboard() {
                                 <div className="text-muted text-sm">{t('dashboard.students')}</div>
                             </div>
                         </div>
+                        <div style={{ marginTop: 10 }}>
+                            <TrendBadge count={weeklyTrends.students} t={t} />
+                        </div>
                     </div>
                     <div
                         className="card hoverable"
@@ -291,6 +464,27 @@ export default function Dashboard() {
                                 <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{completedCount}</div>
                                 <div className="text-muted text-sm">{t('dashboard.grades_submitted')}</div>
                             </div>
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                            <TrendBadge count={weeklyTrends.grades} t={t} />
+                        </div>
+                    </div>
+                    <div
+                        className="card hoverable"
+                        onClick={() => navigate('/rubrics')}
+                        style={{ borderTop: '3px solid var(--yellow)', cursor: 'pointer' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ background: 'rgba(201,133,31,0.12)', padding: 10, borderRadius: 10 }}>
+                                <ClipboardList size={20} style={{ color: 'var(--yellow)' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 700 }}>{needsGrading.length}</div>
+                                <div className="text-muted text-sm">{t('dashboard.needs_grading')}</div>
+                            </div>
+                        </div>
+                        <div style={{ marginTop: 10 }}>
+                            <TrendBadge count={weeklyTrends.needsGrading} t={t} />
                         </div>
                     </div>
                 </div>
@@ -389,139 +583,297 @@ export default function Dashboard() {
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {/* Recent Activity feed */}
-                    <div className="card">
-                        <div className="card-header" style={{ marginBottom: 14 }}>
-                            <h3>{t('dashboard.recent_activity')}</h3>
-                        </div>
-                        {recentActivity.length === 0 ? (
-                            <div className="empty-state">
-                                <BookOpen size={32} />
-                                <p>{t('dashboard.no_rubrics')}</p>
-                                <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
-                                    <Plus size={14} /> {t('dashboard.create_first')}
-                                </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {/* Needs grading */}
+                        <div className="card">
+                            <div
+                                className="card-header"
+                                style={{
+                                    marginBottom: 14,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <h3>{t('dashboard.needs_grading')}</h3>
+                                <span
+                                    className="text-muted text-xs"
+                                    style={{ fontWeight: 600, cursor: 'pointer' }}
+                                    onClick={() => navigate('/rubrics')}
+                                >
+                                    {t('dashboard.view_queue')}
+                                </span>
                             </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {recentActivity.map((item, idx) => {
-                                    const groupLabel = dateGroupLabel(item.timestamp, t);
-                                    const showGroupHeader =
-                                        idx === 0 ||
-                                        groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
-                                    return (
-                                        <React.Fragment key={idx}>
-                                            {showGroupHeader && (
-                                                <div
-                                                    style={{
-                                                        fontSize: '0.72rem',
-                                                        fontWeight: 600,
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.04em',
-                                                        color: 'var(--text-muted)',
-                                                        marginTop: idx === 0 ? 0 : 8,
-                                                        padding: '0 2px',
-                                                    }}
-                                                >
-                                                    {groupLabel}
-                                                </div>
-                                            )}
+                            {needsGrading.length === 0 ? (
+                                <div className="text-muted text-sm">{t('dashboard.needs_grading_empty')}</div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {needsGrading.slice(0, 6).map((item) => (
+                                        <div
+                                            key={`${item.rubricId}_${item.studentId}`}
+                                            className="hoverable"
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 12,
+                                                padding: '8px 6px',
+                                                borderRadius: 10,
+                                                cursor: 'pointer',
+                                            }}
+                                            onClick={() =>
+                                                navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
+                                            }
+                                        >
                                             <div
                                                 style={{
+                                                    width: 34,
+                                                    height: 34,
+                                                    borderRadius: 99,
+                                                    background: 'var(--bg-elevated)',
+                                                    color: 'var(--text-muted)',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: 12,
-                                                    padding: '9px 12px',
-                                                    background: 'var(--bg-elevated)',
-                                                    borderRadius: 8,
-                                                    border: '1px solid var(--border)',
+                                                    justifyContent: 'center',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.8rem',
+                                                    flexShrink: 0,
                                                 }}
                                             >
-                                                <div style={{ flexShrink: 0 }}>
-                                                    {item.type === 'grading' ? (
-                                                        <CheckCircle size={16} style={{ color: 'var(--green)' }} />
-                                                    ) : (
-                                                        <BookOpen size={16} style={{ color: 'var(--accent)' }} />
-                                                    )}
+                                                {item.studentName
+                                                    .split(' ')
+                                                    .map((p) => p[0])
+                                                    .join('')
+                                                    .slice(0, 2)
+                                                    .toUpperCase()}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                                    {item.studentName}
                                                 </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    {item.type === 'grading' ? (
-                                                        <div style={{ fontSize: '0.85rem' }}>
-                                                            {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
-                                                            <strong>{item.studentName}</strong>
-                                                            {' — '}
-                                                            {item.rubricName}
-                                                        </div>
-                                                    ) : (
-                                                        <div style={{ fontSize: '0.85rem' }}>
-                                                            {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
-                                                            <strong>{item.rubricName}</strong>
-                                                        </div>
-                                                    )}
+                                                <div
+                                                    className="text-muted text-xs"
+                                                    style={{
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {item.rubricName}
                                                 </div>
+                                            </div>
+                                            {item.className && (
                                                 <span
                                                     className="text-muted text-xs"
                                                     style={{
+                                                        background: 'var(--bg-elevated)',
+                                                        padding: '3px 9px',
+                                                        borderRadius: 99,
                                                         flexShrink: 0,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 4,
                                                     }}
                                                 >
-                                                    {item.type === 'grading' &&
-                                                        (() => {
-                                                            const days = feedbackAge.get(item.studentId);
-                                                            if (days === undefined) return null;
-                                                            if (days >= 10)
-                                                                return (
-                                                                    <span
-                                                                        title={`${days}d ago — feedback may be stale`}
-                                                                    >
-                                                                        <Clock
-                                                                            size={11}
-                                                                            style={{ color: 'var(--red)' }}
-                                                                        />
-                                                                    </span>
-                                                                );
-                                                            if (days >= 7)
-                                                                return (
-                                                                    <span title={`${days}d ago`}>
-                                                                        <Clock
-                                                                            size={11}
-                                                                            style={{ color: 'var(--yellow, #f59e0b)' }}
-                                                                        />
-                                                                    </span>
-                                                                );
-                                                            return null;
-                                                        })()}
-                                                    {timeAgo(item.timestamp)}
+                                                    {item.className}
                                                 </span>
-                                                <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    style={{ flexShrink: 0, fontSize: '0.75rem', padding: '3px 8px' }}
-                                                    onClick={() =>
-                                                        item.type === 'grading'
-                                                            ? navigate(
-                                                                  `/rubrics/${item.rubricId}/grade/${item.studentId}`
-                                                              )
-                                                            : navigate(`/rubrics/${item.rubricId}`)
-                                                    }
-                                                >
-                                                    {item.type === 'grading'
-                                                        ? t('dashboard.action_resume')
-                                                        : t('dashboard.action_open')}{' '}
-                                                    <ArrowRight size={12} />
-                                                </button>
-                                            </div>
-                                        </React.Fragment>
-                                    );
-                                })}
+                                            )}
+                                            <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
+                                                {timeAgo(item.submittedAt)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Recent Activity feed */}
+                        <div className="card">
+                            <div className="card-header" style={{ marginBottom: 14 }}>
+                                <h3>{t('dashboard.recent_activity')}</h3>
                             </div>
-                        )}
+                            {recentActivity.length === 0 ? (
+                                <div className="empty-state">
+                                    <BookOpen size={32} />
+                                    <p>{t('dashboard.no_rubrics')}</p>
+                                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
+                                        <Plus size={14} /> {t('dashboard.create_first')}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {recentActivity.map((item, idx) => {
+                                        const groupLabel = dateGroupLabel(item.timestamp, t);
+                                        const showGroupHeader =
+                                            idx === 0 ||
+                                            groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
+                                        return (
+                                            <React.Fragment key={idx}>
+                                                {showGroupHeader && (
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.72rem',
+                                                            fontWeight: 600,
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.04em',
+                                                            color: 'var(--text-muted)',
+                                                            marginTop: idx === 0 ? 0 : 8,
+                                                            padding: '0 2px',
+                                                        }}
+                                                    >
+                                                        {groupLabel}
+                                                    </div>
+                                                )}
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 12,
+                                                        padding: '9px 12px',
+                                                        background: 'var(--bg-elevated)',
+                                                        borderRadius: 8,
+                                                        border: '1px solid var(--border)',
+                                                    }}
+                                                >
+                                                    <div style={{ flexShrink: 0 }}>
+                                                        {item.type === 'grading' ? (
+                                                            <CheckCircle size={16} style={{ color: 'var(--green)' }} />
+                                                        ) : (
+                                                            <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                                        )}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        {item.type === 'grading' ? (
+                                                            <div style={{ fontSize: '0.85rem' }}>
+                                                                {t('dashboard.activity_graded_prefix', 'Graded')}{' '}
+                                                                <strong>{item.studentName}</strong>
+                                                                {' — '}
+                                                                {item.rubricName}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: '0.85rem' }}>
+                                                                {t('dashboard.activity_updated_prefix', 'Updated')}{' '}
+                                                                <strong>{item.rubricName}</strong>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span
+                                                        className="text-muted text-xs"
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}
+                                                    >
+                                                        {item.type === 'grading' &&
+                                                            (() => {
+                                                                const days = feedbackAge.get(item.studentId);
+                                                                if (days === undefined) return null;
+                                                                if (days >= 10)
+                                                                    return (
+                                                                        <span
+                                                                            title={`${days}d ago — feedback may be stale`}
+                                                                        >
+                                                                            <Clock
+                                                                                size={11}
+                                                                                style={{ color: 'var(--red)' }}
+                                                                            />
+                                                                        </span>
+                                                                    );
+                                                                if (days >= 7)
+                                                                    return (
+                                                                        <span title={`${days}d ago`}>
+                                                                            <Clock
+                                                                                size={11}
+                                                                                style={{
+                                                                                    color: 'var(--yellow, #f59e0b)',
+                                                                                }}
+                                                                            />
+                                                                        </span>
+                                                                    );
+                                                                return null;
+                                                            })()}
+                                                        {timeAgo(item.timestamp)}
+                                                    </span>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            fontSize: '0.75rem',
+                                                            padding: '3px 8px',
+                                                        }}
+                                                        onClick={() =>
+                                                            item.type === 'grading'
+                                                                ? navigate(
+                                                                      `/rubrics/${item.rubricId}/grade/${item.studentId}`
+                                                                  )
+                                                                : navigate(`/rubrics/${item.rubricId}`)
+                                                        }
+                                                    >
+                                                        {item.type === 'grading'
+                                                            ? t('dashboard.action_resume')
+                                                            : t('dashboard.action_open')}{' '}
+                                                        <ArrowRight size={12} />
+                                                    </button>
+                                                </div>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Quick actions */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        {/* Class CEFR — Writing */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: 4 }}>{t('dashboard.class_cefr_title')}</h3>
+                            <div className="text-muted text-sm" style={{ marginBottom: 14 }}>
+                                {classCriterionAverages.rubric
+                                    ? t(
+                                          activeClassName
+                                              ? 'dashboard.class_cefr_sub_class'
+                                              : 'dashboard.class_cefr_sub_all',
+                                          { class: activeClassName, rubric: classCriterionAverages.rubric.name }
+                                      )
+                                    : t('dashboard.class_cefr_empty')}
+                            </div>
+                            {classCriterionAverages.bars.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {classCriterionAverages.bars.map((bar) => (
+                                        <div key={bar.name}>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    fontSize: '0.8rem',
+                                                    marginBottom: 5,
+                                                }}
+                                            >
+                                                <span className="text-muted">{bar.name}</span>
+                                                <span style={{ fontWeight: 700 }}>{bar.pct}%</span>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    height: 8,
+                                                    borderRadius: 99,
+                                                    background: 'var(--bg-elevated)',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        height: '100%',
+                                                        width: `${bar.pct}%`,
+                                                        borderRadius: 99,
+                                                        background: 'var(--accent)',
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick actions */}
                         <div className="card">
                             <h3 style={{ marginBottom: 16 }}>{t('dashboard.quick_actions')}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

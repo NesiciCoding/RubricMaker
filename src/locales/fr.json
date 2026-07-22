@@ -393,7 +393,21 @@
         "my_templates": "Mes modèles",
         "built_in_templates": "Modèles intégrés",
         "builtin_templates": "Modèles intégrés",
-        "remove_template": "Supprimer le modèle"
+        "remove_template": "Supprimer le modèle",
+        "greeting_morning": "Bonjour",
+        "greeting_afternoon": "Bon après-midi",
+        "greeting_evening": "Bonsoir",
+        "header_meta": "{{rubrics}} rubriques · {{classes}} classes · {{students}} élèves",
+        "this_week": "Cette semaine",
+        "needs_grading": "À corriger",
+        "needs_grading_empty": "Rien à corriger",
+        "view_queue": "Voir la file",
+        "trend_this_week": "+{{count}} cette semaine",
+        "trend_none": "Aucun changement",
+        "class_cefr_title": "CEFR de la classe — Écriture",
+        "class_cefr_sub_class": "{{class}} · {{rubric}}",
+        "class_cefr_sub_all": "Toutes les classes · {{rubric}}",
+        "class_cefr_empty": "Aucune rubrique notée pour l'instant"
     },
     "rubricList": {
         "title": "Rubriques",
