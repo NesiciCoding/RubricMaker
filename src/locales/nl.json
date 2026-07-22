@@ -407,7 +407,14 @@
         "class_cefr_title": "Klas CEFR — Schrijven",
         "class_cefr_sub_class": "{{class}} · {{rubric}}",
         "class_cefr_sub_all": "Alle klassen · {{rubric}}",
-        "class_cefr_empty": "Nog geen becijferde rubriek"
+        "class_cefr_empty": "Nog geen becijferde rubriek",
+        "time_just_now": "Zojuist",
+        "time_minutes_ago_one": "{{count}}m geleden",
+        "time_minutes_ago_other": "{{count}}m geleden",
+        "time_hours_ago_one": "{{count}}u geleden",
+        "time_hours_ago_other": "{{count}}u geleden",
+        "time_days_ago_one": "{{count}}d geleden",
+        "time_days_ago_other": "{{count}}d geleden"
     },
     "rubricList": {
         "title": "Rubrieken",

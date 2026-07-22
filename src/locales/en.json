@@ -407,7 +407,14 @@
         "class_cefr_title": "Class CEFR — Writing",
         "class_cefr_sub_class": "{{class}} · {{rubric}}",
         "class_cefr_sub_all": "All classes · {{rubric}}",
-        "class_cefr_empty": "No graded rubric yet"
+        "class_cefr_empty": "No graded rubric yet",
+        "time_just_now": "Just now",
+        "time_minutes_ago_one": "{{count}}m ago",
+        "time_minutes_ago_other": "{{count}}m ago",
+        "time_hours_ago_one": "{{count}}h ago",
+        "time_hours_ago_other": "{{count}}h ago",
+        "time_days_ago_one": "{{count}}d ago",
+        "time_days_ago_other": "{{count}}d ago"
     },
     "rubricList": {
         "title": "Rubrics",

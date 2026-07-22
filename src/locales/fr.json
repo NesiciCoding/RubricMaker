@@ -407,7 +407,14 @@
         "class_cefr_title": "CEFR de la classe — Écriture",
         "class_cefr_sub_class": "{{class}} · {{rubric}}",
         "class_cefr_sub_all": "Toutes les classes · {{rubric}}",
-        "class_cefr_empty": "Aucune rubrique notée pour l'instant"
+        "class_cefr_empty": "Aucune rubrique notée pour l'instant",
+        "time_just_now": "À l'instant",
+        "time_minutes_ago_one": "il y a {{count}} min",
+        "time_minutes_ago_other": "il y a {{count}} min",
+        "time_hours_ago_one": "il y a {{count}} h",
+        "time_hours_ago_other": "il y a {{count}} h",
+        "time_days_ago_one": "il y a {{count}} j",
+        "time_days_ago_other": "il y a {{count}} j"
     },
     "rubricList": {
         "title": "Rubriques",

@@ -39,12 +39,12 @@ export function dateGroupLabel(iso: string, t: TFunction): string {
     return formatShortDate(iso);
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: TFunction): string {
     const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (diff < 60) return 'Just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 60) return t('dashboard.time_just_now');
+    if (diff < 3600) return t('dashboard.time_minutes_ago', { count: Math.floor(diff / 60) });
+    if (diff < 86400) return t('dashboard.time_hours_ago', { count: Math.floor(diff / 3600) });
+    return t('dashboard.time_days_ago', { count: Math.floor(diff / 86400) });
 }
 
 function greetingKey(hour: number): string {
@@ -223,7 +223,10 @@ export default function Dashboard() {
             !settings.activeClassId || students.find((s) => s.id === studentId)?.classId === settings.activeClassId;
 
         const candidateGradings = studentRubrics
-            .filter((sr) => sr.gradedAt && !sr.notHandedIn && inActiveClass(sr.studentId))
+            .filter((sr) => {
+                if (!sr.gradedAt || sr.notHandedIn || !inActiveClass(sr.studentId)) return false;
+                return rubrics.find((r) => r.id === sr.rubricId)?.cefrSkill === 'writing';
+            })
             .sort((a, b) => (b.gradedAt as string).localeCompare(a.gradedAt as string));
         const latestRubricId = candidateGradings[0]?.rubricId;
         const rubric = latestRubricId ? rubrics.find((r) => r.id === latestRubricId) : undefined;
@@ -471,7 +474,12 @@ export default function Dashboard() {
                     </div>
                     <div
                         className="card hoverable"
+                        role="button"
+                        tabIndex={0}
                         onClick={() => navigate('/rubrics')}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
+                        }}
                         style={{ borderTop: '3px solid var(--yellow)', cursor: 'pointer' }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -598,8 +606,13 @@ export default function Dashboard() {
                                 <h3>{t('dashboard.needs_grading')}</h3>
                                 <span
                                     className="text-muted text-xs"
+                                    role="button"
+                                    tabIndex={0}
                                     style={{ fontWeight: 600, cursor: 'pointer' }}
                                     onClick={() => navigate('/rubrics')}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') navigate('/rubrics');
+                                    }}
                                 >
                                     {t('dashboard.view_queue')}
                                 </span>
@@ -612,6 +625,8 @@ export default function Dashboard() {
                                         <div
                                             key={`${item.rubricId}_${item.studentId}`}
                                             className="hoverable"
+                                            role="button"
+                                            tabIndex={0}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -623,6 +638,10 @@ export default function Dashboard() {
                                             onClick={() =>
                                                 navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`)
                                             }
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ')
+                                                    navigate(`/rubrics/${item.rubricId}/grade/${item.studentId}`);
+                                            }}
                                         >
                                             <div
                                                 style={{
@@ -675,7 +694,7 @@ export default function Dashboard() {
                                                 </span>
                                             )}
                                             <span className="text-muted text-xs" style={{ flexShrink: 0 }}>
-                                                {timeAgo(item.submittedAt)}
+                                                {timeAgo(item.submittedAt, t)}
                                             </span>
                                         </div>
                                     ))}
@@ -704,7 +723,13 @@ export default function Dashboard() {
                                             idx === 0 ||
                                             groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
                                         return (
-                                            <React.Fragment key={idx}>
+                                            <React.Fragment
+                                                key={
+                                                    item.type === 'grading'
+                                                        ? `grading_${item.rubricId}_${item.studentId}`
+                                                        : `edit_${item.rubricId}`
+                                                }
+                                            >
                                                 {showGroupHeader && (
                                                     <div
                                                         style={{
@@ -790,7 +815,7 @@ export default function Dashboard() {
                                                                     );
                                                                 return null;
                                                             })()}
-                                                        {timeAgo(item.timestamp)}
+                                                        {timeAgo(item.timestamp, t)}
                                                     </span>
                                                     <button
                                                         className="btn btn-ghost btn-sm"

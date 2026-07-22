@@ -407,7 +407,14 @@
         "class_cefr_title": "Klassen-CEFR — Schreiben",
         "class_cefr_sub_class": "{{class}} · {{rubric}}",
         "class_cefr_sub_all": "Alle Klassen · {{rubric}}",
-        "class_cefr_empty": "Noch keine bewertete Rubrik"
+        "class_cefr_empty": "Noch keine bewertete Rubrik",
+        "time_just_now": "Gerade eben",
+        "time_minutes_ago_one": "vor {{count}} Min.",
+        "time_minutes_ago_other": "vor {{count}} Min.",
+        "time_hours_ago_one": "vor {{count}} Std.",
+        "time_hours_ago_other": "vor {{count}} Std.",
+        "time_days_ago_one": "vor {{count}} Tg.",
+        "time_days_ago_other": "vor {{count}} Tg."
     },
     "rubricList": {
         "title": "Rubriken",
