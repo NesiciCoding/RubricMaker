@@ -184,7 +184,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     useEffect(() => {
         if (!hasDb || monitorStudents.length === 0) return;
         const client = createClient(config!.supabaseUrl, config!.supabaseAnonKey, {
-            auth: { persistSession: false, autoRefreshToken: false },
+            auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
         });
         clientRef.current = client;
         const channelMap = new Map<string, RealtimeChannel>();

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js';
 import type { Student, Test } from '../../types';
 import LiveMonitorPage from '../LiveMonitorPage';
 
@@ -122,6 +123,14 @@ describe('LiveMonitorPage', () => {
         beforeEach(() => {
             mockHasDb = true;
             mockSupabaseConfig = { supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon-key' };
+        });
+
+        it('opens the realtime client on an isolated storage key with persistence/refresh disabled', () => {
+            renderPage(['/tests/test-1/monitor']);
+
+            expect(createClient).toHaveBeenCalledWith('https://example.supabase.co', 'anon-key', {
+                auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
+            });
         });
 
         it('toggles hide-names so the student row shows an anonymised label', () => {
