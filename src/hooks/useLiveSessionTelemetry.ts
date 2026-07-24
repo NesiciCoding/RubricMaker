@@ -107,7 +107,7 @@ export function useLiveSessionTelemetry({
             return;
         }
         const client = createClient(supabaseUrl!, supabaseAnonKey!, {
-            auth: { persistSession: false, autoRefreshToken: false },
+            auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
         });
         const channel = client.channel(`monitor:${kind}:${assignmentKey}`);
         channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
