@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createClient } from '@supabase/supabase-js';
 import { useLiveSessionTelemetry } from '../useLiveSessionTelemetry';
 
 const mockChannel = {
@@ -213,6 +214,22 @@ describe('useLiveSessionTelemetry', () => {
             vi.advanceTimersByTime(5_000);
         });
         expect(getSnapshot).toHaveBeenCalled();
+    });
+
+    it('opens the realtime client on an isolated storage key so it cannot collide with a real session', () => {
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        expect(createClient).toHaveBeenCalledWith('https://example.supabase.co', 'anon-key', {
+            auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
+        });
     });
 
     it('does nothing when disabled', () => {
