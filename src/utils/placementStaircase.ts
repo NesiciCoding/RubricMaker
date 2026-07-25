@@ -73,10 +73,48 @@ export function isStaircaseTest(test: Pick<Test, 'mode' | 'placementEngine'>): b
     return test.mode === 'placement' && test.placementEngine === 'staircase';
 }
 
-function moveLevel(level: CefrLevel, direction: 'up' | 'down'): CefrLevel {
+/**
+ * True for either engine that produces a `StudentTest.levelPath` (a per-question adaptive trace)
+ * rather than an `sectionPath` (MST's fixed routing stages) — the staircase engine (25.3) and the
+ * live generator engine (27.1), which reuses the same `StaircaseStep`/`computeStaircaseState`
+ * replay even though its questions are pulled from the bank at runtime instead of a pre-authored pool.
+ */
+export function usesLevelPathEstimate(test: Pick<Test, 'mode' | 'placementEngine'>): boolean {
+    return test.mode === 'placement' && (test.placementEngine === 'staircase' || test.placementEngine === 'generator');
+}
+
+/**
+ * Optional overrides for `computeStaircaseState`/`moveLevel`, used by the live generator engine
+ * (roadmap 27.1) which runs within a teacher-configured CEFR range rather than the full A1–C2
+ * span, and doesn't share the classic staircase's hardcoded `MAX_QUESTIONS` safety cap (the
+ * generator owns its own min/max-questions stop rule instead). Omitted fields fall back to the
+ * classic staircase constants above, so existing `'staircase'`-engine call sites are unaffected.
+ */
+export interface StaircaseRunConfig {
+    startLevel?: CefrLevel;
+    minLevel?: CefrLevel;
+    maxLevel?: CefrLevel;
+    convergeAfterReversals?: number;
+}
+
+/** Index-clamped CEFR level midway between two levels (inclusive range), rounded down on an even span. */
+export function cefrMidpoint(minLevel: CefrLevel, maxLevel: CefrLevel): CefrLevel {
+    const minIdx = CEFR_LEVELS.indexOf(minLevel);
+    const maxIdx = CEFR_LEVELS.indexOf(maxLevel);
+    return CEFR_LEVELS[minIdx + Math.floor((maxIdx - minIdx) / 2)];
+}
+
+function moveLevel(
+    level: CefrLevel,
+    direction: 'up' | 'down',
+    minLevel: CefrLevel = CEFR_LEVELS[0],
+    maxLevel: CefrLevel = CEFR_LEVELS[CEFR_LEVELS.length - 1]
+): CefrLevel {
     const idx = CEFR_LEVELS.indexOf(level);
+    const minIdx = CEFR_LEVELS.indexOf(minLevel);
+    const maxIdx = CEFR_LEVELS.indexOf(maxLevel);
     const nextIdx = direction === 'up' ? idx + 1 : idx - 1;
-    return CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, Math.max(0, nextIdx))];
+    return CEFR_LEVELS[Math.min(maxIdx, Math.max(minIdx, nextIdx))];
 }
 
 /** Auto-scorable questions belonging to any section tagged with the given level. */
@@ -88,22 +126,40 @@ export function levelQuestions(test: SectionedTest, level: CefrLevel): TestQuest
 /**
  * Pure replay of a staircase run's history — the single source of truth for "what level are we
  * at, and are we done." A level move only counts as a reversal when its direction differs from
- * the previous move's (the first move never reverses); moves are clamped at A1/C2 and a clamped
- * move (no actual level change) never counts as a reversal either.
+ * the previous move's (the first move never reverses); moves are clamped at the configured
+ * (default A1/C2) bounds and a clamped move (no actual level change) never counts as a reversal
+ * either. `config` lets the live generator engine (27.1) run within a narrower CEFR range and a
+ * different start level than the classic staircase — omitted fields fall back to today's constants.
+ *
+ * A step's `overridden` (roadmap 27.2: a teacher's live level nudge, applied to the question this
+ * step represents) shifts the level one step in that direction *before* the step's own
+ * correct/incorrect move is applied, and resets the correct-streak — the override relocates the
+ * ladder, it isn't itself an answer. It does not count toward reversal detection (that stays a
+ * purely answer-driven signal), so a nudge can never single-handedly end the run.
  */
-export function computeStaircaseState(steps: Pick<StaircaseStep, 'level' | 'correct'>[]): StaircaseState {
-    let level: CefrLevel = STAIRCASE_START_LEVEL;
+export function computeStaircaseState(
+    steps: Pick<StaircaseStep, 'level' | 'correct' | 'overridden'>[],
+    config?: StaircaseRunConfig
+): StaircaseState {
+    const minLevel = config?.minLevel ?? CEFR_LEVELS[0];
+    const maxLevel = config?.maxLevel ?? CEFR_LEVELS[CEFR_LEVELS.length - 1];
+    const convergeAfterReversals = config?.convergeAfterReversals ?? CONVERGE_AFTER_REVERSALS;
+    let level: CefrLevel = config?.startLevel ?? STAIRCASE_START_LEVEL;
     let consecutiveCorrect = 0;
     let reversalCount = 0;
     let lastDirection: 'up' | 'down' | null = null;
 
     for (const step of steps) {
+        if (step.overridden) {
+            level = moveLevel(level, step.overridden, minLevel, maxLevel);
+            consecutiveCorrect = 0;
+        }
         const direction: 'up' | 'down' = step.correct ? 'up' : 'down';
         if (step.correct) {
             consecutiveCorrect++;
             if (consecutiveCorrect < STEP_UP_AFTER_CORRECT) continue;
         }
-        const moved = moveLevel(level, direction);
+        const moved = moveLevel(level, direction, minLevel, maxLevel);
         if (moved !== level) {
             if (lastDirection !== null && lastDirection !== direction) reversalCount++;
             lastDirection = direction;
@@ -112,8 +168,23 @@ export function computeStaircaseState(steps: Pick<StaircaseStep, 'level' | 'corr
         consecutiveCorrect = 0;
     }
 
-    const converged = reversalCount >= CONVERGE_AFTER_REVERSALS || steps.length >= MAX_QUESTIONS;
+    const converged = reversalCount >= convergeAfterReversals || (!config && steps.length >= MAX_QUESTIONS);
     return { level, consecutiveCorrect, reversalCount, lastDirection, converged };
+}
+
+/**
+ * Picks the item whose `eloRating` (defaulting to `DEFAULT_ELO_RATING` when unset) sits closest to
+ * `anchor`. Ties are broken by the caller's pre-shuffled item order (first item wins on an exact
+ * tie), so a caller wanting deterministic-but-varied tiebreaks should seed-shuffle before calling.
+ * Shared by `resolveNextStaircaseQuestion` and the live generator engine's edge-function-side pick
+ * (roadmap 27.1), so the "nearest to level anchor" selection rule lives in exactly one place.
+ */
+export function pickNearestEloItem<T extends { eloRating?: number }>(items: T[], anchor: number): T {
+    return items.reduce((best, item) => {
+        const bestDistance = Math.abs((best.eloRating ?? DEFAULT_ELO_RATING) - anchor);
+        const itemDistance = Math.abs((item.eloRating ?? DEFAULT_ELO_RATING) - anchor);
+        return itemDistance < bestDistance ? item : best;
+    });
 }
 
 /**
@@ -140,18 +211,17 @@ export function resolveNextStaircaseQuestion(
     const unseen = seededShuffle(pool, `${code}-${state.level}`).filter((q) => !askedIds.has(q.id));
     if (unseen.length === 0) return null;
 
-    const anchor = LEVEL_TO_ELO[state.level];
-    const next = unseen.reduce((best, q) => {
-        const bestDistance = Math.abs((best.eloRating ?? DEFAULT_ELO_RATING) - anchor);
-        const qDistance = Math.abs((q.eloRating ?? DEFAULT_ELO_RATING) - anchor);
-        return qDistance < bestDistance ? q : best;
-    });
-
+    const next = pickNearestEloItem(unseen, LEVEL_TO_ELO[state.level]);
     return { sectionId: next.sectionId!, level: state.level, question: next };
 }
 
-/** Total points available across only the questions actually asked, for path-aware scoring. */
-export function staircaseMaxPoints(test: SectionedTest, steps: Pick<StaircaseStep, 'questionId'>[]): number {
+/**
+ * Total points available across only the questions actually asked, for path-aware scoring.
+ * Takes a plain question list rather than a `Test` so callers can pass a merged list — a
+ * generator-engine (27.1) run's asked questions live in `StudentTest.askedQuestionSnapshots`,
+ * not `test.questions`, since they're pulled from the bank at runtime rather than pre-authored.
+ */
+export function staircaseMaxPoints(questions: TestQuestion[], steps: Pick<StaircaseStep, 'questionId'>[]): number {
     const askedIds = new Set(steps.map((s) => s.questionId));
-    return test.questions.filter((q) => askedIds.has(q.id)).reduce((sum, q) => sum + q.points, 0);
+    return questions.filter((q) => askedIds.has(q.id)).reduce((sum, q) => sum + q.points, 0);
 }

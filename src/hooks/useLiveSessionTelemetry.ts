@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { ProctorEvent } from '../types';
+import type { ProctorEvent, CefrLevel } from '../types';
 
 const HEARTBEAT_INTERVAL_MS = 20_000;
 const IDLE_THRESHOLD_MS = 60_000;
@@ -22,6 +22,10 @@ export interface LiveSessionSnapshot {
     text?: string;
     answers?: unknown;
     wordCount?: number;
+    /** Current CEFR level/Elo anchor/progress of a generator-engine (roadmap 27.1) placement run in progress, for the Live Monitor's live level display (27.3). */
+    generatorLevel?: CefrLevel;
+    generatorEloAnchor?: number;
+    questionsAsked?: number;
 }
 
 export interface UseLiveSessionTelemetryOptions {
@@ -50,7 +54,13 @@ export interface UseLiveSessionTelemetryReturn {
 
 function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnapshot): boolean {
     if (!a) return false;
-    return a.text === b.text && a.wordCount === b.wordCount && JSON.stringify(a.answers) === JSON.stringify(b.answers);
+    return (
+        a.text === b.text &&
+        a.wordCount === b.wordCount &&
+        JSON.stringify(a.answers) === JSON.stringify(b.answers) &&
+        a.generatorLevel === b.generatorLevel &&
+        a.questionsAsked === b.questionsAsked
+    );
 }
 
 /**

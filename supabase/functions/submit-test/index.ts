@@ -10,6 +10,12 @@
 // legacy submission-code import relies on. Auto-scoring IS replayed below, but only to verify
 // a placement test's sectionPath/levelPath against the submitted answers (see "Placement path
 // integrity"); it is never written back onto the row.
+//
+// A generator-engine placement test (roadmap 27.1) skips this replay entirely — its questions
+// live only in question_bank_items, never in tests.data, so there's nothing to replay against.
+// Its levelPath/askedQuestionSnapshots are pulled directly from the already-validated
+// placement_sessions record written incrementally by next-placement-question, which requires
+// the run to have reached status: 'converged' before a submission is accepted.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -82,6 +88,7 @@ interface MinimalSection {
 interface MinimalTest {
     sections?: MinimalSection[];
     questions?: MinimalQuestion[];
+    placementEngine?: string;
 }
 interface MinimalAnswer {
     questionId: string;
@@ -534,8 +541,14 @@ serve(async (req) => {
     // Set below once a staircase levelPath has been validated and its items' Elo ratings
     // recomputed, so the update can be persisted after the (unrelated) submission insert below.
     let eloUpdate: { testId: string; data: MinimalTest } | null = null;
+    // Set below for a generator-engine (roadmap 27.1) run instead — its trace lives in
+    // placement_sessions, not in a client-claimed levelPath (which the client never sends,
+    // since question selection/scoring already happened server-side, live, per question).
+    let generatorLevelPath:
+        { sectionId: string; level: string; questionId: string; correct: boolean; overridden?: string }[] | null = null;
+    let generatorAskedQuestions: MinimalQuestion[] | null = null;
 
-    if (sectionPath || levelPath) {
+    if (assignment.mode === 'placement') {
         const { data: testRow, error: testErr } = await admin
             .from('tests')
             .select('data')
@@ -544,51 +557,72 @@ serve(async (req) => {
         if (testErr || !testRow) return json({ error: 'Test not found' }, 404);
         const test = testRow.data as MinimalTest;
 
-        // The scoring replay below parses each answer's `response` as JSON per question type
-        // (arrays for multiple-response/ordering/hot-text, objects for cloze/matching/categorize).
-        // A syntactically valid but wrongly-shaped response (e.g. an object where an array is
-        // expected) throws inside Set/array construction rather than JSON.parse itself, which
-        // the per-scorer try/catch around JSON.parse doesn't cover — treat any such failure as
-        // an invalid submission rather than letting it crash the request to an unhandled 500.
-        try {
-            if (sectionPath) {
-                const recomputed = recomputeSectionPath(test, sanitizedAnswers);
-                if (!recomputed || !sectionPathsMatch(recomputed, sectionPath)) {
-                    return json({ error: 'Invalid section path' }, 400);
-                }
+        if (test.placementEngine === 'generator') {
+            // A generator-engine run has no test.questions to replay answers against — every
+            // question was picked and scored live by next-placement-question, which already
+            // wrote the authoritative trace into placement_sessions. Trust that record rather
+            // than re-deriving/replaying anything here.
+            const { data: session, error: sessionErr } = await admin
+                .from('placement_sessions')
+                .select('status, level_path, asked_questions, student_user_id')
+                .eq('assignment_id', assignmentId)
+                .single();
+            if (sessionErr || !session) return json({ error: 'No placement session found for this assignment' }, 400);
+            if (session.student_user_id !== user.id) {
+                return json({ error: 'This placement session belongs to a different student' }, 403);
             }
-
-            if (levelPath) {
-                if (!isStructurallyValidLevelPath(test, levelPath)) {
-                    return json({ error: 'Invalid level path' }, 400);
-                }
-                const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
-                const answersByQuestionId = new Map(sanitizedAnswers.map((a) => [a.questionId, a]));
-                const correctFlags = levelPath.map((step) => {
-                    const question = questionsById.get(step.questionId)!;
-                    const answer = answersByQuestionId.get(step.questionId);
-                    return (answer ? autoScoreResponse(question, answer.response) : 0) >= question.points;
-                });
-                if (!correctFlags.every((c, i) => c === levelPath[i].correct)) {
-                    return json({ error: 'Invalid level path' }, 400);
-                }
-                const { levelBeforeStep, askedAfterConverged } = replayStaircaseLevels(correctFlags);
-                if (askedAfterConverged || !levelBeforeStep.every((lvl, i) => lvl === levelPath[i].level)) {
-                    return json({ error: 'Invalid level path' }, 400);
-                }
-
-                levelPath.forEach((step, i) => {
-                    const question = questionsById.get(step.questionId);
-                    if (!question) return;
-                    const opponentRating = LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING;
-                    const currentRating = question.eloRating ?? DEFAULT_ELO_RATING;
-                    question.eloRating = updateItemElo(currentRating, opponentRating, correctFlags[i]);
-                });
-                eloUpdate = { testId: assignment.test_id, data: test };
+            if (session.status !== 'converged') {
+                return json({ error: 'Placement run has not finished yet' }, 400);
             }
-        } catch (e) {
-            console.error('submit-test placement path replay failed:', e);
-            return json({ error: 'Invalid submission' }, 400);
+            generatorLevelPath = session.level_path;
+            generatorAskedQuestions = session.asked_questions;
+        } else if (sectionPath || levelPath) {
+            // The scoring replay below parses each answer's `response` as JSON per question type
+            // (arrays for multiple-response/ordering/hot-text, objects for cloze/matching/categorize).
+            // A syntactically valid but wrongly-shaped response (e.g. an object where an array is
+            // expected) throws inside Set/array construction rather than JSON.parse itself, which
+            // the per-scorer try/catch around JSON.parse doesn't cover — treat any such failure as
+            // an invalid submission rather than letting it crash the request to an unhandled 500.
+            try {
+                if (sectionPath) {
+                    const recomputed = recomputeSectionPath(test, sanitizedAnswers);
+                    if (!recomputed || !sectionPathsMatch(recomputed, sectionPath)) {
+                        return json({ error: 'Invalid section path' }, 400);
+                    }
+                }
+
+                if (levelPath) {
+                    if (!isStructurallyValidLevelPath(test, levelPath)) {
+                        return json({ error: 'Invalid level path' }, 400);
+                    }
+                    const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
+                    const answersByQuestionId = new Map(sanitizedAnswers.map((a) => [a.questionId, a]));
+                    const correctFlags = levelPath.map((step) => {
+                        const question = questionsById.get(step.questionId)!;
+                        const answer = answersByQuestionId.get(step.questionId);
+                        return (answer ? autoScoreResponse(question, answer.response) : 0) >= question.points;
+                    });
+                    if (!correctFlags.every((c, i) => c === levelPath[i].correct)) {
+                        return json({ error: 'Invalid level path' }, 400);
+                    }
+                    const { levelBeforeStep, askedAfterConverged } = replayStaircaseLevels(correctFlags);
+                    if (askedAfterConverged || !levelBeforeStep.every((lvl, i) => lvl === levelPath[i].level)) {
+                        return json({ error: 'Invalid level path' }, 400);
+                    }
+
+                    levelPath.forEach((step, i) => {
+                        const question = questionsById.get(step.questionId);
+                        if (!question) return;
+                        const opponentRating = LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING;
+                        const currentRating = question.eloRating ?? DEFAULT_ELO_RATING;
+                        question.eloRating = updateItemElo(currentRating, opponentRating, correctFlags[i]);
+                    });
+                    eloUpdate = { testId: assignment.test_id, data: test };
+                }
+            } catch (e) {
+                console.error('submit-test placement path replay failed:', e);
+                return json({ error: 'Invalid submission' }, 400);
+            }
         }
     }
 
@@ -633,7 +667,11 @@ serve(async (req) => {
                 events: events ?? [],
                 attemptNumber,
                 ...(sectionPath ? { sectionPath } : {}),
-                ...(levelPath ? { levelPath } : {}),
+                ...(generatorLevelPath
+                    ? { levelPath: generatorLevelPath, askedQuestionSnapshots: generatorAskedQuestions ?? [] }
+                    : levelPath
+                      ? { levelPath }
+                      : {}),
             },
         });
 
@@ -646,6 +684,16 @@ serve(async (req) => {
                     .update({ data: eloUpdate.data })
                     .eq('id', eloUpdate.testId);
                 if (eloErr) console.error('submit-test elo rating update failed:', eloErr);
+            }
+            // Generator-engine Elo updates already happened incrementally, per item, inside
+            // next-placement-question — nothing to write back to `tests` here. Just mark the
+            // session closed so a stray resume/answer call after submission is rejected.
+            if (generatorLevelPath) {
+                const { error: sessionErr } = await admin
+                    .from('placement_sessions')
+                    .update({ status: 'submitted' })
+                    .eq('assignment_id', assignmentId);
+                if (sessionErr) console.error('submit-test placement_sessions status update failed:', sessionErr);
             }
             return json({ success: true });
         }

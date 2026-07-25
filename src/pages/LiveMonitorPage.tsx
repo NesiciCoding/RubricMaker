@@ -11,9 +11,10 @@ import { loadSupabaseConfig } from '../services/database';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
+import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
 import { stripCommentHtml } from '../utils/exportDataPrep';
-import type { ProctorEvent, TestAnswer } from '../types';
+import type { ProctorEvent, TestAnswer, CefrLevel } from '../types';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 
@@ -22,7 +23,14 @@ type SortMode = 'active' | 'name' | 'progress' | 'ungraded';
 interface StudentLiveState {
     studentId: string;
     events: ProctorEvent[];
-    snapshot: { text?: string; answers?: unknown; wordCount?: number } | null;
+    snapshot: {
+        text?: string;
+        answers?: unknown;
+        wordCount?: number;
+        generatorLevel?: CefrLevel;
+        generatorEloAnchor?: number;
+        questionsAsked?: number;
+    } | null;
     lastUpdateAt: string | null;
 }
 
@@ -45,7 +53,7 @@ export interface LiveMonitorPageProps {
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
-    const { tests, studentTests, students, fetchTestAssignmentTeacherKeys } = useApp();
+    const { tests, studentTests, students, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useApp();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -246,6 +254,28 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         });
     }
 
+    // ── Live level override (roadmap 27.2) — persists via the owner-scoped
+    // set_placement_override RPC, consumed by the student's NEXT next-placement-question call;
+    // the broadcast below is purely an optimistic "you were adjusted" toast, not the actual effect.
+    const [overridingStudentId, setOverridingStudentId] = useState<string | null>(null);
+    async function sendLevelOverride(studentId: string, direction: 'up' | 'down') {
+        setOverridingStudentId(studentId);
+        try {
+            await setPlacementOverride(assignmentKeyFor(studentId), direction);
+            channelsRef.current.get(studentId)?.send({
+                type: 'broadcast',
+                event: 'nudge',
+                payload: {
+                    message: t('tests.monitor.nudge_override_toast', {
+                        direction: t(`tests.monitor.nudge_${direction}_button`),
+                    }),
+                },
+            });
+        } finally {
+            setOverridingStudentId(null);
+        }
+    }
+
     // ── Re-render periodically so presence ages (active → idle → disconnected) ────
     const [tick, setTick] = useState(0);
     useEffect(() => {
@@ -428,6 +458,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         >
                                             <Send size={13} /> {t('tests.monitor.nudge_button')}
                                         </button>
+                                        {kind === 'test' && test?.placementEngine === 'generator' && (
+                                            <PlacementLevelPanel
+                                                level={row.live.snapshot?.generatorLevel}
+                                                eloAnchor={row.live.snapshot?.generatorEloAnchor}
+                                                questionsAsked={row.live.snapshot?.questionsAsked}
+                                                disabled={overridingStudentId === row.studentId}
+                                                onNudge={(direction) =>
+                                                    void sendLevelOverride(row.studentId, direction)
+                                                }
+                                            />
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                         {row.flags.tabSwitchCount > 0 && (

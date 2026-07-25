@@ -185,3 +185,46 @@ describe('estimatePlacement — staircase engine', () => {
         expect(result?.path[0].scorePct).toBe(100);
     });
 });
+
+describe('estimatePlacement — generator engine (roadmap 27.1)', () => {
+    const makeGeneratorTest = (): Test => ({
+        id: 't-generator',
+        name: 'Generator test',
+        questions: [],
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        mode: 'placement',
+        placementEngine: 'generator',
+        generatorConfig: { minCefrLevel: 'A1', maxCefrLevel: 'C2', minQuestions: 5, maxQuestions: 12 },
+    });
+
+    it('returns a result for a generator-engine levelPath (previously fell through to null)', () => {
+        const st = makeStudentTest({
+            levelPath: [{ sectionId: 'A2', level: 'A2', questionId: 'q1', correct: true }],
+        });
+        const result = estimatePlacement(makeGeneratorTest(), st);
+        expect(result).not.toBeNull();
+        expect(result?.provisional).toBe(true);
+    });
+
+    it('threads generatorConfig min/max range into the replay so clamping matches the live run', () => {
+        const test = makeGeneratorTest();
+        test.generatorConfig = { minCefrLevel: 'B1', maxCefrLevel: 'B2', minQuestions: 5, maxQuestions: 12 };
+        // A miss at the configured floor (B1) must clamp at B1, not fall through to A1/A2 as an
+        // unconfigured (full A1-C2 range) replay would.
+        const st = makeStudentTest({
+            levelPath: [{ sectionId: 'B1', level: 'B1', questionId: 'q1', correct: false }],
+        });
+        const result = estimatePlacement(test, st);
+        expect(result?.level).toBe('B1');
+    });
+
+    it('surfaces a teacher-overridden step on the path', () => {
+        const st = makeStudentTest({
+            levelPath: [{ sectionId: 'B1', level: 'B1', questionId: 'q1', correct: true, overridden: 'up' }],
+        });
+        const result = estimatePlacement(makeGeneratorTest(), st);
+        expect(result?.path[0].overridden).toBe('up');
+    });
+});

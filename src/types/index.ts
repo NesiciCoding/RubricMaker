@@ -1045,8 +1045,10 @@ export interface Test {
     displayOrder?: number;
     /** 'assessment' (default when unset, for back-compat with existing tests) is graded/due-dated as today; 'practice' is ungraded, retakeable, and feeds a separate practice-progress view instead of the graded CEFR chart; 'placement' presents sections sequentially via routing rules and produces a provisional CEFR estimate instead of a graded score (roadmap Phase 25) */
     mode?: 'practice' | 'assessment' | 'placement';
-    /** Only meaningful for mode: 'placement'. 'mst' (default when unset) is the branching-sections engine (routing rules, roadmap 25.1); 'staircase' is the per-question adaptive ladder (roadmap 25.3) — sections become CEFR-level question pools instead of routing stages. */
-    placementEngine?: 'mst' | 'staircase';
+    /** Only meaningful for mode: 'placement'. 'mst' (default when unset) is the branching-sections engine (routing rules, roadmap 25.1); 'staircase' is the per-question adaptive ladder (roadmap 25.3) — sections become CEFR-level question pools instead of routing stages; 'generator' pulls questions live from the question bank at runtime instead of a pre-authored pool, server-authoritative (roadmap 27.1). */
+    placementEngine?: 'mst' | 'staircase' | 'generator';
+    /** Config for a live-generated placement run (roadmap 27.1). Only meaningful when placementEngine === 'generator'. sections/questions stay empty for this engine — every question is pulled from the bank at runtime via the next-placement-question edge function. */
+    generatorConfig?: GeneratorConfig;
     /** When true, students may submit more than one StudentTest attempt (only meaningful for mode: 'practice') */
     allowMultipleAttempts?: boolean;
     /** Target CEFR level for this test/practice set (e.g. 'B1' for a listening comprehension set) */
@@ -1057,6 +1059,18 @@ export interface Test {
     contentArea?: 'listening' | 'reading' | 'grammar';
 }
 
+/** Config for the live/adaptive placement generator (roadmap 27.1) — teacher-set bounds the engine picks questions within, rather than a pre-authored section/pool structure. */
+export interface GeneratorConfig {
+    minCefrLevel: CefrLevel;
+    maxCefrLevel: CefrLevel;
+    /** Empty/undefined = no skill filter, pulls from all CEFR skills present in the bank. */
+    skills?: CefrSkill[];
+    minQuestions: number;
+    maxQuestions: number;
+    /** QuestionBankItem id (question or section) the run starts from, instead of the configured range's midpoint level. */
+    starterBankItemId?: string;
+}
+
 /** A reusable test question saved outside any one test, for cross-test reuse (roadmap 24.1). */
 export interface QuestionBankItem {
     id: string;
@@ -1064,6 +1078,8 @@ export interface QuestionBankItem {
     kind?: 'question' | 'section';
     /** Structured CEFR level facet on every bank item, for reliable generator/browsing filters (in addition to the free-text tags below). */
     cefrLevel?: CefrLevel;
+    /** Structured CEFR skill facet, mirrors Test.cefrSkill — lets the live placement generator filter the bank by skill (roadmap 27.1). Only meaningful when kind is absent/'question'; a 'section' bundle's per-question skill isn't tracked separately. */
+    cefrSkill?: CefrSkill;
     /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). Present when kind is absent/'question'. */
     question?: Omit<TestQuestion, 'sectionId'>;
     /** A passage/stimulus bundled with its questions as one reusable unit. Present when kind === 'section'. */
@@ -1097,13 +1113,15 @@ export interface TestAnswer {
     feedback?: string;
 }
 
-/** One question asked during a staircase (roadmap 25.3) placement run, in order taken. */
+/** One question asked during a staircase (roadmap 25.3) or generator (roadmap 27.1) placement run, in order taken. */
 export interface StaircaseStep {
-    /** The level-pool section this question was drawn from */
+    /** The level-pool section this question was drawn from (staircase engine), or the CEFR level string itself (generator engine, which has no TestSection). */
     sectionId: string;
     level: CefrLevel;
     questionId: string;
     correct: boolean;
+    /** Set when a teacher's live level nudge (roadmap 27.2) shifted the level before this step's question was picked. Display-only — computeStaircaseState's replay treats `level` normally; this only marks the step as teacher-adjusted for reporting. */
+    overridden?: 'up' | 'down';
 }
 
 export interface StudentTest {
@@ -1133,8 +1151,10 @@ export interface StudentTest {
     attemptNumber?: number;
     /** Ids of sections actually presented, in order taken — only set for staged (routed) tests; drives path-aware scoring and the placement estimate */
     sectionPath?: string[];
-    /** The full adaptive question trace — only set for staircase-engine placement tests (roadmap 25.3); drives path-aware scoring and the placement estimate */
+    /** The full adaptive question trace — set for staircase-engine (25.3) or generator-engine (27.1) placement tests; drives path-aware scoring and the placement estimate */
     levelPath?: StaircaseStep[];
+    /** Full snapshots of every question asked during a generator-engine (27.1) placement run, in `levelPath` order. Generator questions are pulled live from the question bank rather than pre-authored into `Test.questions`, so — unlike the staircase engine, whose asked questions are always found in `test.questions` — review/grading UI (TestResultsPage) needs this per-submission copy to look them up. Written once at submission time from the server-authoritative placement_sessions record. */
+    askedQuestionSnapshots?: TestQuestion[];
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';

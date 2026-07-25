@@ -23,7 +23,12 @@ import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { StudentRubric, Student, Rubric, RubricCriterion, VoTrack, SchoolYear, StudentTest, Test } from '../types';
 import { VO_TRACKS } from '../data/voTracks';
 import { SCHOOL_YEAR_LABELS, getAvailableSchoolYears } from '../data/schoolYears';
-import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage } from '../utils/testCalc';
+import {
+    calcTestMaxPoints,
+    calcStudentTestRawPoints,
+    calcTestPercentage,
+    withAskedQuestionSnapshots,
+} from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CriterionRadarChart, { type CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
@@ -411,8 +416,11 @@ export default function StatisticsPage() {
             .map((st) => {
                 const test = tests.find((t) => t.id === st.testId);
                 if (!test) return null;
-                const maxPts = calcTestMaxPoints(test);
-                const rawPts = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
+                // A generator-engine (27.1) run's max points is scoped to the questions that
+                // particular student was actually asked, not a shared test-wide total.
+                const scoredTest = withAskedQuestionSnapshots(test, st);
+                const maxPts = calcTestMaxPoints(scoredTest);
+                const rawPts = st.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, st.answers);
                 const effective = rawPts + (st.adjustmentPoints ?? 0);
                 const pct = calcTestPercentage(effective, maxPts);
                 return { st, test, rawPts, effective, maxPts, pct };
@@ -456,7 +464,9 @@ export default function StatisticsPage() {
                 const maxPts = calcTestMaxPoints(test);
                 const avgPct =
                     submissions.reduce((sum, st) => {
-                        const raw = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
+                        const raw =
+                            st.rawTotalPoints ??
+                            calcStudentTestRawPoints(withAskedQuestionSnapshots(test, st), st.answers);
                         const effective = raw + (st.adjustmentPoints ?? 0);
                         return sum + calcTestPercentage(effective, maxPts);
                     }, 0) / submissions.length;
