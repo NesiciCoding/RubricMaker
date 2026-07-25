@@ -733,6 +733,7 @@
             "nudge_up_button": "Niveau omhoog",
             "nudge_down_button": "Niveau omlaag",
             "nudge_override_toast": "Je docent heeft je niveau aangepast ({{direction}}) voor de volgende vraag.",
+            "nudge_override_error": "Kon de niveau-aanpassing niet versturen. Probeer het opnieuw.",
             "liveDisclosure": "Je docent kan je werk live zien terwijl je dit opstel maakt.",
             "loading": "Laden…",
             "not_found": "Hier is niets te monitoren.",

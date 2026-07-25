@@ -1155,6 +1155,8 @@ export interface StudentTest {
     levelPath?: StaircaseStep[];
     /** Full snapshots of every question asked during a generator-engine (27.1) placement run, in `levelPath` order. Generator questions are pulled live from the question bank rather than pre-authored into `Test.questions`, so — unlike the staircase engine, whose asked questions are always found in `test.questions` — review/grading UI (TestResultsPage) needs this per-submission copy to look them up. Written once at submission time from the server-authoritative placement_sessions record. */
     askedQuestionSnapshots?: TestQuestion[];
+    /** The level a generator-engine (27.1) run actually started from — the configured range's midpoint, or a teacher-preselected starter bank item's own level, clamped into range. Persisted from `placement_sessions.start_level` so `estimatePlacement()`'s client-side replay matches the server-authoritative run exactly, instead of approximating with `cefrMidpoint()` (which can disagree when a starter item started outside the midpoint). */
+    placementStartLevel?: CefrLevel;
 }
 
 export type TestStrengthBucket = 'strong' | 'developing' | 'weak';

@@ -734,6 +734,7 @@
             "nudge_up_button": "Bump level up",
             "nudge_down_button": "Bump level down",
             "nudge_override_toast": "Your teacher adjusted your level ({{direction}}) for the next question.",
+            "nudge_override_error": "Couldn't send the level adjustment. Please try again.",
             "loading": "Loading…",
             "not_found": "Nothing to monitor here.",
             "no_students": "No students to monitor yet.",

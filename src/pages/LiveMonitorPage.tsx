@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
@@ -54,6 +55,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
     const { tests, studentTests, students, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useApp();
+    const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
 
@@ -271,6 +273,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     }),
                 },
             });
+        } catch (err) {
+            console.error('setPlacementOverride failed:', err);
+            showToast(t('tests.monitor.nudge_override_error'), 'error');
         } finally {
             setOverridingStudentId(null);
         }
@@ -463,7 +468,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 level={row.live.snapshot?.generatorLevel}
                                                 eloAnchor={row.live.snapshot?.generatorEloAnchor}
                                                 questionsAsked={row.live.snapshot?.questionsAsked}
-                                                disabled={overridingStudentId === row.studentId}
+                                                disabled={
+                                                    overridingStudentId === row.studentId ||
+                                                    row.status === 'submitted' ||
+                                                    row.status === 'late'
+                                                }
                                                 onNudge={(direction) =>
                                                     void sendLevelOverride(row.studentId, direction)
                                                 }

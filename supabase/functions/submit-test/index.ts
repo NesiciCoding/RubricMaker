@@ -547,6 +547,14 @@ serve(async (req) => {
     let generatorLevelPath:
         { sectionId: string; level: string; questionId: string; correct: boolean; overridden?: string }[] | null = null;
     let generatorAskedQuestions: MinimalQuestion[] | null = null;
+    // The level the run actually started from (configured range midpoint, or a clamped starter
+    // item's level) — persisted onto the submission so the client's placement estimate replay
+    // (src/utils/placementResult.ts) can start from the same point the server run did, rather
+    // than approximating with cefrMidpoint() alone.
+    let generatorStartLevel: string | null = null;
+    // sanitizedAnswers filtered to only questions the trace actually asked, and validated for
+    // score-consistency against the trace's own correct flags — see the generator branch below.
+    let generatorAnswers: MinimalAnswer[] | null = null;
 
     if (assignment.mode === 'placement') {
         const { data: testRow, error: testErr } = await admin
@@ -564,7 +572,7 @@ serve(async (req) => {
             // than re-deriving/replaying anything here.
             const { data: session, error: sessionErr } = await admin
                 .from('placement_sessions')
-                .select('status, level_path, asked_questions, student_user_id')
+                .select('status, level_path, asked_questions, start_level, student_user_id')
                 .eq('assignment_id', assignmentId)
                 .single();
             if (sessionErr || !session) return json({ error: 'No placement session found for this assignment' }, 400);
@@ -576,6 +584,32 @@ serve(async (req) => {
             }
             generatorLevelPath = session.level_path;
             generatorAskedQuestions = session.asked_questions;
+            generatorStartLevel = session.start_level;
+
+            // The client controls the submitted response text, but for a generator run
+            // correctness was already locked in live, per question, by next-placement-question —
+            // level_path.correct is authoritative and must never be overridable in the student's
+            // favor at final submit. Drop any answer for a question id that was never actually
+            // asked, and reject the whole submission if a kept answer's response text doesn't
+            // score consistently with the trace's own correct flag — the same path-consistency
+            // principle the staircase engine already applies below, per-question instead of
+            // per-path (a generator run has no single path to replay, only independent picks).
+            try {
+                const askedById = new Map(generatorAskedQuestions.map((q) => [q.id, q]));
+                const stepById = new Map(generatorLevelPath.map((step) => [step.questionId, step]));
+                const filtered = sanitizedAnswers.filter((a) => stepById.has(a.questionId));
+                for (const a of filtered) {
+                    const q = askedById.get(a.questionId);
+                    const step = stepById.get(a.questionId)!;
+                    if (!q || autoScoreResponse(q, a.response) >= q.points !== step.correct) {
+                        return json({ error: 'Invalid submission' }, 400);
+                    }
+                }
+                generatorAnswers = filtered;
+            } catch (e) {
+                console.error('submit-test generator answer validation failed:', e);
+                return json({ error: 'Invalid submission' }, 400);
+            }
         } else if (sectionPath || levelPath) {
             // The scoring replay below parses each answer's `response` as JSON per question type
             // (arrays for multiple-response/ordering/hot-text, objects for cloze/matching/categorize).
@@ -660,7 +694,7 @@ serve(async (req) => {
                 id: submissionId,
                 testId: assignment.test_id,
                 studentId: assignment.student_id,
-                answers: sanitizedAnswers,
+                answers: generatorAnswers ?? sanitizedAnswers,
                 status: 'submitted',
                 startedAt,
                 submittedAt,
@@ -668,7 +702,11 @@ serve(async (req) => {
                 attemptNumber,
                 ...(sectionPath ? { sectionPath } : {}),
                 ...(generatorLevelPath
-                    ? { levelPath: generatorLevelPath, askedQuestionSnapshots: generatorAskedQuestions ?? [] }
+                    ? {
+                          levelPath: generatorLevelPath,
+                          askedQuestionSnapshots: generatorAskedQuestions ?? [],
+                          ...(generatorStartLevel ? { placementStartLevel: generatorStartLevel } : {}),
+                      }
                     : levelPath
                       ? { levelPath }
                       : {}),

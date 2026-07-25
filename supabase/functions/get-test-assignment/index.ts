@@ -35,9 +35,18 @@ interface RawOption {
     [key: string]: unknown;
 }
 
+interface RawCategorizeItem {
+    categoryId?: unknown;
+    [key: string]: unknown;
+}
+
 interface RawQuestion {
     options?: RawOption[];
+    categorizeItems?: RawCategorizeItem[];
     expectedAnswer?: unknown;
+    expectedAnswers?: unknown;
+    expectedNumericValue?: unknown;
+    numericTolerance?: unknown;
     correctBoolean?: unknown;
     hotTextCorrectIndices?: unknown;
     eloRating?: unknown;
@@ -45,18 +54,19 @@ interface RawQuestion {
 }
 
 // Removes fields that only exist to score an answer or calibrate item difficulty, not to render
-// the question — options[].isCorrect, expectedAnswer, correctBoolean, hotTextCorrectIndices and
-// eloRating (roadmap Phase 25.4/25.5 staircase self-calibration, teacher-only) are read
-// server/teacher-side only, so a student reading this response (e.g. via devtools) must never
-// see them.
+// the question — options[].isCorrect, expectedAnswer(s), expectedNumericValue, numericTolerance,
+// correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, and eloRating (roadmap
+// Phase 25.4/25.5 staircase self-calibration, teacher-only) are read server/teacher-side only, so
+// a student reading this response (e.g. via devtools) must never see them.
 //
-// matchingPairs/orderItems/categorizeItems are NOT stripped here: their
-// correctness is structurally inherent to the same fields StudentTestPage's
-// QuestionCard needs to render the question (paired left/right text, item
-// order, item/category text), and the offline-embedded-test-content link
-// format already ships that same structure today. Untangling that is a
-// data-model change affecting the offline path too — tracked separately, not
-// part of this endpoint's scope.
+// matchingPairs/orderItems are NOT stripped here: their correctness is structurally inherent to
+// the same fields StudentTestPage's QuestionCard needs to render the question (paired left/right
+// text, item order), and the offline-embedded-test-content link format already ships that same
+// structure today. Untangling that is a data-model change affecting the offline path too —
+// tracked separately, not part of this endpoint's scope. categorizeItems is different: the
+// student-facing category *options* come from the separate `categories` field (CategorizeAnswer
+// in StudentTestPage renders `question.categories`, not categorizeItems[].categoryId), so
+// categoryId is a pure answer key with no rendering dependency and is safe to strip.
 function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unknown }) {
     if (!test || !Array.isArray(test.questions)) return test;
     return {
@@ -64,13 +74,23 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
         questions: test.questions.map((q) => {
             const {
                 expectedAnswer: _ea,
+                expectedAnswers: _eas,
+                expectedNumericValue: _env,
+                numericTolerance: _nt,
                 correctBoolean: _cb,
                 hotTextCorrectIndices: _hci,
                 eloRating: _er,
                 options,
+                categorizeItems,
                 ...rest
             } = q;
-            return options ? { ...rest, options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : rest;
+            return {
+                ...rest,
+                ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
+                ...(categorizeItems
+                    ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) }
+                    : {}),
+            };
         }),
     };
 }

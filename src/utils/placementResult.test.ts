@@ -227,4 +227,15 @@ describe('estimatePlacement — generator engine (roadmap 27.1)', () => {
         const result = estimatePlacement(makeGeneratorTest(), st);
         expect(result?.path[0].overridden).toBe('up');
     });
+
+    it('replays from the persisted placementStartLevel instead of the range midpoint when set', () => {
+        // Range A1-C2 has midpoint B1 — a starter item put the real run's start at C1 instead.
+        // A miss from C1 moves down to B2; from the (wrong) midpoint B1 it would move to A2.
+        const st = makeStudentTest({
+            placementStartLevel: 'C1',
+            levelPath: [{ sectionId: 'C1', level: 'C1', questionId: 'q1', correct: false }],
+        });
+        const result = estimatePlacement(makeGeneratorTest(), st);
+        expect(result?.level).toBe('B2');
+    });
 });

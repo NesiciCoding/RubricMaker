@@ -207,4 +207,89 @@ describe('TestAdapter', () => {
             expect(result.error).toContain('Network error');
         });
     });
+
+    describe('nextPlacementQuestion', () => {
+        it('returns an error when there is no session', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: null } });
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+
+            const result = await adapter.nextPlacementQuestion('assignment-1');
+
+            expect(result).toEqual({ ok: false, error: 'Not authenticated' });
+        });
+
+        it('posts to next-placement-question and returns a valid in-progress result', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            const body = {
+                done: false,
+                question: { id: 'q1', type: 'multiple-choice', prompt: 'Pick one', points: 1 },
+                cefrLevel: 'B1',
+                eloAnchor: 1200,
+                questionsAsked: 2,
+            };
+            const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body));
+            vi.stubGlobal('fetch', fetchMock);
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.nextPlacementQuestion('assignment-1', 'q0', 'a');
+
+            expect(result).toEqual({ ok: true, data: body });
+            expect(fetchMock).toHaveBeenCalledWith(
+                'https://x.supabase.co/functions/v1/next-placement-question',
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({
+                        assignmentId: 'assignment-1',
+                        previousQuestionId: 'q0',
+                        previousResponse: 'a',
+                    }),
+                })
+            );
+        });
+
+        it('returns a valid done result', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            const body = { done: true, finalLevel: 'B2', questionsAsked: 8 };
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)));
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.nextPlacementQuestion('assignment-1', 'q7', 'a');
+
+            expect(result).toEqual({ ok: true, data: body });
+        });
+
+        it('rejects a malformed 2xx response instead of reporting success', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ done: false, question: { id: 'q1' } })));
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.nextPlacementQuestion('assignment-1');
+
+            expect(result).toEqual({ ok: false, error: 'Unexpected response from server' });
+        });
+
+        it('surfaces the server error message on a non-ok response', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue(jsonResponse({ error: 'Session belongs to another student' }, 403))
+            );
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.nextPlacementQuestion('assignment-1');
+
+            expect(result).toEqual({ ok: false, error: 'Session belongs to another student' });
+        });
+
+        it('returns a network error message when the request throws', async () => {
+            mockAuth.getSession.mockResolvedValue({ data: { session: mockSession } });
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+            const adapter = new TestAdapter('https://x.supabase.co', 'anon-key');
+            const result = await adapter.nextPlacementQuestion('assignment-1');
+
+            expect(result.ok).toBe(false);
+            if (!result.ok) expect(result.error).toContain('Network error');
+        });
+    });
 });

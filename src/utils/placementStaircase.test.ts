@@ -407,7 +407,7 @@ describe('computeStaircaseState — teacher override (roadmap 27.2)', () => {
     });
 
     it('clamps an override at the configured range bounds', () => {
-        // Override 'up' from C2 clamps to a no-op (still C2), then the miss moves down to B2.
+        // Override 'up' from C2 clamps to a no-op (still C2), then the miss moves down to C1.
         const state = computeStaircaseState([{ level: 'C2', correct: false, overridden: 'up' }], {
             startLevel: 'C2',
             minLevel: 'A1',

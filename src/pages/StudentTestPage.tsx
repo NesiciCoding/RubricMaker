@@ -342,9 +342,27 @@ export default function StudentTestPage() {
     );
 
     useEffect(() => {
-        if (!isGenerator || !assignment || !adapter || generatorResult || generatorLoading || submitted) return;
+        if (
+            !isGenerator ||
+            !assignment ||
+            !adapter ||
+            generatorResult ||
+            generatorLoading ||
+            generatorError ||
+            submitted
+        )
+            return;
         void advanceGenerator();
-    }, [isGenerator, assignment, adapter, generatorResult, generatorLoading, submitted, advanceGenerator]);
+    }, [
+        isGenerator,
+        assignment,
+        adapter,
+        generatorResult,
+        generatorLoading,
+        generatorError,
+        submitted,
+        advanceGenerator,
+    ]);
 
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
@@ -395,6 +413,15 @@ export default function StudentTestPage() {
         const effectiveTestId = resolvedContent?.testId || assignment.testId;
         const effectiveStudentId = resolvedContent?.studentId || assignment.studentId;
 
+        // Set before the (potentially slow) generator flush below too, not just the final
+        // submitTest call, so the spinner/disabled state covers the whole submit sequence —
+        // otherwise a timeout-triggered submit can flush a pending answer with no visible
+        // feedback until the network call finishes.
+        if (hasDb && adapter) {
+            setSubmitting(true);
+            setSubmitError('');
+        }
+
         // The timer can call this directly on timeout, before the student presses "Continue" on
         // the currently-pending generator question — without this, next-placement-question would
         // never learn about it and the session would never reach status: 'converged', which
@@ -407,6 +434,7 @@ export default function StudentTestPage() {
                 response
             );
             if (!outcome.ok) {
+                setSubmitting(false);
                 setSubmitError(t('tests.taking.submit_error_db'));
                 logEvent('error', 'test_submit_error', { testId: effectiveTestId }, 'error');
                 submitInFlightRef.current = false;
@@ -458,8 +486,6 @@ export default function StudentTestPage() {
         const legacyCode = encodeTestSubmission(submissionPayload);
 
         if (hasDb && adapter) {
-            setSubmitting(true);
-            setSubmitError('');
             const studentTestId = nanoid();
             const result = await adapter.submitTest(
                 assignment.teacherKey,
@@ -766,7 +792,7 @@ export default function StudentTestPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         {!submitted && (
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                {isStaircase
+                                {isStaircase || isGenerator
                                     ? t('tests.taking.staircase_progress', { answered: answeredCount })
                                     : t('tests.taking.progress', {
                                           answered: answeredCount,

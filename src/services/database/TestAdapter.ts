@@ -39,6 +39,26 @@ function isTestAssignmentContent(data: unknown): data is TestAssignmentContent {
     );
 }
 
+/** Narrows a next-placement-question response body before it's trusted — a malformed 2xx must not be reported as success. */
+function isNextPlacementQuestionResult(data: unknown): data is NextPlacementQuestionResult {
+    if (!data || typeof data !== 'object') return false;
+    const d = data as Record<string, unknown>;
+    if (d.done === true) {
+        return typeof d.finalLevel === 'string' && typeof d.questionsAsked === 'number';
+    }
+    if (d.done === false) {
+        return (
+            !!d.question &&
+            typeof d.question === 'object' &&
+            typeof (d.question as Record<string, unknown>).id === 'string' &&
+            typeof d.cefrLevel === 'string' &&
+            typeof d.eloAnchor === 'number' &&
+            typeof d.questionsAsked === 'number'
+        );
+    }
+    return false;
+}
+
 export class TestAdapter {
     private client: SupabaseClient;
     private supabaseUrl: string;
@@ -195,6 +215,9 @@ export class TestAdapter {
         if (!response.ok || !body) {
             return { ok: false, error: body?.error ?? `Server error ${response.status}` };
         }
-        return { ok: true, data: body as NextPlacementQuestionResult };
+        if (!isNextPlacementQuestionResult(body)) {
+            return { ok: false, error: 'Unexpected response from server' };
+        }
+        return { ok: true, data: body };
     }
 }

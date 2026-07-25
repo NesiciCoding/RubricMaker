@@ -733,6 +733,7 @@
             "nudge_up_button": "Niveau anheben",
             "nudge_down_button": "Niveau senken",
             "nudge_override_toast": "Ihre Lehrkraft hat Ihr Niveau ({{direction}}) für die nächste Frage angepasst.",
+            "nudge_override_error": "Die Niveau-Anpassung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
             "liveDisclosure": "Deine Lehrkraft kann deine Arbeit während dieses Aufsatzes live sehen.",
             "loading": "Wird geladen…",
             "not_found": "Hier gibt es nichts zu überwachen.",

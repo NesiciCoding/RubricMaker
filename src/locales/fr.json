@@ -733,6 +733,7 @@
             "nudge_up_button": "Monter le niveau",
             "nudge_down_button": "Descendre le niveau",
             "nudge_override_toast": "Votre enseignant a ajusté votre niveau ({{direction}}) pour la question suivante.",
+            "nudge_override_error": "Impossible d'envoyer l'ajustement de niveau. Veuillez réessayer.",
             "liveDisclosure": "Votre enseignant peut voir votre travail en direct pendant cette rédaction.",
             "loading": "Chargement…",
             "not_found": "Rien à surveiller ici.",

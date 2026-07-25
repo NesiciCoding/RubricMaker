@@ -100,7 +100,6 @@ export default function TestBuilderPage() {
     const [generatorStarterBankItemId, setGeneratorStarterBankItemId] = useState<string | undefined>(
         existing?.generatorConfig?.starterBankItemId
     );
-    const [generatorStarterLabel, setGeneratorStarterLabel] = useState('');
     const [showGeneratorStarterModal, setShowGeneratorStarterModal] = useState(false);
     const [allowMultipleAttempts, setAllowMultipleAttempts] = useState(existing?.allowMultipleAttempts ?? false);
     const [cefrTargetLevel, setCefrTargetLevel] = useState<CefrLevel | ''>(existing?.cefrTargetLevel ?? '');
@@ -165,15 +164,35 @@ export default function TestBuilderPage() {
         if (minIdx < 0 || maxIdx < 0 || minIdx > maxIdx) return [];
         return CEFR_LEVELS.slice(minIdx, maxIdx + 1)
             .map((lvl) => {
-                const count = questionBank.filter(
+                const matching = questionBank.filter(
                     (item) =>
                         item.cefrLevel === lvl &&
                         (generatorSkills.length === 0 || (item.cefrSkill && generatorSkills.includes(item.cefrSkill)))
-                ).length;
+                );
+                // Count actual pickable questions, not matching bank items — a 'section' bundle
+                // contributes each of its own auto-scorable questions, not just one.
+                const count = matching.reduce((sum, item) => {
+                    if (item.kind === 'section') {
+                        return sum + (item.section?.questions.filter(isAutoScorable).length ?? 0);
+                    }
+                    return sum + (item.question && isAutoScorable(item.question) ? 1 : 0);
+                }, 0);
                 return { level: lvl, count };
             })
             .filter((entry) => entry.count < MIN_QUESTIONS_PER_LEVEL);
     }, [mode, placementEngine, generatorMinLevel, generatorMaxLevel, generatorSkills, questionBank]);
+
+    // Derived (not separate state) so reopening a saved generator test shows the starter item's
+    // real title immediately, instead of its raw id until the teacher re-picks it.
+    const generatorStarterItem = React.useMemo(
+        () => questionBank.find((item) => item.id === generatorStarterBankItemId),
+        [questionBank, generatorStarterBankItemId]
+    );
+    const generatorStarterLabel = generatorStarterItem
+        ? generatorStarterItem.kind === 'section'
+            ? (generatorStarterItem.section?.title ?? '')
+            : (generatorStarterItem.question?.prompt ?? '')
+        : '';
 
     // Group questions by section for rendering; normalize stale sectionIds to null
     function questionsFor(sectionId: string | null): TestQuestion[] {
@@ -723,7 +742,11 @@ export default function TestBuilderPage() {
                                     type="number"
                                     min={1}
                                     value={generatorMinQuestions}
-                                    onChange={(e) => setGeneratorMinQuestions(Math.max(1, Number(e.target.value) || 1))}
+                                    onChange={(e) => {
+                                        const next = Math.max(1, Number(e.target.value) || 1);
+                                        setGeneratorMinQuestions(next);
+                                        setGeneratorMaxQuestions((prev) => Math.max(prev, next));
+                                    }}
                                 />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
@@ -803,10 +826,7 @@ export default function TestBuilderPage() {
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-sm"
-                                        onClick={() => {
-                                            setGeneratorStarterBankItemId(undefined);
-                                            setGeneratorStarterLabel('');
-                                        }}
+                                        onClick={() => setGeneratorStarterBankItemId(undefined)}
                                     >
                                         {t('common.clear')}
                                     </button>
@@ -818,11 +838,6 @@ export default function TestBuilderPage() {
                                 onClose={() => setShowGeneratorStarterModal(false)}
                                 onSelect={(item) => {
                                     setGeneratorStarterBankItemId(item.id);
-                                    setGeneratorStarterLabel(
-                                        item.kind === 'section'
-                                            ? (item.section?.title ?? '')
-                                            : (item.question?.prompt ?? '')
-                                    );
                                     setShowGeneratorStarterModal(false);
                                 }}
                             />

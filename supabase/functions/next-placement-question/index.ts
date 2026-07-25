@@ -269,18 +269,30 @@ function isAutoScorable(question: MinimalQuestion): boolean {
     return question.type !== 'open';
 }
 
-// Removes fields that only exist to score an answer or calibrate item difficulty — mirrors
-// get-test-assignment's toStudentSafeTest, applied to a single question instead of a whole test.
+// Removes fields that only exist to score an answer or calibrate item difficulty — mirrors (and,
+// for expectedAnswers/expectedNumericValue/numericTolerance/categorizeItems[].categoryId, extends
+// beyond) get-test-assignment's toStudentSafeTest, applied to a single question instead of a whole
+// test. Short-answer/numeric/categorize questions need this too — expectedAnswers, the numeric
+// target+tolerance, and each category item's correct categoryId are all answer keys, not just the
+// singular legacy expectedAnswer field.
 function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
     const {
         expectedAnswer: _ea,
+        expectedAnswers: _eas,
+        expectedNumericValue: _env,
+        numericTolerance: _nt,
         correctBoolean: _cb,
         hotTextCorrectIndices: _hci,
         eloRating: _er,
         options,
+        categorizeItems,
         ...rest
     } = question;
-    return (options ? { ...rest, options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : rest) as MinimalQuestion;
+    return {
+        ...rest,
+        ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
+        ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
+    } as MinimalQuestion;
 }
 
 // ── Staircase state (mirrors src/utils/placementStaircase.ts) ──────────────
@@ -520,13 +532,16 @@ serve(async (req) => {
         if (withinWindow && nextCount > RATE_WINDOW_MAX_CALLS) {
             return json({ error: 'Too many requests. Please slow down.' }, 429);
         }
-        await admin
+        const { error: rateErr } = await admin
             .from('placement_sessions')
             .update({
                 rate_window_start: withinWindow ? existing.rate_window_start : new Date(now).toISOString(),
                 rate_window_count: nextCount,
             })
             .eq('id', assignmentId);
+        // Best-effort: a failed rate-limit counter update just means the next call's window
+        // check is slightly stale, not a correctness issue worth failing the request over.
+        if (rateErr) console.error('placement_sessions rate-limit update failed:', rateErr);
     }
 
     async function fetchBankItem(bankItemId: string): Promise<BankItem | null> {
@@ -554,16 +569,38 @@ serve(async (req) => {
         });
     }
 
-    /** Draws a fresh top-level bank item at `pickLevel`, sets it as the new pending question. Returns null if the pool is empty. */
+    /** A bank item is pickable when it has at least one question and every question in it is auto-scorable — mirrors pickNewItem's own pool filter, applied to a single (e.g. teacher-preselected starter) item. */
+    function isValidBankItem(item: BankItem): boolean {
+        const questions = (item.kind ?? 'question') === 'section' ? (item.section?.questions ?? []) : [item.question];
+        return questions.length > 0 && questions.every((q) => q && isAutoScorable(q));
+    }
+
+    /**
+     * Draws a fresh top-level bank item at `pickLevel`, sets it as the new pending question.
+     * Returns null if the pool is empty. `remainingBudget` (cfg.maxQuestions minus steps already
+     * taken) excludes section bundles that couldn't be *finished* within the cap — a bundle, once
+     * started, is always served in full (mid-bundle continuation never re-checks the cap), so the
+     * only way to keep the run within maxQuestions is to never start one that wouldn't fit.
+     */
     async function pickNewItem(
         pickLevel: string,
         overridden: 'up' | 'down' | undefined,
-        askedItemIds: string[]
+        askedItemIds: string[],
+        remainingBudget: number
     ): Promise<{ item: BankItem; pending: PendingState } | null> {
-        const { data: candidates } = await admin.from('question_bank_items').select('id, data').eq('owner_id', ownerId);
+        // Filter by cefrLevel in the query itself rather than fetching the whole bank and
+        // filtering in memory — beyond the per-question I/O cost of re-downloading every item on
+        // every call, PostgREST applies a default max-rows cap, which could otherwise silently
+        // truncate a large bank's candidate pool to an arbitrary subset. An explicit .limit() is
+        // still set as defense-in-depth, well above any realistic single-level pool size.
+        const { data: candidates } = await admin
+            .from('question_bank_items')
+            .select('id, data')
+            .eq('owner_id', ownerId)
+            .eq('data->>cefrLevel', pickLevel)
+            .limit(5000);
         const pool = (candidates ?? [])
             .map((row) => ({ id: row.id as string, ...(row.data as Omit<BankItem, 'id'>) }) as BankItem)
-            .filter((item) => item.cefrLevel === pickLevel)
             .filter((item) => !cfg.skills?.length || (item.cefrSkill && cfg.skills.includes(item.cefrSkill)))
             .filter((item) => !askedItemIds.includes(item.id))
             .filter((item) => {
@@ -573,6 +610,11 @@ serve(async (req) => {
                 const questions =
                     (item.kind ?? 'question') === 'section' ? (item.section?.questions ?? []) : [item.question];
                 return questions.length > 0 && questions.every((q) => q && isAutoScorable(q));
+            })
+            .filter((item) => {
+                // Never start a bundle that couldn't be finished within the question cap.
+                if ((item.kind ?? 'question') !== 'section') return true;
+                return (item.section?.questions.length ?? 0) <= remainingBudget;
             });
         if (pool.length === 0) return null;
 
@@ -602,7 +644,11 @@ serve(async (req) => {
         let startLevel = cefrMidpoint(cfg.minCefrLevel, cfg.maxCefrLevel);
         let starterItem: BankItem | null = null;
         if (cfg.starterBankItemId) {
-            starterItem = await fetchBankItem(cfg.starterBankItemId);
+            const fetched = await fetchBankItem(cfg.starterBankItemId);
+            // A starter item that's missing, has no question, or has an unscorable ('open')
+            // question would either score 0 forever or never resolve a matchable questionId —
+            // wedging the run permanently. Fall back to the normal pool pick instead.
+            starterItem = fetched && isValidBankItem(fetched) ? fetched : null;
             if (starterItem?.cefrLevel) {
                 const idx = CEFR_LEVELS.indexOf(starterItem.cefrLevel);
                 const minIdx = CEFR_LEVELS.indexOf(cfg.minCefrLevel);
@@ -626,13 +672,13 @@ serve(async (req) => {
                 level: startLevel,
             };
         } else {
-            const picked = await pickNewItem(startLevel, undefined, []);
+            const picked = await pickNewItem(startLevel, undefined, [], cfg.maxQuestions);
             if (!picked) return json({ error: 'No bank questions available at the starting level' }, 400);
             item = picked.item;
             pending = picked.pending;
         }
 
-        await admin.from('placement_sessions').insert({
+        const { error: insertErr } = await admin.from('placement_sessions').insert({
             id: assignmentId,
             owner_id: ownerId,
             assignment_id: assignmentId,
@@ -645,6 +691,24 @@ serve(async (req) => {
             asked_item_ids: [],
             status: 'in_progress',
         });
+        if (insertErr) {
+            // A concurrent first call (two tabs/devices loading the same fresh link at once) can
+            // race this insert on the assignmentId primary key — re-read and re-serve whichever
+            // row actually landed instead of discarding the student's very first question.
+            if (insertErr.code === '23505') {
+                const { data: raced } = await admin
+                    .from('placement_sessions')
+                    .select('*')
+                    .eq('id', assignmentId)
+                    .single();
+                if (raced?.pending) {
+                    const racedItem = await fetchBankItem(raced.pending.bankItemId);
+                    if (racedItem) return respondQuestion(racedItem, raced.pending, (raced.level_path ?? []).length);
+                }
+            }
+            console.error('placement_sessions insert failed:', insertErr);
+            return json({ error: 'Could not start the placement run' }, 500);
+        }
 
         return respondQuestion(item, pending, 0);
     }
@@ -672,6 +736,24 @@ serve(async (req) => {
     if (existing.status !== 'in_progress' || !pending || pending.questionId !== previousQuestionId) {
         return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
     }
+    const answeredQuestionId = previousQuestionId;
+
+    // Every write below is a compare-and-swap against the *exact* pending question just read,
+    // not a plain unconditional update — two in-flight calls carrying the same previousQuestionId
+    // (double-click, retry, duplicate tab) would otherwise both pass the check above (both read
+    // the same snapshot), both append the same step, and both apply an Elo delta, corrupting the
+    // trace that submit-test later trusts verbatim. Only the call whose write actually lands (0
+    // rows updated for the loser) proceeds; the loser gets the same 409 as a genuinely stale call.
+    async function casUpdate(patch: Record<string, unknown>): Promise<boolean> {
+        const { data } = await admin
+            .from('placement_sessions')
+            .update(patch)
+            .eq('id', assignmentId)
+            .eq('status', 'in_progress')
+            .eq('pending->>questionId', answeredQuestionId)
+            .select('id');
+        return !!data?.length;
+    }
 
     const item = await fetchBankItem(pending.bankItemId);
     if (!item) return json({ error: 'Answered question is no longer available' }, 500);
@@ -695,7 +777,14 @@ serve(async (req) => {
         updatedItemData.question.eloRating = newRating;
     }
     const { id: _itemId, ...updatedItemBody } = updatedItemData;
-    await admin.from('question_bank_items').update({ data: updatedItemBody }).eq('id', item.id).eq('owner_id', ownerId);
+    const { error: eloErr } = await admin
+        .from('question_bank_items')
+        .update({ data: updatedItemBody })
+        .eq('id', item.id)
+        .eq('owner_id', ownerId);
+    // Best-effort, same posture as submit-test's staircase Elo write-back: item ratings are an
+    // internal self-calibration refinement, not authoritative data — never fail the request over it.
+    if (eloErr) console.error('question_bank_items elo rating update failed:', eloErr);
 
     const step = {
         sectionId: pending.level,
@@ -719,15 +808,13 @@ serve(async (req) => {
             sectionQuestionIndex: nextIndex,
             level: pending.level,
         };
-        await admin
-            .from('placement_sessions')
-            .update({
-                level_path: levelPath,
-                asked_questions: askedQuestions,
-                pending: nextPending,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', assignmentId);
+        const swapped = await casUpdate({
+            level_path: levelPath,
+            asked_questions: askedQuestions,
+            pending: nextPending,
+            updated_at: new Date().toISOString(),
+        });
+        if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
         return respondQuestion(item, nextPending, levelPath.length);
     }
 
@@ -740,55 +827,49 @@ serve(async (req) => {
         (levelPath.length >= cfg.minQuestions && state.reversalCount >= CONVERGE_AFTER_REVERSALS);
 
     if (stop) {
-        await admin
-            .from('placement_sessions')
-            .update({
-                level_path: levelPath,
-                asked_questions: askedQuestions,
-                asked_item_ids: askedItemIds,
-                pending: null,
-                current_level: state.level,
-                override_direction: null,
-                status: 'converged',
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', assignmentId);
+        const swapped = await casUpdate({
+            level_path: levelPath,
+            asked_questions: askedQuestions,
+            asked_item_ids: askedItemIds,
+            pending: null,
+            current_level: state.level,
+            override_direction: null,
+            status: 'converged',
+            updated_at: new Date().toISOString(),
+        });
+        if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
         return json({ done: true, finalLevel: state.level, questionsAsked: levelPath.length });
     }
 
     const overrideDirection = (existing.override_direction as 'up' | 'down' | null) ?? undefined;
     const pickLevel = overrideDirection ? moveLevel(state.level, overrideDirection, minLevel, maxLevel) : state.level;
-    const picked = await pickNewItem(pickLevel, overrideDirection, askedItemIds);
+    const picked = await pickNewItem(pickLevel, overrideDirection, askedItemIds, cfg.maxQuestions - levelPath.length);
 
     if (!picked) {
-        await admin
-            .from('placement_sessions')
-            .update({
-                level_path: levelPath,
-                asked_questions: askedQuestions,
-                asked_item_ids: askedItemIds,
-                pending: null,
-                current_level: pickLevel,
-                override_direction: null,
-                status: 'converged',
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', assignmentId);
-        return json({ done: true, finalLevel: pickLevel, questionsAsked: levelPath.length });
-    }
-
-    await admin
-        .from('placement_sessions')
-        .update({
+        const swapped = await casUpdate({
             level_path: levelPath,
             asked_questions: askedQuestions,
             asked_item_ids: askedItemIds,
-            pending: picked.pending,
+            pending: null,
             current_level: pickLevel,
             override_direction: null,
+            status: 'converged',
             updated_at: new Date().toISOString(),
-        })
-        .eq('id', assignmentId);
+        });
+        if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
+        return json({ done: true, finalLevel: pickLevel, questionsAsked: levelPath.length });
+    }
+
+    const swapped = await casUpdate({
+        level_path: levelPath,
+        asked_questions: askedQuestions,
+        asked_item_ids: askedItemIds,
+        pending: picked.pending,
+        current_level: pickLevel,
+        override_direction: null,
+        updated_at: new Date().toISOString(),
+    });
+    if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
 
     return respondQuestion(picked.item, picked.pending, levelPath.length);
 });

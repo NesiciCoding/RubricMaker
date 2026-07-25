@@ -59,6 +59,7 @@ function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnaps
         a.wordCount === b.wordCount &&
         JSON.stringify(a.answers) === JSON.stringify(b.answers) &&
         a.generatorLevel === b.generatorLevel &&
+        a.generatorEloAnchor === b.generatorEloAnchor &&
         a.questionsAsked === b.questionsAsked
     );
 }

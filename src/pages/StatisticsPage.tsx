@@ -461,14 +461,12 @@ export default function StatisticsPage() {
                         (st.status === 'submitted' || st.status === 'graded')
                 );
                 if (submissions.length === 0) return null;
-                const maxPts = calcTestMaxPoints(test);
                 const avgPct =
                     submissions.reduce((sum, st) => {
-                        const raw =
-                            st.rawTotalPoints ??
-                            calcStudentTestRawPoints(withAskedQuestionSnapshots(test, st), st.answers);
+                        const scoredTest = withAskedQuestionSnapshots(test, st);
+                        const raw = st.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, st.answers);
                         const effective = raw + (st.adjustmentPoints ?? 0);
-                        return sum + calcTestPercentage(effective, maxPts);
+                        return sum + calcTestPercentage(effective, calcTestMaxPoints(scoredTest));
                     }, 0) / submissions.length;
                 return { test, avgPct: parseFloat(avgPct.toFixed(1)), submittedCount: submissions.length };
             })

@@ -54,12 +54,16 @@ ALTER TABLE public.placement_sessions ENABLE ROW LEVEL SECURITY;
 
 -- Teacher: read-only. All writes go through the service-role edge function or the
 -- scoped RPC below.
+DROP POLICY IF EXISTS "placement_sessions_owner_select" ON public.placement_sessions;
 CREATE POLICY "placement_sessions_owner_select"
   ON public.placement_sessions FOR SELECT
   USING ((SELECT auth.uid()) = owner_id);
 
 -- Scoped write: lets a teacher set the one-shot next-question override (27.2)
--- without any broader UPDATE grant on the table.
+-- without any broader UPDATE grant on the table. Raises (rather than silently
+-- no-op'ing) when nothing matched, so a wrong assignmentId or non-owner caller
+-- surfaces as a failed call instead of the teacher UI reporting a nudge that was
+-- never actually recorded.
 CREATE OR REPLACE FUNCTION public.set_placement_override(p_assignment_id text, p_direction text)
 RETURNS void
 LANGUAGE plpgsql
@@ -73,6 +77,9 @@ BEGIN
   UPDATE public.placement_sessions
   SET override_direction = p_direction, updated_at = now()
   WHERE assignment_id = p_assignment_id AND owner_id = (SELECT auth.uid());
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'no placement session for assignment %', p_assignment_id;
+  END IF;
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.set_placement_override(text, text) TO authenticated;

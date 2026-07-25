@@ -85,15 +85,17 @@ function estimateStaircasePlacement(test: Test, studentTest: StudentTest): Place
     }));
 
     // A generator run's actual persisted start level (the configured range's midpoint, or a
-    // clamped starter item's level) lives only server-side in placement_sessions, not synced
-    // back onto Test/StudentTest — cefrMidpoint is the best client-side approximation, and
-    // without it the replay's default STAIRCASE_START_LEVEL ('A2') could sit outside a narrow
-    // configured range until the first level move clamps it back in.
+    // clamped starter item's level) is written onto the submission as placementStartLevel
+    // (roadmap 27.1 follow-up) precisely so this replay can start from the same point the
+    // server run did — a starter item can begin outside the range's midpoint, so falling back
+    // to cefrMidpoint() alone (older submissions predating that field) is only an approximation.
     const config = test.generatorConfig
         ? {
               minLevel: test.generatorConfig.minCefrLevel,
               maxLevel: test.generatorConfig.maxCefrLevel,
-              startLevel: cefrMidpoint(test.generatorConfig.minCefrLevel, test.generatorConfig.maxCefrLevel),
+              startLevel:
+                  studentTest.placementStartLevel ??
+                  cefrMidpoint(test.generatorConfig.minCefrLevel, test.generatorConfig.maxCefrLevel),
           }
         : undefined;
     return { level: computeStaircaseState(levelPath, config).level, provisional: true, path };
