@@ -18,10 +18,13 @@ describe('PlacementLevelPanel', () => {
         expect(screen.getByText('tests.monitor.generator_level_pending')).toBeInTheDocument();
     });
 
-    it('shows the current level and questions-asked count once reported', () => {
+    it('shows the current level, Elo anchor, and questions-asked count once reported', () => {
         render(<PlacementLevelPanel level="B1" eloAnchor={1200} questionsAsked={4} />);
         expect(screen.getByText(/tests\.monitor\.generator_level_label/)).toBeInTheDocument();
         expect(screen.getByText(/tests\.monitor\.generator_questions_asked_label/)).toBeInTheDocument();
+        const badge = screen.getByText(/tests\.monitor\.generator_level_label/);
+        expect(badge).toHaveAttribute('title', expect.stringContaining('tests.monitor.generator_elo_label'));
+        expect(badge.getAttribute('title')).toContain('1200');
     });
 
     it('does not render nudge buttons when onNudge is not provided', () => {

@@ -259,9 +259,9 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // ── Live level override (roadmap 27.2) — persists via the owner-scoped
     // set_placement_override RPC, consumed by the student's NEXT next-placement-question call;
     // the broadcast below is purely an optimistic "you were adjusted" toast, not the actual effect.
-    const [overridingStudentId, setOverridingStudentId] = useState<string | null>(null);
+    const [overridingStudentIds, setOverridingStudentIds] = useState<Set<string>>(new Set());
     async function sendLevelOverride(studentId: string, direction: 'up' | 'down') {
-        setOverridingStudentId(studentId);
+        setOverridingStudentIds((prev) => new Set(prev).add(studentId));
         try {
             await setPlacementOverride(assignmentKeyFor(studentId), direction);
             channelsRef.current.get(studentId)?.send({
@@ -277,7 +277,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             console.error('setPlacementOverride failed:', err);
             showToast(t('tests.monitor.nudge_override_error'), 'error');
         } finally {
-            setOverridingStudentId(null);
+            setOverridingStudentIds((prev) => {
+                const next = new Set(prev);
+                next.delete(studentId);
+                return next;
+            });
         }
     }
 
@@ -469,7 +473,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                                 eloAnchor={row.live.snapshot?.generatorEloAnchor}
                                                 questionsAsked={row.live.snapshot?.questionsAsked}
                                                 disabled={
-                                                    overridingStudentId === row.studentId ||
+                                                    overridingStudentIds.has(row.studentId) ||
                                                     row.status === 'submitted' ||
                                                     row.status === 'late'
                                                 }

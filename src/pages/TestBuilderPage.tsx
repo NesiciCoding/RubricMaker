@@ -710,7 +710,13 @@ export default function TestBuilderPage() {
                                 <select
                                     id="generator-min-level"
                                     value={generatorMinLevel}
-                                    onChange={(e) => setGeneratorMinLevel(e.target.value as CefrLevel)}
+                                    onChange={(e) => {
+                                        const next = e.target.value as CefrLevel;
+                                        setGeneratorMinLevel(next);
+                                        setGeneratorMaxLevel((prev) =>
+                                            CEFR_LEVELS.indexOf(prev) < CEFR_LEVELS.indexOf(next) ? next : prev
+                                        );
+                                    }}
                                 >
                                     {CEFR_LEVELS.map((lvl) => (
                                         <option key={lvl} value={lvl}>
@@ -724,7 +730,13 @@ export default function TestBuilderPage() {
                                 <select
                                     id="generator-max-level"
                                     value={generatorMaxLevel}
-                                    onChange={(e) => setGeneratorMaxLevel(e.target.value as CefrLevel)}
+                                    onChange={(e) => {
+                                        const next = e.target.value as CefrLevel;
+                                        setGeneratorMaxLevel(next);
+                                        setGeneratorMinLevel((prev) =>
+                                            CEFR_LEVELS.indexOf(prev) > CEFR_LEVELS.indexOf(next) ? next : prev
+                                        );
+                                    }}
                                 >
                                     {CEFR_LEVELS.map((lvl) => (
                                         <option key={lvl} value={lvl}>

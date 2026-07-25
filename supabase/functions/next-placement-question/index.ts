@@ -603,14 +603,9 @@ serve(async (req) => {
             .map((row) => ({ id: row.id as string, ...(row.data as Omit<BankItem, 'id'>) }) as BankItem)
             .filter((item) => !cfg.skills?.length || (item.cefrSkill && cfg.skills.includes(item.cefrSkill)))
             .filter((item) => !askedItemIds.includes(item.id))
-            .filter((item) => {
-                // A section bundle is served in full, so every nested question must be
-                // auto-scorable — one 'open' question among them would always score as
-                // incorrect (autoScoreResponse returns 0 for 'open', needing manual points).
-                const questions =
-                    (item.kind ?? 'question') === 'section' ? (item.section?.questions ?? []) : [item.question];
-                return questions.length > 0 && questions.every((q) => q && isAutoScorable(q));
-            })
+            // A section bundle is served in full, so every nested question must be auto-scorable —
+            // one 'open' question among them would always score 0, needing manual points.
+            .filter(isValidBankItem)
             .filter((item) => {
                 // Never start a bundle that couldn't be finished within the question cap.
                 if ((item.kind ?? 'question') !== 'section') return true;
@@ -745,13 +740,14 @@ serve(async (req) => {
     // trace that submit-test later trusts verbatim. Only the call whose write actually lands (0
     // rows updated for the loser) proceeds; the loser gets the same 409 as a genuinely stale call.
     async function casUpdate(patch: Record<string, unknown>): Promise<boolean> {
-        const { data } = await admin
+        const { data, error } = await admin
             .from('placement_sessions')
             .update(patch)
             .eq('id', assignmentId)
             .eq('status', 'in_progress')
             .eq('pending->>questionId', answeredQuestionId)
             .select('id');
+        if (error) console.error('placement_sessions CAS update failed:', error);
         return !!data?.length;
     }
 
@@ -777,14 +773,19 @@ serve(async (req) => {
         updatedItemData.question.eloRating = newRating;
     }
     const { id: _itemId, ...updatedItemBody } = updatedItemData;
-    const { error: eloErr } = await admin
-        .from('question_bank_items')
-        .update({ data: updatedItemBody })
-        .eq('id', item.id)
-        .eq('owner_id', ownerId);
-    // Best-effort, same posture as submit-test's staircase Elo write-back: item ratings are an
-    // internal self-calibration refinement, not authoritative data — never fail the request over it.
-    if (eloErr) console.error('question_bank_items elo rating update failed:', eloErr);
+    // Deferred until the CAS below actually lands (see call sites) — applying this unconditionally
+    // here would let a losing duplicate request (same previousQuestionId, rejected by the CAS)
+    // still mutate the item's rating, double-applying the Elo delta for one real answer.
+    async function applyEloWriteBack(): Promise<void> {
+        const { error: eloErr } = await admin
+            .from('question_bank_items')
+            .update({ data: updatedItemBody })
+            .eq('id', item.id)
+            .eq('owner_id', ownerId);
+        // Best-effort, same posture as submit-test's staircase Elo write-back: item ratings are an
+        // internal self-calibration refinement, not authoritative data — never fail the request over it.
+        if (eloErr) console.error('question_bank_items elo rating update failed:', eloErr);
+    }
 
     const step = {
         sectionId: pending.level,
@@ -815,6 +816,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
         });
         if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
+        await applyEloWriteBack();
         return respondQuestion(item, nextPending, levelPath.length);
     }
 
@@ -838,6 +840,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
         });
         if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
+        await applyEloWriteBack();
         return json({ done: true, finalLevel: state.level, questionsAsked: levelPath.length });
     }
 
@@ -857,6 +860,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
         });
         if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
+        await applyEloWriteBack();
         return json({ done: true, finalLevel: pickLevel, questionsAsked: levelPath.length });
     }
 
@@ -870,6 +874,7 @@ serve(async (req) => {
         updated_at: new Date().toISOString(),
     });
     if (!swapped) return json({ error: 'This question is no longer pending — refresh and try again' }, 409);
+    await applyEloWriteBack();
 
     return respondQuestion(picked.item, picked.pending, levelPath.length);
 });

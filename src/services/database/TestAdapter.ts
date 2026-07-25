@@ -47,10 +47,14 @@ function isNextPlacementQuestionResult(data: unknown): data is NextPlacementQues
         return typeof d.finalLevel === 'string' && typeof d.questionsAsked === 'number';
     }
     if (d.done === false) {
+        const q = d.question as Record<string, unknown> | undefined;
         return (
-            !!d.question &&
-            typeof d.question === 'object' &&
-            typeof (d.question as Record<string, unknown>).id === 'string' &&
+            !!q &&
+            typeof q === 'object' &&
+            typeof q.id === 'string' &&
+            typeof q.type === 'string' &&
+            typeof q.prompt === 'string' &&
+            typeof q.points === 'number' &&
             typeof d.cefrLevel === 'string' &&
             typeof d.eloAnchor === 'number' &&
             typeof d.questionsAsked === 'number'
