@@ -1064,6 +1064,8 @@ interface AppContextValue extends StoreData {
     fetchMyTestAssignments: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyTestAssignments']>>>;
     fetchAssignedTestContent: (testId: string) => Promise<Test | null>;
     fetchTestAssignmentTeacherKeys: (testId: string) => Promise<Record<string, string>>;
+    /** One-shot teacher level nudge for a generator-engine placement run in progress (roadmap 27.2). */
+    setPlacementOverride: (assignmentId: string, direction: 'up' | 'down') => Promise<void>;
     // Messages (student portal side)
     fetchMyMessages: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyMessages']>>>;
     sendMessageAsStudent: (m: Message) => Promise<SyncResult>;
@@ -2186,6 +2188,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         async (testId: string) => (await loadDb()).storageSync.fetchTestAssignmentTeacherKeys(testId),
         []
     );
+    const setPlacementOverride = useCallback(
+        async (assignmentId: string, direction: 'up' | 'down') =>
+            (await loadDb()).storageSync.setPlacementOverride(assignmentId, direction),
+        []
+    );
     const fetchMyMessages = useCallback(async () => (await loadDb()).storageSync.fetchMyMessages(), []);
     const sendMessageAsStudent = useCallback(
         async (m: Message) => (await loadDb()).storageSync.sendMessageAsStudent(m),
@@ -2487,6 +2494,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             fetchMyTestAssignments,
             fetchAssignedTestContent,
             fetchTestAssignmentTeacherKeys,
+            setPlacementOverride,
             fetchMyMessages,
             sendMessageAsStudent,
             markMessagesReadByStudent,
@@ -2638,6 +2646,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             fetchMyTestAssignments,
             fetchAssignedTestContent,
             fetchTestAssignmentTeacherKeys,
+            setPlacementOverride,
             fetchMyMessages,
             sendMessageAsStudent,
             markMessagesReadByStudent,

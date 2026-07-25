@@ -1122,6 +1122,8 @@ function GradingTab() {
                         t('docs.gr_placement_item_results'),
                         t('docs.gr_placement_item_provisional'),
                         t('docs.gr_placement_item_elo'),
+                        t('docs.gr_placement_item_generator'),
+                        t('docs.gr_placement_item_generator_live'),
                     ]}
                 />
 

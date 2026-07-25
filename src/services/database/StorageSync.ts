@@ -452,6 +452,10 @@ class StorageSyncService {
         return this.adapter.fetchTestAssignmentTeacherKeys(testId);
     }
 
+    async setPlacementOverride(assignmentId: string, direction: 'up' | 'down'): Promise<void> {
+        return this.adapter.setPlacementOverride(assignmentId, direction);
+    }
+
     async fetchMyMessages() {
         return this.adapter.fetchMyMessages();
     }

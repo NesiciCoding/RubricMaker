@@ -218,6 +218,19 @@ function scoreAnswer(question: TestQuestion, answer: TestAnswer): number {
     return autoScoreResponse(question, answer.response);
 }
 
+/**
+ * A generator-engine (roadmap 27.1) placement run's questions are pulled live from the question
+ * bank at runtime and never authored into `test.questions` — the submission carries its own
+ * snapshot of them instead (`StudentTest.askedQuestionSnapshots`). Callers that need to score or
+ * display a generator submission's answers should score against this merged list rather than
+ * `test.questions` alone, which would otherwise show no points at all for such a run. A no-op
+ * (returns `test` unchanged) for every other engine/mode.
+ */
+export function withAskedQuestionSnapshots(test: Test, studentTest: Pick<StudentTest, 'askedQuestionSnapshots'>): Test {
+    if (!studentTest.askedQuestionSnapshots?.length) return test;
+    return { ...test, questions: [...test.questions, ...studentTest.askedQuestionSnapshots] };
+}
+
 export function calcStudentTestRawPoints(test: Test, answers: TestAnswer[]): number {
     const questionsById = new Map(test.questions.map((q) => [q.id, q]));
     const latestByQuestionId = new Map<string, TestAnswer>();

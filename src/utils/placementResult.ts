@@ -1,13 +1,15 @@
 import type { Test, StudentTest, CefrLevel } from '../types';
 import { cefrLevelOrdinal } from './cefrOrdinal';
 import { scoreSectionPct } from './placementRouting';
-import { isStaircaseTest, computeStaircaseState } from './placementStaircase';
+import { usesLevelPathEstimate, computeStaircaseState, cefrMidpoint } from './placementStaircase';
 
 export interface PlacementPathStep {
     sectionId: string;
     title: string;
     level?: CefrLevel;
     scorePct: number;
+    /** Set when a teacher's live level nudge (roadmap 27.2) shifted the level before this step. */
+    overridden?: 'up' | 'down';
 }
 
 export interface PlacementEstimate {
@@ -26,7 +28,7 @@ const DEFAULT_TERMINAL_THRESHOLD_PCT = 60;
  * still gets a starting estimate rather than none at all.
  */
 export function estimatePlacement(test: Test, studentTest: StudentTest): PlacementEstimate | null {
-    if (isStaircaseTest(test)) return estimateStaircasePlacement(test, studentTest);
+    if (usesLevelPathEstimate(test)) return estimateStaircasePlacement(test, studentTest);
 
     const sectionPath = studentTest.sectionPath;
     if (!sectionPath?.length) return null;
@@ -62,9 +64,12 @@ export function estimatePlacement(test: Test, studentTest: StudentTest): Placeme
 }
 
 /**
- * Estimate for a staircase (roadmap Phase 25.3) placement run: unlike MST, the run's own
- * convergence rule already settles at the right level, so the estimate is simply the level the
- * replay ends on — no highest-passed/fallback logic needed.
+ * Estimate for a staircase (roadmap Phase 25.3) or live generator (roadmap 27.1) placement run:
+ * unlike MST, the run's own convergence rule already settles at the right level, so the estimate
+ * is simply the level the replay ends on — no highest-passed/fallback logic needed. A generator
+ * run's `generatorConfig` range must be threaded through the replay so clamping matches what
+ * actually happened server-side (a staircase test has no `generatorConfig`, so this is a no-op
+ * for it and the replay keeps its original A1–C2 bounds).
  */
 function estimateStaircasePlacement(test: Test, studentTest: StudentTest): PlacementEstimate | null {
     const levelPath = studentTest.levelPath;
@@ -76,7 +81,22 @@ function estimateStaircasePlacement(test: Test, studentTest: StudentTest): Place
         title: sectionsById.get(step.sectionId)?.title ?? step.sectionId,
         level: step.level,
         scorePct: step.correct ? 100 : 0,
+        overridden: step.overridden,
     }));
 
-    return { level: computeStaircaseState(levelPath).level, provisional: true, path };
+    // A generator run's actual persisted start level (the configured range's midpoint, or a
+    // clamped starter item's level) is written onto the submission as placementStartLevel
+    // (roadmap 27.1 follow-up) precisely so this replay can start from the same point the
+    // server run did — a starter item can begin outside the range's midpoint, so falling back
+    // to cefrMidpoint() alone (older submissions predating that field) is only an approximation.
+    const config = test.generatorConfig
+        ? {
+              minLevel: test.generatorConfig.minCefrLevel,
+              maxLevel: test.generatorConfig.maxCefrLevel,
+              startLevel:
+                  studentTest.placementStartLevel ??
+                  cefrMidpoint(test.generatorConfig.minCefrLevel, test.generatorConfig.maxCefrLevel),
+          }
+        : undefined;
+    return { level: computeStaircaseState(levelPath, config).level, provisional: true, path };
 }

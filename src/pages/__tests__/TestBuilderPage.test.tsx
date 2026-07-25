@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, GradeScale, Test as RmTest } from '../../types';
+import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem } from '../../types';
 
 function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new') {
     const router = createMemoryRouter(
@@ -52,6 +52,7 @@ const mockShowToast = vi.fn();
 const noop = vi.fn();
 
 let mockTests: RmTest[] = [];
+let mockQuestionBank: QuestionBankItem[] = [];
 
 const mockUseApp = {
     get tests() {
@@ -66,6 +67,10 @@ const mockUseApp = {
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
     updateSettings: noop,
+    get questionBank() {
+        return mockQuestionBank;
+    },
+    addSectionBankItem: noop,
 };
 
 vi.mock('../../context/AppContext', () => ({ useApp: () => mockUseApp }));
@@ -118,12 +123,78 @@ vi.mock('../../components/Editor/EssayEditor', () => ({
     ),
 }));
 
+const mockBankItem: QuestionBankItem = {
+    id: 'bank-1',
+    kind: 'question',
+    cefrLevel: 'B1',
+    question: {
+        id: 'q-bank-1',
+        prompt: 'Bank question prompt',
+        type: 'multiple-choice',
+        points: 5,
+        options: [
+            { id: 'opt-a', text: 'A', isCorrect: false },
+            { id: 'opt-b', text: 'B', isCorrect: true },
+        ],
+    },
+    tags: [],
+    createdAt: '2026-01-01T00:00:00.000Z',
+};
+
 describe('TestBuilderPage', () => {
     beforeEach(() => {
         mockTests = [];
+        mockQuestionBank = [];
         mockAddTest.mockClear();
         mockUpdateTest.mockClear();
         mockShowToast.mockClear();
+    });
+
+    it('configures a generator-engine placement test: range, question counts, skills, and starter item', async () => {
+        mockQuestionBank = [mockBankItem];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage);
+
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Generator Test' } });
+        fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+
+        fireEvent.change(screen.getByLabelText('tests.generator_min_level_label'), { target: { value: 'B1' } });
+        fireEvent.change(screen.getByLabelText('tests.generator_max_level_label'), { target: { value: 'C1' } });
+
+        // Raising min above the current max should pull max up with it.
+        fireEvent.change(screen.getByLabelText('tests.generator_min_questions_label'), { target: { value: '15' } });
+        expect(screen.getByLabelText('tests.generator_max_questions_label')).toHaveValue(15);
+
+        fireEvent.change(screen.getByLabelText('tests.generator_max_questions_label'), { target: { value: '20' } });
+        expect(screen.getByLabelText('tests.generator_max_questions_label')).toHaveValue(20);
+
+        const skillCheckboxes = screen
+            .getAllByRole('checkbox')
+            .filter((el) => el.closest('.form-group')?.textContent?.includes('tests.generator_skills_label'));
+        expect(skillCheckboxes.length).toBeGreaterThan(0);
+        fireEvent.click(skillCheckboxes[0]);
+        fireEvent.click(skillCheckboxes[0]);
+
+        expect(screen.getByText('tests.generator_starter_item_none')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /tests.generator_pick_starter_button/ }));
+        fireEvent.click(screen.getByText('Bank question prompt'));
+
+        expect(screen.getByText('Bank question prompt')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'common.clear' }));
+        expect(screen.getByText('tests.generator_starter_item_none')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('common.save'));
+
+        expect(mockAddTest).toHaveBeenCalledTimes(1);
+        const payload = mockAddTest.mock.calls[0][0];
+        expect(payload.placementEngine).toBe('generator');
+        expect(payload.generatorConfig).toMatchObject({
+            minCefrLevel: 'B1',
+            maxCefrLevel: 'C1',
+            minQuestions: 15,
+            maxQuestions: 20,
+        });
     });
 
     it('creates a new test, adds a multiple-choice question, marks an option correct, and saves', async () => {

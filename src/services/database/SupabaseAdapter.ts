@@ -1335,6 +1335,22 @@ export class SupabaseAdapter {
         return Object.fromEntries(data.map((r) => [r.student_id, r.id]));
     }
 
+    /**
+     * One-shot teacher level nudge for a generator-engine placement run in progress (roadmap
+     * 27.2) — persists via the `set_placement_override` RPC (migration 063) rather than a direct
+     * table write, since a teacher only ever gets owner-scoped SELECT on `placement_sessions`
+     * (all other writes are service-role-only, from next-placement-question). The RPC itself
+     * re-checks ownership server-side via `auth.uid()`, so this call can't affect another
+     * teacher's session even if assignmentId were guessed.
+     */
+    async setPlacementOverride(assignmentId: string, direction: 'up' | 'down'): Promise<void> {
+        const { error } = await this.db().rpc('set_placement_override', {
+            p_assignment_id: assignmentId,
+            p_direction: direction,
+        });
+        if (error) throw error;
+    }
+
     // ── Messages (student <-> teacher, portal-authenticated students only) ────
 
     private static rowToMessage(r: {

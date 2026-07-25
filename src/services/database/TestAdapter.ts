@@ -15,6 +15,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ProctorEvent, TestAnswer, TestAssignmentContent, StaircaseStep } from '../../types';
 import type { SyncResult } from './types';
+import type { NextPlacementQuestionResult } from '../../utils/placementGenerator';
+
+export type NextPlacementQuestionOutcome =
+    { ok: true; data: NextPlacementQuestionResult } | { ok: false; error: string };
 
 export type FetchTestContentResult =
     | { ok: true; data: TestAssignmentContent }
@@ -33,6 +37,30 @@ function isTestAssignmentContent(data: unknown): data is TestAssignmentContent {
         typeof d.test === 'object' &&
         Array.isArray((d.test as Record<string, unknown>).questions)
     );
+}
+
+/** Narrows a next-placement-question response body before it's trusted — a malformed 2xx must not be reported as success. */
+function isNextPlacementQuestionResult(data: unknown): data is NextPlacementQuestionResult {
+    if (!data || typeof data !== 'object') return false;
+    const d = data as Record<string, unknown>;
+    if (d.done === true) {
+        return typeof d.finalLevel === 'string' && typeof d.questionsAsked === 'number';
+    }
+    if (d.done === false) {
+        const q = d.question as Record<string, unknown> | undefined;
+        return (
+            !!q &&
+            typeof q === 'object' &&
+            typeof q.id === 'string' &&
+            typeof q.type === 'string' &&
+            typeof q.prompt === 'string' &&
+            typeof q.points === 'number' &&
+            typeof d.cefrLevel === 'string' &&
+            typeof d.eloAnchor === 'number' &&
+            typeof d.questionsAsked === 'number'
+        );
+    }
+    return false;
 }
 
 export class TestAdapter {
@@ -154,5 +182,46 @@ export class TestAdapter {
         }
 
         return { success: true };
+    }
+
+    /**
+     * Draws (or re-serves, on resume) the next question for a generator-engine placement run
+     * (roadmap 27.1). Server-authoritative: scores `previousResponse` against `previousQuestionId`,
+     * updates level/Elo state, and returns the next pick — call with neither argument on first
+     * load/resume, and with both after every answer.
+     */
+    async nextPlacementQuestion(
+        assignmentId: string,
+        previousQuestionId?: string,
+        previousResponse?: string
+    ): Promise<NextPlacementQuestionOutcome> {
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
+        if (!session) return { ok: false, error: 'Not authenticated' };
+
+        let response: Response;
+        try {
+            response = await this.fetchWithTimeout(`${this.supabaseUrl}/functions/v1/next-placement-question`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: this.supabaseAnonKey,
+                },
+                body: JSON.stringify({ assignmentId, previousQuestionId, previousResponse }),
+            });
+        } catch (err) {
+            return { ok: false, error: `Network error: ${String(err)}` };
+        }
+
+        const body = await response.json().catch(() => null);
+        if (!response.ok || !body) {
+            return { ok: false, error: body?.error ?? `Server error ${response.status}` };
+        }
+        if (!isNextPlacementQuestionResult(body)) {
+            return { ok: false, error: 'Unexpected response from server' };
+        }
+        return { ok: true, data: body };
     }
 }

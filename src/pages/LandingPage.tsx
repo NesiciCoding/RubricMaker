@@ -84,7 +84,7 @@ const TEACHER_FEATURES = [
     {
         icon: Route,
         title: 'Placement Testing',
-        desc: 'Build a placement test with a branching-sections or per-question staircase engine — either way, each student lands on the right difficulty and gets a provisional CEFR estimate, ideal for sizing up new students at the start of the year.',
+        desc: 'Build a placement test with a branching-sections, staircase, or live generator engine that pulls questions from your bank on the fly — each student lands on the right difficulty and gets a provisional CEFR estimate, with a live level view and teacher adjustments while the test is in progress, ideal for sizing up new students at the start of the year.',
         color: '#10b981',
     },
     {

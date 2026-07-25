@@ -5,9 +5,15 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useApp } from '../context/AppContext';
-import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
+import {
+    calcTestMaxPoints,
+    calcStudentTestRawPoints,
+    calcTestPercentage,
+    autoScoreResponse,
+    withAskedQuestionSnapshots,
+} from '../utils/testCalc';
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
-import { isStaircaseTest, staircaseMaxPoints } from '../utils/placementStaircase';
+import { usesLevelPathEstimate, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/docxExport';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
@@ -277,26 +283,30 @@ export default function TestResultsPage() {
     const sectionPath = studentTest?.sectionPath;
     const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
     const levelPath = studentTest?.levelPath;
-    const isStaircase = !!test && isStaircaseTest(test) && !!levelPath?.length;
+    const isStaircase = !!test && usesLevelPathEstimate(test) && !!levelPath?.length;
+    // A generator-engine (27.1) run's asked questions are pulled live from the bank, never
+    // authored into test.questions — score/display against the submission's own snapshot of them.
+    const scoredTest = test && studentTest ? withAskedQuestionSnapshots(test, studentTest) : test;
+    const allQuestions = scoredTest?.questions ?? [];
 
     const maxPoints = test
         ? staged && sectionPath
             ? maxPointsForPath(test, sectionPath)
             : isStaircase && levelPath
-              ? staircaseMaxPoints(test, levelPath)
+              ? staircaseMaxPoints(allQuestions, levelPath)
               : calcTestMaxPoints(test)
         : 0;
 
     // For a staged (placement) submission, only the sections the student actually saw
     // count — the other branch's questions were never presented and would otherwise
-    // show up as unanswered. Same idea for a staircase run: only the questions actually
-    // asked count.
+    // show up as unanswered. Same idea for a staircase/generator run: only the questions
+    // actually asked count.
     const pathQuestions =
         test && staged && sectionPath
             ? sectionPath.flatMap((id) => sectionQuestions(test, id))
             : test && isStaircase && levelPath
               ? levelPath
-                    .map((step) => test.questions.find((q) => q.id === step.questionId))
+                    .map((step) => allQuestions.find((q) => q.id === step.questionId))
                     .filter((q): q is TestQuestion => !!q)
               : (test?.questions ?? []);
 
@@ -310,16 +320,17 @@ export default function TestResultsPage() {
     // actually took — including off-path answers (or a stale rawTotalPoints) would let points
     // from a section/level the student never routed through inflate the path-scoped percentage.
     const pathQuestionIds = new Set(pathQuestions.map((q) => q.id));
-    const rawPoints = !test
-        ? 0
-        : staged || isStaircase
-          ? calcStudentTestRawPoints(
-                test,
-                (studentTest?.answers ?? []).filter((a) => pathQuestionIds.has(a.questionId))
-            )
-          : studentTest
-            ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers))
-            : 0;
+    const rawPoints =
+        !test || !scoredTest
+            ? 0
+            : staged || isStaircase
+              ? calcStudentTestRawPoints(
+                    scoredTest,
+                    (studentTest?.answers ?? []).filter((a) => pathQuestionIds.has(a.questionId))
+                )
+              : studentTest
+                ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, studentTest.answers))
+                : 0;
 
     const adjustmentPoints = studentTest?.adjustmentPoints ?? 0;
     const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);
@@ -424,7 +435,7 @@ export default function TestResultsPage() {
                 : [...existingAnswers, updatedAnswer];
         const scopedAnswers =
             staged || isStaircase ? nextAnswers.filter((a) => pathQuestionIds.has(a.questionId)) : nextAnswers;
-        const nextRaw = test ? calcStudentTestRawPoints(test, scopedAnswers) : 0;
+        const nextRaw = scoredTest ? calcStudentTestRawPoints(scoredTest, scopedAnswers) : 0;
         saveStudentTest({
             ...studentTest,
             answers: nextAnswers,
@@ -537,7 +548,7 @@ export default function TestResultsPage() {
                         <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {levelPath.map((step, i) => {
-                                const q = test.questions.find((qq) => qq.id === step.questionId);
+                                const q = allQuestions.find((qq) => qq.id === step.questionId);
                                 return (
                                     <div
                                         key={`${step.questionId}-${i}`}
@@ -551,6 +562,18 @@ export default function TestResultsPage() {
                                         <span>
                                             {t('tests.results.placement_path_step', { number: i + 1 })} {step.level}
                                             {q ? ` — ${promptPreview(q)}` : ''}
+                                            {step.overridden && (
+                                                <span
+                                                    className="badge"
+                                                    style={{ marginLeft: 6 }}
+                                                    title={t('tests.results.placement_overridden_tooltip', {
+                                                        direction: t(`tests.monitor.nudge_${step.overridden}_button`),
+                                                    })}
+                                                >
+                                                    {step.overridden === 'up' ? '▲' : '▼'}{' '}
+                                                    {t('tests.results.placement_overridden_label')}
+                                                </span>
+                                            )}
                                         </span>
                                         <span style={{ fontWeight: 700 }}>{step.correct ? 100 : 0}%</span>
                                     </div>

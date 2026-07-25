@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
     isStaircaseTest,
+    usesLevelPathEstimate,
     levelQuestions,
     computeStaircaseState,
     resolveNextStaircaseQuestion,
     staircaseMaxPoints,
     eloExpectedScore,
     updateItemElo,
+    cefrMidpoint,
+    pickNearestEloItem,
     STAIRCASE_START_LEVEL,
     STEP_UP_AFTER_CORRECT,
     CONVERGE_AFTER_REVERSALS,
@@ -275,11 +278,141 @@ describe('staircaseMaxPoints', () => {
     it('sums points for only the questions actually asked', () => {
         const test = makeTest({ A2: 3 });
         const steps = [{ questionId: 'q-A2-0' }, { questionId: 'q-A2-1' }];
-        expect(staircaseMaxPoints(test, steps)).toBe(2);
+        expect(staircaseMaxPoints(test.questions, steps)).toBe(2);
     });
 
     it('returns 0 for an empty path', () => {
         const test = makeTest({ A2: 3 });
-        expect(staircaseMaxPoints(test, [])).toBe(0);
+        expect(staircaseMaxPoints(test.questions, [])).toBe(0);
+    });
+});
+
+describe('usesLevelPathEstimate', () => {
+    it('is true for staircase and generator placement engines, false otherwise', () => {
+        expect(usesLevelPathEstimate({ mode: 'placement', placementEngine: 'staircase' })).toBe(true);
+        expect(usesLevelPathEstimate({ mode: 'placement', placementEngine: 'generator' })).toBe(true);
+        expect(usesLevelPathEstimate({ mode: 'placement', placementEngine: 'mst' })).toBe(false);
+        expect(usesLevelPathEstimate({ mode: 'placement' })).toBe(false);
+        expect(usesLevelPathEstimate({ mode: 'assessment', placementEngine: 'generator' })).toBe(false);
+    });
+});
+
+describe('cefrMidpoint', () => {
+    it('rounds down on an even span', () => {
+        expect(cefrMidpoint('A1', 'C2')).toBe('B1'); // indices 0..5 -> midpoint index 2
+        expect(cefrMidpoint('A1', 'B2')).toBe('A2'); // indices 0..3 -> midpoint index 1
+    });
+
+    it('returns the level itself for a single-level range', () => {
+        expect(cefrMidpoint('B1', 'B1')).toBe('B1');
+    });
+});
+
+describe('pickNearestEloItem', () => {
+    it('picks the item whose rating is closest to the anchor', () => {
+        const items = [
+            { id: 'a', eloRating: 600 },
+            { id: 'b', eloRating: 850 },
+            { id: 'c', eloRating: 1500 },
+        ];
+        expect(pickNearestEloItem(items, 900).id).toBe('b');
+    });
+
+    it('treats a missing rating as DEFAULT_ELO_RATING', () => {
+        const items = [{ id: 'a' }, { id: 'b', eloRating: 1500 }];
+        expect(pickNearestEloItem(items, DEFAULT_ELO_RATING).id).toBe('a');
+    });
+
+    it('breaks ties by keeping the first item (caller pre-shuffles for varied tiebreaks)', () => {
+        const items = [
+            { id: 'a', eloRating: 900 },
+            { id: 'b', eloRating: 900 },
+        ];
+        expect(pickNearestEloItem(items, 900).id).toBe('a');
+    });
+});
+
+describe('computeStaircaseState — StaircaseRunConfig (roadmap 27.1)', () => {
+    it('starts at the configured startLevel instead of A2', () => {
+        const state = computeStaircaseState([], { startLevel: 'B1', minLevel: 'A1', maxLevel: 'C2' });
+        expect(state.level).toBe('B1');
+    });
+
+    it('clamps within the configured minLevel/maxLevel range rather than A1/C2', () => {
+        const state = computeStaircaseState([{ level: 'B1', correct: false }], {
+            startLevel: 'B1',
+            minLevel: 'B1',
+            maxLevel: 'B2',
+        });
+        expect(state.level).toBe('B1'); // clamped at the configured floor, not A1
+    });
+
+    it('respects a custom convergeAfterReversals', () => {
+        const state = computeStaircaseState(
+            [
+                { level: 'A2', correct: true },
+                { level: 'A2', correct: true }, // -> B1, up
+                { level: 'B1', correct: false }, // -> A2, down, reversal 1
+            ],
+            { convergeAfterReversals: 1 }
+        );
+        expect(state.reversalCount).toBe(1);
+        expect(state.converged).toBe(true);
+    });
+
+    it('does not apply the classic MAX_QUESTIONS safety cap when a config is passed', () => {
+        const steps = Array.from({ length: MAX_QUESTIONS + 5 }, () => ({ level: 'A2' as const, correct: true }));
+        const state = computeStaircaseState(steps, { minLevel: 'A1', maxLevel: 'C2' });
+        // Climbs to the ceiling and clamps — never reverses, so never converges on its own;
+        // the generator engine owns its own min/max-questions stop rule separately.
+        expect(state.converged).toBe(false);
+    });
+});
+
+describe('computeStaircaseState — teacher override (roadmap 27.2)', () => {
+    it("shifts the level by one step before applying the step's own correct/incorrect move", () => {
+        // Start B1 (config), override 'up' on a step that is itself also correct:
+        // B1 --override up--> B2, then correct answer (1st of 2 needed) keeps consecutiveCorrect=1, level stays B2.
+        const state = computeStaircaseState([{ level: 'B2', correct: true, overridden: 'up' }], {
+            startLevel: 'B1',
+            minLevel: 'A1',
+            maxLevel: 'C2',
+        });
+        expect(state.level).toBe('B2');
+        expect(state.consecutiveCorrect).toBe(1);
+    });
+
+    it('resets the correct-streak on an override', () => {
+        const state = computeStaircaseState(
+            [
+                { level: 'A2', correct: true },
+                { level: 'B1', correct: true, overridden: 'up' }, // streak reset by the override, not enough alone to move again
+            ],
+            { minLevel: 'A1', maxLevel: 'C2' }
+        );
+        expect(state.level).toBe('B1');
+        expect(state.consecutiveCorrect).toBe(1);
+    });
+
+    it('does not count toward reversalCount by itself', () => {
+        const state = computeStaircaseState(
+            [
+                { level: 'A2', correct: true },
+                { level: 'A2', correct: true }, // -> B1, up
+                { level: 'B2', correct: true, overridden: 'up' }, // override shifts level, no reversal
+            ],
+            { minLevel: 'A1', maxLevel: 'C2' }
+        );
+        expect(state.reversalCount).toBe(0);
+    });
+
+    it('clamps an override at the configured range bounds', () => {
+        // Override 'up' from C2 clamps to a no-op (still C2), then the miss moves down to C1.
+        const state = computeStaircaseState([{ level: 'C2', correct: false, overridden: 'up' }], {
+            startLevel: 'C2',
+            minLevel: 'A1',
+            maxLevel: 'C2',
+        });
+        expect(state.level).toBe('C1');
     });
 });

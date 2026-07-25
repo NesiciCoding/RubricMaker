@@ -32,6 +32,7 @@ import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
+import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/placementGenerator';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
@@ -204,6 +205,13 @@ export default function StudentTestPage() {
     // The full adaptive question trace for a staircase (placement) test — only meaningful when
     // isStaircase is true. Each entry is scored and locked in immediately; there's no going back.
     const [levelPath, setLevelPath] = useState<StaircaseStep[]>(() => loadTestDraft(draftKey)?.levelPath ?? []);
+    // A generator-engine (roadmap 27.1) run's question/level/Elo state is server-authoritative —
+    // unlike levelPath above, this is never persisted to the local draft; a reload simply calls
+    // next-placement-question again with no previousQuestionId, which idempotently re-serves
+    // whatever question the server already has pending.
+    const [generatorResult, setGeneratorResult] = useState<NextPlacementQuestionResult | null>(null);
+    const [generatorLoading, setGeneratorLoading] = useState(false);
+    const [generatorError, setGeneratorError] = useState('');
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -309,6 +317,53 @@ export default function StudentTestPage() {
         return resolveNextStaircaseQuestion(test, levelPath, code ?? '');
     }, [test, isStaircase, levelPath, code]);
 
+    const isGenerator = !!test && isGeneratorTest(test);
+
+    // ── Generator-engine (27.1) run: server-authoritative, one question at a time ──────────
+    const advanceGenerator = useCallback(
+        async (previousQuestionId?: string, previousResponse?: string) => {
+            if (!assignment || !adapter) return;
+            setGeneratorLoading(true);
+            setGeneratorError('');
+            const outcome = await adapter.nextPlacementQuestion(
+                assignment.teacherKey,
+                previousQuestionId,
+                previousResponse
+            );
+            setGeneratorLoading(false);
+            if (!outcome.ok) {
+                setGeneratorError(t('tests.taking.generator_load_error'));
+                logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
+                return;
+            }
+            setGeneratorResult(outcome.data);
+        },
+        [assignment, adapter, t]
+    );
+
+    useEffect(() => {
+        if (
+            !isGenerator ||
+            !assignment ||
+            !adapter ||
+            generatorResult ||
+            generatorLoading ||
+            generatorError ||
+            submitted
+        )
+            return;
+        void advanceGenerator();
+    }, [
+        isGenerator,
+        assignment,
+        adapter,
+        generatorResult,
+        generatorLoading,
+        generatorError,
+        submitted,
+        advanceGenerator,
+    ]);
+
     // ── Draft autosave ────────────────────────────────────────────────────────
     useEffect(() => {
         if (submitted) return;
@@ -327,8 +382,15 @@ export default function StudentTestPage() {
                 (sum, a) => sum + a.trim().split(/\s+/).filter(Boolean).length,
                 0
             ),
+            ...(isGenerator && generatorResult && !generatorResult.done
+                ? {
+                      generatorLevel: generatorResult.cefrLevel,
+                      generatorEloAnchor: generatorResult.eloAnchor,
+                      questionsAsked: generatorResult.questionsAsked,
+                  }
+                : {}),
         }),
-        [answers]
+        [answers, isGenerator, generatorResult]
     );
 
     const { showToast } = useContext(ToastContext);
@@ -351,11 +413,42 @@ export default function StudentTestPage() {
         const effectiveTestId = resolvedContent?.testId || assignment.testId;
         const effectiveStudentId = resolvedContent?.studentId || assignment.studentId;
 
+        // Set before the (potentially slow) generator flush below too, not just the final
+        // submitTest call, so the spinner/disabled state covers the whole submit sequence —
+        // otherwise a timeout-triggered submit can flush a pending answer with no visible
+        // feedback until the network call finishes.
+        if (hasDb && adapter) {
+            setSubmitting(true);
+            setSubmitError('');
+        }
+
+        // The timer can call this directly on timeout, before the student presses "Continue" on
+        // the currently-pending generator question — without this, next-placement-question would
+        // never learn about it and the session would never reach status: 'converged', which
+        // submit-test's generator branch requires before accepting a submission.
+        if (isGenerator && adapter && generatorResult && !generatorResult.done) {
+            const response = answers.get(generatorResult.question.id) ?? '';
+            const outcome = await adapter.nextPlacementQuestion(
+                assignment.teacherKey,
+                generatorResult.question.id,
+                response
+            );
+            if (!outcome.ok) {
+                setSubmitting(false);
+                setSubmitError(t('tests.taking.submit_error_db'));
+                logEvent('error', 'test_submit_error', { testId: effectiveTestId }, 'error');
+                submitInFlightRef.current = false;
+                return;
+            }
+        }
+
         const submittedAt = new Date().toISOString();
-        const testAnswers: TestAnswer[] = test.questions.map((q) => ({
-            questionId: q.id,
-            response: answers.get(q.id) ?? '',
-        }));
+        // A generator-engine run has no fixed test.questions to map over — every question was
+        // pulled live from the bank, so the answers map itself is the only record of what was
+        // asked/answered.
+        const testAnswers: TestAnswer[] = isGenerator
+            ? Array.from(answers.entries()).map(([questionId, response]) => ({ questionId, response }))
+            : test.questions.map((q) => ({ questionId: q.id, response: answers.get(q.id) ?? '' }));
 
         // The timer can call this directly on timeout, before the student presses "Continue" on
         // the currently-shown staircase question — without this, that presented-but-uncommitted
@@ -393,8 +486,6 @@ export default function StudentTestPage() {
         const legacyCode = encodeTestSubmission(submissionPayload);
 
         if (hasDb && adapter) {
-            setSubmitting(true);
-            setSubmitError('');
             const studentTestId = nanoid();
             const result = await adapter.submitTest(
                 assignment.teacherKey,
@@ -439,6 +530,8 @@ export default function StudentTestPage() {
         isStaircase,
         levelPath,
         staircaseQuestion,
+        isGenerator,
+        generatorResult,
     ]);
 
     const handleSubmitRef = useRef(handleSubmit);
@@ -550,21 +643,60 @@ export default function StudentTestPage() {
         );
     }
 
+    // ── Guard: generator run failed to load its first/next question ──────────
+    if (isGenerator && generatorError && !generatorResult) {
+        return (
+            <CenteredMessage>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+                <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('tests.taking.load_error_title')}</h2>
+                <p style={{ color: 'var(--text-muted)' }}>{generatorError}</p>
+            </CenteredMessage>
+        );
+    }
+    if (isGenerator && generatorLoading && !generatorResult) {
+        return (
+            <CenteredMessage>
+                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
+            </CenteredMessage>
+        );
+    }
+
     const timedOut = secondsLeft !== null && secondsLeft <= 0;
-    const question = isStaircase ? staircaseQuestion?.question : orderedQuestions[currentIndex];
-    // A staircase test has no fixed question count — every question is effectively the "last"
-    // of its own micro-stage, and there's no going back once an answer is locked in.
-    const isLast = isStaircase ? true : currentIndex === orderedQuestions.length - 1;
-    const isFirst = isStaircase ? true : currentIndex === 0;
+    const generatorQuestion =
+        isGenerator && generatorResult && !generatorResult.done ? generatorResult.question : undefined;
+    const question = isStaircase
+        ? staircaseQuestion?.question
+        : isGenerator
+          ? generatorQuestion
+          : orderedQuestions[currentIndex];
+    // A staircase/generator run has no fixed question count — every question is effectively the
+    // "last" of its own micro-stage, and there's no going back once an answer is locked in.
+    const isLast = isStaircase || isGenerator ? true : currentIndex === orderedQuestions.length - 1;
+    const isFirst = isStaircase || isGenerator ? true : currentIndex === 0;
     const answeredCount = isStaircase
         ? levelPath.length
-        : orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
+        : isGenerator
+          ? (generatorResult?.questionsAsked ?? 0)
+          : orderedQuestions.filter((q) => (answers.get(q.id) ?? '').trim().length > 0).length;
     // The run has converged (or exhausted its pool) — ready to submit instead of continuing.
     const staircaseTerminal = isStaircase && !staircaseQuestion;
+    const generatorTerminal = isGenerator && generatorResult?.done === true;
 
-    // Find current question's section label
+    // Find current question's section label — a generator question's "section" is the ad hoc
+    // passage the server returned alongside it, if any, rather than a real TestSection.
     const sections = test.sections ?? [];
-    const currentSection = question?.sectionId ? sections.find((s) => s.id === question.sectionId) : null;
+    const generatorPassage =
+        isGenerator && generatorResult && !generatorResult.done ? generatorResult.passage : undefined;
+    const currentSection = generatorPassage
+        ? {
+              id: generatorPassage.bankItemId,
+              title: generatorPassage.title,
+              content: generatorPassage.content,
+              audioUrl: generatorPassage.audioUrl,
+          }
+        : question?.sectionId
+          ? sections.find((s) => s.id === question.sectionId)
+          : null;
     const sectionAudioSrc = safeAudioSrc(currentSection?.audioUrl);
 
     // For a staged test, the last question of a stage routes onward instead of submitting
@@ -660,7 +792,7 @@ export default function StudentTestPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         {!submitted && (
                             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                                {isStaircase
+                                {isStaircase || isGenerator
                                     ? t('tests.taking.staircase_progress', { answered: answeredCount })
                                     : t('tests.taking.progress', {
                                           answered: answeredCount,
@@ -902,13 +1034,13 @@ export default function StudentTestPage() {
                                 <QuestionCard
                                     key={question.id}
                                     question={question}
-                                    index={isStaircase ? levelPath.length : currentIndex}
+                                    index={isStaircase ? levelPath.length : isGenerator ? answeredCount : currentIndex}
                                     total={orderedQuestions.length}
                                     value={answers.get(question.id) ?? ''}
                                     onChange={(value) => setAnswers((prev) => new Map(prev).set(question.id, value))}
                                     code={code ?? ''}
                                     onRecordingChange={setIsRecordingAudio}
-                                    hideTotal={isStaircase}
+                                    hideTotal={isStaircase || isGenerator}
                                 />
                             )}
 
@@ -969,6 +1101,29 @@ export default function StudentTestPage() {
                                     >
                                         {t('tests.taking.continue_section')}
                                     </button>
+                                ) : isLast && isGenerator && !generatorTerminal && generatorQuestion ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const response = answers.get(generatorQuestion.id) ?? '';
+                                            void advanceGenerator(generatorQuestion.id, response);
+                                        }}
+                                        disabled={isRecordingAudio || generatorLoading}
+                                        className="btn btn-primary"
+                                        style={{
+                                            padding: '10px 32px',
+                                            fontWeight: 700,
+                                            fontSize: '0.95rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                        }}
+                                    >
+                                        {generatorLoading && (
+                                            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                        )}
+                                        {t('tests.taking.continue_section')}
+                                    </button>
                                 ) : isLast ? (
                                     <button
                                         type="button"
@@ -1014,8 +1169,8 @@ export default function StudentTestPage() {
                     )}
                 </div>
 
-                {/* Question timeline — sticky footer (not shown for an adaptive staircase run, which has no fixed question set to jump between) */}
-                {!submitted && !isStaircase && orderedQuestions.length > 0 && (
+                {/* Question timeline — sticky footer (not shown for an adaptive staircase/generator run, which has no fixed question set to jump between) */}
+                {!submitted && !isStaircase && !isGenerator && orderedQuestions.length > 0 && (
                     <QuestionTimeline
                         questions={orderedQuestions}
                         currentIndex={currentIndex}
