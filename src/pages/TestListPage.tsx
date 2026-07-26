@@ -36,7 +36,19 @@ import CohortFilter from '../components/CohortFilter';
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest, students, classes } = useApp();
+    const {
+        tests,
+        addTest,
+        updateTest,
+        deleteTest,
+        studentTests,
+        saveStudentTest,
+        students,
+        classes,
+        settings,
+        exportTemplates,
+    } = useApp();
+    const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
@@ -80,7 +92,7 @@ export default function TestListPage() {
                 if (!student) return;
                 if (format === 'pdf') {
                     const { exportTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportTestSummaryPdf(exportStudentId, studentTests, test, student);
+                    await exportTestSummaryPdf(exportStudentId, studentTests, test, student, activeStyleTemplate);
                 } else {
                     const { exportTestSummaryDocx } = await import('../utils/docxExport');
                     await exportTestSummaryDocx(exportStudentId, studentTests, test, student);
@@ -92,13 +104,33 @@ export default function TestListPage() {
                     .filter((e): e is { studentId: string; student: (typeof students)[number] } => !!e.student);
                 if (format === 'pdf') {
                     const { exportBatchTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportBatchTestSummaryPdf(entries, studentTests, test);
+                    await exportBatchTestSummaryPdf(entries, studentTests, test, activeStyleTemplate);
                 } else {
                     const { exportBatchTestSummaryDocx } = await import('../utils/docxExport');
                     await exportBatchTestSummaryDocx(entries, studentTests, test);
                 }
                 logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: entries.length });
             }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExporting(false);
+        }
+    }
+
+    async function handleExportTestResultsCsv(test: Test) {
+        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+        if (relevantStudentTests.length === 0) return;
+        setExporting(true);
+        try {
+            const { buildTestResultsCsv } = await import('../utils/testExportPresets');
+            const csv = buildTestResultsCsv(test, studentTests, students);
+            const { saveAs } = await import('file-saver');
+            const { sanitizeFilename } = await import('../utils/exportDataPrep');
+            saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(test.name)}_results.csv`);
+            logAuditEvent('export', 'export_test_summary_csv', 'test', test.id, {
+                count: relevantStudentTests.length,
+            });
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -579,6 +611,19 @@ export default function TestListPage() {
                                                                             <FileDown size={14} />{' '}
                                                                             {t('tests.export.export_docx')}
                                                                         </button>
+                                                                        {exportScope === 'batch' && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-secondary btn-sm"
+                                                                                disabled={exporting}
+                                                                                onClick={() =>
+                                                                                    handleExportTestResultsCsv(test)
+                                                                                }
+                                                                            >
+                                                                                <FileDown size={14} />{' '}
+                                                                                {t('tests.export.export_csv')}
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>

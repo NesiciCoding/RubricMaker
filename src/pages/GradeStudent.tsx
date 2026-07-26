@@ -152,6 +152,7 @@ export default function GradeStudent() {
         updateSettings,
         saveAnalysisResult,
         addCommentBankItem,
+        recordCommentBankUsage,
         addAttachment,
         saveEssayAssignment,
         essayAssignments,
@@ -1729,13 +1730,14 @@ export default function GradeStudent() {
                             : undefined
                     }
                     onClose={() => setShowCommentBankFor(null)}
-                    onSelect={(text) => {
+                    onSelect={(item) => {
                         if (!showCommentBankFor) return;
                         // Use the TipTap editor's insertContent API so the text lands as a
                         // proper document node rather than being appended to raw HTML.
                         if (commentEditorRef.current) {
-                            commentEditorRef.current.insertContent(text);
+                            commentEditorRef.current.insertContent(item.text);
                         }
+                        recordCommentBankUsage(item.id);
                         setShowCommentBankFor(null);
                     }}
                 />

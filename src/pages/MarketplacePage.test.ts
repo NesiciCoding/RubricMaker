@@ -44,12 +44,14 @@ describe('filterAndSortListings', () => {
             listing({ id: 'r1', kind: 'rubric' }),
             listing({ id: 't1', kind: 'test' }),
             listing({ id: 'd1', kind: 'deck' }),
+            listing({ id: 'q1', kind: 'questionBankItem' }),
         ];
         expect(filterAndSortListings(mixed, 'all', 'newest', 'test').map((l) => l.id)).toEqual(['t1']);
+        expect(filterAndSortListings(mixed, 'all', 'newest', 'questionBankItem').map((l) => l.id)).toEqual(['q1']);
         expect(
             filterAndSortListings(mixed, 'all', 'newest', 'all')
                 .map((l) => l.id)
                 .sort()
-        ).toEqual(['d1', 'r1', 't1']);
+        ).toEqual(['d1', 'q1', 'r1', 't1']);
     });
 });

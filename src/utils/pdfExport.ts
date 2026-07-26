@@ -3,6 +3,7 @@ import { calcGradeSummary } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { formatPointsRange, stripCommentHtml } from './exportDataPrep';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
+import type { DocxStyleTemplateOverrides } from './docxExport';
 
 function parseMd(text: string) {
     if (!text) return text;
@@ -239,16 +240,42 @@ const EXPORT_GOOGLE_FONTS: Record<string, string> = {
     'Courier Prime': 'Courier+Prime:wght@400;700',
 };
 
-export function googleFontsLinkFor(fontFamily?: string): string {
-    if (!fontFamily) return '';
-    const tokens = new Set(fontFamily.split(',').map((part) => part.trim().replace(/^['"]|['"]$/g, '')));
+/** Accepts every font-family stack in play (base font plus a style template's body/heading overrides) so the returned link covers all of them at once. */
+export function googleFontsLinkFor(...fontFamilies: Array<string | undefined>): string {
+    const tokens = new Set<string>();
+    for (const fontFamily of fontFamilies) {
+        if (!fontFamily) continue;
+        fontFamily.split(',').forEach((part) => tokens.add(part.trim().replace(/^['"]|['"]$/g, '')));
+    }
     const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => tokens.has(name));
     if (families.length === 0) return '';
     const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
     return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familyParams}&display=swap">`;
 }
 
-export function printHtml(html: string, orientation?: 'portrait' | 'landscape', fontFamily?: string) {
+/** Same body/heading override CSS `buildDocxStyles()` (docxExport.ts) applies to a DOCX document, translated to print CSS. */
+export function styleTemplateCss(styleTemplate?: DocxStyleTemplateOverrides): string {
+    if (!styleTemplate) return '';
+    const { bodyFont, headingFont, headingSize, headingColor } = styleTemplate;
+    const bodyRule = bodyFont ? `body { font-family: '${bodyFont}'; }` : '';
+    const headingDecls = [
+        headingFont ? `font-family: '${headingFont}';` : '',
+        // headingSize is in docx half-points; CSS wants pt.
+        headingSize ? `font-size: ${headingSize / 2}pt;` : '',
+        headingColor ? `color: #${headingColor};` : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
+    const headingRule = headingDecls ? `h1, h2 { ${headingDecls} }` : '';
+    return `${bodyRule} ${headingRule}`;
+}
+
+export function printHtml(
+    html: string,
+    orientation?: 'portrait' | 'landscape',
+    fontFamily?: string,
+    styleTemplate?: DocxStyleTemplateOverrides
+) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
@@ -261,7 +288,7 @@ export function printHtml(html: string, orientation?: 'portrait' | 'landscape', 
 
         const doc = iframe.contentWindow?.document;
         if (doc) {
-            const fontLink = googleFontsLinkFor(fontFamily);
+            const fontLink = googleFontsLinkFor(fontFamily, styleTemplate?.bodyFont, styleTemplate?.headingFont);
             doc.open();
             doc.write(`
                 <!DOCTYPE html>
@@ -271,6 +298,7 @@ export function printHtml(html: string, orientation?: 'portrait' | 'landscape', 
                     <style>
                         @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: 10mm; }
                         body { margin: 0; }
+                        ${styleTemplateCss(styleTemplate)}
                     </style>
                 </head>
                 <body>
@@ -302,17 +330,26 @@ export async function exportSinglePdf(
     rubric: Rubric,
     student: Student,
     scale: GradeScale | null,
-    options: { orientation?: 'portrait' | 'landscape' } = {}
+    options: { orientation?: 'portrait' | 'landscape'; styleTemplate?: DocxStyleTemplateOverrides } = {}
 ): Promise<void> {
     const htmlStr = buildRubricHTML(sr, rubric, student, scale);
-    await printHtml(htmlStr, options.orientation || rubric.format.orientation || 'portrait', rubric.format.fontFamily);
+    await printHtml(
+        htmlStr,
+        options.orientation || rubric.format.orientation || 'portrait',
+        rubric.format.fontFamily,
+        options.styleTemplate
+    );
 }
 
 export async function exportBatchPdf(
     entries: { sr: StudentRubric; student: Student }[],
     rubric: Rubric,
     scale: GradeScale | null,
-    options: { orientation?: 'portrait' | 'landscape'; padForDoubleSided?: boolean } = {}
+    options: {
+        orientation?: 'portrait' | 'landscape';
+        padForDoubleSided?: boolean;
+        styleTemplate?: DocxStyleTemplateOverrides;
+    } = {}
 ): Promise<void> {
     const htmlParts = entries.map(({ sr, student }, index) => {
         // For double-sided mode: break-before: right lets the browser insert a blank
@@ -322,13 +359,14 @@ export async function exportBatchPdf(
     await printHtml(
         htmlParts.join(''),
         options.orientation || rubric.format.orientation || 'portrait',
-        rubric.format.fontFamily
+        rubric.format.fontFamily,
+        options.styleTemplate
     );
 }
 
-export async function exportRubricGridPdf(rubric: Rubric): Promise<void> {
+export async function exportRubricGridPdf(rubric: Rubric, styleTemplate?: DocxStyleTemplateOverrides): Promise<void> {
     const htmlStr = buildEmptyRubricHTML(rubric);
-    await printHtml(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily);
+    await printHtml(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
 }
 
 /** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */
@@ -417,19 +455,21 @@ export async function exportTestSummaryPdf(
     studentId: string | null,
     studentTests: StudentTest[],
     test: Test,
-    student?: Student
+    student?: Student,
+    styleTemplate?: DocxStyleTemplateOverrides
 ): Promise<void> {
     const htmlStr = buildTestSummaryHTML(studentId, studentTests, test, student);
-    await printHtml(htmlStr, 'portrait');
+    await printHtml(htmlStr, 'portrait', undefined, styleTemplate);
 }
 
 export async function exportBatchTestSummaryPdf(
     entries: { studentId: string; student: Student }[],
     studentTests: StudentTest[],
-    test: Test
+    test: Test,
+    styleTemplate?: DocxStyleTemplateOverrides
 ): Promise<void> {
     const htmlParts = entries.map(({ studentId, student }) =>
         buildTestSummaryHTML(studentId, studentTests, test, student)
     );
-    await printHtml(htmlParts.join(''), 'portrait');
+    await printHtml(htmlParts.join(''), 'portrait', undefined, styleTemplate);
 }

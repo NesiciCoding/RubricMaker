@@ -71,6 +71,7 @@ const mockUseApp = {
     studentRubrics: [],
     studentTests: [],
     settings: mockSettings,
+    exportTemplates: [],
     addTest: mockAddTest,
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
