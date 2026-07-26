@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import ReconcileModal from '../components/Modals/ReconcileModal';
 import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import {
@@ -29,6 +30,7 @@ export default function ModerationQueuePage() {
     const dbStatus = useDbStatus();
     const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_POINTS);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
+    const [reconcileTarget, setReconcileTarget] = useState<ModerationQueueItem | null>(null);
 
     useEffect(() => {
         if (!dbStatus.isConnected || !settings.schoolId) {
@@ -85,6 +87,7 @@ export default function ModerationQueuePage() {
     function resolveReconcile(item: ModerationQueueItem) {
         saveStudentRubric({ ...item.baseline, entries: buildReconciledEntries(item) });
         deletePeerReview(item.secondMarkerEntry.id);
+        setReconcileTarget(null);
     }
 
     return (
@@ -236,7 +239,7 @@ export default function ModerationQueuePage() {
                                         <button
                                             type="button"
                                             className="btn btn-primary btn-sm"
-                                            onClick={() => resolveReconcile(item)}
+                                            onClick={() => setReconcileTarget(item)}
                                         >
                                             {t('coGrading.action_reconcile')}
                                         </button>
@@ -247,6 +250,14 @@ export default function ModerationQueuePage() {
                     </div>
                 )}
             </div>
+
+            {reconcileTarget && (
+                <ReconcileModal
+                    item={reconcileTarget}
+                    onConfirm={() => resolveReconcile(reconcileTarget)}
+                    onClose={() => setReconcileTarget(null)}
+                />
+            )}
         </>
     );
 }

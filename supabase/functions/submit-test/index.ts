@@ -538,9 +538,13 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
-    // Set below once a staircase levelPath has been validated and its items' Elo ratings
-    // recomputed, so the update can be persisted after the (unrelated) submission insert below.
-    let eloUpdate: { testId: string; data: MinimalTest } | null = null;
+    // Set below once a staircase levelPath has been validated and its items' new Elo ratings
+    // computed, so they can be persisted atomically (via the update_test_question_elo RPC —
+    // see migration 064) after the (unrelated) submission insert below. Only the touched
+    // questions' {questionId, eloRating} pairs are collected here — never a copy of the whole
+    // test.questions array — so the RPC's own single-statement UPDATE is the only read-modify-write
+    // of tests.data, closing the race a client-computed whole-blob write would reintroduce.
+    let eloRatingUpdates: { questionId: string; eloRating: number }[] | null = null;
     // Set below for a generator-engine (roadmap 27.1) run instead — its trace lives in
     // placement_sessions, not in a client-claimed levelPath (which the client never sends,
     // since question selection/scoring already happened server-side, live, per question).
@@ -644,14 +648,17 @@ serve(async (req) => {
                         return json({ error: 'Invalid level path' }, 400);
                     }
 
-                    levelPath.forEach((step, i) => {
+                    eloRatingUpdates = levelPath.reduce<{ questionId: string; eloRating: number }[]>((acc, step, i) => {
                         const question = questionsById.get(step.questionId);
-                        if (!question) return;
+                        if (!question) return acc;
                         const opponentRating = LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING;
                         const currentRating = question.eloRating ?? DEFAULT_ELO_RATING;
-                        question.eloRating = updateItemElo(currentRating, opponentRating, correctFlags[i]);
-                    });
-                    eloUpdate = { testId: assignment.test_id, data: test };
+                        acc.push({
+                            questionId: step.questionId,
+                            eloRating: updateItemElo(currentRating, opponentRating, correctFlags[i]),
+                        });
+                        return acc;
+                    }, []);
                 }
             } catch (e) {
                 console.error('submit-test placement path replay failed:', e);
@@ -716,11 +723,11 @@ serve(async (req) => {
         if (!insertErr) {
             // Best-effort: item ratings are an internal refinement, not authoritative data — a
             // failed update here should never fail an otherwise-successful submission.
-            if (eloUpdate) {
-                const { error: eloErr } = await admin
-                    .from('tests')
-                    .update({ data: eloUpdate.data })
-                    .eq('id', eloUpdate.testId);
+            if (eloRatingUpdates && eloRatingUpdates.length > 0) {
+                const { error: eloErr } = await admin.rpc('update_test_question_elo', {
+                    p_test_id: assignment.test_id,
+                    p_updates: eloRatingUpdates,
+                });
                 if (eloErr) console.error('submit-test elo rating update failed:', eloErr);
             }
             // Generator-engine Elo updates already happened incrementally, per item, inside

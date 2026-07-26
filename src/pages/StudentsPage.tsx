@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -356,12 +357,7 @@ export default function StudentsPage() {
     function exportCSV() {
         const rows = filteredStudents.map((s) => ({ name: s.name, email: s.email ?? '' }));
         const csv = Papa.unparse(rows);
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'students.csv';
-        a.click();
+        saveAs(new Blob([csv], { type: 'text/csv' }), 'students.csv');
     }
 
     function exportAllSummaries() {
@@ -372,12 +368,7 @@ export default function StudentsPage() {
                 return buildStudentSummary(s.name, srs, rubrics, gradeScales, settings.defaultGradeScaleId);
             })
             .join('\n\n' + '═'.repeat(40) + '\n\n');
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `summaries_${sanitizeFilename(className)}.txt`;
-        a.click();
+        saveAs(new Blob([text], { type: 'text/plain;charset=utf-8' }), `summaries_${sanitizeFilename(className)}.txt`);
     }
 
     const summaryText = summaryStudentId

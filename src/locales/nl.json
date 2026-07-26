@@ -1233,7 +1233,11 @@
         "colleague_select_placeholder": "Selecteer een collega…",
         "colleague_none": "Nog geen collega's gevonden binnen je school.",
         "pending_days_one": "{{count}} dag in behandeling",
-        "pending_days_other": "{{count}} dagen in behandeling"
+        "pending_days_other": "{{count}} dagen in behandeling",
+        "reconcile_modal_title": "Beoordeling verzoenen",
+        "reconcile_modal_desc": "Elk criterium hieronder wordt ingesteld op het gemiddelde van de oorspronkelijke en de tweede beoordelaar's punten. Controleer het resultaat voordat je het toepast.",
+        "col_reconciled": "Verzoend",
+        "action_confirm_reconcile": "Verzoende score toepassen"
     },
     "commentBank": {
         "title": "Opmerkingenbank",
@@ -2574,7 +2578,7 @@
         "gr_cograding_body_suffix": "in de zijbalk, met een verschiloverzicht per criterium en een keuze met één klik om het oorspronkelijke cijfer te behouden of dat van de tweede beoordelaar te accepteren.",
         "gr_cograding_reconcile_body_prefix": "Een derde optie,",
         "gr_cograding_reconcile_button": "Verzoenen (gemiddelde)",
-        "gr_cograding_reconcile_body_suffix": "voegt de twee cijfers samen door op elk afwijkend criterium het gemiddelde van de punten te nemen, in plaats van het cijfer van één beoordelaar volledig te kiezen.",
+        "gr_cograding_reconcile_body_suffix": "opent een voorbeeld van het samengevoegde cijfer — het gemiddelde van de punten per afwijkend criterium — om te bevestigen voordat het wordt toegepast, in plaats van het cijfer van één beoordelaar volledig te kiezen.",
         "gr_cograding_pending_note": "De link Moderatie in de zijbalk toont een aantal openstaande geschillen, en elk item in de wachtrij toont hoeveel dagen het al wacht — oudste eerst.",
         "gr_cograding_digest_note": "Bij zelf gehoste installaties kun je een dagelijkse e-mailherinnering over openstaande geschillen inschakelen — zet \"Stuur mij een dagelijks e-mailoverzicht\" aan onder Instellingen → E-mailoverzicht (vereist dat de scheduled-digest-serverjob is ingesteld, zie docs/SELF_HOSTING_OPS.md).",
         "gr_messages_title": "Berichten",

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
+import { saveAs } from 'file-saver';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     Plus,
@@ -325,13 +326,7 @@ export default function RubricBuilder() {
             logAuditEvent('export', 'export_docx', 'rubric', rubric.id);
         } else {
             const json = JSON.stringify(rubric, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${sanitizeFilename(rubric.name)}.json`;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 100);
+            saveAs(new Blob([json], { type: 'application/json' }), `${sanitizeFilename(rubric.name)}.json`);
             logAuditEvent('export', 'export_json', 'rubric', rubric.id);
         }
     };
