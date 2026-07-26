@@ -63,10 +63,9 @@ export default function ModerationQueuePage() {
     }, [rubrics, studentRubrics, peerReviews, students, threshold, colleagueIds]);
 
     // Re-resolved from the live queue on every render (by the second-marker entry's stable
-    // id) rather than a snapshot taken when the modal opened — if the underlying baseline or
-    // peer review changes while the modal is open (e.g. a co-grader resolves it from another
-    // device), this becomes null and the modal below closes instead of confirming against
-    // stale data.
+    // id) rather than a snapshot taken when the modal opened. Changes update the live preview;
+    // if the item is removed or no longer qualifies for the queue, this becomes null and the
+    // modal closes instead of confirming against stale data.
     const reconcileTarget = useMemo(
         () => queue.find((item) => item.secondMarkerEntry.id === reconcileTargetId) ?? null,
         [queue, reconcileTargetId]
