@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Trash2, Tag, Upload, Download, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Trash2, Upload, Download, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';

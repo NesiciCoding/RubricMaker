@@ -404,7 +404,7 @@ describe('CommentBankModal', () => {
         render(<CommentBankModal onClose={vi.fn()} onSelect={mockOnSelect} />);
         const item = screen.getByText('Well done!');
         fireEvent.click(item);
-        expect(mockOnSelect).toHaveBeenCalledWith(expect.objectContaining({ text: 'Well done!' }));
+        expect(mockOnSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'cb1', text: 'Well done!' }));
     });
 
     it('searching by tag text filters correctly', () => {

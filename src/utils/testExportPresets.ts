@@ -10,17 +10,41 @@ function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: numb
     return calcTestPercentage(rawPoints + adjustmentPoints, maxPoints);
 }
 
+/** Picks the latest attempt (by attemptNumber, then by submission/start time) to represent a student with multiple practice attempts. */
+function latestAttempt(attempts: StudentTest[]): StudentTest {
+    return attempts.reduce((latest, candidate) => {
+        const latestAttemptNumber = latest.attemptNumber ?? 1;
+        const candidateAttemptNumber = candidate.attemptNumber ?? 1;
+        if (candidateAttemptNumber !== latestAttemptNumber) {
+            return candidateAttemptNumber > latestAttemptNumber ? candidate : latest;
+        }
+        const latestTime = Date.parse(latest.submittedAt ?? latest.startedAt);
+        const candidateTime = Date.parse(candidate.submittedAt ?? candidate.startedAt);
+        return candidateTime > latestTime ? candidate : latest;
+    });
+}
+
 /**
- * Whole-class CSV of test results: one row per student submission, with overall score plus
- * per-question and per-skill (linked standard/CEFR descriptor) accuracy columns — mirrors
- * ExportPage.tsx's generic full-column rubric gradebook CSV, using the same aggregation
- * helpers (calcQuestionBreakdowns/calcSkillBreakdowns) the PDF/DOCX test summaries already use.
+ * Whole-class CSV of test results: one row per student, with overall score plus per-question
+ * and per-skill (linked standard/CEFR descriptor) accuracy columns — mirrors ExportPage.tsx's
+ * generic full-column rubric gradebook CSV, using the same aggregation helpers
+ * (calcQuestionBreakdowns/calcSkillBreakdowns) the PDF/DOCX test summaries already use. A
+ * student with multiple practice attempts (Test.allowMultipleAttempts) still gets exactly one
+ * row, scored from their latest attempt.
  */
 export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], students: Student[]): string {
     const maxPoints = calcTestMaxPoints(test);
     const relevant = studentTests.filter((st) => st.testId === test.id);
 
-    const rows = relevant.map((studentTest) => {
+    const attemptsByStudent = new Map<string, StudentTest[]>();
+    for (const st of relevant) {
+        const attempts = attemptsByStudent.get(st.studentId) ?? [];
+        attempts.push(st);
+        attemptsByStudent.set(st.studentId, attempts);
+    }
+
+    const rows = Array.from(attemptsByStudent.values()).map((attempts) => {
+        const studentTest = latestAttempt(attempts);
         const student = students.find((s) => s.id === studentTest.studentId);
         const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, studentTests, test);
         const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, studentTests, test);

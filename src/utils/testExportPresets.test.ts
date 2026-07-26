@@ -35,6 +35,33 @@ const test: Test = {
 const students: Student[] = [
     { id: 's1', name: 'Jane Doe', studentNumber: '1234' } as Student,
     { id: 's2', name: 'John Roe', studentNumber: '5678' } as Student,
+    { id: 's3', name: 'Mia Lee', studentNumber: '9999' } as Student,
+];
+
+const multiAttemptStudentTests: StudentTest[] = [
+    {
+        id: 'st4-attempt1',
+        testId: 'test1',
+        studentId: 's3',
+        attemptNumber: 1,
+        answers: [{ questionId: 'q1', response: 'o1' }], // wrong, no q2 answer → 0%
+        status: 'graded',
+        startedAt: '2024-01-03T00:00:00.000Z',
+        submittedAt: '2024-01-03T00:00:00.000Z',
+    },
+    {
+        id: 'st4-attempt2',
+        testId: 'test1',
+        studentId: 's3',
+        attemptNumber: 2,
+        answers: [
+            { questionId: 'q1', response: 'o2' }, // correct
+            { questionId: 'q2', response: 'anything', pointsEarned: 1 },
+        ], // 100%
+        status: 'graded',
+        startedAt: '2024-01-04T00:00:00.000Z',
+        submittedAt: '2024-01-04T00:00:00.000Z',
+    },
 ];
 
 const studentTests: StudentTest[] = [
@@ -94,5 +121,15 @@ describe('buildTestResultsCsv', () => {
     it('computes 0% for a student who answered the scored question incorrectly', () => {
         const csv = buildTestResultsCsv(test, studentTests, students);
         expect(csv).toContain('John Roe,5678,0.0');
+    });
+
+    it('collapses multiple practice attempts by the same student into a single row, scored from the latest attempt', () => {
+        const csv = buildTestResultsCsv(test, [...studentTests, ...multiAttemptStudentTests], students);
+        const lines = csv.trim().split('\n');
+        expect(lines).toHaveLength(4); // header + s1 + s2 + s3 (not 5 — s3's two attempts collapse to one row)
+
+        const mieRows = lines.filter((line) => line.startsWith('Mia Lee,'));
+        expect(mieRows).toHaveLength(1);
+        expect(mieRows[0]).toContain('Mia Lee,9999,100.0');
     });
 });

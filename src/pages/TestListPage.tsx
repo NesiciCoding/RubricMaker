@@ -128,8 +128,9 @@ export default function TestListPage() {
             const { saveAs } = await import('file-saver');
             const { sanitizeFilename } = await import('../utils/exportDataPrep');
             saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(test.name)}_results.csv`);
+            const uniqueStudentCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
             logAuditEvent('export', 'export_test_summary_csv', 'test', test.id, {
-                count: relevantStudentTests.length,
+                count: uniqueStudentCount,
             });
         } catch {
             showToast(t('toast.export_error'), 'error');

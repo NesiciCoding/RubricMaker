@@ -71,4 +71,28 @@ describe('CommentBankManager fullPage sidebar', () => {
         expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
         expect(screen.queryByText('commentBank.sort_most_used')).not.toBeInTheDocument();
     });
+
+    it('clicking a card with onSelect passes the full CommentBankItem, not just its text', () => {
+        const onSelect = vi.fn();
+        render(<CommentBankManager onSelect={onSelect} />);
+        fireEvent.click(screen.getByText('Great use of vocabulary.'));
+        expect(onSelect).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'c1', text: 'Great use of vocabulary.', tags: ['EFL', 'B1'] })
+        );
+    });
+
+    it('"Most used" sort reorders cards by descending usageCount', () => {
+        const { container } = render(<CommentBankManager fullPage />);
+        // Newest-first (default): c2 (2026-01-02) was created after c1 (2026-01-01).
+        expect(container.textContent!.indexOf('Needs more detail.')).toBeLessThan(
+            container.textContent!.indexOf('Great use of vocabulary.')
+        );
+
+        fireEvent.click(screen.getByText('commentBank.sort_most_used'));
+
+        // Most-used-first: c1 has usageCount 3, c2 has none (treated as 0).
+        expect(container.textContent!.indexOf('Great use of vocabulary.')).toBeLessThan(
+            container.textContent!.indexOf('Needs more detail.')
+        );
+    });
 });

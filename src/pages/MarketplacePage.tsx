@@ -238,8 +238,14 @@ export default function MarketplacePage() {
                                     )
                                 )}
                             </div>
-                            <label className="text-xs text-muted">{t('marketplace.publish_select_entity')}</label>
-                            <select value={publishEntityId} onChange={(e) => setPublishEntityId(e.target.value)}>
+                            <label htmlFor="marketplace-publish-entity" className="text-xs text-muted">
+                                {t('marketplace.publish_select_entity')}
+                            </label>
+                            <select
+                                id="marketplace-publish-entity"
+                                value={publishEntityId}
+                                onChange={(e) => setPublishEntityId(e.target.value)}
+                            >
                                 <option value="">{t('marketplace.publish_select_placeholder')}</option>
                                 {publishOptions.map((entity) => (
                                     <option key={entity.id} value={entity.id}>

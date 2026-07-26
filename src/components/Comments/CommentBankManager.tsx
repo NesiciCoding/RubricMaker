@@ -369,7 +369,12 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
 
     if (fullPage) {
         return (
-            <div style={{ display: 'flex', alignItems: 'flex-start', minHeight: 0 }}>
+            // height: '100%' is load-bearing: .page-content (this component's parent) is the
+            // page's own scroll container (see index.css's .main-area/.page-content comment) —
+            // without a bounded height here, this row just grows and .page-content scrolls the
+            // whole thing, including the sidebar, instead of the sidebar and item list each
+            // scrolling independently within the available space.
+            <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
                 <aside
                     style={{
                         width: 220,
@@ -379,6 +384,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 2,
+                        overflowY: 'auto',
                     }}
                 >
                     <button
@@ -426,7 +432,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                         </button>
                     ))}
                 </aside>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
                     <div
                         style={{
                             padding: 16,
@@ -434,6 +440,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             display: 'flex',
                             gap: 12,
                             flexDirection: 'column',
+                            flexShrink: 0,
                         }}
                     >
                         {searchAndNewRow}
