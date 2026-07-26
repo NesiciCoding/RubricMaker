@@ -100,6 +100,7 @@ export default function NotificationBell() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     {(overdueItems.length > 0 || moderationItems.length > 0) && (
                         <button
+                            type="button"
                             className="btn btn-ghost btn-sm"
                             style={{ fontSize: 12, padding: '2px 8px' }}
                             onClick={clearAll}
@@ -108,6 +109,7 @@ export default function NotificationBell() {
                         </button>
                     )}
                     <button
+                        type="button"
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('common.close')}
                         onClick={() => setOpen(false)}
@@ -160,6 +162,7 @@ export default function NotificationBell() {
                             {overdueItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
                                 <button
                                     key={item.id}
+                                    type="button"
                                     onClick={() => {
                                         navigate(`/students/${item.studentId}`);
                                         setOpen(false);
@@ -209,6 +212,7 @@ export default function NotificationBell() {
                             {messageItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
                                 <button
                                     key={item.id}
+                                    type="button"
                                     onClick={() => {
                                         navigate('/messages');
                                         setOpen(false);
@@ -229,6 +233,11 @@ export default function NotificationBell() {
                                     </span>
                                 </button>
                             ))}
+                            {messageItems.length > POPOVER_ITEM_CAP && (
+                                <div style={moreStyle}>
+                                    {t('notifications.more_items', { count: messageItems.length - POPOVER_ITEM_CAP })}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -253,6 +262,7 @@ export default function NotificationBell() {
                             {moderationItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
                                 <button
                                     key={item.id}
+                                    type="button"
                                     onClick={() => {
                                         navigate('/moderation');
                                         setOpen(false);
@@ -275,6 +285,13 @@ export default function NotificationBell() {
                                     )}
                                 </button>
                             ))}
+                            {moderationItems.length > POPOVER_ITEM_CAP && (
+                                <div style={moreStyle}>
+                                    {t('notifications.more_items', {
+                                        count: moderationItems.length - POPOVER_ITEM_CAP,
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </>
@@ -282,6 +299,7 @@ export default function NotificationBell() {
 
             <div style={{ borderTop: '1px solid var(--border)' }}>
                 <button
+                    type="button"
                     className="btn btn-ghost btn-sm"
                     style={{ width: '100%', borderRadius: 0, padding: '10px 16px' }}
                     onClick={goToNotifications}
@@ -310,7 +328,7 @@ export default function NotificationBell() {
                         </div>
                     </div>
                     {permissionState !== 'denied' && (
-                        <button className="btn btn-primary btn-sm" onClick={requestPermission}>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={requestPermission}>
                             {t('notifications.enable_btn')}
                         </button>
                     )}
@@ -322,6 +340,7 @@ export default function NotificationBell() {
     return (
         <div style={{ position: 'relative' }} ref={panelRef}>
             <button
+                type="button"
                 className="btn btn-ghost btn-icon"
                 onClick={handleToggle}
                 aria-label={t('notifications.bell_title', { count })}

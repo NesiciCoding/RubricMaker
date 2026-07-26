@@ -2046,6 +2046,7 @@
         "overdue_subtitle": "{{count}} élève(s) non noté(s) depuis {{threshold}}+ jours",
         "days_ago": "il y a {{count}}j",
         "more_overdue": "+{{count}} autres",
+        "more_items": "+{{count}} autres",
         "enable_push": "Activer les notifications du navigateur",
         "enable_btn": "Activer",
         "permission_denied": "Notifications du navigateur bloquées. Autorisez-les dans les paramètres du navigateur.",

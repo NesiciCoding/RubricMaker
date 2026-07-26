@@ -2046,6 +2046,7 @@
         "overdue_subtitle": "{{count}} leerling(en) al {{threshold}}+ dagen niet nagekeken",
         "days_ago": "{{count}}d geleden",
         "more_overdue": "+{{count}} meer",
+        "more_items": "+{{count}} meer",
         "enable_push": "Browsernotificaties inschakelen",
         "enable_btn": "Inschakelen",
         "permission_denied": "Browsernotificaties geblokkeerd. Sta ze toe in de browserinstellingen.",

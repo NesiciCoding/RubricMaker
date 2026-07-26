@@ -4394,9 +4394,10 @@ $$;
 REVOKE ALL ON FUNCTION public.update_test_question_elo(text, jsonb) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.update_test_question_elo(text, jsonb) TO service_role;
 
--- ── 065_notification_dismissals.sql ──────────────────────────────────────────────────────────────
+-- ── 066_notification_dismissals.sql ──────────────────────────────────────────────────────────────
 
--- Migration 065: Notification Center (roadmap Phase 30).
+-- Migration 066: Notification Center (roadmap Phase 30).
+-- (Numbered 066/067, not 065 — 065 is taken by the concurrently-developed Phase 29 PR.)
 --
 -- 30.1: notification_dismissals is a per-owner snooze list for the two notification
 -- types that had no persisted per-item state before this (overdue grading previously
@@ -4428,6 +4429,7 @@ CREATE INDEX IF NOT EXISTS notification_dismissals_owner_idx ON public.notificat
 
 ALTER TABLE public.notification_dismissals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "notification_dismissals_owner_all" ON public.notification_dismissals;
 CREATE POLICY "notification_dismissals_owner_all"
   ON public.notification_dismissals FOR ALL
   USING      ((SELECT auth.uid()) = owner_id)
@@ -4567,6 +4569,27 @@ BEGIN
 END;
 $$;
 
+-- ── 067_notification_dismissals_realtime.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 067: Add notification_dismissals to the supabase_realtime publication.
+--
+-- Same gap 052_flashcards_realtime.sql fixed for the flashcard tables: 066 added
+-- notification_dismissals to StorageSync's client-side REALTIME_TABLES list, but
+-- never published it, so the realtime channel would subscribe to postgres_changes
+-- for a table Postgres doesn't recognize as part of the publication. Same guarded
+-- pattern as 047/052 — ALTER PUBLICATION ... ADD TABLE has no IF NOT EXISTS form
+-- and errors on a table that's already a member.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'notification_dismissals'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notification_dismissals;
+  END IF;
+END $$;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -4670,6 +4693,7 @@ insert into public._migrations (name) values
     ('062_document_comments.sql'),
     ('063_placement_sessions.sql'),
     ('064_atomic_test_question_elo.sql'),
-    ('065_notification_dismissals.sql'),
+    ('066_notification_dismissals.sql'),
+    ('067_notification_dismissals_realtime.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

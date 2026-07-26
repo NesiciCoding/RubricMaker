@@ -2046,6 +2046,7 @@
         "overdue_subtitle": "{{count}} student(s) not graded in {{threshold}}+ days",
         "days_ago": "{{count}}d ago",
         "more_overdue": "+{{count}} more",
+        "more_items": "+{{count}} more",
         "enable_push": "Enable browser notifications",
         "enable_btn": "Enable",
         "permission_denied": "Browser notifications blocked. Allow them in browser settings.",

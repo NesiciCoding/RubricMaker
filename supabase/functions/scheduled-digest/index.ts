@@ -1,6 +1,6 @@
 // Edge Function: scheduled-digest
 // Triggered nightly by pg_cron's net.http_post (see migration 059_scheduled_digest.sql).
-// Extended in migration 065 (roadmap 30.2) from a single moderation-only digest to three
+// Extended in migration 066 (roadmap 30.2) from a single moderation-only digest to three
 // independent per-category opt-ins (moderation disputes, overdue grading, unread student
 // messages — the same three the in-app Notification Center surfaces). For every teacher/
 // admin who opted into at least one category and has a non-zero count in at least one of

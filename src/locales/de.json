@@ -2046,6 +2046,7 @@
         "overdue_subtitle": "{{count}} Schüler seit {{threshold}}+ Tagen nicht benotet",
         "days_ago": "vor {{count}}T",
         "more_overdue": "+{{count}} weitere",
+        "more_items": "+{{count}} weitere",
         "enable_push": "Browser-Benachrichtigungen aktivieren",
         "enable_btn": "Aktivieren",
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",

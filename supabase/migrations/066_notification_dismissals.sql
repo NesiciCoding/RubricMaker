@@ -1,4 +1,5 @@
--- Migration 065: Notification Center (roadmap Phase 30).
+-- Migration 066: Notification Center (roadmap Phase 30).
+-- (Numbered 066/067, not 065 — 065 is taken by the concurrently-developed Phase 29 PR.)
 --
 -- 30.1: notification_dismissals is a per-owner snooze list for the two notification
 -- types that had no persisted per-item state before this (overdue grading previously
@@ -30,6 +31,7 @@ CREATE INDEX IF NOT EXISTS notification_dismissals_owner_idx ON public.notificat
 
 ALTER TABLE public.notification_dismissals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "notification_dismissals_owner_all" ON public.notification_dismissals;
 CREATE POLICY "notification_dismissals_owner_all"
   ON public.notification_dismissals FOR ALL
   USING      ((SELECT auth.uid()) = owner_id)

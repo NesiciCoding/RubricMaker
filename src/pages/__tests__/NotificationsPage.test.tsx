@@ -188,4 +188,27 @@ describe('NotificationsPage', () => {
         expect(mockDismissAll).not.toHaveBeenCalledWith('moderation_pending');
         expect(mockMarkThreadRead).not.toHaveBeenCalled();
     });
+
+    it('clear-all under the "all" filter never marks messages read', async () => {
+        mockFeed = {
+            items: [overdueItem, messageItem, moderationItem],
+            overdueItems: [overdueItem],
+            messageItems: [messageItem],
+            moderationItems: [moderationItem],
+        };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        fireEvent.click(screen.getByText('notifications.clear_all'));
+        expect(mockDismissAll).toHaveBeenCalledWith('overdue_grading');
+        expect(mockDismissAll).toHaveBeenCalledWith('moderation_pending');
+        expect(mockMarkThreadRead).not.toHaveBeenCalled();
+    });
+
+    it('hides the clear-all button on the messages-only filter, since nothing there is bulk-dismissible', async () => {
+        mockFeed = { items: [messageItem], overdueItems: [], messageItems: [messageItem], moderationItems: [] };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        fireEvent.click(screen.getByText('notifications.filter_unread_message'));
+        expect(screen.queryByText('notifications.clear_all')).not.toBeInTheDocument();
+    });
 });

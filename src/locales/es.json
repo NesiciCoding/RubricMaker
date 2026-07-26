@@ -2046,6 +2046,7 @@
         "overdue_subtitle": "{{count}} estudiante(s) sin calificar en {{threshold}}+ días",
         "days_ago": "Hace {{count}}d",
         "more_overdue": "+{{count}} más",
+        "more_items": "+{{count}} más",
         "enable_push": "Habilitar notificaciones del navegador",
         "enable_btn": "Habilitar",
         "permission_denied": "Notificaciones del navegador bloqueadas. Permítelas en la configuración del navegador.",

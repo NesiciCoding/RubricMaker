@@ -39,11 +39,16 @@ export default function NotificationsPage() {
         return '/moderation';
     }
 
+    // Deliberately never bulk-marks unread messages as read — same rationale as
+    // NotificationBell's clearAll: Message.readByTeacher is real, synced state, so
+    // clearing it is a deliberate per-thread action (the "Mark read" button below),
+    // not something a broad "Clear all" click should do silently and irreversibly.
     function handleClearVisible() {
         if (filter === 'all' || filter === 'overdue_grading') dismissAll('overdue_grading');
         if (filter === 'all' || filter === 'moderation_pending') dismissAll('moderation_pending');
-        if (filter === 'all' || filter === 'unread_message') messageItems.forEach((item) => markThreadRead(item));
     }
+
+    const canClearVisible = filter !== 'unread_message' && filtered.length > 0;
 
     return (
         <>
@@ -54,6 +59,7 @@ export default function NotificationsPage() {
                         <button
                             key={kind}
                             type="button"
+                            aria-pressed={filter === kind}
                             className={`btn btn-sm ${filter === kind ? 'btn-primary' : 'btn-secondary'}`}
                             onClick={() => setFilter(kind)}
                         >
@@ -71,7 +77,7 @@ export default function NotificationsPage() {
                             )}
                         </button>
                     ))}
-                    {filtered.length > 0 && (
+                    {canClearVisible && (
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm"
