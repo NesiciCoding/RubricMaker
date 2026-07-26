@@ -1235,7 +1235,7 @@
         "pending_days_one": "{{count}} dag in behandeling",
         "pending_days_other": "{{count}} dagen in behandeling",
         "reconcile_modal_title": "Beoordeling verzoenen",
-        "reconcile_modal_desc": "Elk criterium hieronder wordt ingesteld op het gemiddelde van de oorspronkelijke en de tweede beoordelaar's punten. Controleer het resultaat voordat je het toepast.",
+        "reconcile_modal_desc": "Elk criterium hieronder wordt ingesteld op het gemiddelde van de punten van de oorspronkelijke beoordeling en die van de tweede beoordelaar. Controleer het resultaat voordat je het toepast.",
         "col_reconciled": "Verzoend",
         "action_confirm_reconcile": "Verzoende score toepassen"
     },

@@ -10,7 +10,15 @@
 -- This RPC instead does the read-and-rewrite of the `questions` array inside a single
 -- UPDATE statement, so Postgres' row lock on the target `tests` row serializes concurrent
 -- calls — the second caller's subquery re-reads the row only after the first has
--- committed, instead of both racing off the same client-side snapshot.
+-- committed. Critically, the *new* rating is also computed inside that same locked
+-- subquery from the row's current eloRating, rather than being handed a client-precomputed
+-- absolute value: an absolute replacement would still lose an update when two submissions
+-- touch the *same* question, since the second caller's precomputed value is only correct
+-- against the pre-lock snapshot it read before waiting on the lock, not the first caller's
+-- now-committed result. Callers instead pass the replay inputs (opponent rating, correct
+-- flag) and the delta is applied against whatever eloRating the row actually holds at
+-- update time — mirrors updateItemElo()/eloExpectedScore() in
+-- supabase/functions/submit-test/index.ts (and src/utils/placementStaircase.ts).
 
 CREATE OR REPLACE FUNCTION public.update_test_question_elo(p_test_id text, p_updates jsonb)
 RETURNS void
@@ -19,11 +27,15 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_ratings jsonb;
+  v_inputs jsonb;
 BEGIN
-  -- p_updates: [{ questionId: text, eloRating: number }, ...] -> { questionId: eloRating }
-  SELECT jsonb_object_agg(u ->> 'questionId', u -> 'eloRating')
-  INTO v_ratings
+  -- p_updates: [{ questionId: text, opponentRating: number, correct: boolean }, ...]
+  -- -> { questionId: { opponentRating, correct } }
+  SELECT jsonb_object_agg(
+    u ->> 'questionId',
+    jsonb_build_object('opponentRating', u -> 'opponentRating', 'correct', u -> 'correct')
+  )
+  INTO v_inputs
   FROM jsonb_array_elements(p_updates) AS u;
 
   UPDATE public.tests
@@ -34,7 +46,25 @@ BEGIN
       (
         SELECT jsonb_agg(
           CASE
-            WHEN v_ratings ? (q ->> 'id') THEN jsonb_set(q, '{eloRating}', v_ratings -> (q ->> 'id'))
+            WHEN v_inputs ? (q ->> 'id') THEN jsonb_set(
+              q,
+              '{eloRating}',
+              to_jsonb(
+                COALESCE((q ->> 'eloRating')::numeric, 1200)
+                - 24 * (
+                    (CASE WHEN (v_inputs -> (q ->> 'id') ->> 'correct')::boolean THEN 1 ELSE 0 END)
+                    - 1.0 / (
+                        1 + power(
+                          10::numeric,
+                          (
+                            COALESCE((q ->> 'eloRating')::numeric, 1200)
+                            - (v_inputs -> (q ->> 'id') ->> 'opponentRating')::numeric
+                          ) / 400.0
+                        )
+                      )
+                  )
+              )
+            )
             ELSE q
           END
           ORDER BY ord

@@ -30,7 +30,7 @@ export default function ModerationQueuePage() {
     const dbStatus = useDbStatus();
     const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_POINTS);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
-    const [reconcileTarget, setReconcileTarget] = useState<ModerationQueueItem | null>(null);
+    const [reconcileTargetId, setReconcileTargetId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!dbStatus.isConnected || !settings.schoolId) {
@@ -62,6 +62,16 @@ export default function ModerationQueuePage() {
         );
     }, [rubrics, studentRubrics, peerReviews, students, threshold, colleagueIds]);
 
+    // Re-resolved from the live queue on every render (by the second-marker entry's stable
+    // id) rather than a snapshot taken when the modal opened — if the underlying baseline or
+    // peer review changes while the modal is open (e.g. a co-grader resolves it from another
+    // device), this becomes null and the modal below closes instead of confirming against
+    // stale data.
+    const reconcileTarget = useMemo(
+        () => queue.find((item) => item.secondMarkerEntry.id === reconcileTargetId) ?? null,
+        [queue, reconcileTargetId]
+    );
+
     function pendingDays(item: ModerationQueueItem): number | null {
         if (!item.secondMarkerEntry.gradedAt) return null;
         return Math.floor((Date.now() - new Date(item.secondMarkerEntry.gradedAt).getTime()) / 86_400_000);
@@ -87,7 +97,7 @@ export default function ModerationQueuePage() {
     function resolveReconcile(item: ModerationQueueItem) {
         saveStudentRubric({ ...item.baseline, entries: buildReconciledEntries(item) });
         deletePeerReview(item.secondMarkerEntry.id);
-        setReconcileTarget(null);
+        setReconcileTargetId(null);
     }
 
     return (
@@ -239,7 +249,7 @@ export default function ModerationQueuePage() {
                                         <button
                                             type="button"
                                             className="btn btn-primary btn-sm"
-                                            onClick={() => setReconcileTarget(item)}
+                                            onClick={() => setReconcileTargetId(item.secondMarkerEntry.id)}
                                         >
                                             {t('coGrading.action_reconcile')}
                                         </button>
@@ -255,7 +265,7 @@ export default function ModerationQueuePage() {
                 <ReconcileModal
                     item={reconcileTarget}
                     onConfirm={() => resolveReconcile(reconcileTarget)}
-                    onClose={() => setReconcileTarget(null)}
+                    onClose={() => setReconcileTargetId(null)}
                 />
             )}
         </>

@@ -16,7 +16,14 @@ const DISMISSED_OVERDUE_KEY = 'rubricmaker_dismissed_overdue';
 function readDismissedOverdue(): Record<string, string> {
     try {
         const raw = localStorage.getItem(DISMISSED_OVERDUE_KEY);
-        return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+        if (!raw) return {};
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+        const result: Record<string, string> = {};
+        for (const [studentId, lastGradedAt] of Object.entries(parsed)) {
+            if (typeof lastGradedAt === 'string') result[studentId] = lastGradedAt;
+        }
+        return result;
     } catch {
         return {};
     }
@@ -94,9 +101,9 @@ export default function NotificationBell() {
     }, []);
 
     const [dismissed, setDismissed] = useState<Record<string, string>>(() => readDismissedOverdue());
-    const count = overdueStudents.length + unreadThreads.length;
     const visible = overdueStudents.filter((s) => dismissed[s.studentId] !== s.lastGradedAt);
     const visibleCount = visible.length;
+    const count = visibleCount + unreadThreads.length;
 
     const handleToggle = () => {
         setOpen((v) => !v);
