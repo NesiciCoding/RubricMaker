@@ -702,8 +702,12 @@ export interface AppSettings {
     notifyStudentsOnGrade?: boolean;
     /** Whether to send an email notification to the student when a teacher replies to/starts a message thread (Supabase mode only). */
     notifyStudentsOnMessage?: boolean;
-    /** Whether to receive a nightly email digest (currently: pending moderation-queue disputes) via pg_cron. Supabase mode only. */
+    /** Whether to receive a nightly email digest of pending moderation-queue disputes via pg_cron. Supabase mode only. */
     digestEmailEnabled?: boolean;
+    /** Whether to receive a nightly email digest of overdue-grading students via pg_cron (roadmap 30.2). Supabase mode only; defaults off — distinct opt-in from digestEmailEnabled. */
+    digestOverdueGradingEnabled?: boolean;
+    /** Whether to receive a nightly email digest of unread student messages via pg_cron (roadmap 30.2). Supabase mode only; defaults off — distinct opt-in from digestEmailEnabled. */
+    digestUnreadMessagesEnabled?: boolean;
     /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
     dyslexiaFriendlyMode?: boolean;
 }
@@ -880,6 +884,23 @@ export interface Message {
     createdAt: string;
     readByTeacher: boolean;
     readByStudent: boolean;
+}
+
+/**
+ * A per-owner snooze for a notification-center item (roadmap 30.1). Only overdue-grading
+ * and moderation-pending need this — unread messages already have real per-message state
+ * (Message.readByTeacher). `fingerprint` is compared against the notification's current
+ * fingerprint (e.g. a student's lastGradedAt) at read time; a mismatch means the dismissed
+ * instance has passed and the notification should reappear.
+ */
+export type NotificationDismissalType = 'overdue_grading' | 'moderation_pending';
+
+export interface NotificationDismissal {
+    id: string; // `${type}:${entityId}`
+    type: NotificationDismissalType;
+    entityId: string;
+    fingerprint: string;
+    dismissedAt: string;
 }
 
 export interface StudentEssayAssignmentSummary {

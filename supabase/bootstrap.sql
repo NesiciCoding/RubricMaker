@@ -3913,6 +3913,660 @@ SELECT cron.schedule(
   $$
 );
 
+-- ── 060_marketplace_kind.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 060: Marketplace tests & flashcard decks (roadmap 24.4)
+--
+-- Extends the rubric-only marketplace (040/043) to also list tests and
+-- flashcard decks, reusing the same table and snapshot column rather than
+-- adding two more near-identical tables — the listing/upvote/RLS machinery
+-- is entity-agnostic already. `rubric_snapshot` keeps its name for existing
+-- rows/back-compat, but now holds a Rubric, Test, or FlashcardDeck depending
+-- on `kind` (mapped to a generically-named `snapshot` field client-side).
+
+ALTER TABLE public.marketplace_listings
+  ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'rubric';
+
+ALTER TABLE public.marketplace_listings
+  ADD CONSTRAINT marketplace_listings_kind_check CHECK (kind IN ('rubric', 'test', 'deck')) NOT VALID;
+
+ALTER TABLE public.marketplace_listings
+  VALIDATE CONSTRAINT marketplace_listings_kind_check;
+
+-- ── 061_question_bank.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 061: Question bank (roadmap 24.1).
+--
+-- Reusable test questions saved outside any one test. Teacher-owned only (no
+-- student read/write), same shape as standard_mastery_targets (054): one
+-- jsonb-doc table, owner-only RLS. No school-shared read path yet (see the
+-- ponytail note on SupabaseAdapter's question-bank methods).
+
+CREATE TABLE IF NOT EXISTS public.question_bank_items (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS question_bank_items_owner_idx ON public.question_bank_items(owner_id);
+
+ALTER TABLE public.question_bank_items ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "question_bank_items_owner_all"
+  ON public.question_bank_items FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Full replacement of export_owner_backup (058, last extended by 057) — same body
+-- plus question_bank_items appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('question_bank_items',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.question_bank_items t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 062_document_comments.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 062: Inline anchored comments on graded documents (roadmap 26.3).
+--
+-- Grading-side annotations on the read-only, paginated document view introduced in
+-- 26.1/26.2 (essay + DOCX attachments rendered through CommentableDocumentView).
+-- Owner-only, same shape as question_bank_items (061): one jsonb-doc table,
+-- owner-only RLS. No student read/write path — comments are grading-side only.
+
+CREATE TABLE IF NOT EXISTS public.document_comments (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS document_comments_owner_idx ON public.document_comments(owner_id);
+
+ALTER TABLE public.document_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "document_comments_owner_all"
+  ON public.document_comments FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- Full replacement of export_owner_backup (061, last extended by question_bank_items)
+-- — same body plus document_comments appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('question_bank_items',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.question_bank_items t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('document_comments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.document_comments t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 063_placement_sessions.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 063: Live placement generator sessions (roadmap Phase 27.1/27.2).
+--
+-- Server-authoritative per-(assignment,student) run state for a generator-engine
+-- placement test (Test.placementEngine === 'generator'): unlike 'mst'/'staircase',
+-- a generator test has no pre-authored sections/questions — every question is pulled
+-- live from question_bank_items at runtime by the next-placement-question edge
+-- function, which owns this table exclusively via the service role key. Also carries
+-- the one-shot teacher level nudge (27.2) consumed by the next pick.
+--
+-- One row per test_assignments row (1:1, same cardinality as essay_assignments'
+-- mirrored student-scoped rows). Students never get direct table access — all
+-- mutations go through next-placement-question (service role) or the
+-- set_placement_override() RPC below. Teachers get read-only access, for a
+-- persisted fallback view (27.3) alongside the live Realtime broadcast.
+
+CREATE TABLE IF NOT EXISTS public.placement_sessions (
+  id                  TEXT PRIMARY KEY,                    -- = assignment_id (1:1)
+  owner_id            UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  assignment_id       TEXT NOT NULL UNIQUE REFERENCES public.test_assignments(id) ON DELETE CASCADE,
+  student_user_id     UUID NOT NULL,
+  -- The level the run actually started from (the configured range's midpoint, or a
+  -- teacher-preselected starter bank item's own level, clamped into range) — fixed for the
+  -- life of the session and re-used as computeState's replay baseline on every call, since
+  -- it may differ from generatorConfig's range midpoint.
+  start_level         TEXT NOT NULL,
+  current_level       TEXT NOT NULL,
+  -- The bank item/question currently shown but not yet answered; NULL once
+  -- answered-and-advanced or the run has converged. Lets a page reload re-fetch the
+  -- same pending question idempotently instead of drawing a fresh one.
+  -- Shape: { bankItemId, kind: 'question'|'section', questionId, sectionQuestionIndex? }
+  pending             JSONB,
+  level_path          JSONB NOT NULL DEFAULT '[]'::jsonb,   -- StaircaseStep[]
+  -- Full TestQuestion snapshots for every step in level_path, in the same order —
+  -- generator questions are pulled from the bank at runtime and never authored into
+  -- tests.data.questions, so student_tests needs its own copy for review/grading
+  -- (TestResultsPage) once submitted. Copied onto the student_tests row at submit time.
+  asked_questions     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  asked_item_ids      TEXT[] NOT NULL DEFAULT '{}',
+  -- One-shot teacher nudge (27.2): 'up' | 'down' | NULL, consumed and cleared by the
+  -- very next next-placement-question pick.
+  override_direction  TEXT CHECK (override_direction IN ('up', 'down')),
+  status              TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'converged', 'submitted')),
+  -- Sliding-window rate limit for next-placement-question, scoped to this session rather
+  -- than a global per-user table (there's no natural per-call log table to count against,
+  -- unlike submit-test's once-per-attempt student_tests count).
+  rate_window_start   TIMESTAMPTZ,
+  rate_window_count   INTEGER NOT NULL DEFAULT 0,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS placement_sessions_owner_idx ON public.placement_sessions(owner_id);
+
+ALTER TABLE public.placement_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Teacher: read-only. All writes go through the service-role edge function or the
+-- scoped RPC below.
+DROP POLICY IF EXISTS "placement_sessions_owner_select" ON public.placement_sessions;
+CREATE POLICY "placement_sessions_owner_select"
+  ON public.placement_sessions FOR SELECT
+  USING ((SELECT auth.uid()) = owner_id);
+
+-- Scoped write: lets a teacher set the one-shot next-question override (27.2)
+-- without any broader UPDATE grant on the table. Raises (rather than silently
+-- no-op'ing) when nothing matched, so a wrong assignmentId or non-owner caller
+-- surfaces as a failed call instead of the teacher UI reporting a nudge that was
+-- never actually recorded.
+CREATE OR REPLACE FUNCTION public.set_placement_override(p_assignment_id text, p_direction text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_direction NOT IN ('up', 'down') THEN
+    RAISE EXCEPTION 'invalid direction: %', p_direction;
+  END IF;
+  UPDATE public.placement_sessions
+  SET override_direction = p_direction, updated_at = now()
+  WHERE assignment_id = p_assignment_id AND owner_id = (SELECT auth.uid());
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'no placement session for assignment %', p_assignment_id;
+  END IF;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.set_placement_override(text, text) TO authenticated;
+
+-- Full replacement of export_owner_backup (062, last extended by document_comments)
+-- — same body plus placement_sessions appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('question_bank_items',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.question_bank_items t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('document_comments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.document_comments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('placement_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.placement_sessions t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 064_atomic_test_question_elo.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 064: Atomic per-question Elo rating update for submit-test (roadmap 28.4).
+--
+-- submit-test previously read the whole tests.data JSONB blob, mutated the eloRating
+-- field of the questions touched by a submission's staircase levelPath in JS, and wrote
+-- the whole blob back — a classic read-modify-write race. Two students submitting the
+-- same staircase placement test around the same time (the 25.4 use case: a whole class
+-- taking a placement test in one sitting) could have the second write silently discard
+-- the first submission's rating changes.
+--
+-- This RPC instead does the read-and-rewrite of the `questions` array inside a single
+-- UPDATE statement, so Postgres' row lock on the target `tests` row serializes concurrent
+-- calls — the second caller's subquery re-reads the row only after the first has
+-- committed. Critically, the *new* rating is also computed inside that same locked
+-- subquery from the row's current eloRating, rather than being handed a client-precomputed
+-- absolute value: an absolute replacement would still lose an update when two submissions
+-- touch the *same* question, since the second caller's precomputed value is only correct
+-- against the pre-lock snapshot it read before waiting on the lock, not the first caller's
+-- now-committed result. Callers instead pass the replay inputs (opponent rating, correct
+-- flag) and the delta is applied against whatever eloRating the row actually holds at
+-- update time — mirrors updateItemElo()/eloExpectedScore() in
+-- supabase/functions/submit-test/index.ts (and src/utils/placementStaircase.ts).
+
+CREATE OR REPLACE FUNCTION public.update_test_question_elo(p_test_id text, p_updates jsonb)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_inputs jsonb;
+BEGIN
+  -- p_updates: [{ questionId: text, opponentRating: number, correct: boolean }, ...]
+  -- -> { questionId: { opponentRating, correct } }
+  SELECT jsonb_object_agg(
+    u ->> 'questionId',
+    jsonb_build_object('opponentRating', u -> 'opponentRating', 'correct', u -> 'correct')
+  )
+  INTO v_inputs
+  FROM jsonb_array_elements(p_updates) AS u;
+
+  UPDATE public.tests
+  SET data = jsonb_set(
+    data,
+    '{questions}',
+    COALESCE(
+      (
+        SELECT jsonb_agg(
+          CASE
+            WHEN v_inputs ? (q ->> 'id') THEN jsonb_set(
+              q,
+              '{eloRating}',
+              to_jsonb(
+                COALESCE((q ->> 'eloRating')::numeric, 1200)
+                - 24 * (
+                    (CASE WHEN (v_inputs -> (q ->> 'id') ->> 'correct')::boolean THEN 1 ELSE 0 END)
+                    - 1.0 / (
+                        1 + power(
+                          10::numeric,
+                          (
+                            COALESCE((q ->> 'eloRating')::numeric, 1200)
+                            - (v_inputs -> (q ->> 'id') ->> 'opponentRating')::numeric
+                          ) / 400.0
+                        )
+                      )
+                  )
+              )
+            )
+            ELSE q
+          END
+          ORDER BY ord
+        )
+        FROM jsonb_array_elements(data -> 'questions') WITH ORDINALITY AS t(q, ord)
+      ),
+      data -> 'questions'
+    )
+  )
+  WHERE id = p_test_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'test % not found', p_test_id;
+  END IF;
+END;
+$$;
+
+-- Only callable by service_role (the edge-function runtime) — mirrors get_overdue_attachments.
+REVOKE ALL ON FUNCTION public.update_test_question_elo(text, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.update_test_question_elo(text, jsonb) TO service_role;
+
+-- ── 065_notification_dismissals.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 065: Notification Center (roadmap Phase 30).
+--
+-- 30.1: notification_dismissals is a per-owner snooze list for the two notification
+-- types that had no persisted per-item state before this (overdue grading previously
+-- used a localStorage-only dismissal, Phase 28.1; moderation-pending had no dismiss
+-- concept at all). Unread messages need no new state here — Message.read_by_teacher
+-- (050_messages.sql) is already real, owner-scoped, cross-device state, so "dismissing"
+-- a message notification is just marking the message read via the existing path.
+--
+-- A dismissal is a snooze, not a resolve: it hides the notification until `fingerprint`
+-- changes (e.g. the student is graded again and later goes overdue again; the second-
+-- marker entry is re-submitted), mirroring the lastGradedAt-keyed dismissal semantics
+-- Phase 28.1 established. id = '<type>:<entityId>' — globally unique since student ids
+-- and student_rubrics ids are already unique across the whole app, not just per owner.
+--
+-- 30.2: get_overdue_grading_count()/get_unread_messages_count() extend the per-category
+-- digest count helpers alongside the existing get_pending_moderation_count() (059).
+
+-- ── 1. notification_dismissals table ─────────────────────────────────────────────
+-- Same jsonb-doc shape as document_comments (062)/question_bank_items (061): one
+-- table, owner-only RLS, no columns beyond id/owner_id needed since nothing here is
+-- queried by type/entity_id server-side — the client reads the whole owner-scoped set.
+
+CREATE TABLE IF NOT EXISTS public.notification_dismissals (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notification_dismissals_owner_idx ON public.notification_dismissals(owner_id);
+
+ALTER TABLE public.notification_dismissals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notification_dismissals_owner_all"
+  ON public.notification_dismissals FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- ── 2. Digest count helpers (30.2), same SECURITY DEFINER/service_role-only shape ──
+-- as get_pending_moderation_count (059_scheduled_digest.sql).
+
+-- Mirrors useOverdueStudents.ts: most-recent graded_at per student (ISO-8601 strings,
+-- so lexicographic MAX matches chronological MAX, same assumption messageThreads.ts's
+-- createdAt.localeCompare sort already relies on), compared against the owner's own
+-- Settings.overdueReminderThreshold (default 7, matching the client default).
+CREATE OR REPLACE FUNCTION public.get_overdue_grading_count(target_owner uuid)
+RETURNS int
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH threshold AS (
+    SELECT COALESCE(
+      (SELECT (settings->>'overdueReminderThreshold')::int FROM public.user_settings WHERE user_id = target_owner),
+      7
+    ) AS days
+  ),
+  last_graded AS (
+    SELECT student_id, MAX(data->>'gradedAt') AS graded_at
+    FROM public.student_rubrics
+    WHERE grader_id = target_owner AND is_peer_review = false AND data->>'gradedAt' IS NOT NULL
+    GROUP BY student_id
+  )
+  SELECT count(*)::int
+  FROM last_graded, threshold
+  WHERE graded_at::timestamptz < now() - (threshold.days || ' days')::interval;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_overdue_grading_count(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_overdue_grading_count(uuid) TO service_role;
+
+-- Mirrors groupMessageThreads()/countUnreadByTeacher() (messageThreads.ts): counts
+-- distinct (student_id, context_type, context_id) threads with at least one unread
+-- student message, not raw unread message rows.
+CREATE OR REPLACE FUNCTION public.get_unread_messages_count(target_owner uuid)
+RETURNS int
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT count(DISTINCT (student_id, context_type, context_id))::int
+  FROM public.messages
+  WHERE owner_id = target_owner AND sender = 'student' AND read_by_teacher = false;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_unread_messages_count(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_unread_messages_count(uuid) TO service_role;
+
+-- ── 3. Include notification_dismissals in the nightly owner backup ─────────────
+-- Full replacement of export_owner_backup (063 was the last to touch it), same body
+-- plus the new table appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('question_bank_items',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.question_bank_items t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('document_comments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.document_comments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('placement_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.placement_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('notification_dismissals',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.notification_dismissals t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -4011,5 +4665,11 @@ insert into public._migrations (name) values
     ('057_news_flashes.sql'),
     ('058_rubric_versions.sql'),
     ('059_scheduled_digest.sql'),
+    ('060_marketplace_kind.sql'),
+    ('061_question_bank.sql'),
+    ('062_document_comments.sql'),
+    ('063_placement_sessions.sql'),
+    ('064_atomic_test_question_elo.sql'),
+    ('065_notification_dismissals.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

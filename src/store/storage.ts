@@ -33,6 +33,7 @@ import type {
     QuestionBankItem,
     StaircaseStep,
     DocumentComment,
+    NotificationDismissal,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -908,6 +909,7 @@ const KEYS = {
     newsFlashReads: 'rm_news_flash_reads',
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
+    notificationDismissals: 'rm_notification_dismissals',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
@@ -1056,6 +1058,7 @@ export interface StoreData {
     newsFlashReads: NewsFlashRead[];
     questionBank: QuestionBankItem[];
     documentComments: DocumentComment[];
+    notificationDismissals: NotificationDismissal[];
 }
 
 export function loadStore(): StoreData {
@@ -1102,6 +1105,7 @@ export function loadStore(): StoreData {
         newsFlashReads: load<NewsFlashRead[]>(KEYS.newsFlashReads, []),
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
         documentComments: load<DocumentComment[]>(KEYS.documentComments, []),
+        notificationDismissals: load<NotificationDismissal[]>(KEYS.notificationDismissals, []),
     };
 }
 
@@ -1225,6 +1229,9 @@ export function saveQuestionBank(items: QuestionBankItem[]) {
 }
 export function saveDocumentComments(comments: DocumentComment[]) {
     save(KEYS.documentComments, comments);
+}
+export function saveNotificationDismissals(dismissals: NotificationDismissal[]) {
+    save(KEYS.notificationDismissals, dismissals);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -1546,6 +1553,20 @@ export function importFullBackup(json: string): boolean {
             )
                 saveDocumentComments(data.documentComments as DocumentComment[]);
             else console.warn('[importFullBackup] documentComments failed validation — skipped');
+        }
+        if (data.notificationDismissals !== undefined) {
+            if (
+                Array.isArray(data.notificationDismissals) &&
+                data.notificationDismissals.every(
+                    (d) =>
+                        isPlainObject(d) &&
+                        typeof (d as Record<string, unknown>).id === 'string' &&
+                        typeof (d as Record<string, unknown>).type === 'string' &&
+                        typeof (d as Record<string, unknown>).entityId === 'string'
+                )
+            )
+                saveNotificationDismissals(data.notificationDismissals as NotificationDismissal[]);
+            else console.warn('[importFullBackup] notificationDismissals failed validation — skipped');
         }
         return true;
     } catch (e) {

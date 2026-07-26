@@ -217,6 +217,12 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (c: { id: string }) => c.id,
         getUpdatedAt: (c: { updatedAt?: string }) => c.updatedAt,
     },
+    {
+        key: 'notificationDismissals',
+        entity: 'notificationDismissal',
+        getId: (d: { id: string }) => d.id,
+        getUpdatedAt: (d: { dismissedAt?: string }) => d.dismissedAt,
+    },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {

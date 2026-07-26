@@ -1,51 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Bell, X, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
+import { Bell, X, AlertCircle, CheckCircle2, Mail, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useOverdueStudents } from '../../hooks/useOverdueStudents';
-import { useApp } from '../../context/AppContext';
-import { groupMessageThreads } from '../../utils/messageThreads';
+import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 
 const SESSION_NOTIF_KEY = 'rubricmaker_notif_shown';
-const DISMISSED_OVERDUE_KEY = 'rubricmaker_dismissed_overdue';
 
-// studentId -> lastGradedAt at the time of dismissal, so a dismissal only suppresses
-// *this* overdue instance — once the student is graded again and later goes overdue
-// again, lastGradedAt no longer matches and the notification reappears.
-function readDismissedOverdue(): Record<string, string> {
-    try {
-        const raw = localStorage.getItem(DISMISSED_OVERDUE_KEY);
-        if (!raw) return {};
-        const parsed: unknown = JSON.parse(raw);
-        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-        const result: Record<string, string> = {};
-        for (const [studentId, lastGradedAt] of Object.entries(parsed)) {
-            if (typeof lastGradedAt === 'string') result[studentId] = lastGradedAt;
-        }
-        return result;
-    } catch {
-        return {};
-    }
-}
-
-function writeDismissedOverdue(dismissed: Record<string, string>) {
-    try {
-        localStorage.setItem(DISMISSED_OVERDUE_KEY, JSON.stringify(dismissed));
-    } catch {
-        // localStorage unavailable (private browsing, quota) — dismissal just won't persist.
-    }
-}
+const POPOVER_ITEM_CAP = 5;
 
 export default function NotificationBell() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { overdueStudents, threshold } = useOverdueStudents();
-    const { messages, students } = useApp();
-    const unreadThreads = useMemo(
-        () => groupMessageThreads(messages ?? []).filter((thread) => thread.unreadByTeacher > 0),
-        [messages]
-    );
+    const { overdueItems, messageItems, moderationItems, count, threshold, dismissAll } = useNotificationFeed();
     const [open, setOpen] = useState(false);
     const [permissionState, setPermissionState] = useState<NotificationPermission | 'unsupported'>('unsupported');
     const panelRef = useRef<HTMLDivElement>(null);
@@ -69,17 +36,17 @@ export default function NotificationBell() {
 
     // Fire a browser notification once per session if there are overdue items
     useEffect(() => {
-        if (overdueStudents.length === 0) return;
+        if (overdueItems.length === 0) return;
         if (!('Notification' in window)) return;
         if (Notification.permission !== 'granted') return;
         if (sessionStorage.getItem(SESSION_NOTIF_KEY)) return;
 
         sessionStorage.setItem(SESSION_NOTIF_KEY, '1');
         new Notification(t('notifications.browser_title'), {
-            body: t('notifications.browser_body', { count: overdueStudents.length, threshold }),
+            body: t('notifications.browser_body', { count: overdueItems.length, threshold }),
             icon: '/favicon.ico',
         });
-    }, [overdueStudents.length, threshold, t]);
+    }, [overdueItems.length, threshold, t]);
 
     // Close on outside click
     useEffect(() => {
@@ -100,20 +67,21 @@ export default function NotificationBell() {
         setPermissionState(result);
     }, []);
 
-    const [dismissed, setDismissed] = useState<Record<string, string>>(() => readDismissedOverdue());
-    const visible = overdueStudents.filter((s) => dismissed[s.studentId] !== s.lastGradedAt);
-    const visibleCount = visible.length;
-    const count = visibleCount + unreadThreads.length;
-
     const handleToggle = () => {
         setOpen((v) => !v);
     };
 
+    // Bulk-clears the two dismissible types shown here; unread messages aren't
+    // included since "clearing" one means marking it read, a real action a teacher
+    // should take deliberately from the message thread or the Notifications page.
     const clearAll = () => {
-        const next = { ...dismissed };
-        for (const s of overdueStudents) next[s.studentId] = s.lastGradedAt;
-        setDismissed(next);
-        writeDismissedOverdue(next);
+        dismissAll('overdue_grading');
+        dismissAll('moderation_pending');
+    };
+
+    const goToNotifications = () => {
+        navigate('/notifications');
+        setOpen(false);
     };
 
     const notificationPanelContent = (
@@ -130,7 +98,7 @@ export default function NotificationBell() {
             >
                 <span style={{ fontWeight: 600, fontSize: 14 }}>{t('notifications.panel_title')}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {visibleCount > 0 && (
+                    {(overdueItems.length > 0 || moderationItems.length > 0) && (
                         <button
                             className="btn btn-ghost btn-sm"
                             style={{ fontSize: 12, padding: '2px 8px' }}
@@ -149,157 +117,178 @@ export default function NotificationBell() {
                 </div>
             </div>
 
-            {/* Overdue list */}
-            <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-                {count === 0 || visibleCount === 0 ? (
-                    <div
+            {count === 0 ? (
+                <div
+                    style={{
+                        padding: '20px 16px',
+                        textAlign: 'center',
+                        color: 'var(--text-muted)',
+                        fontSize: 13,
+                    }}
+                >
+                    <CheckCircle2
+                        size={28}
                         style={{
-                            padding: '20px 16px',
-                            textAlign: 'center',
-                            color: 'var(--text-muted)',
-                            fontSize: 13,
+                            color: '#22c55e',
+                            marginBottom: 8,
+                            display: 'block',
+                            margin: '0 auto 8px',
                         }}
-                    >
-                        <CheckCircle2
-                            size={28}
-                            style={{
-                                color: '#22c55e',
-                                marginBottom: 8,
-                                display: 'block',
-                                margin: '0 auto 8px',
-                            }}
-                        />
-                        {t('notifications.all_up_to_date', { threshold })}
-                    </div>
-                ) : (
-                    <>
-                        <div
-                            style={{
-                                padding: '8px 16px',
-                                fontSize: 12,
-                                color: 'var(--text-muted)',
-                                background: 'color-mix(in srgb, #ef4444 8%, transparent)',
-                                borderBottom: '1px solid var(--border)',
-                            }}
-                        >
-                            <AlertCircle
-                                size={12}
-                                style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
-                            />
-                            {t('notifications.overdue_subtitle', { count: visibleCount, threshold })}
-                        </div>
-                        {visible.slice(0, 10).map((s) => (
-                            <button
-                                key={s.studentId}
-                                onClick={() => {
-                                    navigate(`/students/${s.studentId}`);
-                                    setOpen(false);
-                                }}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '10px 16px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    borderBottom: '1px solid var(--border)',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    gap: 8,
-                                }}
-                            >
-                                <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>{s.studentName}</span>
-                                <span
-                                    style={{
-                                        fontSize: 11,
-                                        color: '#ef4444',
-                                        background: 'color-mix(in srgb, #ef4444 10%, transparent)',
-                                        borderRadius: 6,
-                                        padding: '2px 7px',
-                                        whiteSpace: 'nowrap',
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    {t('notifications.days_ago', { count: s.daysSince })}
-                                </span>
-                            </button>
-                        ))}
-                        {visibleCount > 10 && (
+                    />
+                    {t('notifications.all_up_to_date', { threshold })}
+                </div>
+            ) : (
+                <>
+                    {/* Overdue grading */}
+                    {overdueItems.length > 0 && (
+                        <div style={{ maxHeight: 200, overflowY: 'auto' }}>
                             <div
                                 style={{
                                     padding: '8px 16px',
                                     fontSize: 12,
                                     color: 'var(--text-muted)',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                {t('notifications.more_overdue', { count: visibleCount - 10 })}
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-
-            {/* Unread student messages */}
-            {unreadThreads.length > 0 && (
-                <div style={{ maxHeight: 240, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
-                    <div
-                        style={{
-                            padding: '8px 16px',
-                            fontSize: 12,
-                            color: 'var(--text-muted)',
-                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                            borderBottom: '1px solid var(--border)',
-                        }}
-                    >
-                        <Mail size={12} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
-                        {t('notifications.unread_messages_subtitle', { count: unreadThreads.length })}
-                    </div>
-                    {unreadThreads.map((thread) => {
-                        const student = students.find((s) => s.id === thread.studentId);
-                        return (
-                            <button
-                                key={`${thread.studentId}__${thread.contextType}__${thread.contextId ?? ''}`}
-                                onClick={() => {
-                                    navigate('/messages');
-                                    setOpen(false);
-                                }}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '10px 16px',
-                                    background: 'transparent',
-                                    border: 'none',
+                                    background: 'color-mix(in srgb, #ef4444 8%, transparent)',
                                     borderBottom: '1px solid var(--border)',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    gap: 8,
                                 }}
                             >
-                                <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
-                                    {student?.name ?? thread.studentId}
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 11,
-                                        color: 'var(--accent)',
-                                        background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
-                                        borderRadius: 6,
-                                        padding: '2px 7px',
-                                        whiteSpace: 'nowrap',
-                                        fontWeight: 600,
+                                <AlertCircle
+                                    size={12}
+                                    style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
+                                />
+                                {t('notifications.overdue_subtitle', { count: overdueItems.length, threshold })}
+                            </div>
+                            {overdueItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        navigate(`/students/${item.studentId}`);
+                                        setOpen(false);
                                     }}
+                                    style={rowStyle}
                                 >
-                                    {thread.unreadByTeacher}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
+                                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                                        {item.studentName}
+                                    </span>
+                                    <span
+                                        style={{
+                                            ...pillStyle,
+                                            color: '#ef4444',
+                                            background: 'color-mix(in srgb, #ef4444 10%, transparent)',
+                                        }}
+                                    >
+                                        {t('notifications.days_ago', { count: item.daysSince })}
+                                    </span>
+                                </button>
+                            ))}
+                            {overdueItems.length > POPOVER_ITEM_CAP && (
+                                <div style={moreStyle}>
+                                    {t('notifications.more_overdue', { count: overdueItems.length - POPOVER_ITEM_CAP })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Unread student messages */}
+                    {messageItems.length > 0 && (
+                        <div style={{ maxHeight: 200, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
+                            <div
+                                style={{
+                                    padding: '8px 16px',
+                                    fontSize: 12,
+                                    color: 'var(--text-muted)',
+                                    background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                    borderBottom: '1px solid var(--border)',
+                                }}
+                            >
+                                <Mail
+                                    size={12}
+                                    style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
+                                />
+                                {t('notifications.unread_messages_subtitle', { count: messageItems.length })}
+                            </div>
+                            {messageItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        navigate('/messages');
+                                        setOpen(false);
+                                    }}
+                                    style={rowStyle}
+                                >
+                                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                                        {item.studentName}
+                                    </span>
+                                    <span
+                                        style={{
+                                            ...pillStyle,
+                                            color: 'var(--accent)',
+                                            background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                                        }}
+                                    >
+                                        {item.unreadCount}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Pending moderation reviews */}
+                    {moderationItems.length > 0 && (
+                        <div style={{ maxHeight: 200, overflowY: 'auto', borderTop: '1px solid var(--border)' }}>
+                            <div
+                                style={{
+                                    padding: '8px 16px',
+                                    fontSize: 12,
+                                    color: 'var(--text-muted)',
+                                    background: 'color-mix(in srgb, #f59e0b 8%, transparent)',
+                                    borderBottom: '1px solid var(--border)',
+                                }}
+                            >
+                                <UserCheck
+                                    size={12}
+                                    style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
+                                />
+                                {t('notifications.moderation_subtitle', { count: moderationItems.length })}
+                            </div>
+                            {moderationItems.slice(0, POPOVER_ITEM_CAP).map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => {
+                                        navigate('/moderation');
+                                        setOpen(false);
+                                    }}
+                                    style={rowStyle}
+                                >
+                                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                                        {item.studentName}
+                                    </span>
+                                    {item.pendingDays !== null && (
+                                        <span
+                                            style={{
+                                                ...pillStyle,
+                                                color: '#f59e0b',
+                                                background: 'color-mix(in srgb, #f59e0b 10%, transparent)',
+                                            }}
+                                        >
+                                            {t('coGrading.pending_days', { count: item.pendingDays })}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
+
+            <div style={{ borderTop: '1px solid var(--border)' }}>
+                <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ width: '100%', borderRadius: 0, padding: '10px 16px' }}
+                    onClick={goToNotifications}
+                >
+                    {t('notifications.view_all')}
+                </button>
+            </div>
 
             {/* Browser notification opt-in */}
             {permissionState !== 'unsupported' && permissionState !== 'granted' && (
@@ -391,3 +380,32 @@ export default function NotificationBell() {
         </div>
     );
 }
+
+const rowStyle: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '10px 16px',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid var(--border)',
+    cursor: 'pointer',
+    textAlign: 'left',
+    gap: 8,
+};
+
+const pillStyle: React.CSSProperties = {
+    fontSize: 11,
+    borderRadius: 6,
+    padding: '2px 7px',
+    whiteSpace: 'nowrap',
+    fontWeight: 600,
+};
+
+const moreStyle: React.CSSProperties = {
+    padding: '8px 16px',
+    fontSize: 12,
+    color: 'var(--text-muted)',
+    textAlign: 'center',
+};

@@ -52,6 +52,7 @@ const DocsPage = lazy(() => import('./pages/DocsPage'));
 const ActivityDashboardPage = lazy(() => import('./pages/ActivityDashboardPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const ModerationQueuePage = lazy(() => import('./pages/ModerationQueuePage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const FlashcardsPage = lazy(() => import('./pages/FlashcardsPage'));
 const FlashcardDeckPage = lazy(() => import('./pages/FlashcardDeckPage'));
@@ -242,6 +243,7 @@ export default function App() {
                                 <Route path="/statistics" element={<StatisticsPage />} />
                                 <Route path="/activity-dashboard" element={<ActivityDashboardPage />} />
                                 <Route path="/moderation" element={<ModerationQueuePage />} />
+                                <Route path="/notifications" element={<NotificationsPage />} />
                                 <Route path="/messages" element={<MessagesPage />} />
                                 <Route path="/comments" element={<CommentBankPage />} />
                                 <Route path="/question-bank" element={<QuestionBankPage />} />
