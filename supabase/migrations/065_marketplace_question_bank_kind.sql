@@ -1,4 +1,4 @@
--- Migration 064: Question Bank items on the marketplace (roadmap 29.2)
+-- Migration 065: Question Bank items on the marketplace (roadmap 29.2)
 --
 -- Extends the marketplace kind check (060) to also allow 'questionBankItem'.
 -- Reuses the same table/columns as rubric/test/deck listings — a listing's
