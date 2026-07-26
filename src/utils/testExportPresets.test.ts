@@ -128,8 +128,11 @@ describe('buildTestResultsCsv', () => {
         const lines = csv.trim().split('\n');
         expect(lines).toHaveLength(4); // header + s1 + s2 + s3 (not 5 — s3's two attempts collapse to one row)
 
-        const mieRows = lines.filter((line) => line.startsWith('Mia Lee,'));
-        expect(mieRows).toHaveLength(1);
-        expect(mieRows[0]).toContain('Mia Lee,9999,100.0');
+        const miaRows = lines.filter((line) => line.startsWith('Mia Lee,'));
+        expect(miaRows).toHaveLength(1);
+        // Score %, Q1/Q2 accuracy, and the "Present simple" skill accuracy must all come from
+        // attempt 2 alone (100% across the board) — not blended with attempt 1's wrong answer
+        // (which would drag Q1/skill accuracy down to 50% while Score % stayed at 100%).
+        expect(miaRows[0]).toBe('Mia Lee,9999,100.0,100,100,100');
     });
 });

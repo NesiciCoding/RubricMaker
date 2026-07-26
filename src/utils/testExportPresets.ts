@@ -46,8 +46,11 @@ export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], stu
     const rows = Array.from(attemptsByStudent.values()).map((attempts) => {
         const studentTest = latestAttempt(attempts);
         const student = students.find((s) => s.id === studentTest.studentId);
-        const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, studentTests, test);
-        const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, studentTests, test);
+        // Scope the breakdowns to just the canonical attempt's own answers — passing the full
+        // studentTests array here would blend earlier attempts' answers into the accuracy
+        // columns while Score % reflects only the latest attempt, an inconsistent row.
+        const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, [studentTest], test);
+        const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, [studentTest], test);
 
         const row: Record<string, string | number> = {
             'Student Name': student?.name ?? '',
