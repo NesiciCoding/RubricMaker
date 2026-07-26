@@ -115,12 +115,24 @@ describe('ModerationQueuePage', () => {
         expect(mockDeletePeerReview).toHaveBeenCalledWith('sr-second');
     });
 
-    it('reconciles a queue item', async () => {
+    it('reconciles a queue item via the confirmation modal', async () => {
         const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
         renderWithRouter(<ModerationQueuePage />);
         fireEvent.click(screen.getByText('coGrading.action_reconcile'));
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByText('coGrading.action_confirm_reconcile'));
         expect(mockSaveStudentRubric).toHaveBeenCalled();
         expect(mockDeletePeerReview).toHaveBeenCalledWith('sr-second');
+    });
+
+    it('cancels a reconcile without applying it', async () => {
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        fireEvent.click(screen.getByText('coGrading.action_reconcile'));
+        fireEvent.click(screen.getByText('common.cancel'));
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockDeletePeerReview).not.toHaveBeenCalled();
+        expect(screen.queryByText('coGrading.action_confirm_reconcile')).not.toBeInTheDocument();
     });
 
     it('updates the threshold input', async () => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { saveAs } from 'file-saver';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import {
@@ -245,12 +246,7 @@ export default function SettingsPage() {
 
     function handleBackupExport() {
         const json = exportFullBackup();
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'rubric-maker-backup.json';
-        a.click();
+        saveAs(new Blob([json], { type: 'application/json' }), 'rubric-maker-backup.json');
     }
 
     function handleBackupImport(e: React.ChangeEvent<HTMLInputElement>) {

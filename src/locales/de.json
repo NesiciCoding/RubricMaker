@@ -1234,7 +1234,11 @@
         "colleague_select_placeholder": "Kollegin/Kollegen auswählen…",
         "colleague_none": "Noch keine Kolleginnen/Kollegen in deiner Schule gefunden.",
         "pending_days_one": "Seit {{count}} Tag ausstehend",
-        "pending_days_other": "Seit {{count}} Tagen ausstehend"
+        "pending_days_other": "Seit {{count}} Tagen ausstehend",
+        "reconcile_modal_title": "Bewertung ausgleichen",
+        "reconcile_modal_desc": "Jedes Kriterium unten wird auf den Mittelwert der Punkte des Originals und des Zweitkorrektors gesetzt. Überprüfe das Ergebnis, bevor du es anwendest.",
+        "col_reconciled": "Ausgeglichen",
+        "action_confirm_reconcile": "Ausgeglichene Note anwenden"
     },
     "commentBank": {
         "title": "Kommentarbank",
@@ -2582,7 +2586,7 @@
         "gr_cograding_body_suffix": "in der Seitenleiste, mit einer Aufschlüsselung der Unterschiede pro Kriterium und einer Ein-Klick-Wahl, die ursprüngliche Bewertung zu behalten oder die des zweiten Prüfers zu akzeptieren.",
         "gr_cograding_reconcile_body_prefix": "Eine dritte Option,",
         "gr_cograding_reconcile_button": "Ausgleichen (Mittelwert)",
-        "gr_cograding_reconcile_body_suffix": "führt die beiden Bewertungen zusammen, indem bei jedem abweichenden Kriterium der Mittelwert der Punkte gebildet wird, statt die Bewertung eines Prüfers vollständig zu übernehmen.",
+        "gr_cograding_reconcile_body_suffix": "öffnet eine Vorschau der zusammengeführten Bewertung — den Mittelwert der Punkte bei jedem abweichenden Kriterium — zur Bestätigung vor der Anwendung, statt die Bewertung eines Prüfers vollständig zu übernehmen.",
         "gr_cograding_pending_note": "Der Link „Moderation“ in der Seitenleiste zeigt die Anzahl ausstehender Konflikte, und jeder Eintrag in der Warteschlange zeigt, wie viele Tage er schon wartet — älteste zuerst.",
         "gr_cograding_digest_note": "Selbst gehostete Installationen können eine nächtliche E-Mail-Erinnerung zu ausstehenden Konflikten aktivieren — schalten Sie „Mir eine nächtliche E-Mail-Zusammenfassung senden“ unter Einstellungen → E-Mail-Zusammenfassung ein (erfordert die Einrichtung des scheduled-digest-Serverjobs, siehe docs/SELF_HOSTING_OPS.md).",
         "gr_messages_title": "Nachrichten",

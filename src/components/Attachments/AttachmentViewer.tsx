@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { renderAsync } from 'docx-preview';
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { Download, FileText, ImageIcon, Loader } from 'lucide-react';
@@ -73,6 +72,8 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
             originalRendered.current = true;
             setLoading(true);
             try {
+                const { renderAsync } = await import('docx-preview');
+
                 // Convert base64 dataUrl back to Blob for docx-preview
                 const res = await fetch(attachment.dataUrl);
                 const blob = await res.blob();

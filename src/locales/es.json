@@ -1234,7 +1234,11 @@
         "colleague_select_placeholder": "Selecciona un colega…",
         "colleague_none": "Aún no se han encontrado colegas en tu centro.",
         "pending_days_one": "Pendiente hace {{count}} día",
-        "pending_days_other": "Pendiente hace {{count}} días"
+        "pending_days_other": "Pendiente hace {{count}} días",
+        "reconcile_modal_title": "Reconciliar calificación",
+        "reconcile_modal_desc": "Cada criterio a continuación se establecerá en el promedio de los puntos del original y del segundo corrector. Revisa el resultado antes de aplicarlo.",
+        "col_reconciled": "Reconciliado",
+        "action_confirm_reconcile": "Aplicar puntuación reconciliada"
     },
     "commentBank": {
         "title": "Banco de comentarios",
@@ -2582,7 +2586,7 @@
         "gr_cograding_body_suffix": "en la barra lateral, con un desglose de diferencias por criterio y una opción de un clic para mantener la calificación original o aceptar la del segundo evaluador.",
         "gr_cograding_reconcile_body_prefix": "Una tercera opción,",
         "gr_cograding_reconcile_button": "Reconciliar (promedio)",
-        "gr_cograding_reconcile_body_suffix": "combina las dos calificaciones promediando los puntos en cada criterio divergente, en lugar de elegir por completo la calificación de un evaluador.",
+        "gr_cograding_reconcile_body_suffix": "abre una vista previa de la calificación combinada — el promedio de los puntos en cada criterio divergente — para confirmar antes de aplicarla, en lugar de elegir por completo la calificación de un evaluador.",
         "gr_cograding_pending_note": "El enlace de Moderación en la barra lateral muestra un recuento de disputas pendientes, y cada elemento de la cola muestra cuántos días lleva esperando — las más antiguas primero.",
         "gr_cograding_digest_note": "Las instalaciones autoalojadas pueden activar un recordatorio nocturno por correo sobre disputas pendientes — activa \"Enviarme un resumen diario por correo electrónico\" en Configuración → Resumen por correo (requiere configurar la tarea de servidor scheduled-digest, ver docs/SELF_HOSTING_OPS.md).",
         "gr_messages_title": "Mensajes",

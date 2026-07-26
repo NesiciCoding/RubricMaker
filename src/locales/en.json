@@ -1234,7 +1234,11 @@
         "colleague_select_placeholder": "Select a colleague…",
         "colleague_none": "No colleagues found in your school yet.",
         "pending_days_one": "Pending {{count}} day",
-        "pending_days_other": "Pending {{count}} days"
+        "pending_days_other": "Pending {{count}} days",
+        "reconcile_modal_title": "Reconcile grading",
+        "reconcile_modal_desc": "Each criterion below will be set to the average of the original and second marker's points. Review the result before applying it.",
+        "col_reconciled": "Reconciled",
+        "action_confirm_reconcile": "Apply reconciled score"
     },
     "commentBank": {
         "title": "Comment Bank",
@@ -2580,7 +2584,7 @@
         "gr_cograding_body_suffix": "in the sidebar, with a per-criterion delta breakdown and a one-click choice to keep the original grade or accept the second marker's.",
         "gr_cograding_reconcile_body_prefix": "A third option,",
         "gr_cograding_reconcile_button": "Reconcile (average)",
-        "gr_cograding_reconcile_body_suffix": "merges the two grades by averaging the points on each diverging criterion, instead of picking one marker's grade outright.",
+        "gr_cograding_reconcile_body_suffix": "opens a preview of the merged grade — averaging the points on each diverging criterion — to confirm before applying, instead of picking one marker's grade outright.",
         "gr_cograding_pending_note": "The sidebar's Moderation link shows a count of pending disputes, and each queue item shows how many days it's been waiting — oldest first.",
         "gr_cograding_digest_note": "Self-hosted deployments can opt into a nightly email reminder about pending disputes — enable \"Send me a nightly email digest\" under Settings → Email Digest (requires the scheduled-digest server job to be set up, see docs/SELF_HOSTING_OPS.md).",
         "gr_messages_title": "Messages",

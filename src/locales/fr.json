@@ -1234,7 +1234,11 @@
         "colleague_select_placeholder": "Sélectionner un collègue…",
         "colleague_none": "Aucun collègue trouvé dans votre établissement pour l'instant.",
         "pending_days_one": "En attente depuis {{count}} jour",
-        "pending_days_other": "En attente depuis {{count}} jours"
+        "pending_days_other": "En attente depuis {{count}} jours",
+        "reconcile_modal_title": "Concilier la notation",
+        "reconcile_modal_desc": "Chaque critère ci-dessous sera fixé à la moyenne des points de l'original et du second correcteur. Vérifiez le résultat avant de l'appliquer.",
+        "col_reconciled": "Concilié",
+        "action_confirm_reconcile": "Appliquer le score concilié"
     },
     "commentBank": {
         "title": "Banque de commentaires",
@@ -2582,7 +2586,7 @@
         "gr_cograding_body_suffix": "dans la barre latérale, avec une répartition des écarts par critère et un choix en un clic pour conserver la note d'origine ou accepter celle du second correcteur.",
         "gr_cograding_reconcile_body_prefix": "Une troisième option,",
         "gr_cograding_reconcile_button": "Concilier (moyenne)",
-        "gr_cograding_reconcile_body_suffix": "fusionne les deux notes en calculant la moyenne des points sur chaque critère divergent, plutôt que de choisir entièrement la note d'un correcteur.",
+        "gr_cograding_reconcile_body_suffix": "ouvre un aperçu de la note fusionnée — la moyenne des points sur chaque critère divergent — à confirmer avant application, plutôt que de choisir entièrement la note d'un correcteur.",
         "gr_cograding_pending_note": "Le lien Modération de la barre latérale affiche le nombre de litiges en attente, et chaque élément de la file indique depuis combien de jours il attend — les plus anciens en premier.",
         "gr_cograding_digest_note": "Les déploiements auto-hébergés peuvent activer un rappel quotidien par e-mail sur les litiges en attente — activez « M'envoyer un résumé quotidien par e-mail » dans Paramètres → Résumé par e-mail (nécessite la mise en place de la tâche serveur scheduled-digest, voir docs/SELF_HOSTING_OPS.md).",
         "gr_messages_title": "Messages",
