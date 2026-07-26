@@ -8,6 +8,34 @@ import { useApp } from '../../context/AppContext';
 import { groupMessageThreads } from '../../utils/messageThreads';
 
 const SESSION_NOTIF_KEY = 'rubricmaker_notif_shown';
+const DISMISSED_OVERDUE_KEY = 'rubricmaker_dismissed_overdue';
+
+// studentId -> lastGradedAt at the time of dismissal, so a dismissal only suppresses
+// *this* overdue instance — once the student is graded again and later goes overdue
+// again, lastGradedAt no longer matches and the notification reappears.
+function readDismissedOverdue(): Record<string, string> {
+    try {
+        const raw = localStorage.getItem(DISMISSED_OVERDUE_KEY);
+        if (!raw) return {};
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+        const result: Record<string, string> = {};
+        for (const [studentId, lastGradedAt] of Object.entries(parsed)) {
+            if (typeof lastGradedAt === 'string') result[studentId] = lastGradedAt;
+        }
+        return result;
+    } catch {
+        return {};
+    }
+}
+
+function writeDismissedOverdue(dismissed: Record<string, string>) {
+    try {
+        localStorage.setItem(DISMISSED_OVERDUE_KEY, JSON.stringify(dismissed));
+    } catch {
+        // localStorage unavailable (private browsing, quota) — dismissal just won't persist.
+    }
+}
 
 export default function NotificationBell() {
     const { t } = useTranslation();
@@ -72,14 +100,20 @@ export default function NotificationBell() {
         setPermissionState(result);
     }, []);
 
-    const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-    const count = overdueStudents.length + unreadThreads.length;
-    const visible = overdueStudents.filter((s) => !dismissedIds.has(s.studentId));
+    const [dismissed, setDismissed] = useState<Record<string, string>>(() => readDismissedOverdue());
+    const visible = overdueStudents.filter((s) => dismissed[s.studentId] !== s.lastGradedAt);
     const visibleCount = visible.length;
+    const count = visibleCount + unreadThreads.length;
 
     const handleToggle = () => {
-        if (!open) setDismissedIds(new Set());
         setOpen((v) => !v);
+    };
+
+    const clearAll = () => {
+        const next = { ...dismissed };
+        for (const s of overdueStudents) next[s.studentId] = s.lastGradedAt;
+        setDismissed(next);
+        writeDismissedOverdue(next);
     };
 
     const notificationPanelContent = (
@@ -100,7 +134,7 @@ export default function NotificationBell() {
                         <button
                             className="btn btn-ghost btn-sm"
                             style={{ fontSize: 12, padding: '2px 8px' }}
-                            onClick={() => setDismissedIds(new Set(overdueStudents.map((s) => s.studentId)))}
+                            onClick={clearAll}
                         >
                             {t('notifications.clear_all')}
                         </button>
@@ -108,10 +142,7 @@ export default function NotificationBell() {
                     <button
                         className="btn btn-ghost btn-icon btn-sm"
                         aria-label={t('common.close')}
-                        onClick={() => {
-                            setDismissedIds(new Set());
-                            setOpen(false);
-                        }}
+                        onClick={() => setOpen(false)}
                     >
                         <X size={14} />
                     </button>

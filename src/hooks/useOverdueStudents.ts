@@ -5,6 +5,7 @@ export interface OverdueStudent {
     studentId: string;
     studentName: string;
     daysSince: number;
+    lastGradedAt: string;
 }
 
 export function useOverdueStudents(): {
@@ -30,7 +31,7 @@ export function useOverdueStudents(): {
             if (daysSince >= threshold) {
                 const student = students.find((s) => s.id === studentId);
                 if (student) {
-                    result.push({ studentId, studentName: student.name, daysSince });
+                    result.push({ studentId, studentName: student.name, daysSince, lastGradedAt: gradedAt });
                 }
             }
         }

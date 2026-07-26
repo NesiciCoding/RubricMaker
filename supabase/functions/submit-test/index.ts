@@ -402,9 +402,12 @@ function replayStaircaseLevels(correctFlags: boolean[]): { levelBeforeStep: stri
 // Item-only ratings, no persisted per-student rating — each level's fixed anchor stands in for
 // the student. Runs only after the level path itself has been validated below, using the same
 // levelBeforeStep/correctFlags the replay already computed, so a forged path can't skew ratings.
+// The actual expected-score/rating-delta math (mirroring eloExpectedScore/updateItemElo in
+// src/utils/placementStaircase.ts) now lives in the update_test_question_elo RPC (migration
+// 064), which recomputes it from the row's current eloRating under lock — only the replay
+// inputs (opponent rating, correct flag) are computed here.
 
 const DEFAULT_ELO_RATING = 1200;
-const ELO_K_FACTOR = 24;
 const LEVEL_TO_ELO: Record<string, number> = {
     A1: 600,
     A2: 900,
@@ -413,16 +416,6 @@ const LEVEL_TO_ELO: Record<string, number> = {
     C1: 1800,
     C2: 2100,
 };
-
-function eloExpectedScore(itemRating: number, opponentRating: number): number {
-    return 1 / (1 + 10 ** ((itemRating - opponentRating) / 400));
-}
-
-function updateItemElo(itemRating: number, opponentRating: number, correct: boolean): number {
-    const expected = eloExpectedScore(itemRating, opponentRating);
-    const actual = correct ? 1 : 0;
-    return itemRating - ELO_K_FACTOR * (actual - expected);
-}
 
 /** Structural checks only (ids exist, no repeats, question/section/level agree) — score/level correctness is verified separately once the real answers are in scope. */
 function isStructurallyValidLevelPath(
@@ -538,9 +531,16 @@ serve(async (req) => {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
-    // Set below once a staircase levelPath has been validated and its items' Elo ratings
-    // recomputed, so the update can be persisted after the (unrelated) submission insert below.
-    let eloUpdate: { testId: string; data: MinimalTest } | null = null;
+    // Set below once a staircase levelPath has been validated, so the touched questions' Elo
+    // replay inputs can be persisted atomically (via the update_test_question_elo RPC — see
+    // migration 064) after the (unrelated) submission insert below. Only {questionId,
+    // opponentRating, correct} triples are collected here — never a precomputed rating or a
+    // copy of the whole test.questions array — so the RPC itself both does the only
+    // read-modify-write of tests.data AND computes the new rating from whatever eloRating the
+    // row holds once it acquires the lock, closing the race a client-computed absolute value
+    // (correct against a pre-lock snapshot only) would reintroduce for concurrent submissions
+    // touching the same question.
+    let eloRatingUpdates: { questionId: string; opponentRating: number; correct: boolean }[] | null = null;
     // Set below for a generator-engine (roadmap 27.1) run instead — its trace lives in
     // placement_sessions, not in a client-claimed levelPath (which the client never sends,
     // since question selection/scoring already happened server-side, live, per question).
@@ -644,14 +644,23 @@ serve(async (req) => {
                         return json({ error: 'Invalid level path' }, 400);
                     }
 
-                    levelPath.forEach((step, i) => {
-                        const question = questionsById.get(step.questionId);
-                        if (!question) return;
-                        const opponentRating = LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING;
-                        const currentRating = question.eloRating ?? DEFAULT_ELO_RATING;
-                        question.eloRating = updateItemElo(currentRating, opponentRating, correctFlags[i]);
-                    });
-                    eloUpdate = { testId: assignment.test_id, data: test };
+                    // Replay inputs only (opponent rating, correct flag) — the RPC recomputes the
+                    // new rating from whatever eloRating the row actually holds once it acquires
+                    // the lock, not a value precomputed here against a pre-lock snapshot. Sending
+                    // an absolute replacement would still lose an update when two submissions
+                    // touch the same question, since the second caller's precomputed value is
+                    // only correct against the state it read before waiting on the lock.
+                    eloRatingUpdates = levelPath.reduce<
+                        { questionId: string; opponentRating: number; correct: boolean }[]
+                    >((acc, step, i) => {
+                        if (!questionsById.has(step.questionId)) return acc;
+                        acc.push({
+                            questionId: step.questionId,
+                            opponentRating: LEVEL_TO_ELO[levelBeforeStep[i]] ?? DEFAULT_ELO_RATING,
+                            correct: correctFlags[i],
+                        });
+                        return acc;
+                    }, []);
                 }
             } catch (e) {
                 console.error('submit-test placement path replay failed:', e);
@@ -716,11 +725,11 @@ serve(async (req) => {
         if (!insertErr) {
             // Best-effort: item ratings are an internal refinement, not authoritative data — a
             // failed update here should never fail an otherwise-successful submission.
-            if (eloUpdate) {
-                const { error: eloErr } = await admin
-                    .from('tests')
-                    .update({ data: eloUpdate.data })
-                    .eq('id', eloUpdate.testId);
+            if (eloRatingUpdates && eloRatingUpdates.length > 0) {
+                const { error: eloErr } = await admin.rpc('update_test_question_elo', {
+                    p_test_id: assignment.test_id,
+                    p_updates: eloRatingUpdates,
+                });
                 if (eloErr) console.error('submit-test elo rating update failed:', eloErr);
             }
             // Generator-engine Elo updates already happened incrementally, per item, inside

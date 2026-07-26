@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { saveAs } from 'file-saver';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -274,13 +275,7 @@ export default function ExportPage() {
                     dueDate: expiresAt,
                 }))
             );
-            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'essay_deadlines.ics';
-            a.click();
-            URL.revokeObjectURL(url);
+            saveAs(new Blob([ics], { type: 'text/calendar;charset=utf-8;' }), 'essay_deadlines.ics');
             logAuditEvent('export', 'export_ics', 'essay', 'all', { count: dedup.size });
         } catch {
             showToast(t('toast.export_error'), 'error');
@@ -371,13 +366,10 @@ export default function ExportPage() {
             }))
         );
         if (presetCsv !== null) {
-            const blob = new Blob([presetCsv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
+            saveAs(
+                new Blob([presetCsv], { type: 'text/csv;charset=utf-8;' }),
+                `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`
+            );
             logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
                 count: toExport.length,
                 preset: gradebookPreset,
@@ -431,13 +423,7 @@ export default function ExportPage() {
 
         const Papa = await import('papaparse');
         const csv = Papa.unparse(data);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${sanitizeFilename(rubric.name)}_grades.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(rubric.name)}_grades.csv`);
         logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });
     }
 
