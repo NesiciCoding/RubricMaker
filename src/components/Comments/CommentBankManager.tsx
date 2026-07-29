@@ -4,15 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { storageSync } from '../../services/database';
-import { CommentBankItem } from '../../types';
+import { CEFR_LEVELS } from '../../data/cefrDescriptors';
+import CefrBadge from '../CEFR/CefrBadge';
+import { CommentBankItem, type CefrLevel } from '../../types';
 
 interface CommentBankManagerProps {
-    onSelect?: (text: string) => void;
+    onSelect?: (item: CommentBankItem) => void;
     /** CEFR skill/level (or other tag) strings to surface a "Suggested" group for, when set */
     suggestedTags?: string[];
+    /** Set from the routed /comment-bank page, which has room for the sort toggle; the compact modal doesn't render it. */
+    fullPage?: boolean;
 }
 
-export default function CommentBankManager({ onSelect, suggestedTags }: CommentBankManagerProps) {
+type SortMode = 'newest' | 'mostUsed';
+
+export default function CommentBankManager({ onSelect, suggestedTags, fullPage }: CommentBankManagerProps) {
     const { t } = useTranslation();
     const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useApp();
     const dbStatus = useDbStatus();
@@ -21,6 +27,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [sortMode, setSortMode] = useState<SortMode>('newest');
 
     useEffect(() => {
         if (!dbStatus.isConnected) {
@@ -54,6 +61,16 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
         return Array.from(tags).sort();
     }, [combinedItems]);
 
+    const tagCounts = useMemo(() => {
+        const counts = new Map<string, number>();
+        combinedItems.forEach((item) => item.tags.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1)));
+        return counts;
+    }, [combinedItems]);
+
+    function cefrTagOf(item: CommentBankItem): CefrLevel | undefined {
+        return item.tags.find((tag): tag is CefrLevel => (CEFR_LEVELS as readonly string[]).includes(tag));
+    }
+
     const filteredItems = useMemo(() => {
         return combinedItems
             .filter((item) => {
@@ -63,8 +80,12 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                 const matchesTags = selectedTags.size === 0 || item.tags.some((tag) => selectedTags.has(tag));
                 return matchesSearch && matchesTags;
             })
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }, [combinedItems, searchTerm, selectedTags]);
+            .sort((a, b) =>
+                sortMode === 'mostUsed'
+                    ? (b.usageCount ?? 0) - (a.usageCount ?? 0)
+                    : b.createdAt.localeCompare(a.createdAt)
+            );
+    }, [combinedItems, searchTerm, selectedTags, sortMode]);
 
     // Additive surfacing, not filtering — matches items don't get hidden from the regular
     // list below, they're just echoed at the top when this criterion has a real signal.
@@ -115,11 +136,11 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
             }}
             role={onSelect ? 'button' : undefined}
             tabIndex={onSelect ? 0 : undefined}
-            onClick={() => onSelect && onSelect(item.text)}
+            onClick={() => onSelect && onSelect(item)}
             onKeyDown={(e) => {
                 if (onSelect && (e.key === 'Enter' || e.key === ' ')) {
                     e.preventDefault();
-                    onSelect(item.text);
+                    onSelect(item);
                 }
             }}
         >
@@ -193,6 +214,16 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                     </span>
                 )}
             </div>
+            {(cefrTagOf(item) || !!item.usageCount) && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                    {cefrTagOf(item) && <CefrBadge level={cefrTagOf(item)!} size="sm" />}
+                    {!!item.usageCount && (
+                        <span className="text-xs text-muted">
+                            {t('commentBank.usage_count_label', { count: item.usageCount })}
+                        </span>
+                    )}
+                </div>
+            )}
             {item.tags.length > 0 && (
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {item.tags.map((tag) => (
@@ -223,6 +254,205 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
         });
     };
 
+    const searchAndNewRow = (
+        <div style={{ display: 'flex', gap: 8 }}>
+            <div className="input-group" style={{ flex: 1 }}>
+                <Search size={16} style={{ color: 'var(--text-dim)' }} />
+                <input
+                    type="text"
+                    placeholder={t('commentBank.search_placeholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ border: 'none', background: 'transparent', width: '100%' }}
+                />
+            </div>
+            <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCreate}
+                disabled={isCreating || editingId !== null}
+            >
+                <Plus size={16} /> {t('commentBank.new_button')}
+            </button>
+        </div>
+    );
+
+    const sortToggleRow = (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span className="text-xs text-muted">{t('commentBank.sort_label')}</span>
+            <button
+                type="button"
+                className={`btn btn-xs ${sortMode === 'newest' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSortMode('newest')}
+            >
+                {t('commentBank.sort_newest')}
+            </button>
+            <button
+                type="button"
+                className={`btn btn-xs ${sortMode === 'mostUsed' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSortMode('mostUsed')}
+            >
+                {t('commentBank.sort_most_used')}
+            </button>
+        </div>
+    );
+
+    const editorForm = (isCreating || editingId) && (
+        <div
+            style={{
+                padding: 16,
+                background: 'var(--bg-elevated)',
+                borderBottom: '1px solid var(--border)',
+            }}
+        >
+            <textarea
+                value={formText}
+                onChange={(e) => setFormText(e.target.value)}
+                placeholder={t('commentBank.form_placeholder')}
+                rows={3}
+                style={{ width: '100%', marginBottom: 12 }}
+                autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Tag size={14} className="text-muted" />
+                <input
+                    type="text"
+                    value={formTags}
+                    onChange={(e) => setFormTags(e.target.value)}
+                    placeholder={t('commentBank.tags_placeholder')}
+                    style={{ flex: 1 }}
+                />
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                        setIsCreating(false);
+                        setEditingId(null);
+                    }}
+                >
+                    {t('common.cancel')}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={handleSave}
+                    disabled={!formText.trim()}
+                >
+                    <Save size={14} /> {t('common.save')}
+                </button>
+            </div>
+        </div>
+    );
+
+    const itemList = (
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+            {suggestedItems.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                    <div
+                        className="text-muted text-xs"
+                        style={{ fontWeight: 600, textTransform: 'uppercase', marginBottom: 8 }}
+                    >
+                        {t('commentBank.suggested_for_criterion')}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {suggestedItems.map(renderItem)}
+                    </div>
+                </div>
+            )}
+            {filteredItems.length === 0 ? (
+                <div className="empty-state">{t('commentBank.empty_state')}</div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{filteredItems.map(renderItem)}</div>
+            )}
+        </div>
+    );
+
+    if (fullPage) {
+        return (
+            // height: '100%' is load-bearing: .page-content (this component's parent) is the
+            // page's own scroll container (see index.css's .main-area/.page-content comment) —
+            // without a bounded height here, this row just grows and .page-content scrolls the
+            // whole thing, including the sidebar, instead of the sidebar and item list each
+            // scrolling independently within the available space.
+            <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
+                <aside
+                    style={{
+                        width: 220,
+                        flexShrink: 0,
+                        borderRight: '1px solid var(--border)',
+                        padding: 16,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        overflowY: 'auto',
+                    }}
+                >
+                    <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{
+                            justifyContent: 'space-between',
+                            fontWeight: selectedTags.size === 0 ? 700 : 400,
+                            color: selectedTags.size === 0 ? 'var(--accent)' : undefined,
+                        }}
+                        onClick={() => setSelectedTags(new Set())}
+                    >
+                        <span>{t('commentBank.sidebar_all_comments')}</span>
+                        <span className="text-xs text-muted" aria-hidden="true">
+                            {combinedItems.length}
+                        </span>
+                    </button>
+                    {allTags.map((tag) => (
+                        <button
+                            key={tag}
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{
+                                justifyContent: 'space-between',
+                                fontWeight: selectedTags.has(tag) ? 700 : 400,
+                                color: selectedTags.has(tag) ? 'var(--accent)' : undefined,
+                            }}
+                            onClick={() => toggleTagFilter(tag)}
+                        >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                                <Tag size={12} style={{ flexShrink: 0 }} />
+                                <span
+                                    style={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {tag}
+                                </span>
+                            </span>
+                            <span className="text-xs text-muted" aria-hidden="true">
+                                {tagCounts.get(tag)}
+                            </span>
+                        </button>
+                    ))}
+                </aside>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
+                    <div
+                        style={{
+                            padding: 16,
+                            borderBottom: '1px solid var(--border)',
+                            display: 'flex',
+                            gap: 12,
+                            flexDirection: 'column',
+                            flexShrink: 0,
+                        }}
+                    >
+                        {searchAndNewRow}
+                        {sortToggleRow}
+                    </div>
+                    {editorForm}
+                    {itemList}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             {/* Toolbar */}
@@ -235,26 +465,7 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                     flexDirection: 'column',
                 }}
             >
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <div className="input-group" style={{ flex: 1 }}>
-                        <Search size={16} style={{ color: 'var(--text-dim)' }} />
-                        <input
-                            type="text"
-                            placeholder={t('commentBank.search_placeholder')}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ border: 'none', background: 'transparent', width: '100%' }}
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleCreate}
-                        disabled={isCreating || editingId !== null}
-                    >
-                        <Plus size={16} /> {t('commentBank.new_button')}
-                    </button>
-                </div>
+                {searchAndNewRow}
                 {allTags.length > 0 && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {allTags.map((tag) => (
@@ -271,78 +482,8 @@ export default function CommentBankManager({ onSelect, suggestedTags }: CommentB
                     </div>
                 )}
             </div>
-
-            {/* Editor Form */}
-            {(isCreating || editingId) && (
-                <div
-                    style={{
-                        padding: 16,
-                        background: 'var(--bg-elevated)',
-                        borderBottom: '1px solid var(--border)',
-                    }}
-                >
-                    <textarea
-                        value={formText}
-                        onChange={(e) => setFormText(e.target.value)}
-                        placeholder={t('commentBank.form_placeholder')}
-                        rows={3}
-                        style={{ width: '100%', marginBottom: 12 }}
-                        autoFocus
-                    />
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <Tag size={14} className="text-muted" />
-                        <input
-                            type="text"
-                            value={formTags}
-                            onChange={(e) => setFormTags(e.target.value)}
-                            placeholder={t('commentBank.tags_placeholder')}
-                            style={{ flex: 1 }}
-                        />
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => {
-                                setIsCreating(false);
-                                setEditingId(null);
-                            }}
-                        >
-                            {t('common.cancel')}
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            onClick={handleSave}
-                            disabled={!formText.trim()}
-                        >
-                            <Save size={14} /> {t('common.save')}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-                {suggestedItems.length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                        <div
-                            className="text-muted text-xs"
-                            style={{ fontWeight: 600, textTransform: 'uppercase', marginBottom: 8 }}
-                        >
-                            {t('commentBank.suggested_for_criterion')}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {suggestedItems.map(renderItem)}
-                        </div>
-                    </div>
-                )}
-                {filteredItems.length === 0 ? (
-                    <div className="empty-state">{t('commentBank.empty_state')}</div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {filteredItems.map(renderItem)}
-                    </div>
-                )}
-            </div>
+            {editorForm}
+            {itemList}
         </>
     );
 }

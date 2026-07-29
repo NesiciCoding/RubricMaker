@@ -3,10 +3,11 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import CommentBankManager from './CommentBankManager';
+import type { CommentBankItem } from '../../types';
 
 interface CommentBankModalProps {
     onClose: () => void;
-    onSelect?: (text: string) => void;
+    onSelect?: (item: CommentBankItem) => void;
     /** CEFR skill/level (or other tag) strings to surface a "Suggested" group for, when set */
     suggestedTags?: string[];
 }

@@ -2198,7 +2198,7 @@ export class SupabaseAdapter {
             schoolId: row.school_id,
             publishedBy: row.published_by,
             kind: (row.kind as MarketplaceListingKind) || 'rubric',
-            snapshot: row.rubric_snapshot as Rubric | Test | FlashcardDeck,
+            snapshot: row.rubric_snapshot as Rubric | Test | FlashcardDeck | QuestionBankItem,
             name: row.name,
             subject: row.subject ?? undefined,
             description: row.description ?? undefined,
@@ -2231,12 +2231,16 @@ export class SupabaseAdapter {
     async publishToMarketplace(
         schoolId: string,
         kind: MarketplaceListingKind,
-        entity: Rubric | Test | FlashcardDeck,
+        entity: Rubric | Test | FlashcardDeck | QuestionBankItem,
         attribution?: string,
         options?: { name?: string; subject?: string; description?: string; cefrLevels?: CefrLevel[] }
     ): Promise<MarketplaceListing | null> {
         if (!this.client || !this.userId) return null;
         const subject = kind === 'rubric' ? ((entity as Rubric).subject ?? null) : null;
+        // QuestionBankItem has neither a `.name` nor a `.description` field — callers must pass
+        // `options.name` for that kind; the `in` checks keep this generic across the other kinds.
+        const fallbackName = 'name' in entity ? entity.name : undefined;
+        const fallbackDescription = 'description' in entity ? entity.description : undefined;
         const { data, error } = await this.client
             .from('marketplace_listings')
             .insert({
@@ -2244,9 +2248,9 @@ export class SupabaseAdapter {
                 published_by: this.userId,
                 kind,
                 rubric_snapshot: entity,
-                name: options?.name ?? entity.name,
+                name: options?.name ?? fallbackName ?? '',
                 subject: options?.subject ?? subject,
-                description: options?.description ?? entity.description ?? null,
+                description: options?.description ?? fallbackDescription ?? null,
                 attribution: attribution ?? null,
                 cefr_levels: options?.cefrLevels?.length ? options.cefrLevels : null,
             })
@@ -2267,7 +2271,7 @@ export class SupabaseAdapter {
      */
     async cloneMarketplaceListing(
         listingId: string
-    ): Promise<{ kind: MarketplaceListingKind; entity: Rubric | Test | FlashcardDeck } | null> {
+    ): Promise<{ kind: MarketplaceListingKind; entity: Rubric | Test | FlashcardDeck | QuestionBankItem } | null> {
         if (!this.client || !this.userId) return null;
         const { data, error } = await this.client
             .from('marketplace_listings')
@@ -2290,7 +2294,7 @@ export class SupabaseAdapter {
                 id: nanoid(),
                 createdAt: now,
                 updatedAt: now,
-            } as Rubric | Test | FlashcardDeck,
+            } as Rubric | Test | FlashcardDeck | QuestionBankItem,
         };
     }
 

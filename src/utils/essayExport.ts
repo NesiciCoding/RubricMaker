@@ -429,8 +429,13 @@ export async function exportEssayDocx(
     saveAs(blob, `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`);
 }
 
-export async function exportEssayPdf(assignment: EssayLike, student: Student, submission: EssaySubmission) {
-    await printHtml(essayHtmlHeader(assignment, student, submission), 'portrait');
+export async function exportEssayPdf(
+    assignment: EssayLike,
+    student: Student,
+    submission: EssaySubmission,
+    styleTemplate?: ExportTemplate
+) {
+    await printHtml(essayHtmlHeader(assignment, student, submission), 'portrait', undefined, styleTemplate);
 }
 
 interface EssayBatchEntry {
@@ -449,7 +454,7 @@ export async function exportEssaysBatch(
         for (const { assignment, student, submission } of entries) {
             if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission);
             else if (format === 'docx') await exportEssayDocx(assignment, student, submission, styleTemplate);
-            else await exportEssayPdf(assignment, student, submission);
+            else await exportEssayPdf(assignment, student, submission, styleTemplate);
         }
         return;
     }
@@ -480,7 +485,7 @@ export async function exportEssaysBatch(
     const html = entries
         .map(({ assignment, student, submission }) => essayHtmlHeader(assignment, student, submission))
         .join('');
-    await printHtml(html, 'portrait');
+    await printHtml(html, 'portrait', undefined, styleTemplate);
 }
 
 function analysisDocxChildren(analysis: DocumentAnalysisResult, vocabularyItems: VocabularyItem[]): Paragraph[] {

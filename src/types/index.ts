@@ -621,15 +621,15 @@ export interface SchoolMember {
 }
 
 /** A rubric published to a school's marketplace. rubricSnapshot is frozen at publish time. */
-export type MarketplaceListingKind = 'rubric' | 'test' | 'deck';
+export type MarketplaceListingKind = 'rubric' | 'test' | 'deck' | 'questionBankItem';
 
 export interface MarketplaceListing {
     id: string;
     schoolId: string;
     publishedBy: string;
-    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' — discriminates the shape of `snapshot`. */
+    /** 'rubric' (default, back-compat with pre-24.4 listings) | 'test' | 'deck' | 'questionBankItem' — discriminates the shape of `snapshot`. */
     kind: MarketplaceListingKind;
-    snapshot: Rubric | Test | FlashcardDeck;
+    snapshot: Rubric | Test | FlashcardDeck | QuestionBankItem;
     name: string;
     subject?: string;
     description?: string;
@@ -744,6 +744,10 @@ export interface CommentBankItem {
     updatedAt?: string;
     /** When true, every teacher in the owner's school can view (read-only) this comment */
     sharedWithSchool?: boolean;
+    /** Number of times this comment has been inserted during grading (roadmap 29.3) */
+    usageCount?: number;
+    /** ISO timestamp of the most recent insertion during grading */
+    lastUsedAt?: string;
 }
 
 // ─── Speaking / Oral Assessment Types ────────────────────────────────────────

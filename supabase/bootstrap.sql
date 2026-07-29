@@ -4394,6 +4394,25 @@ $$;
 REVOKE ALL ON FUNCTION public.update_test_question_elo(text, jsonb) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.update_test_question_elo(text, jsonb) TO service_role;
 
+-- ── 065_marketplace_question_bank_kind.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 065: Question Bank items on the marketplace (roadmap 29.2)
+--
+-- Extends the marketplace kind check (060) to also allow 'questionBankItem'.
+-- Reuses the same table/columns as rubric/test/deck listings — a listing's
+-- `rubric_snapshot` column holds the QuestionBankItem itself when kind is
+-- 'questionBankItem', same generic-snapshot pattern introduced in 060.
+
+ALTER TABLE public.marketplace_listings
+  DROP CONSTRAINT marketplace_listings_kind_check;
+
+ALTER TABLE public.marketplace_listings
+  ADD CONSTRAINT marketplace_listings_kind_check
+    CHECK (kind IN ('rubric', 'test', 'deck', 'questionBankItem')) NOT VALID;
+
+ALTER TABLE public.marketplace_listings
+  VALIDATE CONSTRAINT marketplace_listings_kind_check;
+
 -- ── 066_notification_dismissals.sql ──────────────────────────────────────────────────────────────
 
 -- Migration 066: Notification Center (roadmap Phase 30).
@@ -4693,6 +4712,7 @@ insert into public._migrations (name) values
     ('062_document_comments.sql'),
     ('063_placement_sessions.sql'),
     ('064_atomic_test_question_elo.sql'),
+    ('065_marketplace_question_bank_kind.sql'),
     ('066_notification_dismissals.sql'),
     ('067_notification_dismissals_realtime.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')

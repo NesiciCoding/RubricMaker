@@ -491,6 +491,27 @@ describe('AppContext', () => {
         expect(result.current.commentBank).toHaveLength(0);
     });
 
+    it('should track comment bank usage without requiring a full item replace', () => {
+        const { result } = renderHook(() => useApp(), { wrapper });
+
+        act(() => {
+            result.current.addCommentBankItem('Good job', ['tag1']);
+        });
+        const item = result.current.commentBank[0];
+        expect(item.usageCount).toBeUndefined();
+
+        act(() => {
+            result.current.recordCommentBankUsage(item.id);
+        });
+        expect(result.current.commentBank[0].usageCount).toBe(1);
+        expect(result.current.commentBank[0].lastUsedAt).toBeTruthy();
+
+        act(() => {
+            result.current.recordCommentBankUsage(item.id);
+        });
+        expect(result.current.commentBank[0].usageCount).toBe(2);
+    });
+
     it('should mange grade scales', () => {
         const { result } = renderHook(() => useApp(), { wrapper });
 

@@ -1059,6 +1059,7 @@ function GradingTab() {
                         t('docs.gr_test_results_item_standards'),
                         t('docs.gr_test_results_item_integrity'),
                         t('docs.gr_test_results_item_audio_response'),
+                        t('docs.gr_test_results_item_export_summary'),
                     ]}
                 />
 

@@ -7,9 +7,30 @@ import { useApp } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import type { CefrLevel, MarketplaceListing, MarketplaceListingKind, Rubric, Test, FlashcardDeck } from '../types';
+import type {
+    CefrLevel,
+    MarketplaceListing,
+    MarketplaceListingKind,
+    Rubric,
+    Test,
+    FlashcardDeck,
+    QuestionBankItem,
+} from '../types';
 
-const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test', 'deck'];
+const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test', 'deck', 'questionBankItem'];
+
+/** QuestionBankItem has no `.name` field, unlike the other three publishable entity kinds. */
+function publishOptionLabel(
+    kind: MarketplaceListingKind,
+    entity: Rubric | Test | FlashcardDeck | QuestionBankItem
+): string {
+    if (kind === 'questionBankItem') {
+        const item = entity as QuestionBankItem;
+        if (item.kind === 'section' && item.section) return item.section.title;
+        return item.question?.prompt || '';
+    }
+    return (entity as Rubric | Test | FlashcardDeck).name;
+}
 
 export function filterAndSortListings(
     listings: MarketplaceListing[],
@@ -29,7 +50,17 @@ export function filterAndSortListings(
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
-    const { rubrics, tests, flashcardDecks, addRubric, addTest, addFlashcardDeck, settings } = useApp();
+    const {
+        rubrics,
+        tests,
+        flashcardDecks,
+        questionBank,
+        addRubric,
+        addTest,
+        addFlashcardDeck,
+        addQuestionBankItems,
+        settings,
+    } = useApp();
     const dbStatus = useDbStatus();
     const schoolId = settings.schoolId;
 
@@ -61,7 +92,14 @@ export default function MarketplacePage() {
         [listings, subjectFilter, sortBy, kindFilter]
     );
 
-    const publishOptions = publishKind === 'rubric' ? rubrics : publishKind === 'test' ? tests : flashcardDecks;
+    const publishOptions =
+        publishKind === 'rubric'
+            ? rubrics
+            : publishKind === 'test'
+              ? tests
+              : publishKind === 'deck'
+                ? flashcardDecks
+                : questionBank;
 
     function toggleCefrLevel(level: CefrLevel) {
         setPublishCefrLevels((prev) => (prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]));
@@ -93,7 +131,10 @@ export default function MarketplacePage() {
             publishKind,
             entity,
             publishAttribution.trim() || undefined,
-            { cefrLevels: publishCefrLevels.length ? publishCefrLevels : undefined }
+            {
+                name: publishKind === 'questionBankItem' ? publishOptionLabel(publishKind, entity) : undefined,
+                cefrLevels: publishCefrLevels.length ? publishCefrLevels : undefined,
+            }
         );
         setPublishing(false);
         if (result) {
@@ -111,6 +152,8 @@ export default function MarketplacePage() {
         if (cloned.kind === 'test') addTest(fields as Omit<Test, 'id' | 'createdAt' | 'updatedAt'>);
         else if (cloned.kind === 'deck')
             addFlashcardDeck(fields as Omit<FlashcardDeck, 'id' | 'createdAt' | 'updatedAt'>);
+        else if (cloned.kind === 'questionBankItem')
+            addQuestionBankItems([fields as Omit<QuestionBankItem, 'id' | 'createdAt' | 'updatedAt'>]);
         else addRubric(fields as Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'>);
         setClonedId(listingId);
         setTimeout(() => setClonedId(null), 2000);
@@ -179,26 +222,34 @@ export default function MarketplacePage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <label className="text-xs text-muted">{t('marketplace.publish_kind_label')}</label>
                             <div style={{ display: 'flex', gap: 6 }}>
-                                {(['rubric', 'test', 'deck'] as MarketplaceListingKind[]).map((kind) => (
-                                    <button
-                                        key={kind}
-                                        type="button"
-                                        className={`btn btn-sm ${publishKind === kind ? 'btn-primary' : 'btn-secondary'}`}
-                                        onClick={() => {
-                                            setPublishKind(kind);
-                                            setPublishEntityId('');
-                                        }}
-                                    >
-                                        {t(`marketplace.kind_${kind}`)}
-                                    </button>
-                                ))}
+                                {(['rubric', 'test', 'deck', 'questionBankItem'] as MarketplaceListingKind[]).map(
+                                    (kind) => (
+                                        <button
+                                            key={kind}
+                                            type="button"
+                                            className={`btn btn-sm ${publishKind === kind ? 'btn-primary' : 'btn-secondary'}`}
+                                            onClick={() => {
+                                                setPublishKind(kind);
+                                                setPublishEntityId('');
+                                            }}
+                                        >
+                                            {t(`marketplace.kind_${kind}`)}
+                                        </button>
+                                    )
+                                )}
                             </div>
-                            <label className="text-xs text-muted">{t('marketplace.publish_select_entity')}</label>
-                            <select value={publishEntityId} onChange={(e) => setPublishEntityId(e.target.value)}>
+                            <label htmlFor="marketplace-publish-entity" className="text-xs text-muted">
+                                {t('marketplace.publish_select_entity')}
+                            </label>
+                            <select
+                                id="marketplace-publish-entity"
+                                value={publishEntityId}
+                                onChange={(e) => setPublishEntityId(e.target.value)}
+                            >
                                 <option value="">{t('marketplace.publish_select_placeholder')}</option>
                                 {publishOptions.map((entity) => (
                                     <option key={entity.id} value={entity.id}>
-                                        {entity.name}
+                                        {publishOptionLabel(publishKind, entity) || t('questionBank.untitled_prompt')}
                                     </option>
                                 ))}
                             </select>

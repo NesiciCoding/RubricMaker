@@ -293,6 +293,7 @@ export default function ExportPage() {
                     const { exportSinglePdf } = await import('../utils/pdfExport');
                     await exportSinglePdf(sr, rubric, student, scale, {
                         orientation: orientation || rubric.format.orientation || 'portrait',
+                        styleTemplate: activeStyleTemplate,
                     });
                     logAuditEvent('export', 'export_pdf', 'rubric', rubric.id, { count: 1 });
                 }
@@ -304,6 +305,7 @@ export default function ExportPage() {
                 await exportBatchPdf(toExport, rubric, scale, {
                     padForDoubleSided,
                     orientation: orientation || rubric.format.orientation || 'portrait',
+                    styleTemplate: activeStyleTemplate,
                 });
                 logAuditEvent('export', 'export_pdf', 'rubric', rubric.id, { count: toExport.length });
             }

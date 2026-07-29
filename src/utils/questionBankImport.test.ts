@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseQuestionBankJson } from './questionBankImport';
+import { parseQuestionBankJson, exportQuestionBankJson } from './questionBankImport';
+import type { QuestionBankItem } from '../types';
 
 describe('parseQuestionBankJson', () => {
     it('parses a well-formed multiple-choice item', () => {
@@ -324,6 +325,60 @@ describe('parseQuestionBankJson', () => {
             key: 'questionBank.import_warn_too_many_items',
             params: { max: 500, dropped: 5 },
         });
+    });
+});
+
+describe('exportQuestionBankJson', () => {
+    it('round-trips a question item and a section item through export then import', () => {
+        const items: QuestionBankItem[] = [
+            {
+                id: 'item-1',
+                createdAt: '2026-01-01T00:00:00.000Z',
+                tags: ['grammar', 'a1'],
+                cefrLevel: 'A1',
+                question: {
+                    id: 'q-1',
+                    prompt: 'She ___ to school every day.',
+                    type: 'multiple-choice',
+                    points: 2,
+                    options: [
+                        { id: 'o-1', text: 'go', isCorrect: false },
+                        { id: 'o-2', text: 'goes', isCorrect: true },
+                    ],
+                },
+            },
+            {
+                id: 'item-2',
+                createdAt: '2026-01-02T00:00:00.000Z',
+                updatedAt: '2026-01-03T00:00:00.000Z',
+                kind: 'section',
+                tags: ['reading'],
+                section: {
+                    title: 'A short passage',
+                    content: 'Once upon a time...',
+                    questions: [{ id: 'q-2', prompt: 'Who is the story about?', type: 'open', points: 1 }],
+                },
+            },
+        ];
+
+        const json = exportQuestionBankJson(items);
+        expect(json).not.toContain('item-1');
+        expect(json).not.toContain('2026-01-01');
+
+        const result = parseQuestionBankJson(json);
+        expect(result.warnings).toEqual([]);
+        expect(result.items).toHaveLength(2);
+
+        const [first, second] = result.items;
+        expect(first.tags).toEqual(['grammar', 'a1']);
+        expect(first.cefrLevel).toBe('A1');
+        expect(first.question!.prompt).toBe('She ___ to school every day.');
+        expect(first.question!.options?.[1].isCorrect).toBe(true);
+
+        expect(second.kind).toBe('section');
+        expect(second.section!.title).toBe('A short passage');
+        expect(second.section!.questions).toHaveLength(1);
+        expect(second.section!.questions[0].prompt).toBe('Who is the story about?');
     });
 });
 

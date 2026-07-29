@@ -10,7 +10,7 @@ export default function CommentBankPage() {
         <>
             <Topbar title={t('commentBank.title')} />
             <div className="page-content fade-in">
-                <CommentBankManager />
+                <CommentBankManager fullPage />
             </div>
         </>
     );

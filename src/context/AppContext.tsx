@@ -141,6 +141,7 @@ type Action =
     | { type: 'ADD_COMMENT_BANK_ITEM'; payload: CommentBankItem }
     | { type: 'UPDATE_COMMENT_BANK_ITEM'; payload: CommentBankItem }
     | { type: 'DELETE_COMMENT_BANK_ITEM'; id: string }
+    | { type: 'RECORD_COMMENT_BANK_USAGE'; id: string }
     | { type: 'ADD_EXPORT_TEMPLATE'; payload: ExportTemplate }
     | { type: 'DELETE_EXPORT_TEMPLATE'; id: string }
     | { type: 'SAVE_PEER_REVIEW'; payload: StudentRubric }
@@ -456,6 +457,14 @@ function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'DELETE_COMMENT_BANK_ITEM': {
             const next = state.commentBank.filter((i) => i.id !== action.id);
+            if (isOffline()) saveCommentBank(next);
+            return { ...state, commentBank: next };
+        }
+        case 'RECORD_COMMENT_BANK_USAGE': {
+            const now = new Date().toISOString();
+            const next = state.commentBank.map((i) =>
+                i.id === action.id ? { ...i, usageCount: (i.usageCount ?? 0) + 1, lastUsedAt: now, updatedAt: now } : i
+            );
             if (isOffline()) saveCommentBank(next);
             return { ...state, commentBank: next };
         }
@@ -939,6 +948,7 @@ interface AppContextValue extends StoreData {
     addCommentBankItem: (text: string, tags: string[]) => CommentBankItem;
     updateCommentBankItem: (item: CommentBankItem) => void;
     deleteCommentBankItem: (id: string) => void;
+    recordCommentBankUsage: (id: string) => void;
     addQuestionBankItem: (
         question: Omit<TestQuestion, 'sectionId'>,
         tags: string[],
@@ -1768,6 +1778,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const deleteCommentBankItem = useCallback((id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id }), []);
+    const recordCommentBankUsage = useCallback((id: string) => dispatch({ type: 'RECORD_COMMENT_BANK_USAGE', id }), []);
 
     const addQuestionBankItem = useCallback(
         (question: Omit<TestQuestion, 'sectionId'>, tags: string[], cefrLevel?: CefrLevel): QuestionBankItem => {
@@ -2436,6 +2447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addCommentBankItem,
             updateCommentBankItem,
             deleteCommentBankItem,
+            recordCommentBankUsage,
             addQuestionBankItem,
             addSectionBankItem,
             addQuestionBankItems,
@@ -2589,6 +2601,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addCommentBankItem,
             updateCommentBankItem,
             deleteCommentBankItem,
+            recordCommentBankUsage,
             addQuestionBankItem,
             addSectionBankItem,
             addQuestionBankItems,
