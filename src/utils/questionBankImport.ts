@@ -313,6 +313,14 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
     return { items: parsed, warnings };
 }
 
+/** Serializes the bank to the same `{ items: [...] }` shape `parseQuestionBankJson` reads, for a lossless export/import round-trip. */
+export function exportQuestionBankJson(items: QuestionBankItem[]): string {
+    const exportItems: ParsedQuestionBankItem[] = items.map(
+        ({ id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest }) => rest
+    );
+    return JSON.stringify({ items: exportItems }, null, 2);
+}
+
 export async function parseQuestionBankFile(file: File): Promise<QuestionBankImportResult> {
     const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
     if (ext !== 'json') {

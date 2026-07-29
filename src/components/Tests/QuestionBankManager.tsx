@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Trash2, Tag, Upload, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Trash2, Upload, Download, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
@@ -8,6 +9,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/docxExport';
+import { exportQuestionBankJson } from '../../utils/questionBankImport';
 import { QUESTION_TYPES } from './QuestionEditor';
 import type { QuestionBankItem, CefrLevel, TestQuestion, TestQuestionType } from '../../types';
 import QuestionBankImportModal from './QuestionBankImportModal';
@@ -220,6 +222,13 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         bulkUpdateQuestionBankItems(Array.from(selectedIds), { cefrLevel: bulkCefrValue || null });
     }
 
+    function handleExport() {
+        const json = exportQuestionBankJson(questionBank);
+        const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+        saveAs(blob, 'question-bank-export.json');
+        showToast(t('questionBank.export_success_toast'), 'success');
+    }
+
     return (
         <>
             <div
@@ -232,7 +241,15 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                 }}
             >
                 {manager && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            disabled={questionBank.length === 0}
+                            onClick={handleExport}
+                        >
+                            <Download size={14} /> {t('questionBank.export_button')}
+                        </button>
                         <button
                             type="button"
                             className="btn btn-secondary btn-sm"

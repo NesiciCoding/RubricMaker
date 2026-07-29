@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SupabaseAdapter } from '../SupabaseAdapter';
-import { DEFAULT_FORMAT, type Rubric } from '../../../types';
+import { DEFAULT_FORMAT, type Rubric, type FlashcardDeck, type QuestionBankItem } from '../../../types';
 
 type QueryResult = { data: unknown; error: { message: string } | null };
 
@@ -209,7 +209,7 @@ describe('SupabaseAdapter marketplace methods', () => {
         expect(cloned).not.toBeNull();
         expect(cloned?.kind).toBe('rubric');
         expect(cloned?.entity.id).not.toBe(rubric.id);
-        expect(cloned?.entity.name).toBe(rubric.name);
+        expect((cloned?.entity as Rubric)?.name).toBe(rubric.name);
         expect((cloned?.entity as unknown as { versions?: unknown })?.versions).toBeUndefined();
     });
 
@@ -221,8 +221,45 @@ describe('SupabaseAdapter marketplace methods', () => {
         const cloned = await connectedAdapter.cloneMarketplaceListing('listing1');
 
         expect(cloned?.kind).toBe('deck');
-        expect(cloned?.entity.name).toBe('Grammar Deck');
+        expect((cloned?.entity as FlashcardDeck)?.name).toBe('Grammar Deck');
         expect(cloned?.entity.id).not.toBe('d1');
+    });
+
+    it('cloneMarketplaceListing returns the questionBankItem kind for a published question', async () => {
+        const item = {
+            id: 'qb1',
+            question: { id: 'q1', prompt: 'What is 2+2?', type: 'open', points: 1 },
+            tags: ['math'],
+            createdAt: '2024-01-01T00:00:00.000Z',
+        };
+        const client = makeClient({ data: { kind: 'questionBankItem', rubric_snapshot: item }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        const cloned = await connectedAdapter.cloneMarketplaceListing('listing1');
+
+        expect(cloned?.kind).toBe('questionBankItem');
+        expect((cloned?.entity as QuestionBankItem)?.question?.prompt).toBe('What is 2+2?');
+        expect(cloned?.entity.id).not.toBe('qb1');
+    });
+
+    it('publishToMarketplace uses an explicit options.name for a questionBankItem, which has no .name field', async () => {
+        const item = {
+            id: 'qb1',
+            question: { id: 'q1', prompt: 'What is 2+2?', type: 'open', points: 1 },
+            tags: ['math'],
+            createdAt: '2024-01-01T00:00:00.000Z',
+        };
+        const client = makeClient({ data: { ...item, kind: 'questionBankItem' }, error: null });
+        const connectedAdapter = adapterWithClient(client);
+
+        await connectedAdapter.publishToMarketplace('school1', 'questionBankItem', item as never, undefined, {
+            name: 'What is 2+2?',
+        });
+
+        const builder = client.from.mock.results[0].value as { insert: ReturnType<typeof vi.fn> };
+        expect(builder.insert).toHaveBeenCalledWith(
+            expect.objectContaining({ kind: 'questionBankItem', name: 'What is 2+2?', subject: null })
+        );
     });
 
     it('cloneMarketplaceListing returns null on error', async () => {

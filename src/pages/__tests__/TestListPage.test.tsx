@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -71,6 +71,7 @@ const mockUseApp = {
     studentRubrics: [],
     studentTests: [],
     settings: mockSettings,
+    exportTemplates: [],
     addTest: mockAddTest,
     updateTest: mockUpdateTest,
     deleteTest: mockDeleteTest,
@@ -97,6 +98,21 @@ vi.mock('../../hooks/useDbStatus', () => ({
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => null),
 }));
+
+const mockExportTestSummaryPdf = vi.fn();
+const mockExportBatchTestSummaryPdf = vi.fn();
+vi.mock('../../utils/pdfExport', () => ({
+    exportTestSummaryPdf: (...args: unknown[]) => mockExportTestSummaryPdf(...args),
+    exportBatchTestSummaryPdf: (...args: unknown[]) => mockExportBatchTestSummaryPdf(...args),
+}));
+
+const mockBuildTestResultsCsv = vi.fn((..._args: unknown[]) => 'Student Name,Score %\nAlice,100.0');
+vi.mock('../../utils/testExportPresets', () => ({
+    buildTestResultsCsv: (...args: unknown[]) => mockBuildTestResultsCsv(...args),
+}));
+
+const mockSaveAs = vi.fn();
+vi.mock('file-saver', () => ({ saveAs: (...args: unknown[]) => mockSaveAs(...args) }));
 
 describe('TestListPage', () => {
     beforeEach(() => {
@@ -163,6 +179,73 @@ describe('TestListPage', () => {
         fireEvent.click(resultsBtn);
         expect(resultsBtn.getAttribute('aria-expanded')).toBe('false');
         (mockUseApp as Record<string, unknown>).studentTests = [];
+    });
+
+    it('switching to whole-class scope and clicking Export CSV builds and downloads the CSV', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
+        mockBuildTestResultsCsv.mockClear();
+        mockSaveAs.mockClear();
+        const { default: TestListPage } = await import('../TestListPage');
+        render(
+            <MemoryRouter>
+                <TestListPage />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByTitle('tests.results.action_results'));
+
+        const scopeSelect = screen
+            .getAllByRole('combobox')
+            .find((el) => within(el).queryByText('tests.export.scope_batch')) as HTMLSelectElement;
+        fireEvent.change(scopeSelect, { target: { value: 'batch' } });
+
+        fireEvent.click(screen.getByText('tests.export.export_csv'));
+
+        await waitFor(() => expect(mockSaveAs).toHaveBeenCalledTimes(1));
+        expect(mockBuildTestResultsCsv).toHaveBeenCalledWith(mockTest, [mockStudentTest], [mockStudent]);
+        expect(mockSaveAs.mock.calls[0][1]).toBe('Vocabulary_Quiz_results.csv');
+        (mockUseApp as Record<string, unknown>).studentTests = [];
+    });
+
+    it('exporting a single-student PDF forwards the active style template', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
+        (mockUseApp as Record<string, unknown>).exportTemplates = [
+            {
+                id: 'style1',
+                name: 'Custom Style',
+                kind: 'style',
+                dataUrl: '',
+                levelHeaders: [],
+                headingFont: 'Georgia',
+            },
+        ];
+        mockSettings.styleTemplateId = 'style1';
+        mockExportTestSummaryPdf.mockClear();
+        const { default: TestListPage } = await import('../TestListPage');
+        render(
+            <MemoryRouter>
+                <TestListPage />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByTitle('tests.results.action_results'));
+
+        const studentSelect = screen
+            .getAllByRole('combobox')
+            .find((el) => within(el).queryByText('Alice')) as HTMLSelectElement;
+        fireEvent.change(studentSelect, { target: { value: 's1' } });
+
+        fireEvent.click(screen.getByText('tests.export.export_pdf'));
+
+        await waitFor(() => expect(mockExportTestSummaryPdf).toHaveBeenCalledTimes(1));
+        expect(mockExportTestSummaryPdf).toHaveBeenCalledWith(
+            's1',
+            [mockStudentTest],
+            mockTest,
+            mockStudent,
+            expect.objectContaining({ id: 'style1', headingFont: 'Georgia' })
+        );
+        (mockUseApp as Record<string, unknown>).studentTests = [];
+        (mockUseApp as Record<string, unknown>).exportTemplates = [];
+        mockSettings.styleTemplateId = undefined;
     });
 
     it('renders no-tests message when test list is empty', async () => {
