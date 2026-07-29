@@ -39,6 +39,7 @@ import type {
     NewsFlashRead,
     QuestionBankItem,
     DocumentComment,
+    NotificationDismissal,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -960,6 +961,43 @@ export class SupabaseAdapter {
 
     async deleteDocumentComment(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('document_comments').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Notification Dismissals (roadmap 30.1) ────────────────────────────────────
+    // Owner-only — snoozes overdue-grading/moderation-pending notifications. Unread
+    // messages need no table here; Message.readByTeacher is already real, synced state.
+
+    async fetchNotificationDismissals(): Promise<NotificationDismissal[]> {
+        const { data, error } = await this.db()
+            .from('notification_dismissals')
+            .select('data')
+            .eq('owner_id', this.uid());
+        if (error) {
+            console.error('fetchNotificationDismissals', error);
+            return [];
+        }
+        return (data ?? []).map((r) => r.data as NotificationDismissal);
+    }
+
+    async upsertNotificationDismissal(dismissal: NotificationDismissal): Promise<SyncResult> {
+        const { error } = await this.db().from('notification_dismissals').upsert(
+            {
+                id: dismissal.id,
+                owner_id: this.uid(),
+                data: dismissal,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteNotificationDismissal(id: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('notification_dismissals')
+            .delete()
+            .eq('id', id)
+            .eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

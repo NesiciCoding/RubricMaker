@@ -48,6 +48,7 @@ import type {
     NewsFlashRead,
     QuestionBankItem,
     DocumentComment,
+    NotificationDismissal,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -104,6 +105,7 @@ class StorageSyncService {
         { table: 'news_flash_reads', filterColumn: 'owner_id' },
         { table: 'question_bank_items', filterColumn: 'owner_id' },
         { table: 'document_comments', filterColumn: 'owner_id' },
+        { table: 'notification_dismissals', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -631,6 +633,7 @@ class StorageSyncService {
                 newsFlashReads,
                 questionBank,
                 documentComments,
+                notificationDismissals,
             ] = await Promise.all([
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
@@ -640,6 +643,7 @@ class StorageSyncService {
                 this.adapter.fetchNewsFlashReads().catch(() => []),
                 this.adapter.fetchQuestionBank().catch(() => []),
                 this.adapter.fetchDocumentComments().catch(() => []),
+                this.adapter.fetchNotificationDismissals().catch(() => []),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
@@ -715,6 +719,7 @@ class StorageSyncService {
                 newsFlashReads,
                 questionBank,
                 documentComments,
+                notificationDismissals,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -777,6 +782,7 @@ class StorageSyncService {
                 ...state.newsFlashReads.map((r) => this.adapter.upsertNewsFlashRead(r)),
                 ...state.questionBank.map((q) => this.adapter.upsertQuestionBankItem(q)),
                 ...state.documentComments.map((c) => this.adapter.upsertDocumentComment(c)),
+                ...state.notificationDismissals.map((d) => this.adapter.upsertNotificationDismissal(d)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -861,6 +867,11 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertDocumentComment(payload as DocumentComment);
                     else if (id) result = await this.adapter.deleteDocumentComment(id);
+                    break;
+                case 'notificationDismissal':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertNotificationDismissal(payload as NotificationDismissal);
+                    else if (id) result = await this.adapter.deleteNotificationDismissal(id);
                     break;
                 case 'exportTemplate':
                     if (action === 'upsert') await this.attachmentSync.pushExportTemplate(payload as ExportTemplate);

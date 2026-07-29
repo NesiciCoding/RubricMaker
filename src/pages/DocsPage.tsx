@@ -26,6 +26,7 @@ import {
     Search,
     Mail,
     Newspaper,
+    Bell,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
@@ -324,6 +325,12 @@ function getRouteTree(t: TFunction): RouteNode[] {
             path: '/messages',
             label: t('docs.route_messages_label'),
             description: t('docs.route_messages_desc'),
+            color: '#f59e0b',
+        },
+        {
+            path: '/notifications',
+            label: t('docs.route_notifications_label'),
+            description: t('docs.route_notifications_desc'),
             color: '#f59e0b',
         },
         {
@@ -1015,6 +1022,16 @@ function GradingTab() {
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                     {t('docs.gr_messages_scope_note')}
+                </p>
+            </FeatureSection>
+
+            <FeatureSection icon={Bell} title={t('docs.gr_notifications_title')} color="#f59e0b">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_notifications_body_prefix')} <code>/notifications</code>{' '}
+                    {t('docs.gr_notifications_body_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_notifications_dismiss_note')}
                 </p>
             </FeatureSection>
 

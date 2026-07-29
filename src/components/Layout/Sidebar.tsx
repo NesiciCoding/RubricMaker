@@ -24,10 +24,12 @@ import {
     Mail,
     Newspaper,
     Library,
+    Bell,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
+import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 
 interface SidebarProps {
     mobileOpen?: boolean;
@@ -40,6 +42,7 @@ interface SubItem {
     label: string;
     end?: boolean;
     badge?: number;
+    badgeLabelKey?: string;
 }
 
 interface Domain {
@@ -64,6 +67,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         () => getModerationQueue(rubrics, studentRubrics, peerReviews, students, 2).length,
         [rubrics, studentRubrics, peerReviews, students]
     );
+
+    // Deliberately a separate computation from useNotificationFeed's own (dismissal-
+    // filtered) moderationItems count above: a teacher snoozing a moderation notification
+    // shouldn't make this page's own queue-depth badge under-report real pending work.
+    const { count: notificationCount } = useNotificationFeed();
 
     // Auto-close mobile drawer on navigation
     useEffect(() => {
@@ -129,11 +137,18 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             key: 'insights',
             icon: BarChart3,
             label: t('sidebar.domain_insights'),
-            matchPrefixes: ['/statistics', '/export', '/activity-dashboard'],
+            matchPrefixes: ['/statistics', '/export', '/activity-dashboard', '/notifications'],
             items: [
                 { to: '/statistics', icon: BarChart3, label: t('navigation.statistics') },
                 { to: '/export', icon: Download, label: t('navigation.export') },
                 { to: '/activity-dashboard', icon: LayoutGrid, label: t('navigation.activity_dashboard') },
+                {
+                    to: '/notifications',
+                    icon: Bell,
+                    label: t('navigation.notifications'),
+                    badge: notificationCount > 0 ? notificationCount : undefined,
+                    badgeLabelKey: 'sidebar.notifications_badge',
+                },
             ],
         },
         {
@@ -161,7 +176,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     }, [matchedDomain?.key]);
     const activeDomain = matchedDomain ?? domains.find((d) => d.key === lastDomainKey) ?? domains[0];
 
-    const renderNavLink = ({ to, icon: Icon, label, end, badge }: SubItem) => (
+    const renderNavLink = ({ to, icon: Icon, label, end, badge, badgeLabelKey }: SubItem) => (
         <NavLink
             key={to}
             to={to}
@@ -175,7 +190,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                 <span
                     className="badge badge-orange"
                     style={{ marginLeft: 'auto', fontSize: '0.7rem' }}
-                    aria-label={t('sidebar.moderation_pending_badge', { count: badge })}
+                    aria-label={t(badgeLabelKey ?? 'sidebar.moderation_pending_badge', { count: badge })}
                 >
                     {badge}
                 </span>

@@ -46,6 +46,8 @@ import type {
     TestQuestion,
     CefrLevel,
     DocumentComment,
+    NotificationDismissal,
+    NotificationDismissalType,
 } from '../types';
 import {
     loadStore,
@@ -80,6 +82,7 @@ import {
     saveNewsFlashReads,
     saveQuestionBank,
     saveDocumentComments,
+    saveNotificationDismissals,
     saveUserTemplates,
     importFullBackup,
     loadPendingQueue,
@@ -196,7 +199,8 @@ type Action =
       }
     | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
     | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
-    | { type: 'DELETE_DOCUMENT_COMMENT'; id: string };
+    | { type: 'DELETE_DOCUMENT_COMMENT'; id: string }
+    | { type: 'DISMISS_NOTIFICATION'; payload: NotificationDismissal };
 
 // Type-only handle on the lazily-loaded singleton's shape — pure type-level, so it
 // doesn't force the (heavy) module to be imported as a value just to describe it.
@@ -853,6 +857,15 @@ function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveDocumentComments(next);
             return { ...state, documentComments: next };
         }
+        case 'DISMISS_NOTIFICATION': {
+            const exists = state.notificationDismissals.findIndex((d) => d.id === action.payload.id);
+            const next =
+                exists >= 0
+                    ? state.notificationDismissals.map((d) => (d.id === action.payload.id ? action.payload : d))
+                    : [...state.notificationDismissals, action.payload];
+            if (isOffline()) saveNotificationDismissals(next);
+            return { ...state, notificationDismissals: next };
+        }
         case 'BULK_UPDATE_QUESTION_BANK_ITEMS': {
             const idSet = new Set(action.ids);
             const now = new Date().toISOString();
@@ -960,6 +973,7 @@ interface AppContextValue extends StoreData {
     addDocumentComment: (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>) => DocumentComment;
     resolveDocumentComment: (id: string, resolved: boolean) => void;
     deleteDocumentComment: (id: string) => void;
+    dismissNotification: (type: NotificationDismissalType, entityId: string, fingerprint: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
     // Peer Review
@@ -1146,6 +1160,7 @@ async function flushToLocalStorage(merged: StoreData) {
     saveNewsFlashReads(merged.newsFlashReads);
     saveQuestionBank(merged.questionBank);
     saveDocumentComments(merged.documentComments);
+    saveNotificationDismissals(merged.notificationDismissals);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
     // app-level delete call to clean it up locally, so sweep for orphans after every sync.
@@ -1544,6 +1559,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.newsFlashReads, state.newsFlashReads, 'newsFlashRead', (r) => r.id);
         diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
         diff(prev.documentComments, state.documentComments, 'documentComment', (c) => c.id);
+        diff(prev.notificationDismissals, state.notificationDismissals, 'notificationDismissal', (d) => d.id);
 
         if (prev.settings !== state.settings && JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
@@ -1840,6 +1856,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
     const deleteDocumentComment = useCallback((id: string) => dispatch({ type: 'DELETE_DOCUMENT_COMMENT', id }), []);
+
+    const dismissNotification = useCallback(
+        (type: NotificationDismissalType, entityId: string, fingerprint: string): void => {
+            const dismissal: NotificationDismissal = {
+                id: `${type}:${entityId}`,
+                type,
+                entityId,
+                fingerprint,
+                dismissedAt: new Date().toISOString(),
+            };
+            dispatch({ type: 'DISMISS_NOTIFICATION', payload: dismissal });
+        },
+        []
+    );
 
     const addExportTemplate = useCallback((t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
         const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };
@@ -2428,6 +2458,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addDocumentComment,
             resolveDocumentComment,
             deleteDocumentComment,
+            dismissNotification,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,
@@ -2581,6 +2612,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             addDocumentComment,
             resolveDocumentComment,
             deleteDocumentComment,
+            dismissNotification,
             addExportTemplate,
             deleteExportTemplate,
             savePeerReview,

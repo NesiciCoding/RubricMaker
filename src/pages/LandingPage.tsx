@@ -33,6 +33,7 @@ import {
     Mail,
     Newspaper,
     Route,
+    Bell,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
@@ -127,6 +128,12 @@ const TEACHER_FEATURES = [
         icon: Mail,
         title: 'Student Messaging',
         desc: 'Answer student questions about a rubric, test, or essay right from your Messages inbox — or reach out to a student yourself.',
+        color: '#f59e0b',
+    },
+    {
+        icon: Bell,
+        title: 'Notification Center',
+        desc: 'One bell for overdue grading, unread messages, and pending moderation reviews, with a full filterable history and optional nightly email digests per category.',
         color: '#f59e0b',
     },
     {

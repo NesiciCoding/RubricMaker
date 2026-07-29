@@ -69,6 +69,10 @@ vi.mock('../../context/AppContext', () => ({
         analysisResults: [],
         attachments: [],
         essayTemplates: [],
+        messages: [],
+        notificationDismissals: [],
+        dismissNotification: vi.fn(),
+        markMessageReadByTeacher: vi.fn(),
         // Phase 3/4 actions
         updateClass: vi.fn(),
         addEssayAssignments: vi.fn(),
@@ -434,6 +438,19 @@ describe('ComparativeGrading — a11y', () => {
     it('has no axe violations', async () => {
         const { default: ComparativeGrading } = await import('../ComparativeGrading');
         renderPage(<ComparativeGrading />, '/grade-comparative/c1/r1', '/grade-comparative/:classId/:rubricId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── NotificationsPage (roadmap 30.1) ────────────────────────────────────────────
+
+describe('NotificationsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations on the empty state', async () => {
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderPage(<NotificationsPage />);
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });

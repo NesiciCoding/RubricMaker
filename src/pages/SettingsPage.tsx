@@ -852,10 +852,19 @@ export default function SettingsPage() {
                             </div>
                         )}
 
-                        {/* Teacher email digest (Supabase mode only, pg_cron-driven) */}
+                        {/* Teacher email digest (Supabase mode only, pg_cron-driven) — three independent
+                            per-category opt-ins (roadmap 30.2), matching the three sources the in-app
+                            Notification Center surfaces. */}
                         {dbStatus.isConnected && (
                             <div className="card" style={{ marginBottom: 24 }}>
-                                <h3 style={{ marginBottom: 12 }}>{t('settings.digest_title', 'Email Digest')}</h3>
+                                <h3 style={{ marginBottom: 4 }}>{t('settings.digest_title', 'Email Digest')}</h3>
+                                <div className="text-xs text-muted" style={{ marginBottom: 12 }}>
+                                    {t(
+                                        'settings.digest_intro',
+                                        'Runs nightly via a scheduled job; requires the server-side digest job and SMTP to be set up (self-hosted deployments only, see docs/SELF_HOSTING_OPS.md).'
+                                    )}
+                                </div>
+
                                 <label
                                     style={{
                                         display: 'flex',
@@ -867,18 +876,80 @@ export default function SettingsPage() {
                                 >
                                     <input
                                         type="checkbox"
+                                        checked={!!settings.digestOverdueGradingEnabled}
+                                        onChange={(e) =>
+                                            updateSettings({ digestOverdueGradingEnabled: e.target.checked })
+                                        }
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>
+                                            {t('settings.digest_overdue_label', 'Overdue grading')}
+                                        </div>
+                                        <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                            {t(
+                                                'settings.digest_overdue_help',
+                                                'Sends you an email when students have gone ungraded past your overdue threshold.'
+                                            )}
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        marginTop: 14,
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={!!settings.digestUnreadMessagesEnabled}
+                                        onChange={(e) =>
+                                            updateSettings({ digestUnreadMessagesEnabled: e.target.checked })
+                                        }
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>
+                                            {t('settings.digest_messages_label', 'Unread student messages')}
+                                        </div>
+                                        <div className="text-xs text-muted" style={{ marginTop: 2 }}>
+                                            {t(
+                                                'settings.digest_messages_help',
+                                                'Sends you an email when students have sent messages you haven’t read yet.'
+                                            )}
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        marginTop: 14,
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
                                         checked={!!settings.digestEmailEnabled}
                                         onChange={(e) => updateSettings({ digestEmailEnabled: e.target.checked })}
                                         style={{ accentColor: 'var(--accent)' }}
                                     />
                                     <div>
                                         <div style={{ fontWeight: 500 }}>
-                                            {t('settings.digest_label', 'Send me a nightly email digest')}
+                                            {t('settings.digest_label', 'Pending moderation disputes')}
                                         </div>
                                         <div className="text-xs text-muted" style={{ marginTop: 2 }}>
                                             {t(
                                                 'settings.digest_help',
-                                                'Sends you an email when you have pending second-marker disputes on the Moderation Queue. Runs nightly via a scheduled job; requires the server-side digest job and SMTP to be set up (self-hosted deployments only, see docs/SELF_HOSTING_OPS.md).'
+                                                'Sends you an email when you have pending second-marker disputes on the Moderation Queue.'
                                             )}
                                         </div>
                                     </div>
