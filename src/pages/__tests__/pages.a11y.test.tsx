@@ -131,6 +131,9 @@ vi.mock('../../context/AppContext', () => ({
         newsFlashes: [],
         newsFlashReads: [],
         commentBank: [],
+        userTemplates: [],
+        gradingTasks: [],
+        standardMasteryTargets: [],
         notificationDismissals: [],
         dismissNotification: vi.fn(),
         markMessageReadByTeacher: vi.fn(),
@@ -190,6 +193,22 @@ vi.mock('../../context/AppContext', () => ({
         fetchTestAssignmentTeacherKeys: vi.fn(() => Promise.resolve([])),
         setPlacementOverride: vi.fn(),
         fetchEssayAssignmentByKey: vi.fn(() => Promise.resolve(null)),
+        // Dashboard / activity / rubric-list / students / attachments actions
+        deleteUserTemplate: vi.fn(),
+        sendMessage: vi.fn(),
+        notifyStudentMessage: vi.fn(),
+        addGradingTasks: vi.fn(),
+        deleteGradingTask: vi.fn(),
+        deleteRubric: vi.fn(),
+        createGroupStudentRubrics: vi.fn(),
+        addStudent: vi.fn(),
+        updateStudent: vi.fn(),
+        deleteStudent: vi.fn(),
+        addClass: vi.fn(),
+        deleteClass: vi.fn(),
+        mergeClasses: vi.fn(),
+        setStudentPassword: vi.fn(),
+        deleteAttachment: vi.fn(),
         ...appStateOverride,
     }),
 }));
@@ -803,6 +822,105 @@ describe('LiveMonitorPage — a11y', () => {
     it('has no axe violations', async () => {
         const { default: LiveMonitorPage } = await import('../LiveMonitorPage');
         renderPage(<LiveMonitorPage kind="test" />, '/tests/t1/monitor', '/tests/:testId/monitor');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── Dashboard (roadmap 31.5) ────────────────────────────────────────────────────
+
+describe('Dashboard — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: Dashboard } = await import('../Dashboard');
+        renderPage(<Dashboard />, '/', '/');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── ActivityDashboardPage (roadmap 31.5) ────────────────────────────────────────
+
+describe('ActivityDashboardPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: ActivityDashboardPage } = await import('../ActivityDashboardPage');
+        renderPage(<ActivityDashboardPage />, '/activity-dashboard', '/activity-dashboard');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── RubricList (roadmap 31.5) ───────────────────────────────────────────────────
+
+describe('RubricList — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations with a rubric present', async () => {
+        const { default: RubricList } = await import('../RubricList');
+        renderPage(<RubricList />, '/rubrics', '/rubrics');
+        expect(document.body.textContent).toContain('Test Rubric');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StudentsPage (roadmap 31.5) ─────────────────────────────────────────────────
+
+describe('StudentsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: StudentsPage } = await import('../StudentsPage');
+        renderPage(<StudentsPage />, '/students', '/students');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StatisticsPage (roadmap 31.5) ───────────────────────────────────────────────
+
+describe('StatisticsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    // DEFERRED (roadmap Phase 31.8 follow-up): StatisticsPage exhausts the jsdom
+    // worker's heap on mount (OOM), independent of a11y — the recharts
+    // ResponsiveContainer stub does not resolve it, so the cause is a deeper
+    // render/compute loop that only manifests in the zero-layout jsdom
+    // environment. Auditing it needs a harness change (isolate the offending
+    // chart/aggregation, or run it under a real layout engine), not a markup fix.
+    // Unskip once the page can render in the test environment.
+    it.skip('has no axe violations (blocked on jsdom OOM, 31.8)', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── ExportPage (roadmap 31.5) ───────────────────────────────────────────────────
+
+describe('ExportPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: ExportPage } = await import('../ExportPage');
+        renderPage(<ExportPage />, '/export', '/export');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── AttachmentsPage (roadmap 31.5) ──────────────────────────────────────────────
+
+describe('AttachmentsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: AttachmentsPage } = await import('../AttachmentsPage');
+        renderPage(<AttachmentsPage />, '/attachments', '/attachments');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });

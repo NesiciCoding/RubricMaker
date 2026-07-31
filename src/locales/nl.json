@@ -935,6 +935,7 @@
         "action_merge": "Samenvoegen met...",
         "action_delete": "Verwijderen",
         "new_class_placeholder": "Nieuwe klas…",
+        "add_class": "Klas toevoegen",
         "default_class_name": "Klas",
         "students_count": "leerlingen",
         "no_students": "Nog geen leerlingen in deze klas.",

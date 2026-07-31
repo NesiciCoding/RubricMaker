@@ -935,6 +935,7 @@
         "action_merge": "Zusammenführen in...",
         "action_delete": "Löschen",
         "new_class_placeholder": "Neue Klasse…",
+        "add_class": "Klasse hinzufügen",
         "default_class_name": "Klasse",
         "students_count": "Schüler",
         "no_students": "Noch keine Schüler in dieser Klasse.",

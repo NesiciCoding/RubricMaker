@@ -935,6 +935,7 @@
         "action_merge": "Merge into...",
         "action_delete": "Delete",
         "new_class_placeholder": "New class…",
+        "add_class": "Add class",
         "default_class_name": "Class",
         "students_count": "students",
         "no_students": "No students in this class yet.",
