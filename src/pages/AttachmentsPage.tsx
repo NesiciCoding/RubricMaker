@@ -84,8 +84,11 @@ export default function AttachmentsPage() {
                             alignItems: 'center',
                         }}
                     >
-                        <label className="text-xs text-muted">{t('attachments.link_to_rubric')}</label>
+                        <label className="text-xs text-muted" htmlFor="att-rubric">
+                            {t('attachments.link_to_rubric')}
+                        </label>
                         <select
+                            id="att-rubric"
                             value={selectedRubricId}
                             onChange={(e) => {
                                 setSelectedRubricId(e.target.value);
@@ -112,8 +115,12 @@ export default function AttachmentsPage() {
                                 alignItems: 'center',
                             }}
                         >
-                            <label className="text-xs text-muted">{t('attachments.link_to_student')}</label>
+                            <label className="text-xs text-muted" htmlFor="att-class">
+                                {t('attachments.link_to_student')}
+                            </label>
                             <select
+                                id="att-class"
+                                aria-label={t('attachments.any_class')}
                                 value={selectedClassId}
                                 onChange={(e) => {
                                     setSelectedClassId(e.target.value);
@@ -130,6 +137,7 @@ export default function AttachmentsPage() {
                                 ))}
                             </select>
                             <select
+                                aria-label={t('attachments.link_to_student')}
                                 value={selectedStudentId}
                                 onChange={(e) => setSelectedStudentId(e.target.value)}
                                 style={{ width: 140 }}

@@ -293,8 +293,11 @@ export default function SpeakingSession() {
 
                     {!timerLocked && (
                         <div className="form-group" style={{ maxWidth: 200, marginBottom: 16 }}>
-                            <label style={{ fontSize: '0.85rem' }}>{t('speaking.duration_minutes')}</label>
+                            <label htmlFor="sp-duration" style={{ fontSize: '0.85rem' }}>
+                                {t('speaking.duration_minutes')}
+                            </label>
                             <input
+                                id="sp-duration"
                                 type="number"
                                 min={1}
                                 max={30}
@@ -553,10 +556,11 @@ export default function SpeakingSession() {
 
                 {/* ── Overall Comment ── */}
                 <div className="card" style={{ marginBottom: 24 }}>
-                    <label style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>
+                    <label htmlFor="sp-overall-comment" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>
                         {t('gradeStudent.overall_comment_label')}
                     </label>
                     <textarea
+                        id="sp-overall-comment"
                         value={overallComment}
                         onChange={(e) => {
                             setOverallComment(e.target.value);

@@ -223,7 +223,7 @@ describe('SettingsPage', () => {
         renderPage();
         fireEvent.click(screen.getByText('Administration'));
         // Smoke check: the tab switch itself exercises the admin-only render branch.
-        expect(screen.getByRole('button', { name: 'Administration' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('tab', { name: 'Administration' })).toHaveAttribute('aria-selected', 'true');
     });
 
     it('renders role switch buttons on the General tab', () => {

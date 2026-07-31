@@ -146,7 +146,7 @@ export default function StudentFlashcardStudyPage() {
                     </div>
                 ) : !deck ? (
                     <div className="empty-state">
-                        <h3>{t('flashcards.deck_not_found')}</h3>
+                        <h2>{t('flashcards.deck_not_found')}</h2>
                     </div>
                 ) : (
                     <>
@@ -160,9 +160,9 @@ export default function StudentFlashcardStudyPage() {
                                     marginBottom: 20,
                                 }}
                             >
-                                <h3 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                                <h2 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
                                     {t('flashcards.my_progress_heading')}
-                                </h3>
+                                </h2>
                                 <FlashcardInsightsPanel insights={insights} deckKind={deck?.deckKind} />
                             </div>
                         )}

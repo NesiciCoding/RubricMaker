@@ -325,16 +325,14 @@ describe('SettingsPage deep coverage', () => {
     it('default grade scale dropdown change calls updateSettings', () => {
         renderPage(<SettingsPage />);
         // Grade scale is on the Teaching tab — navigate there first
-        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
-        if (teachingTab) fireEvent.click(teachingTab);
+        fireEvent.click(screen.getByRole('tab', { name: /teaching/i }));
         const selects = screen.getAllByRole('combobox');
         const scaleSelect = selects.find((s) =>
             Array.from(s.querySelectorAll('option')).some((o) => o.value === 'gs1')
         );
-        if (scaleSelect) {
-            fireEvent.change(scaleSelect, { target: { value: 'gs1' } });
-            expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ defaultGradeScaleId: 'gs1' }));
-        }
+        expect(scaleSelect).toBeTruthy();
+        fireEvent.change(scaleSelect!, { target: { value: 'gs1' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ defaultGradeScaleId: 'gs1' }));
     });
 
     it('valid accent color hex calls updateSettings', () => {
@@ -359,15 +357,13 @@ describe('SettingsPage deep coverage', () => {
 
     it('grade scale name renders in list', () => {
         renderPage(<SettingsPage />);
-        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
-        if (teachingTab) fireEvent.click(teachingTab);
+        fireEvent.click(screen.getByRole('tab', { name: /teaching/i }));
         expect(screen.getAllByText('Letter').length).toBeGreaterThanOrEqual(1);
     });
 
     it('clicking delete grade scale sets deleteScaleId (shows confirm)', () => {
         renderPage(<SettingsPage />);
-        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
-        if (teachingTab) fireEvent.click(teachingTab);
+        fireEvent.click(screen.getByRole('tab', { name: /teaching/i }));
         // Find the delete button for grade scales section
         const deleteBtn = screen
             .getAllByRole('button')
@@ -386,13 +382,11 @@ describe('SettingsPage deep coverage', () => {
 
     it('comparisons limit input calls updateSettings with parsed number', () => {
         renderPage(<SettingsPage />);
-        const teachingTab = screen.queryByRole('button', { name: /teaching/i });
-        if (teachingTab) fireEvent.click(teachingTab);
+        fireEvent.click(screen.getByRole('tab', { name: /teaching/i }));
         const numberInputs = screen.getAllByRole('spinbutton');
-        if (numberInputs.length > 0) {
-            fireEvent.change(numberInputs[0], { target: { value: '10' } });
-            expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ comparativeMatchupLimit: 10 }));
-        }
+        expect(numberInputs.length).toBeGreaterThan(0);
+        fireEvent.change(numberInputs[0], { target: { value: '10' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith(expect.objectContaining({ comparativeMatchupLimit: 10 }));
     });
 
     it('opens template upload modal when button clicked', () => {

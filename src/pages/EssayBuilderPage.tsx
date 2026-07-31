@@ -98,6 +98,10 @@ export default function EssayBuilderPage() {
         if (!teacherKeyParam) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
         showToast(t('essays.save'), 'success');
+        // buildPatch/updateEssayGroup/showToast are intentionally excluded (stable
+        // context refs / intentionally recreated); `t` IS included so the save-toast
+        // text follows a locale change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         teacherKeyParam,
         title,
@@ -109,7 +113,8 @@ export default function EssayBuilderPage() {
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
-    ]); // eslint-disable-line react-hooks/exhaustive-deps
+        t,
+    ]);
 
     const handlePickClass = useCallback(
         (classId: string) => {
@@ -265,8 +270,11 @@ export default function EssayBuilderPage() {
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">{t('essay_assignment.prompt_label')}</label>
+                        <label className="form-label" htmlFor="eb-prompt-body">
+                            {t('essay_assignment.prompt_label')}
+                        </label>
                         <textarea
+                            id="eb-prompt-body"
                             className="form-input"
                             rows={6}
                             value={prompt}
@@ -276,8 +284,11 @@ export default function EssayBuilderPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <div className="form-group" style={{ flex: '1 1 140px' }}>
-                            <label className="form-label">{t('essay_assignment.min_words_label')}</label>
+                            <label className="form-label" htmlFor="eb-min-words">
+                                {t('essay_assignment.min_words_label')}
+                            </label>
                             <input
+                                id="eb-min-words"
                                 type="number"
                                 min={0}
                                 className="form-input"
@@ -286,8 +297,11 @@ export default function EssayBuilderPage() {
                             />
                         </div>
                         <div className="form-group" style={{ flex: '1 1 140px' }}>
-                            <label className="form-label">{t('essay_assignment.max_words_label')}</label>
+                            <label className="form-label" htmlFor="eb-max-words">
+                                {t('essay_assignment.max_words_label')}
+                            </label>
                             <input
+                                id="eb-max-words"
                                 type="number"
                                 min={0}
                                 className="form-input"
@@ -296,8 +310,11 @@ export default function EssayBuilderPage() {
                             />
                         </div>
                         <div className="form-group" style={{ flex: '1 1 140px' }}>
-                            <label className="form-label">{t('essay_assignment.time_limit_label')}</label>
+                            <label className="form-label" htmlFor="eb-time-limit">
+                                {t('essay_assignment.time_limit_label')}
+                            </label>
                             <input
+                                id="eb-time-limit"
                                 type="number"
                                 min={0}
                                 className="form-input"
@@ -308,8 +325,11 @@ export default function EssayBuilderPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <div className="form-group" style={{ flex: '1 1 200px' }}>
-                            <label className="form-label">{t('essay_assignment.deadline_label')}</label>
+                            <label className="form-label" htmlFor="eb-deadline">
+                                {t('essay_assignment.deadline_label')}
+                            </label>
                             <input
+                                id="eb-deadline"
                                 type="datetime-local"
                                 className="form-input"
                                 value={expiresAt}
@@ -334,7 +354,12 @@ export default function EssayBuilderPage() {
                 {/* 2. Rubric connector */}
                 <div className="card" data-tour="eb-rubric">
                     <h3 style={{ marginTop: 0 }}>{t('essays.rubric_connector_label')}</h3>
-                    <select className="form-input" value={rubricId} onChange={(e) => setRubricId(e.target.value)}>
+                    <select
+                        className="form-input"
+                        aria-label={t('essays.rubric_connector_label')}
+                        value={rubricId}
+                        onChange={(e) => setRubricId(e.target.value)}
+                    >
                         <option value="">{t('essays.rubric_connector_placeholder')}</option>
                         {rubrics.map((r) => (
                             <option key={r.id} value={r.id}>

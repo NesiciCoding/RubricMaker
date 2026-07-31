@@ -6,12 +6,12 @@
  * Colour-contrast is skipped because jsdom has no rendering engine.
  */
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
 import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, Student, Rubric, StudentRubric, FlashcardDeck } from '../../types';
+import type { AppSettings, Class, Student, Rubric, StudentRubric, Test, StudentTest, FlashcardDeck } from '../../types';
 
 // ─── Shared mock data ──────────────────────────────────────────────────────────
 
@@ -40,14 +40,70 @@ const mockRubric: Rubric = {
     scoringMode: 'weighted-percentage',
 };
 
+const mockTest: Test = {
+    id: 't1',
+    name: 'Unit Test',
+    description: '',
+    questions: [
+        {
+            id: 'q1',
+            prompt: 'What is 2 + 2?',
+            type: 'multiple-choice',
+            points: 1,
+            options: [
+                { id: 'o1', text: '4', isCorrect: true },
+                { id: 'o2', text: '3', isCorrect: false },
+            ],
+        },
+        { id: 'q2', prompt: 'Explain photosynthesis.', type: 'open', points: 5 },
+    ],
+    requireSEB: false,
+    shuffleQuestions: false,
+    gradeScaleId: 'gs1',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
+
+const mockStudentTest: StudentTest = {
+    id: 'st1',
+    testId: 't1',
+    studentId: 's1',
+    answers: [
+        { questionId: 'q1', response: 'o1' },
+        { questionId: 'q2', response: 'Plants convert light into energy.' },
+    ],
+    status: 'submitted',
+    startedAt: '2024-01-01T00:00:00Z',
+    submittedAt: '2024-01-01T01:00:00Z',
+};
+
+const mockFlashcardDeck: FlashcardDeck = {
+    id: 'd1',
+    name: 'Unit 1 Vocabulary',
+    description: '',
+    cards: [
+        { id: 'card1', front: 'ubiquitous', back: 'present everywhere', cefrLevel: 'C1' },
+        { id: 'card2', front: 'ephemeral', back: 'lasting a short time', cefrLevel: 'C1' },
+    ],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
+
+// Per-test overrides merged into the mocked useApp() return value. Default empty so
+// the shared mock stays as the other suites expect; a suite that needs seeded data
+// (e.g. TestResultsPage's graded-submission view) sets this in beforeEach and resets
+// it in afterEach.
+let appStateOverride: Record<string, unknown> = {};
+
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-// Mutable holder so individual tests can render a page with domain data present
-// (e.g. FlashcardsPage with a deck) without re-mocking the whole context.
-const mockAppData = vi.hoisted(() => ({ flashcardDecks: [] as FlashcardDeck[] }));
-
-vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
+// Build the context value ONCE so useApp() returns stable array references across
+// renders — a fresh object/array each call makes any page whose effect depends on a
+// context array re-run that effect forever (setState → re-render → new array ref →
+// effect → …), which OOMs the worker. `appStateOverride` is spread on top so seeded
+// suites still work; the arrays it carries are stable within a single test.
+vi.mock('../../context/AppContext', () => {
+    const base = {
         rubrics: [mockRubric],
         students: [mockStudent],
         classes: [mockClass],
@@ -65,17 +121,24 @@ vi.mock('../../context/AppContext', () => ({
         // Phase 3/4 collections
         tests: [],
         studentTests: [],
-        flashcardDecks: mockAppData.flashcardDecks,
+        questionBank: [],
+        exportTemplates: [],
+        flashcardDecks: [],
         flashcardAssignments: [],
         flashcardReviews: [],
-        addFlashcardDeck: vi.fn(),
-        deleteFlashcardDeck: vi.fn(),
         essayAssignments: [],
+        essaySubmissions: [],
         peerReviews: [],
         analysisResults: [],
         attachments: [],
         essayTemplates: [],
         messages: [],
+        newsFlashes: [],
+        newsFlashReads: [],
+        commentBank: [],
+        userTemplates: [],
+        gradingTasks: [],
+        standardMasteryTargets: [],
         notificationDismissals: [],
         dismissNotification: vi.fn(),
         markMessageReadByTeacher: vi.fn(),
@@ -103,8 +166,57 @@ vi.mock('../../context/AppContext', () => ({
         fetchEssaySubmissionsForStudent: vi.fn(() => Promise.resolve([])),
         deleteEssaySubmission: vi.fn(),
         getEssaySignedUrl: vi.fn(() => Promise.resolve(null)),
-    }),
-}));
+        // Tests / Question Bank actions
+        addTest: vi.fn(),
+        updateTest: vi.fn(),
+        deleteTest: vi.fn(),
+        saveStudentTest: vi.fn(),
+        addSectionBankItem: vi.fn(),
+        addQuestionBankItems: vi.fn(),
+        updateQuestionBankItem: vi.fn(),
+        deleteQuestionBankItem: vi.fn(),
+        deleteQuestionBankItems: vi.fn(),
+        bulkUpdateQuestionBankItems: vi.fn(),
+        // Flashcard actions
+        addFlashcardDeck: vi.fn(),
+        updateFlashcardDeck: vi.fn(),
+        deleteFlashcardDeck: vi.fn(),
+        addFlashcardAssignments: vi.fn(),
+        // Essay actions
+        deleteEssayGroup: vi.fn(),
+        updateEssayGroup: vi.fn(),
+        addEssaySubmission: vi.fn(),
+        // News-flash actions
+        addNewsFlash: vi.fn(),
+        updateNewsFlash: vi.fn(),
+        deleteNewsFlash: vi.fn(),
+        // Comment-bank actions
+        updateCommentBankItem: vi.fn(),
+        deleteCommentBankItem: vi.fn(),
+        // Speaking / live-monitor actions
+        saveSpeakingSession: vi.fn(),
+        fetchTestAssignmentTeacherKeys: vi.fn(() => Promise.resolve([])),
+        setPlacementOverride: vi.fn(),
+        fetchEssayAssignmentByKey: vi.fn(() => Promise.resolve(null)),
+        // Dashboard / activity / rubric-list / students / attachments actions
+        deleteUserTemplate: vi.fn(),
+        sendMessage: vi.fn(),
+        notifyStudentMessage: vi.fn(),
+        addGradingTasks: vi.fn(),
+        deleteGradingTask: vi.fn(),
+        deleteRubric: vi.fn(),
+        createGroupStudentRubrics: vi.fn(),
+        addStudent: vi.fn(),
+        updateStudent: vi.fn(),
+        deleteStudent: vi.fn(),
+        addClass: vi.fn(),
+        deleteClass: vi.fn(),
+        mergeClasses: vi.fn(),
+        setStudentPassword: vi.fn(),
+        deleteAttachment: vi.fn(),
+    };
+    return { useApp: () => ({ ...base, ...appStateOverride }) };
+});
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => null),
@@ -462,36 +574,369 @@ describe('NotificationsPage — a11y', () => {
     });
 });
 
-// ─── FlashcardsPage (roadmap 31.8: nested-interactive fix) ────────────────────────
+// ─── QuestionBankPage (roadmap 31.1) ─────────────────────────────────────────────
 
-describe('FlashcardsPage — a11y', () => {
+describe('QuestionBankPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: QuestionBankPage } = await import('../QuestionBankPage');
+        renderPage(<QuestionBankPage />, '/question-bank', '/question-bank');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── TestListPage (roadmap 31.1) ─────────────────────────────────────────────────
+
+describe('TestListPage — a11y', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockAppData.flashcardDecks = [];
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
     });
     afterEach(() => {
-        mockAppData.flashcardDecks = [];
+        appStateOverride = {};
     });
 
-    it('has no axe violations with a deck present', async () => {
-        // A rendered deck card carries edit/delete buttons; the whole card used to be
-        // role="button" too, which axe flags as `nested-interactive`. The stretched-link
-        // refactor keeps the whole-card click without nesting interactive elements.
-        mockAppData.flashcardDecks = [
-            {
-                id: 'd1',
-                name: 'Irregular verbs',
-                description: 'Practice set',
-                cards: [{ id: 'card1', front: 'go', back: 'went' }],
-                createdAt: '2024-01-01T00:00:00Z',
-            },
-        ];
+    it('has no axe violations with a populated list', async () => {
+        const { default: TestListPage } = await import('../TestListPage');
+        renderPage(<TestListPage />, '/tests', '/tests');
+        // Confirm the seeded test rendered a real row (with its action buttons)
+        // rather than the empty state, so axe audited the populated list.
+        expect(document.body.textContent).toContain('Unit Test');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── TestBuilderPage (roadmap 31.1) ──────────────────────────────────────────────
+
+describe('TestBuilderPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations for a new test', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderPage(<TestBuilderPage />, '/tests/new', '/tests/new');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── TestResultsPage (roadmap 31.1) ──────────────────────────────────────────────
+
+describe('TestResultsPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations on a graded submission', async () => {
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        renderPage(<TestResultsPage />, '/tests/t1/results/st1', '/tests/:testId/results/:studentTestId');
+        // Guard against silently rendering the not-found fallback: the real results
+        // view lists each question prompt, so this confirms the seeded submission
+        // actually rendered and axe audited the graded tables, not an empty state.
+        expect(document.body.textContent).toContain('What is 2 + 2?');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── VocabularyDashboardPage (roadmap 31.2) ──────────────────────────────────────
+
+describe('VocabularyDashboardPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderPage(<VocabularyDashboardPage />, '/vocabulary', '/vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── FlashcardsPage (roadmap 31.2) ───────────────────────────────────────────────
+
+describe('FlashcardsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations on the empty state', async () => {
         const { default: FlashcardsPage } = await import('../FlashcardsPage');
         renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
-        // Guard against a false pass through the empty state: the axe check is only
-        // meaningful once the populated deck card (with its action buttons) rendered.
-        const deckButton = document.querySelector('button.stretched-link');
-        expect(deckButton?.textContent).toBe('Irregular verbs');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    // Regression guard for the stretched-link fix (PR #357): a populated deck card
+    // must not reintroduce a `nested-interactive` violation. The card title is a
+    // `button.stretched-link` that covers the card for whole-card navigation, so the
+    // edit/delete controls are no longer nested inside a `role="button"` wrapper.
+    it('has no axe violations with a deck present', async () => {
+        appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
+        expect(document.body.textContent).toContain('Unit 1 Vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── FlashcardDeckPage (roadmap 31.2) ────────────────────────────────────────────
+
+describe('FlashcardDeckPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations on the deck editor', async () => {
+        const { default: FlashcardDeckPage } = await import('../FlashcardDeckPage');
+        renderPage(<FlashcardDeckPage />, '/flashcards/d1', '/flashcards/:id');
+        // Guard against the deck-not-found fallback: the editor shows the deck name.
+        expect(document.body.textContent).toContain('Unit 1 Vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── EssayListPage (roadmap 31.3) ────────────────────────────────────────────────
+
+describe('EssayListPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderPage(<EssayListPage />, '/essays', '/essays');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── EssayBuilderPage (roadmap 31.3) ─────────────────────────────────────────────
+
+describe('EssayBuilderPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations for a new essay assignment', async () => {
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        renderPage(<EssayBuilderPage />, '/essays/new', '/essays/new');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── PeerReviewAnalyticsPage (roadmap 31.3) ──────────────────────────────────────
+
+describe('PeerReviewAnalyticsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: PeerReviewAnalyticsPage } = await import('../PeerReviewAnalyticsPage');
+        renderPage(<PeerReviewAnalyticsPage />, '/peer-analytics/r1', '/peer-analytics/:rubricId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── CommentBankPage (roadmap 31.3; restructured in 29.6) ─────────────────────────
+
+describe('CommentBankPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: CommentBankPage } = await import('../CommentBankPage');
+        renderPage(<CommentBankPage />, '/comments', '/comments');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── MarketplacePage (roadmap 31.3; gained questionBankItem in 29.2) ──────────────
+
+describe('MarketplacePage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: MarketplacePage } = await import('../MarketplacePage');
+        renderPage(<MarketplacePage />, '/marketplace', '/marketplace');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── NewsFlashesPage (roadmap 31.3) ──────────────────────────────────────────────
+
+describe('NewsFlashesPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: NewsFlashesPage } = await import('../NewsFlashesPage');
+        renderPage(<NewsFlashesPage />, '/news-flashes', '/news-flashes');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── SpeakingSession (roadmap 31.4) ──────────────────────────────────────────────
+
+describe('SpeakingSession — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: SpeakingSession } = await import('../SpeakingSession');
+        renderPage(<SpeakingSession />, '/speaking/r1/s1', '/speaking/:rubricId/:studentId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StudentCefrOverviewPage (roadmap 31.4) ──────────────────────────────────────
+
+describe('StudentCefrOverviewPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: StudentCefrOverviewPage } = await import('../StudentCefrOverviewPage');
+        renderPage(<StudentCefrOverviewPage />, '/students/s1/cefr-overview', '/students/:id/cefr-overview');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── LiveMonitorPage (roadmap 31.4) ──────────────────────────────────────────────
+
+describe('LiveMonitorPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations', async () => {
+        const { default: LiveMonitorPage } = await import('../LiveMonitorPage');
+        renderPage(<LiveMonitorPage kind="test" />, '/tests/t1/monitor', '/tests/:testId/monitor');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── Dashboard (roadmap 31.5) ────────────────────────────────────────────────────
+
+describe('Dashboard — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: Dashboard } = await import('../Dashboard');
+        renderPage(<Dashboard />, '/', '/');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── ActivityDashboardPage (roadmap 31.5) ────────────────────────────────────────
+
+describe('ActivityDashboardPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: ActivityDashboardPage } = await import('../ActivityDashboardPage');
+        renderPage(<ActivityDashboardPage />, '/activity-dashboard', '/activity-dashboard');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── RubricList (roadmap 31.5) ───────────────────────────────────────────────────
+
+describe('RubricList — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations with a rubric present', async () => {
+        const { default: RubricList } = await import('../RubricList');
+        renderPage(<RubricList />, '/rubrics', '/rubrics');
+        expect(document.body.textContent).toContain('Test Rubric');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StudentsPage (roadmap 31.5) ─────────────────────────────────────────────────
+
+describe('StudentsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: StudentsPage } = await import('../StudentsPage');
+        renderPage(<StudentsPage />, '/students', '/students');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StatisticsPage (roadmap 31.5) ───────────────────────────────────────────────
+
+describe('StatisticsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+
+    // The 'rubric' view above only exercises its own filter selects. Switch into
+    // the other two view modes (each renders its own class/student/rubric selects)
+    // so axe audits those branches too.
+    it('has no axe violations in the student view', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        fireEvent.click(screen.getByText('statistics.view_by_student'));
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+
+    it('has no axe violations in the compare view', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        fireEvent.click(screen.getByText('statistics.view_compare'));
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── ExportPage (roadmap 31.5) ───────────────────────────────────────────────────
+
+describe('ExportPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: ExportPage } = await import('../ExportPage');
+        renderPage(<ExportPage />, '/export', '/export');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── AttachmentsPage (roadmap 31.5) ──────────────────────────────────────────────
+
+describe('AttachmentsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: AttachmentsPage } = await import('../AttachmentsPage');
+        renderPage(<AttachmentsPage />, '/attachments', '/attachments');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });

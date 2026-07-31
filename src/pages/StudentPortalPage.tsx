@@ -1354,7 +1354,7 @@ function WorkGroup({
 }) {
     return (
         <div>
-            <h4
+            <h3
                 style={{
                     margin: '0 0 8px',
                     fontSize: '0.78rem',
@@ -1365,7 +1365,7 @@ function WorkGroup({
                 }}
             >
                 {title}
-            </h4>
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {entries.map((entry) =>
                     entry.kind === 'essay' ? (
@@ -1435,6 +1435,7 @@ function PortalMessages({
                         value={contextIndex}
                         onChange={(e) => setContextIndex(Number(e.target.value))}
                         style={{ maxWidth: 220 }}
+                        aria-label={t('studentPortal.messages_context_label')}
                     >
                         {contextOptions.map((opt, i) => (
                             <option key={`${opt.contextType}-${opt.contextId ?? 'general'}`} value={i}>
@@ -1894,7 +1895,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
                 scrollMarginTop: 70,
             }}
         >
-            <h3
+            <h2
                 style={{
                     margin: '0 0 14px',
                     fontSize: '0.9rem',
@@ -1905,7 +1906,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
                 }}
             >
                 {title}
-            </h3>
+            </h2>
             {children}
         </div>
     );

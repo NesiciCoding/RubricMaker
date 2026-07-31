@@ -333,6 +333,7 @@ export default function RubricList() {
                             value={subjectFilter}
                             onChange={(e) => setSubjectFilter(e.target.value)}
                             style={{ minWidth: 150 }}
+                            aria-label={t('rubricList.all_subjects')}
                         >
                             <option value="all">{t('rubricList.all_subjects') || 'All Subjects'}</option>
                             {uniqueSubjects.map((subj) => (
@@ -659,6 +660,9 @@ export default function RubricList() {
                                                                         >
                                                                             <select
                                                                                 value=""
+                                                                                aria-label={t(
+                                                                                    'rubricList.speaking_select_student'
+                                                                                )}
                                                                                 onChange={(e) => {
                                                                                     if (e.target.value)
                                                                                         navigate(

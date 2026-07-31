@@ -703,6 +703,7 @@ export default function StudentsPage() {
                             />
                             <button
                                 className="btn btn-primary btn-icon btn-sm"
+                                aria-label={t('studentsPage.add_class')}
                                 onClick={() => {
                                     if (newClassName.trim()) {
                                         addClass({ name: newClassName.trim() });
