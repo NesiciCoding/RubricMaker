@@ -146,7 +146,7 @@ export default function StudentFlashcardStudyPage() {
                     </div>
                 ) : !deck ? (
                     <div className="empty-state">
-                        <h3>{t('flashcards.deck_not_found')}</h3>
+                        <h2>{t('flashcards.deck_not_found')}</h2>
                     </div>
                 ) : (
                     <>
