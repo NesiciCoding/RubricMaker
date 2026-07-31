@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
 import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, Student, Rubric, StudentRubric } from '../../types';
+import type { AppSettings, Class, Student, Rubric, StudentRubric, FlashcardDeck } from '../../types';
 
 // ─── Shared mock data ──────────────────────────────────────────────────────────
 
@@ -44,7 +44,7 @@ const mockRubric: Rubric = {
 
 // Mutable holder so individual tests can render a page with domain data present
 // (e.g. FlashcardsPage with a deck) without re-mocking the whole context.
-const mockAppData = vi.hoisted(() => ({ flashcardDecks: [] as unknown[] }));
+const mockAppData = vi.hoisted(() => ({ flashcardDecks: [] as FlashcardDeck[] }));
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => ({
@@ -488,6 +488,10 @@ describe('FlashcardsPage — a11y', () => {
         ];
         const { default: FlashcardsPage } = await import('../FlashcardsPage');
         renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
+        // Guard against a false pass through the empty state: the axe check is only
+        // meaningful once the populated deck card (with its action buttons) rendered.
+        const deckButton = document.querySelector('button.stretched-link');
+        expect(deckButton?.textContent).toBe('Irregular verbs');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });
