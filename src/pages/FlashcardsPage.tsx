@@ -59,20 +59,11 @@ export default function FlashcardsPage() {
                                 <div
                                     key={deck.id}
                                     className="card"
-                                    role="button"
-                                    tabIndex={0}
                                     style={{
-                                        cursor: 'pointer',
+                                        position: 'relative',
                                         transition: 'border-color var(--transition)',
                                         flex: '1 1 320px',
                                         maxWidth: 480,
-                                    }}
-                                    onClick={() => navigate(`/flashcards/${deck.id}`)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            navigate(`/flashcards/${deck.id}`);
-                                        }
                                     }}
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -86,21 +77,26 @@ export default function FlashcardsPage() {
                                         }}
                                     >
                                         <div>
-                                            <h3>{deck.name}</h3>
+                                            <h3 style={{ margin: 0 }}>
+                                                <button
+                                                    type="button"
+                                                    className="stretched-link"
+                                                    onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                                >
+                                                    {deck.name}
+                                                </button>
+                                            </h3>
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 4 }}>
+                                        <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 1 }}>
                                             <button
                                                 type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('flashcards.action_edit')}
                                                 aria-label={t('flashcards.action_edit')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/flashcards/${deck.id}`);
-                                                }}
+                                                onClick={() => navigate(`/flashcards/${deck.id}`)}
                                             >
                                                 <Edit2 size={14} />
                                             </button>
@@ -110,10 +106,7 @@ export default function FlashcardsPage() {
                                                 title={t('flashcards.action_delete')}
                                                 aria-label={t('flashcards.action_delete')}
                                                 style={{ color: 'var(--red)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(deck.id, deck.name);
-                                                }}
+                                                onClick={() => handleDelete(deck.id, deck.name)}
                                             >
                                                 <Trash2 size={14} />
                                             </button>

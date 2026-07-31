@@ -564,6 +564,29 @@ h3 {
     margin-bottom: 16px;
 }
 
+/* Stretched-link: lets a single inner control (a link or button) cover its
+   positioned ancestor's whole hit area without nesting one interactive element
+   inside another (which axe flags as `nested-interactive`). The ancestor needs
+   `position: relative`; any sibling controls that must stay clickable need
+   `position: relative; z-index: 1` so they sit above this overlay. */
+.stretched-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.stretched-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
 /* ─── Form Elements ─────────────────────────────────────────────────────────── */
 .form-group {
     display: flex;
