@@ -122,11 +122,15 @@ vi.mock('../../context/AppContext', () => ({
         flashcardAssignments: [],
         flashcardReviews: [],
         essayAssignments: [],
+        essaySubmissions: [],
         peerReviews: [],
         analysisResults: [],
         attachments: [],
         essayTemplates: [],
         messages: [],
+        newsFlashes: [],
+        newsFlashReads: [],
+        commentBank: [],
         notificationDismissals: [],
         dismissNotification: vi.fn(),
         markMessageReadByTeacher: vi.fn(),
@@ -170,6 +174,17 @@ vi.mock('../../context/AppContext', () => ({
         updateFlashcardDeck: vi.fn(),
         deleteFlashcardDeck: vi.fn(),
         addFlashcardAssignments: vi.fn(),
+        // Essay actions
+        deleteEssayGroup: vi.fn(),
+        updateEssayGroup: vi.fn(),
+        addEssaySubmission: vi.fn(),
+        // News-flash actions
+        addNewsFlash: vi.fn(),
+        updateNewsFlash: vi.fn(),
+        deleteNewsFlash: vi.fn(),
+        // Comment-bank actions
+        updateCommentBankItem: vi.fn(),
+        deleteCommentBankItem: vi.fn(),
         ...appStateOverride,
     }),
 }));
@@ -660,6 +675,84 @@ describe('FlashcardDeckPage — a11y', () => {
         renderPage(<FlashcardDeckPage />, '/flashcards/d1', '/flashcards/:id');
         // Guard against the deck-not-found fallback: the editor shows the deck name.
         expect(document.body.textContent).toContain('Unit 1 Vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── EssayListPage (roadmap 31.3) ────────────────────────────────────────────────
+
+describe('EssayListPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderPage(<EssayListPage />, '/essays', '/essays');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── EssayBuilderPage (roadmap 31.3) ─────────────────────────────────────────────
+
+describe('EssayBuilderPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations for a new essay assignment', async () => {
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        renderPage(<EssayBuilderPage />, '/essays/new', '/essays/new');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── PeerReviewAnalyticsPage (roadmap 31.3) ──────────────────────────────────────
+
+describe('PeerReviewAnalyticsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: PeerReviewAnalyticsPage } = await import('../PeerReviewAnalyticsPage');
+        renderPage(<PeerReviewAnalyticsPage />, '/peer-analytics/r1', '/peer-analytics/:rubricId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── CommentBankPage (roadmap 31.3; restructured in 29.6) ─────────────────────────
+
+describe('CommentBankPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: CommentBankPage } = await import('../CommentBankPage');
+        renderPage(<CommentBankPage />, '/comments', '/comments');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── MarketplacePage (roadmap 31.3; gained questionBankItem in 29.2) ──────────────
+
+describe('MarketplacePage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: MarketplacePage } = await import('../MarketplacePage');
+        renderPage(<MarketplacePage />, '/marketplace', '/marketplace');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── NewsFlashesPage (roadmap 31.3) ──────────────────────────────────────────────
+
+describe('NewsFlashesPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: NewsFlashesPage } = await import('../NewsFlashesPage');
+        renderPage(<NewsFlashesPage />, '/news-flashes', '/news-flashes');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });
