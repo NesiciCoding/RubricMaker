@@ -185,6 +185,11 @@ vi.mock('../../context/AppContext', () => ({
         // Comment-bank actions
         updateCommentBankItem: vi.fn(),
         deleteCommentBankItem: vi.fn(),
+        // Speaking / live-monitor actions
+        saveSpeakingSession: vi.fn(),
+        fetchTestAssignmentTeacherKeys: vi.fn(() => Promise.resolve([])),
+        setPlacementOverride: vi.fn(),
+        fetchEssayAssignmentByKey: vi.fn(() => Promise.resolve(null)),
         ...appStateOverride,
     }),
 }));
@@ -753,6 +758,51 @@ describe('NewsFlashesPage — a11y', () => {
     it('has no axe violations', async () => {
         const { default: NewsFlashesPage } = await import('../NewsFlashesPage');
         renderPage(<NewsFlashesPage />, '/news-flashes', '/news-flashes');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── SpeakingSession (roadmap 31.4) ──────────────────────────────────────────────
+
+describe('SpeakingSession — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: SpeakingSession } = await import('../SpeakingSession');
+        renderPage(<SpeakingSession />, '/speaking/r1/s1', '/speaking/:rubricId/:studentId');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── StudentCefrOverviewPage (roadmap 31.4) ──────────────────────────────────────
+
+describe('StudentCefrOverviewPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: StudentCefrOverviewPage } = await import('../StudentCefrOverviewPage');
+        renderPage(<StudentCefrOverviewPage />, '/students/s1/cefr-overview', '/students/:id/cefr-overview');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── LiveMonitorPage (roadmap 31.4) ──────────────────────────────────────────────
+
+describe('LiveMonitorPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations', async () => {
+        const { default: LiveMonitorPage } = await import('../LiveMonitorPage');
+        renderPage(<LiveMonitorPage kind="test" />, '/tests/t1/monitor', '/tests/:testId/monitor');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });
