@@ -7,11 +7,11 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
 import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, Student, Rubric, StudentRubric } from '../../types';
+import type { AppSettings, Class, Student, Rubric, StudentRubric, Test, StudentTest, FlashcardDeck } from '../../types';
 
 // ─── Shared mock data ──────────────────────────────────────────────────────────
 
@@ -40,6 +40,61 @@ const mockRubric: Rubric = {
     scoringMode: 'weighted-percentage',
 };
 
+const mockTest: Test = {
+    id: 't1',
+    name: 'Unit Test',
+    description: '',
+    questions: [
+        {
+            id: 'q1',
+            prompt: 'What is 2 + 2?',
+            type: 'multiple-choice',
+            points: 1,
+            options: [
+                { id: 'o1', text: '4', isCorrect: true },
+                { id: 'o2', text: '3', isCorrect: false },
+            ],
+        },
+        { id: 'q2', prompt: 'Explain photosynthesis.', type: 'open', points: 5 },
+    ],
+    requireSEB: false,
+    shuffleQuestions: false,
+    gradeScaleId: 'gs1',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
+
+const mockStudentTest: StudentTest = {
+    id: 'st1',
+    testId: 't1',
+    studentId: 's1',
+    answers: [
+        { questionId: 'q1', response: 'o1' },
+        { questionId: 'q2', response: 'Plants convert light into energy.' },
+    ],
+    status: 'submitted',
+    startedAt: '2024-01-01T00:00:00Z',
+    submittedAt: '2024-01-01T01:00:00Z',
+};
+
+const mockFlashcardDeck: FlashcardDeck = {
+    id: 'd1',
+    name: 'Unit 1 Vocabulary',
+    description: '',
+    cards: [
+        { id: 'card1', front: 'ubiquitous', back: 'present everywhere', cefrLevel: 'C1' },
+        { id: 'card2', front: 'ephemeral', back: 'lasting a short time', cefrLevel: 'C1' },
+    ],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
+
+// Per-test overrides merged into the mocked useApp() return value. Default empty so
+// the shared mock stays as the other suites expect; a suite that needs seeded data
+// (e.g. TestResultsPage's graded-submission view) sets this in beforeEach and resets
+// it in afterEach.
+let appStateOverride: Record<string, unknown> = {};
+
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
 vi.mock('../../context/AppContext', () => ({
@@ -61,6 +116,8 @@ vi.mock('../../context/AppContext', () => ({
         // Phase 3/4 collections
         tests: [],
         studentTests: [],
+        questionBank: [],
+        exportTemplates: [],
         flashcardDecks: [],
         flashcardAssignments: [],
         flashcardReviews: [],
@@ -97,6 +154,23 @@ vi.mock('../../context/AppContext', () => ({
         fetchEssaySubmissionsForStudent: vi.fn(() => Promise.resolve([])),
         deleteEssaySubmission: vi.fn(),
         getEssaySignedUrl: vi.fn(() => Promise.resolve(null)),
+        // Tests / Question Bank actions
+        addTest: vi.fn(),
+        updateTest: vi.fn(),
+        deleteTest: vi.fn(),
+        saveStudentTest: vi.fn(),
+        addSectionBankItem: vi.fn(),
+        addQuestionBankItems: vi.fn(),
+        updateQuestionBankItem: vi.fn(),
+        deleteQuestionBankItem: vi.fn(),
+        deleteQuestionBankItems: vi.fn(),
+        bulkUpdateQuestionBankItems: vi.fn(),
+        // Flashcard actions
+        addFlashcardDeck: vi.fn(),
+        updateFlashcardDeck: vi.fn(),
+        deleteFlashcardDeck: vi.fn(),
+        addFlashcardAssignments: vi.fn(),
+        ...appStateOverride,
     }),
 }));
 
@@ -451,6 +525,145 @@ describe('NotificationsPage — a11y', () => {
     it('has no axe violations on the empty state', async () => {
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderPage(<NotificationsPage />);
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── QuestionBankPage (roadmap 31.1) ─────────────────────────────────────────────
+
+describe('QuestionBankPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: QuestionBankPage } = await import('../QuestionBankPage');
+        renderPage(<QuestionBankPage />, '/question-bank', '/question-bank');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── TestListPage (roadmap 31.1) ─────────────────────────────────────────────────
+
+describe('TestListPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations with a populated list', async () => {
+        const { default: TestListPage } = await import('../TestListPage');
+        renderPage(<TestListPage />, '/tests', '/tests');
+        // Confirm the seeded test rendered a real row (with its action buttons)
+        // rather than the empty state, so axe audited the populated list.
+        expect(document.body.textContent).toContain('Unit Test');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── TestBuilderPage (roadmap 31.1) ──────────────────────────────────────────────
+
+describe('TestBuilderPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations for a new test', async () => {
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderPage(<TestBuilderPage />, '/tests/new', '/tests/new');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+});
+
+// ─── TestResultsPage (roadmap 31.1) ──────────────────────────────────────────────
+
+describe('TestResultsPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { tests: [mockTest], studentTests: [mockStudentTest] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations on a graded submission', async () => {
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        renderPage(<TestResultsPage />, '/tests/t1/results/st1', '/tests/:testId/results/:studentTestId');
+        // Guard against silently rendering the not-found fallback: the real results
+        // view lists each question prompt, so this confirms the seeded submission
+        // actually rendered and axe audited the graded tables, not an empty state.
+        expect(document.body.textContent).toContain('What is 2 + 2?');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── VocabularyDashboardPage (roadmap 31.2) ──────────────────────────────────────
+
+describe('VocabularyDashboardPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations', async () => {
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderPage(<VocabularyDashboardPage />, '/vocabulary', '/vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── FlashcardsPage (roadmap 31.2) ───────────────────────────────────────────────
+
+describe('FlashcardsPage — a11y', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('has no axe violations on the empty state', async () => {
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+
+    // DEFERRED (roadmap Phase 31.8 follow-up): a populated deck card is a
+    // `<div role="button" onClick>` with nested `<button>` edit/delete controls,
+    // which axe flags as `nested-interactive`. The accessible fix (stretched-link
+    // pattern, or demoting the card container and promoting the title to the click
+    // target) is a real interaction-behavior change that should be applied
+    // consistently across the app's other clickable card lists — out of scope for
+    // this coverage-only pass per the fix-small-defer-large policy. Unskip once the
+    // card-interaction fix lands.
+    it.skip('has no axe violations with a deck present (blocked on nested-interactive fix, 31.8)', async () => {
+        appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
+        try {
+            const { default: FlashcardsPage } = await import('../FlashcardsPage');
+            renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
+            expect(document.body.textContent).toContain('Unit 1 Vocabulary');
+            const results = await axe(document.body, axeOptions);
+            expect(results.violations).toHaveLength(0);
+        } finally {
+            appStateOverride = {};
+        }
+    });
+});
+
+// ─── FlashcardDeckPage (roadmap 31.2) ────────────────────────────────────────────
+
+describe('FlashcardDeckPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
+    });
+    afterEach(() => {
+        appStateOverride = {};
+    });
+
+    it('has no axe violations on the deck editor', async () => {
+        const { default: FlashcardDeckPage } = await import('../FlashcardDeckPage');
+        renderPage(<FlashcardDeckPage />, '/flashcards/d1', '/flashcards/:id');
+        // Guard against the deck-not-found fallback: the editor shows the deck name.
+        expect(document.body.textContent).toContain('Unit 1 Vocabulary');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });
