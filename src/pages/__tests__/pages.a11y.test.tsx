@@ -618,6 +618,9 @@ describe('VocabularyDashboardPage — a11y', () => {
 
 describe('FlashcardsPage — a11y', () => {
     beforeEach(() => vi.clearAllMocks());
+    afterEach(() => {
+        appStateOverride = {};
+    });
 
     it('has no axe violations on the empty state', async () => {
         const { default: FlashcardsPage } = await import('../FlashcardsPage');
@@ -626,25 +629,18 @@ describe('FlashcardsPage — a11y', () => {
         expect(results.violations).toHaveLength(0);
     });
 
-    // DEFERRED (roadmap Phase 31.8 follow-up): a populated deck card is a
-    // `<div role="button" onClick>` with nested `<button>` edit/delete controls,
-    // which axe flags as `nested-interactive`. The accessible fix (stretched-link
-    // pattern, or demoting the card container and promoting the title to the click
-    // target) is a real interaction-behavior change that should be applied
-    // consistently across the app's other clickable card lists — out of scope for
-    // this coverage-only pass per the fix-small-defer-large policy. Unskip once the
-    // card-interaction fix lands.
-    it.skip('has no axe violations with a deck present (blocked on nested-interactive fix, 31.8)', async () => {
+    // Regression guard for the stretched-link fix: a populated deck card must not
+    // reintroduce a `nested-interactive` violation. The card navigates via a
+    // sibling overlay button rather than a `role="button"` wrapper around the
+    // edit/delete controls, so the edit/delete buttons are no longer nested inside
+    // another interactive element.
+    it('has no axe violations with a deck present', async () => {
         appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
-        try {
-            const { default: FlashcardsPage } = await import('../FlashcardsPage');
-            renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
-            expect(document.body.textContent).toContain('Unit 1 Vocabulary');
-            const results = await axe(document.body, axeOptions);
-            expect(results.violations).toHaveLength(0);
-        } finally {
-            appStateOverride = {};
-        }
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
+        expect(document.body.textContent).toContain('Unit 1 Vocabulary');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
     });
 });
 

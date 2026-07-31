@@ -59,24 +59,36 @@ export default function FlashcardsPage() {
                                 <div
                                     key={deck.id}
                                     className="card"
-                                    role="button"
-                                    tabIndex={0}
                                     style={{
+                                        position: 'relative',
                                         cursor: 'pointer',
                                         transition: 'border-color var(--transition)',
                                         flex: '1 1 320px',
                                         maxWidth: 480,
                                     }}
-                                    onClick={() => navigate(`/flashcards/${deck.id}`)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            navigate(`/flashcards/${deck.id}`);
-                                        }
-                                    }}
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                                 >
+                                    {/* Stretched-link overlay: the whole card navigates, but the
+                                        overlay is a sibling of the edit/delete buttons (which sit
+                                        above it via z-index) rather than their parent, so there is
+                                        no nested-interactive a11y violation. */}
+                                    <button
+                                        type="button"
+                                        aria-label={deck.name}
+                                        onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                        style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            width: '100%',
+                                            height: '100%',
+                                            background: 'transparent',
+                                            border: 0,
+                                            padding: 0,
+                                            margin: 0,
+                                            cursor: 'pointer',
+                                        }}
+                                    />
                                     <div
                                         style={{
                                             display: 'flex',
@@ -91,7 +103,14 @@ export default function FlashcardsPage() {
                                                 {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 4 }}>
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                gap: 4,
+                                                position: 'relative',
+                                                zIndex: 1,
+                                            }}
+                                        >
                                             <button
                                                 type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
