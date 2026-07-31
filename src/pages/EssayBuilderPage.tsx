@@ -98,8 +98,9 @@ export default function EssayBuilderPage() {
         if (!teacherKeyParam) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
         showToast(t('essays.save'), 'success');
-        // buildPatch/updateEssayGroup/showToast/t are intentionally excluded — the
-        // callback only needs to re-create when the form fields change.
+        // buildPatch/updateEssayGroup/showToast are intentionally excluded (stable
+        // context refs / intentionally recreated); `t` IS included so the save-toast
+        // text follows a locale change.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         teacherKeyParam,
@@ -112,6 +113,7 @@ export default function EssayBuilderPage() {
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
+        t,
     ]);
 
     const handlePickClass = useCallback(
