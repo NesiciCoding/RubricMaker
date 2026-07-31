@@ -357,8 +357,9 @@ export default function SettingsPage() {
             <Topbar title={t('settings.title')} />
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
                 {/* Tab bar */}
-                <nav className="settings-tabs" aria-label="Settings sections">
+                <nav className="settings-tabs" aria-label="Settings sections" role="tablist">
                     <button
+                        role="tab"
                         className={`settings-tab${activeTab === 'general' ? ' active' : ''}`}
                         onClick={() => handleTabClick('general')}
                         aria-selected={activeTab === 'general'}
@@ -368,6 +369,7 @@ export default function SettingsPage() {
 
                     {isUserPlus && (
                         <button
+                            role="tab"
                             className={`settings-tab${activeTab === 'teaching' ? ' active' : ''}`}
                             onClick={() => handleTabClick('teaching')}
                             aria-selected={activeTab === 'teaching'}
@@ -377,6 +379,7 @@ export default function SettingsPage() {
                     )}
 
                     <button
+                        role="tab"
                         className={`settings-tab${activeTab === 'administration' ? ' active' : ''}${!isAdmin ? ' tab-locked' : ''}`}
                         onClick={() => handleTabClick('administration')}
                         aria-selected={activeTab === 'administration'}
