@@ -97,8 +97,13 @@ let appStateOverride: Record<string, unknown> = {};
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
+// Build the context value ONCE so useApp() returns stable array references across
+// renders — a fresh object/array each call makes any page whose effect depends on a
+// context array re-run that effect forever (setState → re-render → new array ref →
+// effect → …), which OOMs the worker. `appStateOverride` is spread on top so seeded
+// suites still work; the arrays it carries are stable within a single test.
+vi.mock('../../context/AppContext', () => {
+    const base = {
         rubrics: [mockRubric],
         students: [mockStudent],
         classes: [mockClass],
@@ -209,9 +214,9 @@ vi.mock('../../context/AppContext', () => ({
         mergeClasses: vi.fn(),
         setStudentPassword: vi.fn(),
         deleteAttachment: vi.fn(),
-        ...appStateOverride,
-    }),
-}));
+    };
+    return { useApp: () => ({ ...base, ...appStateOverride }) };
+});
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => null),
@@ -884,19 +889,12 @@ describe('StudentsPage — a11y', () => {
 describe('StatisticsPage — a11y', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    // DEFERRED (roadmap Phase 31.8 follow-up): StatisticsPage exhausts the jsdom
-    // worker's heap on mount (OOM), independent of a11y — the recharts
-    // ResponsiveContainer stub does not resolve it, so the cause is a deeper
-    // render/compute loop that only manifests in the zero-layout jsdom
-    // environment. Auditing it needs a harness change (isolate the offending
-    // chart/aggregation, or run it under a real layout engine), not a markup fix.
-    // Unskip once the page can render in the test environment.
-    it.skip('has no axe violations (blocked on jsdom OOM, 31.8)', async () => {
+    it('has no axe violations', async () => {
         const { default: StatisticsPage } = await import('../StatisticsPage');
         renderPage(<StatisticsPage />, '/statistics', '/statistics');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
-    });
+    }, 15000);
 });
 
 // ─── ExportPage (roadmap 31.5) ───────────────────────────────────────────────────

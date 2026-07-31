@@ -45,8 +45,13 @@ const mockRubric: Rubric = {
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
+// Build the context value ONCE so useApp() returns a stable object (and stable
+// array references) across renders. A fresh object/array on every call makes any
+// page whose effect depends on a context array re-run that effect every render —
+// e.g. PeerReviewView setEntry()s a new object keyed on `peerReviews`, which loops
+// forever and OOMs the worker. In the real app these references are stable.
+vi.mock('../../context/AppContext', () => {
+    const base = {
         rubrics: [mockRubric],
         students: [mockStudent],
         classes: [mockClass],
@@ -191,8 +196,9 @@ vi.mock('../../context/AppContext', () => ({
         fetchMyNewsFlashes: vi.fn(() => Promise.resolve([])),
         fetchAssignedFlashcardDeck: vi.fn(() => Promise.resolve(null)),
         fetchMyFlashcardReview: vi.fn(() => Promise.resolve(null)),
-    }),
-}));
+    };
+    return { useApp: () => base };
+});
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => null),
@@ -319,12 +325,7 @@ describe('SelfAssessPage — a11y', () => {
 describe('PeerReviewView — a11y', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    // DEFERRED (roadmap Phase 31.8 follow-up): like StatisticsPage and
-    // ModerationQueuePage, this view exhausts the jsdom worker's heap on mount
-    // (OOM), independent of a11y. The cause is a render/compute loop that only
-    // manifests in the zero-layout jsdom environment; auditing it needs a harness
-    // change, not a markup fix. Unskip once the page can render in the test env.
-    it.skip('has no axe violations (blocked on jsdom OOM, 31.8)', async () => {
+    it('has no axe violations', async () => {
         const { default: PeerReviewView } = await import('../PeerReviewView');
         renderPage(<PeerReviewView />, '/rubrics/r1/peer-review/s1', '/rubrics/:rubricId/peer-review/:studentId');
         const results = await axe(document.body, axeOptions);

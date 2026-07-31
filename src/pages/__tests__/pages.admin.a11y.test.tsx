@@ -45,8 +45,12 @@ const mockRubric: Rubric = {
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
+// Build the context value ONCE so useApp() returns stable array references across
+// renders — a fresh object/array each call makes any page whose effect depends on a
+// context array re-run that effect forever (setState → re-render → new array ref →
+// effect → …), which OOMs the worker. In the real app these references are stable.
+vi.mock('../../context/AppContext', () => {
+    const base = {
         rubrics: [mockRubric],
         students: [mockStudent],
         classes: [mockClass],
@@ -173,8 +177,9 @@ vi.mock('../../context/AppContext', () => ({
         createSchool: vi.fn(() => Promise.resolve()),
         joinSchool: vi.fn(() => Promise.resolve()),
         signOutFromDatabase: vi.fn(() => Promise.resolve()),
-    }),
-}));
+    };
+    return { useApp: () => base };
+});
 
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: vi.fn(() => null),
@@ -295,12 +300,7 @@ describe('SettingsPage — a11y', () => {
 describe('ModerationQueuePage — a11y', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    // DEFERRED (roadmap Phase 31.8 follow-up): like StatisticsPage, this page
-    // exhausts the jsdom worker's heap on mount (OOM), independent of a11y. The
-    // cause is a render/compute loop that only manifests in the zero-layout jsdom
-    // environment; auditing it needs a harness change, not a markup fix. Unskip
-    // once the page can render in the test environment.
-    it.skip('has no axe violations (blocked on jsdom OOM, 31.8)', async () => {
+    it('has no axe violations', async () => {
         const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
         renderPage(<ModerationQueuePage />, '/moderation', '/moderation');
         const results = await axe(document.body, axeOptions);
