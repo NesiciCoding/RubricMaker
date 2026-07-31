@@ -47,18 +47,12 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                         }}
                     >
                         <div
-                            role="button"
-                            tabIndex={0}
-                            aria-expanded={hasContent ? expanded : undefined}
-                            onClick={toggle}
-                            onKeyDown={(e) => {
-                                if (e.target !== e.currentTarget) return;
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    toggle();
-                                }
+                            style={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 10,
                             }}
-                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }}
                         >
                             {unread && (
                                 <span
@@ -77,7 +71,16 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                 {KIND_ICONS[flash.kind]}
                             </span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: unread ? 700 : 600, fontSize: '0.9rem' }}>{flash.title}</div>
+                                <div style={{ fontWeight: unread ? 700 : 600, fontSize: '0.9rem' }}>
+                                    <button
+                                        type="button"
+                                        className="stretched-link"
+                                        aria-expanded={hasContent ? expanded : undefined}
+                                        onClick={toggle}
+                                    >
+                                        {flash.title}
+                                    </button>
+                                </div>
                                 {flash.summary && (
                                     <p className="text-muted text-sm" style={{ margin: '4px 0 0' }}>
                                         {flash.summary}
@@ -120,8 +123,8 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                             href={flash.url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            onClick={(e) => e.stopPropagation()}
                                             className="text-xs"
+                                            style={{ position: 'relative', zIndex: 1 }}
                                         >
                                             <ExternalLink
                                                 size={11}
@@ -133,8 +136,8 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                     {flash.linkedResourceType === 'flashcardDeck' && flash.linkedResourceId && (
                                         <Link
                                             to={`/portal/${studentId}/flashcards/${flash.linkedResourceId}`}
-                                            onClick={(e) => e.stopPropagation()}
                                             className="text-xs"
+                                            style={{ position: 'relative', zIndex: 1 }}
                                         >
                                             <Layers size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
                                             {t('newsFlashes.linked_flashcardDeck')}
@@ -149,11 +152,10 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                                 border: 'none',
                                                 padding: 0,
                                                 cursor: 'pointer',
+                                                position: 'relative',
+                                                zIndex: 1,
                                             }}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onScrollToSection('portal-section-work');
-                                            }}
+                                            onClick={() => onScrollToSection('portal-section-work')}
                                         >
                                             <ListChecks size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
                                             {t('newsFlashes.linked_test')}
@@ -168,11 +170,10 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                                 border: 'none',
                                                 padding: 0,
                                                 cursor: 'pointer',
+                                                position: 'relative',
+                                                zIndex: 1,
                                             }}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onScrollToSection('portal-section-feedback');
-                                            }}
+                                            onClick={() => onScrollToSection('portal-section-feedback')}
                                         >
                                             {t('newsFlashes.linked_rubric')}
                                         </button>

@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
 import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -42,6 +42,10 @@ const mockRubric: Rubric = {
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
+// Mutable holder so individual tests can render a page with domain data present
+// (e.g. FlashcardsPage with a deck) without re-mocking the whole context.
+const mockAppData = vi.hoisted(() => ({ flashcardDecks: [] as unknown[] }));
+
 vi.mock('../../context/AppContext', () => ({
     useApp: () => ({
         rubrics: [mockRubric],
@@ -61,9 +65,11 @@ vi.mock('../../context/AppContext', () => ({
         // Phase 3/4 collections
         tests: [],
         studentTests: [],
-        flashcardDecks: [],
+        flashcardDecks: mockAppData.flashcardDecks,
         flashcardAssignments: [],
         flashcardReviews: [],
+        addFlashcardDeck: vi.fn(),
+        deleteFlashcardDeck: vi.fn(),
         essayAssignments: [],
         peerReviews: [],
         analysisResults: [],
@@ -451,6 +457,37 @@ describe('NotificationsPage — a11y', () => {
     it('has no axe violations on the empty state', async () => {
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderPage(<NotificationsPage />);
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    });
+});
+
+// ─── FlashcardsPage (roadmap 31.8: nested-interactive fix) ────────────────────────
+
+describe('FlashcardsPage — a11y', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockAppData.flashcardDecks = [];
+    });
+    afterEach(() => {
+        mockAppData.flashcardDecks = [];
+    });
+
+    it('has no axe violations with a deck present', async () => {
+        // A rendered deck card carries edit/delete buttons; the whole card used to be
+        // role="button" too, which axe flags as `nested-interactive`. The stretched-link
+        // refactor keeps the whole-card click without nesting interactive elements.
+        mockAppData.flashcardDecks = [
+            {
+                id: 'd1',
+                name: 'Irregular verbs',
+                description: 'Practice set',
+                cards: [{ id: 'card1', front: 'go', back: 'went' }],
+                createdAt: '2024-01-01T00:00:00Z',
+            },
+        ];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderPage(<FlashcardsPage />, '/flashcards', '/flashcards');
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     });

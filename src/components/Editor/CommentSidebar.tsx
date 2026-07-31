@@ -45,21 +45,12 @@ export default function CommentSidebar({
                     <div
                         key={c.id}
                         data-testid="comment-item"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => onSelect(c.id)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                onSelect(c.id);
-                            }
-                        }}
                         style={{
+                            position: 'relative',
                             padding: '8px 10px',
                             borderRadius: 6,
                             border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
                             background: isActive ? 'var(--bg-elevated)' : 'var(--bg-body)',
-                            cursor: 'pointer',
                             opacity: c.resolved ? 0.6 : 1,
                         }}
                     >
@@ -72,16 +63,22 @@ export default function CommentSidebar({
                                 {new Date(c.createdAt).toLocaleDateString()}
                             </span>
                         </div>
-                        <div style={{ fontSize: '0.82rem', lineHeight: 1.4, marginBottom: 6 }}>{c.text}</div>
-                        <div style={{ display: 'flex', gap: 4 }}>
+                        <div style={{ fontSize: '0.82rem', lineHeight: 1.4, marginBottom: 6 }}>
+                            <button
+                                type="button"
+                                className="stretched-link"
+                                data-testid="comment-select"
+                                onClick={() => onSelect(c.id)}
+                            >
+                                {c.text}
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 1 }}>
                             <button
                                 type="button"
                                 className="btn btn-ghost btn-sm"
                                 style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onResolve(c.id, !c.resolved);
-                                }}
+                                onClick={() => onResolve(c.id, !c.resolved)}
                             >
                                 {c.resolved ? (
                                     <>
@@ -97,10 +94,7 @@ export default function CommentSidebar({
                                 type="button"
                                 className="btn btn-ghost btn-sm"
                                 style={{ fontSize: '0.72rem', padding: '2px 8px', color: 'var(--red)' }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(c.id);
-                                }}
+                                onClick={() => onDelete(c.id)}
                             >
                                 <Trash2 size={12} /> {t('attachments.comment_delete')}
                             </button>

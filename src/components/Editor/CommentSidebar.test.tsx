@@ -59,7 +59,7 @@ describe('CommentSidebar', () => {
         expect(items[1]).toHaveTextContent('attachments.comment_author_teacher');
     });
 
-    it('calls onSelect when a comment is clicked', () => {
+    it('calls onSelect when the comment is clicked', () => {
         const onSelect = vi.fn();
         render(
             <CommentSidebar
@@ -71,29 +71,27 @@ describe('CommentSidebar', () => {
                 onDelete={vi.fn()}
             />
         );
-        fireEvent.click(screen.getByTestId('comment-item'));
+        fireEvent.click(screen.getByTestId('comment-select'));
         expect(onSelect).toHaveBeenCalledWith('c1');
     });
 
-    it('is keyboard-accessible: Enter and Space both trigger onSelect', () => {
-        const onSelect = vi.fn();
+    // The select control is a real <button> (not a role="button" div wrapping the
+    // resolve/delete buttons), so it is keyboard-operable by construction and does
+    // not nest interactive elements inside another interactive element.
+    it('exposes the comment as a native, keyboard-operable button', () => {
         render(
             <CommentSidebar
                 comments={[makeComment()]}
                 activeCommentId={null}
                 currentUserId="u1"
-                onSelect={onSelect}
+                onSelect={vi.fn()}
                 onResolve={vi.fn()}
                 onDelete={vi.fn()}
             />
         );
-        const item = screen.getByTestId('comment-item');
-        expect(item).toHaveAttribute('role', 'button');
-        expect(item).toHaveAttribute('tabIndex', '0');
-        fireEvent.keyDown(item, { key: 'Enter' });
-        fireEvent.keyDown(item, { key: ' ' });
-        expect(onSelect).toHaveBeenCalledTimes(2);
-        expect(onSelect).toHaveBeenCalledWith('c1');
+        const select = screen.getByTestId('comment-select');
+        expect(select.tagName).toBe('BUTTON');
+        expect(select.querySelector('button')).toBeNull();
     });
 
     it('calls onResolve with the toggled state and does not also trigger onSelect', () => {
