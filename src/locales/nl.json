@@ -1609,6 +1609,7 @@
         "work_completed": "Voltooid",
         "work_load_error": "Je toegewezen werk kon niet worden geladen. Probeer de pagina te vernieuwen.",
         "messages_section_title": "Berichten",
+        "messages_context_label": "Berichtonderwerp",
         "ask_question_placeholder": "Stel je docent een vraag…",
         "no_messages_yet": "Nog geen berichten. Stel hierboven een vraag aan je docent.",
         "my_progress": "Mijn voortgang",

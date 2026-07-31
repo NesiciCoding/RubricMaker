@@ -1609,6 +1609,7 @@
         "work_completed": "Completed",
         "work_load_error": "Could not load your assigned work. Please try refreshing the page.",
         "messages_section_title": "Messages",
+        "messages_context_label": "Message topic",
         "ask_question_placeholder": "Ask your teacher a question…",
         "no_messages_yet": "No messages yet. Ask your teacher a question above.",
         "my_progress": "My progress",

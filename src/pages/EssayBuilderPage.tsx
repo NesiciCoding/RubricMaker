@@ -98,6 +98,9 @@ export default function EssayBuilderPage() {
         if (!teacherKeyParam) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
         showToast(t('essays.save'), 'success');
+        // buildPatch/updateEssayGroup/showToast/t are intentionally excluded — the
+        // callback only needs to re-create when the form fields change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         teacherKeyParam,
         title,

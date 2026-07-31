@@ -333,7 +333,7 @@ export default function RubricList() {
                             value={subjectFilter}
                             onChange={(e) => setSubjectFilter(e.target.value)}
                             style={{ minWidth: 150 }}
-                            aria-label={t('rubricList.all_subjects') || 'All Subjects'}
+                            aria-label={t('rubricList.all_subjects')}
                         >
                             <option value="all">{t('rubricList.all_subjects') || 'All Subjects'}</option>
                             {uniqueSubjects.map((subj) => (

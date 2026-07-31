@@ -1609,6 +1609,7 @@
         "work_completed": "Terminé",
         "work_load_error": "Impossible de charger votre travail assigné. Veuillez actualiser la page.",
         "messages_section_title": "Messages",
+        "messages_context_label": "Sujet du message",
         "ask_question_placeholder": "Posez une question à votre enseignant…",
         "no_messages_yet": "Pas encore de messages. Posez une question à votre enseignant ci-dessus.",
         "my_progress": "Ma progression",

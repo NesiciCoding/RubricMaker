@@ -160,9 +160,9 @@ export default function StudentFlashcardStudyPage() {
                                     marginBottom: 20,
                                 }}
                             >
-                                <h3 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
+                                <h2 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>
                                     {t('flashcards.my_progress_heading')}
-                                </h3>
+                                </h2>
                                 <FlashcardInsightsPanel insights={insights} deckKind={deck?.deckKind} />
                             </div>
                         )}

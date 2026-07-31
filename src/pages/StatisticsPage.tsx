@@ -777,8 +777,12 @@ export default function StatisticsPage() {
                     ) : viewMode === 'compare' ? (
                         <>
                             <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
-                                <label>{t('statistics.label_rubric')}</label>
-                                <select value={compareRubricId} onChange={(e) => setCompareRubricId(e.target.value)}>
+                                <label htmlFor="stats-compare-rubric">{t('statistics.label_rubric')}</label>
+                                <select
+                                    id="stats-compare-rubric"
+                                    value={compareRubricId}
+                                    onChange={(e) => setCompareRubricId(e.target.value)}
+                                >
                                     {rubrics.map((r) => (
                                         <option key={r.id} value={r.id}>
                                             {r.name}
@@ -834,8 +838,9 @@ export default function StatisticsPage() {
                     ) : (
                         <>
                             <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                                <label>{t('statistics.label_class_filter')}</label>
+                                <label htmlFor="stats-student-class">{t('statistics.label_class_filter')}</label>
                                 <select
+                                    id="stats-student-class"
                                     value={studentViewClassId}
                                     onChange={(e) => setStudentViewClassId(e.target.value)}
                                 >
@@ -848,8 +853,9 @@ export default function StatisticsPage() {
                                 </select>
                             </div>
                             <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
-                                <label>{t('statistics.label_student')}</label>
+                                <label htmlFor="stats-student">{t('statistics.label_student')}</label>
                                 <select
+                                    id="stats-student"
                                     value={selectedStudentId}
                                     onChange={(e) => setSelectedStudentId(e.target.value)}
                                 >
@@ -867,8 +873,11 @@ export default function StatisticsPage() {
                             </div>
                             {selectedStudentId && (
                                 <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
-                                    <label>{t('statistics.label_rubric_comparison')}</label>
+                                    <label htmlFor="stats-student-rubric">
+                                        {t('statistics.label_rubric_comparison')}
+                                    </label>
                                     <select
+                                        id="stats-student-rubric"
                                         value={selectedStudentRubricId}
                                         onChange={(e) => setSelectedStudentRubricId(e.target.value)}
                                     >

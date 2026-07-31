@@ -6,7 +6,7 @@
  * Colour-contrast is skipped because jsdom has no rendering engine.
  */
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { axe } from 'jest-axe';
 import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -892,6 +892,25 @@ describe('StatisticsPage — a11y', () => {
     it('has no axe violations', async () => {
         const { default: StatisticsPage } = await import('../StatisticsPage');
         renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+
+    // The 'rubric' view above only exercises its own filter selects. Switch into
+    // the other two view modes (each renders its own class/student/rubric selects)
+    // so axe audits those branches too.
+    it('has no axe violations in the student view', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        fireEvent.click(screen.getByText('statistics.view_by_student'));
+        const results = await axe(document.body, axeOptions);
+        expect(results.violations).toHaveLength(0);
+    }, 15000);
+
+    it('has no axe violations in the compare view', async () => {
+        const { default: StatisticsPage } = await import('../StatisticsPage');
+        renderPage(<StatisticsPage />, '/statistics', '/statistics');
+        fireEvent.click(screen.getByText('statistics.view_compare'));
         const results = await axe(document.body, axeOptions);
         expect(results.violations).toHaveLength(0);
     }, 15000);
