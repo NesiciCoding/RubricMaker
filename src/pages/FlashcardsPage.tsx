@@ -61,7 +61,6 @@ export default function FlashcardsPage() {
                                     className="card"
                                     style={{
                                         position: 'relative',
-                                        cursor: 'pointer',
                                         transition: 'border-color var(--transition)',
                                         flex: '1 1 320px',
                                         maxWidth: 480,
@@ -69,26 +68,6 @@ export default function FlashcardsPage() {
                                     onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                                 >
-                                    {/* Stretched-link overlay: the whole card navigates, but the
-                                        overlay is a sibling of the edit/delete buttons (which sit
-                                        above it via z-index) rather than their parent, so there is
-                                        no nested-interactive a11y violation. */}
-                                    <button
-                                        type="button"
-                                        aria-label={deck.name}
-                                        onClick={() => navigate(`/flashcards/${deck.id}`)}
-                                        style={{
-                                            position: 'absolute',
-                                            inset: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            background: 'transparent',
-                                            border: 0,
-                                            padding: 0,
-                                            margin: 0,
-                                            cursor: 'pointer',
-                                        }}
-                                    />
                                     <div
                                         style={{
                                             display: 'flex',
@@ -98,28 +77,26 @@ export default function FlashcardsPage() {
                                         }}
                                     >
                                         <div>
-                                            <h3>{deck.name}</h3>
+                                            <h3 style={{ margin: 0 }}>
+                                                <button
+                                                    type="button"
+                                                    className="stretched-link"
+                                                    onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                                >
+                                                    {deck.name}
+                                                </button>
+                                            </h3>
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
                                             </div>
                                         </div>
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                gap: 4,
-                                                position: 'relative',
-                                                zIndex: 1,
-                                            }}
-                                        >
+                                        <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 1 }}>
                                             <button
                                                 type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 title={t('flashcards.action_edit')}
                                                 aria-label={t('flashcards.action_edit')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(`/flashcards/${deck.id}`);
-                                                }}
+                                                onClick={() => navigate(`/flashcards/${deck.id}`)}
                                             >
                                                 <Edit2 size={14} />
                                             </button>
@@ -129,10 +106,7 @@ export default function FlashcardsPage() {
                                                 title={t('flashcards.action_delete')}
                                                 aria-label={t('flashcards.action_delete')}
                                                 style={{ color: 'var(--red)' }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(deck.id, deck.name);
-                                                }}
+                                                onClick={() => handleDelete(deck.id, deck.name)}
                                             >
                                                 <Trash2 size={14} />
                                             </button>

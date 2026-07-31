@@ -668,11 +668,10 @@ describe('FlashcardsPage — a11y', () => {
         expect(results.violations).toHaveLength(0);
     });
 
-    // Regression guard for the stretched-link fix: a populated deck card must not
-    // reintroduce a `nested-interactive` violation. The card navigates via a
-    // sibling overlay button rather than a `role="button"` wrapper around the
-    // edit/delete controls, so the edit/delete buttons are no longer nested inside
-    // another interactive element.
+    // Regression guard for the stretched-link fix (PR #357): a populated deck card
+    // must not reintroduce a `nested-interactive` violation. The card title is a
+    // `button.stretched-link` that covers the card for whole-card navigation, so the
+    // edit/delete controls are no longer nested inside a `role="button"` wrapper.
     it('has no axe violations with a deck present', async () => {
         appStateOverride = { flashcardDecks: [mockFlashcardDeck] };
         const { default: FlashcardsPage } = await import('../FlashcardsPage');
