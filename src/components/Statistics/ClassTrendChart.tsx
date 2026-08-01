@@ -1,5 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { formatShortDate } from '../../utils/dateInput';
 
 export interface TrendPoint {
     rubricName: string;
@@ -13,6 +15,7 @@ interface Props {
 }
 
 export default function ClassTrendChart({ data }: Props) {
+    const { t } = useTranslation();
     if (data.length < 2) return null;
 
     return (
@@ -38,12 +41,16 @@ export default function ClassTrendChart({ data }: Props) {
                         borderRadius: 8,
                     }}
                     formatter={(value: unknown, name: unknown) => [`${value ?? 0}%`, String(name)]}
+                    labelFormatter={(label, payload) => {
+                        const d = payload && payload.length > 0 ? payload[0].payload?.date : undefined;
+                        return d ? `${label} · ${formatShortDate(d)}` : String(label);
+                    }}
                 />
                 <Legend wrapperStyle={{ paddingTop: 8 }} />
                 <Line
                     type="monotone"
                     dataKey="avg"
-                    name="Average"
+                    name={t('statistics.stat_average')}
                     stroke="var(--accent)"
                     strokeWidth={2.5}
                     dot={{ r: 4 }}
@@ -53,7 +60,7 @@ export default function ClassTrendChart({ data }: Props) {
                 <Line
                     type="monotone"
                     dataKey="median"
-                    name="Median"
+                    name={t('statistics.stat_median')}
                     stroke="var(--teal, #14b8a6)"
                     strokeWidth={2}
                     strokeDasharray="5 4"

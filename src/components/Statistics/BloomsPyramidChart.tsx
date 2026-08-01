@@ -18,7 +18,6 @@ interface Props {
 export default function BloomsPyramidChart({ levels, lang }: Props) {
     const { t } = useTranslation();
     const sorted = [...levels].sort((a, b) => b.order - a.order);
-    const maxOrder = Math.max(...levels.map((l) => l.order));
 
     return (
         <figure aria-label={t('statistics.blooms_chart_summary')} style={{ margin: 0 }}>
@@ -35,7 +34,6 @@ export default function BloomsPyramidChart({ levels, lang }: Props) {
             </ul>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '8px 0' }}>
                 {sorted.map((level) => {
-                    const widthPct = 100 - (level.order - 1) * (60 / maxOrder);
                     const label = lang === 'nl' ? level.labelNl : level.labelEn;
                     const hasData = level.value !== null && !isNaN(level.value);
                     const fillPct = hasData ? Math.max(0, Math.min(100, level.value!)) : 0;
@@ -47,7 +45,6 @@ export default function BloomsPyramidChart({ levels, lang }: Props) {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 10,
-                                margin: '0 auto',
                                 width: '100%',
                             }}
                         >
@@ -66,12 +63,11 @@ export default function BloomsPyramidChart({ levels, lang }: Props) {
                                 style={{
                                     flex: 1,
                                     display: 'flex',
-                                    justifyContent: 'center',
                                 }}
                             >
                                 <div
                                     style={{
-                                        width: `${widthPct}%`,
+                                        width: '100%',
                                         height: 28,
                                         borderRadius: 4,
                                         background: `color-mix(in srgb, ${level.color} 18%, transparent)`,
