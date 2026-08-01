@@ -14,7 +14,7 @@ import type {
     Test,
     StudentTest,
 } from '../types';
-import { CEFR_DESCRIPTORS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { CEFR_DESCRIPTORS, CEFR_SKILLS, CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
 import { compareToRange, cefrLevelOrdinal, type ProgressStatus } from './cefrOrdinal';
 import { calcGradeSummary, criterionMaxPoints } from './gradeCalc';
@@ -33,6 +33,30 @@ export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): C
         (best, c) => (cefrLevelOrdinal(c.level) > cefrLevelOrdinal(best) ? c.level : best),
         pool[0].level
     );
+}
+
+/**
+ * Class-representative level for a skill: the most common highest-achieved level across the given
+ * students' cells, breaking ties toward the higher level (iterating CEFR_LEVELS low→high with `>=`).
+ * Returns null when no student has data for the skill.
+ */
+export function modeSkillLevel(cellsList: CefrCellData[][], skill: CefrSkill): CefrLevel | null {
+    const levels = cellsList
+        .map((cells) => highestLevelForSkill(cells, skill))
+        .filter((l): l is CefrLevel => l !== null);
+    if (levels.length === 0) return null;
+    const counts = new Map<CefrLevel, number>();
+    for (const l of levels) counts.set(l, (counts.get(l) ?? 0) + 1);
+    let best: CefrLevel | null = null;
+    let bestCount = -1;
+    for (const lvl of CEFR_LEVELS) {
+        const c = counts.get(lvl) ?? 0;
+        if (c > 0 && c >= bestCount) {
+            best = lvl;
+            bestCount = c;
+        }
+    }
+    return best;
 }
 
 /** Lowest of each skill's highest achieved/developing level — surfaces the weakest skill first. */
