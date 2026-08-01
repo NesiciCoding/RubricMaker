@@ -836,6 +836,13 @@ function RubricsTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.rb_view_toggle_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.rb_view_toggle_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_cohort_filtering_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
@@ -848,6 +855,9 @@ function RubricsTab() {
                     {t('docs.rb_tests_intro')} <strong>{t('docs.rb_tests_intro_page')}</strong>{' '}
                     {t('docs.rb_tests_intro_body')} <strong>{t('docs.rb_tests_intro_help_icon')}</strong>{' '}
                     {t('docs.rb_tests_intro_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.rb_tests_view_toggle_body')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_fillgap_label')}</strong> {t('docs.rb_tests_fillgap_uses')}{' '}

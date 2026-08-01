@@ -13,6 +13,8 @@ import {
     FileDown,
     GripVertical,
     Sparkles,
+    LayoutGrid,
+    List,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +34,8 @@ import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
+import SegmentedToggle from '../components/ui/SegmentedToggle';
+import { calcClassAveragePercentage } from '../utils/testCalc';
 
 export default function TestListPage() {
     const { t } = useTranslation();
@@ -50,6 +54,7 @@ export default function TestListPage() {
     } = useApp();
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
+    const [view, setView] = useState<'cards' | 'list'>('cards');
     const allCohorts = isAllCohorts(cohortFilter);
     const cohortStudentIds = React.useMemo(
         () => getCohortStudentIds(students, classes, cohortFilter),
@@ -182,6 +187,21 @@ export default function TestListPage() {
             <div className="page-content fade-in">
                 <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
+                    <div style={{ marginLeft: 'auto' }}>
+                        <SegmentedToggle
+                            ariaLabel={t('common.view')}
+                            value={view}
+                            onChange={setView}
+                            options={[
+                                {
+                                    value: 'cards',
+                                    label: t('common.view_cards'),
+                                    icon: <LayoutGrid size={14} />,
+                                },
+                                { value: 'list', label: t('common.view_list'), icon: <List size={14} /> },
+                            ]}
+                        />
+                    </div>
                 </div>
                 {visibleTests.length === 0 ? (
                     <div className="empty-state">
@@ -191,6 +211,93 @@ export default function TestListPage() {
                         <button className="btn btn-primary" onClick={() => navigate('/tests/new')}>
                             <Plus size={16} /> {t('tests.new_test')}
                         </button>
+                    </div>
+                ) : view === 'list' ? (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>{t('tests.col_name')}</th>
+                                    <th>{t('tests.col_questions')}</th>
+                                    <th>{t('tests.col_submitted')}</th>
+                                    <th>{t('tests.col_avg')}</th>
+                                    <th>{t('common.actions')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visibleTests.map((test) => {
+                                    const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+                                    const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
+                                    const avgPct =
+                                        relevantStudentTests.length > 0
+                                            ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
+                                            : null;
+                                    return (
+                                        <tr
+                                            key={test.id}
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={() => navigate(`/tests/${test.id}`)}
+                                        >
+                                            <td style={{ fontWeight: 500 }}>{test.name}</td>
+                                            <td>{test.questions.length}</td>
+                                            <td>{submittedCount}</td>
+                                            <td>{avgPct !== null ? `${avgPct}%` : '—'}</td>
+                                            <td onClick={(e) => e.stopPropagation()}>
+                                                <div style={{ display: 'flex', gap: 4 }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('tests.action_edit')}
+                                                        aria-label={t('tests.action_edit')}
+                                                        onClick={() => navigate(`/tests/${test.id}`)}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('tests.action_assign')}
+                                                        aria-label={t('tests.action_assign')}
+                                                        disabled={test.questions.length === 0}
+                                                        onClick={() => setAssigningTestId(test.id)}
+                                                    >
+                                                        <Send size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('tests.monitor.action_monitor')}
+                                                        aria-label={t('tests.monitor.action_monitor')}
+                                                        onClick={() => navigate(`/tests/${test.id}/monitor`)}
+                                                    >
+                                                        <Radio size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('tests.action_duplicate')}
+                                                        aria-label={t('tests.action_duplicate')}
+                                                        onClick={() => handleDuplicate(test.id)}
+                                                    >
+                                                        <Copy size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('tests.action_delete')}
+                                                        aria-label={t('tests.action_delete')}
+                                                        style={{ color: 'var(--red)' }}
+                                                        onClick={() => handleDelete(test.id, test.name)}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <DragDropContext onDragEnd={handleDragEnd}>
@@ -209,6 +316,13 @@ export default function TestListPage() {
                                     {visibleTests.map((test, idx) => {
                                         const totalPoints = test.questions.reduce((sum, q) => sum + (q.points || 0), 0);
                                         const isOverdue = !!test.dueDate && new Date(test.dueDate) < new Date();
+                                        const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+                                        const submittedCount = new Set(relevantStudentTests.map((st) => st.studentId))
+                                            .size;
+                                        const avgPct =
+                                            relevantStudentTests.length > 0
+                                                ? Math.round(calcClassAveragePercentage(relevantStudentTests, test))
+                                                : null;
                                         return (
                                             <Draggable
                                                 key={test.id}
@@ -352,6 +466,18 @@ export default function TestListPage() {
                                                             {test.requireSEB && (
                                                                 <span className="badge badge-green">
                                                                     {t('tests.seb_badge')}
+                                                                </span>
+                                                            )}
+                                                            {submittedCount > 0 && (
+                                                                <span className="badge badge-blue">
+                                                                    {t('tests.list_submitted', {
+                                                                        count: submittedCount,
+                                                                    })}
+                                                                </span>
+                                                            )}
+                                                            {avgPct !== null && (
+                                                                <span className="badge badge-yellow">
+                                                                    {t('tests.list_avg', { pct: avgPct })}
                                                                 </span>
                                                             )}
                                                         </div>
