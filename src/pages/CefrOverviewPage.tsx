@@ -17,35 +17,12 @@ import {
     getCefrStudentOverview,
     highestLevelForSkill,
     overallLevel,
-    type CefrCellData,
+    modeSkillLevel,
 } from '../utils/cefrStudentAggregator';
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
-import type { CefrSkill, CefrLevel } from '../types';
-
-/**
- * The class-representative level for a skill: the most common highest-achieved level across the
- * students shown, breaking ties toward the higher level (iterating CEFR_LEVELS low→high with `>=`).
- */
-function modeSkillLevel(overviews: { overview: { cells: CefrCellData[] } }[], skill: CefrSkill): CefrLevel | null {
-    const levels = overviews
-        .map((o) => highestLevelForSkill(o.overview.cells, skill))
-        .filter((l): l is CefrLevel => l !== null);
-    if (levels.length === 0) return null;
-    const counts = new Map<CefrLevel, number>();
-    for (const l of levels) counts.set(l, (counts.get(l) ?? 0) + 1);
-    let best: CefrLevel | null = null;
-    let bestCount = -1;
-    for (const lvl of CEFR_LEVELS) {
-        const c = counts.get(lvl) ?? 0;
-        if (c > 0 && c >= bestCount) {
-            best = lvl;
-            bestCount = c;
-        }
-    }
-    return best;
-}
+import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, tests, studentTests } =
@@ -69,6 +46,13 @@ export default function CefrOverviewPage() {
         },
         { key: 'listening', label: t('cefr.skills.listening'), short: t('cefr.skills.listening_short') },
     ];
+
+    const cellStateLabel = (state?: 'achieved' | 'developing' | 'not-started'): string =>
+        state === 'achieved'
+            ? t('cefrOverview.cell_achieved')
+            : state === 'developing'
+              ? t('cefrOverview.cell_developing')
+              : t('cefrOverview.cell_not_started');
 
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [selectedStudentId, setSelectedStudentId] = useState<string>('');
@@ -252,7 +236,10 @@ export default function CefrOverviewPage() {
                                         }}
                                     >
                                         {SKILLS.map((sk) => {
-                                            const level = modeSkillLevel(studentOverviews, sk.key);
+                                            const level = modeSkillLevel(
+                                                studentOverviews.map((o) => o.overview.cells),
+                                                sk.key
+                                            );
                                             return (
                                                 <div
                                                     key={sk.key}
@@ -273,7 +260,12 @@ export default function CefrOverviewPage() {
                                                     {level ? (
                                                         <CefrBadge level={level} />
                                                     ) : (
-                                                        <span className="text-dim" style={{ fontSize: '0.9rem' }}>
+                                                        <span
+                                                            className="text-dim"
+                                                            style={{ fontSize: '0.9rem' }}
+                                                            title={t('cefrOverview.cell_no_data')}
+                                                            aria-label={t('cefrOverview.cell_no_data')}
+                                                        >
                                                             —
                                                         </span>
                                                     )}
@@ -441,7 +433,7 @@ export default function CefrOverviewPage() {
                                                                                           cell.skill === sk.key &&
                                                                                           cell.level === lvl
                                                                                   );
-                                                                                  return `${lvl} ${c?.state ?? 'not-started'}`;
+                                                                                  return `${lvl} ${cellStateLabel(c?.state)}`;
                                                                               }).join(', ')
                                                                             : t('cefrOverview.cell_not_started')
                                                                     }`}

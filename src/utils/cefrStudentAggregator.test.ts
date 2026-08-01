@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCefrStudentOverview, highestLevelForSkill, overallLevel } from './cefrStudentAggregator';
+import { getCefrStudentOverview, highestLevelForSkill, overallLevel, modeSkillLevel } from './cefrStudentAggregator';
 import type { CefrCellData } from './cefrStudentAggregator';
 import type { Rubric, StudentRubric, SelfAssessment, DocumentAnalysisResult, Test, StudentTest } from '../types';
 
@@ -955,6 +955,35 @@ describe('highestLevelForSkill', () => {
             makeCell({ skill: 'reading', level: 'B1', state: 'developing' }),
         ];
         expect(highestLevelForSkill(cells, 'reading')).toBe('B1');
+    });
+});
+
+describe('modeSkillLevel', () => {
+    it('returns null for empty input', () => {
+        expect(modeSkillLevel([], 'reading')).toBeNull();
+    });
+
+    it('returns null when no student has data for the skill', () => {
+        const cellsList = [[makeCell({ skill: 'reading', rubricCount: 0, totalDescriptors: 0 })]];
+        expect(modeSkillLevel(cellsList, 'reading')).toBeNull();
+    });
+
+    it('returns the most common highest level across students', () => {
+        const cellsList = [
+            [makeCell({ skill: 'reading', level: 'B1', state: 'achieved' })],
+            [makeCell({ skill: 'reading', level: 'B1', state: 'achieved' })],
+            [makeCell({ skill: 'reading', level: 'A2', state: 'achieved' })],
+        ];
+        expect(modeSkillLevel(cellsList, 'reading')).toBe('B1');
+    });
+
+    it('breaks ties toward the higher CEFR level', () => {
+        const cellsList = [
+            [makeCell({ skill: 'reading', level: 'A2', state: 'achieved' })],
+            [makeCell({ skill: 'reading', level: 'B1', state: 'achieved' })],
+        ];
+        // 1 each — tie resolves to the higher level.
+        expect(modeSkillLevel(cellsList, 'reading')).toBe('B1');
     });
 });
 
