@@ -22,7 +22,30 @@ import {
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
-import type { CefrSkill } from '../types';
+import type { CefrSkill, CefrLevel } from '../types';
+
+/**
+ * The class-representative level for a skill: the most common highest-achieved level across the
+ * students shown, breaking ties toward the higher level (iterating CEFR_LEVELS low→high with `>=`).
+ */
+function modeSkillLevel(overviews: { overview: { cells: CefrCellData[] } }[], skill: CefrSkill): CefrLevel | null {
+    const levels = overviews
+        .map((o) => highestLevelForSkill(o.overview.cells, skill))
+        .filter((l): l is CefrLevel => l !== null);
+    if (levels.length === 0) return null;
+    const counts = new Map<CefrLevel, number>();
+    for (const l of levels) counts.set(l, (counts.get(l) ?? 0) + 1);
+    let best: CefrLevel | null = null;
+    let bestCount = -1;
+    for (const lvl of CEFR_LEVELS) {
+        const c = counts.get(lvl) ?? 0;
+        if (c > 0 && c >= bestCount) {
+            best = lvl;
+            bestCount = c;
+        }
+    }
+    return best;
+}
 
 export default function CefrOverviewPage() {
     const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, tests, studentTests } =
@@ -216,30 +239,114 @@ export default function CefrOverviewPage() {
                                 <p>{t('cefr.empty_no_students')}</p>
                             </div>
                         ) : (
-                            <div className="card" data-tour="cefr-heatmap" style={{ overflowX: 'auto', padding: 0 }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                                            <th
-                                                style={{
-                                                    padding: '10px 14px',
-                                                    textAlign: 'left',
-                                                    fontWeight: 700,
-                                                    color: 'var(--text-muted)',
-                                                    whiteSpace: 'nowrap',
-                                                    position: 'sticky',
-                                                    left: 0,
-                                                    background: 'var(--bg-card)',
-                                                    zIndex: 1,
-                                                }}
-                                            >
-                                                {t('cefr.table_header_student')}
-                                            </th>
-                                            {SKILLS.map((sk) => (
-                                                <th
+                            <>
+                                <div style={{ marginBottom: 16 }}>
+                                    <div className="text-muted text-sm" style={{ fontWeight: 600, marginBottom: 8 }}>
+                                        {t('cefrOverview.class_levels_title')}
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                                            gap: 12,
+                                        }}
+                                    >
+                                        {SKILLS.map((sk) => {
+                                            const level = modeSkillLevel(studentOverviews, sk.key);
+                                            return (
+                                                <div
                                                     key={sk.key}
+                                                    className="card"
+                                                    style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'flex-start',
+                                                        gap: 10,
+                                                    }}
+                                                >
+                                                    <span
+                                                        className="text-muted"
+                                                        style={{ fontSize: '0.8rem', fontWeight: 600 }}
+                                                    >
+                                                        {sk.label}
+                                                    </span>
+                                                    {level ? (
+                                                        <CefrBadge level={level} />
+                                                    ) : (
+                                                        <span className="text-dim" style={{ fontSize: '0.9rem' }}>
+                                                            —
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div
+                                    className="card"
+                                    data-tour="cefr-heatmap"
+                                    style={{ overflowX: 'auto', padding: 0 }}
+                                >
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                                                <th
+                                                    style={{
+                                                        padding: '10px 14px',
+                                                        textAlign: 'left',
+                                                        fontWeight: 700,
+                                                        color: 'var(--text-muted)',
+                                                        whiteSpace: 'nowrap',
+                                                        position: 'sticky',
+                                                        left: 0,
+                                                        background: 'var(--bg-card)',
+                                                        zIndex: 1,
+                                                    }}
+                                                >
+                                                    {t('cefr.table_header_student')}
+                                                </th>
+                                                {SKILLS.map((sk) => (
+                                                    <th
+                                                        key={sk.key}
+                                                        style={{
+                                                            padding: '10px 10px',
+                                                            textAlign: 'center',
+                                                            fontWeight: 600,
+                                                            color: 'var(--text-muted)',
+                                                            borderLeft: '2px solid var(--border)',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        {sk.short}
+                                                    </th>
+                                                ))}
+                                                <th
                                                     style={{
                                                         padding: '10px 10px',
+                                                        textAlign: 'center',
+                                                        fontWeight: 700,
+                                                        color: 'var(--text-muted)',
+                                                        borderLeft: '2px solid var(--border)',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {t('cefrOverview.table_header_overall')}
+                                                </th>
+                                                <th
+                                                    style={{
+                                                        padding: '10px 10px',
+                                                        textAlign: 'center',
+                                                        fontWeight: 700,
+                                                        color: 'var(--text-muted)',
+                                                        borderLeft: '2px solid var(--border)',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {t('cefrOverview.table_header_progress')}
+                                                </th>
+                                                <th
+                                                    style={{
+                                                        padding: '10px 14px',
                                                         textAlign: 'center',
                                                         fontWeight: 600,
                                                         color: 'var(--text-muted)',
@@ -247,135 +354,137 @@ export default function CefrOverviewPage() {
                                                         whiteSpace: 'nowrap',
                                                     }}
                                                 >
-                                                    {sk.short}
+                                                    {t('cefr.table_header_detail')}
                                                 </th>
-                                            ))}
-                                            <th
-                                                style={{
-                                                    padding: '10px 10px',
-                                                    textAlign: 'center',
-                                                    fontWeight: 700,
-                                                    color: 'var(--text-muted)',
-                                                    borderLeft: '2px solid var(--border)',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {t('cefrOverview.table_header_overall')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '10px 10px',
-                                                    textAlign: 'center',
-                                                    fontWeight: 700,
-                                                    color: 'var(--text-muted)',
-                                                    borderLeft: '2px solid var(--border)',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {t('cefrOverview.table_header_progress')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '10px 14px',
-                                                    textAlign: 'center',
-                                                    fontWeight: 600,
-                                                    color: 'var(--text-muted)',
-                                                    borderLeft: '2px solid var(--border)',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {t('cefr.table_header_detail')}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
-                                            const rowTrack = getEffectiveVoTrack(s, sc);
-                                            const rowTarget = rowTrack ? VO_TRACK_DEFAULT_CEFR[rowTrack] : undefined;
-                                            return (
-                                                <tr
-                                                    key={s.id}
-                                                    style={{
-                                                        borderBottom: '1px solid var(--border)',
-                                                        background:
-                                                            i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)',
-                                                    }}
-                                                >
-                                                    <td
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {studentOverviews.map(({ student: s, overview: ov, cls: sc }, i) => {
+                                                const rowTrack = getEffectiveVoTrack(s, sc);
+                                                const rowTarget = rowTrack
+                                                    ? VO_TRACK_DEFAULT_CEFR[rowTrack]
+                                                    : undefined;
+                                                return (
+                                                    <tr
+                                                        key={s.id}
                                                         style={{
-                                                            padding: '8px 14px',
-                                                            fontWeight: 600,
-                                                            whiteSpace: 'nowrap',
-                                                            position: 'sticky',
-                                                            left: 0,
+                                                            borderBottom: '1px solid var(--border)',
                                                             background:
                                                                 i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-elevated)',
-                                                            zIndex: 1,
                                                         }}
                                                     >
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                            <Avatar name={s.name} size={26} fontSize="0.75rem" />
-                                                            <div>
-                                                                <div style={{ fontSize: '0.85rem' }}>{s.name}</div>
-                                                                {sc && (
-                                                                    <div
-                                                                        style={{
-                                                                            fontSize: '0.7rem',
-                                                                            color: 'var(--text-dim)',
-                                                                        }}
-                                                                    >
-                                                                        {sc.name}
-                                                                        {sc.voTrack && (
-                                                                            <span
-                                                                                style={{
-                                                                                    marginLeft: 4,
-                                                                                    padding: '0 4px',
-                                                                                    borderRadius: 3,
-                                                                                    background: getTrackBadgeColor(sc),
-                                                                                    color: '#fff',
-                                                                                    fontSize: '0.65rem',
-                                                                                    fontWeight: 700,
-                                                                                }}
-                                                                            >
-                                                                                {VO_TRACK_LABELS[sc.voTrack]}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    {SKILLS.map((sk) => {
-                                                        const skillLevel = highestLevelForSkill(ov.cells, sk.key);
-                                                        const isTarget = !!rowTarget && skillLevel === rowTarget;
-                                                        return (
-                                                            <td
-                                                                key={sk.key}
-                                                                title={`${sk.label}: ${
-                                                                    skillLevel
-                                                                        ? CEFR_LEVELS.map((lvl) => {
-                                                                              const c = ov.cells.find(
-                                                                                  (cell) =>
-                                                                                      cell.skill === sk.key &&
-                                                                                      cell.level === lvl
-                                                                              );
-                                                                              return `${lvl} ${c?.state ?? 'not-started'}`;
-                                                                          }).join(', ')
-                                                                        : t('cefrOverview.cell_not_started')
-                                                                }`}
+                                                        <td
+                                                            style={{
+                                                                padding: '8px 14px',
+                                                                fontWeight: 600,
+                                                                whiteSpace: 'nowrap',
+                                                                position: 'sticky',
+                                                                left: 0,
+                                                                background:
+                                                                    i % 2 === 0
+                                                                        ? 'var(--bg-card)'
+                                                                        : 'var(--bg-elevated)',
+                                                                zIndex: 1,
+                                                            }}
+                                                        >
+                                                            <div
                                                                 style={{
-                                                                    padding: '6px 6px',
-                                                                    textAlign: 'center',
-                                                                    borderLeft: '2px solid var(--border)',
-                                                                    outline: isTarget
-                                                                        ? '2px solid var(--accent)'
-                                                                        : undefined,
-                                                                    outlineOffset: -1,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 8,
                                                                 }}
                                                             >
-                                                                {skillLevel ? (
-                                                                    <CefrBadge level={skillLevel} size="sm" />
+                                                                <Avatar name={s.name} size={26} fontSize="0.75rem" />
+                                                                <div>
+                                                                    <div style={{ fontSize: '0.85rem' }}>{s.name}</div>
+                                                                    {sc && (
+                                                                        <div
+                                                                            style={{
+                                                                                fontSize: '0.7rem',
+                                                                                color: 'var(--text-dim)',
+                                                                            }}
+                                                                        >
+                                                                            {sc.name}
+                                                                            {sc.voTrack && (
+                                                                                <span
+                                                                                    style={{
+                                                                                        marginLeft: 4,
+                                                                                        padding: '0 4px',
+                                                                                        borderRadius: 3,
+                                                                                        background:
+                                                                                            getTrackBadgeColor(sc),
+                                                                                        color: '#fff',
+                                                                                        fontSize: '0.65rem',
+                                                                                        fontWeight: 700,
+                                                                                    }}
+                                                                                >
+                                                                                    {VO_TRACK_LABELS[sc.voTrack]}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {SKILLS.map((sk) => {
+                                                            const skillLevel = highestLevelForSkill(ov.cells, sk.key);
+                                                            const isTarget = !!rowTarget && skillLevel === rowTarget;
+                                                            return (
+                                                                <td
+                                                                    key={sk.key}
+                                                                    title={`${sk.label}: ${
+                                                                        skillLevel
+                                                                            ? CEFR_LEVELS.map((lvl) => {
+                                                                                  const c = ov.cells.find(
+                                                                                      (cell) =>
+                                                                                          cell.skill === sk.key &&
+                                                                                          cell.level === lvl
+                                                                                  );
+                                                                                  return `${lvl} ${c?.state ?? 'not-started'}`;
+                                                                              }).join(', ')
+                                                                            : t('cefrOverview.cell_not_started')
+                                                                    }`}
+                                                                    style={{
+                                                                        padding: '6px 6px',
+                                                                        textAlign: 'center',
+                                                                        borderLeft: '2px solid var(--border)',
+                                                                        outline: isTarget
+                                                                            ? '2px solid var(--accent)'
+                                                                            : undefined,
+                                                                        outlineOffset: -1,
+                                                                    }}
+                                                                >
+                                                                    {skillLevel ? (
+                                                                        <CefrBadge level={skillLevel} size="sm" />
+                                                                    ) : (
+                                                                        <span
+                                                                            style={{
+                                                                                color: 'var(--border)',
+                                                                                fontSize: '0.7rem',
+                                                                            }}
+                                                                        >
+                                                                            ·
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                            );
+                                                        })}
+
+                                                        <td
+                                                            style={{
+                                                                padding: '6px 6px',
+                                                                textAlign: 'center',
+                                                                borderLeft: '2px solid var(--border)',
+                                                            }}
+                                                        >
+                                                            {(() => {
+                                                                const lvl = overallLevel(
+                                                                    ov.cells,
+                                                                    SKILLS.map((sk) => sk.key)
+                                                                );
+                                                                return lvl ? (
+                                                                    <CefrBadge level={lvl} size="sm" />
                                                                 ) : (
                                                                     <span
                                                                         style={{
@@ -385,25 +494,33 @@ export default function CefrOverviewPage() {
                                                                     >
                                                                         ·
                                                                     </span>
-                                                                )}
-                                                            </td>
-                                                        );
-                                                    })}
+                                                                );
+                                                            })()}
+                                                        </td>
 
-                                                    <td
-                                                        style={{
-                                                            padding: '6px 6px',
-                                                            textAlign: 'center',
-                                                            borderLeft: '2px solid var(--border)',
-                                                        }}
-                                                    >
-                                                        {(() => {
-                                                            const lvl = overallLevel(
-                                                                ov.cells,
-                                                                SKILLS.map((sk) => sk.key)
-                                                            );
-                                                            return lvl ? (
-                                                                <CefrBadge level={lvl} size="sm" />
+                                                        <td
+                                                            style={{
+                                                                padding: '6px 6px',
+                                                                textAlign: 'center',
+                                                                borderLeft: '2px solid var(--border)',
+                                                            }}
+                                                        >
+                                                            {ov.trackYearProgress ? (
+                                                                <span
+                                                                    style={{
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: 700,
+                                                                        color: PROGRESS_STATUS_COLOR[
+                                                                            ov.trackYearProgress.status
+                                                                        ],
+                                                                    }}
+                                                                >
+                                                                    {t(
+                                                                        progressStatusLabelKey(
+                                                                            ov.trackYearProgress.status
+                                                                        )
+                                                                    )}
+                                                                </span>
                                                             ) : (
                                                                 <span
                                                                     style={{
@@ -413,135 +530,109 @@ export default function CefrOverviewPage() {
                                                                 >
                                                                     ·
                                                                 </span>
-                                                            );
-                                                        })()}
-                                                    </td>
+                                                            )}
+                                                        </td>
 
-                                                    <td
-                                                        style={{
-                                                            padding: '6px 6px',
-                                                            textAlign: 'center',
-                                                            borderLeft: '2px solid var(--border)',
-                                                        }}
-                                                    >
-                                                        {ov.trackYearProgress ? (
-                                                            <span
-                                                                style={{
-                                                                    fontSize: '0.7rem',
-                                                                    fontWeight: 700,
-                                                                    color: PROGRESS_STATUS_COLOR[
-                                                                        ov.trackYearProgress.status
-                                                                    ],
-                                                                }}
-                                                            >
-                                                                {t(progressStatusLabelKey(ov.trackYearProgress.status))}
-                                                            </span>
-                                                        ) : (
-                                                            <span
-                                                                style={{ color: 'var(--border)', fontSize: '0.7rem' }}
-                                                            >
-                                                                ·
-                                                            </span>
-                                                        )}
-                                                    </td>
-
-                                                    <td
-                                                        style={{
-                                                            padding: '8px 10px',
-                                                            textAlign: 'center',
-                                                            borderLeft: '2px solid var(--border)',
-                                                        }}
-                                                    >
-                                                        <button
-                                                            className="btn btn-ghost btn-sm"
-                                                            style={{ padding: '3px 8px', fontSize: '0.75rem' }}
-                                                            onClick={() => navigate(`/students/${s.id}/cefr-overview`)}
-                                                            aria-label={t('cefrOverview.open_student_detail', {
-                                                                name: s.name,
-                                                            })}
-                                                            title={t('cefrOverview.open_student_detail', {
-                                                                name: s.name,
-                                                            })}
+                                                        <td
+                                                            style={{
+                                                                padding: '8px 10px',
+                                                                textAlign: 'center',
+                                                                borderLeft: '2px solid var(--border)',
+                                                            }}
                                                         >
-                                                            <ChevronRight size={13} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                                            <button
+                                                                className="btn btn-ghost btn-sm"
+                                                                style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+                                                                onClick={() =>
+                                                                    navigate(`/students/${s.id}/cefr-overview`)
+                                                                }
+                                                                aria-label={t('cefrOverview.open_student_detail', {
+                                                                    name: s.name,
+                                                                })}
+                                                                title={t('cefrOverview.open_student_detail', {
+                                                                    name: s.name,
+                                                                })}
+                                                            >
+                                                                <ChevronRight size={13} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
 
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        gap: 16,
-                                        padding: '10px 14px',
-                                        borderTop: '1px solid var(--border)',
-                                        flexWrap: 'wrap',
-                                    }}
-                                >
-                                    {[
-                                        {
-                                            color: '#22c55e',
-                                            label: t('cefr.legend_achieved'),
-                                            bg: 'rgba(34,197,94,0.25)',
-                                        },
-                                        {
-                                            color: '#eab308',
-                                            label: t('cefr.legend_developing'),
-                                            bg: 'rgba(234,179,8,0.25)',
-                                        },
-                                        {
-                                            color: 'var(--text-dim)',
-                                            label: t('cefr.legend_not_started'),
-                                            bg: 'rgba(148,163,184,0.12)',
-                                        },
-                                        {
-                                            color: 'var(--accent)',
-                                            label: t('cefr.legend_target_level'),
-                                            bg: 'transparent',
-                                            outline: true,
-                                        },
-                                    ].map(({ color, label, bg, outline }) => (
-                                        <div
-                                            key={label}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                                fontSize: '0.75rem',
-                                                color: 'var(--text-muted)',
-                                            }}
-                                        >
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            gap: 16,
+                                            padding: '10px 14px',
+                                            borderTop: '1px solid var(--border)',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        {[
+                                            {
+                                                color: '#22c55e',
+                                                label: t('cefr.legend_achieved'),
+                                                bg: 'rgba(34,197,94,0.25)',
+                                            },
+                                            {
+                                                color: '#eab308',
+                                                label: t('cefr.legend_developing'),
+                                                bg: 'rgba(234,179,8,0.25)',
+                                            },
+                                            {
+                                                color: 'var(--text-dim)',
+                                                label: t('cefr.legend_not_started'),
+                                                bg: 'rgba(148,163,184,0.12)',
+                                            },
+                                            {
+                                                color: 'var(--accent)',
+                                                label: t('cefr.legend_target_level'),
+                                                bg: 'transparent',
+                                                outline: true,
+                                            },
+                                        ].map(({ color, label, bg, outline }) => (
                                             <div
+                                                key={label}
                                                 style={{
-                                                    width: 14,
-                                                    height: 14,
-                                                    borderRadius: 3,
-                                                    background: bg,
-                                                    border: outline ? `2px solid ${color}` : undefined,
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center',
+                                                    gap: 6,
+                                                    fontSize: '0.75rem',
+                                                    color: 'var(--text-muted)',
                                                 }}
                                             >
-                                                {!outline && (
-                                                    <div
-                                                        style={{
-                                                            width: 6,
-                                                            height: 6,
-                                                            borderRadius: '50%',
-                                                            background: color,
-                                                        }}
-                                                    />
-                                                )}
+                                                <div
+                                                    style={{
+                                                        width: 14,
+                                                        height: 14,
+                                                        borderRadius: 3,
+                                                        background: bg,
+                                                        border: outline ? `2px solid ${color}` : undefined,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                >
+                                                    {!outline && (
+                                                        <div
+                                                            style={{
+                                                                width: 6,
+                                                                height: 6,
+                                                                borderRadius: '50%',
+                                                                background: color,
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+                                                {label}
                                             </div>
-                                            {label}
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            </>
                         )}
                     </>
                 )}

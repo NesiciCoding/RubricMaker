@@ -1,8 +1,30 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import LearningGoalChart from '../LearningGoalChart';
 import type { LearningGoalAggregate } from '../../../utils/learningGoalsAggregator';
+
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => {
+            switch (key) {
+                case 'statistics.lg_empty':
+                    return 'No recorded learning goals.';
+                case 'statistics.lg_pts_short':
+                    return 'Pts';
+                case 'statistics.lg_average':
+                    return `Average: ${opts?.pct}% (${opts?.earned} / ${opts?.max} pts)`;
+                case 'statistics.lg_option_suffix':
+                    return `(${opts?.earned}/${opts?.max} pts)`;
+                case 'statistics.lg_target':
+                    return `Target ${opts?.pct}%`;
+                default:
+                    return key;
+            }
+        },
+        i18n: { language: 'en' },
+    }),
+}));
 
 const makeGoal = (guid: string, title = 'Goal A'): LearningGoalAggregate => ({
     guid,
