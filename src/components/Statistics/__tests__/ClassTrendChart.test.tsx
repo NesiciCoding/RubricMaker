@@ -1,7 +1,14 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ClassTrendChart, { TrendPoint } from '../ClassTrendChart';
+
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string) => key,
+        i18n: { language: 'en' },
+    }),
+}));
 
 const makePoint = (name: string, avg: number): TrendPoint => ({
     rubricName: name,
