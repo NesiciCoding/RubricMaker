@@ -1,6 +1,6 @@
 # Option B Mockup Follow-Ups — Implementation Plan (Phases 36–42)
 
-**Status:** Proposed — awaiting approval before any code is written.
+**Status:** Phase 36 implemented (Cards/List toggle + shared `SegmentedToggle`) and Phase 37 in progress (37.1 CEFR cards + Learning Goals chart; 37.2 chart audit); Phases 38 and 40–42 remain proposed.
 **Source of truth for design:** the "Option B" mockup (Claude Design project) as distilled in the wiki's `Architecture.md` → _"Design System — Option B UI Conventions"_. The mockup's foundation (Warm Scholar palette, fonts, two-tier nav) already shipped in Phase 9.5; everything below is page-content work.
 **Resolved decisions (this planning pass):**
 
@@ -12,11 +12,11 @@
 
 ---
 
-## 0. Shared foundation — `SegmentedToggle` (prerequisite for 36, reused by later phases)
+## 0. Shared foundation — `SegmentedToggle` (built in Phase 36, reused by later phases)
 
-There is **no** reusable segmented/toggle control today (`src/components/ui/` has Modal, Avatar, EmptyState, ConfirmDialog, HelpPopover… but nothing for this). Phase 36 introduces one; 38/41 can reuse it.
+`src/components/ui/SegmentedToggle.tsx` **was introduced in Phase 36** as the reusable segmented/toggle control (before Phase 36 there was none — `src/components/ui/` had Modal, Avatar, EmptyState, ConfirmDialog, HelpPopover but nothing for this). Phases 38/41 reuse it.
 
-**New file:** `src/components/ui/SegmentedToggle.tsx`
+**File:** `src/components/ui/SegmentedToggle.tsx`
 
 - Generic, controlled: `options: { value: T; label: string; icon?: ReactNode }[]`, `value: T`, `onChange: (v: T) => void`, `ariaLabel: string`.
 - Visual per Architecture spec: pill container; **active** option `background: var(--accent)` + `color: var(--accent-fg)`; **inactive** transparent + `color: var(--text-muted)`.
@@ -109,7 +109,8 @@ There is **no** reusable segmented/toggle control today (`src/components/ui/` ha
 
 **Target:**
 
-- Replace the left class nav-list with a **horizontal cohort chip row** at the top of the roster (chips = classes; plus an "All" chip). Chip visual follows the filter-chip convention already shown on the mockup's Rubrics screen (All cohorts / VWO 4 / HAVO 5 / …). Support **multi-select** (Ctrl/Cmd-click) per the Architecture note that chips suit a multi-class view — default single-select ("All" or one cohort) so the common case still reads focused.
+- Replace the left class nav-list with a **horizontal cohort chip row** at the top of the roster (chips = classes; plus an **"All"** chip). Chip visual follows the filter-chip convention already shown on the mockup's Rubrics screen (All cohorts / VWO 4 / HAVO 5 / …).
+- **Chip interaction & a11y (keyboard-first):** each chip is an **independently keyboard-operable toggle** — a focusable `<button>` in the tab order with `aria-pressed` reflecting its selected state, toggled by **Enter/Space** as well as click. Do **not** rely on Ctrl/Cmd-click for multi-select (pointer-only, inaccessible); modifier-click may stay as an optional pointer affordance but must never be the _only_ way to multi-select. **"All" vs individual:** selecting a cohort clears "All"; selecting "All" (or deselecting the last active cohort) returns to the all-state. **Default = single-select** (one cohort, or "All") so the common case reads focused; multi-select is additive by toggling more chips on. Wrap the row in a `role="group"` with an aria-label.
 - Roster becomes **combined**: when >1 cohort is active (or "All"), add a **Class** column so rows stay attributable.
 - **38.2 column/badge additions (independent of the nav change):**
     - Avatar-initials circle per row (reuse `src/components/ui/Avatar.tsx`).
@@ -119,11 +120,17 @@ There is **no** reusable segmented/toggle control today (`src/components/ui/` ha
 
 **Migration concerns / regressions to preserve:**
 
-- `settings.activeClassId` is written from this page and read elsewhere (grading defaults, etc.). Keep writing a sensible `activeClassId` (e.g. the single selected chip, or last-selected) so downstream defaults don't break. **Audit every reader of `activeClassId` before changing the write.**
+- **`settings.activeClassId` is singular** and existing readers treat it as exactly one class or unset ("all") — grading defaults and other class-scoped defaults among them. **Contract to preserve:** leave `activeClassId` **unset for "All" or when multiple cohorts are selected**, and write it **only when exactly one cohort is selected**. Do **not** write an arbitrary "last-selected" value or an aggregate — that would make dashboard/grading averages and class-scoped defaults target the wrong class. **Audit every reader of `activeClassId`** (grading defaults, class-scoped actions) before changing the writer, or migrate those readers to a multi-class contract first.
 - Class reorder (dnd) and voTrack badges must survive the move to chips.
 - "Link rubrics to class", add/edit/merge/delete-class, CSV import/export of the roster must all still work — they currently key off `activeClassData`; with multi-select decide which class those class-scoped actions target (**default: enable them only when exactly one chip is selected**).
 
 **Regression checklist:** add/edit/transfer/delete student; class create/merge/delete; link-rubrics modal; CSV import & export; sortable columns; `activeClassId` downstream defaults.
+
+---
+
+## Phase 39 — intentionally not used
+
+Phase 39 is **deliberately skipped** — the two smaller mockup-driven items that would have filled it were folded into their sibling phases 28.5 and 29.6 instead (see the wiki Roadmap's "Option B Mockup Follow-Ups" section). It is listed here only so the 36–42 range has no silent gap; there is no work planned under this number.
 
 ---
 
