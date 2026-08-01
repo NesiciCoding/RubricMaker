@@ -1,6 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { MultiTrendPoint } from '../../utils/classComparisonAggregator';
+import { formatShortDate } from '../../utils/dateInput';
 
 const CLASS_COLORS = ['var(--accent)', 'var(--purple, #a855f7)', 'var(--green, #22c55e)', 'var(--yellow, #eab308)'];
 
@@ -39,6 +40,10 @@ export default function MultiClassTrendChart({ data, classIds, classNames }: Pro
                         `${value ?? 0}%`,
                         classNames[String(name)] ?? String(name),
                     ]}
+                    labelFormatter={(label, payload) => {
+                        const d = payload && payload.length > 0 ? payload[0].payload?.date : undefined;
+                        return d ? `${label} · ${formatShortDate(d)}` : String(label);
+                    }}
                 />
                 <Legend wrapperStyle={{ paddingTop: 8 }} formatter={(value) => classNames[value] ?? value} />
                 {classIds.map((classId, i) => (
