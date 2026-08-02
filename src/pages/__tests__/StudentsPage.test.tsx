@@ -54,6 +54,10 @@ const mockStudentsArr = [mockStudent];
 const mockStudentRubricsArr: never[] = [];
 const mockRubricsArr = [mockRubric];
 const mockGradeScalesArr = [mockGradeScale];
+const mockSelfAssessmentsArr: never[] = [];
+const mockAnalysisResultsArr: never[] = [];
+const mockTestsArr: never[] = [];
+const mockStudentTestsArr: never[] = [];
 
 const mockAppValue = {
     classes: mockClassesArr,
@@ -61,6 +65,10 @@ const mockAppValue = {
     studentRubrics: mockStudentRubricsArr,
     rubrics: mockRubricsArr,
     gradeScales: mockGradeScalesArr,
+    selfAssessments: mockSelfAssessmentsArr,
+    analysisResults: mockAnalysisResultsArr,
+    tests: mockTestsArr,
+    studentTests: mockStudentTestsArr,
     settings: mockSettings,
     addStudent: mockAddStudent,
     updateStudent: vi.fn(),
@@ -70,6 +78,7 @@ const mockAppValue = {
     deleteClass: mockDeleteClass,
     mergeClasses: mockMergeClasses,
     updateSettings: mockUpdateSettings,
+    setStudentPassword: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
