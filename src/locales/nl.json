@@ -1005,6 +1005,8 @@
         "action_edit_student": "Leerling bewerken",
         "action_delete_student": "Leerling verwijderen",
         "link_rubrics": "Rubrics koppelen",
+        "link_rubrics_title": "Rubrics koppelen aan {{className}}",
+        "action_copy_summary": "Rubrieksamenvatting kopiëren voor volgsysteem",
         "action_generate_password": "Portal-wachtwoord genereren",
         "action_generate_class_passwords": "Wachtwoordstrookjes genereren",
         "password_generating": "Bezig met genereren…",

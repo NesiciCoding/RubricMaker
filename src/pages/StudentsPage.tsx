@@ -205,11 +205,13 @@ export default function StudentsPage() {
     }
 
     // Preserve the singular activeClassId contract: write a class only on single-select, else clear it.
+    // Skip while classes are still loading, so we don't clear the remembered class before the seed resolves.
     React.useEffect(() => {
+        if (classes.length === 0) return;
         if (singleClassId !== settings.activeClassId) {
             updateSettings({ activeClassId: singleClassId });
         }
-    }, [singleClassId, settings.activeClassId, updateSettings]);
+    }, [classes.length, singleClassId, settings.activeClassId, updateSettings]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
     const [passwordSlips, setPasswordSlips] = useState<PasswordSlip[] | null>(null);
@@ -306,10 +308,6 @@ export default function StudentsPage() {
         updateClass({ ...linkClass, rubricIds: next });
     }
 
-    const linkedRubricIds = activeClassData?.rubricIds;
-    const classRubrics =
-        linkedRubricIds && linkedRubricIds.length > 0 ? rubrics.filter((r) => linkedRubricIds.includes(r.id)) : rubrics;
-
     const chipStyle = (active: boolean): React.CSSProperties => ({
         display: 'inline-flex',
         alignItems: 'center',
@@ -336,10 +334,22 @@ export default function StudentsPage() {
     const derivedByStudent = useMemo(() => {
         const map = new Map<
             string,
-            { writing: CefrLevel | null; trend: 'up' | 'down' | 'flat' | null; lastActive: string | null }
+            {
+                writing: CefrLevel | null;
+                trend: 'up' | 'down' | 'flat' | null;
+                lastActive: string | null;
+                pcts: number[];
+            }
         >();
+        // Index the grading history once by student, rather than re-filtering per student.
+        const srsByStudent = new Map<string, StudentRubric[]>();
+        for (const sr of studentRubrics) {
+            const arr = srsByStudent.get(sr.studentId);
+            if (arr) arr.push(sr);
+            else srsByStudent.set(sr.studentId, [sr]);
+        }
         for (const s of students) {
-            const srs = studentRubrics.filter((sr) => sr.studentId === s.id);
+            const srs = srsByStudent.get(s.id) ?? [];
             const gradedTimed = srs.filter((sr) => sr.gradedAt).sort((a, b) => a.gradedAt!.localeCompare(b.gradedAt!));
             const lastActive = gradedTimed.length ? gradedTimed[gradedTimed.length - 1].gradedAt! : null;
 
@@ -364,7 +374,7 @@ export default function StudentsPage() {
                 tests,
                 studentTests
             );
-            map.set(s.id, { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive });
+            map.set(s.id, { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive, pcts });
         }
         return map;
     }, [
@@ -443,12 +453,23 @@ export default function StudentsPage() {
                     : prev.pastClassMemberships,
             });
         } else {
-            addStudent({ name, email, classId: singleClassId ?? classes[0]?.id ?? '' });
+            addStudent({ name, email, classId: editStudentClassId || singleClassId || classes[0]?.id || '' });
         }
         setName('');
         setEmail('');
         setShowAddModal(false);
         setEditStudent(null);
+    }
+
+    // Open the add-student modal, seeding the class from the current selection so the target is
+    // explicit even when the combined roster ("All" / multi) has no single active class.
+    function openAddStudent() {
+        setEditStudent(null);
+        setName('');
+        setEmail('');
+        setEditStudentClassId(singleClassId ?? selectedCohorts[0] ?? classes[0]?.id ?? '');
+        setEditStudentTrack('');
+        setShowAddModal(true);
     }
 
     function handleCSVImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -561,11 +582,7 @@ export default function StudentsPage() {
                                     : t('studentsPage.action_generate_class_passwords')}
                             </button>
                         )}
-                        <button
-                            className="btn btn-primary btn-sm"
-                            data-tour="students-add"
-                            onClick={() => setShowAddModal(true)}
-                        >
+                        <button className="btn btn-primary btn-sm" data-tour="students-add" onClick={openAddStudent}>
                             <Plus size={15} /> {t('studentsPage.add_student')}
                         </button>
                     </>
@@ -578,7 +595,14 @@ export default function StudentsPage() {
                         role="group"
                         aria-label={t('studentsPage.cohort_filter_label')}
                         data-tour="students-cohorts"
-                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                        style={{
+                            display: 'flex',
+                            flexWrap: 'nowrap',
+                            gap: 8,
+                            alignItems: 'center',
+                            overflowX: 'auto',
+                            paddingBottom: 4,
+                        }}
                     >
                         <button
                             type="button"
@@ -595,7 +619,7 @@ export default function StudentsPage() {
                                     <div
                                         ref={classDroppableProvided.innerRef}
                                         {...classDroppableProvided.droppableProps}
-                                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                                        style={{ display: 'flex', flexWrap: 'nowrap', gap: 8, alignItems: 'center' }}
                                     >
                                         {sortedClasses.map((c, classIdx) => (
                                             <Draggable key={c.id} draggableId={c.id} index={classIdx}>
@@ -871,7 +895,7 @@ export default function StudentsPage() {
                                     </p>
                                 )}
                                 {!studentSearch && (
-                                    <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+                                    <button type="button" className="btn btn-primary btn-sm" onClick={openAddStudent}>
                                         <Plus size={14} /> {t('studentsPage.add_student')}
                                     </button>
                                 )}
@@ -912,20 +936,20 @@ export default function StudentsPage() {
                                     </thead>
                                     <tbody>
                                         {filteredStudents.map((s) => {
-                                            const studentSrs = studentRubrics.filter((sr) => sr.studentId === s.id);
-                                            const gradedPcts = calcGradedPercentages(
-                                                studentSrs,
-                                                rubrics,
-                                                gradeScales,
-                                                settings.defaultGradeScaleId
-                                            );
+                                            const d = derivedByStudent.get(s.id);
+                                            const gradedPcts = d?.pcts ?? [];
                                             const graded = gradedPcts.length;
                                             const overall = calcStudentOverall(
                                                 gradedPcts,
                                                 gradeScales,
                                                 settings.defaultGradeScaleId
                                             );
-                                            const d = derivedByStudent.get(s.id);
+                                            // Grade menu shows the rubrics linked to THIS student's class (not the
+                                            // single active class), so links stay effective in the combined roster.
+                                            const studentClass = classes.find((c) => c.id === s.classId);
+                                            const studentRubricList = studentClass?.rubricIds?.length
+                                                ? rubrics.filter((r) => studentClass.rubricIds!.includes(r.id))
+                                                : rubrics;
                                             return (
                                                 <tr key={s.id}>
                                                     <td style={{ fontWeight: 500 }}>
@@ -1015,7 +1039,7 @@ export default function StudentsPage() {
                                                                 position: 'relative',
                                                             }}
                                                         >
-                                                            {classRubrics.length > 0 && (
+                                                            {studentRubricList.length > 0 && (
                                                                 <div style={{ position: 'relative' }}>
                                                                     <button
                                                                         type="button"
@@ -1046,7 +1070,7 @@ export default function StudentsPage() {
                                                                             }}
                                                                             onClick={(e) => e.stopPropagation()}
                                                                         >
-                                                                            {classRubrics.map((r) => (
+                                                                            {studentRubricList.map((r) => (
                                                                                 <button
                                                                                     key={r.id}
                                                                                     type="button"
@@ -1071,6 +1095,7 @@ export default function StudentsPage() {
                                                                 </div>
                                                             )}
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-secondary btn-icon btn-sm"
                                                                 onClick={() => navigate(`/students/${s.id}`)}
                                                                 title={t('studentsPage.view_profile')}
@@ -1078,17 +1103,19 @@ export default function StudentsPage() {
                                                                 <TrendingUp size={14} />
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 onClick={() => {
                                                                     setSummaryStudentId(s.id);
                                                                     setCopied(false);
                                                                 }}
-                                                                title="Copy rubric summary for tracking system"
+                                                                title={t('studentsPage.action_copy_summary')}
                                                             >
                                                                 <ClipboardCopy size={14} />
                                                             </button>
                                                             {dbStatus.isConnected && s.email && (
                                                                 <button
+                                                                    type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     aria-label={t(
                                                                         'studentsPage.action_generate_password'
@@ -1105,6 +1132,7 @@ export default function StudentsPage() {
                                                                 </button>
                                                             )}
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 aria-label={t('studentsPage.action_edit_student')}
                                                                 onClick={() => {
@@ -1123,6 +1151,7 @@ export default function StudentsPage() {
                                                                 <Edit2 size={14} />
                                                             </button>
                                                             <button
+                                                                type="button"
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 aria-label={t('studentsPage.action_delete_student')}
                                                                 style={{ color: 'var(--red)' }}
@@ -1199,7 +1228,7 @@ export default function StudentsPage() {
                                         placeholder={t('studentsPage.form_email_placeholder')}
                                     />
                                 </div>
-                                {editStudent && (
+                                {(editStudent || !singleClassId) && (
                                     <div className="form-group">
                                         <label htmlFor="student-class">{t('studentsPage.form_class')}</label>
                                         <select
@@ -1687,7 +1716,7 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setShowLinkRubrics(false)}>
                         <div className="modal" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Link rubrics to {linkClass.name}</h3>
+                                <h3>{t('studentsPage.link_rubrics_title', { className: linkClass.name })}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowLinkRubrics(false)}>
                                     ✕
                                 </button>

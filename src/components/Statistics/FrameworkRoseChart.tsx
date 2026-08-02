@@ -34,7 +34,8 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
             // in the value — the correct coxcomb encoding. Using radius ∝ value would make area grow
             // with value², overstating high values to the eye. The reference rings below use the same
             // √ scale so they remain accurate value gridlines.
-            const r = hasData ? Math.max(innerRadius + 2, Math.sqrt(sector.value / 100) * maxRadius) : innerRadius + 2;
+            const clampedValue = Math.max(0, Math.min(100, sector.value));
+            const r = hasData ? Math.max(innerRadius + 2, Math.sqrt(clampedValue / 100) * maxRadius) : innerRadius + 2;
 
             const x1 = cx + innerRadius * Math.cos(startAngle);
             const y1 = cy + innerRadius * Math.sin(startAngle);

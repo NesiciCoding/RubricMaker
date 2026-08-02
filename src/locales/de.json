@@ -1005,6 +1005,8 @@
         "action_edit_student": "Schüler bearbeiten",
         "action_delete_student": "Schüler löschen",
         "link_rubrics": "Rubriken verknüpfen",
+        "link_rubrics_title": "Rubriken mit {{className}} verknüpfen",
+        "action_copy_summary": "Rubrik-Zusammenfassung für Tracking-System kopieren",
         "action_generate_password": "Portal-Passwort generieren",
         "action_generate_class_passwords": "Passwort-Zettel generieren",
         "password_generating": "Wird generiert…",

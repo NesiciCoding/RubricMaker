@@ -1005,6 +1005,8 @@
         "action_edit_student": "Modifier l'élève",
         "action_delete_student": "Supprimer l'élève",
         "link_rubrics": "Lier des grilles",
+        "link_rubrics_title": "Lier des grilles à {{className}}",
+        "action_copy_summary": "Copier le résumé de la grille pour le système de suivi",
         "action_generate_password": "Générer un mot de passe du portail",
         "action_generate_class_passwords": "Générer les fiches de connexion",
         "password_generating": "Génération…",

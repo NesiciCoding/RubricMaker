@@ -1005,6 +1005,8 @@
         "action_edit_student": "Edit student",
         "action_delete_student": "Delete student",
         "link_rubrics": "Link rubrics",
+        "link_rubrics_title": "Link rubrics to {{className}}",
+        "action_copy_summary": "Copy rubric summary for tracking system",
         "action_generate_password": "Generate portal login password",
         "action_generate_class_passwords": "Generate password slips",
         "password_generating": "Generating…",
