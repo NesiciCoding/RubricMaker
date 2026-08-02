@@ -190,7 +190,7 @@ describe('StudentsPage', () => {
         renderPage();
         fireEvent.click(screen.getByLabelText('studentsPage.action_class_menu'));
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
-        expect(screen.getByText(/Link rubrics to Class A/)).toBeInTheDocument();
+        expect(screen.getByText(/link_rubrics_title/)).toBeInTheDocument();
     });
 
     it('adds a new class by pressing Enter in the class name input', () => {
@@ -216,7 +216,7 @@ describe('StudentsPage', () => {
         fireEvent.click(screen.getByLabelText('studentsPage.action_class_menu'));
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
         fireEvent.click(screen.getByText('Done'));
-        expect(screen.queryByText(/Link rubrics to Class A/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/link_rubrics_title/)).not.toBeInTheDocument();
     });
 
     it('clears all rubric links via Clear all button', () => {
@@ -225,5 +225,16 @@ describe('StudentsPage', () => {
         fireEvent.click(screen.getByText('studentsPage.link_rubrics'));
         fireEvent.click(screen.getByText('Clear all'));
         expect(mockUpdateClass).toHaveBeenCalledWith(expect.objectContaining({ rubricIds: [] }));
+    });
+
+    it('shows the Class column only in the combined view and clears activeClassId on "All"', () => {
+        renderPage();
+        // Default seed is the remembered single class (settings.activeClassId = 'c1') → no Class column.
+        expect(screen.queryByText('studentsPage.table_class')).not.toBeInTheDocument();
+        // Switching to "All cohorts" shows the combined roster's Class column and clears the singular
+        // activeClassId contract (unset for the all/multi view).
+        fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
+        expect(screen.getByText('studentsPage.table_class')).toBeInTheDocument();
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: undefined });
     });
 });
