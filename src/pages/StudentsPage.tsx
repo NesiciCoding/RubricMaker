@@ -163,9 +163,20 @@ export default function StudentsPage() {
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
 
-    // Initialize active class from settings, falling back to the first available class
-    const initialClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
-    const [activeClass, setActiveClass] = useState(initialClassId);
+    // Cohort-chip selection: an empty selection means "All classes" (combined roster).
+    // Seeded from the remembered single active class, if any.
+    const initialCohorts =
+        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
+    const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
+    const selectedSet = new Set(selectedCohorts);
+    const isAllCohorts = selectedCohorts.length === 0;
+    // Contract for settings.activeClassId (read app-wide as "one class, or unset = all"):
+    // a concrete id ONLY when exactly one cohort is selected; otherwise undefined.
+    const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
+
+    function toggleCohort(id: string) {
+        setSelectedCohorts((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    }
 
     const sortedClasses = sortByDisplayOrder(classes);
     function handleClassDragEnd(result: DropResult) {
@@ -175,12 +186,12 @@ export default function StudentsPage() {
         }
     }
 
-    // Persist active class selection so back navigation maintains context
+    // Preserve the singular activeClassId contract: write a class only on single-select, else clear it.
     React.useEffect(() => {
-        if (activeClass && activeClass !== settings.activeClassId) {
-            updateSettings({ activeClassId: activeClass });
+        if (singleClassId !== settings.activeClassId) {
+            updateSettings({ activeClassId: singleClassId });
         }
-    }, [activeClass, settings.activeClassId, updateSettings]);
+    }, [singleClassId, settings.activeClassId, updateSettings]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
     const [passwordSlips, setPasswordSlips] = useState<PasswordSlip[] | null>(null);
@@ -263,25 +274,51 @@ export default function StudentsPage() {
     const [summaryStudentId, setSummaryStudentId] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const activeClassData = classes.find((c) => c.id === activeClass);
+    // The single selected class (single-select only) drives class-scoped defaults + the grade menu.
+    const activeClassData = classes.find((c) => c.id === singleClassId);
+
+    // Link-rubrics targets a specific class (opened from that class's chip menu), independent of selection.
+    const [linkRubricsClassId, setLinkRubricsClassId] = useState<string | null>(null);
+    const linkClass = classes.find((c) => c.id === linkRubricsClassId);
 
     function toggleClassRubric(rubricId: string) {
-        if (!activeClassData) return;
-        const current = activeClassData.rubricIds ?? [];
+        if (!linkClass) return;
+        const current = linkClass.rubricIds ?? [];
         const next = current.includes(rubricId) ? current.filter((id) => id !== rubricId) : [...current, rubricId];
-        updateClass({ ...activeClassData, rubricIds: next });
+        updateClass({ ...linkClass, rubricIds: next });
     }
 
     const linkedRubricIds = activeClassData?.rubricIds;
     const classRubrics =
         linkedRubricIds && linkedRubricIds.length > 0 ? rubrics.filter((r) => linkedRubricIds.includes(r.id)) : rubrics;
 
+    const chipStyle = (active: boolean): React.CSSProperties => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '5px 12px',
+        borderRadius: 999,
+        fontSize: '0.85rem',
+        fontWeight: 600,
+        cursor: 'pointer',
+        border: '1px solid var(--border)',
+        background: active ? 'var(--accent)' : 'var(--bg-raised)',
+        color: active ? 'var(--accent-fg)' : 'var(--text-muted)',
+    });
+
+    const showClassColumn = singleClassId === undefined; // combined roster (All or multi) needs attribution
+    const rosterLabel = singleClassId
+        ? (classes.find((c) => c.id === singleClassId)?.name ?? t('studentsPage.default_class_name'))
+        : isAllCohorts
+          ? t('studentsPage.all_classes_label')
+          : t('studentsPage.n_cohorts_label', { count: selectedCohorts.length });
+
     const classStudentsWithEmail = students
-        .filter((s) => s.classId === activeClass && s.email)
+        .filter((s) => (isAllCohorts || selectedSet.has(s.classId)) && s.email)
         .map((s) => ({ id: s.id, name: s.name, email: s.email! }));
 
     const filteredStudents = students
-        .filter((s) => s.classId === activeClass)
+        .filter((s) => isAllCohorts || selectedSet.has(s.classId))
         .filter(
             (s) =>
                 !studentSearch.trim() ||
@@ -339,7 +376,7 @@ export default function StudentsPage() {
                     : prev.pastClassMemberships,
             });
         } else {
-            addStudent({ name, email, classId: activeClass });
+            addStudent({ name, email, classId: singleClassId ?? classes[0]?.id ?? '' });
         }
         setName('');
         setEmail('');
@@ -468,18 +505,30 @@ export default function StudentsPage() {
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 280px) 1fr', gap: 20 }}>
-                    {/* Class list */}
-                    <div className="card" style={{ height: 'fit-content' }}>
-                        <div className="card-header">
-                            <h3>{t('studentsPage.classes')}</h3>
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* Cohort chips */}
+                    <div
+                        role="group"
+                        aria-label={t('studentsPage.cohort_filter_label')}
+                        data-tour="students-cohorts"
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                    >
+                        <button
+                            type="button"
+                            aria-pressed={isAllCohorts}
+                            onClick={() => setSelectedCohorts([])}
+                            style={chipStyle(isAllCohorts)}
+                        >
+                            {t('studentsPage.all_cohorts')}
+                            <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>{students.length}</span>
+                        </button>
                         <DragDropContext onDragEnd={handleClassDragEnd}>
-                            <Droppable droppableId="class-list">
+                            <Droppable droppableId="class-list" direction="horizontal">
                                 {(classDroppableProvided) => (
                                     <div
                                         ref={classDroppableProvided.innerRef}
                                         {...classDroppableProvided.droppableProps}
+                                        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
                                     >
                                         {sortedClasses.map((c, classIdx) => (
                                             <Draggable key={c.id} draggableId={c.id} index={classIdx}>
@@ -508,11 +557,11 @@ export default function StudentsPage() {
                                                         </span>
                                                         <button
                                                             type="button"
-                                                            className={`nav-item ${c.id === activeClass ? 'active' : ''}`}
-                                                            onClick={() => setActiveClass(c.id)}
-                                                            style={{ flex: 1 }}
+                                                            aria-pressed={selectedSet.has(c.id)}
+                                                            onClick={() => toggleCohort(c.id)}
+                                                            style={chipStyle(selectedSet.has(c.id))}
                                                         >
-                                                            <UsersIcon size={15} />
+                                                            <UsersIcon size={14} />
                                                             <span
                                                                 title={c.name}
                                                                 style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
@@ -521,10 +570,8 @@ export default function StudentsPage() {
                                                             </span>
                                                             <span
                                                                 style={{
-                                                                    marginLeft: 'auto',
                                                                     fontSize: '0.75rem',
-                                                                    opacity: 0.7,
-                                                                    paddingRight: 24,
+                                                                    opacity: 0.8,
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     gap: 4,
@@ -589,11 +636,7 @@ export default function StudentsPage() {
                                                                 setClassMenuOpen(classMenuOpen === c.id ? null : c.id);
                                                             }}
                                                             style={{
-                                                                position: 'absolute',
-                                                                right: 4,
-                                                                top: '50%',
-                                                                transform: 'translateY(-50%)',
-                                                                opacity: classMenuOpen === c.id ? 1 : 0.4,
+                                                                opacity: classMenuOpen === c.id ? 1 : 0.6,
                                                             }}
                                                         >
                                                             <MoreVertical size={14} />
@@ -639,7 +682,7 @@ export default function StudentsPage() {
                                                                         justifyContent: 'flex-start',
                                                                     }}
                                                                     onClick={() => {
-                                                                        setActiveClass(c.id);
+                                                                        setLinkRubricsClassId(c.id);
                                                                         setShowLinkRubrics(true);
                                                                         setClassMenuOpen(null);
                                                                     }}
@@ -687,7 +730,7 @@ export default function StudentsPage() {
                                 )}
                             </Droppable>
                         </DragDropContext>
-                        <div style={{ marginTop: 12, display: 'flex', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                             <input
                                 type="text"
                                 placeholder={t('studentsPage.new_class_placeholder')}
@@ -699,7 +742,7 @@ export default function StudentsPage() {
                                         setNewClassName('');
                                     }
                                 }}
-                                style={{ flex: 1, fontSize: '0.82rem' }}
+                                style={{ width: 150, fontSize: '0.82rem' }}
                             />
                             <button
                                 className="btn btn-primary btn-icon btn-sm"
@@ -720,9 +763,7 @@ export default function StudentsPage() {
                     <div className="card" data-tour="students-roster">
                         <div className="card-header">
                             <h3>
-                                {classes.find((c) => c.id === activeClass)?.name ??
-                                    t('studentsPage.default_class_name')}{' '}
-                                — {filteredStudents.length} {t('studentsPage.students_count')}
+                                {rosterLabel} — {filteredStudents.length} {t('studentsPage.students_count')}
                             </h3>
                         </div>
                         {/* Student search */}
@@ -779,6 +820,7 @@ export default function StudentsPage() {
                                             {t('studentsPage.table_name')}
                                             {sortArrow('name')}
                                         </th>
+                                        {showClassColumn && <th>{t('studentsPage.table_class')}</th>}
                                         <th
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
                                             onClick={() => handleSort('email')}
@@ -815,6 +857,11 @@ export default function StudentsPage() {
                                         return (
                                             <tr key={s.id}>
                                                 <td style={{ fontWeight: 500 }}>{s.name}</td>
+                                                {showClassColumn && (
+                                                    <td className="text-muted text-sm">
+                                                        {classes.find((c) => c.id === s.classId)?.name ?? '—'}
+                                                    </td>
+                                                )}
                                                 <td className="text-muted text-sm">{s.email || '—'}</td>
                                                 <td>
                                                     {graded > 0 ? (
@@ -1328,7 +1375,17 @@ export default function StudentsPage() {
                                         className="btn btn-danger"
                                         onClick={() => {
                                             mergeClasses(mergeClassId!, mergeTargetId);
-                                            if (activeClass === mergeClassId) setActiveClass(mergeTargetId);
+                                            setSelectedCohorts((prev) =>
+                                                prev.includes(mergeClassId!)
+                                                    ? [
+                                                          ...new Set(
+                                                              prev.map((id) =>
+                                                                  id === mergeClassId ? mergeTargetId : id
+                                                              )
+                                                          ),
+                                                      ]
+                                                    : prev
+                                            );
                                             setMergeClassId(null);
                                             setMergeConfirming(false);
                                         }}
@@ -1385,8 +1442,7 @@ export default function StudentsPage() {
                                     style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
                                     onClick={() => {
                                         deleteClass(deleteClassId!, true);
-                                        if (activeClass === deleteClassId)
-                                            setActiveClass(classes.find((c) => c.id !== deleteClassId)?.id ?? '');
+                                        setSelectedCohorts((prev) => prev.filter((id) => id !== deleteClassId));
                                         setDeleteClassId(null);
                                     }}
                                 >
@@ -1511,11 +1567,11 @@ export default function StudentsPage() {
                     <StudentPasswordSlipSheet slips={passwordSlips} onClose={() => setPasswordSlips(null)} />
                 )}
 
-                {showLinkRubrics && activeClassData && (
+                {showLinkRubrics && linkClass && (
                     <div className="modal-overlay" onClick={() => setShowLinkRubrics(false)}>
                         <div className="modal" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>Link rubrics to {activeClassData.name}</h3>
+                                <h3>Link rubrics to {linkClass.name}</h3>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowLinkRubrics(false)}>
                                     ✕
                                 </button>
@@ -1533,7 +1589,7 @@ export default function StudentsPage() {
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {rubrics.map((r) => {
-                                            const linked = (activeClassData.rubricIds ?? []).includes(r.id);
+                                            const linked = (linkClass.rubricIds ?? []).includes(r.id);
                                             return (
                                                 <label
                                                     key={r.id}
@@ -1584,7 +1640,7 @@ export default function StudentsPage() {
                                 <button
                                     className="btn btn-secondary"
                                     onClick={() => {
-                                        updateClass({ ...activeClassData, rubricIds: [] });
+                                        updateClass({ ...linkClass, rubricIds: [] });
                                     }}
                                 >
                                     Clear all
