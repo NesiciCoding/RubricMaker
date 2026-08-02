@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,6 +18,9 @@ import {
     FileText,
     GripVertical,
     KeyRound,
+    ArrowUp,
+    ArrowDown,
+    Minus,
 } from 'lucide-react';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -31,9 +34,20 @@ import Papa from 'papaparse';
 import CsvImportModal from '../components/Students/CsvImportModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
-import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, isAdjacentTrack, getTrackBadgeColor } from '../data/voTracks';
+import {
+    VO_TRACKS,
+    VO_TRACK_LABELS,
+    VO_TRACK_COLORS,
+    isAdjacentTrack,
+    getTrackBadgeColor,
+    getEffectiveVoTrack,
+} from '../data/voTracks';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../data/schoolYears';
-import type { VoTrack, SchoolYear, StudentRubric, Rubric, GradeScale } from '../types';
+import type { VoTrack, SchoolYear, StudentRubric, Rubric, GradeScale, CefrLevel } from '../types';
+import Avatar from '../components/ui/Avatar';
+import CefrBadge from '../components/CEFR/CefrBadge';
+import { getCefrStudentOverview, highestLevelForSkill } from '../utils/cefrStudentAggregator';
+import { formatShortDate } from '../utils/dateInput';
 import {
     calcGradeSummary,
     calcEntryPoints,
@@ -149,6 +163,10 @@ export default function StudentsPage() {
         rubrics,
         studentRubrics,
         gradeScales,
+        selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
         addStudent,
         updateStudent,
         deleteStudent,
@@ -312,6 +330,55 @@ export default function StudentsPage() {
         : isAllCohorts
           ? t('studentsPage.all_classes_label')
           : t('studentsPage.n_cohorts_label', { count: selectedCohorts.length });
+
+    // Per-student roster extras (CEFR writing level, score trend, last-active date), memoized over the
+    // full data set so search/selection changes don't recompute the CEFR aggregation.
+    const derivedByStudent = useMemo(() => {
+        const map = new Map<
+            string,
+            { writing: CefrLevel | null; trend: 'up' | 'down' | 'flat' | null; lastActive: string | null }
+        >();
+        for (const s of students) {
+            const srs = studentRubrics.filter((sr) => sr.studentId === s.id);
+            const gradedTimed = srs.filter((sr) => sr.gradedAt).sort((a, b) => a.gradedAt!.localeCompare(b.gradedAt!));
+            const lastActive = gradedTimed.length ? gradedTimed[gradedTimed.length - 1].gradedAt! : null;
+
+            const pcts = calcGradedPercentages(gradedTimed, rubrics, gradeScales, settings.defaultGradeScaleId);
+            let trend: 'up' | 'down' | 'flat' | null = null;
+            if (pcts.length >= 2) {
+                const recent = pcts[pcts.length - 1];
+                const baseline = pcts.slice(0, -1).reduce((a, b) => a + b, 0) / (pcts.length - 1);
+                const delta = recent - baseline;
+                trend = delta > 3 ? 'up' : delta < -3 ? 'down' : 'flat';
+            }
+
+            const cls = classes.find((c) => c.id === s.classId);
+            const ov = getCefrStudentOverview(
+                s.id,
+                studentRubrics,
+                rubrics,
+                selfAssessments,
+                analysisResults,
+                cls?.year,
+                getEffectiveVoTrack(s, cls),
+                tests,
+                studentTests
+            );
+            map.set(s.id, { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive });
+        }
+        return map;
+    }, [
+        students,
+        studentRubrics,
+        rubrics,
+        gradeScales,
+        selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
+        classes,
+        settings.defaultGradeScaleId,
+    ]);
 
     const classStudentsWithEmail = students
         .filter((s) => (isAllCohorts || selectedSet.has(s.classId)) && s.email)
@@ -810,221 +877,270 @@ export default function StudentsPage() {
                                 )}
                             </div>
                         ) : (
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th
-                                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                                            onClick={() => handleSort('name')}
-                                        >
-                                            {t('studentsPage.table_name')}
-                                            {sortArrow('name')}
-                                        </th>
-                                        {showClassColumn && <th>{t('studentsPage.table_class')}</th>}
-                                        <th
-                                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                                            onClick={() => handleSort('email')}
-                                        >
-                                            {t('studentsPage.table_email')}
-                                            {sortArrow('email')}
-                                        </th>
-                                        <th
-                                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                                            onClick={() => handleSort('grades')}
-                                        >
-                                            {t('studentsPage.table_grades')}
-                                            {sortArrow('grades')}
-                                        </th>
-                                        <th>{t('studentsPage.table_overall')}</th>
-                                        <th>{t('studentsPage.table_actions')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredStudents.map((s) => {
-                                        const studentSrs = studentRubrics.filter((sr) => sr.studentId === s.id);
-                                        const gradedPcts = calcGradedPercentages(
-                                            studentSrs,
-                                            rubrics,
-                                            gradeScales,
-                                            settings.defaultGradeScaleId
-                                        );
-                                        const graded = gradedPcts.length;
-                                        const overall = calcStudentOverall(
-                                            gradedPcts,
-                                            gradeScales,
-                                            settings.defaultGradeScaleId
-                                        );
-                                        return (
-                                            <tr key={s.id}>
-                                                <td style={{ fontWeight: 500 }}>{s.name}</td>
-                                                {showClassColumn && (
-                                                    <td className="text-muted text-sm">
-                                                        {classes.find((c) => c.id === s.classId)?.name ?? '—'}
+                            <div style={{ overflowX: 'auto' }}>
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th
+                                                style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                onClick={() => handleSort('name')}
+                                            >
+                                                {t('studentsPage.table_name')}
+                                                {sortArrow('name')}
+                                            </th>
+                                            {showClassColumn && <th>{t('studentsPage.table_class')}</th>}
+                                            <th
+                                                style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                onClick={() => handleSort('email')}
+                                            >
+                                                {t('studentsPage.table_email')}
+                                                {sortArrow('email')}
+                                            </th>
+                                            <th
+                                                style={{ cursor: 'pointer', userSelect: 'none' }}
+                                                onClick={() => handleSort('grades')}
+                                            >
+                                                {t('studentsPage.table_grades')}
+                                                {sortArrow('grades')}
+                                            </th>
+                                            <th>{t('studentsPage.table_cefr_writing')}</th>
+                                            <th>{t('studentsPage.table_trend')}</th>
+                                            <th>{t('studentsPage.table_last_active')}</th>
+                                            <th>{t('studentsPage.table_overall')}</th>
+                                            <th>{t('studentsPage.table_actions')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredStudents.map((s) => {
+                                            const studentSrs = studentRubrics.filter((sr) => sr.studentId === s.id);
+                                            const gradedPcts = calcGradedPercentages(
+                                                studentSrs,
+                                                rubrics,
+                                                gradeScales,
+                                                settings.defaultGradeScaleId
+                                            );
+                                            const graded = gradedPcts.length;
+                                            const overall = calcStudentOverall(
+                                                gradedPcts,
+                                                gradeScales,
+                                                settings.defaultGradeScaleId
+                                            );
+                                            const d = derivedByStudent.get(s.id);
+                                            return (
+                                                <tr key={s.id}>
+                                                    <td style={{ fontWeight: 500 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                            <Avatar name={s.name} size={26} fontSize="0.75rem" />
+                                                            {s.name}
+                                                        </div>
                                                     </td>
-                                                )}
-                                                <td className="text-muted text-sm">{s.email || '—'}</td>
-                                                <td>
-                                                    {graded > 0 ? (
-                                                        <span className="badge badge-green">
-                                                            {graded}{' '}
-                                                            {graded !== 1
-                                                                ? t('studentsPage.rubric_plural')
-                                                                : t('studentsPage.rubric_single')}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="badge badge-yellow">
-                                                            {t('studentsPage.not_graded')}
-                                                        </span>
+                                                    {showClassColumn && (
+                                                        <td className="text-muted text-sm">
+                                                            {classes.find((c) => c.id === s.classId)?.name ?? '—'}
+                                                        </td>
                                                     )}
-                                                </td>
-                                                <td>
-                                                    {overall ? (
-                                                        <span
-                                                            className="badge"
-                                                            style={{
-                                                                background: overall.color,
-                                                                color: '#fff',
-                                                            }}
-                                                            title={`${Math.round(overall.pct)}%`}
-                                                        >
-                                                            {overall.letter}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-muted text-sm">—</span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            gap: 6,
-                                                            flexWrap: 'wrap',
-                                                            position: 'relative',
-                                                        }}
-                                                    >
-                                                        {classRubrics.length > 0 && (
-                                                            <div style={{ position: 'relative' }}>
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-primary btn-sm"
-                                                                    aria-haspopup="menu"
-                                                                    aria-expanded={gradeMenuOpen === s.id}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setGradeMenuOpen(
-                                                                            gradeMenuOpen === s.id ? null : s.id
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    {t('studentsPage.grade_prefix')} ▾
-                                                                </button>
-                                                                {gradeMenuOpen === s.id && (
-                                                                    <div
-                                                                        className="card"
-                                                                        role="menu"
-                                                                        style={{
-                                                                            position: 'absolute',
-                                                                            left: 0,
-                                                                            top: '100%',
-                                                                            zIndex: 10,
-                                                                            padding: 4,
-                                                                            minWidth: 180,
-                                                                            boxShadow: 'var(--shadow-lg)',
-                                                                        }}
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                    >
-                                                                        {classRubrics.map((r) => (
-                                                                            <button
-                                                                                key={r.id}
-                                                                                type="button"
-                                                                                role="menuitem"
-                                                                                className="btn btn-ghost btn-sm"
-                                                                                style={{
-                                                                                    width: '100%',
-                                                                                    justifyContent: 'flex-start',
-                                                                                }}
-                                                                                onClick={() => {
-                                                                                    setGradeMenuOpen(null);
-                                                                                    navigate(
-                                                                                        `/rubrics/${r.id}/grade/${s.id}`
-                                                                                    );
-                                                                                }}
-                                                                            >
-                                                                                {r.name}
-                                                                            </button>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                    <td className="text-muted text-sm">{s.email || '—'}</td>
+                                                    <td>
+                                                        {graded > 0 ? (
+                                                            <span className="badge badge-green">
+                                                                {graded}{' '}
+                                                                {graded !== 1
+                                                                    ? t('studentsPage.rubric_plural')
+                                                                    : t('studentsPage.rubric_single')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="badge badge-yellow">
+                                                                {t('studentsPage.not_graded')}
+                                                            </span>
                                                         )}
-                                                        <button
-                                                            className="btn btn-secondary btn-icon btn-sm"
-                                                            onClick={() => navigate(`/students/${s.id}`)}
-                                                            title={t('studentsPage.view_profile')}
-                                                        >
-                                                            <TrendingUp size={14} />
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            onClick={() => {
-                                                                setSummaryStudentId(s.id);
-                                                                setCopied(false);
+                                                    </td>
+                                                    <td>
+                                                        {d?.writing ? (
+                                                            <CefrBadge level={d.writing} size="sm" />
+                                                        ) : (
+                                                            <span className="text-muted text-sm">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        {d?.trend === 'up' ? (
+                                                            <span
+                                                                title={t('studentsPage.trend_up')}
+                                                                aria-label={t('studentsPage.trend_up')}
+                                                            >
+                                                                <ArrowUp size={16} color="var(--green)" />
+                                                            </span>
+                                                        ) : d?.trend === 'down' ? (
+                                                            <span
+                                                                title={t('studentsPage.trend_down')}
+                                                                aria-label={t('studentsPage.trend_down')}
+                                                            >
+                                                                <ArrowDown size={16} color="var(--red)" />
+                                                            </span>
+                                                        ) : d?.trend === 'flat' ? (
+                                                            <span
+                                                                title={t('studentsPage.trend_flat')}
+                                                                aria-label={t('studentsPage.trend_flat')}
+                                                            >
+                                                                <Minus size={16} color="var(--text-muted)" />
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted text-sm">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-muted text-sm">
+                                                        {d?.lastActive ? formatShortDate(d.lastActive) : '—'}
+                                                    </td>
+                                                    <td>
+                                                        {overall ? (
+                                                            <span
+                                                                className="badge"
+                                                                style={{
+                                                                    background: overall.color,
+                                                                    color: '#fff',
+                                                                }}
+                                                                title={`${Math.round(overall.pct)}%`}
+                                                            >
+                                                                {overall.letter}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted text-sm">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                gap: 6,
+                                                                flexWrap: 'wrap',
+                                                                position: 'relative',
                                                             }}
-                                                            title="Copy rubric summary for tracking system"
                                                         >
-                                                            <ClipboardCopy size={14} />
-                                                        </button>
-                                                        {dbStatus.isConnected && s.email && (
+                                                            {classRubrics.length > 0 && (
+                                                                <div style={{ position: 'relative' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-primary btn-sm"
+                                                                        aria-haspopup="menu"
+                                                                        aria-expanded={gradeMenuOpen === s.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setGradeMenuOpen(
+                                                                                gradeMenuOpen === s.id ? null : s.id
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {t('studentsPage.grade_prefix')} ▾
+                                                                    </button>
+                                                                    {gradeMenuOpen === s.id && (
+                                                                        <div
+                                                                            className="card"
+                                                                            role="menu"
+                                                                            style={{
+                                                                                position: 'absolute',
+                                                                                left: 0,
+                                                                                top: '100%',
+                                                                                zIndex: 10,
+                                                                                padding: 4,
+                                                                                minWidth: 180,
+                                                                                boxShadow: 'var(--shadow-lg)',
+                                                                            }}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            {classRubrics.map((r) => (
+                                                                                <button
+                                                                                    key={r.id}
+                                                                                    type="button"
+                                                                                    role="menuitem"
+                                                                                    className="btn btn-ghost btn-sm"
+                                                                                    style={{
+                                                                                        width: '100%',
+                                                                                        justifyContent: 'flex-start',
+                                                                                    }}
+                                                                                    onClick={() => {
+                                                                                        setGradeMenuOpen(null);
+                                                                                        navigate(
+                                                                                            `/rubrics/${r.id}/grade/${s.id}`
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    {r.name}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                className="btn btn-secondary btn-icon btn-sm"
+                                                                onClick={() => navigate(`/students/${s.id}`)}
+                                                                title={t('studentsPage.view_profile')}
+                                                            >
+                                                                <TrendingUp size={14} />
+                                                            </button>
                                                             <button
                                                                 className="btn btn-ghost btn-icon btn-sm"
-                                                                aria-label={t('studentsPage.action_generate_password')}
-                                                                title={t('studentsPage.action_generate_password')}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    void handleGeneratePasswordSlips([
-                                                                        { id: s.id, name: s.name, email: s.email! },
-                                                                    ]);
+                                                                onClick={() => {
+                                                                    setSummaryStudentId(s.id);
+                                                                    setCopied(false);
+                                                                }}
+                                                                title="Copy rubric summary for tracking system"
+                                                            >
+                                                                <ClipboardCopy size={14} />
+                                                            </button>
+                                                            {dbStatus.isConnected && s.email && (
+                                                                <button
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    aria-label={t(
+                                                                        'studentsPage.action_generate_password'
+                                                                    )}
+                                                                    title={t('studentsPage.action_generate_password')}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        void handleGeneratePasswordSlips([
+                                                                            { id: s.id, name: s.name, email: s.email! },
+                                                                        ]);
+                                                                    }}
+                                                                >
+                                                                    <KeyRound size={14} />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                aria-label={t('studentsPage.action_edit_student')}
+                                                                onClick={() => {
+                                                                    setEditStudent({
+                                                                        id: s.id,
+                                                                        name: s.name,
+                                                                        email: s.email ?? '',
+                                                                    });
+                                                                    setName(s.name);
+                                                                    setEmail(s.email ?? '');
+                                                                    setEditStudentClassId(s.classId);
+                                                                    setEditStudentTrack(s.voTrack ?? '');
+                                                                    setShowAddModal(true);
                                                                 }}
                                                             >
-                                                                <KeyRound size={14} />
+                                                                <Edit2 size={14} />
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            aria-label={t('studentsPage.action_edit_student')}
-                                                            onClick={() => {
-                                                                setEditStudent({
-                                                                    id: s.id,
-                                                                    name: s.name,
-                                                                    email: s.email ?? '',
-                                                                });
-                                                                setName(s.name);
-                                                                setEmail(s.email ?? '');
-                                                                setEditStudentClassId(s.classId);
-                                                                setEditStudentTrack(s.voTrack ?? '');
-                                                                setShowAddModal(true);
-                                                            }}
-                                                        >
-                                                            <Edit2 size={14} />
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            aria-label={t('studentsPage.action_delete_student')}
-                                                            style={{ color: 'var(--red)' }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setConfirmDeleteStudent(s.id);
-                                                            }}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                            <button
+                                                                className="btn btn-ghost btn-icon btn-sm"
+                                                                aria-label={t('studentsPage.action_delete_student')}
+                                                                style={{ color: 'var(--red)' }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setConfirmDeleteStudent(s.id);
+                                                                }}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
                 </div>
