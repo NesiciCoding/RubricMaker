@@ -1094,7 +1094,8 @@
         "override_label": "Remplacer le score",
         "quick_comments_label": "Rapide",
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
-        "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)"
+        "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
+        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)"
     },
     "rubricBuilder": {
         "action_back": "Retour",

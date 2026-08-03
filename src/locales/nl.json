@@ -1094,7 +1094,8 @@
         "override_label": "Score overschrijven",
         "quick_comments_label": "Snel",
         "quick_comments_empty": "Sla opmerkingen op in de bank voor snelle invoegingen hier.",
-        "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)"
+        "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)",
+        "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)"
     },
     "rubricBuilder": {
         "action_back": "Terug",

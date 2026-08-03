@@ -22,6 +22,7 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
     const [open, setOpen] = useState(false);
     const wrapRef = useRef<HTMLDivElement>(null);
     const btnRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     // Fixed-position coords computed from the trigger — the Topbar's actions row has
     // `overflow: auto`, which would otherwise clip an absolutely-positioned dropdown.
     const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
@@ -31,6 +32,10 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
         if (r) setCoords({ top: r.bottom + 4, right: window.innerWidth - r.right });
         setOpen(true);
     };
+    const closeMenu = (returnFocus = true) => {
+        setOpen(false);
+        if (returnFocus) btnRef.current?.focus();
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -38,7 +43,7 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
             if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
         };
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpen(false);
+            if (e.key === 'Escape') closeMenu();
         };
         const onReflow = () => setOpen(false);
         document.addEventListener('mousedown', onDown);
@@ -52,6 +57,31 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
             window.removeEventListener('scroll', onReflow, true);
         };
     }, [open]);
+
+    // Move focus into the menu on open (ARIA menu-button pattern).
+    useEffect(() => {
+        if (!open) return;
+        menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    }, [open]);
+
+    const onMenuKeyDown = (e: React.KeyboardEvent) => {
+        const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+        if (items.length === 0) return;
+        const idx = items.indexOf(document.activeElement as HTMLButtonElement);
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            items[(idx + 1) % items.length]?.focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            items[(idx - 1 + items.length) % items.length]?.focus();
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            items[0]?.focus();
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            items[items.length - 1]?.focus();
+        }
+    };
 
     if (actions.length === 0) return null;
 
@@ -71,8 +101,10 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
             </button>
             {open && coords && (
                 <div
+                    ref={menuRef}
                     className="card"
                     role="menu"
+                    onKeyDown={onMenuKeyDown}
                     style={{
                         position: 'fixed',
                         right: coords.right,
@@ -96,7 +128,7 @@ export default function GradingActionsMenu({ actions }: { actions: GradingAction
                                 color: a.danger ? 'var(--red)' : a.active ? 'var(--accent)' : undefined,
                             }}
                             onClick={() => {
-                                setOpen(false);
+                                closeMenu(false);
                                 a.onClick();
                             }}
                         >

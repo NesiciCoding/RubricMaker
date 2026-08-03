@@ -369,7 +369,7 @@ export default function GradeStudent() {
             // Criterion-letter → focus that criterion. Combined with the number keys below this
             // gives the A+1 / B+2 chord: press the letter to address a criterion, then the digit
             // to pick its level. Single-key level select on the already-focused row still works.
-            if (/^[a-z]$/i.test(e.key)) {
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && /^[a-z]$/i.test(e.key)) {
                 const idx = e.key.toLowerCase().charCodeAt(0) - 97;
                 if (idx >= 0 && idx < criteriaCount) {
                     setFocusedCriterionIdx(idx);
@@ -995,6 +995,7 @@ export default function GradeStudent() {
                                         >
                                             {fmt.showWeights && <span className="badge badge-blue">{c.weight}%</span>}
                                             <button
+                                                type="button"
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 data-tour={criterionIndex === 0 ? 'grading-comment' : undefined}
                                                 onClick={() =>
@@ -1068,6 +1069,7 @@ export default function GradeStudent() {
                                                             return (
                                                                 <button
                                                                     key={o.value}
+                                                                    type="button"
                                                                     className="level-btn"
                                                                     style={
                                                                         isSelected
@@ -1113,6 +1115,7 @@ export default function GradeStudent() {
                                                 return (
                                                     <button
                                                         key={level.id}
+                                                        type="button"
                                                         data-tour={
                                                             levelIndex === 0 && criterionIndex === 0
                                                                 ? 'grading-level-btn'
@@ -1129,7 +1132,9 @@ export default function GradeStudent() {
                                                         }
                                                         title={
                                                             shortcutNum <= 5
-                                                                ? `Press ${shortcutNum} to select (when criterion is focused)`
+                                                                ? t('gradeStudent.level_shortcut_hint', {
+                                                                      num: shortcutNum,
+                                                                  })
                                                                 : undefined
                                                         }
                                                         onClick={() =>
@@ -1492,6 +1497,7 @@ export default function GradeStudent() {
                                                     />
                                                 </div>
                                                 <button
+                                                    type="button"
                                                     className="btn btn-secondary btn-sm"
                                                     onClick={() => setShowCommentBankFor(c.id)}
                                                     title={t('gradeStudent.comment_open_bank')}
@@ -1505,6 +1511,7 @@ export default function GradeStudent() {
                                             >
                                                 {audioRecorder.recordingKey === c.id ? (
                                                     <button
+                                                        type="button"
                                                         className="btn btn-danger btn-sm pulse"
                                                         onClick={() => stopAudioRecording(c.id)}
                                                     >
@@ -1512,6 +1519,7 @@ export default function GradeStudent() {
                                                     </button>
                                                 ) : (
                                                     <button
+                                                        type="button"
                                                         className="btn btn-secondary btn-sm"
                                                         onClick={() => startAudioRecording(c.id)}
                                                     >
@@ -1526,10 +1534,12 @@ export default function GradeStudent() {
                                                             style={{ height: 28, flex: 1 }}
                                                         />
                                                         <button
+                                                            type="button"
                                                             className="btn btn-ghost btn-sm"
                                                             onClick={() =>
                                                                 updateEntry(c.id, { audioDataUrl: undefined })
                                                             }
+                                                            aria-label={t('gradeStudent.audio_remove')}
                                                             title={t('gradeStudent.audio_remove')}
                                                         >
                                                             ✕
