@@ -160,7 +160,7 @@ test.describe('Co-grading & moderation', () => {
         const gradePage = new GradeStudentPage(appPage);
         await gradePage.goto(rubric.id, student.id);
 
-        await appPage.getByRole('button', { name: /co-grade/i }).click();
+        await gradePage.openHeaderAction(/co-grade/i);
         await appPage.getByPlaceholder(/j\.smith@school\.org/i).fill('colleague@school.org');
         await appPage.getByRole('button', { name: /start co-grading/i }).click();
 
