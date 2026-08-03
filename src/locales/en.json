@@ -148,7 +148,8 @@
         "all": "All",
         "export_csv": "Export CSV",
         "prev": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "view_grid": "Grid"
     },
     "sidebar": {
         "main_section": "Main",
@@ -1084,7 +1085,16 @@
         "action_essay": "Essay",
         "action_import_essay": "Import essay",
         "anchor_help_text": "Anchor papers are reference submissions used to calibrate your grading. Marking a submission as an anchor lets you compare it side-by-side with new submissions in the grade footer.",
-        "aria_grade_summary": "Grade summary"
+        "aria_grade_summary": "Grade summary",
+        "view_layout_label": "Grading layout",
+        "more_actions": "More actions",
+        "action_export_pdf": "Export PDF",
+        "grid_pick_level": "Pick a level for this criterion, or just leave a comment.",
+        "sub_items_label": "Sub-items",
+        "override_label": "Override score",
+        "quick_comments_label": "Quick",
+        "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
+        "shortcut_chord": "Address a criterion, then pick its level (chord)"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -2945,7 +2955,11 @@
         "gr_generate_test_body": "From the Tests list, \"Generate from bank\" opens a wizard that assembles a new test from bank items matching criteria you pick — no manual question-by-question insertion needed.",
         "gr_generate_test_item_criteria": "Add one or more criteria rows (question or section bundle, CEFR level, tag, and how many to draw) — items are picked at random from matches, so repeated generations don't always draw the same set.",
         "gr_generate_test_item_organize": "Optionally organize the result into CEFR-level sections — produces exactly the level-pool shape the Staircase placement engine expects, ready to use immediately.",
-        "gr_generate_test_item_review": "The generated test opens in the normal Test Builder, pre-filled and ready to review, adjust, and save like any other test."
+        "gr_generate_test_item_review": "The generated test opens in the normal Test Builder, pre-filled and ready to review, adjust, and save like any other test.",
+        "gr_layout_title": "Card & grid layouts",
+        "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
+        "gr_keyboard_title": "Keyboard shortcuts",
+        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut."
     },
     "studentProfile": {
         "tab_overview": "Overview",

@@ -1,6 +1,6 @@
 # Option B Mockup Follow-Ups — Implementation Plan (Phases 36–42)
 
-**Status:** Phase 36 implemented (Cards/List toggle + shared `SegmentedToggle`) and Phase 37 in progress (37.1 CEFR cards + Learning Goals chart; 37.2 chart audit); Phases 38 and 40–42 remain proposed.
+**Status:** Phases 36, 37 (37.1 + 37.2), 38, and 40 implemented (40 = grading Cards/Grid toggle, criterion×level grid with focused-criterion detail panel, settings-cog header menu, sub-item chips + override control, comment quick-chips, criterion-letter+number chords). Phases 41–42 remain proposed.
 **Source of truth for design:** the "Option B" mockup (Claude Design project) as distilled in the wiki's `Architecture.md` → _"Design System — Option B UI Conventions"_. The mockup's foundation (Warm Scholar palette, fonts, two-tier nav) already shipped in Phase 9.5; everything below is page-content work.
 **Resolved decisions (this planning pass):**
 

@@ -49,7 +49,7 @@ const TEACHER_FEATURES = [
     {
         icon: Users,
         title: 'Smart Grading',
-        desc: 'Grade with a comment bank, voice dictation, file attachments, inline comments anchored right on essay and DOCX submissions, audio/video speaking recordings, side-by-side comparative view, and group grading for shared assignments.',
+        desc: 'Grade in a card or criterion×level grid layout, with a comment bank, voice dictation, keyboard shortcuts, file attachments, inline comments anchored right on essay and DOCX submissions, audio/video speaking recordings, side-by-side comparative view, and group grading for shared assignments.',
         color: '#8b5cf6',
     },
     {

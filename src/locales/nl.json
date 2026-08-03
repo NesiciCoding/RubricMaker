@@ -148,7 +148,8 @@
         "all": "Alles",
         "export_csv": "Exporteer CSV",
         "prev": "Vorige",
-        "next": "Volgende"
+        "next": "Volgende",
+        "view_grid": "Raster"
     },
     "sidebar": {
         "main_section": "Hoofdmenu",
@@ -1084,7 +1085,16 @@
         "action_essay": "Opstel",
         "action_import_essay": "Opstel importeren",
         "anchor_help_text": "Ankerwerkstukken zijn referentie-inzendingen die worden gebruikt om je beoordeling te kalibreren. Door een inzending als anker te markeren, kun je deze naast nieuwe inzendingen vergelijken in de beoordelingsvoettekst.",
-        "aria_grade_summary": "Cijferoverzicht"
+        "aria_grade_summary": "Cijferoverzicht",
+        "view_layout_label": "Beoordelingsweergave",
+        "more_actions": "Meer acties",
+        "action_export_pdf": "PDF exporteren",
+        "grid_pick_level": "Kies een niveau voor dit criterium, of laat alleen een opmerking achter.",
+        "sub_items_label": "Subonderdelen",
+        "override_label": "Score overschrijven",
+        "quick_comments_label": "Snel",
+        "quick_comments_empty": "Sla opmerkingen op in de bank voor snelle invoegingen hier.",
+        "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -2947,7 +2957,11 @@
         "gr_generate_test_body": "Vanuit de toetsenlijst opent \"Genereren uit bank\" een wizard die een nieuwe toets samenstelt uit bank-items die aan jouw criteria voldoen — geen handmatige vraag-voor-vraag invoeging nodig.",
         "gr_generate_test_item_criteria": "Voeg een of meer criteriumregels toe (losse vraag of sectiebundel, ERK-niveau, tag en aantal) — items worden willekeurig gekozen uit de resultaten, zodat herhaalde generaties niet steeds dezelfde set opleveren.",
         "gr_generate_test_item_organize": "Organiseer het resultaat optioneel in ERK-niveausecties — dit levert precies de niveaupool-vorm op die de Staircase-plaatsingsengine verwacht, direct bruikbaar.",
-        "gr_generate_test_item_review": "De gegenereerde toets opent in de normale toetsenbouwer, vooraf ingevuld en klaar om te bekijken, aan te passen en op te slaan zoals elke andere toets."
+        "gr_generate_test_item_review": "De gegenereerde toets opent in de normale toetsenbouwer, vooraf ingevuld en klaar om te bekijken, aan te passen en op te slaan zoals elke andere toets.",
+        "gr_layout_title": "Kaart- en rasterweergave",
+        "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
+        "gr_keyboard_title": "Sneltoetsen",
+        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
