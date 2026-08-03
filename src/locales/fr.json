@@ -148,7 +148,8 @@
         "all": "Tout",
         "export_csv": "Exporter CSV",
         "prev": "Précédent",
-        "next": "Suivant"
+        "next": "Suivant",
+        "view_grid": "Grille"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -1084,7 +1085,16 @@
         "action_essay": "Dissertation",
         "action_import_essay": "Importer la dissertation",
         "anchor_help_text": "Les copies de référence sont des travaux utilisés pour calibrer votre évaluation. Marquer une copie comme référence vous permet de la comparer côte à côte avec de nouvelles copies dans le pied de page de notation.",
-        "aria_grade_summary": "Résumé de la note"
+        "aria_grade_summary": "Résumé de la note",
+        "view_layout_label": "Disposition de notation",
+        "more_actions": "Plus d'actions",
+        "action_export_pdf": "Exporter en PDF",
+        "grid_pick_level": "Choisissez un niveau pour ce critère, ou laissez simplement un commentaire.",
+        "sub_items_label": "Sous-éléments",
+        "override_label": "Remplacer le score",
+        "quick_comments_label": "Rapide",
+        "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
+        "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -2947,7 +2957,11 @@
         "gr_generate_test_body": "Depuis la liste des tests, « Générer depuis la banque » ouvre un assistant qui assemble un nouveau test à partir d'éléments de la banque correspondant aux critères choisis — plus besoin d'insertion manuelle question par question.",
         "gr_generate_test_item_criteria": "Ajoutez une ou plusieurs lignes de critères (question isolée ou section groupée, niveau CECRL, étiquette, et le nombre à tirer) — les éléments sont tirés au hasard parmi les correspondances, donc des générations répétées ne donnent pas toujours le même ensemble.",
         "gr_generate_test_item_organize": "Organisez éventuellement le résultat en sections par niveau CECRL — cela produit exactement la structure de pools de niveau attendue par le moteur de placement Staircase, prête à l'emploi.",
-        "gr_generate_test_item_review": "Le test généré s'ouvre dans le générateur de test habituel, pré-rempli et prêt à être vérifié, ajusté et enregistré comme n'importe quel autre test."
+        "gr_generate_test_item_review": "Le test généré s'ouvre dans le générateur de test habituel, pré-rempli et prêt à être vérifié, ajusté et enregistré comme n'importe quel autre test.",
+        "gr_layout_title": "Dispositions carte et grille",
+        "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
+        "gr_keyboard_title": "Raccourcis clavier",
+        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
