@@ -1094,7 +1094,8 @@
         "override_label": "Override score",
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
-        "shortcut_chord": "Address a criterion, then pick its level (chord)"
+        "shortcut_chord": "Address a criterion, then pick its level (chord)",
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
     },
     "rubricBuilder": {
         "action_back": "Back",

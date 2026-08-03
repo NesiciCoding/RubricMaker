@@ -1094,7 +1094,8 @@
         "override_label": "Anular puntuación",
         "quick_comments_label": "Rápido",
         "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
-        "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)"
+        "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
     },
     "rubricBuilder": {
         "action_back": "Volver",

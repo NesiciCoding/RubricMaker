@@ -105,7 +105,7 @@ export default function CriterionDetailPanel({
                 {/* Fine-tune base points */}
                 {showBasePoints && selectedLevel && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label
+                        <span
                             style={{
                                 fontSize: '0.7rem',
                                 color: 'var(--text-muted)',
@@ -114,7 +114,7 @@ export default function CriterionDetailPanel({
                             }}
                         >
                             {hasAnySubItems ? t('gradeStudent.label_base_points') : t('gradeStudent.label_points')}
-                        </label>
+                        </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <input
                                 type="range"

@@ -1094,7 +1094,8 @@
         "override_label": "Bewertung überschreiben",
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
-        "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)"
+        "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
     },
     "rubricBuilder": {
         "action_back": "Zurück",

@@ -34,13 +34,6 @@ export default function TouchStepper({
         minHeight: 44,
         padding: 0,
     };
-    const makeKeyHandler = (delta: number, disabled: boolean) => (e: React.KeyboardEvent) => {
-        if (disabled) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            stepBy(delta);
-        }
-    };
     const decDisabled = value <= min;
     const incDisabled = value >= max;
     return (
@@ -50,20 +43,17 @@ export default function TouchStepper({
             aria-label={label}
             style={{ alignItems: 'center', gap: 8, marginTop: 4 }}
         >
-            <span
-                role="button"
-                tabIndex={decDisabled ? -1 : 0}
+            <button
+                type="button"
                 className="btn btn-secondary"
                 aria-label={t('gradeStudent.stepper_decrease')}
                 aria-disabled={decDisabled}
                 onClick={() => !decDisabled && stepBy(-step)}
-                onKeyDown={makeKeyHandler(-step, decDisabled)}
                 style={{ ...controlStyle, opacity: decDisabled ? 0.5 : 1 }}
             >
                 <Minus size={18} />
-            </span>
+            </button>
             <div
-                aria-hidden="true"
                 style={{
                     minWidth: 36,
                     textAlign: 'center',
@@ -73,18 +63,16 @@ export default function TouchStepper({
             >
                 {value}
             </div>
-            <span
-                role="button"
-                tabIndex={incDisabled ? -1 : 0}
+            <button
+                type="button"
                 className="btn btn-secondary"
                 aria-label={t('gradeStudent.stepper_increase')}
                 aria-disabled={incDisabled}
                 onClick={() => !incDisabled && stepBy(step)}
-                onKeyDown={makeKeyHandler(step, incDisabled)}
                 style={{ ...controlStyle, opacity: incDisabled ? 0.5 : 1 }}
             >
                 <Plus size={18} />
-            </span>
+            </button>
         </div>
     );
 }

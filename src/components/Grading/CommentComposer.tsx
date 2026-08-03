@@ -121,6 +121,7 @@ export default function CommentComposer({
                             type="button"
                             className="btn btn-ghost btn-sm"
                             onClick={onRemoveAudio}
+                            aria-label={t('gradeStudent.audio_remove')}
                             title={t('gradeStudent.audio_remove')}
                         >
                             ✕
