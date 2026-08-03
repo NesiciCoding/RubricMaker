@@ -11,7 +11,10 @@ test.describe('ConfirmDialog — delete flows', () => {
         await appPage.waitForSelector('.main-area');
         await expect(appPage.getByText('Confirm Delete Rubric')).toBeVisible();
 
-        const card = appPage.locator('.rubric-card, .card').filter({ has: appPage.getByText('Confirm Delete Rubric', { exact: true }) }).first();
+        const card = appPage
+            .locator('.rubric-card, .card')
+            .filter({ has: appPage.getByText('Confirm Delete Rubric', { exact: true }) })
+            .first();
         await card.getByRole('button', { name: /delete/i }).click();
 
         const dialog = appPage.getByRole('dialog');
@@ -30,7 +33,10 @@ test.describe('ConfirmDialog — delete flows', () => {
         await appPage.goto('/#/rubrics');
         await appPage.reload();
         await appPage.waitForSelector('.main-area');
-        const card = appPage.locator('.rubric-card, .card').filter({ has: appPage.getByText('Cancel Delete Rubric', { exact: true }) }).first();
+        const card = appPage
+            .locator('.rubric-card, .card')
+            .filter({ has: appPage.getByText('Cancel Delete Rubric', { exact: true }) })
+            .first();
         await card.getByRole('button', { name: /delete/i }).click();
 
         const dialog = appPage.getByRole('dialog');
@@ -48,7 +54,10 @@ test.describe('ConfirmDialog — delete flows', () => {
         await appPage.goto('/#/rubrics');
         await appPage.reload();
         await appPage.waitForSelector('.main-area');
-        const card = appPage.locator('.rubric-card, .card').filter({ has: appPage.getByText('Escape Test Rubric', { exact: true }) }).first();
+        const card = appPage
+            .locator('.rubric-card, .card')
+            .filter({ has: appPage.getByText('Escape Test Rubric', { exact: true }) })
+            .first();
         await card.getByRole('button', { name: /delete/i }).click();
 
         await expect(appPage.getByRole('dialog')).toBeVisible();
@@ -67,8 +76,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         await appPage.waitForSelector('.main-area');
         await expect(appPage.getByText('Student To Delete')).toBeVisible();
 
-        const row = appPage.locator('table tbody tr').filter({ has: appPage.getByText('Student To Delete', { exact: true }) });
-        await row.locator('button.btn-ghost.btn-icon').last().click();
+        const row = appPage.locator('table tbody tr').filter({ hasText: 'Student To Delete' });
+        await row.getByRole('button', { name: /delete student/i }).click();
 
         // Student delete confirm uses <div class="modal"> without role="dialog"
         await expect(appPage.locator('.modal-overlay')).toBeVisible();

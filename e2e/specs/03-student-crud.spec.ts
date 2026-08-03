@@ -27,11 +27,8 @@ test.describe('Student CRUD', () => {
         await page.goto();
         await expect(appPage.getByText('Delete Me Student')).toBeVisible();
 
-        const studentRow = appPage.locator('table tbody tr').filter({
-            has: appPage.getByText('Delete Me Student', { exact: true }),
-        });
-        // Delete button is icon-only (Trash2, no accessible name) — pick last icon btn in row
-        await studentRow.locator('button.btn-ghost.btn-icon').last().click();
+        const studentRow = appPage.locator('table tbody tr').filter({ hasText: 'Delete Me Student' });
+        await studentRow.getByRole('button', { name: /delete student/i }).click();
         // Student delete confirm uses <div class="modal"> without role="dialog"
         await expect(appPage.locator('.modal-overlay')).toBeVisible();
         await appPage.locator('.modal').locator('button.btn-primary').click();
@@ -41,10 +38,7 @@ test.describe('Student CRUD', () => {
 
     test('student list shows added students', async ({ appPage, seedStorage }) => {
         const cls = buildClass({ name: 'Class B' });
-        const students = [
-            buildStudent(cls.id, { name: 'Alice A' }),
-            buildStudent(cls.id, { name: 'Bob B' }),
-        ];
+        const students = [buildStudent(cls.id, { name: 'Alice A' }), buildStudent(cls.id, { name: 'Bob B' })];
         await seedStorage({ rm_classes: [cls], rm_students: students });
 
         const page = new StudentsPage(appPage);
