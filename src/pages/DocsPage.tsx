@@ -1210,6 +1210,9 @@ function GradingTab() {
                     {t('docs.gr_portal_intro_prefix')} <strong>{t('docs.gr_portal_intro_button')}</strong>{' '}
                     {t('docs.gr_portal_intro_suffix')} <code>/portal/:studentId</code>.
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.gr_portal_tabs_body')}
+                </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_portal_work_title')}
                 </h3>

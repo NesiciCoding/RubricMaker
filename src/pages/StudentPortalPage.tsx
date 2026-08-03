@@ -20,8 +20,14 @@ import {
     Layers,
     UserCheck,
     PenSquare,
+    Home,
+    Sun,
+    Moon,
+    GraduationCap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SegmentedToggle from '../components/ui/SegmentedToggle';
+import Avatar from '../components/ui/Avatar';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
@@ -102,6 +108,24 @@ function buildTitleAveragedRadarData(
     }));
 }
 
+type PortalTab = 'home' | 'assignments' | 'feedback' | 'progress';
+
+/** Which portal tab each scroll section belongs to (Phase 41.1). */
+const SECTION_TAB: Record<string, PortalTab> = {
+    'portal-section-top': 'home',
+    'portal-section-news-flashes': 'home',
+    'portal-section-moderation': 'home',
+    'portal-section-work': 'assignments',
+    'portal-section-flashcards': 'assignments',
+    'portal-section-messages': 'feedback',
+    'portal-section-peer-reviews': 'feedback',
+    'portal-section-feedback': 'feedback',
+    'portal-section-grades': 'progress',
+    'portal-section-cefr': 'progress',
+    'portal-section-progress': 'progress',
+    'portal-section-learning-path': 'progress',
+};
+
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
     const {
@@ -132,12 +156,21 @@ export default function StudentPortalPage() {
         fetchMyNewsFlashes,
         markNewsFlashRead,
         markNewsFlashReadAsStudent,
+        updateSettings,
     } = useApp();
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);
     const [portalQuery, setPortalQuery] = useState('');
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<PortalTab>('home');
+    const isTab = (tab: PortalTab) => activeTab === tab;
+    // Switch to the tab that owns a section, then scroll it into view (used by search).
+    const goToSection = (sectionId: string) => {
+        const tab = SECTION_TAB[sectionId];
+        if (tab) setActiveTab(tab);
+        requestAnimationFrame(() => scrollToSection(sectionId));
+    };
 
     const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
     const [essayLoadError, setEssayLoadError] = useState<string | null>(null);
@@ -457,7 +490,6 @@ export default function StudentPortalPage() {
         .filter((e) => !isDone(e) && (!dueAt(e) || new Date(dueAt(e)!) > now))
         .sort(byDueDateAsc);
     const completedWork = allWork.filter(isDone);
-    const hasPeerReviews = receivedPeerReviews.length > 0;
     const hasWork = allWork.length > 0;
     const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
 
@@ -543,42 +575,14 @@ export default function StudentPortalPage() {
         flashcards: myFlashcards.map((a) => ({ deckId: a.deckId, deckName: a.deckName })),
     });
 
-    const navLinks = [
-        { id: 'portal-section-work', label: t('studentPortal.my_work'), visible: hasWork },
-        {
-            id: 'portal-section-flashcards',
-            label: t('studentPortal.flashcards_section_title'),
-            visible: myFlashcards.length > 0,
-        },
-        {
-            id: 'portal-section-news-flashes',
-            label:
-                unreadNewsFlashCount > 0
-                    ? t('newsFlashes.section_title_unread', { count: unreadNewsFlashCount })
-                    : t('newsFlashes.section_title'),
-            visible: myNewsFlashes.length > 0,
-        },
-        { id: 'portal-section-messages', label: t('studentPortal.messages_section_title'), visible: true },
-        { id: 'portal-section-progress', label: t('studentPortal.my_progress'), visible: hasRadar },
-        { id: 'portal-section-grades', label: t('studentPortal.grade_history'), visible: history.length > 1 },
-        { id: 'portal-section-cefr', label: t('studentPortal.cefr_progress'), visible: cefrProgress.length > 0 },
-        {
-            id: 'portal-section-peer-reviews',
-            label: t('studentPortal.peer_reviews_received', 'Peer Reviews'),
-            visible: hasPeerReviews,
-        },
-        {
-            id: 'portal-section-moderation',
-            label: t('studentPortal.moderation_section_title'),
-            visible: pendingModeration.length > 0,
-        },
-        {
-            id: 'portal-section-learning-path',
-            label: t('studentPortal.learning_path_section_title'),
-            visible: hasLearningPath,
-        },
-        { id: 'portal-section-feedback', label: t('studentPortal.rubric_grades'), visible: history.length > 0 },
-    ].filter((link) => link.visible);
+    // Home and Feedback always render at least one block (summary stats / messages);
+    // Assignments and Progress can be empty, so they get an empty-state prompt.
+    const tabHasContent: Record<PortalTab, boolean> = {
+        home: true,
+        assignments: hasWork || myFlashcards.length > 0,
+        feedback: true,
+        progress: history.length > 1 || cefrProgress.length > 0 || hasRadar || hasLearningPath,
+    };
 
     const isTeacherPreview = settings.userRole !== 'student';
 
@@ -644,23 +648,50 @@ export default function StudentPortalPage() {
                         flexWrap: 'wrap',
                     }}
                 >
-                    <div>
-                        <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{student.name}</h1>
-                        {cls && (
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                {cls.name}
-                            </div>
-                        )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <Avatar name={student.name} size={40} fontSize="1.05rem" />
+                        <div style={{ minWidth: 0 }}>
+                            <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>{student.name}</h1>
+                            {cls && (
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                    {cls.name}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        data-tour="portal-copy-link"
-                        onClick={handleCopyLink}
-                        title={t('studentPortal.copy_link')}
-                    >
-                        {linkCopied ? <Check size={14} /> : <Copy size={14} />}
-                        {linkCopied ? t('studentPortal.link_copied') : t('studentPortal.copy_link')}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span
+                            aria-hidden="true"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                color: 'var(--text-muted)',
+                                fontWeight: 700,
+                                fontSize: '0.9rem',
+                            }}
+                        >
+                            <GraduationCap size={18} style={{ color: 'var(--accent)' }} /> Rubric Maker
+                        </span>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
+                            aria-label={t('studentPortal.toggle_theme')}
+                            title={t('studentPortal.toggle_theme')}
+                        >
+                            {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            data-tour="portal-copy-link"
+                            onClick={handleCopyLink}
+                            title={t('studentPortal.copy_link')}
+                        >
+                            {linkCopied ? <Check size={14} /> : <Copy size={14} />}
+                            {linkCopied ? t('studentPortal.link_copied') : t('studentPortal.copy_link')}
+                        </button>
+                    </div>
                 </div>
                 {(history.length > 0 || allWork.length > 0 || myFlashcards.length > 0) && (
                     <div style={{ maxWidth: 820, margin: '12px auto 0' }}>
@@ -669,7 +700,7 @@ export default function StudentPortalPage() {
                             onQueryChange={setPortalQuery}
                             results={portalSearchResults}
                             onSelect={(result) => {
-                                scrollToSection(result.sectionId);
+                                goToSection(result.sectionId);
                                 setPortalQuery('');
                             }}
                         />
@@ -677,34 +708,39 @@ export default function StudentPortalPage() {
                 )}
             </div>
 
-            {navLinks.length > 1 && (
-                <nav
-                    aria-label={t('studentPortal.section_nav_label')}
-                    style={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 10,
-                        background: 'var(--bg)',
-                        borderBottom: '1px solid var(--border)',
-                        display: 'flex',
-                        gap: 4,
-                        justifyContent: 'center',
-                        flexWrap: 'wrap',
-                        padding: '8px 16px',
-                    }}
-                >
-                    {navLinks.map((link) => (
-                        <button
-                            key={link.id}
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => scrollToSection(link.id)}
-                        >
-                            {link.label}
-                        </button>
-                    ))}
-                </nav>
-            )}
+            <nav
+                aria-label={t('studentPortal.section_nav_label')}
+                style={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10,
+                    background: 'var(--bg)',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '8px 16px',
+                }}
+            >
+                <SegmentedToggle
+                    ariaLabel={t('studentPortal.section_nav_label')}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    options={[
+                        { value: 'home', label: t('studentPortal.tab_home'), icon: <Home size={14} /> },
+                        {
+                            value: 'assignments',
+                            label: t('studentPortal.tab_assignments'),
+                            icon: <ListChecks size={14} />,
+                        },
+                        {
+                            value: 'feedback',
+                            label: t('studentPortal.tab_feedback'),
+                            icon: <MessageSquare size={14} />,
+                        },
+                        { value: 'progress', label: t('studentPortal.tab_progress'), icon: <TrendingUp size={14} /> },
+                    ]}
+                />
+            </nav>
 
             <div
                 data-tour="portal-content"
@@ -717,40 +753,56 @@ export default function StudentPortalPage() {
                     gap: 24,
                 }}
             >
-                {/* Summary stats */}
-                <div
-                    id="portal-section-top"
-                    data-tour="portal-stats"
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                        gap: 12,
-                        scrollMarginTop: 70,
-                    }}
-                >
-                    <StatCard
-                        icon={<BookOpen size={16} />}
-                        label={t('studentPortal.stat_rubrics')}
-                        value={String(history.length)}
-                    />
-                    {avgScore !== null && (
+                {!tabHasContent[activeTab] && (
+                    <div
+                        style={{
+                            textAlign: 'center',
+                            padding: '40px 16px',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        {isTab('assignments')
+                            ? t('studentPortal.tab_empty_assignments')
+                            : t('studentPortal.tab_empty_progress')}
+                    </div>
+                )}
+                {/* Summary stats (Home tab) */}
+                {isTab('home') && (
+                    <div
+                        id="portal-section-top"
+                        data-tour="portal-stats"
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                            gap: 12,
+                            scrollMarginTop: 70,
+                        }}
+                    >
                         <StatCard
-                            icon={<TrendingUp size={16} />}
-                            label={t('studentPortal.stat_average')}
-                            value={`${avgScore.toFixed(1)}%`}
+                            icon={<BookOpen size={16} />}
+                            label={t('studentPortal.stat_rubrics')}
+                            value={String(history.length)}
                         />
-                    )}
-                    {selfAssess.length > 0 && (
-                        <StatCard
-                            icon={<Star size={16} />}
-                            label={t('studentPortal.stat_self_assessments')}
-                            value={String(selfAssess.length)}
-                        />
-                    )}
-                </div>
+                        {avgScore !== null && (
+                            <StatCard
+                                icon={<TrendingUp size={16} />}
+                                label={t('studentPortal.stat_average')}
+                                value={`${avgScore.toFixed(1)}%`}
+                            />
+                        )}
+                        {selfAssess.length > 0 && (
+                            <StatCard
+                                icon={<Star size={16} />}
+                                label={t('studentPortal.stat_self_assessments')}
+                                value={String(selfAssess.length)}
+                            />
+                        )}
+                    </div>
+                )}
 
                 {/* Grade history chart */}
-                {history.length > 1 && (
+                {history.length > 1 && isTab('progress') && (
                     <Section id="portal-section-grades" title={t('studentPortal.grade_history')}>
                         <ResponsiveContainer width="100%" height={200}>
                             <LineChart data={history} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
@@ -783,13 +835,13 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* CEFR progress */}
-                {cefrProgress.length > 0 && (
+                {cefrProgress.length > 0 && isTab('progress') && (
                     <Section id="portal-section-cefr" title={t('studentPortal.cefr_progress')}>
                         <CefrProgressChart entries={cefrProgress} />
                     </Section>
                 )}
 
-                {(essayLoadError || testLoadError) && dbConfig && (
+                {(essayLoadError || testLoadError) && dbConfig && isTab('assignments') && (
                     <div
                         style={{
                             background: 'var(--bg-raised)',
@@ -807,7 +859,7 @@ export default function StudentPortalPage() {
                         {t('studentPortal.work_load_error')}
                     </div>
                 )}
-                {hasWork && (
+                {hasWork && isTab('assignments') && (
                     <Section id="portal-section-work" title={t('studentPortal.my_work')}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                             {overdueWork.length > 0 && (
@@ -847,7 +899,7 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {myFlashcards.length > 0 && (
+                {myFlashcards.length > 0 && isTab('assignments') && (
                     <Section id="portal-section-flashcards" title={t('studentPortal.flashcards_section_title')}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {myFlashcards.map((a) => {
@@ -900,7 +952,7 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {myNewsFlashes.length > 0 && (
+                {myNewsFlashes.length > 0 && isTab('home') && (
                     <Section
                         id="portal-section-news-flashes"
                         title={
@@ -914,39 +966,41 @@ export default function StudentPortalPage() {
                             flashes={myNewsFlashes}
                             readFlashIds={readNewsFlashIds}
                             onOpen={handleOpenNewsFlash}
-                            onScrollToSection={scrollToSection}
+                            onScrollToSection={goToSection}
                         />
                     </Section>
                 )}
 
-                <Section id="portal-section-messages" title={t('studentPortal.messages_section_title')}>
-                    <PortalMessages
-                        studentId={student.id}
-                        threads={myThreads}
-                        contextOptions={messageContextOptions}
-                        onSend={(contextType, contextId, contextLabel, body) => {
-                            const message: Message = {
-                                id: nanoid(),
-                                studentId: student.id,
-                                contextType,
-                                contextId,
-                                contextLabel,
-                                sender: 'student',
-                                body,
-                                createdAt: new Date().toISOString(),
-                                readByTeacher: false,
-                                readByStudent: true,
-                            };
-                            setMessageRows((prev) => [...prev, message]);
-                            sendMessageAsStudent(message).catch(() => {
-                                /* messaging requires a live Supabase session; silently unavailable otherwise */
-                            });
-                        }}
-                        t={t}
-                    />
-                </Section>
+                {isTab('feedback') && (
+                    <Section id="portal-section-messages" title={t('studentPortal.messages_section_title')}>
+                        <PortalMessages
+                            studentId={student.id}
+                            threads={myThreads}
+                            contextOptions={messageContextOptions}
+                            onSend={(contextType, contextId, contextLabel, body) => {
+                                const message: Message = {
+                                    id: nanoid(),
+                                    studentId: student.id,
+                                    contextType,
+                                    contextId,
+                                    contextLabel,
+                                    sender: 'student',
+                                    body,
+                                    createdAt: new Date().toISOString(),
+                                    readByTeacher: false,
+                                    readByStudent: true,
+                                };
+                                setMessageRows((prev) => [...prev, message]);
+                                sendMessageAsStudent(message).catch(() => {
+                                    /* messaging requires a live Supabase session; silently unavailable otherwise */
+                                });
+                            }}
+                            t={t}
+                        />
+                    </Section>
+                )}
 
-                {hasRadar && (
+                {hasRadar && isTab('progress') && (
                     <Section id="portal-section-progress" title={t('studentPortal.my_progress')}>
                         {rubricRadarOptions.length > 0 && (
                             <div className="form-group" style={{ marginBottom: 14 }}>
@@ -981,66 +1035,67 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* Peer reviews received */}
-                {(() => {
-                    const received = receivedPeerReviews;
-                    if (received.length === 0) return null;
-                    return (
-                        <Section
-                            id="portal-section-peer-reviews"
-                            title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}
-                        >
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {received.map((pr) => {
-                                    const rubric = rubrics.find((r) => r.id === pr.rubricId);
-                                    if (!rubric) return null;
-                                    const hasComment = pr.entries.some((e) => e.comment) || pr.overallComment;
-                                    return (
-                                        <div
-                                            key={pr.id}
-                                            style={{
-                                                background: 'var(--bg)',
-                                                border: '1px solid var(--border)',
-                                                borderRadius: 10,
-                                                padding: '12px 14px',
-                                            }}
-                                        >
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>
-                                                {rubric.name}
-                                            </div>
+                {isTab('feedback') &&
+                    (() => {
+                        const received = receivedPeerReviews;
+                        if (received.length === 0) return null;
+                        return (
+                            <Section
+                                id="portal-section-peer-reviews"
+                                title={t('studentPortal.peer_reviews_received', 'Peer Reviews')}
+                            >
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {received.map((pr) => {
+                                        const rubric = rubrics.find((r) => r.id === pr.rubricId);
+                                        if (!rubric) return null;
+                                        const hasComment = pr.entries.some((e) => e.comment) || pr.overallComment;
+                                        return (
                                             <div
+                                                key={pr.id}
                                                 style={{
-                                                    fontSize: '0.78rem',
-                                                    color: 'var(--text-muted)',
-                                                    marginBottom: 6,
+                                                    background: 'var(--bg)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 10,
+                                                    padding: '12px 14px',
                                                 }}
                                             >
-                                                {pr.gradedAt && new Date(pr.gradedAt).toLocaleDateString()}
-                                            </div>
-                                            {hasComment && (
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>
+                                                    {rubric.name}
+                                                </div>
                                                 <div
                                                     style={{
-                                                        fontSize: '0.82rem',
-                                                        color: 'var(--text)',
-                                                        fontStyle: 'italic',
+                                                        fontSize: '0.78rem',
+                                                        color: 'var(--text-muted)',
+                                                        marginBottom: 6,
                                                     }}
                                                 >
-                                                    {pr.overallComment ||
-                                                        pr.entries.find((e) => e.comment)?.comment ||
-                                                        ''}
+                                                    {pr.gradedAt && new Date(pr.gradedAt).toLocaleDateString()}
                                                 </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </Section>
-                    );
-                })()}
+                                                {hasComment && (
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.82rem',
+                                                            color: 'var(--text)',
+                                                            fontStyle: 'italic',
+                                                        }}
+                                                    >
+                                                        {pr.overallComment ||
+                                                            pr.entries.find((e) => e.comment)?.comment ||
+                                                            ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </Section>
+                        );
+                    })()}
 
                 {/* Pending co-grading moderation — deliberately vague: no delta/score details or
                     reviewer identity, since a dispute isn't resolved yet and this is a read-only
                     student-facing surface. */}
-                {pendingModeration.length > 0 && (
+                {pendingModeration.length > 0 && isTab('home') && (
                     <Section id="portal-section-moderation" title={t('studentPortal.moderation_section_title')}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {pendingModeration.map((item) => {
@@ -1077,7 +1132,7 @@ export default function StudentPortalPage() {
                     teacher sees on StudentLearningPathPage, minus the navigate() actions since
                     /rubrics, /flashcards, /tests are teacher-authenticated routes not reachable
                     from this public portal. */}
-                {hasLearningPath && (
+                {hasLearningPath && isTab('progress') && (
                     <Section id="portal-section-learning-path" title={t('studentPortal.learning_path_section_title')}>
                         {learningPathRecommendations.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
@@ -1179,7 +1234,7 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* Rubric grades list */}
-                {history.length > 0 && (
+                {history.length > 0 && isTab('feedback') && (
                     <Section id="portal-section-feedback" title={t('studentPortal.rubric_grades')}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {[...history].reverse().map((h) => (
@@ -1316,13 +1371,6 @@ export default function StudentPortalPage() {
                             ))}
                         </div>
                     </Section>
-                )}
-
-                {history.length === 0 && (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>
-                        <BookOpen size={36} style={{ marginBottom: 12, opacity: 0.3 }} />
-                        <p>{t('studentPortal.no_grades_yet')}</p>
-                    </div>
                 )}
             </div>
         </div>
