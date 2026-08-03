@@ -254,6 +254,12 @@ function renderAt(studentId: string) {
     return render(<RouterProvider router={router} />);
 }
 
+// Phase 41.1 moved portal content behind Home/Assignments/Feedback/Progress tabs;
+// click the tab that owns the section under test before asserting on it.
+function switchTab(tab: 'home' | 'assignments' | 'feedback' | 'progress') {
+    fireEvent.click(screen.getByText(`studentPortal.tab_${tab}`));
+}
+
 describe('StudentPortalPage', () => {
     beforeEach(async () => {
         mockFetchMyEssayAssignments.mockClear();
@@ -289,6 +295,19 @@ describe('StudentPortalPage', () => {
         expect(screen.getByText('studentPortal.stat_rubrics')).toBeInTheDocument();
     });
 
+    it('renders the four tabs and switches gated content between them', () => {
+        renderAt('s1');
+        // Home is the default tab — summary stat cards are visible here.
+        expect(screen.getByText('studentPortal.stat_rubrics')).toBeInTheDocument();
+        // Assignments tab hides the Home stats and shows its own empty state.
+        switchTab('assignments');
+        expect(screen.queryByText('studentPortal.stat_rubrics')).not.toBeInTheDocument();
+        expect(screen.getByText('studentPortal.tab_empty_assignments')).toBeInTheDocument();
+        // Progress tab shows its empty state when there are no grades.
+        switchTab('progress');
+        expect(screen.getByText('studentPortal.tab_empty_progress')).toBeInTheDocument();
+    });
+
     it('calls fetchMyEssayAssignments on mount', () => {
         renderAt('s1');
         expect(mockFetchMyEssayAssignments).toHaveBeenCalledTimes(1);
@@ -297,9 +316,11 @@ describe('StudentPortalPage', () => {
     it('renders grade history section when graded studentRubrics exist', () => {
         mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
         renderAt('s1');
-        // With 2 graded records history.length > 1, grade chart section renders
+        // Grade history chart lives on the Progress tab.
+        switchTab('progress');
         expect(screen.getAllByText('studentPortal.grade_history').length).toBeGreaterThan(0);
-        // rubric grades section also renders
+        // The rubric grades list lives on the Feedback tab.
+        switchTab('feedback');
         expect(screen.getAllByText('studentPortal.rubric_grades').length).toBeGreaterThan(0);
         // Rubric name appears in the grade list
         expect(screen.getAllByText('Essay Rubric').length).toBeGreaterThan(0);
@@ -311,6 +332,7 @@ describe('StudentPortalPage', () => {
     it('renders peer reviews section when peer reviews exist', () => {
         mockAppValue.peerReviews = mockPeerReviewsArr;
         renderAt('s1');
+        switchTab('feedback');
         expect(screen.getByText('Nice peer review')).toBeInTheDocument();
         mockAppValue.peerReviews = emptyArr;
     });
@@ -319,10 +341,11 @@ describe('StudentPortalPage', () => {
         mockAppValue.studentRubrics = [mockModerationBaseline];
         mockAppValue.peerReviews = [mockSecondMarkerEntry];
         renderAt('s1');
-        // Section title appears in both the jump-nav and the section heading.
+        // Moderation notice lives on the Home tab (default).
         expect(screen.getAllByText('studentPortal.moderation_section_title').length).toBeGreaterThan(0);
         expect(screen.getByText('studentPortal.moderation_notice')).toBeInTheDocument();
-        // The second-marker entry must not show up as an ordinary peer review.
+        // The second-marker entry must not show up as an ordinary peer review (Feedback tab).
+        switchTab('feedback');
         expect(screen.queryByText('studentPortal.peer_reviews_received')).not.toBeInTheDocument();
         mockAppValue.studentRubrics = emptyArr;
         mockAppValue.peerReviews = emptyArr;
@@ -331,6 +354,7 @@ describe('StudentPortalPage', () => {
     it('renders learning-path recommendations when an intervention flag triggers', () => {
         mockAppValue.studentRubrics = mockLowScoreStreakArr;
         renderAt('s1');
+        switchTab('progress');
         expect(screen.getAllByText('studentPortal.learning_path_section_title').length).toBeGreaterThan(0);
         // flagLabel resolves the criterion title for a 'criterion'-kind flag.
         expect(screen.getAllByText('Content').length).toBeGreaterThan(0);
@@ -376,8 +400,9 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyEssayAssignments.mockResolvedValueOnce([pendingEssay]);
         renderAt('s1');
+        switchTab('assignments');
         expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
-        // Also appears as a context option in the "ask a question" composer.
+        // Also appears in the work card on the Assignments tab.
         expect(screen.getAllByText('My Essay Title').length).toBeGreaterThan(0);
     });
 
@@ -399,6 +424,7 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyEssayAssignments.mockResolvedValueOnce([completedEssay]);
         renderAt('s1');
+        switchTab('assignments');
         expect(await screen.findByText('studentPortal.work_completed')).toBeInTheDocument();
         expect(screen.getAllByText('Completed Essay').length).toBeGreaterThan(0);
     });
@@ -417,6 +443,7 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyTestAssignments.mockResolvedValueOnce([pendingTest]);
         renderAt('s1');
+        switchTab('assignments');
         expect(await screen.findByText('studentPortal.work_planned')).toBeInTheDocument();
         expect(screen.getAllByText('Vocabulary Quiz').length).toBeGreaterThan(0);
         expect(screen.getByText('studentPortal.test_open')).toBeInTheDocument();
@@ -440,6 +467,7 @@ describe('StudentPortalPage', () => {
         mockFetchMyTestAssignments.mockResolvedValueOnce([otherStudentsTest]);
         renderAt('s1');
         await screen.findByText('studentPortal.copy_link');
+        switchTab('assignments');
         expect(screen.queryByText("Someone Else's Test")).not.toBeInTheDocument();
     });
 
@@ -473,6 +501,7 @@ describe('StudentPortalPage', () => {
         mockFetchMyEssayAssignments.mockResolvedValueOnce([overdueEssay]);
         mockFetchMyTestAssignments.mockResolvedValueOnce([submittedTest]);
         renderAt('s1');
+        switchTab('assignments');
         expect(await screen.findByText('studentPortal.work_overdue')).toBeInTheDocument();
         expect(screen.getAllByText('Late Essay').length).toBeGreaterThan(0);
         expect(screen.getByText('studentPortal.work_completed')).toBeInTheDocument();
@@ -482,6 +511,7 @@ describe('StudentPortalPage', () => {
     it('renders the My Progress radar section once 3+ criteria have been graded', async () => {
         mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
         renderAt('s1');
+        switchTab('progress');
         expect((await screen.findAllByText('studentPortal.my_progress')).length).toBeGreaterThan(0);
         // Rubric picker offers the graded rubric alongside the combined view. Scoped to the
         // radar select itself since "Essay Rubric" also appears as a context option in the
@@ -501,6 +531,7 @@ describe('StudentPortalPage', () => {
         // radar must average both attempts (→ 80%), not just sr1's alone (→ 90%, the bug).
         mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
         renderAt('s1');
+        switchTab('progress');
         await screen.findAllByText('studentPortal.my_progress');
 
         fireEvent.change(screen.getByLabelText('studentPortal.progress_view_label'), { target: { value: 'r1' } });
@@ -517,6 +548,7 @@ describe('StudentPortalPage', () => {
     it('sends a general question to the teacher via the messages section', async () => {
         renderAt('s1');
         await screen.findByText('studentPortal.copy_link');
+        switchTab('feedback');
         fireEvent.change(screen.getByPlaceholderText('studentPortal.ask_question_placeholder'), {
             target: { value: 'Can I get an extension?' },
         });
@@ -547,6 +579,7 @@ describe('StudentPortalPage', () => {
         };
         mockFetchMyMessages.mockResolvedValueOnce([teacherReply]);
         renderAt('s1');
+        switchTab('feedback');
         await screen.findByText('Sure, take an extra day.');
         expect(mockMarkMessagesReadByStudent).toHaveBeenCalledWith(['msg-1']);
     });
