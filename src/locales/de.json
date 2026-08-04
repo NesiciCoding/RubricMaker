@@ -2971,7 +2971,8 @@
         "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
         "gr_keyboard_title": "Tastaturkürzel",
         "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
-        "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich."
+        "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich.",
+        "ce_flashcards_item_fields": "Vokabelkarten können eine Phonetik (Aussprache/IPA) und Wortart enthalten — direkt im Deck-Editor eingegeben oder als optionale 4. und 5. Spalte importiert. Lernende sehen sie beim Lernen auf der Karte, zusammen mit einer Fortschrittsleiste und einer Seitenleiste mit der Wortliste des Decks."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3197,7 +3198,12 @@
         "focus_words": "Wörter zum Üben",
         "focus_items": "Elemente zum Üben",
         "last_studied": "Zuletzt gelernt am {{date}}",
-        "progress_bar_label": "Stapelfortschritt nach Lernphase"
+        "progress_bar_label": "Stapelfortschritt nach Lernphase",
+        "card_phonetic": "Phonetik",
+        "card_part_of_speech": "Wortart",
+        "study_progress_label": "Lernfortschritt",
+        "study_progress_count": "{{done}} erledigt · {{remaining}} übrig",
+        "deck_words": "Kartenwörter"
     },
     "grammar": {
         "item_select_label": "Grammatikelement",
