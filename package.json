@@ -71,7 +71,7 @@
     "lucide-react": "^1.27.0",
     "mammoth": "^1.8.0",
     "papaparse": "^5.5.4",
-    "pdfjs-dist": "^6.1.200",
+    "pdfjs-dist": "^6.2.108",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
