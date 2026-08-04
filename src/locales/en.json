@@ -1670,7 +1670,8 @@
         "tab_progress": "Progress",
         "toggle_theme": "Toggle theme",
         "tab_empty_assignments": "You have no assignments right now.",
-        "tab_empty_progress": "No progress data yet — it appears here once your work is graded."
+        "tab_empty_progress": "No progress data yet — it appears here once your work is graded.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
