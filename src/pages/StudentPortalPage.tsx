@@ -579,7 +579,7 @@ export default function StudentPortalPage() {
     // Assignments and Progress can be empty, so they get an empty-state prompt.
     const tabHasContent: Record<PortalTab, boolean> = {
         home: true,
-        assignments: hasWork || myFlashcards.length > 0,
+        assignments: hasWork || myFlashcards.length > 0 || !!((essayLoadError || testLoadError) && dbConfig),
         feedback: true,
         progress: history.length > 1 || cefrProgress.length > 0 || hasRadar || hasLearningPath,
     };
@@ -671,7 +671,8 @@ export default function StudentPortalPage() {
                                 fontSize: '0.9rem',
                             }}
                         >
-                            <GraduationCap size={18} style={{ color: 'var(--accent)' }} /> Rubric Maker
+                            <GraduationCap size={18} style={{ color: 'var(--accent)' }} />{' '}
+                            {t('studentPortal.brand_name')}
                         </span>
                         <button
                             type="button"
@@ -683,6 +684,7 @@ export default function StudentPortalPage() {
                             {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                         </button>
                         <button
+                            type="button"
                             className="btn btn-ghost btn-sm"
                             data-tour="portal-copy-link"
                             onClick={handleCopyLink}

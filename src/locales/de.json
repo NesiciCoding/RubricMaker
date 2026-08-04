@@ -1670,7 +1670,8 @@
         "tab_progress": "Fortschritt",
         "toggle_theme": "Thema wechseln",
         "tab_empty_assignments": "Du hast derzeit keine Aufgaben.",
-        "tab_empty_progress": "Noch keine Fortschrittsdaten — sie erscheinen, sobald deine Arbeit bewertet wurde."
+        "tab_empty_progress": "Noch keine Fortschrittsdaten — sie erscheinen, sobald deine Arbeit bewertet wurde.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",

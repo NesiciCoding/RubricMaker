@@ -1670,7 +1670,8 @@
         "tab_progress": "Voortgang",
         "toggle_theme": "Thema wisselen",
         "tab_empty_assignments": "Je hebt op dit moment geen opdrachten.",
-        "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld."
+        "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",

@@ -1670,7 +1670,8 @@
         "tab_progress": "Progreso",
         "toggle_theme": "Cambiar tema",
         "tab_empty_assignments": "No tienes tareas por ahora.",
-        "tab_empty_progress": "Aún no hay datos de progreso: aparecerán cuando se califique tu trabajo."
+        "tab_empty_progress": "Aún no hay datos de progreso: aparecerán cuando se califique tu trabajo.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
