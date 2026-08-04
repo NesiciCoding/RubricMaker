@@ -1317,6 +1317,7 @@ function CefrTab() {
                     items={[
                         t('docs.ce_flashcards_item_create'),
                         t('docs.ce_flashcards_item_import'),
+                        t('docs.ce_flashcards_item_fields'),
                         t('docs.ce_flashcards_item_assign'),
                         t('docs.ce_flashcards_item_study'),
                         t('docs.ce_flashcards_item_insights'),

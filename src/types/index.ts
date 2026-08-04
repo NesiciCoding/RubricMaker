@@ -1283,6 +1283,10 @@ export interface FlashcardCard {
     front: string;
     back: string;
     example?: string;
+    /** Pronunciation respelling or IPA, e.g. "/əˈbandən/" — surfaced in the study view (vocabulary decks). */
+    phonetic?: string;
+    /** Part of speech, e.g. "noun", "verb (irregular)" — surfaced in the study view (vocabulary decks). */
+    partOfSpeech?: string;
     cefrLevel?: CefrLevel;
     /** References GrammarItem.id (src/data/grammarStandards.ts) — set only on cards in a 'grammar' deck. */
     linkedGrammarItemId?: string;

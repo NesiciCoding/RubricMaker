@@ -19,6 +19,19 @@ describe('parseCsvText', () => {
         const cards = parseCsvText('apple,appel\nlonely\n,orphan');
         expect(cards).toHaveLength(1);
     });
+
+    it('parses optional phonetic and part-of-speech columns', () => {
+        const cards = parseCsvText('apple,appel,I eat an apple,/ˈapl̩/,noun');
+        expect(cards).toEqual([
+            { front: 'apple', back: 'appel', example: 'I eat an apple', phonetic: '/ˈapl̩/', partOfSpeech: 'noun' },
+        ]);
+    });
+
+    it('omits phonetic/part-of-speech when those columns are absent (back-compat)', () => {
+        const cards = cardsFromRows([['run', 'rennen']]);
+        expect(cards[0]).not.toHaveProperty('phonetic');
+        expect(cards[0]).not.toHaveProperty('partOfSpeech');
+    });
 });
 
 describe('splitLine', () => {

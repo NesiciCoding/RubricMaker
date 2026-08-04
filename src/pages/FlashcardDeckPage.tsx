@@ -274,6 +274,26 @@ export default function FlashcardDeckPage() {
                                         onChange={(e) => patchCard(card.id, { example: e.target.value })}
                                         style={{ flex: 1, minWidth: 160 }}
                                     />
+                                    {draft.deckKind !== 'grammar' && (
+                                        <>
+                                            <input
+                                                className="input"
+                                                value={card.phonetic ?? ''}
+                                                placeholder={t('flashcards.card_phonetic')}
+                                                aria-label={t('flashcards.card_phonetic')}
+                                                onChange={(e) => patchCard(card.id, { phonetic: e.target.value })}
+                                                style={{ width: 120, flexShrink: 0 }}
+                                            />
+                                            <input
+                                                className="input"
+                                                value={card.partOfSpeech ?? ''}
+                                                placeholder={t('flashcards.card_part_of_speech')}
+                                                aria-label={t('flashcards.card_part_of_speech')}
+                                                onChange={(e) => patchCard(card.id, { partOfSpeech: e.target.value })}
+                                                style={{ width: 120, flexShrink: 0 }}
+                                            />
+                                        </>
+                                    )}
                                     {draft.deckKind === 'grammar' && (
                                         <div style={{ width: 180, flexShrink: 0 }}>
                                             <GrammarItemSelect
