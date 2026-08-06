@@ -741,7 +741,13 @@
             "microphone_error": "Could not access your microphone. Please check permissions and try again.",
             "practice_review_question_number": "Question {{number}}",
             "numeric_placeholder": "Enter a number…",
-            "section_audio_alt": "Section audio playback"
+            "section_audio_alt": "Section audio playback",
+            "flag": "Flag",
+            "flagged": "Flagged",
+            "legend_answered": "Answered",
+            "legend_unanswered": "Unanswered",
+            "legend_unseen": "Unseen",
+            "legend_flagged": "Flagged"
         },
         "monitor": {
             "title": "Live monitor",
@@ -2357,7 +2363,13 @@
         "hide_essay": "Hide essay",
         "expired_desc_no_date": "This assignment has expired. Please contact your teacher.",
         "email_invalid": "Enter a valid school email address.",
-        "session_error": "Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase."
+        "session_error": "Could not start session. Ask your teacher to enable anonymous sign-ins in Supabase.",
+        "exit": "Exit",
+        "meta_label": "Details",
+        "meta_word_target": "Word target",
+        "meta_time_left": "Time left",
+        "tip_label": "Tip",
+        "tip_body": "Plan a quick outline before you write, then check your word count and re-read for clarity before submitting."
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
@@ -2970,7 +2982,10 @@
         "gr_keyboard_title": "Keyboard shortcuts",
         "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
         "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
-        "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar."
+        "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar.",
+        "es_focus_title": "Student focus mode",
+        "es_focus_item_essay": "The essay page is a distraction-free writing view: an exit control and a live \"draft saved\" badge in the header, plus a sidebar carrying the prompt, the word/time targets, and a writing tip. Drafts autosave locally and restore on return.",
+        "es_focus_item_test": "When taking a test, the sticky question timeline is a colour-coded palette — answered, unanswered, flagged, and unseen, with a legend — and each question has a \"flag for review\" toggle. Adaptive staircase/generator runs, which have no fixed question set, show no palette."
     },
     "studentProfile": {
         "tab_overview": "Overview",

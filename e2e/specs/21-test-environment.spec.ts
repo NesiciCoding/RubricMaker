@@ -34,7 +34,11 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
         appPage,
         seedStorage,
         browser,
-    }: { appPage: import('@playwright/test').Page; seedStorage: (d: Record<string, unknown>) => Promise<void>; browser: Browser }) => {
+    }: {
+        appPage: import('@playwright/test').Page;
+        seedStorage: (d: Record<string, unknown>) => Promise<void>;
+        browser: Browser;
+    }) => {
         const klass: Class = buildClass({ name: 'E2E Class' });
         const student: Student = buildStudent(klass.id, { name: 'Eva Example' });
         await seedStorage({ rm_classes: [klass], rm_students: [student] });
@@ -103,6 +107,13 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
 
             // Trigger a tab-switch event early in the session.
             await studentTestPage.triggerTabSwitch();
+
+            // Phase 41.3: the question-timeline palette shows a legend, and a question can be
+            // flagged for review.
+            await appExpect(studentPage.getByText('Answered', { exact: true })).toBeVisible();
+            await appExpect(studentPage.getByText('Unseen', { exact: true })).toBeVisible();
+            await studentPage.getByRole('button', { name: /^Flag$/ }).click();
+            await appExpect(studentPage.getByRole('button', { name: /^Flagged$/ })).toBeVisible();
 
             // Question 1 — multiple choice
             await studentTestPage.selectMultipleChoiceOption('Paris');
