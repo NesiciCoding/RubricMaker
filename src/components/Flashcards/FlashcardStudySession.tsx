@@ -80,7 +80,9 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
         );
     }
 
-    const meta = [card.phonetic, card.partOfSpeech].filter(Boolean).join(' · ');
+    // Phonetic / part of speech are vocabulary concepts; grammar decks never show them,
+    // even if a card retains the fields from before its deck was switched to grammar.
+    const meta = deck.deckKind !== 'grammar' ? [card.phonetic, card.partOfSpeech].filter(Boolean).join(' · ') : '';
 
     return (
         <div
@@ -93,9 +95,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                 flexWrap: 'wrap',
             }}
         >
-            {/* Main study column */}
             <div style={{ flex: 1, minWidth: 280 }}>
-                {/* Progress */}
                 <div style={{ marginBottom: 16 }}>
                     <div
                         role="progressbar"
@@ -136,6 +136,19 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                     className="card"
                     style={{ textAlign: 'center', padding: '40px 24px', cursor: revealed ? 'default' : 'pointer' }}
                     onClick={() => !revealed && setRevealed(true)}
+                    {...(!revealed
+                        ? {
+                              role: 'button' as const,
+                              tabIndex: 0,
+                              'aria-label': t('flashcards.show_answer'),
+                              onKeyDown: (e: React.KeyboardEvent) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      setRevealed(true);
+                                  }
+                              },
+                          }
+                        : {})}
                 >
                     <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{card.front}</div>
                     {meta && <div style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{meta}</div>}
@@ -186,7 +199,6 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                 </div>
             </div>
 
-            {/* Deck word-list sidebar */}
             <aside style={{ width: 220, flexShrink: 0, alignSelf: 'stretch' }} aria-label={t('flashcards.deck_words')}>
                 <div
                     style={{

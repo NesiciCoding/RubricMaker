@@ -3155,7 +3155,7 @@
         "remove_card": "Remove card",
         "import_button": "Import",
         "import_title": "Import cards",
-        "import_instructions": "Upload a .csv, .xlsx, .docx, or .txt file. The first column (or the text before a separator) becomes the front, the second the back, and an optional third column an example sentence.",
+        "import_instructions": "Upload a .csv, .xlsx, .docx, or .txt file. The first column (or the text before a separator) becomes the front, the second the back, and an optional third column an example sentence. Optional fourth and fifth columns add the phonetic and part of speech.",
         "import_choose_file": "Choose file",
         "import_parsing": "Reading file…",
         "import_no_cards": "No cards found in this file. Check that each row or line has a front and a back value.",

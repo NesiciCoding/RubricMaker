@@ -30,8 +30,20 @@ describe('FlashcardStudySession', () => {
         // appears in the main card, hence getAllByText).
         expect(screen.getAllByText('meadow').length).toBeGreaterThan(0);
         expect(screen.getAllByText('swift').length).toBeGreaterThan(0);
-        // Phonetic · part-of-speech meta line for the first card.
-        expect(screen.getByText(/·/)).toBeInTheDocument();
+        // Full phonetic · part-of-speech meta line for the first card (meadow).
+        expect(screen.getByText('/ˈmɛdəʊ/ · noun')).toBeInTheDocument();
+    });
+
+    it('never shows vocabulary metadata for a grammar deck, even when card fields persist', () => {
+        const grammarDeck: FlashcardDeck = {
+            ...deck,
+            deckKind: 'grammar',
+            // A card carrying leftover phonetic/POS from before the deck was switched to grammar.
+            cards: [{ id: 'g1', front: 'past simple', back: 'walked', phonetic: '/wɔːkt/', partOfSpeech: 'verb' }],
+        };
+        render(<FlashcardStudySession deck={grammarDeck} initialStates={{}} />);
+        expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+        expect(screen.queryByText('/wɔːkt/', { exact: false })).not.toBeInTheDocument();
     });
 
     it('reveals the back and advances the progress bar after a rating', () => {
