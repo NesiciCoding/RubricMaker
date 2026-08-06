@@ -741,7 +741,13 @@
             "microphone_error": "No se pudo acceder al micrófono. Comprueba los permisos e inténtalo de nuevo.",
             "practice_review_question_number": "Pregunta {{number}}",
             "numeric_placeholder": "Introduce un número…",
-            "section_audio_alt": "Reproducción de audio de la sección"
+            "section_audio_alt": "Reproducción de audio de la sección",
+            "flag": "Marcar",
+            "flagged": "Marcada",
+            "legend_answered": "Respondida",
+            "legend_unanswered": "Sin responder",
+            "legend_unseen": "No vista",
+            "legend_flagged": "Marcada"
         },
         "monitor": {
             "title": "Monitor en vivo",
@@ -2357,7 +2363,13 @@
         "hide_essay": "Ocultar redacción",
         "expired_desc_no_date": "Esta tarea ha caducado. Por favor, contacte con su profesor.",
         "email_invalid": "Ingrese una dirección de correo escolar válida.",
-        "session_error": "No se pudo iniciar la sesión. Pida a su maestro que habilite los inicios de sesión anónimos en Supabase."
+        "session_error": "No se pudo iniciar la sesión. Pida a su maestro que habilite los inicios de sesión anónimos en Supabase.",
+        "exit": "Salir",
+        "meta_label": "Detalles",
+        "meta_word_target": "Objetivo de palabras",
+        "meta_time_left": "Tiempo restante",
+        "tip_label": "Consejo",
+        "tip_body": "Haz un breve esquema antes de escribir, luego revisa tu recuento de palabras y relee el texto para mayor claridad antes de enviarlo."
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
@@ -2972,7 +2984,10 @@
         "gr_keyboard_title": "Atajos de teclado",
         "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
         "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante.",
-        "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo."
+        "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo.",
+        "es_focus_title": "Modo de concentración del estudiante",
+        "es_focus_item_essay": "La página de redacción es una vista de escritura sin distracciones: un control de salida y una insignia en vivo de \"borrador guardado\" en la cabecera, además de una barra lateral con la consigna, los objetivos de palabras/tiempo y un consejo de escritura. Los borradores se guardan automáticamente en local y se restauran al volver.",
+        "es_focus_item_test": "Al hacer un examen, la barra de preguntas fija es una paleta con código de colores —respondida, sin responder, marcada y no vista, con una leyenda— y cada pregunta tiene un conmutador para \"marcar para revisión\". Los exámenes adaptativos (staircase/generador), que no tienen un conjunto fijo de preguntas, no muestran paleta."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
