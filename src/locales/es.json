@@ -3157,7 +3157,7 @@
         "remove_card": "Eliminar tarjeta",
         "import_button": "Importar",
         "import_title": "Importar tarjetas",
-        "import_instructions": "Sube un archivo .csv, .xlsx, .docx o .txt. La primera columna (o el texto antes de un separador) será el anverso, la segunda el reverso y una tercera columna opcional una frase de ejemplo.",
+        "import_instructions": "Sube un archivo .csv, .xlsx, .docx o .txt. La primera columna (o el texto antes de un separador) será el anverso, la segunda el reverso y una tercera columna opcional una frase de ejemplo. Una cuarta y una quinta columna opcionales añaden la fonética y la categoría gramatical.",
         "import_choose_file": "Elegir archivo",
         "import_parsing": "Leyendo archivo…",
         "import_no_cards": "No se encontraron tarjetas en este archivo. Comprueba que cada fila o línea tenga un anverso y un reverso.",

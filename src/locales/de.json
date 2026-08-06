@@ -3157,7 +3157,7 @@
         "remove_card": "Karte entfernen",
         "import_button": "Importieren",
         "import_title": "Karten importieren",
-        "import_instructions": "Lade eine .csv-, .xlsx-, .docx- oder .txt-Datei hoch. Die erste Spalte (oder der Text vor einem Trennzeichen) wird zur Vorderseite, die zweite zur Rückseite und eine optionale dritte Spalte zum Beispielsatz.",
+        "import_instructions": "Lade eine .csv-, .xlsx-, .docx- oder .txt-Datei hoch. Die erste Spalte (oder der Text vor einem Trennzeichen) wird zur Vorderseite, die zweite zur Rückseite und eine optionale dritte Spalte zum Beispielsatz. Optionale vierte und fünfte Spalten ergänzen Phonetik und Wortart.",
         "import_choose_file": "Datei auswählen",
         "import_parsing": "Datei wird gelesen…",
         "import_no_cards": "Keine Karten in dieser Datei gefunden. Prüfe, ob jede Zeile einen Vorder- und Rückseitenwert enthält.",

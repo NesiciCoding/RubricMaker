@@ -69,6 +69,16 @@ describe('parseLines', () => {
             { front: 'house', back: 'huis' },
         ]);
     });
+
+    it('yields only front/back for line-based formats (DOCX/TXT) — no example/phonetic/POS', () => {
+        // splitLine splits on the FIRST separator only, so everything after it becomes the
+        // back; these freeform formats have no column structure to carry the extra fields.
+        const [card] = parseLines('apple - appel - I eat an apple - /ˈapl̩/ - noun');
+        expect(card.front).toBe('apple');
+        expect(card).not.toHaveProperty('example');
+        expect(card).not.toHaveProperty('phonetic');
+        expect(card).not.toHaveProperty('partOfSpeech');
+    });
 });
 
 describe('cardsFromRows', () => {
