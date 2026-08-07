@@ -2988,7 +2988,8 @@
         "ce_flashcards_item_fields": "Vokabelkarten können eine Phonetik (Aussprache/IPA) und Wortart enthalten — direkt im Deck-Editor eingegeben oder als optionale 4. und 5. Spalte importiert. Lernende sehen sie beim Lernen auf der Karte, zusammen mit einer Fortschrittsleiste und einer Seitenleiste mit der Wortliste des Decks.",
         "es_focus_title": "Fokusmodus für Lernende",
         "es_focus_item_essay": "Die Aufsatzseite ist eine ablenkungsfreie Schreibansicht: eine Schließen-Schaltfläche und ein Live-Badge „Entwurf gespeichert“ in der Kopfzeile sowie eine Seitenleiste mit der Aufgabenstellung, den Wort-/Zeitvorgaben und einem Schreibtipp. Entwürfe werden lokal automatisch gespeichert und bei der Rückkehr wiederhergestellt.",
-        "es_focus_item_test": "Beim Bearbeiten eines Tests ist die fixierte Fragenleiste eine farbcodierte Palette – beantwortet, unbeantwortet, markiert und ungesehen, mit einer Legende – und jede Frage hat einen Schalter „zur Überprüfung markieren“. Adaptive Staircase-/Generator-Läufe ohne festen Fragensatz zeigen keine Palette."
+        "es_focus_item_test": "Beim Bearbeiten eines Tests ist die fixierte Fragenleiste eine farbcodierte Palette – beantwortet, unbeantwortet, markiert und ungesehen, mit einer Legende – und jede Frage hat einen Schalter „zur Überprüfung markieren“. Adaptive Staircase-/Generator-Läufe ohne festen Fragensatz zeigen keine Palette.",
+        "ce_flashcards_item_student_decks": "Lernende können in ihrem Portal im Bereich „Meine Karteikarten“ eigene Decks erstellen – standardmäßig privat und in keiner Lehrkraft-Deckliste sichtbar. Ein Tippen auf „Mit meiner Lehrkraft teilen“ legt eine Kopie in der Bibliothek der Lehrkraft ab (mit „Von einer/einem Lernenden“ gekennzeichnet); das Original bleibt bei der/dem Lernenden."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3269,5 +3270,20 @@
         "has_full_article": "Vollständiger Artikel",
         "read_article": "Artikel lesen",
         "collapse_article": "Einklappen"
+    },
+    "studentDecks": {
+        "section_title": "Meine Karteikarten",
+        "create": "Neues Deck",
+        "empty": "Erstelle dein eigenes Deck, um Wörter auf deine Weise zu üben.",
+        "untitled": "Unbenanntes Deck",
+        "editor_title": "Deck bearbeiten",
+        "name_placeholder": "Deckname",
+        "add_card": "Karte hinzufügen",
+        "share": "Mit meiner Lehrkraft teilen",
+        "shared_toast": "Deck mit deiner Lehrkraft geteilt.",
+        "unshared_toast": "Deck ist wieder privat.",
+        "shared_badge": "Geteilt",
+        "from_student_badge": "Von einer/einem Lernenden",
+        "save_error": "Deck konnte nicht gespeichert werden. Bitte erneut versuchen."
     }
 }

@@ -27,7 +27,12 @@ export default function FlashcardsPage() {
         if (ok) deleteFlashcardDeck(deckId);
     }
 
-    const sorted = [...flashcardDecks].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    // Never show a student's private deck in the teacher list (Phase 41.4); a deck the student
+    // shared appears (badged). Online, private student decks aren't hydrated anyway; this also
+    // covers the offline same-device case.
+    const sorted = [...flashcardDecks]
+        .filter((d) => !d.ownerStudentId || d.sharedWithTeacher)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return (
         <>
@@ -88,6 +93,22 @@ export default function FlashcardsPage() {
                                             </h3>
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
+                                                {deck.ownerStudentId && deck.sharedWithTeacher && (
+                                                    <span
+                                                        style={{
+                                                            marginLeft: 8,
+                                                            padding: '1px 7px',
+                                                            borderRadius: 999,
+                                                            fontSize: '0.68rem',
+                                                            fontWeight: 700,
+                                                            background:
+                                                                'var(--green-soft, color-mix(in srgb, var(--green) 14%, transparent))',
+                                                            color: 'var(--green)',
+                                                        }}
+                                                    >
+                                                        {t('studentDecks.from_student_badge')}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 1 }}>

@@ -226,6 +226,9 @@ vi.mock('../../utils/shareCode', () => ({
     encodeTestAssignment: vi.fn(() => 'test-code'),
 }));
 
+vi.mock('../../components/Students/StudentDecksSection', () => ({
+    default: () => React.createElement('div', { 'data-testid': 'student-decks' }),
+}));
 vi.mock('../../components/Statistics/CefrProgressChart', () => ({ default: () => null }));
 vi.mock('../../components/Students/RubricSelfAssessPanel', () => ({ default: () => null }));
 vi.mock('../../components/Statistics/CriterionRadarChart', () => ({
@@ -299,10 +302,10 @@ describe('StudentPortalPage', () => {
         renderAt('s1');
         // Home is the default tab — summary stat cards are visible here.
         expect(screen.getByText('studentPortal.stat_rubrics')).toBeInTheDocument();
-        // Assignments tab hides the Home stats and shows its own empty state.
+        // Assignments tab hides the Home stats and always shows the My-flashcards section.
         switchTab('assignments');
         expect(screen.queryByText('studentPortal.stat_rubrics')).not.toBeInTheDocument();
-        expect(screen.getByText('studentPortal.tab_empty_assignments')).toBeInTheDocument();
+        expect(screen.getByTestId('student-decks')).toBeInTheDocument();
         // Progress tab shows its empty state when there are no grades.
         switchTab('progress');
         expect(screen.getByText('studentPortal.tab_empty_progress')).toBeInTheDocument();

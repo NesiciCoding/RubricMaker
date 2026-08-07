@@ -1301,6 +1301,14 @@ export interface FlashcardDeck {
     updatedAt?: string;
     /** 'vocabulary' (default when unset, for back-compat) or 'grammar' — controls copy framing and grammar-recommendation matching. */
     deckKind?: 'vocabulary' | 'grammar';
+    /**
+     * Set on a deck a student authored in their portal (Phase 41.4). Teacher decks leave this
+     * unset. Private to the student unless `sharedWithTeacher` is true — teacher deck lists filter
+     * these out. In Supabase this maps to the `flashcard_decks.student_id` column.
+     */
+    ownerStudentId?: string;
+    /** A student-owned deck the student pushed to their teacher's library (Phase 41.4). */
+    sharedWithTeacher?: boolean;
 }
 
 /** One row per assigned student, keyed `${deckId}:${studentId}` (same composite pattern as EssayAssignment) */
