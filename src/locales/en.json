@@ -2369,7 +2369,8 @@
         "meta_word_target": "Word target",
         "meta_time_left": "Time left",
         "tip_label": "Tip",
-        "tip_body": "Plan a quick outline before you write, then check your word count and re-read for clarity before submitting."
+        "tip_body": "Plan a quick outline before you write, then check your word count and re-read for clarity before submitting.",
+        "submission_code_label": "Submission code"
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",

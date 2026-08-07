@@ -263,8 +263,8 @@ test.describe('Essay page — DB mode (mocked Supabase)', () => {
         await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
         await expect(essay.signedInAs('student@school.nl')).toBeVisible({ timeout: 5_000 });
         // Phase 41.3 focus-mode chrome: an exit control and the writing-tip sidebar.
-        await expect(page.getByRole('button', { name: /exit/i })).toBeVisible();
-        await expect(page.getByText(/Plan a quick outline/i)).toBeVisible();
+        await expect(essay.exitButton()).toBeVisible();
+        await expect(essay.writingTip()).toBeVisible();
     });
 
     test('auth failure keeps the gate visible and does not proceed to editor', async ({ page }) => {

@@ -2369,7 +2369,8 @@
         "meta_word_target": "Objectif de mots",
         "meta_time_left": "Temps restant",
         "tip_label": "Astuce",
-        "tip_body": "Faites un plan rapide avant d'écrire, puis vérifiez votre nombre de mots et relisez-vous pour plus de clarté avant de soumettre."
+        "tip_body": "Faites un plan rapide avant d'écrire, puis vérifiez votre nombre de mots et relisez-vous pour plus de clarté avant de soumettre.",
+        "submission_code_label": "Code de soumission"
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
