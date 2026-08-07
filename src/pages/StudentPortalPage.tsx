@@ -60,6 +60,7 @@ import { computeDeckInsights } from '../utils/flashcardInsights';
 import { searchPortal } from '../utils/portalSearch';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
+import StudentDecksSection from '../components/Students/StudentDecksSection';
 import { nanoid } from '../utils/nanoid';
 import type {
     EssayAssignment,
@@ -117,6 +118,7 @@ const SECTION_TAB: Record<string, PortalTab> = {
     'portal-section-moderation': 'home',
     'portal-section-work': 'assignments',
     'portal-section-flashcards': 'assignments',
+    'portal-section-my-decks': 'assignments',
     'portal-section-messages': 'feedback',
     'portal-section-peer-reviews': 'feedback',
     'portal-section-feedback': 'feedback',
@@ -579,7 +581,8 @@ export default function StudentPortalPage() {
     // Assignments and Progress can be empty, so they get an empty-state prompt.
     const tabHasContent: Record<PortalTab, boolean> = {
         home: true,
-        assignments: hasWork || myFlashcards.length > 0 || !!((essayLoadError || testLoadError) && dbConfig),
+        // Assignments always has the "My flashcards" authoring section (Phase 41.4).
+        assignments: true,
         feedback: true,
         progress: history.length > 1 || cefrProgress.length > 0 || hasRadar || hasLearningPath,
     };
@@ -952,6 +955,12 @@ export default function StudentPortalPage() {
                             })}
                         </div>
                     </Section>
+                )}
+
+                {isTab('assignments') && (
+                    <div className="card" id="portal-section-my-decks">
+                        <StudentDecksSection studentId={student.id} />
+                    </div>
                 )}
 
                 {myNewsFlashes.length > 0 && isTab('home') && (

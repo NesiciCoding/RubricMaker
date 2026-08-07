@@ -2988,7 +2988,8 @@
         "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo.",
         "es_focus_title": "Modo de concentración del estudiante",
         "es_focus_item_essay": "La página de redacción es una vista de escritura sin distracciones: un control de salida y una insignia en vivo de \"borrador guardado\" en la cabecera, además de una barra lateral con la consigna, los objetivos de palabras/tiempo y un consejo de escritura. Los borradores se guardan automáticamente en local y se restauran al volver.",
-        "es_focus_item_test": "Al hacer un examen, la barra de preguntas fija es una paleta con código de colores —respondida, sin responder, marcada y no vista, con una leyenda— y cada pregunta tiene un conmutador para \"marcar para revisión\". Los exámenes adaptativos (staircase/generador), que no tienen un conjunto fijo de preguntas, no muestran paleta."
+        "es_focus_item_test": "Al hacer un examen, la barra de preguntas fija es una paleta con código de colores —respondida, sin responder, marcada y no vista, con una leyenda— y cada pregunta tiene un conmutador para \"marcar para revisión\". Los exámenes adaptativos (staircase/generador), que no tienen un conjunto fijo de preguntas, no muestran paleta.",
+        "ce_flashcards_item_student_decks": "Los estudiantes pueden crear sus propios mazos desde la sección \"Mis tarjetas\" de su portal: privados por defecto y ocultos en toda lista de mazos del profesor. Un toque en \"Compartir con mi profesor\" añade una copia a la biblioteca del profesor (con la etiqueta \"De un estudiante\"); el estudiante conserva el original."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3269,5 +3270,20 @@
         "has_full_article": "Artículo completo",
         "read_article": "Leer artículo",
         "collapse_article": "Contraer"
+    },
+    "studentDecks": {
+        "section_title": "Mis tarjetas",
+        "create": "Nuevo mazo",
+        "empty": "Crea tu propio mazo para practicar palabras a tu manera.",
+        "untitled": "Mazo sin título",
+        "editor_title": "Editar mazo",
+        "name_placeholder": "Nombre del mazo",
+        "add_card": "Añadir tarjeta",
+        "share": "Compartir con mi profesor",
+        "shared_toast": "Mazo compartido con tu profesor.",
+        "unshared_toast": "El mazo vuelve a ser privado.",
+        "shared_badge": "Compartido",
+        "from_student_badge": "De un estudiante",
+        "save_error": "No se pudo guardar el mazo. Inténtalo de nuevo."
     }
 }

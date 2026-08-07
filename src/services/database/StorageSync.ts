@@ -492,6 +492,19 @@ class StorageSyncService {
         return this.adapter.saveFlashcardReviewAsStudent(r);
     }
 
+    // Portal student's own authored decks (migration 068).
+    async fetchMyStudentFlashcardDecks(studentId: string): Promise<FlashcardDeck[]> {
+        return this.adapter.fetchMyStudentFlashcardDecks(studentId);
+    }
+
+    async saveFlashcardDeckAsStudent(d: FlashcardDeck): Promise<SyncResult> {
+        return this.adapter.saveFlashcardDeckAsStudent(d);
+    }
+
+    async deleteFlashcardDeckAsStudent(id: string): Promise<SyncResult> {
+        return this.adapter.deleteFlashcardDeckAsStudent(id);
+    }
+
     async fetchMyNewsFlashes(): Promise<NewsFlash[]> {
         return this.adapter.fetchMyNewsFlashes();
     }
