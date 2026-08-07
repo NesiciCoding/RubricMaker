@@ -2369,7 +2369,8 @@
         "meta_word_target": "Woorddoel",
         "meta_time_left": "Resterende tijd",
         "tip_label": "Tip",
-        "tip_body": "Maak eerst een korte opzet, controleer daarna je aantal woorden en lees je tekst nog eens door op duidelijkheid voordat je inlevert."
+        "tip_body": "Maak eerst een korte opzet, controleer daarna je aantal woorden en lees je tekst nog eens door op duidelijkheid voordat je inlevert.",
+        "submission_code_label": "Inzendcode"
     },
     "editor": {
         "switchToCompactView": "Compact weergave",

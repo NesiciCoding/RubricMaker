@@ -211,7 +211,6 @@ export default function StudentEssayPage() {
     const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
     const navigate = useNavigate();
-    const handleExit = () => (window.history.length > 1 ? navigate(-1) : navigate('/'));
 
     // Legacy format: full JSON base64 — try to decode first.
     const legacyAssignment = code ? decodeEssayAssignment(code) : null;
@@ -298,6 +297,12 @@ export default function StudentEssayPage() {
     const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
     const [submitted, setSubmitted] = useState(false);
+    // Persist the current draft before leaving so a click between autosave ticks can't lose it,
+    // then return to wherever the student came from (the portal, for a portal-linked essay).
+    const handleExit = () => {
+        if (!submitted && html) localStorage.setItem(draftKey, html);
+        navigate(-1);
+    };
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -869,6 +874,7 @@ export default function StudentEssayPage() {
                                     readOnly
                                     value={submissionCode}
                                     rows={6}
+                                    aria-label={t('essay.submission_code_label')}
                                     style={{
                                         flex: 1,
                                         fontFamily: 'monospace',
@@ -882,6 +888,7 @@ export default function StudentEssayPage() {
                                     }}
                                 />
                                 <button
+                                    type="button"
                                     onClick={handleCopy}
                                     style={{
                                         padding: '0 16px',
@@ -985,7 +992,6 @@ export default function StudentEssayPage() {
 
                 {!submitted && (
                     <aside
-                        className="essay-focus-sidebar"
                         style={{
                             width: 300,
                             flexShrink: 0,

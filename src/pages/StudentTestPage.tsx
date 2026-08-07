@@ -313,6 +313,9 @@ export default function StudentTestPage() {
 
     useEffect(() => {
         setCurrentIndex(0);
+        // seenIndices is index-based within the active section, so it must reset when the
+        // stage changes; otherwise an index seen in one section reads as seen in the next.
+        setSeenIndices(new Set([0]));
     }, [currentStageId]);
 
     const orderedQuestions = useMemo<TestQuestion[]>(() => {
@@ -581,6 +584,8 @@ export default function StudentTestPage() {
         startedAtRef.current = new Date().toISOString();
         setAnswers(new Map());
         setCurrentIndex(0);
+        setFlagged(new Set());
+        setSeenIndices(new Set([0]));
         setSectionPath([]);
         setLevelPath([]);
         setSubmitted(false);
@@ -1331,6 +1336,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, flagged,
                         return (
                             <button
                                 key={q.id}
+                                type="button"
                                 onClick={() => onJump(i)}
                                 aria-label={t('tests.taking.go_to_question', { number: i + 1 })}
                                 aria-current={isCurrent ? 'step' : undefined}

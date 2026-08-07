@@ -2369,7 +2369,8 @@
         "meta_word_target": "Wortziel",
         "meta_time_left": "Verbleibende Zeit",
         "tip_label": "Tipp",
-        "tip_body": "Erstelle vor dem Schreiben eine kurze Gliederung, prüfe dann deine Wortzahl und lies deinen Text vor dem Absenden noch einmal auf Verständlichkeit."
+        "tip_body": "Erstelle vor dem Schreiben eine kurze Gliederung, prüfe dann deine Wortzahl und lies deinen Text vor dem Absenden noch einmal auf Verständlichkeit.",
+        "submission_code_label": "Abgabecode"
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",

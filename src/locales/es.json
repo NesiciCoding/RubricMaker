@@ -2369,7 +2369,8 @@
         "meta_word_target": "Objetivo de palabras",
         "meta_time_left": "Tiempo restante",
         "tip_label": "Consejo",
-        "tip_body": "Haz un breve esquema antes de escribir, luego revisa tu recuento de palabras y relee el texto para mayor claridad antes de enviarlo."
+        "tip_body": "Haz un breve esquema antes de escribir, luego revisa tu recuento de palabras y relee el texto para mayor claridad antes de enviarlo.",
+        "submission_code_label": "Código de entrega"
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
