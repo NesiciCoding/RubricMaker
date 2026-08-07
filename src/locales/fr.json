@@ -2989,7 +2989,7 @@
         "es_focus_title": "Mode focus élève",
         "es_focus_item_essay": "La page de rédaction est un espace d'écriture sans distraction : un bouton de sortie et un badge « brouillon enregistré » en temps réel dans l'en-tête, plus une barre latérale reprenant la consigne, les objectifs de mots/temps et un conseil d'écriture. Les brouillons sont enregistrés automatiquement en local et restaurés au retour.",
         "es_focus_item_test": "Pendant un test, la barre de questions fixe est une palette à code couleur — répondue, sans réponse, marquée et non vue, avec une légende — et chaque question dispose d'un bouton « marquer pour révision ». Les tests adaptatifs (staircase/générateur), sans jeu de questions fixe, n'affichent aucune palette.",
-        "ce_flashcards_item_student_decks": "Les élèves peuvent créer leurs propres paquets depuis la section « Mes cartes » de leur portail — privés par défaut et masqués dans toutes les listes de l'enseignant. Un « Partager avec mon enseignant » en un geste ajoute une copie à la bibliothèque de l'enseignant (badge « D'un élève ») ; l'élève conserve l'original."
+        "ce_flashcards_item_student_decks": "Les élèves peuvent créer leurs propres paquets depuis la section « Mes cartes » de leur portail — privés par défaut et masqués dans toutes les listes de l'enseignant. Un « Partager avec mon enseignant » en un geste affiche le paquet en lecture seule dans la bibliothèque de l'enseignant (badge « D'un élève ») ; l'élève en reste propriétaire et peut arrêter le partage à tout moment."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3284,6 +3284,7 @@
         "unshared_toast": "Le paquet est de nouveau privé.",
         "shared_badge": "Partagé",
         "from_student_badge": "D’un élève",
-        "save_error": "Impossible d’enregistrer le paquet. Réessayez."
+        "save_error": "Impossible d’enregistrer le paquet. Réessayez.",
+        "load_error": "Impossible de charger vos paquets. Actualisez la page pour réessayer."
     }
 }

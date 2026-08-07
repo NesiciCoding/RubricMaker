@@ -13,15 +13,18 @@
 ALTER TABLE public.flashcard_decks ADD COLUMN IF NOT EXISTS student_id TEXT;
 CREATE INDEX IF NOT EXISTS flashcard_decks_student_idx ON public.flashcard_decks(student_id);
 
--- ── 2. Resolve owner_id from the roster for a student-authored insert ────────────
--- owner_id is NOT NULL; a portal student can't supply a trustworthy one, so the
--- BEFORE INSERT trigger fills it from the student's roster row before the
--- constraint is checked (mirrors set_flashcard_review_owner in 051).
+-- ── 2. Resolve owner_id from the roster for a student-authored row ───────────────
+-- owner_id is NOT NULL; a portal student can't supply a trustworthy one. The trigger
+-- is authoritative for any row carrying a student_id — it always overwrites owner_id
+-- from the roster (never trusting a client-supplied value) and fires on UPDATE too, so
+-- a raw PostgREST request can neither spoof owner_id on INSERT nor re-point it on UPDATE
+-- to inject a deck into another teacher's library. Teacher decks (student_id IS NULL)
+-- are untouched. Mirrors set_flashcard_review_owner in 051.
 
 CREATE OR REPLACE FUNCTION public.set_flashcard_deck_owner()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  IF NEW.owner_id IS NULL AND NEW.student_id IS NOT NULL THEN
+  IF NEW.student_id IS NOT NULL THEN
     SELECT owner_id INTO NEW.owner_id FROM public.students WHERE id = NEW.student_id;
   END IF;
   RETURN NEW;
@@ -30,7 +33,7 @@ $$;
 
 DROP TRIGGER IF EXISTS flashcard_decks_set_owner ON public.flashcard_decks;
 CREATE TRIGGER flashcard_decks_set_owner
-  BEFORE INSERT ON public.flashcard_decks
+  BEFORE INSERT OR UPDATE ON public.flashcard_decks
   FOR EACH ROW EXECUTE FUNCTION public.set_flashcard_deck_owner();
 
 -- ── 3. Rework the teacher policy to hide private student decks ───────────────────

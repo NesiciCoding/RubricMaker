@@ -44,12 +44,19 @@ export default function StudentDecksSection({ studentId }: Props) {
     const [editing, setEditing] = useState<FlashcardDeck | null>(null);
     const [studying, setStudying] = useState<FlashcardDeck | null>(null);
 
+    const [loadError, setLoadError] = useState(false);
     useEffect(() => {
         if (!isConnected) return;
         let cancelled = false;
-        void fetchMyStudentFlashcardDecks(studentId).then((d) => {
-            if (!cancelled) setOnlineDecks(d);
-        });
+        setLoadError(false);
+        fetchMyStudentFlashcardDecks(studentId)
+            .then((d) => {
+                if (!cancelled) setOnlineDecks(d);
+            })
+            .catch(() => {
+                // A failed fetch must not masquerade as "no decks" — surface it and keep prior state.
+                if (!cancelled) setLoadError(true);
+            });
         return () => {
             cancelled = true;
         };
@@ -64,24 +71,29 @@ export default function StudentDecksSection({ studentId }: Props) {
     const upsertOnline = (deck: FlashcardDeck) =>
         setOnlineDecks((prev) => [...(prev ?? []).filter((d) => d.id !== deck.id), deck]);
 
-    async function persistDeck(deck: FlashcardDeck) {
+    /** Returns true only when the deck actually persisted (so callers can gate UI on success). */
+    async function persistDeck(deck: FlashcardDeck): Promise<boolean> {
         if (isConnected) {
             const res = await saveFlashcardDeckAsStudent(deck);
             if (!res.success) {
                 showToast(t('studentDecks.save_error'), 'error');
-                return;
+                return false;
             }
             upsertOnline(deck);
-        } else if (flashcardDecks.some((d) => d.id === deck.id)) {
-            updateFlashcardDeck(deck);
-        } else {
-            addFlashcardDeck(deck);
+            return true;
         }
+        if (flashcardDecks.some((d) => d.id === deck.id)) updateFlashcardDeck(deck);
+        else addFlashcardDeck(deck);
+        return true;
     }
 
     async function handleDelete(deck: FlashcardDeck) {
         if (isConnected) {
-            await deleteFlashcardDeckAsStudent(deck.id);
+            const res = await deleteFlashcardDeckAsStudent(deck.id);
+            if (!res.success) {
+                showToast(t('studentDecks.save_error'), 'error');
+                return;
+            }
             setOnlineDecks((prev) => (prev ?? []).filter((d) => d.id !== deck.id));
         } else {
             deleteFlashcardDeck(deck.id);
@@ -90,7 +102,7 @@ export default function StudentDecksSection({ studentId }: Props) {
 
     async function toggleShare(deck: FlashcardDeck) {
         const next = { ...deck, sharedWithTeacher: !deck.sharedWithTeacher, updatedAt: new Date().toISOString() };
-        await persistDeck(next);
+        if (!(await persistDeck(next))) return;
         showToast(
             next.sharedWithTeacher ? t('studentDecks.shared_toast') : t('studentDecks.unshared_toast'),
             'success'
@@ -136,7 +148,11 @@ export default function StudentDecksSection({ studentId }: Props) {
                 </button>
             </div>
 
-            {decks.length === 0 ? (
+            {loadError ? (
+                <p className="text-sm" style={{ margin: 0, color: 'var(--red)' }}>
+                    {t('studentDecks.load_error')}
+                </p>
+            ) : decks.length === 0 ? (
                 <p className="text-muted text-sm" style={{ margin: 0 }}>
                     {t('studentDecks.empty')}
                 </p>
@@ -219,8 +235,7 @@ export default function StudentDecksSection({ studentId }: Props) {
                     deck={editing}
                     onClose={() => setEditing(null)}
                     onSave={async (deck) => {
-                        await persistDeck(deck);
-                        setEditing(null);
+                        if (await persistDeck(deck)) setEditing(null);
                     }}
                 />
             )}

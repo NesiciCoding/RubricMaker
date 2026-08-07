@@ -31,6 +31,7 @@ const mockSettings: AppSettings = {
     language: 'en',
     accentColor: '#3b82f6',
     defaultFormat: DEFAULT_FORMAT,
+    userRole: 'student',
 };
 
 // Stable refs.

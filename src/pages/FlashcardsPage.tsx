@@ -83,13 +83,19 @@ export default function FlashcardsPage() {
                                     >
                                         <div>
                                             <h3 style={{ margin: 0 }}>
-                                                <button
-                                                    type="button"
-                                                    className="stretched-link"
-                                                    onClick={() => navigate(`/flashcards/${deck.id}`)}
-                                                >
-                                                    {deck.name}
-                                                </button>
+                                                {deck.ownerStudentId ? (
+                                                    // A shared student deck is read-only for teachers (RLS blocks
+                                                    // owner writes on student rows); no editor link.
+                                                    <span>{deck.name}</span>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        className="stretched-link"
+                                                        onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                                    >
+                                                        {deck.name}
+                                                    </button>
+                                                )}
                                             </h3>
                                             <div className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {new Date(deck.createdAt).toLocaleDateString(i18n.language)}
@@ -112,25 +118,29 @@ export default function FlashcardsPage() {
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 4, position: 'relative', zIndex: 1 }}>
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('flashcards.action_edit')}
-                                                aria-label={t('flashcards.action_edit')}
-                                                onClick={() => navigate(`/flashcards/${deck.id}`)}
-                                            >
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-ghost btn-icon btn-sm"
-                                                title={t('flashcards.action_delete')}
-                                                aria-label={t('flashcards.action_delete')}
-                                                style={{ color: 'var(--red)' }}
-                                                onClick={() => handleDelete(deck.id, deck.name)}
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {!deck.ownerStudentId && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('flashcards.action_edit')}
+                                                        aria-label={t('flashcards.action_edit')}
+                                                        onClick={() => navigate(`/flashcards/${deck.id}`)}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('flashcards.action_delete')}
+                                                        aria-label={t('flashcards.action_delete')}
+                                                        style={{ color: 'var(--red)' }}
+                                                        onClick={() => handleDelete(deck.id, deck.name)}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

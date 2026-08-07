@@ -957,7 +957,7 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
 
-                {isTab('assignments') && (
+                {isTab('assignments') && !isTeacherPreview && (
                     <div className="card" id="portal-section-my-decks">
                         <StudentDecksSection studentId={student.id} />
                     </div>
