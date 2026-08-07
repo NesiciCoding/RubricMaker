@@ -2989,7 +2989,7 @@
         "es_focus_title": "Focusmodus voor leerlingen",
         "es_focus_item_essay": "De essaypagina is een afleidingsvrije schrijfweergave: een sluitknop en een live \"concept opgeslagen\"-badge in de kop, plus een zijbalk met de opdracht, het woord-/tijddoel en een schrijftip. Concepten worden lokaal automatisch opgeslagen en hersteld bij terugkeer.",
         "es_focus_item_test": "Bij het maken van een toets is de vaste vragenbalk een kleurgecodeerd overzicht — beantwoord, onbeantwoord, gemarkeerd en nog niet bekeken, met een legenda — en elke vraag heeft een \"markeren voor herziening\"-schakelaar. Adaptieve staircase-/generatorruns, die geen vaste vragenset hebben, tonen geen overzicht.",
-        "ce_flashcards_item_student_decks": "Leerlingen kunnen hun eigen sets maken in het gedeelte \"Mijn flashcards\" van hun portaal — standaard privé en verborgen voor elke docentenlijst. Met één tik op \"Delen met mijn docent\" verschijnt er een kopie in de bibliotheek van de docent (met het label \"Van een leerling\"); de leerling behoudt het origineel."
+        "ce_flashcards_item_student_decks": "Leerlingen kunnen hun eigen sets maken in het gedeelte \"Mijn flashcards\" van hun portaal — standaard privé en verborgen voor elke docentenlijst. Met één tik op \"Delen met mijn docent\" verschijnt de set alleen-lezen in de bibliotheek van de docent (met het label \"Van een leerling\"); de leerling blijft eigenaar en kan het delen op elk moment stoppen."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3284,6 +3284,7 @@
         "unshared_toast": "Set is weer privé.",
         "shared_badge": "Gedeeld",
         "from_student_badge": "Van een leerling",
-        "save_error": "Kon de set niet opslaan. Probeer het opnieuw."
+        "save_error": "Kon de set niet opslaan. Probeer het opnieuw.",
+        "load_error": "Kon je sets niet laden. Vernieuw de pagina om het opnieuw te proberen."
     }
 }

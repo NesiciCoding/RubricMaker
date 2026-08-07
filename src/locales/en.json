@@ -2987,7 +2987,7 @@
         "es_focus_title": "Student focus mode",
         "es_focus_item_essay": "The essay page is a distraction-free writing view: an exit control and a live \"draft saved\" badge in the header, plus a sidebar carrying the prompt, the word/time targets, and a writing tip. Drafts autosave locally and restore on return.",
         "es_focus_item_test": "When taking a test, the sticky question timeline is a colour-coded palette — answered, unanswered, flagged, and unseen, with a legend — and each question has a \"flag for review\" toggle. Adaptive staircase/generator runs, which have no fixed question set, show no palette.",
-        "ce_flashcards_item_student_decks": "Students can create their own decks from the \"My flashcards\" section of their portal — private to them by default and hidden from every teacher deck list. A one-tap \"Share with my teacher\" surfaces a copy in the teacher's library (badged \"From a student\"); the student keeps their original."
+        "ce_flashcards_item_student_decks": "Students can create their own decks from the \"My flashcards\" section of their portal — private to them by default and hidden from every teacher deck list. A one-tap \"Share with my teacher\" surfaces the deck read-only in the teacher's library (badged \"From a student\"); the student stays its owner and can unshare at any time."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3282,6 +3282,7 @@
         "unshared_toast": "Deck is private again.",
         "shared_badge": "Shared",
         "from_student_badge": "From a student",
-        "save_error": "Could not save the deck. Please try again."
+        "save_error": "Could not save the deck. Please try again.",
+        "load_error": "Could not load your decks. Please refresh to try again."
     }
 }
