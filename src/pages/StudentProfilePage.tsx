@@ -96,7 +96,7 @@ export default function StudentProfilePage() {
                     rubric,
                     scale,
                     summary,
-                    dateStr: formatShortDate(sr.gradedAt!),
+                    dateStr: formatShortDate(sr.gradedAt!, i18n.language),
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 };
             })
@@ -238,7 +238,7 @@ export default function StudentProfilePage() {
             entries.push({
                 kind: 'speaking',
                 date: new Date(s.gradedAt),
-                dateStr: formatShortDate(s.gradedAt),
+                dateStr: formatShortDate(s.gradedAt, i18n.language),
                 rubricName: rubric?.name ?? s.rubricId,
                 score: summary ? parseFloat(summary.modifiedPercentage.toFixed(1)) : null,
                 letterGrade: summary?.letterGrade ?? null,
@@ -255,7 +255,7 @@ export default function StudentProfilePage() {
             entries.push({
                 kind: 'selfAssess',
                 date: new Date(sa.submittedAt),
-                dateStr: formatShortDate(sa.submittedAt),
+                dateStr: formatShortDate(sa.submittedAt, i18n.language),
                 rubricName,
                 confidentPct,
                 saId: sa.id,

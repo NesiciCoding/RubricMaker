@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function LearningGoalChart({ goals, className }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [selectedGoalId, setSelectedGoalId] = useState<string>(goals[0]?.guid || '');
     const [displayMode, setDisplayMode] = useState<'percentage' | 'cumulative'>('percentage');
 
@@ -27,7 +27,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
     const chartData = useMemo(() => {
         if (!activeGoal) return [];
         return activeGoal.history.map((h) => {
-            const dateStr = formatShortDate(h.gradedAt);
+            const dateStr = formatShortDate(h.gradedAt, i18n.language);
             return {
                 name: dateStr,
                 rubricName: h.rubricName,
