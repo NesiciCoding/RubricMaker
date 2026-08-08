@@ -30,7 +30,11 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
             const midAngle = (startAngle + endAngle) / 2;
 
             const hasData = sector.count > 0 && !isNaN(sector.value);
-            const r = hasData ? Math.max(innerRadius + 2, (sector.value / 100) * maxRadius) : innerRadius + 2;
+            // Radius ∝ √value so that a sector's *area* (all sectors share an equal angle) is linear
+            // in the value — the correct coxcomb encoding. Using radius ∝ value would make area grow
+            // with value², overstating high values to the eye. The reference rings below use the same
+            // √ scale so they remain accurate value gridlines.
+            const r = hasData ? Math.max(innerRadius + 2, Math.sqrt(sector.value / 100) * maxRadius) : innerRadius + 2;
 
             const x1 = cx + innerRadius * Math.cos(startAngle);
             const y1 = cy + innerRadius * Math.sin(startAngle);
@@ -70,13 +74,13 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
                 viewBox={`0 0 320 ${height}`}
                 style={{ display: 'block', margin: '0 auto' }}
             >
-                {/* Reference rings */}
+                {/* Reference rings — placed on the same √ scale as the sectors so they read as value gridlines */}
                 {[0.33, 0.66, 1].map((pct) => (
                     <circle
                         key={pct}
                         cx={cx}
                         cy={cy}
-                        r={pct * maxRadius}
+                        r={Math.sqrt(pct) * maxRadius}
                         fill="none"
                         stroke="var(--border)"
                         strokeWidth={1}
@@ -89,7 +93,7 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
                     <text
                         key={pct}
                         x={cx + 3}
-                        y={cy - (pct / 100) * maxRadius + 4}
+                        y={cy - Math.sqrt(pct / 100) * maxRadius + 4}
                         fontSize={9}
                         fill="var(--text-muted)"
                         opacity={0.7}

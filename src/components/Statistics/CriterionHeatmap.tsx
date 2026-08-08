@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     students: { id: string; name: string }[];
@@ -49,13 +50,24 @@ export default function CriterionHeatmap({
     onToggleExpand,
     renderDetail,
 }: Props) {
+    const { t } = useTranslation();
     if (students.length === 0 || criteria.length === 0) {
         return (
             <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '24px 0' }}>
-                No data to display.
+                {t('statistics.no_data')}
             </p>
         );
     }
+
+    // The student-name column stays pinned while the criterion columns scroll horizontally,
+    // so rows remain identifiable at tablet width (UX-audit finding: names scrolled out of view).
+    const stickyCol: React.CSSProperties = {
+        position: 'sticky',
+        left: 0,
+        zIndex: 1,
+        background: 'var(--bg-card)',
+        boxShadow: '2px 0 4px -2px rgba(0,0,0,0.12)',
+    };
 
     const colCount = criteria.length + 1; // +1 for student name column
 
@@ -70,7 +82,7 @@ export default function CriterionHeatmap({
                 }}
             >
                 {/* Header row */}
-                <div /> {/* empty corner */}
+                <div style={stickyCol} /> {/* empty corner, pinned */}
                 {criteria.map((c) => (
                     <div
                         key={c.id}
@@ -100,6 +112,7 @@ export default function CriterionHeatmap({
                                 tabIndex={onToggleExpand ? 0 : undefined}
                                 onClick={onToggleExpand ? () => onToggleExpand(s.id) : undefined}
                                 style={{
+                                    ...stickyCol,
                                     fontSize: '0.78rem',
                                     color: 'var(--text)',
                                     display: 'flex',
