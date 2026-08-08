@@ -741,7 +741,13 @@
             "microphone_error": "Kon geen toegang krijgen tot je microfoon. Controleer je machtigingen en probeer opnieuw.",
             "practice_review_question_number": "Vraag {{number}}",
             "numeric_placeholder": "Voer een getal in…",
-            "section_audio_alt": "Audioweergave van sectie"
+            "section_audio_alt": "Audioweergave van sectie",
+            "flag": "Markeren",
+            "flagged": "Gemarkeerd",
+            "legend_answered": "Beantwoord",
+            "legend_unanswered": "Onbeantwoord",
+            "legend_unseen": "Nog niet bekeken",
+            "legend_flagged": "Gemarkeerd"
         },
         "monitor": {
             "title": "Live-monitor",
@@ -2357,7 +2363,14 @@
         "hide_essay": "Opstel verbergen",
         "expired_desc_no_date": "Deze opdracht is verlopen. Neem contact op met uw docent.",
         "email_invalid": "Voer een geldig school-e-mailadres in.",
-        "session_error": "Sessie kon niet worden gestart. Vraag uw docent om anoniem inloggen in Supabase in te schakelen."
+        "session_error": "Sessie kon niet worden gestart. Vraag uw docent om anoniem inloggen in Supabase in te schakelen.",
+        "exit": "Sluiten",
+        "meta_label": "Details",
+        "meta_word_target": "Woorddoel",
+        "meta_time_left": "Resterende tijd",
+        "tip_label": "Tip",
+        "tip_body": "Maak eerst een korte opzet, controleer daarna je aantal woorden en lees je tekst nog eens door op duidelijkheid voordat je inlevert.",
+        "submission_code_label": "Inzendcode"
     },
     "editor": {
         "switchToCompactView": "Compact weergave",
@@ -2972,7 +2985,10 @@
         "gr_keyboard_title": "Sneltoetsen",
         "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
         "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
-        "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set."
+        "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set.",
+        "es_focus_title": "Focusmodus voor leerlingen",
+        "es_focus_item_essay": "De essaypagina is een afleidingsvrije schrijfweergave: een sluitknop en een live \"concept opgeslagen\"-badge in de kop, plus een zijbalk met de opdracht, het woord-/tijddoel en een schrijftip. Concepten worden lokaal automatisch opgeslagen en hersteld bij terugkeer.",
+        "es_focus_item_test": "Bij het maken van een toets is de vaste vragenbalk een kleurgecodeerd overzicht — beantwoord, onbeantwoord, gemarkeerd en nog niet bekeken, met een legenda — en elke vraag heeft een \"markeren voor herziening\"-schakelaar. Adaptieve staircase-/generatorruns, die geen vaste vragenset hebben, tonen geen overzicht."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

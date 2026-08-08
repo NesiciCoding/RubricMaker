@@ -160,7 +160,7 @@ const STUDENT_FEATURES = [
     {
         icon: FileText,
         title: 'Submit Essays',
-        desc: 'Write in a rich-text A4 editor and submit with a code your teacher gives you. No account required.',
+        desc: 'Write in a distraction-free rich-text A4 editor with the prompt, word target, and a writing tip beside you — your draft autosaves and you submit with a code your teacher gives you. No account required.',
         color: '#f59e0b',
     },
     {
@@ -178,7 +178,7 @@ const STUDENT_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Take a Test',
-        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go. Practice tests can be retaken and never affect your graded results.',
+        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, flag any to revisit, and jump between them from a colour-coded question map, then submit — your answers save automatically as you go. Practice tests can be retaken and never affect your graded results.',
         color: '#3b82f6',
     },
     {

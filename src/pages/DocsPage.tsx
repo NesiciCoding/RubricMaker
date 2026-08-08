@@ -1404,6 +1404,11 @@ function EssaysTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.es_focus_title')}
+                </h3>
+                <FeatureList items={[t('docs.es_focus_item_essay'), t('docs.es_focus_item_test')]} />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.es_doc_analysis_title')}
                 </h3>
                 <FeatureList

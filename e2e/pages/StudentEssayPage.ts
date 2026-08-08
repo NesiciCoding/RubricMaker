@@ -89,6 +89,18 @@ export class StudentEssayPage {
         return this.page.locator('[style*="tabular-nums"]');
     }
 
+    // ── Focus-mode chrome (Phase 41.3) ────────────────────────────────────────
+
+    /** Header exit control. */
+    exitButton(): Locator {
+        return this.page.getByRole('button', { name: /exit/i });
+    }
+
+    /** Writing-tip card in the prompt sidebar. */
+    writingTip(): Locator {
+        return this.page.getByText(/plan a quick outline/i);
+    }
+
     // ── Error / edge-case states ──────────────────────────────────────────────
 
     /** "Invalid or expired link" error page */
@@ -173,7 +185,7 @@ export function buildEssaySubmissionCode(overrides: TestEssaySubmission = {}): s
         assignmentRubricId: 'test-rubric-id',
         assignmentStudentId: 'test-student-id',
         teacherKey: 'test-teacher-key',
-        contentHtml: '<p>This is the student\'s handed-in essay.</p>',
+        contentHtml: "<p>This is the student's handed-in essay.</p>",
         wordCount: 6,
         submittedAt: new Date().toISOString(),
         ...overrides,

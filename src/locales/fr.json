@@ -741,7 +741,13 @@
             "microphone_error": "Impossible d'accéder à votre microphone. Vérifiez les autorisations et réessayez.",
             "practice_review_question_number": "Question {{number}}",
             "numeric_placeholder": "Entrez un nombre…",
-            "section_audio_alt": "Lecture audio de la section"
+            "section_audio_alt": "Lecture audio de la section",
+            "flag": "Marquer",
+            "flagged": "Marquée",
+            "legend_answered": "Répondue",
+            "legend_unanswered": "Sans réponse",
+            "legend_unseen": "Non vue",
+            "legend_flagged": "Marquée"
         },
         "monitor": {
             "title": "Suivi en direct",
@@ -2357,7 +2363,14 @@
         "hide_essay": "Masquer la dissertation",
         "expired_desc_no_date": "Ce devoir a expiré. Veuillez contacter votre enseignant.",
         "email_invalid": "Saisissez une adresse e-mail scolaire valide.",
-        "session_error": "Impossible de démarrer la session. Demandez à votre enseignant d'activer les connexions anonymes dans Supabase."
+        "session_error": "Impossible de démarrer la session. Demandez à votre enseignant d'activer les connexions anonymes dans Supabase.",
+        "exit": "Quitter",
+        "meta_label": "Détails",
+        "meta_word_target": "Objectif de mots",
+        "meta_time_left": "Temps restant",
+        "tip_label": "Astuce",
+        "tip_body": "Faites un plan rapide avant d'écrire, puis vérifiez votre nombre de mots et relisez-vous pour plus de clarté avant de soumettre.",
+        "submission_code_label": "Code de soumission"
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
@@ -2972,7 +2985,10 @@
         "gr_keyboard_title": "Raccourcis clavier",
         "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
         "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
-        "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale."
+        "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale.",
+        "es_focus_title": "Mode focus élève",
+        "es_focus_item_essay": "La page de rédaction est un espace d'écriture sans distraction : un bouton de sortie et un badge « brouillon enregistré » en temps réel dans l'en-tête, plus une barre latérale reprenant la consigne, les objectifs de mots/temps et un conseil d'écriture. Les brouillons sont enregistrés automatiquement en local et restaurés au retour.",
+        "es_focus_item_test": "Pendant un test, la barre de questions fixe est une palette à code couleur — répondue, sans réponse, marquée et non vue, avec une légende — et chaque question dispose d'un bouton « marquer pour révision ». Les tests adaptatifs (staircase/générateur), sans jeu de questions fixe, n'affichent aucune palette."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
