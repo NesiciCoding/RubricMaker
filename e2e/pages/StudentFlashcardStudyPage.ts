@@ -12,7 +12,8 @@ export class StudentFlashcardStudyPage extends BasePage {
     }
 
     async reveal(): Promise<void> {
-        await this.page.getByRole('button', { name: /show answer/i }).click();
+        // The whole card is also a role=button with the same accessible name; target the <button>.
+        await this.page.locator('button', { hasText: /show answer/i }).click();
     }
 
     async rate(rating: 'Again' | 'Hard' | 'Good' | 'Easy'): Promise<void> {
