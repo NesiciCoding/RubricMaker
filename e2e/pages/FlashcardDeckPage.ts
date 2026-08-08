@@ -61,8 +61,9 @@ export class FlashcardDeckPage extends BasePage {
     }
 
     async revealCard(): Promise<void> {
+        // The whole card is also a role=button with the same accessible name; target the <button>.
         await this.practiceModal()
-            .getByRole('button', { name: /show answer/i })
+            .locator('button', { hasText: /show answer/i })
             .click();
     }
 

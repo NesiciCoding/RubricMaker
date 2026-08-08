@@ -150,7 +150,9 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                           }
                         : {})}
                 >
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{card.front}</div>
+                    <div data-testid="study-card-front" style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                        {card.front}
+                    </div>
                     {meta && <div style={{ marginTop: 6, fontSize: '0.9rem', color: 'var(--text-muted)' }}>{meta}</div>}
                     {revealed && (
                         <>
