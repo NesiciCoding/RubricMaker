@@ -139,7 +139,7 @@ const TEACHER_FEATURES = [
     {
         icon: Layers,
         title: 'Vocabulary & Grammar Flashcards',
-        desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which items each student should focus on.',
+        desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word — add pronunciation and part of speech per word — assign them to a class, and see which items each student should focus on.',
         color: '#8b5cf6',
     },
     {
@@ -208,7 +208,7 @@ const STUDENT_FEATURES = [
     {
         icon: Layers,
         title: 'Study Flashcards',
-        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — hard words come back sooner, and you can see your progress grow.',
+        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner.',
         color: '#8b5cf6',
     },
     {

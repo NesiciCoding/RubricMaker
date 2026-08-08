@@ -2971,7 +2971,8 @@
         "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
         "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
-        "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcard-decks), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, CEFR en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop."
+        "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
+        "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3156,7 +3157,7 @@
         "remove_card": "Kaart verwijderen",
         "import_button": "Importeren",
         "import_title": "Kaarten importeren",
-        "import_instructions": "Upload een .csv-, .xlsx-, .docx- of .txt-bestand. De eerste kolom (of de tekst voor een scheidingsteken) wordt de voorkant, de tweede de achterkant en een optionele derde kolom een voorbeeldzin.",
+        "import_instructions": "Upload een .csv-, .xlsx-, .docx- of .txt-bestand. De eerste kolom (of de tekst voor een scheidingsteken) wordt de voorkant, de tweede de achterkant en een optionele derde kolom een voorbeeldzin. Optionele vierde en vijfde kolommen voegen de fonetiek en woordsoort toe.",
         "import_choose_file": "Bestand kiezen",
         "import_parsing": "Bestand lezen…",
         "import_no_cards": "Geen kaarten gevonden in dit bestand. Controleer of elke rij of regel een voor- en achterkant bevat.",
@@ -3197,7 +3198,12 @@
         "focus_words": "Woorden om op te letten",
         "focus_items": "Onderdelen om op te letten",
         "last_studied": "Laatst geoefend op {{date}}",
-        "progress_bar_label": "Voortgang van de set per leerfase"
+        "progress_bar_label": "Voortgang van de set per leerfase",
+        "card_phonetic": "Fonetisch",
+        "card_part_of_speech": "Woordsoort",
+        "study_progress_label": "Studievoortgang",
+        "study_progress_count": "{{done}} gedaan · {{remaining}} over",
+        "deck_words": "Woorden in de set"
     },
     "grammar": {
         "item_select_label": "Grammaticaonderdeel",

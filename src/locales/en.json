@@ -2969,7 +2969,8 @@
         "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
         "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
-        "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header."
+        "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
+        "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3154,7 +3155,7 @@
         "remove_card": "Remove card",
         "import_button": "Import",
         "import_title": "Import cards",
-        "import_instructions": "Upload a .csv, .xlsx, .docx, or .txt file. The first column (or the text before a separator) becomes the front, the second the back, and an optional third column an example sentence.",
+        "import_instructions": "Upload a .csv, .xlsx, .docx, or .txt file. The first column (or the text before a separator) becomes the front, the second the back, and an optional third column an example sentence. Optional fourth and fifth columns add the phonetic and part of speech.",
         "import_choose_file": "Choose file",
         "import_parsing": "Reading file…",
         "import_no_cards": "No cards found in this file. Check that each row or line has a front and a back value.",
@@ -3195,7 +3196,12 @@
         "focus_words": "Words to focus on",
         "focus_items": "Items to focus on",
         "last_studied": "Last studied {{date}}",
-        "progress_bar_label": "Deck progress by learning stage"
+        "progress_bar_label": "Deck progress by learning stage",
+        "card_phonetic": "Phonetic",
+        "card_part_of_speech": "Part of speech",
+        "study_progress_label": "Study progress",
+        "study_progress_count": "{{done}} done · {{remaining}} left",
+        "deck_words": "Deck words"
     },
     "grammar": {
         "item_select_label": "Grammar item",

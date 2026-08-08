@@ -2971,7 +2971,8 @@
         "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
         "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
-        "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et jeux de cartes à faire), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête."
+        "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
+        "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3156,7 +3157,7 @@
         "remove_card": "Supprimer la carte",
         "import_button": "Importer",
         "import_title": "Importer des cartes",
-        "import_instructions": "Téléversez un fichier .csv, .xlsx, .docx ou .txt. La première colonne (ou le texte avant un séparateur) devient le recto, la deuxième le verso, et une troisième colonne facultative une phrase d’exemple.",
+        "import_instructions": "Téléversez un fichier .csv, .xlsx, .docx ou .txt. La première colonne (ou le texte avant un séparateur) devient le recto, la deuxième le verso, et une troisième colonne facultative une phrase d’exemple. Des quatrième et cinquième colonnes facultatives ajoutent la phonétique et la nature du mot.",
         "import_choose_file": "Choisir un fichier",
         "import_parsing": "Lecture du fichier…",
         "import_no_cards": "Aucune carte trouvée dans ce fichier. Vérifiez que chaque ligne contient un recto et un verso.",
@@ -3197,7 +3198,12 @@
         "focus_words": "Mots à travailler",
         "focus_items": "Éléments à travailler",
         "last_studied": "Dernière révision le {{date}}",
-        "progress_bar_label": "Progression du paquet par étape d’apprentissage"
+        "progress_bar_label": "Progression du paquet par étape d’apprentissage",
+        "card_phonetic": "Phonétique",
+        "card_part_of_speech": "Nature du mot",
+        "study_progress_label": "Progression de l'étude",
+        "study_progress_count": "{{done}} faites · {{remaining}} restantes",
+        "deck_words": "Mots du paquet"
     },
     "grammar": {
         "item_select_label": "Point de grammaire",

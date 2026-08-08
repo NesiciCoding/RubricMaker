@@ -19,6 +19,19 @@ describe('parseCsvText', () => {
         const cards = parseCsvText('apple,appel\nlonely\n,orphan');
         expect(cards).toHaveLength(1);
     });
+
+    it('parses optional phonetic and part-of-speech columns', () => {
+        const cards = parseCsvText('apple,appel,I eat an apple,/ˈapl̩/,noun');
+        expect(cards).toEqual([
+            { front: 'apple', back: 'appel', example: 'I eat an apple', phonetic: '/ˈapl̩/', partOfSpeech: 'noun' },
+        ]);
+    });
+
+    it('omits phonetic/part-of-speech when those columns are absent (back-compat)', () => {
+        const cards = cardsFromRows([['run', 'rennen']]);
+        expect(cards[0]).not.toHaveProperty('phonetic');
+        expect(cards[0]).not.toHaveProperty('partOfSpeech');
+    });
 });
 
 describe('splitLine', () => {
@@ -55,6 +68,16 @@ describe('parseLines', () => {
             { front: '100', back: 'honderd' },
             { front: 'house', back: 'huis' },
         ]);
+    });
+
+    it('yields only front/back for line-based formats (DOCX/TXT) — no example/phonetic/POS', () => {
+        // splitLine splits on the FIRST separator only, so everything after it becomes the
+        // back; these freeform formats have no column structure to carry the extra fields.
+        const [card] = parseLines('apple - appel - I eat an apple - /ˈapl̩/ - noun');
+        expect(card.front).toBe('apple');
+        expect(card).not.toHaveProperty('example');
+        expect(card).not.toHaveProperty('phonetic');
+        expect(card).not.toHaveProperty('partOfSpeech');
     });
 });
 

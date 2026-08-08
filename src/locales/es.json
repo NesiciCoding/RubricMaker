@@ -2971,7 +2971,8 @@
         "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
         "gr_keyboard_title": "Atajos de teclado",
         "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
-        "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante."
+        "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante.",
+        "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3156,7 +3157,7 @@
         "remove_card": "Eliminar tarjeta",
         "import_button": "Importar",
         "import_title": "Importar tarjetas",
-        "import_instructions": "Sube un archivo .csv, .xlsx, .docx o .txt. La primera columna (o el texto antes de un separador) será el anverso, la segunda el reverso y una tercera columna opcional una frase de ejemplo.",
+        "import_instructions": "Sube un archivo .csv, .xlsx, .docx o .txt. La primera columna (o el texto antes de un separador) será el anverso, la segunda el reverso y una tercera columna opcional una frase de ejemplo. Una cuarta y una quinta columna opcionales añaden la fonética y la categoría gramatical.",
         "import_choose_file": "Elegir archivo",
         "import_parsing": "Leyendo archivo…",
         "import_no_cards": "No se encontraron tarjetas en este archivo. Comprueba que cada fila o línea tenga un anverso y un reverso.",
@@ -3197,7 +3198,12 @@
         "focus_words": "Palabras en las que trabajar",
         "focus_items": "Elementos en los que enfocarse",
         "last_studied": "Último repaso: {{date}}",
-        "progress_bar_label": "Progreso del mazo por fase de aprendizaje"
+        "progress_bar_label": "Progreso del mazo por fase de aprendizaje",
+        "card_phonetic": "Fonética",
+        "card_part_of_speech": "Categoría gramatical",
+        "study_progress_label": "Progreso del estudio",
+        "study_progress_count": "{{done}} hechas · {{remaining}} restantes",
+        "deck_words": "Palabras del mazo"
     },
     "grammar": {
         "item_select_label": "Elemento gramatical",
