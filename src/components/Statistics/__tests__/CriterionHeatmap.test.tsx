@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import CriterionHeatmap, { pctToColor } from '../CriterionHeatmap';
+
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string) => (key === 'statistics.no_data' ? 'No data' : key),
+        i18n: { language: 'en' },
+    }),
+}));
 
 // ── pctToColor pure function tests ─────────────────────────────────────────────
 

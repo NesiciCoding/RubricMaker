@@ -697,6 +697,7 @@ function GettingStartedTab() {
                 </p>
                 <FeatureList
                     items={[
+                        t('docs.gs_classes_item_cohorts'),
                         t('docs.gs_classes_item_year'),
                         t('docs.gs_classes_item_track'),
                         t('docs.gs_classes_item_student_track'),
@@ -836,6 +837,13 @@ function RubricsTab() {
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.rb_view_toggle_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.rb_view_toggle_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_cohort_filtering_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
@@ -848,6 +856,9 @@ function RubricsTab() {
                     {t('docs.rb_tests_intro')} <strong>{t('docs.rb_tests_intro_page')}</strong>{' '}
                     {t('docs.rb_tests_intro_body')} <strong>{t('docs.rb_tests_intro_help_icon')}</strong>{' '}
                     {t('docs.rb_tests_intro_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.rb_tests_view_toggle_body')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     <strong>{t('docs.rb_tests_fillgap_label')}</strong> {t('docs.rb_tests_fillgap_uses')}{' '}
@@ -930,6 +941,20 @@ function GradingTab() {
                         t('docs.gr_scoring_item_modifiers'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_layout_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_layout_body')}
+                </p>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_keyboard_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_keyboard_body')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_mobile_title')}
@@ -1185,6 +1210,9 @@ function GradingTab() {
                     {t('docs.gr_portal_intro_prefix')} <strong>{t('docs.gr_portal_intro_button')}</strong>{' '}
                     {t('docs.gr_portal_intro_suffix')} <code>/portal/:studentId</code>.
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.gr_portal_tabs_body')}
+                </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_portal_work_title')}
                 </h3>
@@ -1219,6 +1247,7 @@ function CefrTab() {
                 <FeatureList
                     items={[
                         t('docs.ce_overview_item_whole_class'),
+                        t('docs.ce_overview_item_summary_cards'),
                         t('docs.ce_overview_item_per_student'),
                         t('docs.ce_overview_item_progress'),
                         t('docs.ce_overview_item_evidence'),
@@ -1288,8 +1317,10 @@ function CefrTab() {
                     items={[
                         t('docs.ce_flashcards_item_create'),
                         t('docs.ce_flashcards_item_import'),
+                        t('docs.ce_flashcards_item_fields'),
                         t('docs.ce_flashcards_item_assign'),
                         t('docs.ce_flashcards_item_study'),
+                        t('docs.ce_flashcards_item_student_decks'),
                         t('docs.ce_flashcards_item_insights'),
                         t('docs.ce_flashcards_item_grammar'),
                     ]}
@@ -1372,6 +1403,11 @@ function EssaysTab() {
                         t('docs.es_editor_item_image'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.es_focus_title')}
+                </h3>
+                <FeatureList items={[t('docs.es_focus_item_essay'), t('docs.es_focus_item_test')]} />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.es_doc_analysis_title')}

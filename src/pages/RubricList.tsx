@@ -20,6 +20,8 @@ import {
     X,
     ExternalLink,
     UsersRound,
+    LayoutGrid,
+    List,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -36,6 +38,7 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import { nanoid } from '../utils/nanoid';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import Modal from '../components/ui/Modal';
+import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -59,6 +62,7 @@ export default function RubricList() {
         createGroupStudentRubrics,
     } = useApp();
     const [search, setSearch] = useState('');
+    const [view, setView] = useState<'cards' | 'list'>('cards');
     const [subjectFilter, setSubjectFilter] = useState<string>('all');
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -344,6 +348,21 @@ export default function RubricList() {
                         </select>
                     )}
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
+                    <div style={{ marginLeft: 'auto' }}>
+                        <SegmentedToggle
+                            ariaLabel={t('common.view')}
+                            value={view}
+                            onChange={setView}
+                            options={[
+                                {
+                                    value: 'cards',
+                                    label: t('common.view_cards'),
+                                    icon: <LayoutGrid size={14} />,
+                                },
+                                { value: 'list', label: t('common.view_list'), icon: <List size={14} /> },
+                            ]}
+                        />
+                    </div>
                 </div>
 
                 {filtered.length === 0 ? (
@@ -354,6 +373,107 @@ export default function RubricList() {
                         <button className="btn btn-primary" onClick={() => navigate('/rubrics/new')}>
                             <Plus size={16} /> {t('rubricList.create_rubric')}
                         </button>
+                    </div>
+                ) : view === 'list' ? (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>{t('rubricList.col_name')}</th>
+                                    <th>{t('rubricList.col_subject')}</th>
+                                    <th>{t('rubricList.col_criteria')}</th>
+                                    <th>{t('rubricList.col_levels')}</th>
+                                    <th>{t('rubricList.col_graded')}</th>
+                                    <th>{t('rubricList.col_cefr')}</th>
+                                    <th>{t('common.actions')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((r) => {
+                                    const gradedStudents = [
+                                        ...new Set(
+                                            studentRubrics
+                                                .filter((sr) => sr.rubricId === r.id)
+                                                .map((sr) => sr.studentId)
+                                        ),
+                                    ];
+                                    return (
+                                        <tr
+                                            key={r.id}
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={() => navigate(`/rubrics/${r.id}`)}
+                                        >
+                                            <td style={{ fontWeight: 500 }}>{r.name}</td>
+                                            <td className="text-muted text-sm">{r.subject || '—'}</td>
+                                            <td>{r.criteria.length}</td>
+                                            <td>{r.criteria[0]?.levels.length ?? 0}</td>
+                                            <td>{gradedStudents.length}</td>
+                                            <td>
+                                                {r.cefrTargetLevel ? (
+                                                    <CefrBadge level={r.cefrTargetLevel} size="sm" />
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </td>
+                                            <td onClick={(e) => e.stopPropagation()}>
+                                                <div style={{ display: 'flex', gap: 4 }}>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('rubricList.action_edit')}
+                                                        onClick={() => navigate(`/rubrics/${r.id}`)}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('rubricList.grade_students')}
+                                                        onClick={() => navigate('/students')}
+                                                    >
+                                                        <Users size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('rubricList.action_compare')}
+                                                        onClick={() => {
+                                                            const activeClass = classes.find(
+                                                                (c) => c.id === settings.activeClassId
+                                                            );
+                                                            navigate(
+                                                                `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
+                                                            );
+                                                        }}
+                                                    >
+                                                        <GitCompare size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('rubricList.action_duplicate')}
+                                                        onClick={() => handleDuplicate(r.id)}
+                                                    >
+                                                        <Copy size={14} />
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        title={t('rubricList.action_delete')}
+                                                        style={{ color: 'var(--red)' }}
+                                                        onClick={async () => {
+                                                            const ok = await confirm({
+                                                                title: t('rubricList.delete_rubric_title'),
+                                                                message: t('rubricList.delete_rubric_warning'),
+                                                                confirmLabel: t('common.delete'),
+                                                            });
+                                                            if (ok) deleteRubric(r.id);
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <DragDropContext onDragEnd={handleDragEnd}>

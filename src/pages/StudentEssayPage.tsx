@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
-import { Clock, CheckCircle, Copy, AlertTriangle, Mail, Loader2, Save, Eye, Download } from 'lucide-react';
+import {
+    Clock,
+    CheckCircle,
+    Copy,
+    AlertTriangle,
+    Mail,
+    Loader2,
+    Save,
+    Eye,
+    Download,
+    X,
+    Lightbulb,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
 import EssayTTSControls from '../components/Essay/EssayTTSControls';
@@ -198,6 +210,7 @@ function isShortCode(code: string): boolean {
 export default function StudentEssayPage() {
     const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
+    const navigate = useNavigate();
 
     // Legacy format: full JSON base64 — try to decode first.
     const legacyAssignment = code ? decodeEssayAssignment(code) : null;
@@ -284,6 +297,12 @@ export default function StudentEssayPage() {
     const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
     const [submitted, setSubmitted] = useState(false);
+    // Persist the current draft before leaving so a click between autosave ticks can't lose it,
+    // then return to wherever the student came from (the portal, for a portal-linked essay).
+    const handleExit = () => {
+        if (!submitted && html) localStorage.setItem(draftKey, html);
+        navigate(-1);
+    };
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -703,28 +722,55 @@ export default function StudentEssayPage() {
                     flexWrap: 'wrap',
                 }}
             >
-                <div>
-                    <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
-                        {resolvedContent?.title || assignment.title}
-                    </h1>
-                    {studentEmail && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                            {t('essay.signed_in_as', { email: studentEmail })}
-                        </div>
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <button
+                        type="button"
+                        onClick={handleExit}
+                        aria-label={t('essay.exit')}
+                        title={t('essay.exit')}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 34,
+                            height: 34,
+                            flexShrink: 0,
+                            borderRadius: 8,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
+                    <div style={{ minWidth: 0 }}>
+                        <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
+                            {resolvedContent?.title || assignment.title}
+                        </h1>
+                        {studentEmail && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                {t('essay.signed_in_as', { email: studentEmail })}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                     {draftSavedAt && !submitted && (
                         <div
                             style={{
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 4,
-                                fontSize: '0.75rem',
-                                color: 'var(--text-muted)',
+                                gap: 5,
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                padding: '3px 9px',
+                                borderRadius: 999,
+                                background: 'var(--green-soft, color-mix(in srgb, var(--green) 14%, transparent))',
+                                color: 'var(--green)',
                             }}
                         >
-                            <Save size={12} />
+                            <CheckCircle size={12} />
                             {t('essay.draft_saved_at', {
                                 time: draftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                             })}
@@ -764,198 +810,293 @@ export default function StudentEssayPage() {
                 </div>
             </div>
 
-            <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px' }}>
-                {/* Prompt — fetched from edge function after auth when Supabase is configured */}
-                {resolvedContent?.prompt && (
-                    <div
-                        style={{
-                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                            border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
-                            borderRadius: 10,
-                            padding: '14px 18px',
-                            marginBottom: 20,
-                            fontSize: '0.95rem',
-                            color: 'var(--text)',
-                            lineHeight: 1.6,
-                        }}
-                    >
+            <div
+                style={{
+                    maxWidth: 1100,
+                    margin: '0 auto',
+                    padding: '24px 20px',
+                    display: 'flex',
+                    gap: 24,
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <div style={{ flex: 1, minWidth: 320 }}>
+                    {/* DB submission error */}
+                    {submitError && (
                         <div
                             style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                textTransform: 'uppercase',
-                                color: 'var(--accent)',
-                                marginBottom: 6,
-                                letterSpacing: '0.05em',
+                                background: '#fef2f2',
+                                border: '1px solid #fca5a5',
+                                borderRadius: 10,
+                                padding: '12px 16px',
+                                marginBottom: 16,
+                                fontSize: '0.875rem',
+                                color: '#b91c1c',
+                                display: 'flex',
+                                gap: 8,
+                                alignItems: 'flex-start',
                             }}
                         >
-                            {t('essay.prompt_label')}
+                            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                            {submitError}
                         </div>
-                        {resolvedContent?.prompt}
-                    </div>
-                )}
+                    )}
 
-                {/* DB submission error */}
-                {submitError && (
-                    <div
-                        style={{
-                            background: '#fef2f2',
-                            border: '1px solid #fca5a5',
-                            borderRadius: 10,
-                            padding: '12px 16px',
-                            marginBottom: 16,
-                            fontSize: '0.875rem',
-                            color: '#b91c1c',
-                            display: 'flex',
-                            gap: 8,
-                            alignItems: 'flex-start',
-                        }}
-                    >
-                        <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                        {submitError}
-                    </div>
-                )}
-
-                {/* Submitted confirmation */}
-                {submitted && (
-                    <div
-                        style={{
-                            background: '#f0fdf4',
-                            border: '1px solid #86efac',
-                            borderRadius: 12,
-                            padding: 20,
-                            marginBottom: 20,
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                            <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
-                            <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
-                                {hasDb && !submitError ? t('essay.submitted_title_db') : t('essay.submitted_title')}
-                            </span>
+                    {/* Submitted confirmation */}
+                    {submitted && (
+                        <div
+                            style={{
+                                background: '#f0fdf4',
+                                border: '1px solid #86efac',
+                                borderRadius: 12,
+                                padding: 20,
+                                marginBottom: 20,
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                                <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
+                                <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
+                                    {hasDb && !submitError ? t('essay.submitted_title_db') : t('essay.submitted_title')}
+                                </span>
+                            </div>
+                            {hasDb && !submitError ? (
+                                <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
+                                    {t('essay.submitted_desc_db')}
+                                </p>
+                            ) : (
+                                <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
+                                    {t('essay.submitted_desc_code')}
+                                </p>
+                            )}
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                                <textarea
+                                    readOnly
+                                    value={submissionCode}
+                                    rows={6}
+                                    aria-label={t('essay.submission_code_label')}
+                                    style={{
+                                        flex: 1,
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.72rem',
+                                        resize: 'vertical',
+                                        background: 'var(--bg-elevated)',
+                                        border: '1px solid #86efac',
+                                        borderRadius: 8,
+                                        padding: 10,
+                                        color: 'var(--text)',
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleCopy}
+                                    style={{
+                                        padding: '0 16px',
+                                        background: copied ? '#16a34a' : '#22c55e',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: 8,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        fontSize: '0.875rem',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Copy size={14} />
+                                    {copied ? t('essay.copied') : t('essay.copy')}
+                                </button>
+                            </div>
                         </div>
-                        {hasDb && !submitError ? (
-                            <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                {t('essay.submitted_desc_db')}
-                            </p>
-                        ) : (
-                            <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
-                                {t('essay.submitted_desc_code')}
-                            </p>
-                        )}
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-                            <textarea
-                                readOnly
-                                value={submissionCode}
-                                rows={6}
-                                style={{
-                                    flex: 1,
-                                    fontFamily: 'monospace',
-                                    fontSize: '0.72rem',
-                                    resize: 'vertical',
-                                    background: 'var(--bg-elevated)',
-                                    border: '1px solid #86efac',
-                                    borderRadius: 8,
-                                    padding: 10,
-                                    color: 'var(--text)',
-                                }}
-                            />
+                    )}
+
+                    {/* Editor */}
+                    <EssayEditor
+                        content={html}
+                        onChange={setHtml}
+                        editable={
+                            !submitted || !(resolvedContent?.readOnlyAfterSubmit ?? assignment.readOnlyAfterSubmit)
+                        }
+                        placeholder={t('essay.editor_placeholder')}
+                        showDragHandle
+                        showTableOfContents
+                    />
+
+                    {/* Submit row */}
+                    {!submitted && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                gap: 12,
+                                marginTop: 16,
+                            }}
+                        >
+                            {timedOut && !isOverLimit && (
+                                <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
+                                    {t('essay.time_up_auto')}
+                                </span>
+                            )}
+                            {timedOut && isOverLimit && (
+                                <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
+                                    {t('essay.time_up_over_submitted', {
+                                        count: wordCount - (effectiveMaxWords ?? 0),
+                                    })}
+                                </span>
+                            )}
+                            {!timedOut && isOverLimit && (
+                                <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
+                                    {t('essay.over_limit', { count: wordCount - (effectiveMaxWords ?? 0) })}
+                                </span>
+                            )}
                             <button
-                                onClick={handleCopy}
+                                onClick={handleSubmit}
+                                disabled={!canSubmit}
                                 style={{
-                                    padding: '0 16px',
-                                    background: copied ? '#16a34a' : '#22c55e',
-                                    color: '#fff',
-                                    border: 'none',
+                                    padding: '10px 32px',
                                     borderRadius: 8,
+                                    border: isOverLimit ? '1.5px solid #fca5a5' : 'none',
                                     fontWeight: 700,
-                                    cursor: 'pointer',
+                                    fontSize: '0.95rem',
+                                    background: isOverLimit
+                                        ? '#fef2f2'
+                                        : canSubmit
+                                          ? 'var(--accent)'
+                                          : 'var(--bg-elevated)',
+                                    color: isOverLimit ? '#dc2626' : canSubmit ? '#fff' : 'var(--text-dim)',
+                                    cursor: canSubmit ? 'pointer' : 'not-allowed',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 6,
-                                    fontSize: '0.875rem',
-                                    flexShrink: 0,
+                                    gap: 8,
                                 }}
                             >
-                                <Copy size={14} />
-                                {copied ? t('essay.copied') : t('essay.copy')}
+                                {submitting ? (
+                                    <>
+                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                                        {t('essay.submitting')}
+                                    </>
+                                ) : isOverLimit ? (
+                                    <>
+                                        <AlertTriangle size={16} /> {t('essay.too_many_words')}
+                                    </>
+                                ) : (
+                                    t('essay.submit_btn')
+                                )}
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
-                {/* Editor */}
-                <EssayEditor
-                    content={html}
-                    onChange={setHtml}
-                    editable={!submitted || !(resolvedContent?.readOnlyAfterSubmit ?? assignment.readOnlyAfterSubmit)}
-                    placeholder={t('essay.editor_placeholder')}
-                    showDragHandle
-                    showTableOfContents
-                />
-
-                {/* Submit row */}
                 {!submitted && (
-                    <div
+                    <aside
                         style={{
+                            width: 300,
+                            flexShrink: 0,
                             display: 'flex',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                            gap: 12,
-                            marginTop: 16,
+                            flexDirection: 'column',
+                            gap: 16,
                         }}
                     >
-                        {timedOut && !isOverLimit && (
-                            <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                {t('essay.time_up_auto')}
-                            </span>
+                        {(resolvedContent?.prompt ?? assignment.prompt) && (
+                            <div
+                                style={{
+                                    background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                                    border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)',
+                                    borderRadius: 10,
+                                    padding: '14px 18px',
+                                    fontSize: '0.92rem',
+                                    color: 'var(--text)',
+                                    lineHeight: 1.55,
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        color: 'var(--accent)',
+                                        marginBottom: 6,
+                                        letterSpacing: '0.05em',
+                                    }}
+                                >
+                                    {t('essay.prompt_label')}
+                                </div>
+                                {resolvedContent?.prompt ?? assignment.prompt}
+                            </div>
                         )}
-                        {timedOut && isOverLimit && (
-                            <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 600 }}>
-                                {t('essay.time_up_over_submitted', {
-                                    count: wordCount - (effectiveMaxWords ?? 0),
-                                })}
-                            </span>
-                        )}
-                        {!timedOut && isOverLimit && (
-                            <span style={{ fontSize: '0.875rem', color: '#ef4444' }}>
-                                {t('essay.over_limit', { count: wordCount - (effectiveMaxWords ?? 0) })}
-                            </span>
-                        )}
-                        <button
-                            onClick={handleSubmit}
-                            disabled={!canSubmit}
+
+                        <div
                             style={{
-                                padding: '10px 32px',
-                                borderRadius: 8,
-                                border: isOverLimit ? '1.5px solid #fca5a5' : 'none',
-                                fontWeight: 700,
-                                fontSize: '0.95rem',
-                                background: isOverLimit
-                                    ? '#fef2f2'
-                                    : canSubmit
-                                      ? 'var(--accent)'
-                                      : 'var(--bg-elevated)',
-                                color: isOverLimit ? '#dc2626' : canSubmit ? '#fff' : 'var(--text-dim)',
-                                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                                background: 'var(--bg-elevated)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 10,
+                                padding: '14px 18px',
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
                                 display: 'flex',
-                                alignItems: 'center',
+                                flexDirection: 'column',
                                 gap: 8,
                             }}
                         >
-                            {submitting ? (
-                                <>
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />{' '}
-                                    {t('essay.submitting')}
-                                </>
-                            ) : isOverLimit ? (
-                                <>
-                                    <AlertTriangle size={16} /> {t('essay.too_many_words')}
-                                </>
-                            ) : (
-                                t('essay.submit_btn')
+                            <div
+                                style={{
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: 'var(--text-dim)',
+                                    letterSpacing: '0.05em',
+                                }}
+                            >
+                                {t('essay.meta_label')}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                <span>{t('essay.meta_word_target')}</span>
+                                <span style={{ color: 'var(--text)', fontWeight: 600 }}>
+                                    {effectiveMinWords ?? 0}–{effectiveMaxWords ?? '∞'}
+                                </span>
+                            </div>
+                            {secondsLeft !== null && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                    <span>{t('essay.meta_time_left')}</span>
+                                    <span style={{ color: 'var(--text)', fontWeight: 600 }}>
+                                        {timedOut ? t('essay.time_up_countdown') : formatTime(secondsLeft)}
+                                    </span>
+                                </div>
                             )}
-                        </button>
-                    </div>
+                        </div>
+
+                        <div
+                            style={{
+                                background: 'var(--bg-elevated)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 10,
+                                padding: '14px 18px',
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: 'var(--accent)',
+                                    letterSpacing: '0.05em',
+                                    marginBottom: 6,
+                                }}
+                            >
+                                <Lightbulb size={13} /> {t('essay.tip_label')}
+                            </div>
+                            {t('essay.tip_body')}
+                        </div>
+                    </aside>
                 )}
             </div>
         </div>

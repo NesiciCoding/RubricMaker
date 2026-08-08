@@ -1099,6 +1099,9 @@ interface AppContextValue extends StoreData {
     fetchAssignedFlashcardDeck: (deckId: string) => Promise<FlashcardDeck | null>;
     fetchMyFlashcardReview: (deckId: string, studentId: string) => Promise<FlashcardReview | null>;
     saveFlashcardReviewAsStudent: (r: FlashcardReview) => Promise<SyncResult>;
+    fetchMyStudentFlashcardDecks: (studentId: string) => Promise<FlashcardDeck[]>;
+    saveFlashcardDeckAsStudent: (d: FlashcardDeck) => Promise<SyncResult>;
+    deleteFlashcardDeckAsStudent: (id: string) => Promise<SyncResult>;
     // News flashes (student portal side)
     fetchMyNewsFlashes: () => Promise<NewsFlash[]>;
     markNewsFlashReadAsStudent: (r: NewsFlashRead) => Promise<SyncResult>;
@@ -2256,6 +2259,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             (await loadDb()).storageSync.fetchMyFlashcardReview(deckId, studentId),
         []
     );
+    const fetchMyStudentFlashcardDecks = useCallback(
+        async (studentId: string) => (await loadDb()).storageSync.fetchMyStudentFlashcardDecks(studentId),
+        []
+    );
+    const saveFlashcardDeckAsStudent = useCallback(
+        async (d: FlashcardDeck) => (await loadDb()).storageSync.saveFlashcardDeckAsStudent(d),
+        []
+    );
+    const deleteFlashcardDeckAsStudent = useCallback(
+        async (id: string) => (await loadDb()).storageSync.deleteFlashcardDeckAsStudent(id),
+        []
+    );
     const saveFlashcardReviewAsStudent = useCallback(
         async (r: FlashcardReview) => (await loadDb()).storageSync.saveFlashcardReviewAsStudent(r),
         []
@@ -2545,6 +2560,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             fetchAssignedFlashcardDeck,
             fetchMyFlashcardReview,
             saveFlashcardReviewAsStudent,
+            fetchMyStudentFlashcardDecks,
+            saveFlashcardDeckAsStudent,
+            deleteFlashcardDeckAsStudent,
             fetchMyNewsFlashes,
             markNewsFlashReadAsStudent,
             importBackup,
@@ -2699,6 +2717,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             fetchAssignedFlashcardDeck,
             fetchMyFlashcardReview,
             saveFlashcardReviewAsStudent,
+            fetchMyStudentFlashcardDecks,
+            saveFlashcardDeckAsStudent,
+            deleteFlashcardDeckAsStudent,
             fetchMyNewsFlashes,
             markNewsFlashReadAsStudent,
             importBackup,

@@ -32,10 +32,7 @@ const FAKE_ANON_JWT =
     '.fake';
 
 /** Route all Supabase auth calls for the mock project to a fake anonymous session. */
-async function mockSupabaseAuth(
-    page: import('@playwright/test').Page,
-    opts: { fail?: boolean } = {}
-) {
+async function mockSupabaseAuth(page: import('@playwright/test').Page, opts: { fail?: boolean } = {}) {
     await page.route(`${MOCK_SUPABASE_URL}/auth/v1/**`, (route) => {
         if (opts.fail) {
             return route.fulfill({
@@ -68,10 +65,7 @@ async function mockSupabaseAuth(
 }
 
 /** Route the submit-essay edge function call. */
-async function mockSubmitEssay(
-    page: import('@playwright/test').Page,
-    opts: { fail?: boolean } = {}
-) {
+async function mockSubmitEssay(page: import('@playwright/test').Page, opts: { fail?: boolean } = {}) {
     await page.route(`${MOCK_SUPABASE_URL}/functions/v1/submit-essay`, (route) => {
         if (opts.fail) {
             return route.fulfill({
@@ -268,6 +262,9 @@ test.describe('Essay page — DB mode (mocked Supabase)', () => {
         await essay.fillEmailAndStart('student@school.nl');
         await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
         await expect(essay.signedInAs('student@school.nl')).toBeVisible({ timeout: 5_000 });
+        // Phase 41.3 focus-mode chrome: an exit control and the writing-tip sidebar.
+        await expect(essay.exitButton()).toBeVisible();
+        await expect(essay.writingTip()).toBeVisible();
     });
 
     test('auth failure keeps the gate visible and does not proceed to editor', async ({ page }) => {
@@ -332,10 +329,10 @@ test.describe('Essay page — portal session bypass', () => {
         // The key is sb-{projectRef}-auth-token where projectRef = hostname[0].
         // For https://mock.supabase.co → sb-mock-auth-token.
         const portalSession = buildPortalSession('portal.student@school.nl');
-        await page.addInitScript(
-            ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
-            { key: 'sb-mock-auth-token', value: portalSession }
-        );
+        await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+            key: 'sb-mock-auth-token',
+            value: portalSession,
+        });
 
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
         // No auth call needed — but the gate now confirms profiles.role === 'student'
@@ -355,10 +352,10 @@ test.describe('Essay page — portal session bypass', () => {
 
     test('portal session email appears in header after bypass', async ({ page }) => {
         const portalSession = buildPortalSession('jane.doe@myschool.nl', 'user-jane');
-        await page.addInitScript(
-            ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
-            { key: 'sb-mock-auth-token', value: portalSession }
-        );
+        await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+            key: 'sb-mock-auth-token',
+            value: portalSession,
+        });
 
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
         await mockProfileRole(page, MOCK_SUPABASE_URL, 'student');
@@ -375,10 +372,10 @@ test.describe('Essay page — portal session bypass', () => {
         // default storage key as the portal session — this must NOT be mistaken
         // for a student login (the bug this PR fixes).
         const teacherSession = buildPortalSession('teacher@school.nl', 'teacher-user-id');
-        await page.addInitScript(
-            ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
-            { key: 'sb-mock-auth-token', value: teacherSession }
-        );
+        await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+            key: 'sb-mock-auth-token',
+            value: teacherSession,
+        });
 
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
         await mockProfileRole(page, MOCK_SUPABASE_URL, 'teacher');
@@ -404,12 +401,9 @@ test.describe('Essay page — short-code format (teacherKey only in URL)', () =>
     async function injectConfig(page: import('@playwright/test').Page) {
         await page.addInitScript(
             ({ url, key }: { url: string; key: string }) => {
-                localStorage.setItem(
-                    'rm_supabase_config',
-                    JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }),
-                );
+                localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
             },
-            { url: MOCK_SUPABASE_URL, key: MOCK_ANON_KEY },
+            { url: MOCK_SUPABASE_URL, key: MOCK_ANON_KEY }
         );
     }
 
@@ -459,9 +453,7 @@ test.describe('Essay page — short-code format (teacherKey only in URL)', () =>
 
         await essay.fillEmailAndStart('student@school.nl');
         await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
-        await expect(
-            page.getByText('Describe the water cycle in your own words.'),
-        ).toBeVisible({ timeout: 5_000 });
+        await expect(page.getByText('Describe the water cycle in your own words.')).toBeVisible({ timeout: 5_000 });
     });
 
     test('title from edge function is shown in header after auth', async ({ page }) => {

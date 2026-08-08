@@ -5,6 +5,8 @@ export interface ParsedFlashcard {
     front: string;
     back: string;
     example?: string;
+    phonetic?: string;
+    partOfSpeech?: string;
 }
 
 /** Thrown for legacy .xls and other unreadable formats so the UI can show a targeted hint. */
@@ -33,7 +35,16 @@ export function cardsFromRows(rows: Cellish[][]): ParsedFlashcard[] {
         if (!front || !back) return;
         if (i === 0 && (HEADER_FRONT.test(front) || HEADER_BACK.test(back))) return;
         const example = toText(row[2]);
-        cards.push({ front, back, ...(example ? { example } : {}) });
+        // Optional trailing columns (back-compat: absent in 2/3-column files).
+        const phonetic = toText(row[3]);
+        const partOfSpeech = toText(row[4]);
+        cards.push({
+            front,
+            back,
+            ...(example ? { example } : {}),
+            ...(phonetic ? { phonetic } : {}),
+            ...(partOfSpeech ? { partOfSpeech } : {}),
+        });
     });
     return cards;
 }

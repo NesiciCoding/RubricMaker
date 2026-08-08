@@ -49,7 +49,7 @@ const TEACHER_FEATURES = [
     {
         icon: Users,
         title: 'Smart Grading',
-        desc: 'Grade with a comment bank, voice dictation, file attachments, inline comments anchored right on essay and DOCX submissions, audio/video speaking recordings, side-by-side comparative view, and group grading for shared assignments.',
+        desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading.',
         color: '#8b5cf6',
     },
     {
@@ -139,7 +139,7 @@ const TEACHER_FEATURES = [
     {
         icon: Layers,
         title: 'Vocabulary & Grammar Flashcards',
-        desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word, assign them to a class, and see which items each student should focus on.',
+        desc: 'Build vocabulary or grammar flashcard decks by hand or import them from CSV, Excel, or Word — add pronunciation and part of speech per word — assign them to a class, and see which items each student should focus on.',
         color: '#8b5cf6',
     },
     {
@@ -154,13 +154,13 @@ const STUDENT_FEATURES = [
     {
         icon: Eye,
         title: 'View Feedback',
-        desc: 'See your grades, teacher comments, and attached files via your personal portal link — no login needed.',
+        desc: 'See your grades, teacher comments, and attached files via your personal portal link — organised into Home, Assignments, Feedback, and Progress tabs, no login needed.',
         color: '#10b981',
     },
     {
         icon: FileText,
         title: 'Submit Essays',
-        desc: 'Write in a rich-text A4 editor and submit with a code your teacher gives you. No account required.',
+        desc: 'Write in a distraction-free rich-text A4 editor with the prompt, word target, and a writing tip beside you — your draft autosaves and you submit with a code your teacher gives you. No account required.',
         color: '#f59e0b',
     },
     {
@@ -178,7 +178,7 @@ const STUDENT_FEATURES = [
     {
         icon: ClipboardCheck,
         title: 'Take a Test',
-        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, and submit — your answers are saved automatically as you go. Practice tests can be retaken and never affect your graded results.',
+        desc: 'Open a test link from your teacher, answer the questions with a countdown timer, flag any to revisit, and jump between them from a colour-coded question map, then submit — your answers save automatically as you go. Practice tests can be retaken and never affect your graded results.',
         color: '#3b82f6',
     },
     {
@@ -208,7 +208,7 @@ const STUDENT_FEATURES = [
     {
         icon: Layers,
         title: 'Study Flashcards',
-        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — hard words come back sooner, and you can see your progress grow.',
+        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner. Make your own private decks too, and share one with your teacher in a tap.',
         color: '#8b5cf6',
     },
     {

@@ -972,6 +972,152 @@ select.input-error {
     box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
+/* ─── Grading grid (Phase 40 criterion × level) ──────────────────────────────── */
+.grading-grid-scroll {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+}
+.grading-grid-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+.grading-grid-table .grid-corner,
+.grading-grid-table .grid-row-head {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg-card);
+    text-align: start;
+    min-width: 190px;
+    max-width: 260px;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+}
+.grading-grid-table .grid-corner {
+    z-index: 3;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+.grading-grid-table .grid-col-head {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    min-width: 150px;
+}
+.grading-grid-table .grid-row-focused .grid-row-head {
+    box-shadow: inset 3px 0 0 var(--accent);
+}
+.grading-grid-table .grid-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+.grading-grid-table .grid-cell {
+    padding: 6px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+}
+.grading-grid-table .grid-cell-filler {
+    background: repeating-linear-gradient(
+        135deg,
+        transparent,
+        transparent 6px,
+        var(--bg-elevated) 6px,
+        var(--bg-elevated) 7px
+    );
+}
+.grid-cell-btn {
+    width: 100%;
+    height: 100%;
+    min-height: 76px;
+    text-align: start;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition:
+        border-color var(--transition),
+        background var(--transition);
+}
+.grid-cell-btn:hover {
+    border-color: var(--border-light);
+}
+.grid-cell-btn.selected {
+    box-shadow: 0 0 0 1px var(--accent-soft);
+}
+.grid-cell-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+}
+.grid-cell-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+.grid-cell-chord {
+    display: inline-block;
+    margin-right: 5px;
+    font-size: 0.7em;
+    font-weight: 700;
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 4px;
+    vertical-align: middle;
+}
+.grid-cell-cefr {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+.grid-cell-points {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.grid-cell-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.grid-cell-desc-empty {
+    color: var(--text-dim);
+    font-style: italic;
+}
+
 /* ─── Drop zone ──────────────────────────────────────────────────────────────── */
 .drop-zone {
     border: 2px dashed var(--border);

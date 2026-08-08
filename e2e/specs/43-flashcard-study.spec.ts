@@ -32,7 +32,8 @@ test.describe('Flashcard study session', () => {
         // Card front/back live in <input value>s on the edit page (not plain text) — the
         // edit form itself is already covered by 41-flashcards.spec.ts.
         await page.openPractice();
-        await expect(page.practiceModal().getByText('le chat')).toBeVisible();
+        // 'le chat' also appears in the word-list sidebar; scope to the card face.
+        await expect(page.practiceModal().getByTestId('study-card-front')).toHaveText('le chat');
         await page.revealCard();
         await expect(page.practiceModal().getByText('the cat')).toBeVisible();
 
@@ -57,7 +58,7 @@ test.describe('Flashcard study session', () => {
         const page = new StudentFlashcardStudyPage(appPage);
         await page.goto(student.id, deck.id);
 
-        await expect(appPage.getByText('la maison')).toBeVisible();
+        await expect(appPage.getByTestId('study-card-front')).toHaveText('la maison');
         await page.reveal();
         await expect(appPage.getByText('the house')).toBeVisible();
         await page.rate('Good');

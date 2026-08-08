@@ -1283,6 +1283,10 @@ export interface FlashcardCard {
     front: string;
     back: string;
     example?: string;
+    /** Pronunciation respelling or IPA, e.g. "/əˈbandən/" — surfaced in the study view (vocabulary decks). */
+    phonetic?: string;
+    /** Part of speech, e.g. "noun", "verb (irregular)" — surfaced in the study view (vocabulary decks). */
+    partOfSpeech?: string;
     cefrLevel?: CefrLevel;
     /** References GrammarItem.id (src/data/grammarStandards.ts) — set only on cards in a 'grammar' deck. */
     linkedGrammarItemId?: string;
@@ -1297,6 +1301,14 @@ export interface FlashcardDeck {
     updatedAt?: string;
     /** 'vocabulary' (default when unset, for back-compat) or 'grammar' — controls copy framing and grammar-recommendation matching. */
     deckKind?: 'vocabulary' | 'grammar';
+    /**
+     * Set on a deck a student authored in their portal (Phase 41.4). Teacher decks leave this
+     * unset. Private to the student unless `sharedWithTeacher` is true — teacher deck lists filter
+     * these out. In Supabase this maps to the `flashcard_decks.student_id` column.
+     */
+    ownerStudentId?: string;
+    /** A student-owned deck the student pushed to their teacher's library (Phase 41.4). */
+    sharedWithTeacher?: boolean;
 }
 
 /** One row per assigned student, keyed `${deckId}:${studentId}` (same composite pattern as EssayAssignment) */

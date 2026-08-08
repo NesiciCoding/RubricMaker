@@ -1517,6 +1517,32 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    // ── Portal student: their own authored decks (migration 068) ──────────────
+
+    /** Decks the logged-in portal student authored (RLS: flashcard_decks_student_own_select). */
+    async fetchMyStudentFlashcardDecks(studentId: string): Promise<FlashcardDeck[]> {
+        const { data, error } = await this.db().from('flashcard_decks').select('data').eq('student_id', studentId);
+        if (error || !data) return [];
+        return data.map((r) => r.data as FlashcardDeck);
+    }
+
+    /**
+     * Student creates/updates one of their own decks. owner_id is intentionally omitted —
+     * the set_flashcard_deck_owner trigger (migration 068) resolves it from the roster, same
+     * rationale as saveFlashcardReviewAsStudent.
+     */
+    async saveFlashcardDeckAsStudent(d: FlashcardDeck): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('flashcard_decks')
+            .upsert({ id: d.id, student_id: d.ownerStudentId, data: d }, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteFlashcardDeckAsStudent(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('flashcard_decks').delete().eq('id', id);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Standard mastery targets (CEFR/SLO progress by track/year) ───────────
 
     async fetchStandardMasteryTargets(): Promise<StandardMasteryTarget[]> {

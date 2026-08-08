@@ -12,6 +12,7 @@ import {
     ChevronUp,
     ChevronDown,
     Lightbulb,
+    Flag,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
@@ -197,6 +198,21 @@ export default function StudentTestPage() {
     });
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!loadTestDraft(draftKey));
     const [currentIndex, setCurrentIndex] = useState(0);
+    // Question ids the student flagged for review, and question indices they've viewed — both
+    // drive the timeline palette (fixed-question tests only; adaptive runs have no palette).
+    const [flagged, setFlagged] = useState<Set<string>>(new Set());
+    const [seenIndices, setSeenIndices] = useState<Set<number>>(() => new Set([0]));
+    const toggleFlag = useCallback((questionId: string) => {
+        setFlagged((prev) => {
+            const next = new Set(prev);
+            if (next.has(questionId)) next.delete(questionId);
+            else next.add(questionId);
+            return next;
+        });
+    }, []);
+    React.useEffect(() => {
+        setSeenIndices((prev) => (prev.has(currentIndex) ? prev : new Set(prev).add(currentIndex)));
+    }, [currentIndex]);
     // Ids of sections visited so far, in order — only meaningful for staged (placement) tests.
     // Seeded from the draft when resuming; the effect below seeds the entry section once the
     // test loads for a fresh attempt (the currentStageId fallback below covers the one-render
@@ -297,6 +313,9 @@ export default function StudentTestPage() {
 
     useEffect(() => {
         setCurrentIndex(0);
+        // seenIndices is index-based within the active section, so it must reset when the
+        // stage changes; otherwise an index seen in one section reads as seen in the next.
+        setSeenIndices(new Set([0]));
     }, [currentStageId]);
 
     const orderedQuestions = useMemo<TestQuestion[]>(() => {
@@ -565,6 +584,8 @@ export default function StudentTestPage() {
         startedAtRef.current = new Date().toISOString();
         setAnswers(new Map());
         setCurrentIndex(0);
+        setFlagged(new Set());
+        setSeenIndices(new Set([0]));
         setSectionPath([]);
         setLevelPath([]);
         setSubmitted(false);
@@ -1063,6 +1084,22 @@ export default function StudentTestPage() {
                                     {t('tests.taking.previous')}
                                 </button>
 
+                                {!isStaircase && !isGenerator && question && (
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleFlag(question.id)}
+                                        aria-pressed={flagged.has(question.id)}
+                                        className="btn btn-ghost btn-sm"
+                                        style={{
+                                            color: flagged.has(question.id) ? 'var(--yellow)' : 'var(--text-muted)',
+                                            gap: 6,
+                                        }}
+                                    >
+                                        <Flag size={15} fill={flagged.has(question.id) ? 'var(--yellow)' : 'none'} />
+                                        {flagged.has(question.id) ? t('tests.taking.flagged') : t('tests.taking.flag')}
+                                    </button>
+                                )}
+
                                 {isLast && staged && nextStageId ? (
                                     <button
                                         type="button"
@@ -1176,6 +1213,8 @@ export default function StudentTestPage() {
                         currentIndex={currentIndex}
                         answers={answers}
                         sections={sections}
+                        flagged={flagged}
+                        seenIndices={seenIndices}
                         onJump={setCurrentIndex}
                     />
                 )}
@@ -1191,10 +1230,21 @@ interface TimelineProps {
     currentIndex: number;
     answers: Map<string, string>;
     sections: TestSection[];
+    flagged: Set<string>;
+    seenIndices: Set<number>;
     onJump: (index: number) => void;
 }
 
-function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }: TimelineProps) {
+function LegendSwatch({ label, style }: { label: string; style: React.CSSProperties }) {
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+            <span style={{ width: 14, height: 14, borderRadius: 4, flexShrink: 0, ...style }} />
+            {label}
+        </span>
+    );
+}
+
+function QuestionTimeline({ questions, currentIndex, answers, sections, flagged, seenIndices, onJump }: TimelineProps) {
     const { t } = useTranslation();
 
     // Group consecutive questions with same sectionId
@@ -1208,6 +1258,8 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
             groups.push({ sectionTitle, indices: [i] });
         }
     });
+
+    const neutralBg = 'color-mix(in srgb, var(--text-muted) 20%, var(--bg))';
 
     return (
         <div
@@ -1227,6 +1279,27 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
             }}
             aria-label={t('tests.taking.timeline_label')}
         >
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    fontSize: '0.68rem',
+                    color: 'var(--text-muted)',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <LegendSwatch label={t('tests.taking.legend_answered')} style={{ background: 'var(--accent)' }} />
+                <LegendSwatch label={t('tests.taking.legend_unanswered')} style={{ background: neutralBg }} />
+                <LegendSwatch
+                    label={t('tests.taking.legend_unseen')}
+                    style={{ background: 'var(--bg)', border: '1px dashed var(--border)' }}
+                />
+                <LegendSwatch
+                    label={t('tests.taking.legend_flagged')}
+                    style={{ background: 'var(--bg)', border: '2px solid var(--yellow)' }}
+                />
+            </div>
             {groups.map((group) => (
                 <div
                     key={`${group.sectionTitle ?? '__none__'}-${group.indices[0]}`}
@@ -1251,20 +1324,29 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
                         const q = questions[i];
                         const answered = (answers.get(q.id) ?? '').trim().length > 0;
                         const isCurrent = i === currentIndex;
+                        const isSeen = seenIndices.has(i);
+                        const isFlagged = flagged.has(q.id);
+                        const border = isCurrent
+                            ? '2px solid var(--accent)'
+                            : isFlagged
+                              ? '2px solid var(--yellow)'
+                              : isSeen
+                                ? '2px solid transparent'
+                                : '2px dashed var(--border)';
                         return (
                             <button
                                 key={q.id}
+                                type="button"
                                 onClick={() => onJump(i)}
                                 aria-label={t('tests.taking.go_to_question', { number: i + 1 })}
                                 aria-current={isCurrent ? 'step' : undefined}
                                 style={{
+                                    position: 'relative',
                                     width: 28,
                                     height: 28,
                                     borderRadius: 6,
-                                    border: isCurrent ? '2px solid var(--accent)' : '2px solid transparent',
-                                    background: answered
-                                        ? 'var(--accent)'
-                                        : 'color-mix(in srgb, var(--text-muted) 20%, var(--bg))',
+                                    border,
+                                    background: answered ? 'var(--accent)' : isSeen ? neutralBg : 'var(--bg)',
                                     color: answered ? '#fff' : 'var(--text-muted)',
                                     fontWeight: 700,
                                     fontSize: '0.75rem',
@@ -1277,6 +1359,14 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, onJump }
                                 }}
                             >
                                 {i + 1}
+                                {isFlagged && (
+                                    <Flag
+                                        size={9}
+                                        fill="var(--yellow)"
+                                        color="var(--yellow)"
+                                        style={{ position: 'absolute', top: -4, right: -4 }}
+                                    />
+                                )}
                             </button>
                         );
                     })}
