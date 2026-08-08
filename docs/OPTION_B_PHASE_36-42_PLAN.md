@@ -237,7 +237,7 @@ Phase 39 is **deliberately skipped** — the two smaller mockup-driven items tha
 2. **Phase 36** (Rubrics + Tests) — proves the toggle, lowest risk.
 3. **Phase 37.1** (CEFR summary cards) — tiny, additive.
 4. **Phase 38** (roster → chips + columns) — self-contained but touches `activeClassId`; needs the reader-audit.
-5. **Phase 37.2** (Statistics CSV move) — optional, only if wanted.
+5. **Phase 37.2** (Statistics graph audit, refinements, and CSV alignment).
 6. **Phase 42** (vocab consolidation) — medium, isolated.
 7. **Phase 41** (portal + focus modes) — large, share-link risk.
 8. **Phase 40** (grading grid) — largest, highest risk, its own signed-off spike last.
