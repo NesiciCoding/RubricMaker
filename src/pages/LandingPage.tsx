@@ -208,7 +208,7 @@ const STUDENT_FEATURES = [
     {
         icon: Layers,
         title: 'Study Flashcards',
-        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner.',
+        desc: 'Practice vocabulary decks from your teacher with smart spaced repetition — see the pronunciation on each card, track a progress bar, and watch hard words come back sooner. Make your own private decks too, and share one with your teacher in a tap.',
         color: '#8b5cf6',
     },
     {

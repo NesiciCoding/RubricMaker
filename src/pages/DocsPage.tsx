@@ -1320,6 +1320,7 @@ function CefrTab() {
                         t('docs.ce_flashcards_item_fields'),
                         t('docs.ce_flashcards_item_assign'),
                         t('docs.ce_flashcards_item_study'),
+                        t('docs.ce_flashcards_item_student_decks'),
                         t('docs.ce_flashcards_item_insights'),
                         t('docs.ce_flashcards_item_grammar'),
                     ]}

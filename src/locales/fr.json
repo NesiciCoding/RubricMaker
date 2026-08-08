@@ -2988,7 +2988,8 @@
         "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale.",
         "es_focus_title": "Mode focus élève",
         "es_focus_item_essay": "La page de rédaction est un espace d'écriture sans distraction : un bouton de sortie et un badge « brouillon enregistré » en temps réel dans l'en-tête, plus une barre latérale reprenant la consigne, les objectifs de mots/temps et un conseil d'écriture. Les brouillons sont enregistrés automatiquement en local et restaurés au retour.",
-        "es_focus_item_test": "Pendant un test, la barre de questions fixe est une palette à code couleur — répondue, sans réponse, marquée et non vue, avec une légende — et chaque question dispose d'un bouton « marquer pour révision ». Les tests adaptatifs (staircase/générateur), sans jeu de questions fixe, n'affichent aucune palette."
+        "es_focus_item_test": "Pendant un test, la barre de questions fixe est une palette à code couleur — répondue, sans réponse, marquée et non vue, avec une légende — et chaque question dispose d'un bouton « marquer pour révision ». Les tests adaptatifs (staircase/générateur), sans jeu de questions fixe, n'affichent aucune palette.",
+        "ce_flashcards_item_student_decks": "Les élèves peuvent créer leurs propres paquets depuis la section « Mes cartes » de leur portail — privés par défaut et masqués dans toutes les listes de l'enseignant. Un « Partager avec mon enseignant » en un geste affiche le paquet en lecture seule dans la bibliothèque de l'enseignant (badge « D'un élève ») ; l'élève en reste propriétaire et peut arrêter le partage à tout moment."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3269,5 +3270,21 @@
         "has_full_article": "Article complet",
         "read_article": "Lire l’article",
         "collapse_article": "Réduire"
+    },
+    "studentDecks": {
+        "section_title": "Mes cartes",
+        "create": "Nouveau paquet",
+        "empty": "Créez votre propre paquet pour réviser les mots à votre façon.",
+        "untitled": "Paquet sans titre",
+        "editor_title": "Modifier le paquet",
+        "name_placeholder": "Nom du paquet",
+        "add_card": "Ajouter une carte",
+        "share": "Partager avec mon enseignant",
+        "shared_toast": "Paquet partagé avec votre enseignant.",
+        "unshared_toast": "Le paquet est de nouveau privé.",
+        "shared_badge": "Partagé",
+        "from_student_badge": "D’un élève",
+        "save_error": "Impossible d’enregistrer le paquet. Réessayez.",
+        "load_error": "Impossible de charger vos paquets. Actualisez la page pour réessayer."
     }
 }
