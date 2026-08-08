@@ -224,7 +224,7 @@ export default function StudentPortalPage() {
             dateStr: string;
             score: number;
         }[];
-    }, [student, studentRubrics, rubrics, gradeScales, settings]);
+    }, [student, studentRubrics, rubrics, gradeScales, settings, i18n.language]);
 
     const cefrProgress = useMemo(() => {
         if (!student) return [];

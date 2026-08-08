@@ -108,7 +108,7 @@ export default function StudentProfilePage() {
             dateStr: string;
             score: number;
         }[];
-    }, [student, studentRubrics, rubrics, gradeScales, settings]);
+    }, [student, studentRubrics, rubrics, gradeScales, settings, i18n.language]);
 
     const goals = useMemo(() => {
         if (!student) return [];
@@ -263,7 +263,7 @@ export default function StudentProfilePage() {
             });
         }
         return entries.sort((a, b) => b.date.getTime() - a.date.getTime());
-    }, [student, history, speakingSessions, selfAssessments, rubrics, gradeScales, settings]);
+    }, [student, history, speakingSessions, selfAssessments, rubrics, gradeScales, settings, i18n.language]);
 
     if (!student) {
         return (

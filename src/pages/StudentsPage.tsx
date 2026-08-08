@@ -46,6 +46,9 @@ import { generateStudentPassword } from '../utils/studentPassword';
 import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
 
 const sortHeaderButtonStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
     background: 'none',
     border: 'none',
     padding: 0,
@@ -268,8 +271,8 @@ export default function StudentsPage() {
         }
     }
     const sortArrow = (key: typeof sortKey) => (sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '');
-    const ariaSort = (key: typeof sortKey): 'ascending' | 'descending' | 'none' =>
-        sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+    const ariaSort = (key: typeof sortKey): 'ascending' | 'descending' | undefined =>
+        sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined;
 
     // Summary export modal
     const [summaryStudentId, setSummaryStudentId] = useState<string | null>(null);

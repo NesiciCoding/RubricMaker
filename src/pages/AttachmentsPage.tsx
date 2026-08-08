@@ -21,14 +21,18 @@ export default function AttachmentsPage() {
         (files: FileList | null) => {
             if (!files) return;
             Array.from(files).forEach(async (file) => {
-                addAttachment({
-                    name: file.name,
-                    mimeType: file.type,
-                    dataUrl: await fileToDataUrl(file),
-                    rubricId: selectedRubricId || undefined,
-                    studentId: selectedStudentId || undefined,
-                    size: file.size,
-                });
+                try {
+                    addAttachment({
+                        name: file.name,
+                        mimeType: file.type,
+                        dataUrl: await fileToDataUrl(file),
+                        rubricId: selectedRubricId || undefined,
+                        studentId: selectedStudentId || undefined,
+                        size: file.size,
+                    });
+                } catch (err) {
+                    console.error('Failed to read attachment file', file.name, err);
+                }
             });
         },
         [addAttachment, selectedRubricId, selectedStudentId]

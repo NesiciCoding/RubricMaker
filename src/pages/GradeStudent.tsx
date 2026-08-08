@@ -508,8 +508,12 @@ export default function GradeStudent() {
         async (criterionId: string) => {
             const result = await audioRecorder.stop(criterionId);
             if (!result) return;
-            const audioDataUrl = await fileToDataUrl(result.blob);
-            updateEntry(criterionId, { audioDataUrl });
+            try {
+                const audioDataUrl = await fileToDataUrl(result.blob);
+                updateEntry(criterionId, { audioDataUrl });
+            } catch (err) {
+                console.error('Failed to encode voice feedback recording', err);
+            }
         },
         [audioRecorder, updateEntry]
     );

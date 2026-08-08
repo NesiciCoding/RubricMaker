@@ -1704,8 +1704,12 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
         if (timerRef.current) clearInterval(timerRef.current);
         const result = await stop();
         if (result) {
-            const dataUri = await fileToDataUrl(result.blob);
-            onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+            try {
+                const dataUri = await fileToDataUrl(result.blob);
+                onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+            } catch (err) {
+                console.error('Failed to encode audio response', err);
+            }
         }
     }, [stop, onChange]);
 

@@ -36,7 +36,7 @@ export default function LearningGoalChart({ goals, className }: Props) {
                 max: h.maxPoints,
             };
         });
-    }, [activeGoal]);
+    }, [activeGoal, i18n.language]);
 
     if (!goals || goals.length === 0) {
         return (
