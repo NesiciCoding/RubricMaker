@@ -389,7 +389,8 @@ export default function StudentCefrOverviewPage() {
                                                     >
                                                         <span>{ev.sourceName}</span>
                                                         <span style={{ flexShrink: 0 }}>
-                                                            {formatShortDate(ev.gradedAt)} · {Math.round(ev.score)}%
+                                                            {formatShortDate(ev.gradedAt, i18n.language)} ·{' '}
+                                                            {Math.round(ev.score)}%
                                                         </span>
                                                     </div>
                                                 ))}

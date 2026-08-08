@@ -19,6 +19,7 @@ import Image from '@tiptap/extension-image';
 import { FileHandler } from '@tiptap/extension-file-handler';
 import { TableOfContents, type TableOfContentData } from '@tiptap/extension-table-of-contents';
 import { createEmojiExtension } from './emojiExtension';
+import { fileToDataUrl } from '../../utils/fileToDataUrl';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -232,7 +233,7 @@ export function getTipTapExtensions() {
         FontFamily,
         FontSize,
         LineHeight,
-        InvisibleCharacters,
+        InvisibleCharacters.configure({ visible: false }),
         // Headings only — this is what TableOfContents' click-to-scroll and stable anchors rely on;
         // harmless to include even where no TOC/emoji feature is opted into (read-only viewers included).
         UniqueId.configure({ types: ['heading'] }),
@@ -259,15 +260,6 @@ export function createTableOfContentsExtension(onUpdate: (data: TableOfContentDa
     return TableOfContents.configure({ onUpdate });
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-    });
-}
-
 /** Matches `MAX_FILE_SIZE_BYTES` in `questionBankImport.ts` — the project's existing size-cap convention. Images embed as base64 data URIs in the stored `content` HTML, so an oversized one bloats the synced jsonb document the same way an unbounded import file would. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -280,7 +272,7 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
     const insertPos = pos ?? editor.state.selection.anchor;
     files.forEach((file) => {
         if (!file.type.startsWith('image/') || file.size > MAX_IMAGE_BYTES) return;
-        readFileAsDataUrl(file)
+        fileToDataUrl(file)
             .then((src) => {
                 editor
                     .chain()

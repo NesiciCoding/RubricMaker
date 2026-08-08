@@ -3,6 +3,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader } from 'lucide-react';
 import { parseTemplateHeaders } from '../../utils/docxTemplateExport';
 import { parseStyleTemplate } from '../../utils/docxStyleTemplate';
+import { fileToDataUrl } from '../../utils/fileToDataUrl';
 import type { ExportTemplate } from '../../types';
 import Modal from '../ui/Modal';
 
@@ -52,12 +53,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
 
             try {
                 // Read as base64 for storage
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
+                const dataUrl = await fileToDataUrl(file);
 
                 if (kind === 'table') {
                     const { levelHeaders, headerColor } = await parseTemplateHeaders(file);

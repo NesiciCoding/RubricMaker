@@ -39,6 +39,7 @@ import { TestAdapter } from '../services/database/TestAdapter';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
 import { autoScoreResponse } from '../utils/testCalc';
+import { fileToDataUrl } from '../utils/fileToDataUrl';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -1674,15 +1675,6 @@ function QuestionCard({
 
 const DEFAULT_MAX_RECORDING_SECONDS = 60;
 
-function blobToDataUri(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-    });
-}
-
 interface AudioResponseAnswerProps {
     value: string;
     onChange: (value: string) => void;
@@ -1690,7 +1682,7 @@ interface AudioResponseAnswerProps {
     onRecordingChange?: (recording: boolean) => void;
 }
 
-/** Recordings are always `data:audio/...` URIs produced locally by blobToDataUri — reject anything else before it reaches an <audio src>. */
+/** Recordings are always `data:audio/...` URIs produced locally by fileToDataUrl — reject anything else before it reaches an <audio src>. */
 function safeRecordedAudioSrc(dataUri: string): string | undefined {
     return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
 }
@@ -1712,8 +1704,12 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
         if (timerRef.current) clearInterval(timerRef.current);
         const result = await stop();
         if (result) {
-            const dataUri = await blobToDataUri(result.blob);
-            onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+            try {
+                const dataUri = await fileToDataUrl(result.blob);
+                onChange(encodeAudioResponse({ dataUri, mimeType: result.mimeType, durationSec: elapsedRef.current }));
+            } catch (err) {
+                console.error('Failed to encode audio response', err);
+            }
         }
     }, [stop, onChange]);
 
