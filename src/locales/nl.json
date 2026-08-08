@@ -1663,7 +1663,15 @@
         "test_duration": "{{n}} min",
         "test_seb_required": "Safe Exam Browser vereist",
         "test_open_error": "Deze toets kon niet worden geladen. Vraag je docent de link opnieuw te sturen.",
-        "flashcards_section_title": "Mijn flashcards"
+        "flashcards_section_title": "Mijn flashcards",
+        "tab_home": "Start",
+        "tab_assignments": "Opdrachten",
+        "tab_feedback": "Feedback",
+        "tab_progress": "Voortgang",
+        "toggle_theme": "Thema wisselen",
+        "tab_empty_assignments": "Je hebt op dit moment geen opdrachten.",
+        "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
@@ -2962,7 +2970,8 @@
         "gr_layout_title": "Kaart- en rasterweergave",
         "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
-        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen."
+        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
+        "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcard-decks), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, CEFR en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

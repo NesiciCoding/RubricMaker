@@ -154,7 +154,7 @@ const STUDENT_FEATURES = [
     {
         icon: Eye,
         title: 'View Feedback',
-        desc: 'See your grades, teacher comments, and attached files via your personal portal link — no login needed.',
+        desc: 'See your grades, teacher comments, and attached files via your personal portal link — organised into Home, Assignments, Feedback, and Progress tabs, no login needed.',
         color: '#10b981',
     },
     {

@@ -1663,7 +1663,15 @@
         "test_duration": "{{n}} min",
         "test_seb_required": "Se requiere Safe Exam Browser",
         "test_open_error": "No se pudo cargar este examen. Pide a tu profesor que reenvíe el enlace.",
-        "flashcards_section_title": "Mis tarjetas de memoria"
+        "flashcards_section_title": "Mis tarjetas de memoria",
+        "tab_home": "Inicio",
+        "tab_assignments": "Tareas",
+        "tab_feedback": "Comentarios",
+        "tab_progress": "Progreso",
+        "toggle_theme": "Cambiar tema",
+        "tab_empty_assignments": "No tienes tareas por ahora.",
+        "tab_empty_progress": "Aún no hay datos de progreso: aparecerán cuando se califique tu trabajo.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
@@ -2962,7 +2970,8 @@
         "gr_layout_title": "Diseños de tarjeta y cuadrícula",
         "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
         "gr_keyboard_title": "Atajos de teclado",
-        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos."
+        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
+        "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

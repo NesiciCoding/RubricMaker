@@ -1663,7 +1663,15 @@
         "test_duration": "{{n}} min",
         "test_seb_required": "Safe Exam Browser required",
         "test_open_error": "Couldn't load this test. Ask your teacher to resend the link.",
-        "flashcards_section_title": "My flashcards"
+        "flashcards_section_title": "My flashcards",
+        "tab_home": "Home",
+        "tab_assignments": "Assignments",
+        "tab_feedback": "Feedback",
+        "tab_progress": "Progress",
+        "toggle_theme": "Toggle theme",
+        "tab_empty_assignments": "You have no assignments right now.",
+        "tab_empty_progress": "No progress data yet — it appears here once your work is graded.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",
@@ -2960,7 +2968,8 @@
         "gr_layout_title": "Card & grid layouts",
         "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
-        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut."
+        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
+        "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header."
     },
     "studentProfile": {
         "tab_overview": "Overview",

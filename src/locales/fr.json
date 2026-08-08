@@ -1663,7 +1663,15 @@
         "test_duration": "{{n}} min",
         "test_seb_required": "Safe Exam Browser requis",
         "test_open_error": "Impossible de charger ce test. Demandez à votre enseignant de renvoyer le lien.",
-        "flashcards_section_title": "Mes cartes mémoire"
+        "flashcards_section_title": "Mes cartes mémoire",
+        "tab_home": "Accueil",
+        "tab_assignments": "Devoirs",
+        "tab_feedback": "Retours",
+        "tab_progress": "Progrès",
+        "toggle_theme": "Changer de thème",
+        "tab_empty_assignments": "Vous n'avez aucun devoir pour le moment.",
+        "tab_empty_progress": "Aucune donnée de progression pour l'instant — elle apparaîtra une fois votre travail noté.",
+        "brand_name": "Rubric Maker"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
@@ -2962,7 +2970,8 @@
         "gr_layout_title": "Dispositions carte et grille",
         "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
-        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis."
+        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
+        "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et jeux de cartes à faire), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
