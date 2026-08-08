@@ -10,6 +10,16 @@ export class GradeStudentPage extends BasePage {
         await this.navigate(`/rubrics/${rubricId}/grade/${studentId}`);
     }
 
+    /**
+     * Opens the header settings-cog menu and clicks one of its items. Phase 40 moved
+     * the rarely-used header actions (import essay, co-grade, not-handed-in, …) behind
+     * this menu, so they're no longer directly clickable in the topbar.
+     */
+    async openHeaderAction(name: RegExp): Promise<void> {
+        await this.page.getByRole('button', { name: /more actions/i }).click();
+        await this.page.getByRole('menuitem', { name }).click();
+    }
+
     async selectLevel(criterionIndex: number, levelLabel: string): Promise<void> {
         const levelBtns = this.page.locator('.level-btn').filter({ hasText: levelLabel });
         await levelBtns.nth(criterionIndex).click();

@@ -148,7 +148,8 @@
         "all": "Todo",
         "export_csv": "Exportar CSV",
         "prev": "Anterior",
-        "next": "Siguiente"
+        "next": "Siguiente",
+        "view_grid": "Cuadrícula"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -1084,7 +1085,17 @@
         "action_essay": "Redacción",
         "action_import_essay": "Importar redacción",
         "anchor_help_text": "Los trabajos de referencia son envíos usados para calibrar su evaluación. Marcar un envío como referencia le permite compararlo junto a nuevos envíos en el pie de página de calificación.",
-        "aria_grade_summary": "Resumen de calificación"
+        "aria_grade_summary": "Resumen de calificación",
+        "view_layout_label": "Diseño de calificación",
+        "more_actions": "Más acciones",
+        "action_export_pdf": "Exportar PDF",
+        "grid_pick_level": "Elige un nivel para este criterio, o simplemente deja un comentario.",
+        "sub_items_label": "Subelementos",
+        "override_label": "Anular puntuación",
+        "quick_comments_label": "Rápido",
+        "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
+        "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -2947,7 +2958,11 @@
         "gr_generate_test_body": "\"Generar desde el banco\", disponible en la lista de exámenes, abre un asistente que ensambla un nuevo examen a partir de elementos del banco que coinciden con los criterios elegidos, sin necesidad de insertar preguntas una a una.",
         "gr_generate_test_item_criteria": "Añada una o más filas de criterios (pregunta individual o sección agrupada, nivel MCER, etiqueta y cuántas extraer) — los elementos se eligen al azar entre las coincidencias, por lo que generaciones repetidas no siempre producen el mismo conjunto.",
         "gr_generate_test_item_organize": "Organice opcionalmente el resultado en secciones por nivel MCER — esto produce exactamente la forma de grupo de nivel que espera el motor de posicionamiento Staircase, lista para usar de inmediato.",
-        "gr_generate_test_item_review": "El examen generado se abre en el generador de exámenes habitual, prellenado y listo para revisar, ajustar y guardar como cualquier otro examen."
+        "gr_generate_test_item_review": "El examen generado se abre en el generador de exámenes habitual, prellenado y listo para revisar, ajustar y guardar como cualquier otro examen.",
+        "gr_layout_title": "Diseños de tarjeta y cuadrícula",
+        "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
+        "gr_keyboard_title": "Atajos de teclado",
+        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

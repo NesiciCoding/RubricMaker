@@ -29,7 +29,7 @@ test.describe('Essay import → grading views (offline mode)', () => {
         const page = new GradeStudentPage(appPage);
         await page.goto('essay-import-rubric', 'essay-import-student');
 
-        await appPage.getByRole('button', { name: /import essay/i }).click();
+        await page.openHeaderAction(/import essay/i);
         await expect(appPage.getByText(/import essay — essay import student/i)).toBeVisible({ timeout: 10_000 });
 
         // No Supabase configured — the "From database" tab must not be offered.
@@ -41,7 +41,7 @@ test.describe('Essay import → grading views (offline mode)', () => {
         const page = new GradeStudentPage(appPage);
         await page.goto('essay-import-rubric', 'essay-import-student');
 
-        await appPage.getByRole('button', { name: /import essay/i }).click();
+        await page.openHeaderAction(/import essay/i);
         const code = buildEssaySubmissionCode({
             assignmentRubricId: 'some-other-rubric',
             assignmentStudentId: 'essay-import-student',
@@ -58,7 +58,7 @@ test.describe('Essay import → grading views (offline mode)', () => {
         const page = new GradeStudentPage(appPage);
         await page.goto('essay-import-rubric', 'essay-import-student');
 
-        await appPage.getByRole('button', { name: /import essay/i }).click();
+        await page.openHeaderAction(/import essay/i);
         const code = buildEssaySubmissionCode({
             assignmentRubricId: 'essay-import-rubric',
             assignmentStudentId: 'essay-import-student',
@@ -77,7 +77,7 @@ test.describe('Essay import → grading views (offline mode)', () => {
         const page = new GradeStudentPage(appPage);
         await page.goto('essay-import-rubric', 'essay-import-student');
 
-        await appPage.getByRole('button', { name: /import essay/i }).click();
+        await page.openHeaderAction(/import essay/i);
         const code = buildEssaySubmissionCode({
             assignmentRubricId: 'essay-import-rubric',
             assignmentStudentId: 'essay-import-student',
@@ -91,9 +91,7 @@ test.describe('Essay import → grading views (offline mode)', () => {
         await expect(appPage.getByText(/essay – essay import student/i).first()).toBeVisible({ timeout: 10_000 });
 
         // Comparative grading anchors on the imported student via ?start=
-        await appPage.goto(
-            '/#/grade-comparative/essay-import-class/essay-import-rubric?start=essay-import-student'
-        );
+        await appPage.goto('/#/grade-comparative/essay-import-class/essay-import-rubric?start=essay-import-student');
         await expect(appPage.locator('.main-area')).toBeVisible({ timeout: 10_000 });
         await expect(appPage.getByText(/essay – essay import student/i).first()).toBeVisible({ timeout: 10_000 });
     });

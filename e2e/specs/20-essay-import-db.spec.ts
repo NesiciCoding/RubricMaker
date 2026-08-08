@@ -134,7 +134,7 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
 
         const otherSubmissionId = `db-essay-other-submission-${runId}`;
         const otherStoragePath = `${otherAssignmentId}/${otherSubmissionId}.html`;
-        await uploadEssayHtml(otherStoragePath, '<p>A different student\'s essay.</p>');
+        await uploadEssayHtml(otherStoragePath, "<p>A different student's essay.</p>");
         await insertRow('essay_submissions', {
             id: otherSubmissionId,
             assignment_id: otherAssignmentId,
@@ -149,7 +149,7 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
         const page = new GradeStudentPage(supabasePage);
         await page.goto(rubric.id, student.id);
 
-        await supabasePage.getByRole('button', { name: /import essay/i }).click();
+        await page.openHeaderAction(/import essay/i);
 
         // DB is connected — the "From database" tab is shown and loads automatically.
         await expect(supabasePage.getByText('From database')).toBeVisible({ timeout: 10_000 });
@@ -164,8 +164,8 @@ test.describe('Essay import → grading views (Supabase-backed)', () => {
         // The modal closes immediately on import and the Attachments panel
         // opens, showing the essay as an HTML attachment for this student.
         const escapedEmail = studentEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        await expect(
-            supabasePage.getByText(new RegExp(`essay – ${escapedEmail}`, 'i')).first()
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(supabasePage.getByText(new RegExp(`essay – ${escapedEmail}`, 'i')).first()).toBeVisible({
+            timeout: 10_000,
+        });
     });
 });

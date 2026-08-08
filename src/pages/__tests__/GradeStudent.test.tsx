@@ -137,6 +137,8 @@ function renderPage() {
 
 describe('GradeStudent', () => {
     beforeEach(async () => {
+        // jsdom has no scrollIntoView; focusing a criterion triggers it.
+        Element.prototype.scrollIntoView = vi.fn();
         mockSaveStudentRubric.mockClear();
         mockUpdateSettings.mockClear();
         mockNavigate.mockClear();
@@ -191,9 +193,36 @@ describe('GradeStudent', () => {
 
     it('marks the student as not handed in and navigates to the next student', () => {
         renderPage();
-        fireEvent.click(screen.getByLabelText('gradeStudent.action_not_handed_in'));
+        // Not-handed-in now lives in the settings-cog menu (Phase 40) — open it first.
+        fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
+        fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+    });
+
+    it('toggles to the grid layout and selects a level cell', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('common.view_grid'));
+        // The grid renders each level as a cell button; select "Excellent".
+        fireEvent.click(screen.getByText('Excellent'));
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c1', levelId: 'l1' })]),
+            })
+        );
+    });
+
+    it('supports the criterion-letter + number chord to select a level', () => {
+        renderPage();
+        fireEvent.keyDown(window, { key: 'a' });
+        fireEvent.keyDown(window, { key: '1' });
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c1', levelId: 'l1' })]),
+            })
+        );
     });
 
     it('saves and advances to the next student', () => {
@@ -237,7 +266,8 @@ describe('GradeStudent', () => {
         it('pre-fills the prompt from an existing assignment for this rubric', () => {
             mockAppValue.essayAssignments = [existingAssignment];
             renderPage();
-            fireEvent.click(screen.getByLabelText('gradeStudent.action_essay'));
+            fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
+            fireEvent.click(screen.getByText('gradeStudent.action_essay'));
             expect(screen.getByLabelText(/prompt_label/)).toHaveValue('Write a short story...');
         });
 
@@ -246,7 +276,8 @@ describe('GradeStudent', () => {
             // for this rubric, so guessing could prefill the wrong prompt/limits.
             mockAppValue.essayAssignments = [existingAssignment, ambiguousAssignment];
             renderPage();
-            fireEvent.click(screen.getByLabelText('gradeStudent.action_essay'));
+            fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
+            fireEvent.click(screen.getByText('gradeStudent.action_essay'));
             expect(screen.getByLabelText(/prompt_label/)).toHaveValue('');
         });
     });

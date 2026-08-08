@@ -148,7 +148,8 @@
         "all": "Alle",
         "export_csv": "CSV exportieren",
         "prev": "Zurück",
-        "next": "Weiter"
+        "next": "Weiter",
+        "view_grid": "Raster"
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -1084,7 +1085,17 @@
         "action_essay": "Aufsatz",
         "action_import_essay": "Aufsatz importieren",
         "anchor_help_text": "Ankerarbeiten sind Referenzeinreichungen, die zur Kalibrierung Ihrer Bewertung verwendet werden. Durch das Markieren einer Einreichung als Anker können Sie sie in der Bewertungsfußzeile neben neuen Einreichungen vergleichen.",
-        "aria_grade_summary": "Notenübersicht"
+        "aria_grade_summary": "Notenübersicht",
+        "view_layout_label": "Bewertungsansicht",
+        "more_actions": "Weitere Aktionen",
+        "action_export_pdf": "PDF exportieren",
+        "grid_pick_level": "Wählen Sie eine Stufe für dieses Kriterium oder hinterlassen Sie nur einen Kommentar.",
+        "sub_items_label": "Unterpunkte",
+        "override_label": "Bewertung überschreiben",
+        "quick_comments_label": "Schnell",
+        "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
+        "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -2947,7 +2958,11 @@
         "gr_generate_test_body": "In der Testliste öffnet „Aus Bank generieren\" einen Assistenten, der einen neuen Test aus Bankelementen zusammenstellt, die Ihren gewählten Kriterien entsprechen — kein manuelles Einfügen Frage für Frage nötig.",
         "gr_generate_test_item_criteria": "Fügen Sie eine oder mehrere Kriterienzeilen hinzu (Einzelfrage oder Abschnittsbündel, GER-Niveau, Tag und Anzahl) — Elemente werden zufällig aus den Treffern ausgewählt, sodass wiederholte Generierungen nicht immer dieselbe Auswahl ergeben.",
         "gr_generate_test_item_organize": "Organisieren Sie das Ergebnis optional in GER-Niveau-Abschnitte — das erzeugt genau die Niveau-Pool-Struktur, die die Staircase-Einstufungs-Engine erwartet, sofort einsatzbereit.",
-        "gr_generate_test_item_review": "Der generierte Test öffnet sich im normalen Test-Builder, vorausgefüllt und bereit zur Überprüfung, Anpassung und Speicherung wie jeder andere Test."
+        "gr_generate_test_item_review": "Der generierte Test öffnet sich im normalen Test-Builder, vorausgefüllt und bereit zur Überprüfung, Anpassung und Speicherung wie jeder andere Test.",
+        "gr_layout_title": "Karten- und Rasteransicht",
+        "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
+        "gr_keyboard_title": "Tastaturkürzel",
+        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
