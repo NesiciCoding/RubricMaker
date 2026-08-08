@@ -153,6 +153,16 @@ describe('StudentsPage', () => {
         expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
+    it('exposes sortable column headers as buttons with aria-sort', () => {
+        renderPage();
+        const nameBtn = screen.getByRole('button', { name: /studentsPage\.table_name/ });
+        expect(nameBtn.tagName).toBe('BUTTON');
+        const th = nameBtn.closest('th');
+        expect(th).toHaveAttribute('aria-sort', 'ascending');
+        fireEvent.click(nameBtn);
+        expect(th).toHaveAttribute('aria-sort', 'descending');
+    });
+
     it('searches and filters students', () => {
         renderPage();
         const search = screen.getByPlaceholderText('studentsPage.search_students');

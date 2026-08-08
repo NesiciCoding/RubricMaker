@@ -33,11 +33,11 @@ function dayKey(iso: string): string {
     return new Date(iso).toDateString();
 }
 
-export function dateGroupLabel(iso: string, t: TFunction): string {
+export function dateGroupLabel(iso: string, t: TFunction, locale?: string): string {
     const key = dayKey(iso);
     if (key === new Date().toDateString()) return t('dashboard.date_today', 'Today');
     if (key === new Date(Date.now() - 86_400_000).toDateString()) return t('dashboard.date_yesterday', 'Yesterday');
-    return formatShortDate(iso);
+    return formatShortDate(iso, locale);
 }
 
 function timeAgo(iso: string, t: TFunction): string {
@@ -85,7 +85,7 @@ function TrendBadge({ count, t }: { count: number; t: TFunction }) {
 }
 
 export default function Dashboard() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
     const {
@@ -697,10 +697,11 @@ export default function Dashboard() {
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     {recentActivity.map((item, idx) => {
-                                        const groupLabel = dateGroupLabel(item.timestamp, t);
+                                        const groupLabel = dateGroupLabel(item.timestamp, t, i18n.language);
                                         const showGroupHeader =
                                             idx === 0 ||
-                                            groupLabel !== dateGroupLabel(recentActivity[idx - 1].timestamp, t);
+                                            groupLabel !==
+                                                dateGroupLabel(recentActivity[idx - 1].timestamp, t, i18n.language);
                                         return (
                                             <React.Fragment
                                                 key={

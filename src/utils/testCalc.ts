@@ -1,9 +1,6 @@
 import type { Test, TestQuestion, TestAnswer, StudentTest } from '../types';
 import { parseClozeGaps, parseHotTextFragments } from './clozeParse';
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
+import { clamp } from './clamp';
 
 export function calcTestMaxPoints(test: Test): number {
     return test.questions.reduce((sum, q) => sum + q.points, 0);

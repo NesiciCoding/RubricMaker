@@ -9,10 +9,7 @@ import type {
     TestStrongWeakSummary,
 } from '../types';
 import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
+import { clamp } from './clamp';
 
 /** Same thresholds as gradeColor() in periodReportExport.ts — keep these in sync. */
 export function bucketForAccuracy(accuracyPct: number): TestStrengthBucket {
