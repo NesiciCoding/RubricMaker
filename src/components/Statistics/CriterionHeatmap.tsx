@@ -82,7 +82,7 @@ export default function CriterionHeatmap({
                 }}
             >
                 {/* Header row */}
-                <div style={stickyCol} /> {/* empty corner, pinned */}
+                <div style={stickyCol} />
                 {criteria.map((c) => (
                     <div
                         key={c.id}

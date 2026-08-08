@@ -8,6 +8,16 @@ interface Sector {
     count: number;
 }
 
+/**
+ * Radius for a 0–100 value such that the sector's *visible* area — the annulus r² − innerRadius²
+ * over an equal angle — is linear in the value (the correct coxcomb encoding for a non-zero inner
+ * radius). Value is clamped to [0, 100] so out-of-range/negative inputs can't produce NaN.
+ */
+function radiusForValue(value: number, innerRadius: number, maxRadius: number): number {
+    const ratio = Math.max(0, Math.min(100, value)) / 100;
+    return Math.sqrt(innerRadius ** 2 + ratio * (maxRadius ** 2 - innerRadius ** 2));
+}
+
 interface Props {
     sectors: Sector[];
     height?: number;
@@ -30,11 +40,11 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
             const midAngle = (startAngle + endAngle) / 2;
 
             const hasData = sector.count > 0 && !isNaN(sector.value);
-            // Radius ∝ √value so that a sector's *area* (all sectors share an equal angle) is linear
-            // in the value — the correct coxcomb encoding. Using radius ∝ value would make area grow
-            // with value², overstating high values to the eye. The reference rings below use the same
-            // √ scale so they remain accurate value gridlines.
-            const r = hasData ? Math.max(innerRadius + 2, Math.sqrt(sector.value / 100) * maxRadius) : innerRadius + 2;
+            // Encode value as annulus-area (see radiusForValue) so equal values read as equal visible
+            // area regardless of the sector's angular position; the reference rings use the same scale.
+            const r = hasData
+                ? Math.max(innerRadius + 2, radiusForValue(sector.value, innerRadius, maxRadius))
+                : innerRadius + 2;
 
             const x1 = cx + innerRadius * Math.cos(startAngle);
             const y1 = cy + innerRadius * Math.sin(startAngle);
@@ -74,17 +84,17 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
                 viewBox={`0 0 320 ${height}`}
                 style={{ display: 'block', margin: '0 auto' }}
             >
-                {/* Reference rings — placed on the same √ scale as the sectors so they read as value gridlines */}
-                {[0.33, 0.66, 1].map((pct) => (
+                {/* Reference rings — same annulus scale as the sectors so they read as value gridlines */}
+                {[33, 66, 100].map((pct) => (
                     <circle
                         key={pct}
                         cx={cx}
                         cy={cy}
-                        r={Math.sqrt(pct) * maxRadius}
+                        r={radiusForValue(pct, innerRadius, maxRadius)}
                         fill="none"
                         stroke="var(--border)"
                         strokeWidth={1}
-                        strokeDasharray={pct < 1 ? '4 4' : undefined}
+                        strokeDasharray={pct < 100 ? '4 4' : undefined}
                         opacity={0.5}
                     />
                 ))}
@@ -93,7 +103,7 @@ export default function FrameworkRoseChart({ sectors, height = 360 }: Props) {
                     <text
                         key={pct}
                         x={cx + 3}
-                        y={cy - Math.sqrt(pct / 100) * maxRadius + 4}
+                        y={cy - radiusForValue(pct, innerRadius, maxRadius) + 4}
                         fontSize={9}
                         fill="var(--text-muted)"
                         opacity={0.7}

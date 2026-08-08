@@ -697,6 +697,7 @@ function GettingStartedTab() {
                 </p>
                 <FeatureList
                     items={[
+                        t('docs.gs_classes_item_cohorts'),
                         t('docs.gs_classes_item_year'),
                         t('docs.gs_classes_item_track'),
                         t('docs.gs_classes_item_student_track'),

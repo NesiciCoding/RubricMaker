@@ -50,8 +50,8 @@ test.describe('CSV student import', () => {
         // Dismiss the import summary and close the modal
         await dialog.getByRole('button', { name: /done/i }).click();
 
-        // Select the imported class in the sidebar to make its students visible
-        await appPage.locator('.nav-item').filter({ hasText: 'Year 3B' }).click();
+        // Select the imported class via its cohort chip to make its students visible
+        await appPage.getByRole('button', { name: /^Year 3B/ }).click();
 
         await expect(appPage.getByText('Bob Smith')).toBeVisible({ timeout: 5_000 });
         await expect(appPage.getByText('Carol Jones')).toBeVisible();
