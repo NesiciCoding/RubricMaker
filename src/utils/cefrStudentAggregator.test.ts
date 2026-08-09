@@ -616,6 +616,10 @@ function makeAnalysisResult(overrides: Partial<DocumentAnalysisResult> = {}): Do
         detectedItems: [],
         grammarErrors: [],
         grammarCheckerUsed: 'none',
+        // Levels are precomputed at analysis time (DocumentAnalysisPanel) and stored on the record;
+        // the aggregator reads these rather than re-running the NLP profilers.
+        vocabEstimatedLevel: 'B1',
+        grammarEstimatedLevel: 'B1',
         ...overrides,
     };
 }
@@ -667,10 +671,10 @@ describe('getCefrStudentOverview — text profiling from analysisResults', () =>
         expect(cell!.textGrammarEstimate).toBeUndefined();
     });
 
-    it('ignores analysisResult with no extractedText', () => {
+    it('ignores analysisResult with no precomputed estimate (e.g. analysed before the fields existed)', () => {
         const rubric = makeRubric({ cefrTargetLevel: 'B1', cefrSkill: 'writing' });
         const sr = makeSr();
-        const ar = makeAnalysisResult({ extractedText: '' });
+        const ar = makeAnalysisResult({ vocabEstimatedLevel: undefined, grammarEstimatedLevel: undefined });
 
         const result = getCefrStudentOverview('s1', [sr], [rubric], [], [ar]);
         const cell = result.cellMap.get('writing__B1');
@@ -710,26 +714,14 @@ describe('getCefrStudentOverview — text profiling from analysisResults', () =>
         const sr2 = makeSr({ id: 'sr2', rubricId: 'r2' });
         const rubric2 = makeRubric({ id: 'r2', cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 });
 
-        // One analysis with basic text, one with advanced text
-        const ar1 = makeAnalysisResult({
-            id: 'ar1',
-            rubricId: 'r1',
-            extractedText: 'the cat sat on the mat',
-        });
-        const ar2 = makeAnalysisResult({
-            id: 'ar2',
-            rubricId: 'r2',
-            extractedText:
-                'The phenomenon of globalisation has fundamentally transformed contemporary economic structures. ' +
-                'Significant disparities persist despite unprecedented technological advancement.',
-        });
+        // One analysis estimated low, one estimated high — the cell should keep the higher.
+        const ar1 = makeAnalysisResult({ id: 'ar1', rubricId: 'r1', vocabEstimatedLevel: 'A1' });
+        const ar2 = makeAnalysisResult({ id: 'ar2', rubricId: 'r2', vocabEstimatedLevel: 'C1' });
 
         const result = getCefrStudentOverview('s1', [sr1, sr2], [rubric, rubric2], [], [ar1, ar2]);
         const cell = result.cellMap.get('writing__B1');
         expect(cell).toBeDefined();
-        // The advanced text should push the vocab estimate higher than A1
-        const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-        expect(LEVEL_ORDER.indexOf(cell!.textVocabEstimate!)).toBeGreaterThanOrEqual(0);
+        expect(cell!.textVocabEstimate).toBe('C1');
     });
 
     it('textVocabEstimate is a valid CefrLevel', () => {

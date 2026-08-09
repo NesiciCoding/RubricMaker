@@ -1,8 +1,6 @@
 import type {
     CefrLevel,
     CefrSkill,
-    CefrVocabProfile,
-    CefrGrammarProfile,
     DocumentAnalysisResult,
     Rubric,
     StudentRubric,
@@ -18,8 +16,6 @@ import { CEFR_DESCRIPTORS, CEFR_SKILLS, CEFR_LEVELS } from '../data/cefrDescript
 import { getCefrTargetRange } from '../data/cefrTrackYearTargets';
 import { compareToRange, cefrLevelOrdinal, type ProgressStatus } from './cefrOrdinal';
 import { calcGradeSummary, criterionMaxPoints } from './gradeCalc';
-import { profileText } from './cefrVocabularyProfiler';
-import { profileGrammar } from './grammarChecker';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
 
@@ -132,10 +128,6 @@ export interface CefrTrackYearProgress {
     achievedLevel: CefrLevel | null;
     status: ProgressStatus;
 }
-
-// Module-level cache so repeated getCefrStudentOverview calls (e.g. on navigation)
-// don't re-run NLP on the same extracted text
-const profileCache = new Map<string, { vocab: CefrVocabProfile; grammar: CefrGrammarProfile }>();
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -586,27 +578,29 @@ export function getCefrStudentOverview(
     const textGrammarMap = new Map<string, CefrLevel>();
 
     if (analysisResults?.length) {
-        const studentAnalyses = analysisResults.filter((ar) => ar.studentId === studentId && ar.extractedText);
+        // Levels are precomputed at analysis time (DocumentAnalysisPanel) and stored on the record,
+        // so this hot aggregator never loads the NLP profilers. Records analysed before those fields
+        // existed simply carry no estimate and are skipped here (badge omitted, no effect on levels).
+        const studentAnalyses = analysisResults.filter(
+            (ar) => ar.studentId === studentId && (ar.vocabEstimatedLevel || ar.grammarEstimatedLevel)
+        );
         for (const ar of studentAnalyses) {
             const sr = graded.find((r) => r.rubricId === ar.rubricId);
             if (!sr) continue;
             const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
             if (!rubric?.cefrTargetLevel) continue;
             const key = `${rubric.cefrSkill ?? 'writing'}__${rubric.cefrTargetLevel}`;
-            let cached = profileCache.get(ar.extractedText);
-            if (!cached) {
-                cached = { vocab: profileText(ar.extractedText), grammar: profileGrammar(ar.extractedText) };
-                profileCache.set(ar.extractedText, cached);
+            if (ar.vocabEstimatedLevel) {
+                const prevVocab = textVocabMap.get(key);
+                if (!prevVocab || cefrLevelOrdinal(ar.vocabEstimatedLevel) > cefrLevelOrdinal(prevVocab)) {
+                    textVocabMap.set(key, ar.vocabEstimatedLevel);
+                }
             }
-            const vocabProfile = cached.vocab;
-            const grammarProfile = cached.grammar;
-            const prevVocab = textVocabMap.get(key);
-            if (!prevVocab || cefrLevelOrdinal(vocabProfile.estimatedLevel) > cefrLevelOrdinal(prevVocab)) {
-                textVocabMap.set(key, vocabProfile.estimatedLevel);
-            }
-            const prevGrammar = textGrammarMap.get(key);
-            if (!prevGrammar || cefrLevelOrdinal(grammarProfile.estimatedLevel) > cefrLevelOrdinal(prevGrammar)) {
-                textGrammarMap.set(key, grammarProfile.estimatedLevel);
+            if (ar.grammarEstimatedLevel) {
+                const prevGrammar = textGrammarMap.get(key);
+                if (!prevGrammar || cefrLevelOrdinal(ar.grammarEstimatedLevel) > cefrLevelOrdinal(prevGrammar)) {
+                    textGrammarMap.set(key, ar.grammarEstimatedLevel);
+                }
             }
         }
     }

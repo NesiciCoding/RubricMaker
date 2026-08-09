@@ -441,6 +441,11 @@ export interface DocumentAnalysisResult {
     grammarErrors: GrammarError[];
     grammarCheckerUsed: 'languagetool' | 'compromise' | 'none';
     grammarTextTruncated?: boolean;
+    /** Vocabulary/grammar CEFR estimates, precomputed at analysis time so the CEFR aggregator
+     * doesn't have to load the NLP profilers (compromise + vocab data, ~500KB). Absent on records
+     * analysed before this field existed — the aggregator simply omits the estimate badge for those. */
+    vocabEstimatedLevel?: CefrLevel;
+    grammarEstimatedLevel?: CefrLevel;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
 }
