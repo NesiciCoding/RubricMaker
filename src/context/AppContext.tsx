@@ -1428,30 +1428,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // ── Re-hydrate from Supabase when the network comes back online ──────────────
     useEffect(() => {
         let cancelled = false;
-        let unsub: (() => void) | undefined;
+        const unsubs: Array<() => void> = [];
         loadDb()
             .then(({ storageSync }) => {
                 if (cancelled) return;
-                unsub = storageSync.onNetworkReconnect(async () => {
-                    if (!storageSync.isConnected()) return;
-                    const { data: fresh } = await storageSync.hydrate();
-                    if (fresh) {
-                        const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
-                        applyHydrated(merged, true);
-                        try {
-                            await flushToLocalStorage(merged);
-                        } catch {
-                            // quota error — non-fatal on reconnect
-                        }
+                const applyFresh = async (fresh: Partial<StoreData>) => {
+                    const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
+                    applyHydrated(merged, true);
+                    try {
+                        await flushToLocalStorage(merged);
+                    } catch {
+                        // quota error — non-fatal on reconnect
                     }
-                });
+                };
+                unsubs.push(
+                    storageSync.onNetworkReconnect(async () => {
+                        if (!storageSync.isConnected()) return;
+                        const { data: fresh } = await storageSync.hydrate();
+                        if (fresh) await applyFresh(fresh);
+                    })
+                );
+                // Realtime: a remote row change refreshes only the affected collections
+                // (targeted partial hydrate) instead of re-pulling all ~30 tables; unknown
+                // tables / settings degrade to a full hydrate so nothing is ever dropped.
+                unsubs.push(
+                    storageSync.onRealtimeChange(async (tables) => {
+                        if (!storageSync.isConnected()) return;
+                        const { data, fullFallback } = await storageSync.hydratePartial(new Set(tables));
+                        const fresh = fullFallback ? (await storageSync.hydrate()).data : data;
+                        if (fresh) await applyFresh(fresh);
+                    })
+                );
             })
             .catch((e) => {
                 if (!cancelled) console.error('[sync] failed to load database module for reconnect handling', e);
             });
         return () => {
             cancelled = true;
-            unsub?.();
+            unsubs.forEach((u) => u());
         };
     }, []);
 
