@@ -8,7 +8,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { getGrammarItemById } from '../../data/grammarStandards';
-import { stripHtmlTags } from '../../utils/docxExport';
+import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { exportQuestionBankJson } from '../../utils/questionBankImport';
 import { QUESTION_TYPES } from './QuestionEditor';
 import type { QuestionBankItem, CefrLevel, TestQuestion, TestQuestionType } from '../../types';

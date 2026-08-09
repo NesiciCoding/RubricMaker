@@ -65,7 +65,6 @@ import Modal from '../components/ui/Modal';
 import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
-import { exportRubricToDocx } from '../utils/docxExport';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
@@ -322,6 +321,7 @@ export default function RubricBuilder() {
             await exportRubricGridPdf(rubric);
             logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
         } else if (type === 'docx') {
+            const { exportRubricToDocx } = await import('../utils/docxExport');
             await exportRubricToDocx(rubric);
             logAuditEvent('export', 'export_docx', 'rubric', rubric.id);
         } else {

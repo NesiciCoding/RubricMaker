@@ -15,7 +15,7 @@ import {
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
 import { usesLevelPathEstimate, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
-import { stripHtmlTags } from '../utils/docxExport';
+import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
