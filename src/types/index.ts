@@ -555,8 +555,14 @@ export interface ScoreEntry {
     attachmentId?: string; // evidence file linked to this criterion
     /** Single-point rubric outcome — set instead of levelId when scoringMode is 'single-point' */
     singlePointOutcome?: SinglePointOutcome;
-    /** Base64 audio recording for this criterion (data:audio/webm;base64,...) */
+    /** Base64 audio recording for this criterion (data:audio/webm;base64,...).
+     * Holds the freshly-recorded blob before it is uploaded, and old records recorded before
+     * feedback audio moved to the storage bucket. Once synced, audioStoragePath is set and this
+     * is cleared to keep the student_rubrics jsonb small (perf: issue #275). */
     audioDataUrl?: string;
+    /** Path in the private 'feedback-audio' bucket ({uid}/{studentRubricId}/{criterionId}) once
+     * the recording has been uploaded. Playback resolves this to a signed URL on demand. */
+    audioStoragePath?: string;
 }
 
 export interface StudentRubric {

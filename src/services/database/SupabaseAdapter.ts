@@ -1205,6 +1205,31 @@ export class SupabaseAdapter {
         return error ? null : (data?.signedUrl ?? null);
     }
 
+    // ── Voice-feedback audio (feedback-audio bucket, migration 069) ─────────────
+    // Blobs live in the bucket; the ScoreEntry keeps only the returned path so the
+    // student_rubrics jsonb stays small. Path = {uid}/{suffix} where suffix is
+    // {studentRubricId}/{criterionId}, so re-recording a criterion overwrites in place.
+
+    async uploadFeedbackAudio(suffix: string, blob: Blob, mimeType: string): Promise<string | null> {
+        const path = `${this.uid()}/${suffix}`;
+        const { error } = await this.db().storage.from('feedback-audio').upload(path, blob, {
+            contentType: mimeType,
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    /** Sign a feedback-audio path. Default 1h (teacher playback); pass a long TTL for share links. */
+    async getFeedbackAudioSignedUrl(storagePath: string, ttlSeconds = 3600): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('feedback-audio').createSignedUrl(storagePath, ttlSeconds);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    async deleteFeedbackAudio(storagePath: string): Promise<SyncResult> {
+        const { error } = await this.db().storage.from('feedback-audio').remove([storagePath]);
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     /** Fetch recording ids for a given speaking session, for cascading deletes. */
     async fetchRecordingIdsForSession(sessionId: string): Promise<string[]> {
         const { data, error } = await this.db()

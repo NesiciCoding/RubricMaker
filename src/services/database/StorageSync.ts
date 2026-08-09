@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseAdapter } from './SupabaseAdapter';
 import { AttachmentSync } from './AttachmentSync';
 import { RecordingSync } from './RecordingSync';
+import { FeedbackAudioSync } from './FeedbackAudioSync';
 import type { DatabaseConfig, SyncStatus, SyncResult, DbUser } from './types';
 export { loadSupabaseConfig, saveSupabaseConfig, clearSupabaseConfig } from './supabaseConfig';
 import { clearSupabaseConfig } from './supabaseConfig';
@@ -58,6 +59,7 @@ class StorageSyncService {
     readonly adapter = new SupabaseAdapter();
     private attachmentSync: AttachmentSync = new AttachmentSync(this.adapter);
     private recordingSync: RecordingSync = new RecordingSync(this.adapter);
+    readonly feedbackAudioSync: FeedbackAudioSync = new FeedbackAudioSync(this.adapter);
     private status: SyncStatus = 'offline';
     private lastSyncAt: string | null = localStorage.getItem(LAST_SYNC_KEY);
     private listeners: Set<() => void> = new Set();
@@ -769,7 +771,9 @@ class StorageSyncService {
                 ...state.rubrics.map((r) => this.adapter.upsertRubric(r)),
                 ...state.classes.map((c) => this.adapter.upsertClass(c)),
                 ...state.students.map((s) => this.adapter.upsertStudent(s)),
-                ...state.studentRubrics.map((sr) => this.adapter.upsertStudentRubric(sr)),
+                ...state.studentRubrics.map((sr) =>
+                    this.feedbackAudioSync.prepareForPush(sr).then((p) => this.adapter.upsertStudentRubric(p))
+                ),
                 ...state.peerReviews.map((sr) => this.adapter.upsertPeerReview(sr)),
                 ...state.gradeScales.map((gs) => this.adapter.upsertGradeScale(gs)),
                 ...state.commentBank.map((cb) => this.adapter.upsertCommentBankItem(cb)),
@@ -856,7 +860,10 @@ class StorageSyncService {
                     else if (id) result = await this.adapter.deleteStudent(id);
                     break;
                 case 'studentRubric':
-                    if (action === 'upsert') result = await this.adapter.upsertStudentRubric(payload as StudentRubric);
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertStudentRubric(
+                            await this.feedbackAudioSync.prepareForPush(payload as StudentRubric)
+                        );
                     else if (id) result = await this.adapter.deleteStudentRubric(id);
                     break;
                 case 'peerReview':

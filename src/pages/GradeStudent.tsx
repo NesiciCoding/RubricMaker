@@ -39,6 +39,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import GradingActionsMenu, { type GradingAction } from '../components/Grading/GradingActionsMenu';
 import GradingGrid from '../components/Grading/GradingGrid';
+import { FeedbackAudioPlayer } from '../components/Grading/FeedbackAudioPlayer';
 import TouchStepper from '../components/Grading/TouchStepper';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +54,7 @@ import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
-import { loadSupabaseConfig } from '../services/database';
+import { loadSupabaseConfig, storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
 
 export default function GradeStudent() {
@@ -1526,26 +1527,20 @@ export default function GradeStudent() {
                                                         <Mic size={13} /> {t('gradeStudent.audio_record')}
                                                     </button>
                                                 )}
-                                                {entry.audioDataUrl && (
-                                                    <>
-                                                        <audio
-                                                            controls
-                                                            src={entry.audioDataUrl}
-                                                            style={{ height: 28, flex: 1 }}
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-ghost btn-sm"
-                                                            onClick={() =>
-                                                                updateEntry(c.id, { audioDataUrl: undefined })
-                                                            }
-                                                            aria-label={t('gradeStudent.audio_remove')}
-                                                            title={t('gradeStudent.audio_remove')}
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    </>
-                                                )}
+                                                <FeedbackAudioPlayer
+                                                    audioDataUrl={entry.audioDataUrl}
+                                                    audioStoragePath={entry.audioStoragePath}
+                                                    onRemove={() => {
+                                                        if (entry.audioStoragePath)
+                                                            void storageSync.feedbackAudioSync.deleteByPath(
+                                                                entry.audioStoragePath
+                                                            );
+                                                        updateEntry(c.id, {
+                                                            audioDataUrl: undefined,
+                                                            audioStoragePath: undefined,
+                                                        });
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     )}

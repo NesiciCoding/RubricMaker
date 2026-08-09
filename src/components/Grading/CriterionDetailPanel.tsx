@@ -319,6 +319,7 @@ export default function CriterionDetailPanel({
                     onBrowseAll={onBrowseAll}
                     audioRecording={audioRecording}
                     audioDataUrl={audioDataUrl}
+                    audioStoragePath={entry.audioStoragePath}
                     onStartAudio={onStartAudio}
                     onStopAudio={onStopAudio}
                     onRemoveAudio={onRemoveAudio}

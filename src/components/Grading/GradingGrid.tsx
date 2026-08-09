@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 import type { TiptapEditorHandle } from '../Editor/TiptapEditor';
 import CriterionDetailPanel from './CriterionDetailPanel';
+import { storageSync } from '../../services/database';
 
 /** Criterion index → chord letter (A, B, … Z, then A2, B2 … as a safe fallback). */
 function letterFor(index: number): string {
@@ -209,7 +210,16 @@ export default function GradingGrid({
                                                 audioDataUrl={entry.audioDataUrl}
                                                 onStartAudio={() => onStartAudio(c.id)}
                                                 onStopAudio={() => onStopAudio(c.id)}
-                                                onRemoveAudio={() => updateEntry(c.id, { audioDataUrl: undefined })}
+                                                onRemoveAudio={() => {
+                                                    if (entry.audioStoragePath)
+                                                        void storageSync.feedbackAudioSync.deleteByPath(
+                                                            entry.audioStoragePath
+                                                        );
+                                                    updateEntry(c.id, {
+                                                        audioDataUrl: undefined,
+                                                        audioStoragePath: undefined,
+                                                    });
+                                                }}
                                             />
                                         </td>
                                     </tr>

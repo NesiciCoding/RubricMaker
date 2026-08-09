@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { saveAs } from 'file-saver';
 import { logAuditEvent } from '../services/database/AuditLogger';
+import { storageSync } from '../services/database';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getExportTourSteps } from '../data/TutorialSteps';
@@ -1154,10 +1155,14 @@ export default function ExportPage() {
                                                         <button
                                                             className="btn btn-ghost btn-sm"
                                                             title="Copy student feedback link"
-                                                            onClick={() => {
+                                                            onClick={async () => {
                                                                 if (!rubric) return;
+                                                                const preparedSr =
+                                                                    await storageSync.feedbackAudioSync.inlineForShare(
+                                                                        sr
+                                                                    );
                                                                 const code = encodeFeedbackCode({
-                                                                    sr,
+                                                                    sr: preparedSr,
                                                                     rubric,
                                                                     student,
                                                                     scale,
@@ -1173,15 +1178,29 @@ export default function ExportPage() {
                                                             <Share2 size={13} />
                                                         </button>
                                                         {import.meta.env.DEV && rubric && (
-                                                            <a
+                                                            <button
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 title="Open as student (dev only)"
-                                                                href={`${window.location.origin}${window.location.pathname}#/feedback/${encodeFeedbackCode({ sr, rubric, student, scale })}`}
-                                                                target="_blank"
-                                                                rel="noreferrer"
+                                                                onClick={async () => {
+                                                                    const preparedSr =
+                                                                        await storageSync.feedbackAudioSync.inlineForShare(
+                                                                            sr
+                                                                        );
+                                                                    const code = encodeFeedbackCode({
+                                                                        sr: preparedSr,
+                                                                        rubric,
+                                                                        student,
+                                                                        scale,
+                                                                    });
+                                                                    window.open(
+                                                                        `${window.location.origin}${window.location.pathname}#/feedback/${code}`,
+                                                                        '_blank',
+                                                                        'noreferrer'
+                                                                    );
+                                                                }}
                                                             >
                                                                 <ExternalLink size={13} />
-                                                            </a>
+                                                            </button>
                                                         )}
                                                     </td>
                                                 </tr>
