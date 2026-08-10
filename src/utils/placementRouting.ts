@@ -1,12 +1,9 @@
 import type { Test, TestQuestion, TestAnswer } from '../types';
 import { autoScoreResponse } from './testCalc';
+import { clamp } from './clamp';
 
 /** Shape needed by the routing helpers below — narrower than `Test` so builder-in-progress state (not yet a saved Test) can reuse them directly. */
 type SectionedTest = Pick<Test, 'questions' | 'sections'>;
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
 
 export function isStagedTest(test: Pick<Test, 'mode' | 'sections'>): boolean {
     return test.mode === 'placement' && (test.sections ?? []).some((s) => s.routing);

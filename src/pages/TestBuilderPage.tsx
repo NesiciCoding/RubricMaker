@@ -32,13 +32,14 @@ import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
 import type { Test, TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
+import { clamp } from '../utils/clamp';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
 
 function clampThresholdPct(value: number): number {
     if (!Number.isFinite(value)) return 0;
-    return Math.min(100, Math.max(0, value));
+    return clamp(value, 0, 100);
 }
 
 export default function TestBuilderPage() {

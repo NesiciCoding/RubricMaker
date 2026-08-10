@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function ClassTrendChart({ data }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     if (data.length < 2) return null;
 
     return (
@@ -43,7 +43,7 @@ export default function ClassTrendChart({ data }: Props) {
                     formatter={(value: unknown, name: unknown) => [`${value ?? 0}%`, String(name)]}
                     labelFormatter={(label, payload) => {
                         const d = payload && payload.length > 0 ? payload[0].payload?.date : undefined;
-                        return d ? `${label} · ${formatShortDate(d)}` : String(label);
+                        return d ? `${label} · ${formatShortDate(d, i18n.language)}` : String(label);
                     }}
                 />
                 <Legend wrapperStyle={{ paddingTop: 8 }} />

@@ -59,6 +59,19 @@ import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { generateStudentPassword } from '../utils/studentPassword';
 import { sanitizeFilename, stripCommentHtml } from '../utils/exportDataPrep';
 
+const sortHeaderButtonStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'left',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    font: 'inherit',
+    color: 'inherit',
+    cursor: 'pointer',
+    userSelect: 'none',
+};
+
 /** Build a plain-text rubric summary for one student, suitable for pasting into a tracking system. */
 function buildStudentSummary(
     studentName: string,
@@ -155,7 +168,7 @@ function calcStudentOverall(
 }
 
 export default function StudentsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const {
         students,
@@ -289,6 +302,8 @@ export default function StudentsPage() {
         }
     }
     const sortArrow = (key: typeof sortKey) => (sortKey === key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '');
+    const ariaSort = (key: typeof sortKey): 'ascending' | 'descending' | undefined =>
+        sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined;
 
     // Summary export modal
     const [summaryStudentId, setSummaryStudentId] = useState<string | null>(null);
@@ -905,27 +920,36 @@ export default function StudentsPage() {
                                 <table className="data-table">
                                     <thead>
                                         <tr>
-                                            <th
-                                                style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                onClick={() => handleSort('name')}
-                                            >
-                                                {t('studentsPage.table_name')}
-                                                {sortArrow('name')}
+                                            <th aria-sort={ariaSort('name')}>
+                                                <button
+                                                    type="button"
+                                                    style={sortHeaderButtonStyle}
+                                                    onClick={() => handleSort('name')}
+                                                >
+                                                    {t('studentsPage.table_name')}
+                                                    {sortArrow('name')}
+                                                </button>
                                             </th>
                                             {showClassColumn && <th>{t('studentsPage.table_class')}</th>}
-                                            <th
-                                                style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                onClick={() => handleSort('email')}
-                                            >
-                                                {t('studentsPage.table_email')}
-                                                {sortArrow('email')}
+                                            <th aria-sort={ariaSort('email')}>
+                                                <button
+                                                    type="button"
+                                                    style={sortHeaderButtonStyle}
+                                                    onClick={() => handleSort('email')}
+                                                >
+                                                    {t('studentsPage.table_email')}
+                                                    {sortArrow('email')}
+                                                </button>
                                             </th>
-                                            <th
-                                                style={{ cursor: 'pointer', userSelect: 'none' }}
-                                                onClick={() => handleSort('grades')}
-                                            >
-                                                {t('studentsPage.table_grades')}
-                                                {sortArrow('grades')}
+                                            <th aria-sort={ariaSort('grades')}>
+                                                <button
+                                                    type="button"
+                                                    style={sortHeaderButtonStyle}
+                                                    onClick={() => handleSort('grades')}
+                                                >
+                                                    {t('studentsPage.table_grades')}
+                                                    {sortArrow('grades')}
+                                                </button>
                                             </th>
                                             <th>{t('studentsPage.table_cefr_writing')}</th>
                                             <th>{t('studentsPage.table_trend')}</th>
@@ -1012,7 +1036,9 @@ export default function StudentsPage() {
                                                         )}
                                                     </td>
                                                     <td className="text-muted text-sm">
-                                                        {d?.lastActive ? formatShortDate(d.lastActive) : '—'}
+                                                        {d?.lastActive
+                                                            ? formatShortDate(d.lastActive, i18n.language)
+                                                            : '—'}
                                                     </td>
                                                     <td>
                                                         {overall ? (

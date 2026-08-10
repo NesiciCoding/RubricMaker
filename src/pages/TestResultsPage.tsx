@@ -13,6 +13,7 @@ import {
     withAskedQuestionSnapshots,
 } from '../utils/testCalc';
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
+import { clamp } from '../utils/clamp';
 import { usesLevelPathEstimate, staircaseMaxPoints } from '../utils/placementStaircase';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
@@ -20,10 +21,6 @@ import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse'
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
 
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;

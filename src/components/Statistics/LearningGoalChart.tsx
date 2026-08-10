@@ -29,7 +29,7 @@ function barColor(pct: number, target: number | undefined): string {
 }
 
 export default function LearningGoalChart({ goals, className }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [selectedGoalId, setSelectedGoalId] = useState<string>(goals[0]?.guid || '');
     const [displayMode, setDisplayMode] = useState<'percentage' | 'points'>('percentage');
 
@@ -47,12 +47,12 @@ export default function LearningGoalChart({ goals, className }: Props) {
         return activeGoal.history.map((h, i) => ({
             // Label each bar by its rubric — a labelled, meaningful axis instead of near-duplicate graded dates.
             label: h.rubricName || `#${i + 1}`,
-            date: formatShortDate(h.gradedAt),
+            date: formatShortDate(h.gradedAt, i18n.language),
             percentage: Number(h.percentage.toFixed(1)),
             earned: h.earnedPoints,
             max: h.maxPoints,
         }));
-    }, [activeGoal]);
+    }, [activeGoal, i18n.language]);
 
     if (!goals || goals.length === 0) {
         return (

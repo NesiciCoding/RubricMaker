@@ -1,45 +1,19 @@
 import type { SessionRecording } from '../../types';
 import type { SupabaseAdapter } from './SupabaseAdapter';
 import { getBlob, deleteBlob } from '../mediaStore';
+import { getCachedSignedUrl, setCachedSignedUrl } from './signedUrlCache';
 
 const SIGNED_URL_CACHE_PREFIX = 'rm_signed_url_rec_';
-const SIGNED_URL_TTL_MS = 55 * 60 * 1000; // 55 min (URLs valid 60 min)
-
-interface CachedUrl {
-    url: string;
-    expiresAt: number;
-}
-
-function getCachedUrl(id: string): string | null {
-    try {
-        const raw = sessionStorage.getItem(SIGNED_URL_CACHE_PREFIX + id);
-        if (!raw) return null;
-        const cached: CachedUrl = JSON.parse(raw);
-        if (Date.now() > cached.expiresAt) return null;
-        return cached.url;
-    } catch {
-        return null;
-    }
-}
-
-function setCachedUrl(id: string, url: string) {
-    try {
-        const entry: CachedUrl = { url, expiresAt: Date.now() + SIGNED_URL_TTL_MS };
-        sessionStorage.setItem(SIGNED_URL_CACHE_PREFIX + id, JSON.stringify(entry));
-    } catch {
-        /* ignore */
-    }
-}
 
 export class RecordingSync {
     constructor(private adapter: SupabaseAdapter) {}
 
     /** Resolve a storage path to a signed URL, with session-level caching. */
     async resolveRecordingUrl(id: string, storagePath: string): Promise<string> {
-        const cached = getCachedUrl(id);
+        const cached = getCachedSignedUrl(SIGNED_URL_CACHE_PREFIX + id);
         if (cached) return cached;
         const url = await this.adapter.getRecordingSignedUrl(storagePath);
-        if (url) setCachedUrl(id, url);
+        if (url) setCachedSignedUrl(SIGNED_URL_CACHE_PREFIX + id, url);
         return url ?? '';
     }
 

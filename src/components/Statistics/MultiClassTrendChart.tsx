@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { MultiTrendPoint } from '../../utils/classComparisonAggregator';
 import { formatShortDate } from '../../utils/dateInput';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function MultiClassTrendChart({ data, classIds, classNames }: Props) {
+    const { i18n } = useTranslation();
     if (data.length < 2) return null;
 
     return (
@@ -42,7 +44,7 @@ export default function MultiClassTrendChart({ data, classIds, classNames }: Pro
                     ]}
                     labelFormatter={(label, payload) => {
                         const d = payload && payload.length > 0 ? payload[0].payload?.date : undefined;
-                        return d ? `${label} · ${formatShortDate(d)}` : String(label);
+                        return d ? `${label} · ${formatShortDate(d, i18n.language)}` : String(label);
                     }}
                 />
                 <Legend wrapperStyle={{ paddingTop: 8 }} formatter={(value) => classNames[value] ?? value} />

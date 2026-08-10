@@ -247,7 +247,7 @@ export default function StudentPortalPage() {
                     rubric,
                     scale,
                     summary,
-                    dateStr: formatShortDate(sr.gradedAt!),
+                    dateStr: formatShortDate(sr.gradedAt!, i18n.language),
                     score: parseFloat(summary.modifiedPercentage.toFixed(1)),
                 };
             })
@@ -259,7 +259,7 @@ export default function StudentPortalPage() {
             dateStr: string;
             score: number;
         }[];
-    }, [student, studentRubrics, rubrics, gradeScales, settings]);
+    }, [student, studentRubrics, rubrics, gradeScales, settings, i18n.language]);
 
     const cefrProgress = useMemo(() => {
         if (!student) return [];

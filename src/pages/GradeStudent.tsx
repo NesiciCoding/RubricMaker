@@ -56,6 +56,7 @@ import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig, storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
+import { fileToDataUrl } from '../utils/fileToDataUrl';
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -442,9 +443,12 @@ export default function GradeStudent() {
         async (criterionId: string) => {
             const result = await audioRecorder.stop(criterionId);
             if (!result) return;
-            const reader = new FileReader();
-            reader.onload = () => updateEntry(criterionId, { audioDataUrl: reader.result as string });
-            reader.readAsDataURL(result.blob);
+            try {
+                const audioDataUrl = await fileToDataUrl(result.blob);
+                updateEntry(criterionId, { audioDataUrl });
+            } catch (err) {
+                console.error('Failed to encode voice feedback recording', err);
+            }
         },
         [audioRecorder, updateEntry]
     );

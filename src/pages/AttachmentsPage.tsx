@@ -5,6 +5,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useApp } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { fileToDataUrl } from '../utils/fileToDataUrl';
 
 export default function AttachmentsPage() {
     const { t } = useTranslation();
@@ -19,19 +20,19 @@ export default function AttachmentsPage() {
     const handleFiles = useCallback(
         (files: FileList | null) => {
             if (!files) return;
-            Array.from(files).forEach((file) => {
-                const reader = new FileReader();
-                reader.onload = () => {
+            Array.from(files).forEach(async (file) => {
+                try {
                     addAttachment({
                         name: file.name,
                         mimeType: file.type,
-                        dataUrl: reader.result as string,
+                        dataUrl: await fileToDataUrl(file),
                         rubricId: selectedRubricId || undefined,
                         studentId: selectedStudentId || undefined,
                         size: file.size,
                     });
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error('Failed to read attachment file', file.name, err);
+                }
             });
         },
         [addAttachment, selectedRubricId, selectedStudentId]
