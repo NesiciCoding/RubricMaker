@@ -192,18 +192,17 @@ export default function GradeStudent() {
         }
     }, [student?.classId, settings.activeClassId, updateSettings]);
 
-    const updateEntry = useCallback(
-        (criterionId: string, patch: Partial<ScoreEntry>) => {
-            if (!sr) return;
-            setSr((prev) => {
-                if (!prev) return prev;
-                const entries = prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e));
-                return { ...prev, entries };
-            });
-            setIsDirty(true);
-        },
-        [sr]
-    );
+    // Stable identity (functional setState guards on prev, so no `sr` dep needed) — a changing
+    // updateEntry identity would defeat React.memo on any extracted criterion card and forces the
+    // comment editor / grid rows to reconcile on every keystroke.
+    const updateEntry = useCallback((criterionId: string, patch: Partial<ScoreEntry>) => {
+        setSr((prev) => {
+            if (!prev) return prev;
+            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e));
+            return { ...prev, entries };
+        });
+        setIsDirty(true);
+    }, []);
 
     const summary = useMemo(() => {
         if (!sr || !rubric) return null;
