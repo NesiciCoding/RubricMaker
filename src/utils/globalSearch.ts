@@ -178,12 +178,13 @@ export function searchAll(query: string, data: SearchableData): SearchResult[] {
         text &&
         (!typeFilter || typeFilter === 'grade' || typeFilter === 'student' || typeFilter === 'rubric')
     ) {
+        // Normalise each rubric name once, not once per student.
+        const normalizedRubrics = data.rubrics.map((r) => ({ r, normRubric: normalize(r.name) }));
         for (const s of data.students) {
             if (s.anonymizedAt) continue;
             const normName = normalize(s.name);
             if (normName.length < 3 || !text.includes(normName)) continue;
-            for (const r of data.rubrics) {
-                const normRubric = normalize(r.name);
+            for (const { r, normRubric } of normalizedRubrics) {
                 if (normRubric.length < 3 || !text.includes(normRubric)) continue;
                 addResult({
                     type: 'grade',

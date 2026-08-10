@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
@@ -27,10 +27,22 @@ export default function GlobalSearch({ onClose, growFrom }: Props) {
     const navigate = useNavigate();
     const { rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes } = useApp();
     const [query, setQuery] = useState('');
+    // Keep the input responsive: run the full-corpus search at lower priority so it coalesces
+    // rapid keystrokes instead of re-scanning every rubric/test/student on each keypress.
+    const deferredQuery = useDeferredValue(query);
 
     const results = useMemo(
-        () => searchAll(query, { rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes }),
-        [query, rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes]
+        () =>
+            searchAll(deferredQuery, {
+                rubrics,
+                tests,
+                students,
+                classes,
+                essayAssignments,
+                flashcardDecks,
+                newsFlashes,
+            }),
+        [deferredQuery, rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes]
     );
 
     function go(result: SearchResult) {
