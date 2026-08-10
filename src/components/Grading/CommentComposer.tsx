@@ -3,6 +3,7 @@ import { BookOpen, Mic, MicOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import TiptapEditor, { type TiptapEditorHandle } from '../Editor/TiptapEditor';
 import type { CommentBankItem } from '../../types';
+import { FeedbackAudioPlayer } from './FeedbackAudioPlayer';
 
 const CHIP_COUNT = 6;
 
@@ -25,6 +26,7 @@ export default function CommentComposer({
     onBrowseAll,
     audioRecording,
     audioDataUrl,
+    audioStoragePath,
     onStartAudio,
     onStopAudio,
     onRemoveAudio,
@@ -37,6 +39,7 @@ export default function CommentComposer({
     onBrowseAll: () => void;
     audioRecording: boolean;
     audioDataUrl?: string;
+    audioStoragePath?: string;
     onStartAudio: () => void;
     onStopAudio: () => void;
     onRemoveAudio: () => void;
@@ -114,20 +117,11 @@ export default function CommentComposer({
                         <Mic size={13} /> {t('gradeStudent.audio_record')}
                     </button>
                 )}
-                {audioDataUrl && (
-                    <>
-                        <audio controls src={audioDataUrl} style={{ height: 28, flex: 1 }} />
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={onRemoveAudio}
-                            aria-label={t('gradeStudent.audio_remove')}
-                            title={t('gradeStudent.audio_remove')}
-                        >
-                            ✕
-                        </button>
-                    </>
-                )}
+                <FeedbackAudioPlayer
+                    audioDataUrl={audioDataUrl}
+                    audioStoragePath={audioStoragePath}
+                    onRemove={onRemoveAudio}
+                />
             </div>
         </div>
     );

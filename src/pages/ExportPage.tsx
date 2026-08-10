@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { saveAs } from 'file-saver';
 import { logAuditEvent } from '../services/database/AuditLogger';
+import { storageSync } from '../services/database';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getExportTourSteps } from '../data/TutorialSteps';
@@ -29,7 +30,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
 import { sanitizeFilename } from '../utils/exportDataPrep';
-import type { ReportCardConfig, Student } from '../types';
+import type { ReportCardConfig, Student, StudentRubric } from '../types';
 import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
 
 export default function ExportPage() {
@@ -146,6 +147,15 @@ export default function ExportPage() {
         } else {
             setSelectedStudentIds(new Set(gradedStudents.map((x) => x.student!.id)));
         }
+    }
+
+    // Build a self-contained /feedback/:code link, inlining any bucket-stored voice audio as
+    // signed URLs first. Shared by the copy-link and dev-preview controls so both stay in sync.
+    async function buildFeedbackUrl(sr: StudentRubric, student: Student): Promise<string | null> {
+        if (!rubric) return null;
+        const preparedSr = await storageSync.feedbackAudioSync.inlineForShare(sr);
+        const code = encodeFeedbackCode({ sr: preparedSr, rubric, student, scale });
+        return `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
     }
 
     // ── Essay export ────────────────────────────────────────────────────────────
@@ -1154,15 +1164,9 @@ export default function ExportPage() {
                                                         <button
                                                             className="btn btn-ghost btn-sm"
                                                             title="Copy student feedback link"
-                                                            onClick={() => {
-                                                                if (!rubric) return;
-                                                                const code = encodeFeedbackCode({
-                                                                    sr,
-                                                                    rubric,
-                                                                    student,
-                                                                    scale,
-                                                                });
-                                                                const url = `${window.location.origin}${window.location.pathname}#/feedback/${code}`;
+                                                            onClick={async () => {
+                                                                const url = await buildFeedbackUrl(sr, student);
+                                                                if (!url) return;
                                                                 navigator.clipboard.writeText(url);
                                                                 showToast(
                                                                     'Feedback link copied to clipboard',
@@ -1173,15 +1177,16 @@ export default function ExportPage() {
                                                             <Share2 size={13} />
                                                         </button>
                                                         {import.meta.env.DEV && rubric && (
-                                                            <a
+                                                            <button
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 title="Open as student (dev only)"
-                                                                href={`${window.location.origin}${window.location.pathname}#/feedback/${encodeFeedbackCode({ sr, rubric, student, scale })}`}
-                                                                target="_blank"
-                                                                rel="noreferrer"
+                                                                onClick={async () => {
+                                                                    const url = await buildFeedbackUrl(sr, student);
+                                                                    if (url) window.open(url, '_blank', 'noreferrer');
+                                                                }}
                                                             >
                                                                 <ExternalLink size={13} />
-                                                            </a>
+                                                            </button>
                                                         )}
                                                     </td>
                                                 </tr>

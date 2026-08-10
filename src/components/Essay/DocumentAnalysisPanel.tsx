@@ -176,6 +176,8 @@ export default function DocumentAnalysisPanel({
                 grammarErrors,
                 grammarCheckerUsed,
                 grammarTextTruncated: textWasTruncated,
+                vocabEstimatedLevel: profileText(text).estimatedLevel,
+                grammarEstimatedLevel: profileGrammar(text).estimatedLevel,
             };
 
             setResult(newResult);

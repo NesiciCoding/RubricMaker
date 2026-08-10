@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -391,7 +391,8 @@ describe('RubricBuilder', () => {
         renderNew();
         fireEvent.click(screen.getByText('rubricBuilder.action_export'));
         fireEvent.click(screen.getByText('rubricBuilder.action_export_docx'));
-        expect(mockExportDocx).toHaveBeenCalled();
+        // The export now lazy-loads docxExport via dynamic import(), so it resolves a microtask later.
+        await waitFor(() => expect(mockExportDocx).toHaveBeenCalled());
     });
 
     it('shows the version history button only when editing an existing rubric', () => {

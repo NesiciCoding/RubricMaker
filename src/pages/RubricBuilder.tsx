@@ -65,7 +65,6 @@ import Modal from '../components/ui/Modal';
 import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
-import { exportRubricToDocx } from '../utils/docxExport';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
@@ -318,16 +317,22 @@ export default function RubricBuilder() {
     const handleExport = async (type: 'pdf' | 'docx' | 'json') => {
         setShowExportMenu(false);
         const rubric = getRubricData();
-        if (type === 'pdf') {
-            await exportRubricGridPdf(rubric);
-            logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
-        } else if (type === 'docx') {
-            await exportRubricToDocx(rubric);
-            logAuditEvent('export', 'export_docx', 'rubric', rubric.id);
-        } else {
-            const json = JSON.stringify(rubric, null, 2);
-            saveAs(new Blob([json], { type: 'application/json' }), `${sanitizeFilename(rubric.name)}.json`);
-            logAuditEvent('export', 'export_json', 'rubric', rubric.id);
+        try {
+            if (type === 'pdf') {
+                await exportRubricGridPdf(rubric);
+                logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
+            } else if (type === 'docx') {
+                // Lazy chunk — the dynamic import can reject if it's unavailable/stale.
+                const { exportRubricToDocx } = await import('../utils/docxExport');
+                await exportRubricToDocx(rubric);
+                logAuditEvent('export', 'export_docx', 'rubric', rubric.id);
+            } else {
+                const json = JSON.stringify(rubric, null, 2);
+                saveAs(new Blob([json], { type: 'application/json' }), `${sanitizeFilename(rubric.name)}.json`);
+                logAuditEvent('export', 'export_json', 'rubric', rubric.id);
+            }
+        } catch {
+            showToast(t('toast.export_error'), 'error');
         }
     };
 
