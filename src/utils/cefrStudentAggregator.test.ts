@@ -708,20 +708,32 @@ describe('getCefrStudentOverview — text profiling from analysisResults', () =>
         expect(result.cells).toHaveLength(0);
     });
 
-    it('uses the highest vocab level across multiple analyses for the same cell', () => {
+    it('uses the highest vocab AND grammar level across multiple analyses for the same cell', () => {
         const rubric = makeRubric({ id: 'r1', cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 });
         const sr1 = makeSr({ id: 'sr1', rubricId: 'r1' });
         const sr2 = makeSr({ id: 'sr2', rubricId: 'r2' });
         const rubric2 = makeRubric({ id: 'r2', cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 });
 
-        // One analysis estimated low, one estimated high — the cell should keep the higher.
-        const ar1 = makeAnalysisResult({ id: 'ar1', rubricId: 'r1', vocabEstimatedLevel: 'A1' });
-        const ar2 = makeAnalysisResult({ id: 'ar2', rubricId: 'r2', vocabEstimatedLevel: 'C1' });
+        // The two analyses estimate low/high differently for vocab and for grammar — the cell should
+        // keep the higher of each independently (the max is taken per skill, not per analysis).
+        const ar1 = makeAnalysisResult({
+            id: 'ar1',
+            rubricId: 'r1',
+            vocabEstimatedLevel: 'A1',
+            grammarEstimatedLevel: 'B2',
+        });
+        const ar2 = makeAnalysisResult({
+            id: 'ar2',
+            rubricId: 'r2',
+            vocabEstimatedLevel: 'C1',
+            grammarEstimatedLevel: 'A2',
+        });
 
         const result = getCefrStudentOverview('s1', [sr1, sr2], [rubric, rubric2], [], [ar1, ar2]);
         const cell = result.cellMap.get('writing__B1');
         expect(cell).toBeDefined();
         expect(cell!.textVocabEstimate).toBe('C1');
+        expect(cell!.textGrammarEstimate).toBe('B2');
     });
 
     it('textVocabEstimate is a valid CefrLevel', () => {

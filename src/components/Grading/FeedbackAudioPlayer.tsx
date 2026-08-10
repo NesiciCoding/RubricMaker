@@ -16,10 +16,13 @@ export function FeedbackAudioPlayer({
 }) {
     const { t } = useTranslation();
     const src = useFeedbackAudioSrc(audioDataUrl, audioStoragePath);
-    if (!src) return null;
+    // Show the controls whenever audio exists, even if the signed URL is still resolving or
+    // failed (offline) — otherwise storage-backed audio can't be removed. The <audio> element
+    // itself only renders once a playable src is available.
+    if (!audioDataUrl && !audioStoragePath) return null;
     return (
         <>
-            <audio controls src={src} style={{ height: 28, flex: 1 }} />
+            {src && <audio controls src={src} style={{ height: 28, flex: 1 }} />}
             <button
                 type="button"
                 className="btn btn-ghost btn-sm"

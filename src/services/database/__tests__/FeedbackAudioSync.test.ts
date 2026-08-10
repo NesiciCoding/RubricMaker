@@ -91,6 +91,30 @@ describe('FeedbackAudioSync.prepareForPush', () => {
 
         expect(adapter.uploadFeedbackAudio).toHaveBeenCalledTimes(1);
     });
+
+    it('uploads a re-recording (new content) even when the entry already has a storage path', async () => {
+        const adapter = makeAdapter();
+        const sync = new FeedbackAudioSync(adapter);
+        const reRecorded = 'data:audio/webm;base64,' + btoa('different-audio-bytes');
+        const sr = makeSr([makeEntry({ audioDataUrl: reRecorded, audioStoragePath: 'user1/sr1/c1-old' })]);
+
+        const out = await sync.prepareForPush(sr);
+
+        expect(adapter.uploadFeedbackAudio).toHaveBeenCalledWith('sr1/c1', expect.anything(), 'audio/webm');
+        expect(out.entries[0].audioStoragePath).toBe('user1/sr1/c1'); // the freshly-uploaded path, not the old one
+        expect(out.entries[0].audioDataUrl).toBeUndefined();
+    });
+
+    it('re-uploads when the same criterion gets different content in one session', async () => {
+        const adapter = makeAdapter();
+        const sync = new FeedbackAudioSync(adapter);
+        const v2 = 'data:audio/webm;base64,' + btoa('take-two');
+
+        await sync.prepareForPush(makeSr([makeEntry({ audioDataUrl: DATA_URL })]));
+        await sync.prepareForPush(makeSr([makeEntry({ audioDataUrl: v2 })]));
+
+        expect(adapter.uploadFeedbackAudio).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe('FeedbackAudioSync.inlineForShare', () => {

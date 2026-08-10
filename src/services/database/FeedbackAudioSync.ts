@@ -59,10 +59,11 @@ export function dataUrlToBlob(dataUrl: string): { blob: Blob; mime: string } | n
 export class FeedbackAudioSync {
     constructor(private adapter: SupabaseAdapter) {}
 
-    // suffix ({srId}/{criterionId}) -> storage path uploaded this session, so re-pushing an
-    // unchanged record (state still carries the base64 until the next hydrate) reuses the path
-    // instead of re-uploading the same blob on every edit.
-    private uploaded = new Map<string, string>();
+    // audioDataUrl (content) -> storage path uploaded this session. Keyed by content, not by
+    // criterion, so re-pushing an unchanged record (state carries the base64 until the next
+    // hydrate) reuses the path, while a *re-recording* (new content for the same criterion)
+    // is a cache miss and gets uploaded rather than silently dropped.
+    private uploadedByContent = new Map<string, string>();
 
     /** Resolve a storage path to a signed URL for teacher-side playback, with session caching. */
     async resolveUrl(storagePath: string): Promise<string> {
@@ -99,7 +100,6 @@ export class FeedbackAudioSync {
 
     /** Best-effort delete of a bucket object when a teacher removes a recording. */
     async deleteByPath(storagePath: string): Promise<void> {
-        this.uploaded.delete(storagePath.split('/').slice(1).join('/'));
         try {
             sessionStorage.removeItem(SIGNED_URL_CACHE_PREFIX + storagePath);
         } catch {
@@ -124,15 +124,19 @@ export class FeedbackAudioSync {
                 entries.push(entry);
                 continue;
             }
-            const suffix = `${sr.id}/${entry.criterionId}`;
-            let storagePath = entry.audioStoragePath ?? this.uploaded.get(suffix);
+            // audioDataUrl present means there's a local recording to upload — a fresh or a
+            // re-recording. Never reuse entry.audioStoragePath here (that would keep the OLD
+            // audio and drop the new one); only skip the upload if this exact content already
+            // went up this session.
+            let storagePath = this.uploadedByContent.get(entry.audioDataUrl);
             if (!storagePath) {
                 const parsed = dataUrlToBlob(entry.audioDataUrl);
                 if (parsed) {
+                    const suffix = `${sr.id}/${entry.criterionId}`;
                     const path = await this.adapter.uploadFeedbackAudio(suffix, parsed.blob, parsed.mime);
                     if (path) {
                         storagePath = path;
-                        this.uploaded.set(suffix, path);
+                        this.uploadedByContent.set(entry.audioDataUrl, path);
                     }
                 }
             }
