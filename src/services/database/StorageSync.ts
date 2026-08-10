@@ -120,8 +120,9 @@ class StorageSyncService {
         'student_rubrics',
         'attachments',
         'grade_scales',
-        'comment_snippets',
-        'comment_bank',
+        // comment_snippets / comment_bank intentionally excluded: their full hydrate lifts legacy
+        // snippets into comment_bank AND back-fills them as real rows (upsertCommentBankItem). A
+        // partial refresh can't replicate that safely, so a change there falls back to a full hydrate.
         'export_templates',
         'favorite_standards',
         'self_assessments',
@@ -836,7 +837,6 @@ class StorageSyncService {
         const a = this.adapter;
         const result: Partial<StoreData> = {};
         const jobs: Array<Promise<void>> = [];
-        let commentBankQueued = false;
         try {
             for (const table of tables) {
                 switch (table) {
@@ -870,18 +870,6 @@ class StorageSyncService {
                                 if (g.length) result.gradeScales = g;
                             })
                         );
-                        break;
-                    case 'comment_snippets':
-                    case 'comment_bank':
-                        if (!commentBankQueued) {
-                            commentBankQueued = true;
-                            jobs.push(
-                                Promise.all([a.fetchCommentSnippets(), a.fetchCommentBank()]).then(([s, b]) => {
-                                    const merged = mergeLegacyCommentSnippets(s, b);
-                                    if (merged.length) result.commentBank = merged;
-                                })
-                            );
-                        }
                         break;
                     case 'export_templates':
                         jobs.push(
@@ -961,6 +949,11 @@ class StorageSyncService {
                 }
             }
             await Promise.all(jobs);
+            // Mirror _hydrateImpl's bookkeeping so "last synced" reflects the partial refresh too.
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.notifyListeners();
             return { data: result };
         } catch (e) {
             console.warn('[sync] hydratePartial failed, falling back to full hydrate', e);

@@ -38,16 +38,15 @@ describe('StorageSync.hydratePartial', () => {
         expect(data).toEqual({ studentRubrics: [{ id: 'sr1' }], peerReviews: [{ id: 'pr1' }] });
     });
 
-    it('maps either comment table to a single merged commentBank fetch', async () => {
+    it('falls back to a full hydrate for comment tables (legacy-snippet back-fill needs it)', async () => {
         vi.spyOn(adapter, 'isConnected').mockReturnValue(true);
         const snips = stub('fetchCommentSnippets', []);
-        const bank = stub('fetchCommentBank', [{ id: 'cb1' }]);
 
-        const { data } = await storageSync.hydratePartial(new Set(['comment_snippets', 'comment_bank']));
+        const { data, fullFallback } = await storageSync.hydratePartial(new Set(['comment_bank']));
 
-        expect(data?.commentBank).toEqual([{ id: 'cb1' }]);
-        expect(snips).toHaveBeenCalledTimes(1); // not queued twice
-        expect(bank).toHaveBeenCalledTimes(1);
+        expect(fullFallback).toBe(true);
+        expect(data).toBeNull();
+        expect(snips).not.toHaveBeenCalled();
     });
 
     it('falls back to a full hydrate for user_settings (needs profile machinery)', async () => {
@@ -61,6 +60,16 @@ describe('StorageSync.hydratePartial', () => {
         vi.spyOn(adapter, 'isConnected').mockReturnValue(true);
         const { fullFallback } = await storageSync.hydratePartial(new Set(['tests', 'some_new_table']));
         expect(fullFallback).toBe(true);
+    });
+
+    it('validates all tables before starting any fetch (no in-flight fetch on fallback)', async () => {
+        vi.spyOn(adapter, 'isConnected').mockReturnValue(true);
+        const fetchTests = stub('fetchTests', []);
+
+        const { fullFallback } = await storageSync.hydratePartial(new Set(['tests', 'some_new_table']));
+
+        expect(fullFallback).toBe(true);
+        expect(fetchTests).not.toHaveBeenCalled();
     });
 
     it('falls back to a full hydrate when a fetch throws', async () => {
