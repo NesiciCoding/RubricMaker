@@ -1132,48 +1132,63 @@ const AppContext = createContext<AppContextValue | null>(null);
 const LOCAL_MODE_KEY = 'rm_local_mode';
 const MIGRATION_DONE_KEY = 'rm_migration_done';
 
-async function flushToLocalStorage(merged: StoreData) {
-    saveRubrics(merged.rubrics);
-    saveStudents(merged.students);
-    saveClasses(merged.classes);
-    saveStudentRubrics(stripAudioForOfflineCache(merged.studentRubrics));
-    saveAttachments(merged.attachments);
-    saveGradeScales(merged.gradeScales);
-    saveSettings(merged.settings);
-    saveFavoriteStandards(merged.favoriteStandards);
-    saveCommentBank(merged.commentBank);
-    saveExportTemplates(merged.exportTemplates);
-    savePeerReviews(merged.peerReviews);
-    saveSelfAssessments(merged.selfAssessments);
-    saveSpeakingSessions(merged.speakingSessions);
-    saveAnalysisResults(merged.analysisResults);
-    saveTests(merged.tests);
-    saveStudentTests(merged.studentTests);
-    saveEssayTemplates(merged.essayTemplates);
-    saveGradingTasks(merged.gradingTasks);
-    saveMessages(merged.messages);
-    saveEssayAssignments(merged.essayAssignments);
-    saveEssaySubmissions(merged.essaySubmissions);
-    saveUserTemplates(merged.userTemplates);
-    saveFlashcardDecks(merged.flashcardDecks);
-    saveFlashcardAssignments(merged.flashcardAssignments);
-    saveFlashcardReviews(merged.flashcardReviews);
-    saveStandardMasteryTargets(merged.standardMasteryTargets);
-    saveNewsFlashes(merged.newsFlashes);
-    saveNewsFlashReads(merged.newsFlashReads);
-    saveQuestionBank(merged.questionBank);
-    saveDocumentComments(merged.documentComments);
-    saveNotificationDismissals(merged.notificationDismissals);
+// One writer per StoreData collection, so a flush can rewrite only the collections that
+// actually changed (a realtime tick touching one table shouldn't re-serialise all ~30).
+const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void>> = {
+    rubrics: (m) => saveRubrics(m.rubrics),
+    students: (m) => saveStudents(m.students),
+    classes: (m) => saveClasses(m.classes),
+    studentRubrics: (m) => saveStudentRubrics(stripAudioForOfflineCache(m.studentRubrics)),
+    attachments: (m) => saveAttachments(m.attachments),
+    gradeScales: (m) => saveGradeScales(m.gradeScales),
+    settings: (m) => saveSettings(m.settings),
+    favoriteStandards: (m) => saveFavoriteStandards(m.favoriteStandards),
+    commentBank: (m) => saveCommentBank(m.commentBank),
+    exportTemplates: (m) => saveExportTemplates(m.exportTemplates),
+    peerReviews: (m) => savePeerReviews(m.peerReviews),
+    selfAssessments: (m) => saveSelfAssessments(m.selfAssessments),
+    speakingSessions: (m) => saveSpeakingSessions(m.speakingSessions),
+    analysisResults: (m) => saveAnalysisResults(m.analysisResults),
+    tests: (m) => saveTests(m.tests),
+    studentTests: (m) => saveStudentTests(m.studentTests),
+    essayTemplates: (m) => saveEssayTemplates(m.essayTemplates),
+    gradingTasks: (m) => saveGradingTasks(m.gradingTasks),
+    messages: (m) => saveMessages(m.messages),
+    essayAssignments: (m) => saveEssayAssignments(m.essayAssignments),
+    essaySubmissions: (m) => saveEssaySubmissions(m.essaySubmissions),
+    userTemplates: (m) => saveUserTemplates(m.userTemplates),
+    flashcardDecks: (m) => saveFlashcardDecks(m.flashcardDecks),
+    flashcardAssignments: (m) => saveFlashcardAssignments(m.flashcardAssignments),
+    flashcardReviews: (m) => saveFlashcardReviews(m.flashcardReviews),
+    standardMasteryTargets: (m) => saveStandardMasteryTargets(m.standardMasteryTargets),
+    newsFlashes: (m) => saveNewsFlashes(m.newsFlashes),
+    newsFlashReads: (m) => saveNewsFlashReads(m.newsFlashReads),
+    questionBank: (m) => saveQuestionBank(m.questionBank),
+    documentComments: (m) => saveDocumentComments(m.documentComments),
+    notificationDismissals: (m) => saveNotificationDismissals(m.notificationDismissals),
+};
+
+/**
+ * Persist the merged snapshot to the localStorage offline cache. Pass `changedKeys` (the keys of a
+ * partial-hydrate result) to rewrite only those collections; omit it to rewrite everything (full
+ * hydrate / initial sync). Collections absent from `changedKeys` are already current on disk.
+ */
+async function flushToLocalStorage(merged: StoreData, changedKeys?: Set<keyof StoreData>) {
+    const keys = changedKeys ?? (Object.keys(COLLECTION_SAVERS) as (keyof StoreData)[]);
+    for (const key of keys) COLLECTION_SAVERS[key]?.(merged);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
-    // app-level delete call to clean it up locally, so sweep for orphans after every sync.
-    const { pruneOrphanedBlobs } = await import('../services/mediaStore');
-    const referencedRecordingIds = new Set(
-        merged.speakingSessions.flatMap((ss) => ss.recordings?.map((r) => r.id) ?? [])
-    );
-    pruneOrphanedBlobs(referencedRecordingIds).catch(() => {
-        // stray IndexedDB blob costs storage quota, not correctness — not worth surfacing
-    });
+    // app-level delete call to clean it up locally, so sweep for orphans after a full sync
+    // or whenever speaking sessions were among the changed collections.
+    if (!changedKeys || changedKeys.has('speakingSessions')) {
+        const { pruneOrphanedBlobs } = await import('../services/mediaStore');
+        const referencedRecordingIds = new Set(
+            merged.speakingSessions.flatMap((ss) => ss.recordings?.map((r) => r.id) ?? [])
+        );
+        pruneOrphanedBlobs(referencedRecordingIds).catch(() => {
+            // stray IndexedDB blob costs storage quota, not correctness — not worth surfacing
+        });
+    }
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -1432,11 +1447,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadDb()
             .then(({ storageSync }) => {
                 if (cancelled) return;
-                const applyFresh = async (fresh: Partial<StoreData>) => {
+                const applyFresh = async (fresh: Partial<StoreData>, changedKeys?: Set<keyof StoreData>) => {
                     const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
                     applyHydrated(merged, true);
                     try {
-                        await flushToLocalStorage(merged);
+                        await flushToLocalStorage(merged, changedKeys);
                     } catch {
                         // quota error — non-fatal on reconnect
                     }
@@ -1449,14 +1464,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     })
                 );
                 // Realtime: a remote row change refreshes only the affected collections
-                // (targeted partial hydrate) instead of re-pulling all ~30 tables; unknown
-                // tables / settings degrade to a full hydrate so nothing is ever dropped.
+                // (targeted partial hydrate) instead of re-pulling all ~30 tables, and rewrites
+                // only those localStorage keys. Unknown tables / settings degrade to a full
+                // hydrate (and full flush) so nothing is ever dropped.
                 unsubs.push(
                     storageSync.onRealtimeChange(async (tables) => {
                         if (!storageSync.isConnected()) return;
                         const { data, fullFallback } = await storageSync.hydratePartial(new Set(tables));
-                        const fresh = fullFallback ? (await storageSync.hydrate()).data : data;
-                        if (fresh) await applyFresh(fresh);
+                        if (fullFallback) {
+                            const { data: full } = await storageSync.hydrate();
+                            if (full) await applyFresh(full);
+                        } else if (data) {
+                            await applyFresh(data, new Set(Object.keys(data) as (keyof StoreData)[]));
+                        }
                     })
                 );
             })
