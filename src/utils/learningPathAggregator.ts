@@ -294,22 +294,43 @@ export function getGrammarRecommendations(
         }
     }
 
+    // Index deck/test ids by the grammar item they cover in a single pass, so the per-streak loop
+    // below is a Map lookup instead of re-scanning every deck's cards and every test's questions
+    // for each streak of each grammar item.
+    const deckIdsByGrammarItem = new Map<string, string[]>();
+    for (const d of flashcardDecks) {
+        if (d.deckKind !== 'grammar') continue;
+        const seen = new Set<string>();
+        for (const c of d.cards) {
+            const gid = c.linkedGrammarItemId;
+            if (!gid || seen.has(gid)) continue;
+            seen.add(gid);
+            const list = deckIdsByGrammarItem.get(gid) ?? [];
+            list.push(d.id);
+            deckIdsByGrammarItem.set(gid, list);
+        }
+    }
+    const testIdsByGrammarItem = new Map<string, string[]>();
+    for (const t of tests) {
+        if (t.mode !== 'practice' || t.contentArea !== 'grammar') continue;
+        const seen = new Set<string>();
+        for (const q of t.questions) {
+            const gid = q.linkedGrammarItemId;
+            if (!gid || seen.has(gid)) continue;
+            seen.add(gid);
+            const list = testIdsByGrammarItem.get(gid) ?? [];
+            list.push(t.id);
+            testIdsByGrammarItem.set(gid, list);
+        }
+    }
+
     const recommendations: GrammarRecommendation[] = [];
     scoresByGrammarItem.forEach((scores, grammarItemId) => {
         const sorted = [...scores].sort((a, b) => a.gradedAt.localeCompare(b.gradedAt));
         const streaks = findStreaks(sorted, config.lowScoreThreshold, config.consecutiveLowThreshold);
         for (const streak of streaks) {
-            const suggestedGrammarDeckIds = flashcardDecks
-                .filter((d) => d.deckKind === 'grammar' && d.cards.some((c) => c.linkedGrammarItemId === grammarItemId))
-                .map((d) => d.id);
-            const suggestedGrammarTestIds = tests
-                .filter(
-                    (t) =>
-                        t.mode === 'practice' &&
-                        t.contentArea === 'grammar' &&
-                        t.questions.some((q) => q.linkedGrammarItemId === grammarItemId)
-                )
-                .map((t) => t.id);
+            const suggestedGrammarDeckIds = [...(deckIdsByGrammarItem.get(grammarItemId) ?? [])];
+            const suggestedGrammarTestIds = [...(testIdsByGrammarItem.get(grammarItemId) ?? [])];
 
             recommendations.push({
                 studentId,

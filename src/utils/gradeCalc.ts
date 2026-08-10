@@ -141,9 +141,21 @@ export function applyModifier(score: number, modifier?: Modifier): number {
 // Sorted descending by min, first range where score >= range.min wins.
 // Using >= min only (no upper bound) prevents float scores like 89.7% from
 // falling in the gap between integer-bounded ranges (e.g. B: 80–89, A: 90–100).
+// Cache the descending-sorted ranges per ranges array (identity-stable while unedited), so
+// class-level grading — which calls matchRange 2–3× per student — doesn't re-sort the same
+// small array every time. A new ranges array (edit) gets a fresh entry automatically.
+const sortedRangesCache = new WeakMap<GradeRange[], GradeRange[]>();
+function sortedRangesDesc(scale: GradeScale): GradeRange[] {
+    let sorted = sortedRangesCache.get(scale.ranges);
+    if (!sorted) {
+        sorted = [...scale.ranges].sort((a, b) => b.min - a.min);
+        sortedRangesCache.set(scale.ranges, sorted);
+    }
+    return sorted;
+}
+
 function matchRange(percentage: number, scale: GradeScale): GradeRange | undefined {
-    const sorted = [...scale.ranges].sort((a, b) => b.min - a.min);
-    return sorted.find((r) => percentage >= r.min);
+    return sortedRangesDesc(scale).find((r) => percentage >= r.min);
 }
 
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
@@ -234,9 +246,11 @@ export function calcClassStats(summaries: GradeSummary[], scale: GradeScale | nu
                   const match = matchRange(s.modifiedPercentage, scale);
                   if (match) counts.set(match.label, (counts.get(match.label) ?? 0) + 1);
               }
-              return [...scale.ranges]
-                  .sort((a, b) => b.min - a.min)
-                  .map((r) => ({ label: r.label, color: r.color, count: counts.get(r.label) ?? 0 }));
+              return sortedRangesDesc(scale).map((r) => ({
+                  label: r.label,
+                  color: r.color,
+                  count: counts.get(r.label) ?? 0,
+              }));
           })()
         : [];
 
