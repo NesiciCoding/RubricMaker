@@ -67,6 +67,8 @@ class StorageSyncService {
     private pushOneFailCount = 0;
     private toastFn: ((msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) | null = null;
     private reconnectListeners: Set<() => void> = new Set();
+    private realtimeListeners: Set<(tables: string[]) => void> = new Set();
+    private pendingRealtimeTables: Set<string> = new Set();
     private networkListenerActive = false;
     private flushInProgress = false;
     private realtimeChannel: ReturnType<SupabaseClient['channel']> | null = null;
@@ -110,6 +112,42 @@ class StorageSyncService {
         { table: 'notification_dismissals', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
+
+    // Tables hydratePartial() can refresh in isolation (must stay in sync with its switch). Any
+    // realtime-subscribed table NOT listed here (e.g. user_settings) degrades to a full hydrate.
+    private static readonly PARTIAL_HYDRATE_TABLES = new Set<string>([
+        'rubrics',
+        'classes',
+        'students',
+        'student_rubrics',
+        'attachments',
+        'grade_scales',
+        // comment_snippets / comment_bank intentionally excluded: their full hydrate lifts legacy
+        // snippets into comment_bank AND back-fills them as real rows (upsertCommentBankItem). A
+        // partial refresh can't replicate that safely, so a change there falls back to a full hydrate.
+        'export_templates',
+        'favorite_standards',
+        'self_assessments',
+        'speaking_sessions',
+        'analysis_results',
+        'tests',
+        'student_tests',
+        'essay_templates',
+        'grading_tasks',
+        'messages',
+        'essay_batch_assignments',
+        'essay_offline_submissions',
+        'user_templates',
+        'flashcard_decks',
+        'flashcard_assignments',
+        'flashcard_reviews',
+        'standard_mastery_targets',
+        'news_flashes',
+        'news_flash_reads',
+        'question_bank_items',
+        'document_comments',
+        'notification_dismissals',
+    ]);
 
     // ── Status ────────────────────────────────────────────────────────────────
 
@@ -160,6 +198,16 @@ class StorageSyncService {
 
     private notifyReconnect() {
         this.reconnectListeners.forEach((cb) => cb());
+    }
+
+    /**
+     * Realtime-specific listener: receives the set of tables that changed since the last tick, so
+     * the handler can refresh only those collections (via hydratePartial) instead of a full hydrate.
+     * If nothing registers here, realtime falls back to a full-hydrate reconnect.
+     */
+    onRealtimeChange(cb: (tables: string[]) => void): () => void {
+        this.realtimeListeners.add(cb);
+        return () => this.realtimeListeners.delete(cb);
     }
 
     /** Start listening for browser online/offline events. Idempotent. */
@@ -272,7 +320,10 @@ class StorageSyncService {
             channel.on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table, filter: `${filterColumn}=eq.${uid}` },
-                () => this.scheduleRealtimeRefresh()
+                () => {
+                    this.pendingRealtimeTables.add(table);
+                    this.scheduleRealtimeRefresh();
+                }
             );
         }
         channel.subscribe();
@@ -284,6 +335,7 @@ class StorageSyncService {
             clearTimeout(this.realtimeDebounceTimer);
             this.realtimeDebounceTimer = null;
         }
+        this.pendingRealtimeTables.clear();
         if (this.realtimeChannel) {
             this.adapter.getClient()?.removeChannel(this.realtimeChannel);
             this.realtimeChannel = null;
@@ -294,10 +346,17 @@ class StorageSyncService {
         if (this.realtimeDebounceTimer) clearTimeout(this.realtimeDebounceTimer);
         this.realtimeDebounceTimer = setTimeout(() => {
             this.realtimeDebounceTimer = null;
-            // AppContext's onNetworkReconnect handler already does exactly what a
-            // realtime change needs: hydrate, merge against pending writes, flush
-            // to localStorage.
-            this.notifyReconnect();
+            const changed = Array.from(this.pendingRealtimeTables);
+            this.pendingRealtimeTables.clear();
+            // Prefer the targeted path: refresh only the collections whose tables changed
+            // (a remote edit to one rubric shouldn't re-pull all ~30 tables). If nothing is
+            // registered for it, fall back to a full-hydrate reconnect, which — like
+            // onNetworkReconnect — hydrates, merges against pending writes, and flushes.
+            if (this.realtimeListeners.size > 0 && changed.length > 0) {
+                this.realtimeListeners.forEach((cb) => cb(changed));
+            } else {
+                this.notifyReconnect();
+            }
         }, StorageSyncService.REALTIME_DEBOUNCE_MS);
     }
 
@@ -758,6 +817,149 @@ class StorageSyncService {
             logEvent('sync', 'hydrate', { error: String(e) }, 'error');
             if (gen === this.hydrationGeneration) this.setStatus('error');
             return { data: null, error: String(e) };
+        }
+    }
+
+    /**
+     * Targeted realtime refresh: fetch only the collections backing the tables that changed and
+     * return a Partial<StoreData> the caller merges exactly like a full hydrate (mergeStoreData
+     * skips absent keys). Returns { fullFallback: true } for any table it can't refresh in
+     * isolation — an unknown table, or `user_settings`, whose hydrate needs the profile/onboarding
+     * machinery in _hydrateImpl — so the caller does a full hydrate instead and never silently
+     * drops an update. Any fetch error also degrades to a full fallback.
+     */
+    async hydratePartial(tables: Set<string>): Promise<{ data: Partial<StoreData> | null; fullFallback?: boolean }> {
+        if (!this.adapter.isConnected()) return { data: null };
+        // Validate up front: if any table isn't independently refreshable (unknown, or user_settings
+        // which needs the profile/onboarding machinery), fall back to a full hydrate before starting
+        // any fetch — so an early return never leaves in-flight fetches floating.
+        for (const table of tables) {
+            if (!StorageSyncService.PARTIAL_HYDRATE_TABLES.has(table)) return { data: null, fullFallback: true };
+        }
+        const a = this.adapter;
+        const result: Partial<StoreData> = {};
+        const jobs: Array<Promise<void>> = [];
+        try {
+            for (const table of tables) {
+                switch (table) {
+                    case 'rubrics':
+                        jobs.push(
+                            a.fetchRubrics().then((r) => {
+                                result.rubrics = r.map(migrateLegacyRubricVersions);
+                            })
+                        );
+                        break;
+                    case 'classes':
+                        jobs.push(
+                            a.fetchClasses().then((c) => {
+                                if (c.length) result.classes = c;
+                            })
+                        );
+                        break;
+                    case 'students':
+                        jobs.push(a.fetchStudents().then((s) => void (result.students = s)));
+                        break;
+                    case 'student_rubrics':
+                        jobs.push(a.fetchStudentRubrics().then((r) => void (result.studentRubrics = r)));
+                        jobs.push(a.fetchPeerReviews().then((r) => void (result.peerReviews = r)));
+                        break;
+                    case 'attachments':
+                        jobs.push(this.attachmentSync.hydrateAttachments().then((x) => void (result.attachments = x)));
+                        break;
+                    case 'grade_scales':
+                        jobs.push(
+                            a.fetchGradeScales().then((g) => {
+                                if (g.length) result.gradeScales = g;
+                            })
+                        );
+                        break;
+                    case 'export_templates':
+                        jobs.push(
+                            this.attachmentSync.hydrateExportTemplates().then((x) => void (result.exportTemplates = x))
+                        );
+                        break;
+                    case 'favorite_standards':
+                        jobs.push(a.fetchFavoriteStandards().then((x) => void (result.favoriteStandards = x)));
+                        break;
+                    case 'self_assessments':
+                        jobs.push(a.fetchSelfAssessments().then((x) => void (result.selfAssessments = x)));
+                        break;
+                    case 'speaking_sessions':
+                        jobs.push(a.fetchSpeakingSessions().then((x) => void (result.speakingSessions = x)));
+                        break;
+                    case 'analysis_results':
+                        jobs.push(a.fetchAnalysisResults().then((x) => void (result.analysisResults = x)));
+                        break;
+                    case 'tests':
+                        jobs.push(a.fetchTests().then((x) => void (result.tests = x)));
+                        break;
+                    case 'student_tests':
+                        jobs.push(a.fetchStudentTests().then((x) => void (result.studentTests = x)));
+                        break;
+                    case 'essay_templates':
+                        jobs.push(a.fetchEssayTemplates().then((x) => void (result.essayTemplates = x)));
+                        break;
+                    case 'grading_tasks':
+                        jobs.push(a.fetchGradingTasks().then((x) => void (result.gradingTasks = x)));
+                        break;
+                    case 'messages':
+                        jobs.push(a.fetchMessages().then((x) => void (result.messages = x)));
+                        break;
+                    case 'essay_batch_assignments':
+                        jobs.push(a.fetchEssayBatchAssignments().then((x) => void (result.essayAssignments = x)));
+                        break;
+                    case 'essay_offline_submissions':
+                        jobs.push(a.fetchEssayOfflineSubmissions().then((x) => void (result.essaySubmissions = x)));
+                        break;
+                    case 'user_templates':
+                        jobs.push(a.fetchUserTemplates().then((x) => void (result.userTemplates = x)));
+                        break;
+                    case 'flashcard_decks':
+                        jobs.push(a.fetchFlashcardDecks().then((x) => void (result.flashcardDecks = x)));
+                        break;
+                    case 'flashcard_assignments':
+                        jobs.push(a.fetchFlashcardAssignments().then((x) => void (result.flashcardAssignments = x)));
+                        break;
+                    case 'flashcard_reviews':
+                        jobs.push(a.fetchFlashcardReviews().then((x) => void (result.flashcardReviews = x)));
+                        break;
+                    case 'standard_mastery_targets':
+                        jobs.push(
+                            a.fetchStandardMasteryTargets().then((x) => void (result.standardMasteryTargets = x))
+                        );
+                        break;
+                    case 'news_flashes':
+                        jobs.push(a.fetchNewsFlashes().then((x) => void (result.newsFlashes = x)));
+                        break;
+                    case 'news_flash_reads':
+                        jobs.push(a.fetchNewsFlashReads().then((x) => void (result.newsFlashReads = x)));
+                        break;
+                    case 'question_bank_items':
+                        jobs.push(a.fetchQuestionBank().then((x) => void (result.questionBank = x)));
+                        break;
+                    case 'document_comments':
+                        jobs.push(a.fetchDocumentComments().then((x) => void (result.documentComments = x)));
+                        break;
+                    case 'notification_dismissals':
+                        jobs.push(
+                            a.fetchNotificationDismissals().then((x) => void (result.notificationDismissals = x))
+                        );
+                        break;
+                    default:
+                        // Unknown table, or user_settings (needs the full-hydrate profile machinery).
+                        return { data: null, fullFallback: true };
+                }
+            }
+            await Promise.all(jobs);
+            // Mirror _hydrateImpl's bookkeeping so "last synced" reflects the partial refresh too.
+            const now = new Date().toISOString();
+            this.lastSyncAt = now;
+            localStorage.setItem(LAST_SYNC_KEY, now);
+            this.notifyListeners();
+            return { data: result };
+        } catch (e) {
+            console.warn('[sync] hydratePartial failed, falling back to full hydrate', e);
+            return { data: null, fullFallback: true };
         }
     }
 
