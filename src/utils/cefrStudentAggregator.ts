@@ -289,9 +289,17 @@ export function getCefrStudentOverview(
 
     const graded = studentRubrics.filter((sr) => sr.studentId === studentId && sr.gradedAt);
 
+    // Index once for O(1) lookups instead of .find scans inside the per-record loops below.
+    const rubricById = new Map(rubrics.map((r) => [r.id, r]));
+    const testById = new Map(tests.map((t) => [t.id, t]));
+    const gradedByRubricId = new Map<string, StudentRubric>();
+    for (const r of graded) if (!gradedByRubricId.has(r.rubricId)) gradedByRubricId.set(r.rubricId, r);
+
     for (const sr of graded) {
-        const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
+        const rubric = sr.rubricSnapshot ?? rubricById.get(sr.rubricId);
         if (!rubric) continue;
+        // This rubric's criteria, indexed once for the two per-entry loops below.
+        const criteriaById = new Map(rubric.criteria.map((c) => [c.id, c]));
 
         // CEFR cell aggregation
         if (rubric.cefrTargetLevel) {
@@ -330,7 +338,7 @@ export function getCefrStudentOverview(
         // Being graded at a tagged level is unconditionally "achieved" regardless of score averaging.
         for (const entry of sr.entries) {
             if (!entry.levelId) continue;
-            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
+            const criterion = criteriaById.get(entry.criterionId);
             if (!criterion) continue;
             const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
             if (!selectedLevel?.cefrLevel) continue;
@@ -360,7 +368,7 @@ export function getCefrStudentOverview(
         const standardInfo = new Map<string, LinkedStandard>();
 
         for (const entry of sr.entries) {
-            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
+            const criterion = criteriaById.get(entry.criterionId);
             if (!criterion) continue;
 
             const activeStandards = new Map<string, LinkedStandard>();
@@ -445,7 +453,7 @@ export function getCefrStudentOverview(
     );
 
     for (const st of studentTestsForStudent) {
-        const test = tests.find((tst) => tst.id === st.testId);
+        const test = testById.get(st.testId);
         if (!test || test.mode === 'placement' || !test.cefrTargetLevel || !test.cefrSkill) continue;
 
         const maxPoints = calcTestMaxPoints(test);
@@ -532,7 +540,7 @@ export function getCefrStudentOverview(
 
     let placement: CefrPlacementEstimate | undefined;
     for (const st of studentTestsForStudent) {
-        const test = tests.find((tst) => tst.id === st.testId);
+        const test = testById.get(st.testId);
         if (!test || test.mode !== 'placement') continue;
         const estimate = estimatePlacement(test, st);
         if (!estimate) continue;
@@ -585,9 +593,9 @@ export function getCefrStudentOverview(
             (ar) => ar.studentId === studentId && (ar.vocabEstimatedLevel || ar.grammarEstimatedLevel)
         );
         for (const ar of studentAnalyses) {
-            const sr = graded.find((r) => r.rubricId === ar.rubricId);
+            const sr = gradedByRubricId.get(ar.rubricId);
             if (!sr) continue;
-            const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
+            const rubric = sr.rubricSnapshot ?? rubricById.get(sr.rubricId);
             if (!rubric?.cefrTargetLevel) continue;
             const key = `${rubric.cefrSkill ?? 'writing'}__${rubric.cefrTargetLevel}`;
             if (ar.vocabEstimatedLevel) {
