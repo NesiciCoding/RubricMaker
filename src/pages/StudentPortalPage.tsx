@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import {
     BookOpen,
     Copy,
@@ -32,8 +31,11 @@ import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useApp } from '../context/AppContext';
 import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
-import CefrProgressChart from '../components/Statistics/CefrProgressChart';
-import CriterionRadarChart from '../components/Statistics/CriterionRadarChart';
+// Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
+// route chunk stays lean; they render only when their (below-the-fold) sections do.
+const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgressChart'));
+const CriterionRadarChart = lazy(() => import('../components/Statistics/CriterionRadarChart'));
+const PortalGradeHistoryChart = lazy(() => import('../components/Statistics/PortalGradeHistoryChart'));
 import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { getGrammarItemById } from '../data/grammarStandards';
@@ -809,40 +811,18 @@ export default function StudentPortalPage() {
                 {/* Grade history chart */}
                 {history.length > 1 && isTab('progress') && (
                     <Section id="portal-section-grades" title={t('studentPortal.grade_history')}>
-                        <ResponsiveContainer width="100%" height={200}>
-                            <LineChart data={history} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                                <XAxis
-                                    dataKey="dateStr"
-                                    tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                                    interval="preserveStartEnd"
-                                />
-                                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} unit="%" />
-                                <Tooltip
-                                    contentStyle={{
-                                        background: 'var(--bg-elevated)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 8,
-                                    }}
-                                    formatter={(value: unknown) => [`${value}%`, t('studentPortal.score')]}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="score"
-                                    stroke="var(--accent)"
-                                    strokeWidth={2}
-                                    dot={{ r: 3 }}
-                                    activeDot={{ r: 5 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                            <PortalGradeHistoryChart history={history} />
+                        </Suspense>
                     </Section>
                 )}
 
                 {/* CEFR progress */}
                 {cefrProgress.length > 0 && isTab('progress') && (
                     <Section id="portal-section-cefr" title={t('studentPortal.cefr_progress')}>
-                        <CefrProgressChart entries={cefrProgress} />
+                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                            <CefrProgressChart entries={cefrProgress} />
+                        </Suspense>
                     </Section>
                 )}
 
@@ -1032,16 +1012,18 @@ export default function StudentPortalPage() {
                                 </select>
                             </div>
                         )}
-                        <CriterionRadarChart
-                            data={selectedRadarData}
-                            accentColor="var(--accent)"
-                            classAverageLabel={
-                                radarRubricId === 'combined'
-                                    ? t('studentPortal.progress_view_combined')
-                                    : (rubricRadarOptions.find((o) => o.id === radarRubricId)?.name ?? '')
-                            }
-                            height={340}
-                        />
+                        <Suspense fallback={<div style={{ height: 340 }} />}>
+                            <CriterionRadarChart
+                                data={selectedRadarData}
+                                accentColor="var(--accent)"
+                                classAverageLabel={
+                                    radarRubricId === 'combined'
+                                        ? t('studentPortal.progress_view_combined')
+                                        : (rubricRadarOptions.find((o) => o.id === radarRubricId)?.name ?? '')
+                                }
+                                height={340}
+                            />
+                        </Suspense>
                     </Section>
                 )}
 
