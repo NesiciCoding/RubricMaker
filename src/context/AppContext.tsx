@@ -1556,8 +1556,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // than deriving it from the payload.
         function diff<T>(prevArr: T[], currArr: T[], entity: string, getId: (x: T) => string) {
             const { upserted, deletedIds } = diffCollection(prevArr, currArr, getId);
-            for (const id of deletedIds) storageSync.pushOne(entity, 'delete', null, id);
-            for (const item of upserted) storageSync.pushOne(entity, 'upsert', item, getId(item));
+            // Bulk actions (e.g. assign a rubric to a whole class) go through pushMany, which
+            // collapses them into a single array upsert / delete where the entity supports it and
+            // falls back to per-row otherwise. A single change stays a plain pushOne.
+            if (deletedIds.length > 1) storageSync.pushMany(entity, 'delete', [], deletedIds);
+            else for (const id of deletedIds) storageSync.pushOne(entity, 'delete', null, id);
+            if (upserted.length > 1) storageSync.pushMany(entity, 'upsert', upserted, upserted.map(getId));
+            else for (const item of upserted) storageSync.pushOne(entity, 'upsert', item, getId(item));
         }
 
         diff(prev.rubrics, state.rubrics, 'rubric', (r) => r.id);

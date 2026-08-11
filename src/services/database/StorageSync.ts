@@ -644,7 +644,7 @@ class StorageSyncService {
                 messages,
                 attachments,
                 settings,
-                profile,
+                profileFull,
             ] = await Promise.all([
                 this.adapter.fetchRubrics(),
                 this.adapter.fetchClasses(),
@@ -669,7 +669,9 @@ class StorageSyncService {
                 this.adapter.fetchMessages(),
                 this.attachmentSync.hydrateAttachments(),
                 this.adapter.fetchSettings(),
-                this.adapter.fetchMyProfile(),
+                // school-aware profile fetched in-parallel here (one round-trip), rather than a
+                // second sequential profiles query after the waves.
+                this.adapter.fetchMyProfileWithSchool(),
             ]);
 
             // Back-compat read path (Phase 18.4): rubrics synced before this phase still
@@ -723,13 +725,12 @@ class StorageSyncService {
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
             // If the profile has no school_id the user needs to complete onboarding.
-            const profileFull = await this.adapter.fetchMyProfileWithSchool();
-            let mergedSettings = profile?.role
+            let mergedSettings = profileFull?.role
                 ? {
                       ...DEFAULT_SETTINGS,
                       ...(settings ?? {}),
-                      userRole: profile.role,
-                      ...(profile.email ? { userEmail: profile.email } : {}),
+                      userRole: profileFull.role,
+                      ...(profileFull.email ? { userEmail: profileFull.email } : {}),
                   }
                 : (settings ?? undefined);
 
@@ -738,11 +739,9 @@ class StorageSyncService {
                     // Students don't create/join a school during onboarding — their
                     // profile.role being set is enough to consider onboarding complete,
                     // and it persists in the DB so re-logging in never re-prompts them.
-                    let schoolName: string | undefined;
-                    if (profileFull.schoolId) {
-                        const schools = await this.adapter.fetchSchools();
-                        schoolName = schools.find((s) => s.id === profileFull.schoolId)?.name;
-                    }
+                    const schoolName = profileFull.schoolId
+                        ? await this.adapter.fetchSchoolName(profileFull.schoolId)
+                        : undefined;
                     mergedSettings = {
                         ...mergedSettings,
                         needsOnboarding: false,
@@ -752,14 +751,11 @@ class StorageSyncService {
                 } else if (!profileFull.schoolId) {
                     mergedSettings = { ...mergedSettings, needsOnboarding: true };
                 } else {
-                    // Fetch school name to store alongside the id
-                    const schools = await this.adapter.fetchSchools();
-                    const school = schools.find((s) => s.id === profileFull.schoolId);
                     mergedSettings = {
                         ...mergedSettings,
                         needsOnboarding: false,
                         schoolId: profileFull.schoolId,
-                        schoolName: school?.name,
+                        schoolName: await this.adapter.fetchSchoolName(profileFull.schoolId),
                     };
                 }
             }
@@ -1215,6 +1211,59 @@ class StorageSyncService {
                 this.toastFn(i18n.t('toast.sync_push_failed'), 'warning');
             }
         }
+    }
+
+    /**
+     * Batch variant of pushOne for bulk mutations (e.g. assigning a rubric to a whole class):
+     * collapses N single-row requests into one array upsert / one `delete().in(...)` for entities
+     * that support it, and falls back to per-row pushOne for everything else — and on batch failure,
+     * so the pending-queue retry semantics are preserved unchanged.
+     */
+    async pushMany(entity: string, action: 'upsert' | 'delete', payloads: unknown[], ids: string[]): Promise<void> {
+        if (!this.adapter.isConnected()) return;
+        if (action === 'upsert' && payloads.length > 0) {
+            if (await this.tryBatchUpsert(entity, payloads)) return;
+        } else if (action === 'delete' && ids.length > 0) {
+            if (await this.tryBatchDelete(entity, ids)) return;
+        }
+        // Per-row fallback: unsupported entity, or a failed batch (pushOne re-queues on its own failure).
+        const n = action === 'upsert' ? payloads.length : ids.length;
+        for (let i = 0; i < n; i++) {
+            await this.pushOne(entity, action, action === 'upsert' ? payloads[i] : null, ids[i]);
+        }
+    }
+
+    private async tryBatchUpsert(entity: string, payloads: unknown[]): Promise<boolean> {
+        try {
+            if (entity === 'studentRubric') {
+                const prepared = await Promise.all(
+                    (payloads as StudentRubric[]).map((sr) => this.feedbackAudioSync.prepareForPush(sr))
+                );
+                const res = await this.adapter.upsertStudentRubrics(prepared);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:upsert`, { count: payloads.length });
+                return true;
+            }
+        } catch (e) {
+            console.warn(`[sync] batch upsert ${entity} failed, retrying per-row`, e);
+        }
+        return false;
+    }
+
+    private async tryBatchDelete(entity: string, ids: string[]): Promise<boolean> {
+        try {
+            if (entity === 'studentRubric') {
+                const res = await this.adapter.deleteStudentRubrics(ids);
+                if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
+                logEvent('sync', `pushMany:${entity}:delete`, { count: ids.length });
+                return true;
+            }
+        } catch (e) {
+            console.warn(`[sync] batch delete ${entity} failed, retrying per-row`, e);
+        }
+        return false;
     }
 }
 
