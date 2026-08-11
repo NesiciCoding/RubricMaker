@@ -72,6 +72,17 @@ jobs:
       - name: Test with coverage
         run: npm run coverage
 
+      # JUnit report (unit-results/results.xml, emitted by the vitest config) —
+      # consumed by the Quarantine Check workflow's detect-flaky job to spot
+      # unit tests that fail repeatedly across runs.
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unit-results
+          path: unit-results/
+          retention-days: 14
+
       - name: Coverage comment
         if: always()
         uses: davelosert/vitest-coverage-report-action@8b157684c6a6b259b97d45e72b44242865c0f6a5 # v2

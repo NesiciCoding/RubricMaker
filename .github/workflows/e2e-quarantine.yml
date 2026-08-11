@@ -7,9 +7,11 @@ name: Quarantine Check
 #     from the list via an automatically opened PR.
 #   - unquarantine-unit: same for flaky unit tests listed in
 #     quarantine-unit.json (marked with isQuarantined() / it.skipIf).
-#   - detect-flaky: scans recent CI runs' merged JUnit reports and proposes
-#     quarantining e2e specs that keep failing via a PR (thresholds tunable
-#     from the workflow_dispatch inputs; `dry_run` reports without a PR).
+#   - detect-flaky: scans recent CI runs' JUnit reports and proposes
+#     quarantining e2e specs and unit tests that keep failing via a PR
+#     (thresholds tunable from the workflow_dispatch inputs; `dry_run`
+#     reports without a PR). Unit proposals also wrap the it() call with the
+#     it.skipIf(isQuarantined('id')) marker, since that's what actually skips.
 #   - flaky-report: publishes a dated report issue of everything quarantined,
 #     for how long, and why.
 on:
@@ -294,8 +296,42 @@ jobs:
             echo "Proposed: $SPECS"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Detect repeatedly failing unit tests
+        id: detect-unit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          MIN_FAILURES: ${{ inputs.min_failures || 3 }}
+          WINDOW: ${{ inputs.window || 15 }}
+        run: |
+          python3 scripts/ci-quarantine-detect.py --repo "${{ github.repository }}" \
+            --kind unit --min-failures "$MIN_FAILURES" --window "$WINDOW" > /tmp/flagged-unit.txt
+          if [ ! -s /tmp/flagged-unit.txt ]; then
+            echo "No repeatedly failing unit tests detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          # Adds entries to quarantine-unit.json AND wraps the it() calls with
+          # it.skipIf(isQuarantined('id')) in the test files — the marker is
+          # what actually skips a quarantined test.
+          python3 scripts/apply-unit-quarantine.py < /tmp/flagged-unit.txt
+          TESTS=""
+          while IFS=$'\t' read -r FILE ID COUNT TOTAL; do
+            TESTS="$TESTS | $ID ($COUNT/$TOTAL)"
+          done < /tmp/flagged-unit.txt
+          echo "tests=${TESTS# | }" >> "$GITHUB_OUTPUT"
+          echo "Proposing quarantine for unit tests: $TESTS"
+          {
+            echo "### Auto-quarantine candidates — unit tests (dry run: $DRY_RUN)"
+            echo ""
+            echo ""; cat /tmp/flagged-unit.txt; echo ""
+            echo "Proposed: $TESTS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Open auto-quarantine PR
-        if: steps.detect.outputs.changed == 'true' && ${{ inputs.dry_run != 'true' }}
+        if: (steps.detect.outputs.changed == 'true' || steps.detect-unit.outputs.changed == 'true') && ${{ inputs.dry_run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -308,14 +344,15 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BRANCH="ci/quarantine-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
-          git add e2e/quarantine.json
-          git commit -m "test(e2e): quarantine repeatedly failing specs"
+          # Includes the test files the unit detector wrapped with skip markers.
+          git add e2e/quarantine.json quarantine-unit.json src
+          git commit -m "test: quarantine repeatedly failing tests"
           git push origin "$BRANCH"
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "test(e2e): quarantine repeatedly failing specs" \
-            --body "These specs failed in at least 3 distinct recent CI runs. They are moved out of the gating projects via e2e/quarantine.json; the weekly quarantine check will unquarantine them automatically once they pass 3 clean runs:${{ steps.detect.outputs.specs }}"
+            --title "test: quarantine repeatedly failing tests" \
+            --body "These tests failed in at least 3 distinct recent CI runs. They are moved out of the gating runs (e2e via e2e/quarantine.json; unit tests via quarantine-unit.json + it.skipIf markers); the weekly quarantine check will unquarantine them automatically once they pass 3 clean runs.\n\nE2E specs: ${{ steps.detect.outputs.specs }}\nUnit tests: ${{ steps.detect-unit.outputs.tests }}"
 
   flaky-report:
     name: Flaky test report

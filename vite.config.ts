@@ -86,6 +86,13 @@ export default defineConfig({
         setupFiles: ['./src/vitest.setup.ts'],
         globals: true,
         exclude: ['**/node_modules/**', '**/dist/**', '**/.claude/worktrees/**', 'e2e/**'],
+        // JUnit output powers the auto-quarantine detector (the Quarantine Check
+        // workflow's detect-flaky job downloads unit-results/results.xml from
+        // recent CI runs). Written on every run; the file is gitignored.
+        reporters: ['default', 'junit'],
+        outputFile: {
+            junit: 'unit-results/results.xml',
+        },
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'json-summary', 'html'],
