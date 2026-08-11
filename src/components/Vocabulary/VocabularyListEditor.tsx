@@ -13,7 +13,7 @@ import {
     Search,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { lookupWord } from '../../services/cambridgeApi';
+import { lookupWord } from '../../services/freeDictionaryApi';
 import { useToast } from '../../hooks/useToast';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CefrBadge from '../CEFR/CefrBadge';
@@ -27,8 +27,6 @@ interface Props {
     onUpdate: (item: VocabularyItem) => void;
     onDelete: (itemId: string) => void;
     onDeleteMultiple: (itemIds: string[]) => void;
-    /** Cambridge Dictionary API key — when set, shows a per-word "Look up" affordance */
-    cambridgeApiKey?: string;
 }
 
 const CATEGORIES: VocabularyCategory[] = ['vocabulary', 'grammar', 'discourse', 'other'];
@@ -55,7 +53,6 @@ export default function VocabularyListEditor({
     onUpdate,
     onDelete,
     onDeleteMultiple,
-    cambridgeApiKey,
 }: Props) {
     const { t } = useTranslation();
     const { showToast } = useToast();
@@ -71,10 +68,10 @@ export default function VocabularyListEditor({
     const [lookingUpId, setLookingUpId] = useState<string | null>(null);
 
     async function handleLookup(item: VocabularyItem) {
-        if (!cambridgeApiKey || !item.phrase.trim()) return;
+        if (!item.phrase.trim()) return;
         setLookingUpId(item.id);
         try {
-            const result = await lookupWord(item.phrase.trim(), cambridgeApiKey);
+            const result = await lookupWord(item.phrase.trim());
             if (!result || (!result.level && !result.definition)) {
                 showToast(t('cambridge.lookup_failed'), 'error');
                 return;
@@ -86,7 +83,7 @@ export default function VocabularyListEditor({
             });
             showToast(t('cambridge.lookup_success'), 'success');
         } catch (e) {
-            console.error('[cambridge] lookup failed', e);
+            console.error('[dictionary] lookup failed', e);
             showToast(t('cambridge.lookup_failed'), 'error');
         } finally {
             setLookingUpId(null);
@@ -343,17 +340,15 @@ export default function VocabularyListEditor({
                                         }
                                         placeholder={t('cambridge.definition_placeholder')}
                                     />
-                                    {cambridgeApiKey && (
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            onClick={() => handleLookup(item)}
-                                            disabled={lookingUpId === item.id || !item.phrase.trim()}
-                                            title={t('cambridge.lookup_button')}
-                                        >
-                                            <Search size={14} />
-                                            {t('cambridge.lookup_button')}
-                                        </button>
-                                    )}
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => handleLookup(item)}
+                                        disabled={lookingUpId === item.id || !item.phrase.trim()}
+                                        title={t('cambridge.lookup_button')}
+                                    >
+                                        <Search size={14} />
+                                        {t('cambridge.lookup_button')}
+                                    </button>
                                 </div>
                             </div>
                         ) : (

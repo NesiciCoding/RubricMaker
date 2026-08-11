@@ -1163,7 +1163,6 @@ export default function RubricBuilder() {
                                         onUpdate={(item) => updateVocabularyItem(id, item)}
                                         onDelete={(itemId) => deleteVocabularyItem(id, itemId)}
                                         onDeleteMultiple={(itemIds) => deleteVocabularyItems(id, itemIds)}
-                                        cambridgeApiKey={settings.cambridgeApiKey}
                                     />
                                 </div>
                             )}

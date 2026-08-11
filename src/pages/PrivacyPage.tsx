@@ -287,15 +287,16 @@ export default function PrivacyPage() {
                             </a>
                         </li>
                         <li>
-                            <strong>Cambridge Dictionary API</strong> — Optional online CEFR word-level enrichment (only
-                            when a key is configured in Settings). Data sent to dictionary.cambridge.org.{' '}
+                            <strong>Free Dictionary API</strong> — Optional online word lookup (definition, phonetic,
+                            part of speech) triggered per word from the Rubric Builder vocabulary panel. The looked-up
+                            word is sent to api.dictionaryapi.dev; no key or account is required.{' '}
                             <a
-                                href="https://dictionary-api.cambridge.org/"
+                                href="https://dictionaryapi.dev/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: 'var(--accent)' }}
                             >
-                                dictionary-api.cambridge.org <ExternalLink size={10} />
+                                dictionaryapi.dev <ExternalLink size={10} />
                             </a>
                         </li>
                     </ul>
