@@ -8,7 +8,7 @@ import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText, Ext
 import { nanoid } from '../utils/nanoid';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
-import { useApp } from '../context/AppContext';
+import { useAuthoring, useEssays, useRoster } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
@@ -21,16 +21,10 @@ export default function EssayBuilderPage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { showToast } = useToast();
-    const {
-        essayAssignments,
-        essaySubmissions,
-        rubrics,
-        classes,
-        students,
-        addEssayAssignments,
-        updateEssayGroup,
-        addEssaySubmission,
-    } = useApp();
+    const { classes, students } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { essayAssignments, essaySubmissions, addEssayAssignments, updateEssayGroup, addEssaySubmission } =
+        useEssays();
 
     // The canonical group is every row saved under this exact teacherKey (the bulk
     // "Assign to Students" fan-out). `existing` is looked up directly rather than via

@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useApp } from '../context/AppContext';
+import { useAuthoring, usePlatform, useRoster, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
@@ -53,7 +53,8 @@ type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retenti
 
 function UsersTab() {
     const { t } = useTranslation();
-    const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = useApp();
+    const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = usePlatform();
+
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const [users, setUsers] = useState<DbUser[]>([]);
@@ -171,7 +172,9 @@ function SchoolsTab() {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const { fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolMembers, removeSchoolMember } = useApp();
+    const { fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolMembers, removeSchoolMember } =
+        usePlatform();
+
     const [schools, setSchools] = useState<SchoolType[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedSchool, setExpandedSchool] = useState<string | null>(null);
@@ -429,6 +432,8 @@ function SchoolsTab() {
 
 function DatabaseTab() {
     const { t } = useTranslation();
+    const { classes } = useRoster();
+    const { rubrics } = useAuthoring();
     const {
         connectDatabase,
         connectForOAuth,
@@ -437,9 +442,8 @@ function DatabaseTab() {
         pullFromDatabase,
         updateMyProfile,
         fetchAllUsers,
-        rubrics,
-        classes,
-    } = useApp();
+    } = usePlatform();
+
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
 
@@ -1302,7 +1306,7 @@ function DatabaseTab() {
 
 function IntegrationsTab() {
     const { t } = useTranslation();
-    const { settings, updateSettings } = useApp();
+    const { settings, updateSettings } = useSettings();
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 680 }}>
@@ -1373,7 +1377,8 @@ function IntegrationsTab() {
 function DataTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const { students, anonymizeStudent, deleteStudent } = useApp();
+    const { students, anonymizeStudent, deleteStudent } = useRoster();
+
     const [search, setSearch] = useState('');
 
     const filtered = search.trim()
@@ -1703,8 +1708,8 @@ function ArchiveTab() {
         deletedStudentRubrics,
         restoreStudentRubric,
         students,
-        rubrics,
-    } = useApp();
+    } = useRoster();
+    const { rubrics } = useAuthoring();
 
     const classMap = new Map(classes.map((c) => [c.id, c.name]));
     const studentMap = new Map([...students, ...archivedStudents].map((s) => [s.id, s.name]));

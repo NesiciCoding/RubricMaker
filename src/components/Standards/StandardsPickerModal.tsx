@@ -12,7 +12,7 @@ import {
     type CspStandard,
 } from '../../services/standardsApi';
 import type { LinkedStandard } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring } from '../../context/AppContext';
 
 interface Props {
     apiKey: string;
@@ -25,7 +25,7 @@ type View = 'browse' | 'favorites';
 
 export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Props) {
     const { t } = useTranslation();
-    const { favoriteStandards, addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard } = useApp();
+    const { favoriteStandards, addFavoriteStandard, removeFavoriteStandard, isFavoriteStandard } = useAuthoring();
 
     const [view, setView] = useState<View>('browse');
     const [step, setStep] = useState<Step>('jurisdiction');

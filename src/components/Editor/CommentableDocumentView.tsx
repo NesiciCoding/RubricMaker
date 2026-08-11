@@ -5,7 +5,7 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import EssayEditor from './EssayEditor';
 import CommentSidebar from './CommentSidebar';
 import { CommentHighlight } from './commentDecorations';
-import { useApp } from '../../context/AppContext';
+import { useAssessment, usePlatform } from '../../context/AppContext';
 
 interface CommentableDocumentViewProps {
     content: string;
@@ -22,13 +22,9 @@ const noop = () => {};
  */
 export default function CommentableDocumentView({ content, attachmentId }: CommentableDocumentViewProps) {
     const { t } = useTranslation();
-    const {
-        documentComments,
-        addDocumentComment,
-        resolveDocumentComment,
-        deleteDocumentComment,
-        getCurrentDatabaseUserId,
-    } = useApp();
+    const { documentComments, addDocumentComment, resolveDocumentComment, deleteDocumentComment } = useAssessment();
+    const { getCurrentDatabaseUserId } = usePlatform();
+
     const [editor, setEditor] = useState<Editor | null>(null);
     const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);

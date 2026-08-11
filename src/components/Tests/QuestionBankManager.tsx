@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Trash2, Upload, Download, Pencil, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -68,7 +68,8 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         deleteQuestionBankItem,
         deleteQuestionBankItems,
         bulkUpdateQuestionBankItems,
-    } = useApp();
+    } = useAuthoring();
+
     const { showToast } = useToast();
     const { confirm, dialogProps } = useConfirm();
     const [searchTerm, setSearchTerm] = useState('');

@@ -29,7 +29,7 @@ import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
 import StandardMasteryTargetModal from '../components/Standards/StandardMasteryTargetModal';
 import Modal from '../components/ui/Modal';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAuthoring, useFlashcards, usePlatform, useRoster, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
@@ -86,9 +86,8 @@ const ROLE_META: Record<
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const { students, classes, studentRubrics } = useRoster();
     const {
-        settings,
-        updateSettings,
         gradeScales,
         addGradeScale,
         updateGradeScale,
@@ -98,13 +97,11 @@ export default function SettingsPage() {
         addExportTemplate,
         deleteExportTemplate,
         rubrics,
-        students,
-        classes,
-        studentRubrics,
-        importBackup,
-        standardMasteryTargets,
-        deleteStandardMasteryTarget,
-    } = useApp();
+    } = useAuthoring();
+    const { standardMasteryTargets, deleteStandardMasteryTarget } = useFlashcards();
+    const { settings, updateSettings } = useSettings();
+    const { importBackup } = usePlatform();
+
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
 

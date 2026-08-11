@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import { seededShuffle } from '../../utils/seededShuffle';
 import { cloneBankItemIntoTest } from '../../utils/testQuestionClone';
@@ -29,7 +29,7 @@ function newRow(): CriterionRow {
 export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { questionBank } = useApp();
+    const { questionBank } = useAuthoring();
 
     const [name, setName] = useState('');
     const [mode, setMode] = useState<'assessment' | 'practice' | 'placement'>('assessment');

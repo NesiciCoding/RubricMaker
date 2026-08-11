@@ -178,7 +178,16 @@ vi.mock('../../context/AppContext', () => {
         joinSchool: vi.fn(() => Promise.resolve()),
         signOutFromDatabase: vi.fn(() => Promise.resolve()),
     };
-    return { useApp: () => base };
+    return {
+        useApp: () => base,
+        useRoster: () => base,
+        useAuthoring: () => base,
+        useAssessment: () => base,
+        useEssays: () => base,
+        useFlashcards: () => base,
+        useSettings: () => base,
+        usePlatform: () => base,
+    };
 });
 
 vi.mock('../../services/database', () => ({

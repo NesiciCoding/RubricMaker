@@ -15,13 +15,21 @@ const commentBank: CommentBankItem[] = [
     { id: 'c2', text: 'Needs more detail.', tags: ['Grammar'], createdAt: '2026-01-02T00:00:00.000Z' },
 ];
 
+const makeAppContextMock = () => ({
+    commentBank,
+    addCommentBankItem: vi.fn(),
+    updateCommentBankItem: vi.fn(),
+    deleteCommentBankItem: vi.fn(),
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        commentBank,
-        addCommentBankItem: vi.fn(),
-        updateCommentBankItem: vi.fn(),
-        deleteCommentBankItem: vi.fn(),
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('../../../hooks/useDbStatus', () => ({

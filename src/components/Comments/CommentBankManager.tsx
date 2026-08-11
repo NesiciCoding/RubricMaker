@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Search, Trash2, Edit2, Tag, Save, Users2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { storageSync } from '../../services/database';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
@@ -20,7 +20,8 @@ type SortMode = 'newest' | 'mostUsed';
 
 export default function CommentBankManager({ onSelect, suggestedTags, fullPage }: CommentBankManagerProps) {
     const { t } = useTranslation();
-    const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useApp();
+    const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useAuthoring();
+
     const dbStatus = useDbStatus();
     const [schoolShared, setSchoolShared] = useState<CommentBankItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');

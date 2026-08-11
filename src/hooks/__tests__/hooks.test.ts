@@ -12,12 +12,20 @@ let mockStudents: Student[] = [];
 let mockStudentRubrics: StudentRubric[] = [];
 let mockThreshold = 7;
 
+const makeAppContextMock = () => ({
+    students: mockStudents,
+    studentRubrics: mockStudentRubrics,
+    settings: { overdueReminderThreshold: mockThreshold },
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        students: mockStudents,
-        studentRubrics: mockStudentRubrics,
-        settings: { overdueReminderThreshold: mockThreshold },
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 // Mutable unsub functions so we can verify cleanup

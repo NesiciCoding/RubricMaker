@@ -12,7 +12,7 @@ import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster } from '../context/AppContext';
 import {
     getCefrStudentOverview,
     highestLevelForSkill,
@@ -25,8 +25,10 @@ import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiv
 import type { CefrSkill } from '../types';
 
 export default function CefrOverviewPage() {
-    const { students, classes, rubrics, studentRubrics, selfAssessments, analysisResults, tests, studentTests } =
-        useApp();
+    const { students, classes, studentRubrics } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
+
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const navigate = useNavigate();

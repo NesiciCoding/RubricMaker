@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layers, Plus, Trash2, Play, Pencil, Share2, X, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
+import { useFlashcards } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
@@ -38,7 +38,7 @@ export default function StudentDecksSection({ studentId }: Props) {
         fetchMyStudentFlashcardDecks,
         saveFlashcardDeckAsStudent,
         deleteFlashcardDeckAsStudent,
-    } = useApp();
+    } = useFlashcards();
 
     const [onlineDecks, setOnlineDecks] = useState<FlashcardDeck[] | null>(null);
     const [editing, setEditing] = useState<FlashcardDeck | null>(null);

@@ -19,7 +19,7 @@ import {
     Gauge,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring, useSettings } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
@@ -87,7 +87,9 @@ export default function QuestionEditor({
     showSaveToBank = true,
 }: Props) {
     const { t } = useTranslation();
-    const { settings, addQuestionBankItem } = useApp();
+    const { addQuestionBankItem } = useAuthoring();
+    const { settings } = useSettings();
+
     const { showToast } = useToast();
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);

@@ -35,7 +35,7 @@ import {
     Route,
     Bell,
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { usePlatform } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
 import LoginButtons from '../components/auth/LoginButtons';
 
@@ -220,7 +220,7 @@ const STUDENT_FEATURES = [
 ];
 
 export default function LandingPage() {
-    const { enterLocalMode, connectForOAuth } = useApp();
+    const { enterLocalMode, connectForOAuth } = usePlatform();
 
     const savedConfig = loadSupabaseConfig();
     const [supabaseReady, setSupabaseReady] = useState(!!savedConfig);

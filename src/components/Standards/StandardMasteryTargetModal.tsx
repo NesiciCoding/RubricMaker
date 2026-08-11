@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import StandardsPickerModal from './StandardsPickerModal';
-import { useApp } from '../../context/AppContext';
+import { useFlashcards, useSettings } from '../../context/AppContext';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../../data/schoolYears';
 import { VO_TRACKS, VO_TRACK_LABELS } from '../../data/voTracks';
 import type { LinkedStandard, SchoolYear, VoTrack, StandardMasteryTarget } from '../../types';
@@ -14,7 +14,8 @@ interface Props {
 
 export default function StandardMasteryTargetModal({ existing, onClose }: Props) {
     const { t } = useTranslation();
-    const { settings, addStandardMasteryTarget, updateStandardMasteryTarget } = useApp();
+    const { addStandardMasteryTarget, updateStandardMasteryTarget } = useFlashcards();
+    const { settings } = useSettings();
 
     const [standard, setStandard] = useState<LinkedStandard | null>(
         existing

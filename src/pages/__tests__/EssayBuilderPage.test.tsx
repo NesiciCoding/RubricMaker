@@ -111,20 +111,28 @@ vi.mock('../../hooks/useToast', () => ({
     useToast: () => ({ showToast: mockShowToast }),
 }));
 
+const makeAppContextMock = () => ({
+    essayAssignments: [mockAssignment],
+    essaySubmissions: [mockSubmission],
+    rubrics: [mockRubric],
+    classes: mockClasses,
+    students: mockStudents,
+    addEssayAssignments: mockAddEssayAssignments,
+    updateEssayGroup: mockUpdateEssayGroup,
+    addEssaySubmission: mockAddEssaySubmission,
+    settings: mockSettings,
+    studentRubrics: [],
+    ...appOverrides,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        essayAssignments: [mockAssignment],
-        essaySubmissions: [mockSubmission],
-        rubrics: [mockRubric],
-        classes: mockClasses,
-        students: mockStudents,
-        addEssayAssignments: mockAddEssayAssignments,
-        updateEssayGroup: mockUpdateEssayGroup,
-        addEssaySubmission: mockAddEssaySubmission,
-        settings: mockSettings,
-        studentRubrics: [],
-        ...appOverrides,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp } from './AppContext';
+import { AppProvider, useApp, useRoster, useSettings } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
@@ -78,6 +78,8 @@ vi.mock('../services/database', () => ({
         setToastFn: () => {},
         hydrate: () => Promise.resolve({ data: null, error: null }),
         didWipeLocalData: () => false,
+        pushOne: vi.fn(),
+        pushMany: vi.fn(),
     },
 }));
 
@@ -635,5 +637,53 @@ describe('AppContext', () => {
 
             expect(mockShowToast).not.toHaveBeenCalled();
         });
+    });
+
+    it('only re-renders consumers of the domain whose data changed', () => {
+        // Domain isolation: a dispatch that touches one collection must NOT re-render
+        // consumers that only read a different domain. Each probe records every render
+        // it performs; the probes are direct children of AppProvider so their re-render
+        // is driven solely by the context value they subscribe to.
+        const rosterRenders: number[] = [];
+        const settingsRenders: string[] = [];
+        let triggerAdd: (() => void) | null = null;
+
+        function RosterProbe() {
+            const { students } = useRoster();
+            rosterRenders.push(students.length);
+            return <div data-testid="roster-probe">{students.length}</div>;
+        }
+
+        function SettingsProbe() {
+            const { settings } = useSettings();
+            settingsRenders.push(settings.language);
+            return <div data-testid="settings-probe">{settings.language}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addStudent } = useRoster();
+            triggerAdd = () => addStudent({ name: 'New Student', classId: 'default' });
+            return null;
+        }
+
+        render(
+            <AppProvider>
+                <RosterProbe />
+                <SettingsProbe />
+                <TriggerProbe />
+            </AppProvider>
+        );
+
+        // Baseline: both probes rendered once; the settings probe never subscribes to
+        // roster state, so it must not re-render when a student is added.
+        expect(rosterRenders.length).toBe(1);
+        expect(settingsRenders.length).toBe(1);
+
+        act(() => {
+            triggerAdd!();
+        });
+
+        expect(rosterRenders.length).toBeGreaterThan(1); // roster consumer re-rendered
+        expect(settingsRenders.length).toBe(1); // settings consumer did NOT
     });
 });

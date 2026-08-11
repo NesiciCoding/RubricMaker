@@ -41,21 +41,29 @@ const mockEnterLocalMode = vi.hoisted(() => vi.fn());
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
+const makeAppContextMock = () => ({
+    rubrics: [mockRubric],
+    students: [mockStudent],
+    classes: [mockClass],
+    studentRubrics: [] as StudentRubric[],
+    selfAssessments: [],
+    settings: mockSettings,
+    updateSettings: vi.fn(),
+    enterLocalMode: mockEnterLocalMode,
+    connectForOAuth: vi.fn(() => Promise.resolve(true)),
+    showMigrationPrompt: false,
+    dismissMigrationPrompt: vi.fn(),
+    getActiveGradeScale: vi.fn(),
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [mockRubric],
-        students: [mockStudent],
-        classes: [mockClass],
-        studentRubrics: [] as StudentRubric[],
-        selfAssessments: [],
-        settings: mockSettings,
-        updateSettings: vi.fn(),
-        enterLocalMode: mockEnterLocalMode,
-        connectForOAuth: vi.fn(() => Promise.resolve(true)),
-        showMigrationPrompt: false,
-        dismissMigrationPrompt: vi.fn(),
-        getActiveGradeScale: vi.fn(),
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('../../services/database', () => ({

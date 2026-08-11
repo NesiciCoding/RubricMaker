@@ -197,7 +197,16 @@ vi.mock('../../context/AppContext', () => {
         fetchAssignedFlashcardDeck: vi.fn(() => Promise.resolve(null)),
         fetchMyFlashcardReview: vi.fn(() => Promise.resolve(null)),
     };
-    return { useApp: () => base };
+    return {
+        useApp: () => base,
+        useRoster: () => base,
+        useAuthoring: () => base,
+        useAssessment: () => base,
+        useEssays: () => base,
+        useFlashcards: () => base,
+        useSettings: () => base,
+        usePlatform: () => base,
+    };
 });
 
 vi.mock('../../services/database', () => ({
