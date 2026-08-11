@@ -149,5 +149,6 @@ function boot() {
 }
 
 // Wait for the `en` fallback bundle before the first render so no untranslated keys flash.
-// `.finally` — even if the fetch fails we still boot (a keyed UI beats a blank screen).
-void i18nReady.finally(boot);
+// `then(boot, boot)` — even if the fetch fails we still boot (a keyed UI beats a blank screen),
+// and the locale-load rejection is consumed rather than surfacing as an unhandled rejection.
+void i18nReady.then(boot, boot);
