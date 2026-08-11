@@ -338,8 +338,21 @@ export default function StudentsPage() {
     });
 
     const showClassColumn = singleClassId === undefined; // combined roster (All or multi) needs attribution
+
+    // Index classes once so per-row roster lookups don't scan the array on every render.
+    const classById = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
+    // Per-class rubric lists, so the roster doesn't re-filter rubrics for every student row.
+    const classRubricsById = useMemo(() => {
+        const map = new Map<string, Rubric[]>();
+        for (const c of classes) {
+            const ids = c.rubricIds;
+            map.set(c.id, ids?.length ? rubrics.filter((r) => ids.includes(r.id)) : rubrics);
+        }
+        return map;
+    }, [classes, rubrics]);
+
     const rosterLabel = singleClassId
-        ? (classes.find((c) => c.id === singleClassId)?.name ?? t('studentsPage.default_class_name'))
+        ? (classById.get(singleClassId)?.name ?? t('studentsPage.default_class_name'))
         : isAllCohorts
           ? t('studentsPage.all_classes_label')
           : t('studentsPage.n_cohorts_label', { count: selectedCohorts.length });
@@ -377,7 +390,7 @@ export default function StudentsPage() {
                 trend = delta > 3 ? 'up' : delta < -3 ? 'down' : 'flat';
             }
 
-            const cls = classes.find((c) => c.id === s.classId);
+            const cls = classById.get(s.classId);
             const ov = getCefrStudentOverview(
                 s.id,
                 studentRubrics,
@@ -970,10 +983,8 @@ export default function StudentsPage() {
                                             );
                                             // Grade menu shows the rubrics linked to THIS student's class (not the
                                             // single active class), so links stay effective in the combined roster.
-                                            const studentClass = classes.find((c) => c.id === s.classId);
-                                            const studentRubricList = studentClass?.rubricIds?.length
-                                                ? rubrics.filter((r) => studentClass.rubricIds!.includes(r.id))
-                                                : rubrics;
+                                            const studentClass = classById.get(s.classId);
+                                            const studentRubricList = classRubricsById.get(s.classId) ?? rubrics;
                                             return (
                                                 <tr key={s.id}>
                                                     <td style={{ fontWeight: 500 }}>
@@ -984,7 +995,7 @@ export default function StudentsPage() {
                                                     </td>
                                                     {showClassColumn && (
                                                         <td className="text-muted text-sm">
-                                                            {classes.find((c) => c.id === s.classId)?.name ?? '—'}
+                                                            {classById.get(s.classId)?.name ?? '—'}
                                                         </td>
                                                     )}
                                                     <td className="text-muted text-sm">{s.email || '—'}</td>
