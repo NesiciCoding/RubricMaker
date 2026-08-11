@@ -10,7 +10,7 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import {
     calcGradeSummary,
     calcClassStats,
@@ -69,18 +69,12 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const {
-        rubrics,
-        students,
-        classes,
-        studentRubrics,
-        gradeScales,
-        settings,
-        updateSettings,
-        tests = [],
-        studentTests = [],
-        standardMasteryTargets,
-    } = useApp();
+    const { students, classes, studentRubrics } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
+    const { tests = [], studentTests = [] } = useAssessment();
+    const { standardMasteryTargets } = useFlashcards();
+    const { settings, updateSettings } = useSettings();
+
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 

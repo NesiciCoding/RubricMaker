@@ -7,7 +7,7 @@ import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getActivityDashboardTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useRoster } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
@@ -26,23 +26,10 @@ const SECTION_LABELS: Record<string, string> = {
 export default function ActivityDashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const {
-        rubrics,
-        tests,
-        essayAssignments,
-        classes,
-        students,
-        studentRubrics,
-        studentTests,
-        updateClass,
-        addEssayAssignments,
-        updateRubric,
-        updateTest,
-        updateEssayGroup,
-        gradingTasks,
-        addGradingTasks,
-        deleteGradingTask,
-    } = useApp();
+    const { classes, students, studentRubrics, updateClass } = useRoster();
+    const { rubrics, updateRubric } = useAuthoring();
+    const { tests, studentTests, updateTest, gradingTasks, addGradingTasks, deleteGradingTask } = useAssessment();
+    const { essayAssignments, addEssayAssignments, updateEssayGroup } = useEssays();
 
     const [filterYear, setFilterYear] = useState<SchoolYear | 'all'>('all');
     const [filterTrack, setFilterTrack] = useState<VoTrack | 'all'>('all');

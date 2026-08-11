@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Trash2, Upload, Play, Send, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
-import { useApp } from '../context/AppContext';
+import { useFlashcards, useRoster } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { nanoid } from '../utils/nanoid';
 import FlashcardImportModal from '../components/Flashcards/FlashcardImportModal';
@@ -21,15 +21,10 @@ export default function FlashcardDeckPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const {
-        flashcardDecks,
-        flashcardAssignments,
-        flashcardReviews,
-        updateFlashcardDeck,
-        addFlashcardAssignments,
-        students,
-        classes,
-    } = useApp();
+    const { students, classes } = useRoster();
+    const { flashcardDecks, flashcardAssignments, flashcardReviews, updateFlashcardDeck, addFlashcardAssignments } =
+        useFlashcards();
+
     const { showToast } = useToast();
 
     const deck = flashcardDecks.find((d) => d.id === id);

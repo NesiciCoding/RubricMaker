@@ -93,6 +93,13 @@ const mockAppValue = {
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => mockAppValue,
+    useRoster: () => mockAppValue,
+    useAuthoring: () => mockAppValue,
+    useAssessment: () => mockAppValue,
+    useEssays: () => mockAppValue,
+    useFlashcards: () => mockAppValue,
+    useSettings: () => mockAppValue,
+    usePlatform: () => mockAppValue,
 }));
 
 const mockNavigate = vi.fn();

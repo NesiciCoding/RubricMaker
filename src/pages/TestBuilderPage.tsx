@@ -19,7 +19,7 @@ import type { EventData } from 'react-joyride';
 import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -48,7 +48,9 @@ export default function TestBuilderPage() {
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
-    const { tests, addTest, updateTest, gradeScales, settings, addSectionBankItem, questionBank } = useApp();
+    const { gradeScales, addSectionBankItem, questionBank } = useAuthoring();
+    const { tests, addTest, updateTest } = useAssessment();
+    const { settings } = useSettings();
 
     const existing = id ? tests.find((tst) => tst.id === id) : undefined;
     const notFound = !!id && !existing;

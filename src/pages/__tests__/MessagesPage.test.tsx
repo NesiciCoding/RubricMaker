@@ -37,17 +37,25 @@ const mockNotifyStudentMessage = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
 
+const makeAppContextMock = () => ({
+    messages: mockMessages,
+    students: mockStudents,
+    studentRubrics: [],
+    settings: mockSettings,
+    sendMessage: mockSendMessage,
+    markMessageReadByTeacher: mockMarkMessageReadByTeacher,
+    notifyStudentMessage: mockNotifyStudentMessage,
+    ...appOverrides,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        messages: mockMessages,
-        students: mockStudents,
-        studentRubrics: [],
-        settings: mockSettings,
-        sendMessage: mockSendMessage,
-        markMessageReadByTeacher: mockMarkMessageReadByTeacher,
-        notifyStudentMessage: mockNotifyStudentMessage,
-        ...appOverrides,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

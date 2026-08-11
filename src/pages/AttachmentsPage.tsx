@@ -2,14 +2,16 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Paperclip, Trash2, Download, Link2, Users, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAuthoring, useRoster } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 
 export default function AttachmentsPage() {
     const { t } = useTranslation();
-    const { attachments, rubrics, students, classes, addAttachment, deleteAttachment } = useApp();
+    const { attachments, students, classes, addAttachment, deleteAttachment } = useRoster();
+    const { rubrics } = useAuthoring();
+
     const { confirm, dialogProps } = useConfirm();
     const [dragOver, setDragOver] = useState(false);
     const [selectedRubricId, setSelectedRubricId] = useState('');

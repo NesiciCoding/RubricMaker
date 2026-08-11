@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mail, Plus, Send, X } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useEssays, useRoster, useSettings } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import type { Message, MessageContextType } from '../types';
@@ -16,7 +16,10 @@ const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
 
 export default function MessagesPage() {
     const { t } = useTranslation();
-    const { messages, students, settings, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useApp();
+    const { students } = useRoster();
+    const { messages, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useEssays();
+    const { settings } = useSettings();
+
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const [newThreadOpen, setNewThreadOpen] = useState(false);

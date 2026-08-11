@@ -5,7 +5,7 @@ import { Eye, EyeOff, AlertTriangle, Database, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useEssays, useRoster } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';
@@ -54,7 +54,9 @@ export interface LiveMonitorPageProps {
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
-    const { tests, studentTests, students, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useApp();
+    const { students } = useRoster();
+    const { tests, studentTests, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useAssessment();
+
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
     const config = loadSupabaseConfig();
@@ -70,7 +72,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
 
-    const { fetchEssayAssignmentByKey } = useApp();
+    const { fetchEssayAssignmentByKey } = useEssays();
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 

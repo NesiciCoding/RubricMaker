@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Layers, Edit2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useFlashcards } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 
 export default function FlashcardsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { flashcardDecks, flashcardAssignments, addFlashcardDeck, deleteFlashcardDeck } = useApp();
+    const { flashcardDecks, flashcardAssignments, addFlashcardDeck, deleteFlashcardDeck } = useFlashcards();
+
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     function handleCreate() {

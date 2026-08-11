@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, FileText, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
 import { aggregatePeerReviews } from '../utils/peerReviewAggregator';
@@ -12,7 +12,9 @@ export default function PeerReviewAnalyticsPage() {
     const { rubricId } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { rubrics, students, peerReviews, studentRubrics } = useApp();
+    const { students, studentRubrics } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { peerReviews } = useAssessment();
 
     const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
 

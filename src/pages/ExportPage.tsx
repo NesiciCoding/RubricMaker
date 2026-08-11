@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useRoster, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
@@ -35,23 +35,12 @@ import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId }
 
 export default function ExportPage() {
     const { t } = useTranslation();
-    const {
-        rubrics,
-        students,
-        classes,
-        studentRubrics,
-        gradeScales,
-        settings,
-        exportTemplates,
-        updateSettings,
-        saveStudentRubric,
-        selfAssessments,
-        analysisResults,
-        tests,
-        studentTests,
-        essayAssignments,
-        essaySubmissions,
-    } = useApp();
+    const { students, classes, studentRubrics, saveStudentRubric } = useRoster();
+    const { rubrics, gradeScales, exportTemplates } = useAuthoring();
+    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
+    const { essayAssignments, essaySubmissions } = useEssays();
+    const { settings, updateSettings } = useSettings();
+
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());

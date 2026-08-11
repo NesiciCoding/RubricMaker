@@ -19,7 +19,7 @@ import {
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
@@ -40,18 +40,11 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const {
-        tests,
-        addTest,
-        updateTest,
-        deleteTest,
-        studentTests,
-        saveStudentTest,
-        students,
-        classes,
-        settings,
-        exportTemplates,
-    } = useApp();
+    const { students, classes } = useRoster();
+    const { exportTemplates } = useAuthoring();
+    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest } = useAssessment();
+    const { settings } = useSettings();
+
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const [view, setView] = useState<'cards' | 'list'>('cards');

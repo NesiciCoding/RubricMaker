@@ -100,6 +100,13 @@ const mockAppValue = {
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => mockAppValue,
+    useRoster: () => mockAppValue,
+    useAuthoring: () => mockAppValue,
+    useAssessment: () => mockAppValue,
+    useEssays: () => mockAppValue,
+    useFlashcards: () => mockAppValue,
+    useSettings: () => mockAppValue,
+    usePlatform: () => mockAppValue,
 }));
 
 vi.mock('recharts', async (importOriginal) => {

@@ -171,7 +171,16 @@ Object.defineProperty(navigator, 'clipboard', {
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../context/AppContext', () => ({ useApp: () => mockUseApp }));
+vi.mock('../../context/AppContext', () => ({
+    useApp: () => mockUseApp,
+    useRoster: () => mockUseApp,
+    useAuthoring: () => mockUseApp,
+    useAssessment: () => mockUseApp,
+    useEssays: () => mockUseApp,
+    useFlashcards: () => mockUseApp,
+    useSettings: () => mockUseApp,
+    usePlatform: () => mockUseApp,
+}));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
 vi.mock('react-i18next', () => ({

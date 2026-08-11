@@ -20,7 +20,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
@@ -88,23 +88,13 @@ export default function Dashboard() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const {
-        rubrics,
-        students,
-        studentRubrics,
-        studentTests,
-        tests,
-        classes,
-        essaySubmissions,
-        flashcardDecks,
-        gradeScales,
-        settings,
-        userTemplates,
-        deleteUserTemplate,
-        addFlashcardAssignments,
-        sendMessage,
-        notifyStudentMessage,
-    } = useApp();
+    const { students, studentRubrics, classes } = useRoster();
+    const { rubrics, gradeScales, userTemplates, deleteUserTemplate } = useAuthoring();
+    const { studentTests, tests } = useAssessment();
+    const { essaySubmissions, sendMessage, notifyStudentMessage } = useEssays();
+    const { flashcardDecks, addFlashcardAssignments } = useFlashcards();
+    const { settings } = useSettings();
+
     const [messagingStudentId, setMessagingStudentId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
 

@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { Moon, Sun, Menu, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
+import { useRoster, useSettings } from '../../context/AppContext';
 import { useMobileMenu } from '../../context/MobileMenuContext';
 import NotificationBell from './NotificationBell';
 import GlobalSearch from '../Search/GlobalSearch';
@@ -18,7 +18,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export default function Topbar({ title, actions }: TopbarProps) {
-    const { settings, updateSettings, classes = [] } = useApp();
+    const { classes = [] } = useRoster();
+    const { settings, updateSettings } = useSettings();
+
     const { t } = useTranslation();
     const { open: openMobileMenu } = useMobileMenu();
     const [searchOpen, setSearchOpen] = useState(false);
