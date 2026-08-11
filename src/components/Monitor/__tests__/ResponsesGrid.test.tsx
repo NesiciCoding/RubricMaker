@@ -96,7 +96,14 @@ const alice: ResponsesGridStudentRow = {
         { questionId: 'q4', response: JSON.stringify({ 0: 'capital' }) },
         { questionId: 'q5', response: JSON.stringify(['oa', 'ob']) },
         { questionId: 'q6', response: 'true' },
-        { questionId: 'q7', response: encodeAudioResponse({ dataUri: 'data:audio/webm;base64,xxx', mimeType: 'audio/webm', durationSec: 12 }) },
+        {
+            questionId: 'q7',
+            response: encodeAudioResponse({
+                dataUri: 'data:audio/webm;base64,xxx',
+                mimeType: 'audio/webm',
+                durationSec: 12,
+            }),
+        },
         { questionId: 'q8', response: JSON.stringify([1]) },
     ],
 };
@@ -139,9 +146,7 @@ describe('ResponsesGrid', () => {
     it('respects pointsEarned overrides from manual grading', () => {
         const graded = {
             ...alice,
-            answers: alice.answers.map((a) =>
-                a.questionId === 'q3' ? { ...a, pointsEarned: 1 } : a
-            ),
+            answers: alice.answers.map((a) => (a.questionId === 'q3' ? { ...a, pointsEarned: 1 } : a)),
         };
         render(<ResponsesGrid test={test} rows={[graded]} />);
         // q3 answered with pointsEarned 1 < 3 → incorrect (hot-text [1] is also incorrect),
@@ -180,9 +185,7 @@ describe('ResponsesGrid', () => {
         fireEvent.click(screen.getByLabelText('common.close'));
 
         fireEvent.click(screen.getByLabelText('Say your name'));
-        expect(screen.getByRole('dialog').textContent).toContain(
-            'tests.monitor.grid.audio_recorded:{"seconds":12}'
-        );
+        expect(screen.getByRole('dialog').textContent).toContain('tests.monitor.grid.audio_recorded:{"seconds":12}');
     });
 
     it('shows no_answer for unanswered gallery cells', () => {
