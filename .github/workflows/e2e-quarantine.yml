@@ -1,0 +1,413 @@
+name: Quarantine Check
+
+# Four weekly jobs (Mon 05:00 UTC, after the weekly CI full run):
+#   - unquarantine: re-tests the e2e specs listed in e2e/quarantine.json (flaky
+#     specs parked out of the gating run). Any spec that passes three
+#     consecutive clean runs — the same bar the gate would demand — is removed
+#     from the list via an automatically opened PR.
+#   - unquarantine-unit: same for flaky unit tests listed in
+#     quarantine-unit.json (marked with isQuarantined() / it.skipIf).
+#   - detect-flaky: scans recent CI runs' JUnit reports and proposes
+#     quarantining e2e specs and unit tests that keep failing via a PR
+#     (thresholds tunable from the workflow_dispatch inputs; `dry_run`
+#     reports without a PR). Unit proposals also wrap the it() call with the
+#     it.skipIf(isQuarantined('id')) marker, since that's what actually skips.
+#   - flaky-report: publishes a dated report issue of everything quarantined,
+#     for how long, and why.
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report candidates (no PR is opened)"
+        type: boolean
+        default: false
+      min_failures:
+        description: "Min distinct failed runs to flag a spec (default 3)"
+        type: number
+        default: 3
+      window:
+        description: "Most recent CI runs to examine (default 15)"
+        type: number
+        default: 15
+
+# Least privilege per job (declared on each job below): the three jobs that
+# push branches and open PRs need contents+pull-requests write; flaky-report
+# only reads the repo and maintains the report issue.
+permissions: {}
+
+concurrency:
+  group: quarantine-check
+  cancel-in-progress: false
+
+jobs:
+  unquarantine:
+    name: Unquarantine stable specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # push the branch carrying the quarantine change
+      pull-requests: write # open the unquarantine PR
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Re-test quarantined specs
+        id: retest
+        env:
+          CI: true
+        run: |
+          QUARANTINE=e2e/quarantine.json
+          COUNT=$(jq 'length' "$QUARANTINE")
+          echo "quarantined=$COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          rm -rf quarantine-failures
+          STABLE=""
+          for SPEC in $(jq -r '.[].spec' "$QUARANTINE"); do
+            echo "::group::Testing quarantined spec: $SPEC"
+            CLEAN=1
+            for i in 1 2 3; do
+              # trace defaults to on-first-retry, which never fires with --retries=0;
+              # force retain-on-failure here. video/screenshot come from the config's
+              # global `use` (retain-on-failure / only-on-failure).
+              if ! npx playwright test "e2e/specs/$SPEC" --project=quarantine --retries=0 \
+                --trace=retain-on-failure --reporter=list; then
+                CLEAN=0
+                break
+              fi
+            done
+            if [ "$CLEAN" -eq 0 ]; then
+              mkdir -p "quarantine-failures/$SPEC"
+              cp -r test-results/. "quarantine-failures/$SPEC/" 2>/dev/null || true
+            fi
+            echo "::endgroup::"
+            if [ "$CLEAN" -eq 1 ]; then
+              STABLE="$STABLE $SPEC"
+              echo "stable: $SPEC"
+            else
+              echo "still failing/flaky, stays quarantined: $SPEC (trace/video in the quarantine-failures artifact)"
+            fi
+          done
+
+          if [ -z "$STABLE" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          for SPEC in $STABLE; do
+            jq --arg spec "$SPEC" 'map(select(.spec != $spec))' "$QUARANTINE" > "$QUARANTINE.tmp"
+            mv "$QUARANTINE.tmp" "$QUARANTINE"
+          done
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "Remaining quarantined: $(jq -r '.[].spec' "$QUARANTINE" | tr '\n' ' ')"
+
+      - name: Upload quarantine failure artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quarantine-failures
+          path: quarantine-failures/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Open unquarantine PR
+        if: steps.retest.outputs.changed == 'true'
+        env:
+          # PRs opened with the plain GITHUB_TOKEN do not trigger CI, which
+          # would stall the automation if main requires status checks. Set the
+          # AUTO_QUARANTINE_TOKEN secret (a fine-grained PAT or GitHub App
+          # token) to make auto-PRs run their checks.
+          GH_TOKEN: ${{ secrets.AUTO_QUARANTINE_TOKEN || secrets.GITHUB_TOKEN }}
+          STABLE_SPECS: ${{ steps.retest.outputs.stable }}
+        run: |
+          EXISTING=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("ci/unquarantine-"))] | length')
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "An unquarantine PR is already open — not creating another."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="ci/unquarantine-$(date +%Y%m%d-%H%M%S)"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git checkout -b "$BRANCH"
+          git add e2e/quarantine.json
+          git commit -m "test(e2e): unquarantine stable specs"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "test(e2e): unquarantine stable specs" \
+            --body "The weekly quarantine check verified these specs pass 3 consecutive clean runs (no retries):$STABLE_SPECS"
+
+  unquarantine-unit:
+    name: Unquarantine stable unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch carrying the quarantine change
+      pull-requests: write # open the unquarantine PR
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Re-test quarantined unit tests
+        id: retest-unit
+        run: |
+          QUARANTINE=quarantine-unit.json
+          COUNT=$(jq 'length' "$QUARANTINE")
+          echo "quarantined=$COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Ids may contain spaces, so iterate with `while read`, not `for in`
+          # (word splitting would shred them). Stable entries are removed from
+          # the JSON immediately; CHANGED tracks whether anything was removed.
+          CHANGED=0
+          STABLE=""
+          for FILE in $(jq -r '.[].file' "$QUARANTINE" | sort -u); do
+            # Snapshot the ids first: the loop body rewrites $QUARANTINE, and
+            # the process substitution would read the file while it's being
+            # replaced (a race that only works today because jq is fast).
+            IDS_FILE=$(mktemp)
+            jq -r --arg f "$FILE" '.[] | select(.file == $f) | .id' "$QUARANTINE" > "$IDS_FILE"
+            while read -r ID; do
+              echo "::group::Testing quarantined unit test: $ID ($FILE)"
+              CLEAN=1
+              for i in 1 2 3; do
+                # QUARANTINE_DISABLED forces the it.skipIf marker to run;
+                # -t filters to just the quarantined test. Three clean runs,
+                # no retries — the same bar the CI gate demands. The JSON
+                # reporter guards the case where -t matches nothing (e.g. the
+                # test was renamed): vitest exits 0 with 0 tests run, which
+                # must NOT count as stable.
+                if ! QUARANTINE_DISABLED=1 npx vitest run "$FILE" -t "$ID" --retry=0 \
+                  --reporter=json --outputFile.json=/tmp/vitest-unit.json; then
+                  CLEAN=0
+                  break
+                fi
+                PASSED=$(jq -r '.numPassedTests // 0' /tmp/vitest-unit.json)
+                if [ "$PASSED" -le 0 ]; then
+                  echo "  (no test matched '$ID' — renamed? keeping quarantined)"
+                  CLEAN=0
+                  break
+                fi
+              done
+              echo "::endgroup::"
+              if [ "$CLEAN" -eq 1 ]; then
+                jq --arg id "$ID" 'map(select(.id != $id))' "$QUARANTINE" > "$QUARANTINE.tmp"
+                mv "$QUARANTINE.tmp" "$QUARANTINE"
+                CHANGED=1
+                if [ -z "$STABLE" ]; then STABLE="$ID"; else STABLE="$STABLE | $ID"; fi
+                echo "stable: $ID"
+              else
+                echo "still failing/flaky, stays quarantined: $ID"
+              fi
+            done < "$IDS_FILE"
+            rm -f "$IDS_FILE"
+          done
+
+          if [ "$CHANGED" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "Remaining quarantined: $(jq -r '.[].id' "$QUARANTINE" | tr '\n' ' ')"
+
+      - name: Open unquarantine PR (unit tests)
+        if: steps.retest-unit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_QUARANTINE_TOKEN || secrets.GITHUB_TOKEN }}
+          STABLE_TESTS: ${{ steps.retest-unit.outputs.stable }}
+        run: |
+          EXISTING=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("ci/unquarantine-unit-"))] | length')
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "An unquarantine PR is already open — not creating another."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="ci/unquarantine-unit-$(date +%Y%m%d-%H%M%S)"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git checkout -b "$BRANCH"
+          git add quarantine-unit.json
+          git commit -m "test: unquarantine stable unit tests"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "test: unquarantine stable unit tests" \
+            --body "The weekly quarantine check verified these unit tests pass 3 consecutive clean runs (no retries):$STABLE_TESTS"
+
+  detect-flaky:
+    name: Detect repeatedly failing specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # push the branch carrying the quarantine change
+      pull-requests: write # open the auto-quarantine PR
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Detect repeatedly failing specs
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          MIN_FAILURES: ${{ inputs.min_failures || 3 }}
+          WINDOW: ${{ inputs.window || 15 }}
+        run: |
+          python3 scripts/ci-quarantine-detect.py --repo "${{ github.repository }}" \
+            --min-failures "$MIN_FAILURES" --window "$WINDOW" > /tmp/flagged.txt
+          if [ ! -s /tmp/flagged.txt ]; then
+            echo "No repeatedly failing specs detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          SPECS=""
+          while read -r SPEC COUNT TOTAL; do
+            REASON="auto-detected: failed in $COUNT of the last $TOTAL CI runs examined"
+            jq --arg spec "$SPEC" --arg reason "$REASON" \
+              'if any(.[]; .spec == $spec) then . else . + [{spec: $spec, reason: $reason, since: (now | strftime("%Y-%m-%d"))}] end' \
+              e2e/quarantine.json > e2e/quarantine.json.tmp
+            mv e2e/quarantine.json.tmp e2e/quarantine.json
+            SPECS="$SPECS $SPEC($COUNT/$TOTAL)"
+          done < /tmp/flagged.txt
+          echo "specs=$SPECS" >> "$GITHUB_OUTPUT"
+          echo "Proposing quarantine for:$SPECS"
+          {
+            echo "### Auto-quarantine candidates (dry run: $DRY_RUN)"
+            echo ""
+            echo ""; cat /tmp/flagged.txt; echo ""
+            echo "Proposed: $SPECS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Detect repeatedly failing unit tests
+        id: detect-unit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          MIN_FAILURES: ${{ inputs.min_failures || 3 }}
+          WINDOW: ${{ inputs.window || 15 }}
+        run: |
+          python3 scripts/ci-quarantine-detect.py --repo "${{ github.repository }}" \
+            --kind unit --min-failures "$MIN_FAILURES" --window "$WINDOW" > /tmp/flagged-unit.txt
+          if [ ! -s /tmp/flagged-unit.txt ]; then
+            echo "No repeatedly failing unit tests detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          # Adds entries to quarantine-unit.json AND wraps the it() calls with
+          # it.skipIf(isQuarantined('id')) in the test files — the marker is
+          # what actually skips a quarantined test.
+          python3 scripts/apply-unit-quarantine.py < /tmp/flagged-unit.txt
+          TESTS=""
+          while IFS=$'\t' read -r FILE ID COUNT TOTAL; do
+            TESTS="$TESTS | $ID ($COUNT/$TOTAL)"
+          done < /tmp/flagged-unit.txt
+          echo "tests=${TESTS# | }" >> "$GITHUB_OUTPUT"
+          echo "Proposing quarantine for unit tests: $TESTS"
+          {
+            echo "### Auto-quarantine candidates — unit tests (dry run: $DRY_RUN)"
+            echo ""
+            echo ""; cat /tmp/flagged-unit.txt; echo ""
+            echo "Proposed: $TESTS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open auto-quarantine PR
+        if: >-
+          (steps.detect.outputs.changed == 'true' || steps.detect-unit.outputs.changed == 'true')
+          && !inputs.dry_run
+        env:
+          GH_TOKEN: ${{ secrets.AUTO_QUARANTINE_TOKEN || secrets.GITHUB_TOKEN }}
+          E2E_SPECS: ${{ steps.detect.outputs.specs }}
+          UNIT_TESTS: ${{ steps.detect-unit.outputs.tests }}
+        run: |
+          EXISTING=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("ci/quarantine-"))] | length')
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "A quarantine proposal PR is already open — not creating another."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="ci/quarantine-$(date +%Y%m%d-%H%M%S)"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git checkout -b "$BRANCH"
+          # Includes the test files the unit detector wrapped with skip markers.
+          git add e2e/quarantine.json quarantine-unit.json src
+          git commit -m "test: quarantine repeatedly failing tests"
+          git push origin "$BRANCH"
+          printf 'These tests failed in at least 3 distinct recent CI runs. They are moved out of the gating runs (e2e via e2e/quarantine.json; unit tests via quarantine-unit.json + it.skipIf markers); the weekly quarantine check will unquarantine them automatically once they pass 3 clean runs.\n\nE2E specs: %s\nUnit tests: %s\n' "$E2E_SPECS" "$UNIT_TESTS" > /tmp/quarantine-pr-body.md
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "test: quarantine repeatedly failing tests" \
+            --body-file /tmp/quarantine-pr-body.md
+
+  flaky-report:
+    name: Flaky test report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # checkout only
+      issues: write # maintain the single report issue
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # no git push in this job
+
+      - name: Render report
+        run: python3 scripts/flaky-report.py > /tmp/flaky-report.md
+
+      - name: Maintain report issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_TITLE: "Flaky test quarantine report"
+        run: |
+          EXISTING=$(gh issue list --search "in:title \"$REPORT_TITLE\"" --state open --json number --jq '.[0].number' || true)
+          if [ -z "$EXISTING" ]; then
+            gh issue create --title "$REPORT_TITLE" --body-file /tmp/flaky-report.md
+            echo "Created report issue."
+          else
+            gh issue edit "$EXISTING" --body-file /tmp/flaky-report.md
+            echo "Updated report issue #$EXISTING."
+          fi

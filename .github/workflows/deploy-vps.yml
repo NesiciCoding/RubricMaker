@@ -1,8 +1,11 @@
+# Manual deploy to the Virtualmin VPS.
+#
+# Automatic deploys on push to main now run inside ci.yml (the `deploy-vps`
+# job), which only fires after every CI + e2e job passes and only when the push
+# touched app files. Use this workflow_dispatch to deploy without waiting on CI.
 name: Deploy to VPS
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
 
 concurrency:
@@ -10,14 +13,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  deploy-vps-manual:
+    name: Deploy to VPS (manual)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: 'npm'
@@ -32,7 +40,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@9.0.0
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
         with:
           switches: -avz --delete
           path: dist/
@@ -43,7 +51,7 @@ jobs:
           remote_key: ${{ secrets.VPS_SSH_KEY }}
 
       - name: Upload .htaccess
-        uses: burnett01/rsync-deployments@9.0.0
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
         with:
           switches: -avz
           path: deploy/.htaccess
