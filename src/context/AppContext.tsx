@@ -1919,9 +1919,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
 
+    // These actions read state via currentStateRef instead of closing over a slice so their
+    // identity stays stable: a closure over e.g. `state.rubrics` would re-identify the action
+    // (and thus re-render every roster consumer) whenever rubrics change, even though rubrics
+    // belong to the authoring domain. Read-only helpers built from fresh state keep each domain
+    // value changing only when the slices it exposes change.
     const createStudentRubric = useCallback(
         (rubricId: string, studentId: string): StudentRubric => {
-            const rubric = state.rubrics.find((r) => r.id === rubricId);
+            const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
             const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
                 criterionId: c.id,
                 levelId: null,
@@ -1939,7 +1944,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
             return sr;
         },
-        [state.rubrics]
+        []
     );
 
     /**
@@ -1949,7 +1954,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
      */
     const createGroupStudentRubrics = useCallback(
         (rubricId: string, studentIds: string[]): StudentRubric[] => {
-            const rubric = state.rubrics.find((r) => r.id === rubricId);
+            const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
             const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
                 criterionId: c.id,
                 levelId: null,
@@ -1958,7 +1963,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }));
             const groupId = nanoid();
             const srs = studentIds.map((studentId): StudentRubric => {
-                const existing = state.studentRubrics.find(
+                const existing = currentStateRef.current.studentRubrics.find(
                     (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
                 );
                 return {
@@ -1980,7 +1985,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
             return srs;
         },
-        [state.rubrics, state.studentRubrics]
+        []
     );
 
     const deleteStudentRubric = useCallback((id: string, scope: 'student' | 'group') => {
@@ -2015,9 +2020,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
 
+    // Read via currentStateRef for the same reason as createStudentRubric: gradeScales belongs to
+    // the authoring domain, so closing over it would re-render every settings consumer on any
+    // grade-scale change.
     const getActiveGradeScale = useCallback((): GradeScale => {
-        return state.gradeScales.find((gs) => gs.id === state.settings.defaultGradeScaleId) ?? state.gradeScales[0];
-    }, [state.gradeScales, state.settings.defaultGradeScaleId]);
+        const { gradeScales, settings } = currentStateRef.current;
+        return gradeScales.find((gs) => gs.id === settings.defaultGradeScaleId) ?? gradeScales[0];
+    }, []);
 
     const addFavoriteStandard = useCallback(
         (s: LinkedStandard) => dispatch({ type: 'ADD_FAVORITE_STANDARD', payload: s }),

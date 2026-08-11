@@ -1,10 +1,11 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act, render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp, useRoster, useSettings } from './AppContext';
+import { AppProvider, useApp, useRoster, useSettings, useAuthoring } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
+import { DEFAULT_FORMAT } from '../types';
 
 // vi.hoisted so this spy can be created before vi.mock('../hooks/useToast', ...) runs
 // (vi.mock factories are hoisted above regular imports/consts) and still be referenced
@@ -685,5 +686,85 @@ describe('AppContext', () => {
 
         expect(rosterRenders.length).toBeGreaterThan(1); // roster consumer re-rendered
         expect(settingsRenders.length).toBe(1); // settings consumer did NOT
+    });
+
+    it('roster consumers do not re-render when authoring data (rubrics) changes', () => {
+        // Cross-domain action stability: createStudentRubric / createGroupStudentRubrics read
+        // rubrics via currentStateRef, so their identity (and thus rosterValue) must not change
+        // when the authoring rubrics collection changes.
+        const rosterRenders: number[] = [];
+        let triggerAddRubric: (() => void) | null = null;
+
+        function RosterProbe() {
+            const { students } = useRoster();
+            rosterRenders.push(students.length);
+            return <div data-testid="roster-probe">{students.length}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addRubric } = useAuthoring();
+            triggerAddRubric = () =>
+                addRubric({
+                    name: 'New Rubric',
+                    subject: '',
+                    description: '',
+                    criteria: [],
+                    gradeScaleId: 'default-scale',
+                    format: DEFAULT_FORMAT,
+                    attachmentIds: [],
+                    totalMaxPoints: 100,
+                    scoringMode: 'weighted-percentage',
+                });
+            return null;
+        }
+
+        render(
+            <AppProvider>
+                <RosterProbe />
+                <TriggerProbe />
+            </AppProvider>
+        );
+
+        expect(rosterRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddRubric!();
+        });
+
+        expect(rosterRenders.length).toBe(1); // roster consumer did NOT re-render
+    });
+
+    it('settings consumers do not re-render when authoring data (grade scales) changes', () => {
+        // getActiveGradeScale reads gradeScales via currentStateRef, so its identity (and thus
+        // settingsValue) must not change when the authoring grade-scales collection changes.
+        const settingsRenders: string[] = [];
+        let triggerAddGradeScale: (() => void) | null = null;
+
+        function SettingsProbe() {
+            const { settings } = useSettings();
+            settingsRenders.push(settings.language);
+            return <div data-testid="settings-probe">{settings.language}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addGradeScale } = useAuthoring();
+            triggerAddGradeScale = () => addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
+            return null;
+        }
+
+        render(
+            <AppProvider>
+                <SettingsProbe />
+                <TriggerProbe />
+            </AppProvider>
+        );
+
+        expect(settingsRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddGradeScale!();
+        });
+
+        expect(settingsRenders.length).toBe(1); // settings consumer did NOT re-render
     });
 });
