@@ -43,7 +43,20 @@ import {
     getEffectiveVoTrack,
 } from '../data/voTracks';
 import { SCHOOL_YEARS, SCHOOL_YEAR_LABELS, SCHOOL_YEAR_HAS_TRACK } from '../data/schoolYears';
-import type { VoTrack, SchoolYear, StudentRubric, Rubric, GradeScale, CefrLevel } from '../types';
+import type {
+    VoTrack,
+    SchoolYear,
+    Student,
+    Class,
+    StudentRubric,
+    Rubric,
+    GradeScale,
+    CefrLevel,
+    SelfAssessment,
+    DocumentAnalysisResult,
+    Test,
+    StudentTest,
+} from '../types';
 import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import { getCefrStudentOverview, highestLevelForSkill } from '../utils/cefrStudentAggregator';
@@ -166,6 +179,100 @@ function calcStudentOverall(
         color: scale ? calcGradeColor(avg, scale) : 'var(--text)',
     };
 }
+
+/** Per-student roster extras (CEFR writing level, score trend, last-active date, graded percentages). */
+interface StudentDerivedValue {
+    writing: CefrLevel | null;
+    trend: 'up' | 'down' | 'flat' | null;
+    lastActive: string | null;
+    pcts: number[];
+}
+
+/**
+ * Identity-keyed fingerprint of everything one student's derived row depends on. When the fingerprint
+ * is unchanged, the expensive per-student aggregation is skipped entirely — so e.g. grading one student
+ * only recomputes that student instead of the whole roster. All per-student arrays arrive pre-sliced;
+ * rubrics/tests stay whole because the aggregator indexes them by id (only the ones this student
+ * references are fingerprinted, so edits to unrelated records don't invalidate this entry).
+ */
+type StudentDerivedKey = (object | string | null)[];
+
+function studentDerivedKey(
+    s: Student,
+    cls: Class | null,
+    srs: StudentRubric[],
+    sas: SelfAssessment[],
+    ars: DocumentAnalysisResult[],
+    sts: StudentTest[],
+    rubricsById: Map<string, Rubric>,
+    testsById: Map<string, Test>,
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string
+): StudentDerivedKey {
+    const key: StudentDerivedKey = [s, cls];
+    for (const sr of srs) key.push(sr);
+    for (const sa of sas) key.push(sa);
+    for (const ar of ars) key.push(ar);
+    for (const st of sts) key.push(st);
+    for (const id of [...new Set(srs.map((sr) => sr.rubricId))].sort()) key.push(rubricsById.get(id) ?? null);
+    for (const id of [...new Set(sts.map((st) => st.testId))].sort()) key.push(testsById.get(id) ?? null);
+    key.push(gradeScales, defaultGradeScaleId);
+    return key;
+}
+
+function sameStudentDerivedKey(a: StudentDerivedKey, b: StudentDerivedKey): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
+/** Compute the derived row for ONE student. The aggregator re-filters by studentId internally, so passing
+ *  the pre-sliced arrays is behavior-identical to passing the full collections. */
+function computeStudentDerived(
+    s: Student,
+    cls: Class | null,
+    srs: StudentRubric[],
+    sas: SelfAssessment[],
+    ars: DocumentAnalysisResult[],
+    sts: StudentTest[],
+    rubrics: Rubric[],
+    gradeScales: GradeScale[],
+    defaultGradeScaleId: string,
+    tests: Test[]
+): StudentDerivedValue {
+    const gradedTimed = srs.filter((sr) => sr.gradedAt).sort((a, b) => a.gradedAt!.localeCompare(b.gradedAt!));
+    const lastActive = gradedTimed.length ? gradedTimed[gradedTimed.length - 1].gradedAt! : null;
+
+    const pcts = calcGradedPercentages(gradedTimed, rubrics, gradeScales, defaultGradeScaleId);
+    let trend: 'up' | 'down' | 'flat' | null = null;
+    if (pcts.length >= 2) {
+        const recent = pcts[pcts.length - 1];
+        const baseline = pcts.slice(0, -1).reduce((a, b) => a + b, 0) / (pcts.length - 1);
+        const delta = recent - baseline;
+        trend = delta > 3 ? 'up' : delta < -3 ? 'down' : 'flat';
+    }
+
+    const ov = getCefrStudentOverview(
+        s.id,
+        srs,
+        rubrics,
+        sas,
+        ars,
+        cls?.year,
+        getEffectiveVoTrack(s, cls ?? undefined),
+        tests,
+        sts
+    );
+    return { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive, pcts };
+}
+
+/**
+ * Cross-render memo cache for derivedByStudent. Lives at module scope (not in a ref) so no ref is
+ * read or written during render, and entries are rebuilt from the current roster on every run so
+ * students who leave the roster are evicted automatically. Correctness is gated by the identity
+ * signature — a stale entry is only ever reused when every input object is still the same reference.
+ */
+const derivedByStudentCache = new Map<string, { key: StudentDerivedKey; value: StudentDerivedValue }>();
 
 export default function StudentsPage() {
     const { t, i18n } = useTranslation();
@@ -345,52 +452,82 @@ export default function StudentsPage() {
           : t('studentsPage.n_cohorts_label', { count: selectedCohorts.length });
 
     // Per-student roster extras (CEFR writing level, score trend, last-active date), memoized over the
-    // full data set so search/selection changes don't recompute the CEFR aggregation.
+    // full data set so search/selection changes don't recompute the CEFR aggregation. A per-student
+    // identity cache additionally skips the expensive aggregation for students whose inputs are
+    // unchanged, so a single student's data change recomputes only that student.
     const derivedByStudent = useMemo(() => {
-        const map = new Map<
-            string,
-            {
-                writing: CefrLevel | null;
-                trend: 'up' | 'down' | 'flat' | null;
-                lastActive: string | null;
-                pcts: number[];
-            }
-        >();
-        // Index the grading history once by student, rather than re-filtering per student.
+        const map = new Map<string, StudentDerivedValue>();
+        const nextCache = new Map<string, { key: StudentDerivedKey; value: StudentDerivedValue }>();
+        // Index the per-student records once, rather than re-filtering per student.
         const srsByStudent = new Map<string, StudentRubric[]>();
-        for (const sr of studentRubrics) {
+        for (const sr of studentRubrics ?? []) {
             const arr = srsByStudent.get(sr.studentId);
             if (arr) arr.push(sr);
             else srsByStudent.set(sr.studentId, [sr]);
         }
+        const sasByStudent = new Map<string, SelfAssessment[]>();
+        for (const sa of selfAssessments ?? []) {
+            const arr = sasByStudent.get(sa.studentId);
+            if (arr) arr.push(sa);
+            else sasByStudent.set(sa.studentId, [sa]);
+        }
+        const arsByStudent = new Map<string, DocumentAnalysisResult[]>();
+        for (const ar of analysisResults ?? []) {
+            const arr = arsByStudent.get(ar.studentId);
+            if (arr) arr.push(ar);
+            else arsByStudent.set(ar.studentId, [ar]);
+        }
+        const stsByStudent = new Map<string, StudentTest[]>();
+        for (const st of studentTests ?? []) {
+            const arr = stsByStudent.get(st.studentId);
+            if (arr) arr.push(st);
+            else stsByStudent.set(st.studentId, [st]);
+        }
+        const rubricsById = new Map(rubrics.map((r) => [r.id, r]));
+        const testsById = new Map((tests ?? []).map((t) => [t.id, t]));
+        const classById = new Map(classes.map((c) => [c.id, c]));
+
         for (const s of students) {
             const srs = srsByStudent.get(s.id) ?? [];
-            const gradedTimed = srs.filter((sr) => sr.gradedAt).sort((a, b) => a.gradedAt!.localeCompare(b.gradedAt!));
-            const lastActive = gradedTimed.length ? gradedTimed[gradedTimed.length - 1].gradedAt! : null;
-
-            const pcts = calcGradedPercentages(gradedTimed, rubrics, gradeScales, settings.defaultGradeScaleId);
-            let trend: 'up' | 'down' | 'flat' | null = null;
-            if (pcts.length >= 2) {
-                const recent = pcts[pcts.length - 1];
-                const baseline = pcts.slice(0, -1).reduce((a, b) => a + b, 0) / (pcts.length - 1);
-                const delta = recent - baseline;
-                trend = delta > 3 ? 'up' : delta < -3 ? 'down' : 'flat';
-            }
-
-            const cls = classes.find((c) => c.id === s.classId);
-            const ov = getCefrStudentOverview(
-                s.id,
-                studentRubrics,
-                rubrics,
-                selfAssessments,
-                analysisResults,
-                cls?.year,
-                getEffectiveVoTrack(s, cls),
-                tests,
-                studentTests
+            const sas = sasByStudent.get(s.id) ?? [];
+            const ars = arsByStudent.get(s.id) ?? [];
+            const sts = stsByStudent.get(s.id) ?? [];
+            const cls = classById.get(s.classId) ?? null;
+            const key = studentDerivedKey(
+                s,
+                cls,
+                srs,
+                sas,
+                ars,
+                sts,
+                rubricsById,
+                testsById,
+                gradeScales,
+                settings.defaultGradeScaleId
             );
-            map.set(s.id, { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive, pcts });
+            const cached = derivedByStudentCache.get(s.id);
+            if (cached && sameStudentDerivedKey(cached.key, key)) {
+                nextCache.set(s.id, cached);
+                map.set(s.id, cached.value);
+                continue;
+            }
+            const value = computeStudentDerived(
+                s,
+                cls,
+                srs,
+                sas,
+                ars,
+                sts,
+                rubrics,
+                gradeScales,
+                settings.defaultGradeScaleId,
+                tests
+            );
+            nextCache.set(s.id, { key, value });
+            map.set(s.id, value);
         }
+        derivedByStudentCache.clear();
+        for (const [id, entry] of nextCache) derivedByStudentCache.set(id, entry);
         return map;
     }, [
         students,
