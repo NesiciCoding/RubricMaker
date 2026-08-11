@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Upload, X, Database, Loader2 } from 'lucide-react';
 import Modal from '../ui/Modal';
-import { useApp } from '../../context/AppContext';
+import { useAuthoring, usePlatform, useRoster } from '../../context/AppContext';
 
 export default function MigrationPrompt() {
-    const { rubrics, students, classes, showMigrationPrompt, dismissMigrationPrompt } = useApp();
+    const { students, classes } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { showMigrationPrompt, dismissMigrationPrompt } = usePlatform();
+
     const [uploading, setUploading] = useState(false);
 
     if (!showMigrationPrompt) return null;
