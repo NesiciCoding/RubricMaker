@@ -2,7 +2,6 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { useParams } from 'react-router-dom';
 import { ToastContext } from '../context/ToastContext';
 import {
-    Clock,
     CheckCircle,
     XCircle,
     Copy,
@@ -18,17 +17,11 @@ import { useTranslation } from 'react-i18next';
 import { decodeTestAssignment } from '../utils/shareCode';
 import { encodeTestSubmission } from '../utils/shareCode';
 import { nanoid } from '../utils/nanoid';
-import {
-    loadTestDraft,
-    saveTestDraft,
-    clearTestDraft,
-    loadTestTimer,
-    saveTestTimer,
-    clearTestTimer,
-} from '../store/storage';
+import { loadTestDraft, saveTestDraft, clearTestDraft, clearTestTimer } from '../store/storage';
 import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
+import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
@@ -68,14 +61,6 @@ function copyText(text: string): boolean {
     }
     navigator.clipboard?.writeText(text).catch(() => {});
     return false;
-}
-
-function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60)
-        .toString()
-        .padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
 }
 
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -238,15 +223,7 @@ export default function StudentTestPage() {
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
-
-    const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
-        const minutes = assignment?.durationMinutes ?? null;
-        if (!minutes) return null;
-        const stored = loadTestTimer(draftKey + '_timer');
-        if (stored !== null) return stored;
-        return minutes * 60;
-    });
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [retakeCount, setRetakeCount] = useState(0);
 
     // ── Fetch test content (DB mode) ─────────────────────────────────────────
     // Signs in anonymously (silent — no email gate, unlike essays) then fetches
@@ -265,8 +242,7 @@ export default function StudentTestPage() {
             if (cancelled) return;
             if (!session.ok) {
                 // Mark contentReady so this effect doesn't keep retrying ensureSession()
-                // on every unrelated re-render (e.g. the countdown timer ticking for a
-                // legacy link with an embedded durationMinutes).
+                // on every unrelated re-render.
                 setResolvedContent(null);
                 setLoadError(t('tests.taking.load_error'));
                 logEvent('error', 'test_load_error', { testId: assignment.testId }, 'error');
@@ -277,10 +253,6 @@ export default function StudentTestPage() {
             if (cancelled) return;
             if (result.ok) {
                 setResolvedContent(result.data);
-                if (result.data.durationMinutes && secondsLeft === null) {
-                    const stored = loadTestTimer(draftKey + '_timer');
-                    setSecondsLeft(stored ?? result.data.durationMinutes * 60);
-                }
                 logEvent('lifecycle', 'test_loaded', { testId: result.data.testId });
             } else {
                 setResolvedContent(null);
@@ -296,7 +268,7 @@ export default function StudentTestPage() {
         return () => {
             cancelled = true;
         };
-    }, [hasDb, assignment, adapter, contentReady, secondsLeft, draftKey, t]);
+    }, [hasDb, assignment, adapter, contentReady, draftKey, t]);
 
     const staged = !!test && isStagedTest(test);
     // Falls back to the entry section directly (rather than waiting for the seeding effect
@@ -428,7 +400,6 @@ export default function StudentTestPage() {
         if (!assignment || !test) return;
         if (submitInFlightRef.current || submitted) return;
         submitInFlightRef.current = true;
-        if (timerRef.current) clearInterval(timerRef.current);
 
         const effectiveTestId = resolvedContent?.testId || assignment.testId;
         const effectiveStudentId = resolvedContent?.studentId || assignment.studentId;
@@ -554,31 +525,6 @@ export default function StudentTestPage() {
         generatorResult,
     ]);
 
-    const handleSubmitRef = useRef(handleSubmit);
-    useEffect(() => {
-        handleSubmitRef.current = handleSubmit;
-    }, [handleSubmit]);
-
-    // ── Countdown — auto-submit at 0 ──────────────────────────────────────────
-    useEffect(() => {
-        if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
-        timerRef.current = setInterval(() => {
-            setSecondsLeft((prev) => {
-                if (prev === null) return null;
-                const next = prev - 1;
-                saveTestTimer(draftKey + '_timer', next);
-                if (next <= 0) {
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    void handleSubmitRef.current();
-                }
-                return next;
-            });
-        }, 1000);
-        return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
-        };
-    }, [secondsLeft === null, submitted, draftKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
     const handleRetake = useCallback(() => {
         clearTestDraft(draftKey);
         clearTestTimer(draftKey + '_timer');
@@ -593,8 +539,8 @@ export default function StudentTestPage() {
         setSubmissionCode('');
         setSubmitError('');
         setDraftRestored(false);
-        if (assignment?.durationMinutes) setSecondsLeft(assignment.durationMinutes * 60);
-    }, [assignment, draftKey]);
+        setRetakeCount((c) => c + 1);
+    }, [draftKey]);
 
     const handleCopy = useCallback(() => {
         copyText(submissionCode);
@@ -683,7 +629,6 @@ export default function StudentTestPage() {
         );
     }
 
-    const timedOut = secondsLeft !== null && secondsLeft <= 0;
     const generatorQuestion =
         isGenerator && generatorResult && !generatorResult.done ? generatorResult.question : undefined;
     const question = isStaircase
@@ -822,22 +767,14 @@ export default function StudentTestPage() {
                                       })}
                             </div>
                         )}
-                        {secondsLeft !== null && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    fontWeight: 700,
-                                    fontSize: '1.05rem',
-                                    fontVariantNumeric: 'tabular-nums',
-                                    color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
-                                }}
-                            >
-                                <Clock size={17} />
-                                {timedOut ? t('tests.taking.time_up') : formatTime(secondsLeft)}
-                            </div>
-                        )}
+                        <CountdownTimer
+                            durationMinutes={assignment?.durationMinutes ?? resolvedContent?.durationMinutes ?? null}
+                            storageKey={draftKey + '_timer'}
+                            submitted={submitted}
+                            resetSignal={retakeCount}
+                            onTimeUp={handleSubmit}
+                            timeUpLabel={t('tests.taking.time_up')}
+                        />
                     </div>
                 </div>
 

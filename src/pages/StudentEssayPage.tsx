@@ -17,6 +17,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import EssayEditor from '../components/Editor/EssayEditor';
 import EssayTTSControls from '../components/Essay/EssayTTSControls';
+
+// Memoized so the 1Hz exam countdown tick doesn't re-render the whole TipTap editor
+// (all props passed here are stable between renders).
+const MemoizedEssayEditor = React.memo(EssayEditor);
 import { decodeEssayAssignment } from '../utils/shareCode';
 import { encodeEssaySubmission } from '../utils/shareCode';
 import { downloadSebConfig } from '../utils/sebConfig';
@@ -913,7 +917,7 @@ export default function StudentEssayPage() {
                     )}
 
                     {/* Editor */}
-                    <EssayEditor
+                    <MemoizedEssayEditor
                         content={html}
                         onChange={setHtml}
                         editable={
