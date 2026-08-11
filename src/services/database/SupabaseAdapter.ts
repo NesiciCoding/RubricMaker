@@ -370,6 +370,13 @@ export class SupabaseAdapter {
         }));
     }
 
+    /** Resolve a single school's name without pulling (and ordering) the whole schools table. */
+    async fetchSchoolName(schoolId: string): Promise<string | undefined> {
+        if (!this.client) return undefined;
+        const { data, error } = await this.client.from('schools').select('name').eq('id', schoolId).maybeSingle();
+        return error || !data ? undefined : (data.name ?? undefined);
+    }
+
     async createSchool(name: string, retentionYears: number): Promise<import('../../types').School | null> {
         if (!this.client || !this.userId) return null;
         const { data, error } = await this.client
@@ -703,13 +710,36 @@ export class SupabaseAdapter {
 
     // ── Student Rubrics (grades) ───────────────────────────────────────────────
 
+    // Page through a select so the heaviest tables aren't silently capped at PostgREST's default
+    // 1000-row limit. `makeQuery` must return a fresh filter builder each call (a builder can't be
+    // reused after it's awaited).
+    private async fetchPaged<Row>(
+        makeQuery: () => {
+            range(from: number, to: number): PromiseLike<{ data: Row[] | null; error: unknown }>;
+        },
+        pageSize = 1000
+    ): Promise<Row[]> {
+        const out: Row[] = [];
+        for (let from = 0; ; from += pageSize) {
+            const { data, error } = await makeQuery().range(from, from + pageSize - 1);
+            if (error) throw error;
+            const rows = data ?? [];
+            out.push(...rows);
+            if (rows.length < pageSize) break;
+        }
+        return out;
+    }
+
     async fetchStudentRubrics(): Promise<StudentRubric[]> {
-        const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', false);
-        if (error) {
+        try {
+            const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
+                this.db().from('student_rubrics').select('data').eq('is_peer_review', false)
+            );
+            return rows.map((r) => r.data);
+        } catch (error) {
             console.error('fetchStudentRubrics', error);
             return [];
         }
-        return (data ?? []).map((r) => r.data as StudentRubric);
     }
 
     async upsertStudentRubric(sr: StudentRubric): Promise<SyncResult> {
@@ -732,15 +762,40 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    /** Batched upsert — one round-trip for a bulk action (e.g. assign a rubric to a whole class). */
+    async upsertStudentRubrics(srs: StudentRubric[]): Promise<SyncResult> {
+        if (srs.length === 0) return { success: true };
+        const graderId = this.uid();
+        const rows = srs.map((sr) => ({
+            id: sr.id,
+            grader_id: graderId,
+            rubric_id: sr.rubricId,
+            student_id: sr.studentId,
+            is_peer_review: false,
+            data: sr,
+        }));
+        const { error } = await this.db().from('student_rubrics').upsert(rows, { onConflict: 'id' });
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteStudentRubrics(ids: string[]): Promise<SyncResult> {
+        if (ids.length === 0) return { success: true };
+        const { error } = await this.db().from('student_rubrics').delete().in('id', ids).eq('grader_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
     // ── Peer Reviews ──────────────────────────────────────────────────────────
 
     async fetchPeerReviews(): Promise<StudentRubric[]> {
-        const { data, error } = await this.db().from('student_rubrics').select('data').eq('is_peer_review', true);
-        if (error) {
+        try {
+            const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
+                this.db().from('student_rubrics').select('data').eq('is_peer_review', true)
+            );
+            return rows.map((r) => r.data);
+        } catch (error) {
             console.error('fetchPeerReviews', error);
             return [];
         }
-        return (data ?? []).map((r) => r.data as StudentRubric);
     }
 
     async upsertPeerReview(sr: StudentRubric): Promise<SyncResult> {
@@ -1337,13 +1392,23 @@ export class SupabaseAdapter {
             .order('created_at', { ascending: false });
         if (error || !data) return [];
 
-        const { data: subRows } = await this.db().from('student_tests').select('data');
+        // Project only the four scalar fields this status map needs (via jsonb selectors) instead
+        // of pulling every submission's full answer blob just to read status/submittedAt.
+        const { data: subRows } = await this.db()
+            .from('student_tests')
+            .select(
+                'testId:data->>testId, studentId:data->>studentId, status:data->>status, submittedAt:data->>submittedAt'
+            );
         const submissionByKey = new Map<string, { status: StudentTest['status']; submittedAt: string | null }>();
-        for (const row of subRows ?? []) {
-            const st = row.data as StudentTest;
-            submissionByKey.set(`${st.testId}__${st.studentId}`, {
-                status: st.status,
-                submittedAt: st.submittedAt ?? null,
+        for (const row of (subRows ?? []) as unknown as Array<{
+            testId: string;
+            studentId: string;
+            status: StudentTest['status'];
+            submittedAt: string | null;
+        }>) {
+            submissionByKey.set(`${row.testId}__${row.studentId}`, {
+                status: row.status,
+                submittedAt: row.submittedAt ?? null,
             });
         }
 
