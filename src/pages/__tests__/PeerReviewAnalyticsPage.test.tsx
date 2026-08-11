@@ -74,7 +74,6 @@ const peerReview: StudentRubric = {
 let mockUseApp: any;
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockUseApp,
     useRoster: () => mockUseApp,
     useAuthoring: () => mockUseApp,
     useAssessment: () => mockUseApp,

@@ -54,7 +54,7 @@ const mockSaveStudentRubric = vi.fn();
 const mockUpdateSettings = vi.fn();
 
 // Stable references — see ComparativeGrading/StatisticsPage tests for why this matters:
-// fresh array/object literals on every useApp() call defeat memo/effect deps and can
+// fresh array/object literals on every domain-hook call defeat memo/effect deps and can
 // cause infinite render loops.
 const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudent, mockStudentBob];
@@ -92,7 +92,6 @@ const mockAppValue = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useAuthoring: () => mockAppValue,
     useAssessment: () => mockAppValue,

@@ -47,7 +47,7 @@ const mockSettings: AppSettings = {
 const mockSaveStudentRubric = vi.fn();
 const mockNavigate = vi.fn();
 
-// Stable references — a useApp() mock that builds new array literals on every call
+// Stable references — a domain-hook mock that builds new array literals on every call
 // defeats this page's useMemo/useEffect deps and causes infinite render loops.
 const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudentA, mockStudentB];
@@ -67,7 +67,6 @@ const mockAppValue = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useAuthoring: () => mockAppValue,
     useAssessment: () => mockAppValue,

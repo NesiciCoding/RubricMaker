@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act, render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp, useRoster, useSettings, useAuthoring } from './AppContext';
+import { AppProvider, useRoster, useSettings, useAuthoring, useAssessment } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
@@ -131,7 +131,7 @@ describe('AppContext', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it('should initialize with default loaded state', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         expect(result.current.rubrics).toEqual([]);
         expect(result.current.students).toEqual([]);
         expect(result.current.classes).toEqual([]);
@@ -140,7 +140,7 @@ describe('AppContext', () => {
     });
 
     it('should add a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
 
         const newRubric: Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'> = {
             name: 'Test Rubric',
@@ -166,7 +166,7 @@ describe('AppContext', () => {
     });
 
     it('should update a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
 
         act(() => {
             result.current.addRubric({
@@ -197,7 +197,7 @@ describe('AppContext', () => {
     });
 
     it('should delete a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
         let addedId = '';
 
         act(() => {
@@ -226,7 +226,7 @@ describe('AppContext', () => {
     });
 
     it('should save and update student rubrics', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         const sr = { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false };
 
         act(() => {
@@ -242,7 +242,7 @@ describe('AppContext', () => {
     });
 
     it('should create a student rubric with default entries', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'R1',
@@ -266,7 +266,7 @@ describe('AppContext', () => {
     });
 
     it('should create group student rubrics sharing one groupId, and propagate scores on save', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -309,7 +309,7 @@ describe('AppContext', () => {
     });
 
     it('should only fan out collaborative criteria in group grading, leaving individually-scoped criteria per student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -360,7 +360,7 @@ describe('AppContext', () => {
     });
 
     it('should still fan out overallComment/globalModifier for an all-individually-scoped rubric, while entries stay per-student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -406,7 +406,7 @@ describe('AppContext', () => {
     });
 
     it('should reuse an existing ungrouped StudentRubric instead of creating a duplicate', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -440,7 +440,7 @@ describe('AppContext', () => {
     });
 
     it('should merge classes', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         let c1 = '',
             c2 = '';
 
@@ -459,7 +459,7 @@ describe('AppContext', () => {
     });
 
     it('should manage favorite standards', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         const std = { guid: 'std1', description: 'desc', standardSetTitle: '', jurisdictionTitle: '' };
 
         act(() => {
@@ -475,7 +475,7 @@ describe('AppContext', () => {
     });
 
     it('should manage comment bank items', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addCommentBankItem('Good job', ['tag1']);
@@ -495,7 +495,7 @@ describe('AppContext', () => {
     });
 
     it('should track comment bank usage without requiring a full item replace', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addCommentBankItem('Good job', ['tag1']);
@@ -516,7 +516,7 @@ describe('AppContext', () => {
     });
 
     it('should mange grade scales', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
@@ -536,7 +536,7 @@ describe('AppContext', () => {
     });
 
     it('should manage attachments', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
 
         act(() => {
             result.current.addAttachment({ name: 'File 1', mimeType: 'docx', size: 100, dataUrl: 'data' });
@@ -551,7 +551,7 @@ describe('AppContext', () => {
     });
 
     it('should manage export templates', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addExportTemplate({ name: 'Template 1', dataUrl: 'data', levelHeaders: ['H1'], size: 100 });
@@ -566,7 +566,7 @@ describe('AppContext', () => {
     });
 
     it('should manage peer reviews', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const pr = {
             id: 'pr1',
             rubricId: 'r1',
@@ -589,7 +589,7 @@ describe('AppContext', () => {
     });
 
     it('should retrieve active grade scale', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         let scale: GradeScale | undefined;
         act(() => {
@@ -599,7 +599,7 @@ describe('AppContext', () => {
     });
 
     it('should update settings', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         act(() => {
             result.current.updateSettings({ theme: 'dark' });
@@ -623,7 +623,7 @@ describe('AppContext', () => {
 
         it('shows the storage_full toast when the quota is exceeded while offline/disconnected', () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(false);
-            renderHook(() => useApp(), { wrapper });
+            renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
 
@@ -632,7 +632,7 @@ describe('AppContext', () => {
 
         it('stays silent when the quota is exceeded while connected — Supabase already has the real data', () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(true);
-            renderHook(() => useApp(), { wrapper });
+            renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
 

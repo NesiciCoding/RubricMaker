@@ -66,7 +66,6 @@ const makeAppContextMock = () => ({
     updateSettings: vi.fn(),
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),

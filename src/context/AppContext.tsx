@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState, ReactNode } from 'react';
 import {
-    AppContextValue,
     LOCAL_MODE_KEY,
     MIGRATION_DONE_KEY,
     flushToLocalStorage,
@@ -10,13 +9,13 @@ import {
 } from './storeCore';
 import { createSelectorStore, StoreProvider } from './useStore';
 
-import { useRoster, RosterProvider } from './domains/roster';
-import { useAuthoring, AuthoringProvider } from './domains/authoring';
-import { useAssessment, AssessmentProvider } from './domains/assessment';
-import { useEssays, EssaysProvider } from './domains/essays';
-import { useFlashcards, FlashcardsProvider } from './domains/flashcards';
-import { useSettings, SettingsProvider } from './domains/settings';
-import { usePlatform, PlatformProvider } from './domains/platform';
+import { RosterProvider } from './domains/roster';
+import { AuthoringProvider } from './domains/authoring';
+import { AssessmentProvider } from './domains/assessment';
+import { EssaysProvider } from './domains/essays';
+import { FlashcardsProvider } from './domains/flashcards';
+import { SettingsProvider } from './domains/settings';
+import { PlatformProvider } from './domains/platform';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { loadDb, getDb } from '../services/database/lazyDb';
@@ -29,22 +28,6 @@ import { isRtlLanguage } from '../utils/rtlLanguages';
 import { initClientLogger, setLoggerContext, STRESS_TEST_LOGGING_ENABLED } from '../services/logging/clientLogger';
 import { initAuditLogger, clearAuditLogger } from '../services/database/AuditLogger';
 import type { DatabaseConfig } from '../services/database';
-
-// The merged view for tests and object-form call sites — app code must use the
-// domain hooks (enforced by the no-restricted-syntax ESLint rule).
-export function useApp(): AppContextValue {
-    const roster = useRoster();
-    const authoring = useAuthoring();
-    const assessment = useAssessment();
-    const essays = useEssays();
-    const flashcards = useFlashcards();
-    const settings = useSettings();
-    const platform = usePlatform();
-    return useMemo(
-        () => ({ ...settings, ...roster, ...authoring, ...assessment, ...essays, ...flashcards, ...platform }),
-        [roster, authoring, assessment, essays, flashcards, settings, platform]
-    );
-}
 
 export { useRoster } from './domains/roster';
 export { useAuthoring } from './domains/authoring';

@@ -45,7 +45,7 @@ const mockRubric: Rubric = {
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-// Build the context value ONCE so useApp() returns a stable object (and stable
+// Build the context value ONCE so the domain hooks return a stable object (and stable
 // array references) across renders. A fresh object/array on every call makes any
 // page whose effect depends on a context array re-run that effect every render —
 // e.g. PeerReviewView setEntry()s a new object keyed on `peerReviews`, which loops
@@ -198,7 +198,6 @@ vi.mock('../../context/AppContext', () => {
         fetchMyFlashcardReview: vi.fn(() => Promise.resolve(null)),
     };
     return {
-        useApp: () => base,
         useRoster: () => base,
         useAuthoring: () => base,
         useAssessment: () => base,

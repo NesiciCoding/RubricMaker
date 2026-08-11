@@ -7,7 +7,7 @@ import { useDbStatus } from '../useDbStatus';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-// Mutable state consumed by useApp mock (useOverdueStudents)
+// Mutable state consumed by the AppContext mock (useOverdueStudents)
 let mockStudents: Student[] = [];
 let mockStudentRubrics: StudentRubric[] = [];
 let mockThreshold = 7;
@@ -18,7 +18,6 @@ const makeAppContextMock = () => ({
     settings: { overdueReminderThreshold: mockThreshold },
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),
