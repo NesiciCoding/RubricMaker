@@ -2,10 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import type { UnitQuarantineEntry } from '../test-utils/quarantine';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-
-type UnitQuarantineEntry = { id: string; file: string; reason: string; since?: string };
 
 // Ids are passed to `vitest run -t <id>` (a regexp) and must be substrings of
 // the quarantined test's title, so restrict them to regex-safe characters.
@@ -52,7 +51,7 @@ describe('unit-test quarantine list (quarantine-unit.json)', () => {
             // closing parens before the title (`skipIf(isQuarantined('id'))('title'`),
             // and requiring `skipIf(` guarantees the marker actually skips.
             const marker = new RegExp(
-                `skipIf\\(isQuarantined\\(['"]${entry.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]\\)+\\s*\\(\\s*['"]([^'"]+)['"]`
+                `skipIf\\(\\s*isQuarantined\\(\\s*['"]${entry.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]\\s*\\)+\\s*\\(\\s*['"]([^'"]+)['"]`
             );
             const match = text.match(marker);
             expect(
@@ -60,6 +59,10 @@ describe('unit-test quarantine list (quarantine-unit.json)', () => {
                 `skipIf(isQuarantined('${entry.id}'))('title', fn) not found in ${entry.file} — the marker must ` +
                     `actually skip (it.skipIf/describe.skipIf) with the title in the same call`
             ).toBeTruthy();
+            expect(
+                /import\s*\{[^}]*\bisQuarantined\b[^}]*\}\s*from/.test(text),
+                `${entry.file} uses isQuarantined() but does not import it`
+            ).toBe(true);
             const title = match![1];
             expect(
                 title.includes(entry.id),

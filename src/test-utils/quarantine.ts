@@ -1,6 +1,9 @@
 import quarantineUnit from '../../quarantine-unit.json';
 
-type UnitQuarantineEntry = { id: string; file: string; reason: string };
+// The quarantine schema. Single source of truth — the guard test
+// (src/__tests__/quarantineUnit.test.ts) imports it instead of redeclaring it,
+// and scripts/apply-unit-quarantine.py writes the same shape.
+export type UnitQuarantineEntry = { id: string; file: string; reason: string; since?: string };
 
 // tsc infers the empty list as never[]; the annotation keeps entry.id usable
 // whether the list is empty or populated.

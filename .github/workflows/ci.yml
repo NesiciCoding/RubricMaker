@@ -328,6 +328,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # deploys push via their own mechanisms, not git
 
       - name: Check whether app files changed
         id: changes
@@ -335,6 +337,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          # The Compare API caps the file list at 300 entries. Past that we
+          # can't prove nothing app-relevant changed, so deploy conservatively.
+          COUNT=$(gh api "$API" --jq '.files | length')
+          if [ "$COUNT" -ge 300 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
           MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
           if [ "$MATCH" -gt 0 ]; then
@@ -381,6 +390,8 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # deploys push via their own mechanisms, not git
 
       - name: Check whether app files changed
         id: changes
@@ -388,6 +399,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          # The Compare API caps the file list at 300 entries. Past that we
+          # can't prove nothing app-relevant changed, so deploy conservatively.
+          COUNT=$(gh api "$API" --jq '.files | length')
+          if [ "$COUNT" -ge 300 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
           MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
           if [ "$MATCH" -gt 0 ]; then
@@ -451,6 +469,8 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false # deploys push via their own mechanisms, not git
 
       - name: Check whether app files changed
         id: changes
@@ -458,6 +478,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          # The Compare API caps the file list at 300 entries. Past that we
+          # can't prove nothing app-relevant changed, so deploy conservatively.
+          COUNT=$(gh api "$API" --jq '.files | length')
+          if [ "$COUNT" -ge 300 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
           MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
           if [ "$MATCH" -gt 0 ]; then

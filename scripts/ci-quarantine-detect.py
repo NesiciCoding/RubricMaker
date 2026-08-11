@@ -164,7 +164,12 @@ def main() -> None:
     quarantined = quarantined_ids(args.kind)
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=args.days)
-    runs = json.loads(gh([f"repos/{args.repo}/actions/runs?workflow=ci.yml&per_page={args.window}"]))["workflow_runs"]
+    # Measure flakiness on the trunk only: without the branch filter, a single
+    # feature branch with a genuinely broken test could produce three failing
+    # runs and trigger an auto-quarantine PR against main.
+    runs = json.loads(
+        gh([f"repos/{args.repo}/actions/runs?workflow=ci.yml&branch=main&per_page={args.window}"])
+    )["workflow_runs"]
     runs = [
         r
         for r in runs
@@ -187,6 +192,10 @@ def main() -> None:
             examined += 1
             failed_in_run: set = set()
             for xml in xml_files:
+                # PR runs' artifacts are fork-controlled; cap the size before
+                # parsing to blunt entity-expansion attacks (no defusedxml dep).
+                if xml.stat().st_size > 5_000_000:
+                    continue
                 try:
                     if args.kind == "e2e":
                         failed_in_run |= failing_e2e_specs(xml)
@@ -204,10 +213,8 @@ def main() -> None:
     ratio_floor = math.ceil(examined * args.min_ratio) if examined else 0
     # For e2e, `item` is the spec name; for unit, `item` is a (file, id) tuple
     # and the id is what quarantine-unit.json keys on.
-    if args.kind == "e2e":
-        already_quarantined = lambda item: item in quarantined
-    else:
-        already_quarantined = lambda item: item[1] in quarantined
+    def already_quarantined(item) -> bool:
+        return (item in quarantined) if args.kind == "e2e" else (item[1] in quarantined)
     flagged = sorted(
         (
             (item, count)

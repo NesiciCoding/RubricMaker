@@ -30,15 +30,19 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 QUARANTINE = REPO_ROOT / "quarantine-unit.json"
 HELPER = "src/test-utils/quarantine"
 
+# Both patterns mirror the contract enforced by
+# src/__tests__/quarantineUnit.test.ts — keep the two sides in sync.
 # Must match the guard test's ID_PATTERN (regex-safe ids only).
 ID_PATTERN = re.compile(r"^[A-Za-z0-9 _-]+$")
+# Only src/ test files may be rewritten (same pattern the detector uses).
+FILE_PATTERN = re.compile(r"^src/[^\s]+\.test\.(ts|tsx)$")
 # it('title' ... — the marker wraps this call. Backreference \3 keeps whichever
 # quote style the file uses.
 CALL_RE = re.compile(r"^(\s*)(it|test)\(\s*(['\"])([^'\"]+)\3")
@@ -49,10 +53,12 @@ def import_line(test_file: str) -> str:
     """Import statement for isQuarantined, relative to the test file's dir.
 
     The test file is always under src/ (the guard test enforces that), so the
-    depth is the number of directory levels below src/ it sits in.
+    depth is the number of directory levels below src/ it sits in. A file
+    directly in src/ needs './' — a bare specifier would be resolved as a
+    package and the file could not load.
     """
     depth = len(Path(test_file).parent.parts) - 1  # parts below src/
-    prefix = "../" * depth if depth else ""
+    prefix = ("../" * depth) if depth else "./"
     return f"import {{ isQuarantined }} from '{prefix}test-utils/quarantine';"
 
 
@@ -75,8 +81,8 @@ def add_marker(test_file: str, id_: str, dry_run: bool) -> bool:
     lines = path.read_text().splitlines(keepends=True)
     changed = False
     for i, line in enumerate(lines):
-        if "skipIf(" in line:
-            continue  # already wrapped (idempotent)
+        if MARKER_RE.search(line):
+            continue  # already wrapped with the quarantine marker (idempotent)
         m = CALL_RE.match(line)
         if not m or m.group(4) != id_:
             continue
@@ -92,14 +98,22 @@ def add_marker(test_file: str, id_: str, dry_run: bool) -> bool:
         return False
 
     # Ensure isQuarantined is imported: reuse an existing helper import if one
-    # is there, otherwise insert a fresh import after the last import statement.
-    imports = [i for i, ln in enumerate(lines) if ln.startswith("import ")]
+    # is there, otherwise insert a fresh import after the last import
+    # *statement* — a single import can span several lines, and inserting
+    # inside it would break the file.
     helper_import = next(
         (i for i, ln in enumerate(lines) if ln.startswith("import ") and "/test-utils/quarantine" in ln),
         None,
     )
     if helper_import is None:
-        insert_at = (imports[-1] + 1) if imports else 0
+        insert_at = 0
+        in_import = False
+        for i, ln in enumerate(lines):
+            if ln.startswith("import "):
+                in_import = True
+            if in_import and ";" in ln:
+                in_import = False
+                insert_at = i + 1
         lines.insert(insert_at, f"{import_line(test_file)}\n")
     elif "isQuarantined" not in lines[helper_import]:
         lines[helper_import] = lines[helper_import].replace(
@@ -122,7 +136,9 @@ def main() -> None:
 
     entries = load_entries()
     existing_ids = {e.get("id") for e in entries}
-    today = datetime.now().strftime("%Y-%m-%d")
+    # UTC, so `since` never lands in the future relative to the guard test's
+    # UTC comparison on a runner ahead of UTC.
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     proposed = 0
 
     for line_no, raw in enumerate(sys.stdin, start=1):
@@ -144,6 +160,12 @@ def main() -> None:
             print(
                 f"  ! {id_} ({file_}): id is not regex-safe (only letters, digits, "
                 f"spaces, _ and -) — needs a manual quarantine entry",
+                file=sys.stderr,
+            )
+            continue
+        if not FILE_PATTERN.match(file_):
+            print(
+                f"  ! {id_}: {file_} is not a src/ test file — refusing to modify",
                 file=sys.stderr,
             )
             continue

@@ -43,10 +43,11 @@ Check runs are named after the workflow **job names**. Add these exact names
 | `Analyze (javascript-typescript)` | codeql.yml → analyze        | CodeQL security analysis                                      |
 | `Lighthouse Audit`                | lighthouse.yml → lighthouse | Perf/a11y budgets (optional — only if you want it blocking)   |
 
-Two shortcuts:
+Notes:
 
-- **Wildcards are supported** in check names, so `E2E (*)` covers both shards
-  with one entry instead of listing them separately.
+- **No wildcards** — GitHub does not support wildcard patterns in required
+  status-check names, so both shards must be listed separately: `E2E (1/2)`
+  and `E2E (2/2)`.
 - Once you add a check, GitHub remembers it; if you later **rename a job**,
   update the rule — a stale name shows as "Expected — Waiting for status to be
   reported" and blocks merges forever.

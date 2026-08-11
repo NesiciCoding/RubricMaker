@@ -133,6 +133,9 @@ export default defineConfig({
         // recording specs are the usual flaky suspects). Not part of the gating
         // run — the weekly Quarantine Check workflow uses this project to
         // verify quarantined specs are stable again before unquarantining them.
+        // With an empty e2e/quarantine.json this project matches nothing and
+        // `--project=quarantine` exits 1 unless `--pass-with-no-tests` is
+        // passed — the weekly workflow guards the empty list explicitly.
         {
             name: 'quarantine',
             use: {

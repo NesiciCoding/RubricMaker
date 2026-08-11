@@ -9,6 +9,7 @@ type ProjectConfig = {
     name: string;
     testMatch: string[];
     testIgnore: string[];
+    testMatchKeyword: boolean;
 };
 
 type QuarantineEntry = { spec: string; reason?: string; since?: string };
@@ -38,6 +39,7 @@ function extractProjects(): ProjectConfig[] {
                 name,
                 testMatch: stringList(/testMatch:\s*\[([\s\S]*?)\]/),
                 testIgnore: stringList(/testIgnore:\s*\[([\s\S]*?)\]/),
+                testMatchKeyword: /testMatch:/.test(chunk),
             };
         });
 }
@@ -108,6 +110,15 @@ describe('Playwright project wiring', () => {
     it('has unique project names', () => {
         const names = projects.map((p) => p.name);
         expect(new Set(names).size).toBe(names.length);
+    });
+
+    it('every testMatch array is actually parsed (a spread/variable would parse empty and fake coverage)', () => {
+        // The text parser only sees quoted literals; `testMatch: quarantinePatterns`
+        // or `testMatch: [...x]` parses as an empty list, and includesSpec then
+        // treats the project as running every spec — making the coverage tests
+        // below pass without evidence. Fail loudly instead.
+        const unparsed = projects.filter((p) => p.testMatchKeyword && p.testMatch.length === 0);
+        expect(unparsed.map((p) => p.name)).toEqual([]);
     });
 
     it('every e2e spec is run by at least one project (unless quarantined)', () => {

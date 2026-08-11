@@ -33,12 +33,17 @@ def age_days(since: str | None) -> str:
         return "unknown"
 
 
-def render_table(rows: list[tuple[str, str, str]]) -> str:
+def cell(value: str) -> str:
+    """Make a value safe for a markdown table cell."""
+    return value.replace("|", "\\|").replace("\n", " ")
+
+
+def render_table(rows: list[tuple[str, str | None, str]]) -> str:
     if not rows:
         return "_none_"
     lines = ["| Quarantined | Since | Age | Reason |", "|---|---|---|---|"]
     for name, since, reason in rows:
-        lines.append(f"| {name} | {since or '—'} | {age_days(since)} | {reason} |")
+        lines.append(f"| {cell(name)} | {since or '—'} | {age_days(since)} | {cell(reason)} |")
     return "\n".join(lines)
 
 
@@ -73,7 +78,7 @@ def main() -> None:
     lines.append("")
 
     total = len(e2e) + len(unit)
-    lines.append(f"---")
+    lines.append("---")
     lines.append(f"**{total} item(s) quarantined.**" if total else "**Nothing quarantined — all green.**")
     lines.append("")
 
