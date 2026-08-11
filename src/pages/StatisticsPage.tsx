@@ -10,7 +10,8 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import { useAuthoring, useSettings } from '../context/AppContext';
+import { useStoreSelector } from '../context/useStore';
 import {
     calcGradeSummary,
     calcClassStats,
@@ -69,11 +70,31 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const { students, classes, studentRubrics } = useRoster();
-    const { rubrics, gradeScales } = useAuthoring();
-    const { tests = [], studentTests = [] } = useAssessment();
-    const { standardMasteryTargets } = useFlashcards();
-    const { settings, updateSettings } = useSettings();
+    // Data via the selector store: re-renders only when a slice this page renders changes.
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        classes,
+        rubrics,
+        gradeScales,
+        tests,
+        studentTests,
+        standardMasteryTargets,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        classes: s.classes,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        standardMasteryTargets: s.standardMasteryTargets,
+        settings: s.settings,
+    }));
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const { updateSettings } = useSettings();
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';

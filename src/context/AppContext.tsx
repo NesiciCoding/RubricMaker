@@ -8,6 +8,7 @@ import {
     loggingReducer,
     StoreData,
 } from './storeCore';
+import { createSelectorStore, StoreProvider } from './useStore';
 
 import { useRoster, RosterProvider } from './domains/roster';
 import { useAuthoring, AuthoringProvider } from './domains/authoring';
@@ -471,6 +472,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [state]);
 
+    // Selector store: lets components subscribe to exactly the slices they render via
+    // useStoreSelector (see src/context/useStore.ts) instead of whole domain contexts.
+    // The store's getState closure reads the ref lazily (on subscribe/snapshot reads, not
+    // during this render), and the ref is synced during render above — same deliberate
+    // pattern as the ref-based action reads, so eslint-disable is warranted.
+    // eslint-disable-next-line react-hooks/refs
+    const selectorStore = useMemo(() => createSelectorStore(() => currentStateRef.current, dispatch), [dispatch]);
+    useEffect(() => {
+        selectorStore.notify();
+    }, [state, selectorStore]);
+
     const actionsCtx = useMemo(() => ({ getState: () => currentStateRef.current, dispatch }), [dispatch]);
     const platformCtx = useMemo(
         () => ({
@@ -486,25 +498,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     return (
-        <RosterProvider ctx={actionsCtx} state={state}>
-            <AuthoringProvider ctx={actionsCtx} state={state}>
-                <AssessmentProvider ctx={actionsCtx} state={state}>
-                    <EssaysProvider ctx={actionsCtx} state={state}>
-                        <FlashcardsProvider ctx={actionsCtx} state={state}>
-                            <SettingsProvider ctx={actionsCtx} state={state}>
-                                <PlatformProvider
-                                    ctx={platformCtx}
-                                    state={state}
-                                    landingState={landingState}
-                                    showMigrationPrompt={showMigrationPrompt}
-                                >
-                                    {children}
-                                </PlatformProvider>
-                            </SettingsProvider>
-                        </FlashcardsProvider>
-                    </EssaysProvider>
-                </AssessmentProvider>
-            </AuthoringProvider>
-        </RosterProvider>
+        <StoreProvider store={selectorStore}>
+            <RosterProvider ctx={actionsCtx} state={state}>
+                <AuthoringProvider ctx={actionsCtx} state={state}>
+                    <AssessmentProvider ctx={actionsCtx} state={state}>
+                        <EssaysProvider ctx={actionsCtx} state={state}>
+                            <FlashcardsProvider ctx={actionsCtx} state={state}>
+                                <SettingsProvider ctx={actionsCtx} state={state}>
+                                    <PlatformProvider
+                                        ctx={platformCtx}
+                                        state={state}
+                                        landingState={landingState}
+                                        showMigrationPrompt={showMigrationPrompt}
+                                    >
+                                        {children}
+                                    </PlatformProvider>
+                                </SettingsProvider>
+                            </FlashcardsProvider>
+                        </EssaysProvider>
+                    </AssessmentProvider>
+                </AuthoringProvider>
+            </RosterProvider>
+        </StoreProvider>
     );
 }

@@ -109,6 +109,16 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+// StatisticsPage reads data via the selector store; route selectors to the same
+// mocked app value, with array defaults for slices this file's mock omits.
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) =>
+        selector({
+            standardMasteryTargets: [],
+            ...mockAppValue,
+        }),
+}));
+
 vi.mock('recharts', async (importOriginal) => {
     const mod = await importOriginal<typeof import('recharts')>();
     return {

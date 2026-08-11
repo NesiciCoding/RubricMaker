@@ -20,7 +20,8 @@ import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
-import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import { useAuthoring, useEssays, useFlashcards } from '../context/AppContext';
+import { useStoreSelector } from '../context/useStore';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
@@ -88,12 +89,40 @@ export default function Dashboard() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const { students, studentRubrics, classes } = useRoster();
-    const { rubrics, gradeScales, userTemplates, deleteUserTemplate } = useAuthoring();
-    const { studentTests, tests } = useAssessment();
-    const { essaySubmissions, sendMessage, notifyStudentMessage } = useEssays();
-    const { flashcardDecks, addFlashcardAssignments } = useFlashcards();
-    const { settings } = useSettings();
+    // Data comes from the selector store so this page only re-renders when one of the
+    // slices it actually renders changes (not on every change in a whole domain).
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        classes,
+        rubrics,
+        gradeScales,
+        userTemplates,
+        studentTests,
+        tests,
+        essaySubmissions,
+        flashcardDecks,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        classes: s.classes,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        userTemplates: s.userTemplates,
+        studentTests: s.studentTests,
+        tests: s.tests,
+        essaySubmissions: s.essaySubmissions,
+        flashcardDecks: s.flashcardDecks,
+        settings: s.settings,
+    }));
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    // Actions stay on the domain contexts (they are identity-stable; the contexts keep
+    // this page subscribed to the roster domain only for the two derived slices above).
+    const { deleteUserTemplate } = useAuthoring();
+    const { sendMessage, notifyStudentMessage } = useEssays();
+    const { addFlashcardAssignments } = useFlashcards();
 
     const [messagingStudentId, setMessagingStudentId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
