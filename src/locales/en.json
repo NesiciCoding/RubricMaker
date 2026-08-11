@@ -2917,7 +2917,7 @@
         "da_admin_item_users": "Users tab — assign roles (admin, teacher, student), invite colleagues.",
         "da_admin_item_schools": "Schools tab — manage school names and branding.",
         "da_admin_item_database": "Database tab — configure Supabase connection, push/pull data, manage sharing.",
-        "da_admin_item_integrations": "Integrations tab — Standards API key, Cambridge Dictionary API key.",
+        "da_admin_item_integrations": "Integrations tab — Standards API key.",
         "da_admin_item_data": "Data tab — anonymise student data, bulk delete, compliance tools.",
         "da_admin_item_retention": "Retention tab — set automatic data retention policies per school.",
         "da_admin_item_audit": "Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
@@ -3002,13 +3002,13 @@
         "show_labels_setting": "Show Cambridge exam labels",
         "show_labels_help": "Display the matching Cambridge English Qualification (e.g. \"B2 First\") next to CEFR level badges.",
         "lookup_button": "Look up",
-        "lookup_failed": "Couldn't find Cambridge data for this word.",
-        "lookup_success": "Word details updated from Cambridge Dictionary.",
+        "lookup_failed": "Couldn't find dictionary data for this word.",
+        "lookup_success": "Word details updated from the dictionary.",
         "cefr_level_label": "CEFR level",
         "cefr_level_placeholder": "— CEFR level —",
         "definition_placeholder": "Definition (optional)…",
         "docs_title": "Cambridge English exam labels",
-        "docs_body": "When enabled in Settings, CEFR level badges show the matching Cambridge English Qualification (e.g. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) as a subtle secondary label. In the Rubric Builder's vocabulary panel, if a Cambridge Dictionary API key is configured in Admin → Integrations, each word gets a \"Look up\" button that fetches its CEFR level and definition automatically."
+        "docs_body": "When enabled in Settings, CEFR level badges show the matching Cambridge English Qualification (e.g. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) as a subtle secondary label. In the Rubric Builder's vocabulary panel, each word gets a \"Look up\" button that fetches its definition from the free Dictionary API (dictionaryapi.dev) — no key required."
     },
     "masteryProfile": {
         "title": "Grammar Mastery Profile",

@@ -408,7 +408,7 @@ export interface VocabularyItem {
     linkedCriterionId?: string;
     linkedSubItemId?: string;
     notes?: string;
-    /** CEFR level, optionally filled via dictionary lookup */
+    /** CEFR level; always teacher-set (dictionary lookup never returns a CEFR level) */
     cefrLevel?: CefrLevel;
     /** Plain-text definition, optionally filled via dictionary lookup */
     definition?: string;

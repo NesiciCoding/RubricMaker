@@ -2919,7 +2919,7 @@
         "da_admin_item_users": "Onglet Utilisateurs — attribuer des rôles (admin, enseignant, élève), inviter des collègues.",
         "da_admin_item_schools": "Onglet Établissements — gérer les noms d'établissement et l'image de marque.",
         "da_admin_item_database": "Onglet Base de données — configurer la connexion Supabase, envoyer/récupérer des données, gérer le partage.",
-        "da_admin_item_integrations": "Onglet Intégrations — clé API Standards, clé API Cambridge Dictionary.",
+        "da_admin_item_integrations": "Onglet Intégrations — clé API Standards.",
         "da_admin_item_data": "Onglet Données — anonymiser les données des élèves, suppression en masse, outils de conformité.",
         "da_admin_item_retention": "Onglet Conservation — définir des politiques de conservation des données automatiques par établissement.",
         "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé des changements de rôle, enregistrements de notes, exports et événements d'authentification ; les administrateurs voient toutes les entrées, les enseignants voient les leurs. Les entrées sont conservées 3 ans (admin), 1 an (note), 1 mois (export/auth) puis automatiquement purgées.",
@@ -3004,13 +3004,13 @@
         "show_labels_setting": "Afficher les étiquettes d'examen Cambridge",
         "show_labels_help": "Afficher l'examen Cambridge English correspondant (par ex. « B2 First ») à côté des badges de niveau CECR.",
         "lookup_button": "Rechercher",
-        "lookup_failed": "Aucune donnée Cambridge trouvée pour ce mot.",
-        "lookup_success": "Détails du mot mis à jour depuis Cambridge Dictionary.",
+        "lookup_failed": "Aucune donnée de dictionnaire trouvée pour ce mot.",
+        "lookup_success": "Détails du mot mis à jour depuis le dictionnaire.",
         "cefr_level_label": "Niveau CECR",
         "cefr_level_placeholder": "— Niveau CECR —",
         "definition_placeholder": "Définition (facultatif)…",
         "docs_title": "Étiquettes d'examens Cambridge English",
-        "docs_body": "Lorsque cette option est activée dans les paramètres, les badges de niveau CECR affichent l'examen Cambridge English correspondant (par ex. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) sous forme d'étiquette secondaire discrète. Dans le panneau de vocabulaire du créateur de grilles, si une clé API Cambridge Dictionary est configurée dans Administration → Intégrations, chaque mot dispose d'un bouton « Rechercher » qui récupère automatiquement son niveau CECR et sa définition."
+        "docs_body": "Lorsque cette option est activée dans les paramètres, les badges de niveau CECR affichent l'examen Cambridge English correspondant (par ex. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) sous forme d'étiquette secondaire discrète. Dans le panneau de vocabulaire du créateur de grilles, chaque mot dispose d'un bouton « Rechercher » qui récupère sa définition via l'API Dictionary gratuite (dictionaryapi.dev) — sans clé."
     },
     "masteryProfile": {
         "title": "Profil de maîtrise grammaticale",

@@ -2919,7 +2919,7 @@
         "da_admin_item_users": "Pestaña Usuarios — asignar roles (admin, profesor, alumno), invitar a colegas.",
         "da_admin_item_schools": "Pestaña Centros — gestionar nombres de centros e identidad visual.",
         "da_admin_item_database": "Pestaña Base de datos — configurar la conexión a Supabase, enviar/recibir datos, gestionar la compartición.",
-        "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards, clave de API de Cambridge Dictionary.",
+        "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards.",
         "da_admin_item_data": "Pestaña Datos — anonimizar datos de alumnos, eliminación masiva, herramientas de cumplimiento.",
         "da_admin_item_retention": "Pestaña Retención — establecer políticas automáticas de retención de datos por centro.",
         "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de cambios de rol, guardados de calificaciones, exportaciones y eventos de autenticación; los administradores ven todas las entradas, los profesores ven las suyas. Las entradas se conservan 3 años (admin), 1 año (calificación), 1 mes (exportación/autenticación) y luego se purgan automáticamente.",
@@ -3004,13 +3004,13 @@
         "show_labels_setting": "Mostrar etiquetas de exámenes Cambridge",
         "show_labels_help": "Muestra el examen de Cambridge English correspondiente (p. ej., \"B2 First\") junto a las insignias de nivel MCER.",
         "lookup_button": "Buscar",
-        "lookup_failed": "No se encontraron datos de Cambridge para esta palabra.",
-        "lookup_success": "Detalles de la palabra actualizados desde Cambridge Dictionary.",
+        "lookup_failed": "No se encontraron datos de diccionario para esta palabra.",
+        "lookup_success": "Detalles de la palabra actualizados desde el diccionario.",
         "cefr_level_label": "Nivel MCER",
         "cefr_level_placeholder": "— Nivel MCER —",
         "definition_placeholder": "Definición (opcional)…",
         "docs_title": "Etiquetas de exámenes de Cambridge English",
-        "docs_body": "Cuando se activa en Configuración, las insignias de nivel MCER muestran el examen de Cambridge English correspondiente (p. ej., A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) como una etiqueta secundaria discreta. En el panel de vocabulario del creador de rúbricas, si hay configurada una clave API de Cambridge Dictionary en Administración → Integraciones, cada palabra tiene un botón \"Buscar\" que obtiene automáticamente su nivel MCER y definición."
+        "docs_body": "Cuando se activa en Configuración, las insignias de nivel MCER muestran el examen de Cambridge English correspondiente (p. ej., A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) como una etiqueta secundaria discreta. En el panel de vocabulario del creador de rúbricas, cada palabra tiene un botón \"Buscar\" que obtiene su definición desde la API de diccionario gratuita (dictionaryapi.dev) — sin clave."
     },
     "masteryProfile": {
         "title": "Perfil de dominio gramatical",

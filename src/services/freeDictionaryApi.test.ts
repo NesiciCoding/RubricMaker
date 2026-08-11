@@ -94,4 +94,25 @@ describe('lookupWord (Free Dictionary)', () => {
 
         expect(fetch).toHaveBeenCalledTimes(1);
     });
+
+    it('returns null when the response JSON is not an array', async () => {
+        (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(jsonResponse({ title: 'No Definitions Found' }));
+        expect(await lookupWord('notarray')).toBeNull();
+    });
+
+    it('returns null when the request times out (abort fires)', async () => {
+        vi.useFakeTimers();
+        (fetch as ReturnType<typeof vi.fn>).mockImplementation(
+            (_url: string, opts: { signal: AbortSignal }) =>
+                new Promise((_resolve, reject) => {
+                    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+                })
+        );
+
+        const pending = lookupWord('slow');
+        await vi.advanceTimersByTimeAsync(5000);
+
+        expect(await pending).toBeNull();
+        vi.useRealTimers();
+    });
 });

@@ -262,6 +262,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `src/utils/icsExport.ts`                | Builds a minimal `.ics` calendar file from assignment deadlines                                                                                                                                                |
 | `src/utils/messageThreads.ts`           | Groups flat student/teacher `Message` rows into threads by student + context                                                                                                                                   |
 | `src/services/standardsApi.ts`          | Common Standards Project API (CCSS, NGSS)                                                                                                                                                                      |
+| `src/services/freeDictionaryApi.ts`     | Keyless word lookup (definition, phonetic, part of speech) via the Free Dictionary API (`dictionaryapi.dev`) for the vocabulary panel                                                                          |
 
 ---
 

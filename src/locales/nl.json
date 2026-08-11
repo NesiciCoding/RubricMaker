@@ -2919,7 +2919,7 @@
         "da_admin_item_users": "Tabblad Gebruikers — wijs rollen toe (admin, docent, leerling), nodig collega's uit.",
         "da_admin_item_schools": "Tabblad Scholen — beheer schoolnamen en branding.",
         "da_admin_item_database": "Tabblad Database — configureer Supabase-verbinding, push/pull gegevens, beheer delen.",
-        "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel, Cambridge Dictionary API-sleutel.",
+        "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel.",
         "da_admin_item_data": "Tabblad Gegevens — anonimiseer leerlinggegevens, bulkverwijdering, compliancetools.",
         "da_admin_item_retention": "Tabblad Bewaartermijn — stel automatisch gegevensbewaarbeleid per school in.",
         "da_admin_item_audit": "Tabblad Auditlogboek — filterbaar, gepagineerd logboek van rolwijzigingen, cijferopslag, exports en authenticatiegebeurtenissen; admins zien alle vermeldingen, docenten zien hun eigen vermeldingen. Vermeldingen worden 3 jaar bewaard (admin), 1 jaar (cijfer), 1 maand (export/auth) en daarna automatisch verwijderd.",
@@ -3004,13 +3004,13 @@
         "show_labels_setting": "Cambridge-examenlabels tonen",
         "show_labels_help": "Toon het bijbehorende Cambridge English-examen (bijv. \"B2 First\") naast CEFR-niveaubadges.",
         "lookup_button": "Opzoeken",
-        "lookup_failed": "Geen Cambridge-gegevens gevonden voor dit woord.",
-        "lookup_success": "Woordgegevens bijgewerkt vanuit Cambridge Dictionary.",
+        "lookup_failed": "Geen woordgegevens gevonden voor dit woord.",
+        "lookup_success": "Woordgegevens bijgewerkt vanuit het woordenboek.",
         "cefr_level_label": "ERK-niveau",
         "cefr_level_placeholder": "— ERK-niveau —",
         "definition_placeholder": "Definitie (optioneel)…",
         "docs_title": "Cambridge English-examenlabels",
-        "docs_body": "Wanneer dit in Instellingen is ingeschakeld, tonen ERK-niveaubadges het bijbehorende Cambridge English-examen (bijv. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als subtiel extra label. In het woordenschatpaneel van de Rubricbouwer krijgt elk woord, als er een Cambridge Dictionary API-sleutel is ingesteld bij Beheer → Integraties, een knop \"Opzoeken\" die automatisch het ERK-niveau en de definitie ophaalt."
+        "docs_body": "Wanneer dit in Instellingen is ingeschakeld, tonen ERK-niveaubadges het bijbehorende Cambridge English-examen (bijv. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als subtiel extra label. In het woordenschatpaneel van de Rubricbouwer krijgt elk woord een knop \"Opzoeken\" die de definitie ophaalt via de gratis Dictionary API (dictionaryapi.dev) — geen sleutel nodig."
     },
     "masteryProfile": {
         "title": "Grammaticabeheersing",

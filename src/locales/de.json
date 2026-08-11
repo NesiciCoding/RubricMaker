@@ -2919,7 +2919,7 @@
         "da_admin_item_users": "Tab Benutzer — Rollen zuweisen (Admin, Lehrer, Schüler), Kollegen einladen.",
         "da_admin_item_schools": "Tab Schulen — Schulnamen und Branding verwalten.",
         "da_admin_item_database": "Tab Datenbank — Supabase-Verbindung konfigurieren, Daten push/pull, Freigabe verwalten.",
-        "da_admin_item_integrations": "Tab Integrationen — Standards-API-Schlüssel, Cambridge-Dictionary-API-Schlüssel.",
+        "da_admin_item_integrations": "Tab Integrationen — Standards-API-Schlüssel.",
         "da_admin_item_data": "Tab Daten — Schülerdaten anonymisieren, Massenlöschung, Compliance-Tools.",
         "da_admin_item_retention": "Tab Aufbewahrung — automatische Datenaufbewahrungsrichtlinien pro Schule festlegen.",
         "da_admin_item_audit": "Tab Auditprotokoll — filterbares, paginiertes Protokoll von Rollenänderungen, Bewertungsspeicherungen, Exporten und Authentifizierungsereignissen; Admins sehen alle Einträge, Lehrer sehen ihre eigenen. Einträge werden 3 Jahre (Admin), 1 Jahr (Bewertung), 1 Monat (Export/Auth) aufbewahrt und dann automatisch gelöscht.",
@@ -3004,13 +3004,13 @@
         "show_labels_setting": "Cambridge-Prüfungsbezeichnungen anzeigen",
         "show_labels_help": "Zeigt die passende Cambridge English-Prüfung (z. B. \"B2 First\") neben den GER-Niveau-Badges an.",
         "lookup_button": "Nachschlagen",
-        "lookup_failed": "Keine Cambridge-Daten für dieses Wort gefunden.",
-        "lookup_success": "Wortdetails von Cambridge Dictionary aktualisiert.",
+        "lookup_failed": "Keine Wörterbuchdaten für dieses Wort gefunden.",
+        "lookup_success": "Wortdetails aus dem Wörterbuch aktualisiert.",
         "cefr_level_label": "GER-Niveau",
         "cefr_level_placeholder": "— GER-Niveau —",
         "definition_placeholder": "Definition (optional)…",
         "docs_title": "Cambridge English-Prüfungsbezeichnungen",
-        "docs_body": "Wenn diese Option in den Einstellungen aktiviert ist, zeigen GER-Niveau-Badges die passende Cambridge English-Prüfung (z. B. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als dezente Zusatzbezeichnung an. Im Vokabelbereich des Rubrik-Editors erhält jedes Wort eine Schaltfläche \"Nachschlagen\", sofern unter Verwaltung → Integrationen ein Cambridge Dictionary API-Schlüssel hinterlegt ist; diese ruft automatisch GER-Niveau und Definition ab."
+        "docs_body": "Wenn diese Option in den Einstellungen aktiviert ist, zeigen GER-Niveau-Badges die passende Cambridge English-Prüfung (z. B. A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) als dezente Zusatzbezeichnung an. Im Vokabelbereich des Rubrik-Editors erhält jedes Wort eine Schaltfläche \"Nachschlagen\", die die Definition über die kostenlose Dictionary API (dictionaryapi.dev) abruft — ohne Schlüssel."
     },
     "masteryProfile": {
         "title": "Grammatikbeherrschung",
