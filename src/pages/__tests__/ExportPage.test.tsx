@@ -89,25 +89,33 @@ const mockShowToast = vi.fn();
 
 let appOverrides: Record<string, unknown> = {};
 
+const makeAppContextMock = () => ({
+    rubrics: [mockRubric],
+    students: [mockStudent],
+    classes: [mockClass],
+    studentRubrics: [mockSr],
+    gradeScales: [mockGradeScale],
+    settings: mockSettings,
+    exportTemplates: [],
+    updateSettings: vi.fn(),
+    saveStudentRubric: vi.fn(),
+    selfAssessments: [],
+    analysisResults: [],
+    tests: [],
+    studentTests: [],
+    essayAssignments: [mockEssayAssignment],
+    essaySubmissions: [mockEssaySubmission],
+    ...appOverrides,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [mockRubric],
-        students: [mockStudent],
-        classes: [mockClass],
-        studentRubrics: [mockSr],
-        gradeScales: [mockGradeScale],
-        settings: mockSettings,
-        exportTemplates: [],
-        updateSettings: vi.fn(),
-        saveStudentRubric: vi.fn(),
-        selfAssessments: [],
-        analysisResults: [],
-        tests: [],
-        studentTests: [],
-        essayAssignments: [mockEssayAssignment],
-        essaySubmissions: [mockEssaySubmission],
-        ...appOverrides,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

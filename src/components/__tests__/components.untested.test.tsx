@@ -57,14 +57,22 @@ vi.mock('../../services/database', () => ({
     },
 }));
 
+const makeAppContextMock = () => ({
+    rubrics: [],
+    students: [],
+    classes: [],
+    showMigrationPrompt: true,
+    dismissMigrationPrompt: mockDismissMigrationPrompt,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [],
-        students: [],
-        classes: [],
-        showMigrationPrompt: true,
-        dismissMigrationPrompt: mockDismissMigrationPrompt,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

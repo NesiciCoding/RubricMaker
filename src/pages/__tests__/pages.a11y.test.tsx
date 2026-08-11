@@ -215,7 +215,16 @@ vi.mock('../../context/AppContext', () => {
         setStudentPassword: vi.fn(),
         deleteAttachment: vi.fn(),
     };
-    return { useApp: () => ({ ...base, ...appStateOverride }) };
+    return {
+        useApp: () => ({ ...base, ...appStateOverride }),
+        useRoster: () => ({ ...base, ...appStateOverride }),
+        useAuthoring: () => ({ ...base, ...appStateOverride }),
+        useAssessment: () => ({ ...base, ...appStateOverride }),
+        useEssays: () => ({ ...base, ...appStateOverride }),
+        useFlashcards: () => ({ ...base, ...appStateOverride }),
+        useSettings: () => ({ ...base, ...appStateOverride }),
+        usePlatform: () => ({ ...base, ...appStateOverride }),
+    };
 });
 
 vi.mock('../../services/database', () => ({

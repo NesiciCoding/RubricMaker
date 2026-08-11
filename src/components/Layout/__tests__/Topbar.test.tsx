@@ -9,17 +9,25 @@ const mockClasses = [
     { id: 'c2', name: '5B' },
 ];
 
+const makeAppContextMock = () => ({
+    settings: { theme: 'dark' },
+    updateSettings: mockUpdateSettings,
+    students: [],
+    studentRubrics: [],
+    classes: mockClasses,
+    rubrics: [],
+    tests: [],
+    essayAssignments: [],
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        settings: { theme: 'dark' },
-        updateSettings: mockUpdateSettings,
-        students: [],
-        studentRubrics: [],
-        classes: mockClasses,
-        rubrics: [],
-        tests: [],
-        essayAssignments: [],
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

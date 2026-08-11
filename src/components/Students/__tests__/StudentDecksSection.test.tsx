@@ -14,16 +14,24 @@ const fetchMyStudentFlashcardDecks = vi.fn().mockResolvedValue([]);
 let decks: FlashcardDeck[] = [];
 let connected = false;
 
+const makeAppContextMock = () => ({
+    flashcardDecks: decks,
+    addFlashcardDeck,
+    updateFlashcardDeck,
+    deleteFlashcardDeck,
+    saveFlashcardDeckAsStudent,
+    deleteFlashcardDeckAsStudent,
+    fetchMyStudentFlashcardDecks,
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        flashcardDecks: decks,
-        addFlashcardDeck,
-        updateFlashcardDeck,
-        deleteFlashcardDeck,
-        saveFlashcardDeckAsStudent,
-        deleteFlashcardDeckAsStudent,
-        fetchMyStudentFlashcardDecks,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 vi.mock('../../../hooks/useDbStatus', () => ({ useDbStatus: () => ({ isConnected: connected }) }));
 vi.mock('../../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));

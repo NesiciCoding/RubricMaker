@@ -6,14 +6,22 @@ import Sidebar from '../Sidebar';
 
 let mockUserRole: string = 'user';
 
+const makeAppContextMock = () => ({
+    settings: { userRole: mockUserRole },
+    rubrics: [],
+    studentRubrics: [],
+    peerReviews: [],
+    students: [],
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        settings: { userRole: mockUserRole },
-        rubrics: [],
-        studentRubrics: [],
-        peerReviews: [],
-        students: [],
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({
