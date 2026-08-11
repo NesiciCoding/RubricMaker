@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import DOMPurify from 'dompurify';
 import { TIPTAP_CONTENT_STYLES } from './tiptapContentStyles';
 
@@ -7,7 +8,7 @@ interface Props {
 }
 
 /** Read-only render of TipTap-authored HTML (question prompts, section passages). */
-export default function RichContent({ html, className }: Props) {
+export default memo(function RichContent({ html, className }: Props) {
     return (
         <>
             <div
@@ -20,4 +21,4 @@ export default function RichContent({ html, className }: Props) {
             <style>{TIPTAP_CONTENT_STYLES}</style>
         </>
     );
-}
+});
