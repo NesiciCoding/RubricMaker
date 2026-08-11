@@ -5,6 +5,21 @@ on:
     branches: ["main"]
   push:
     branches: ["main"]
+  # Runs when a PR enters the merge queue — the queue tests on a temporary
+  # branch (gha-merge-queue/...), so without this event the required checks
+  # would never run there and the queue would hang.
+  merge_group:
+  # Weekly full verification of main (incl. the Supabase e2e suite) even in
+  # weeks with no pushes/PRs, catching drift the PR-triggered runs miss.
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+# Cancel superseded runs for the same ref — a new push/PR makes the old run's
+# result moot. Keep in-progress main pushes running (they may feed deploys).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -13,6 +28,7 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -29,6 +45,7 @@ jobs:
   ci:
     name: Type-check, Lint & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pull-requests: write # required by vitest-coverage-report-action to post PR comments
@@ -69,11 +86,17 @@ jobs:
           path: coverage/
           retention-days: 14
 
+  # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split
+  # across two shards. Each shard emits a blob report; `e2e-merge-reports`
+  # merges them into the final HTML + JUnit reports after the shards finish.
   e2e:
-    name: E2E Tests
+    name: E2E (${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
-    needs: ci
-    if: github.event_name == 'pull_request'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -87,15 +110,67 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
 
-      - name: Run E2E tests
-        run: npm run e2e -- --project=chromium --project=firefox --project=chromium-fake-media
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run E2E tests (shard ${{ matrix.shard }}/2)
+        run: |
+          npx playwright test \
+            --project=chromium --project=firefox --project=webkit \
+            --project=chromium-fake-media --project=mobile-chrome \
+            --shard=${{ matrix.shard }}/2 --reporter=blob,list
         env:
           CI: true
 
-      - name: Upload Playwright report
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-blob-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 3
+
+  e2e-merge-reports:
+    name: E2E Report
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: ${{ !cancelled() }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download blob reports
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: all-blob-reports
+          pattern: playwright-blob-*
+          merge-multiple: true
+
+      # Loads the reporter list (html + junit) and their output paths from
+      # playwright.config.ts, so the merged HTML lands in playwright-report/ and
+      # JUnit in playwright-results/results.xml.
+      - name: Merge reports
+        run: npx playwright merge-reports -c playwright.config.ts ./all-blob-reports
+
+      - name: Upload merged HTML report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -114,8 +189,7 @@ jobs:
   e2e-supabase:
     name: E2E — Supabase Integration
     runs-on: ubuntu-latest
-    needs: ci
-    if: github.event_name == 'pull_request'
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -192,6 +266,7 @@ jobs:
   bundle:
     name: Bundle Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -222,3 +297,201 @@ jobs:
           name: bundle-stats
           path: dist/stats.html
           retention-days: 14
+
+  # Production deploys live here so they only fire after every CI job above has
+  # passed — the `needs` + result checks below are the gate. Each deploy also
+  # skips itself when the push touched no app files (doc/CI-only pushes), via a
+  # compare of the pushed range. The standalone deploy-*.yml workflows are now
+  # manual-only (workflow_dispatch); use them to deploy without waiting on CI.
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Check whether app files changed
+        id: changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
+          MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
+          if [ "$MATCH" -gt 0 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Setup Pages
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/configure-pages@1f0c5cde4bc74cd7e1254d0cb4de8d49e9068c7d # v4
+
+      - name: Upload artifact
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        if: steps.changes.outputs.changed == 'true'
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  deploy-hestiacp:
+    name: Deploy to HestiaCP VPS
+    runs-on: ubuntu-latest
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    environment: production
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Check whether app files changed
+        id: changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
+          MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
+          if [ "$MATCH" -gt 0 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_PUBLIC_URL: ${{ secrets.SUPABASE_PUBLIC_URL }}
+          # Optional diagnostic event stream to `client_logs` — see README →
+          # "Stress-test logging". Toggle via repo Settings → Secrets and
+          # variables → Actions → Variables (not a secret: it's a feature
+          # flag, not sensitive data).
+          VITE_STRESS_TEST_LOGGING: ${{ vars.VITE_STRESS_TEST_LOGGING }}
+
+      - name: Deploy via rsync
+        if: steps.changes.outputs.changed == 'true'
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        with:
+          switches: -avz --delete
+          path: dist/
+          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
+          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: root
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Upload .htaccess
+        if: steps.changes.outputs.changed == 'true'
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        with:
+          switches: -avz
+          path: deploy/.htaccess
+          remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: root
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+  deploy-vps:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    environment: production
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Check whether app files changed
+        id: changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          API="repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}"
+          CHANGED_FILES=$(gh api "$API" --jq '.files[].filename')
+          MATCH=$(echo "$CHANGED_FILES" | grep -cE '^(src/|public/|index\.html$|package\.json$|package-lock\.json$|vite\.config\.ts$|tsconfig\.json$|eslint\.config\.js$|deploy/)' || true)
+          if [ "$MATCH" -gt 0 ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Deploy via rsync
+        if: steps.changes.outputs.changed == 'true'
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        with:
+          switches: -avz --delete
+          path: dist/
+          # Virtualmin web root: /home/<user>/public_html/
+          remote_path: /home/${{ secrets.VPS_USER }}/public_html/
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Upload .htaccess
+        if: steps.changes.outputs.changed == 'true'
+        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        with:
+          switches: -avz
+          path: deploy/.htaccess
+          remote_path: /home/${{ secrets.VPS_USER }}/public_html/.htaccess
+          remote_host: ${{ secrets.VPS_HOST }}
+          remote_user: ${{ secrets.VPS_USER }}
+          remote_key: ${{ secrets.VPS_SSH_KEY }}

@@ -5,6 +5,7 @@
 RubricMaker is a rubric and grading application for teachers. It is **self-hostable with full functionality** (Supabase backend for persistence, sync, multi-device and multi-teacher features) and **offline-capable with reduced capabilities**: without a Supabase connection the app still runs from browser `localStorage`, but cloud-dependent features (collaboration, student portal, multi-device access) are unavailable. The app targets static hosting and can also be self-hosted with Docker.
 
 Key domains:
+
 - **Rubric Builder** — create/edit rubrics with criteria, levels, scoring modes
 - **Grading** — interactive grading with comment bank, voice feedback, attachments
 - **Analytics** — per-class and per-student charts, CEFR proficiency tracking
@@ -19,6 +20,7 @@ Key domains:
 npm run dev          # Vite dev server at http://localhost:5173
 npm run build        # tsc && vite build → dist/
 npm run typecheck    # tsc --noEmit (run before commits; also runs in the pre-push hook)
+npm run check        # Full pre-push gate: typecheck + lint + format:check + unit tests
 npm run lint         # ESLint check (src only)
 npm run format       # Prettier write
 npm test             # Vitest, single run (NOT watch mode — use `npx vitest` for watch)
@@ -46,20 +48,20 @@ A pre-commit hook runs `lint-staged` (ESLint --fix + Prettier on staged files); 
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Framework | React 19 + TypeScript 6 (strict) |
-| Build | Vite 8 |
-| Routing | React Router v7 (lazy-loaded pages) |
-| State | React Context (`AppContext`) + `useReducer` |
+| Layer       | Choice                                                                    |
+| ----------- | ------------------------------------------------------------------------- |
+| Framework   | React 19 + TypeScript 6 (strict)                                          |
+| Build       | Vite 8                                                                    |
+| Routing     | React Router v7 (lazy-loaded pages)                                       |
+| State       | React Context (`AppContext`) + `useReducer`                               |
 | Persistence | Supabase primary when configured; `localStorage` offline-capable fallback |
-| Rich text | TipTap 3 (ProseMirror) |
-| Charts | Recharts |
-| Export | `docx`, `pdfjs-dist`, `file-saver` |
-| OCR | Tesseract.js |
-| i18n | i18next (EN, NL, FR, DE, ES) |
-| Auth | Supabase Auth (email OTP) — optional |
-| Tests | Vitest + Testing Library |
+| Rich text   | TipTap 3 (ProseMirror)                                                    |
+| Charts      | Recharts                                                                  |
+| Export      | `docx`, `pdfjs-dist`, `file-saver`                                        |
+| OCR         | Tesseract.js                                                              |
+| i18n        | i18next (EN, NL, FR, DE, ES)                                              |
+| Auth        | Supabase Auth (email OTP) — optional                                      |
+| Tests       | Vitest + Testing Library                                                  |
 
 ## Architecture
 
@@ -101,19 +103,19 @@ Secondary contexts: `ToastContext` (notifications), `MobileMenuContext` (nav sta
 
 Pages are lazy-loaded from `src/pages/`. Key routes:
 
-| Path | Page |
-|---|---|
-| `/` | LandingPage |
-| `/rubrics` | RubricList |
-| `/rubrics/:id` | RubricBuilder |
-| `/rubrics/:id/grade/:studentId` | GradeStudent |
-| `/grade-comparative/:classId/:rubricId` | ComparativeGrading |
-| `/students` | StudentsPage |
-| `/students/:id` | StudentProfilePage |
-| `/students/cefr-overview` | StudentCefrOverviewPage |
-| `/statistics` | StatisticsPage |
-| `/export` | ExportPage |
-| `/settings` | SettingsPage |
+| Path                                    | Page                    |
+| --------------------------------------- | ----------------------- |
+| `/`                                     | LandingPage             |
+| `/rubrics`                              | RubricList              |
+| `/rubrics/:id`                          | RubricBuilder           |
+| `/rubrics/:id/grade/:studentId`         | GradeStudent            |
+| `/grade-comparative/:classId/:rubricId` | ComparativeGrading      |
+| `/students`                             | StudentsPage            |
+| `/students/:id`                         | StudentProfilePage      |
+| `/students/cefr-overview`               | StudentCefrOverviewPage |
+| `/statistics`                           | StatisticsPage          |
+| `/export`                               | ExportPage              |
+| `/settings`                             | SettingsPage            |
 
 ## Code conventions
 
@@ -135,7 +137,7 @@ Do not add AI/LLM content-generation features (auto-grading, auto-feedback, rubr
 
 ### Comments
 
-Write no comments unless the *why* is non-obvious. Never describe what the code does; the identifiers do that.
+Write no comments unless the _why_ is non-obvious. Never describe what the code does; the identifiers do that.
 
 ### Testing
 
@@ -145,6 +147,17 @@ Write no comments unless the *why* is non-obvious. Never describe what the code 
 - Keep coverage above the thresholds: 65% lines/statements, 60% functions, 58% branches (`vite.config.ts`).
 - `src/locales/__tests__/` asserts every non-English locale has the same key set as `en.json` for at least the `cambridge` namespace — new locale keys that are only added to `en.json` will fail this test.
 - E2E specs (`e2e/specs/*.spec.ts`, Playwright) use a Page Object Model in `e2e/pages/` and shared fixtures/factories in `e2e/fixtures/`. Specs that require a live Supabase connection are excluded from the default `chromium`/`firefox` projects in `playwright.config.ts` and only run via `npm run e2e:supabase`.
+- `src/__tests__/playwrightProjects.test.ts` guards the Playwright wiring: every spec in `e2e/specs/` must be run by at least one project, and `npm run e2e:*` scripts may only reference projects that exist. Keep `playwright.config.ts` project lists and this test in sync when adding/renaming specs or projects.
+- **Flaky-spec quarantine**: a spec that flakes intermittently should be added to `e2e/quarantine.json` (`[{ "spec": "04-grading.spec.ts", "since": "2026-08-11", "reason": "…" }]`) rather than deleted — it is then excluded from every gating project (see `playwright.config.ts`) so it can't block CI, and the weekly `Quarantine Check` workflow re-tests it (3 clean runs, `--project=quarantine`) and opens a PR to unquarantine it once it's stable. Quarantine is only validated against the default browser projects; don't quarantine a spec that needs the Supabase stack unless it's debugged.
+- **Flaky unit-test quarantine**: the same idea for vitest tests. Add the test to `quarantine-unit.json` (`[{ "id": "detects Arabic", "file": "src/utils/rtlLanguages.test.ts", "since": "2026-08-11", "reason": "…" }]`) and wrap the test as `it.skipIf(isQuarantined('detects Arabic'))('detects Arabic', fn)` from `src/test-utils/quarantine.ts` — it is then skipped in every run (local, CI, coverage). The `id` must be a regex-safe substring of the test title (the weekly re-check runs `vitest run <file> -t <id>`); the guard test `src/__tests__/quarantineUnit.test.ts` enforces all of this. `QUARANTINE_DISABLED=1 npm test` runs quarantined tests too (used by the weekly job). Both quarantine lists require a `since` date (YYYY-MM-DD) — the weekly report uses it to show how long each item has been quarantined.
+
+## CI/CD
+
+- `ci.yml` is the single gate: typecheck/lint/format, unit tests + coverage, sharded e2e (chromium/firefox/webkit/fake-media/mobile, merged reports), Supabase e2e, and bundle analysis. It runs on PRs, main pushes, a weekly schedule, manual dispatch, and the merge queue (`merge_group` event).
+- **Deploys are gated on CI**: the `deploy-pages` / `deploy-hestiacp` / `deploy-vps` jobs live inside `ci.yml` and only run when every verification job passed on a push to `main` — and only when the push changed app files (docs/CI-only pushes skip them via a `compare` of the pushed range). The standalone `deploy-*.yml` workflows are manual-only (`workflow_dispatch`) — use them to deploy without waiting on CI.
+- Production-VPS deploys run in the `production` GitHub environment; add protection rules (e.g. required reviewers) there in Settings → Environments if manual approval is wanted.
+- **Merge queue**: `ci.yml`, `codeql.yml` and `lighthouse.yml` listen for `merge_group` so their checks run on the merge queue's temporary branch. Enabling the queue is a branch-rule setting — see `docs/BRANCH_PROTECTION.md` → Merge queue.
+- **Quarantine Check workflow** (`e2e-quarantine.yml`, weekly + dispatch): unquarantines stable e2e specs and unit tests, proposes quarantining e2e specs that keep failing (`scripts/ci-quarantine-detect.py`, thresholds ≥ 3 distinct failed runs and ≥ 20% of examined runs — tune via the dispatch inputs `min_failures`/`window`, or `--min-ratio` on the script), and maintains a single **Flaky test quarantine report issue** (`scripts/flaky-report.py`). The dispatch input `dry_run` reports candidates without opening a PR.
 
 ## Directory structure
 
@@ -182,11 +195,11 @@ When both are unset, all sync is disabled and the app runs fully offline. `.env.
 
 ## Deployment
 
-| Method | Notes |
-|---|---|
+| Method         | Notes                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------- |
 | Static hosting | `npm run build` → deploy `dist/`. GitHub Pages, Netlify, Vercel, SharePoint all work. |
-| Docker | `docker-compose.yml` includes frontend + Supabase. Caddy handles HTTPS. |
-| Traditional | Apache/Nginx configs in `deploy/`. HestiaCP and Virtualmin guides in repo root. |
+| Docker         | `docker-compose.yml` includes frontend + Supabase. Caddy handles HTTPS.               |
+| Traditional    | Apache/Nginx configs in `deploy/`. HestiaCP and Virtualmin guides in repo root.       |
 
 The build uses `base: './'` in `vite.config.ts` so the app works from any sub-path without server-side routing config.
 
@@ -224,15 +237,15 @@ Keep card descriptions short (one sentence, no jargon) and written from the user
 
 Non-exhaustive — pointers to the modules most likely to matter across files. For the complete, currently-maintained list see README.md's "Key utility modules" table (kept in sync per the documentation-maintenance rule above).
 
-| File | Purpose |
-|---|---|
-| `src/utils/gradeCalc.ts` | Score aggregation and weighted scoring engine |
-| `src/utils/cefrStudentAggregator.ts` | CEFR level computation across assessments |
-| `src/utils/syncMerge.ts` / `syncDiff.ts` | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above |
-| `src/utils/placementRouting.ts` / `placementResult.ts` | Placement-test section routing and provisional CEFR estimate |
-| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations |
-| `src/utils/globalSearch.ts` | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search |
-| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts` | Export generation (raw and mail-merge DOCX, PDF) |
-| `src/utils/textExtraction.ts` | OCR (Tesseract) + DOCX parsing (Mammoth) |
-| `src/utils/flashcardScheduler.ts` | Thin `ts-fsrs` wrapper (FSRS spaced repetition) |
-| `src/services/standardsApi.ts` | Common Standards Project API (CCSS, NGSS) |
+| File                                                                  | Purpose                                                                                               |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `src/utils/gradeCalc.ts`                                              | Score aggregation and weighted scoring engine                                                         |
+| `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                             |
+| `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above |
+| `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                          |
+| `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                     |
+| `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                       |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and mail-merge DOCX, PDF)                                                      |
+| `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                              |
+| `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                       |
+| `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                             |

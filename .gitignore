@@ -17,6 +17,11 @@ scripts/deploy.sh
 playwright-report/
 playwright-results/
 test-results/
+blob-report/
+
+# Python
+__pycache__/
+*.pyc
 
 # Backup output
 backups/
