@@ -199,7 +199,7 @@ export default function StudentsPage() {
     const initialCohorts =
         settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
     const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
-    const selectedSet = new Set(selectedCohorts);
+    const selectedSet = useMemo(() => new Set(selectedCohorts), [selectedCohorts]);
     const isAllCohorts = selectedCohorts.length === 0;
     // Contract for settings.activeClassId (read app-wide as "one class, or unset = all"):
     // a concrete id ONLY when exactly one cohort is selected; otherwise undefined.
@@ -405,44 +405,44 @@ export default function StudentsPage() {
         settings.defaultGradeScaleId,
     ]);
 
-    const classStudentsWithEmail = students
-        .filter((s) => (isAllCohorts || selectedSet.has(s.classId)) && s.email)
-        .map((s) => ({ id: s.id, name: s.name, email: s.email! }));
+    const classStudentsWithEmail = useMemo(
+        () =>
+            students
+                .filter((s) => (isAllCohorts || selectedSet.has(s.classId)) && s.email)
+                .map((s) => ({ id: s.id, name: s.name, email: s.email! })),
+        [students, isAllCohorts, selectedSet]
+    );
 
-    const filteredStudents = students
-        .filter((s) => isAllCohorts || selectedSet.has(s.classId))
-        .filter(
-            (s) =>
-                !studentSearch.trim() ||
-                s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
-                (s.email ?? '').toLowerCase().includes(studentSearch.toLowerCase())
-        )
-        .sort((a, b) => {
-            let valA: string | number, valB: string | number;
-            if (sortKey === 'name') {
-                valA = a.name.toLowerCase();
-                valB = b.name.toLowerCase();
-            } else if (sortKey === 'email') {
-                valA = (a.email ?? '').toLowerCase();
-                valB = (b.email ?? '').toLowerCase();
-            } else {
-                valA = calcGradedPercentages(
-                    studentRubrics.filter((sr) => sr.studentId === a.id),
-                    rubrics,
-                    gradeScales,
-                    settings.defaultGradeScaleId
-                ).length;
-                valB = calcGradedPercentages(
-                    studentRubrics.filter((sr) => sr.studentId === b.id),
-                    rubrics,
-                    gradeScales,
-                    settings.defaultGradeScaleId
-                ).length;
-            }
-            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
-            if (valA > valB) return sortDir === 'asc' ? 1 : -1;
-            return 0;
-        });
+    const filteredStudents = useMemo(
+        () =>
+            students
+                .filter((s) => isAllCohorts || selectedSet.has(s.classId))
+                .filter(
+                    (s) =>
+                        !studentSearch.trim() ||
+                        s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+                        (s.email ?? '').toLowerCase().includes(studentSearch.toLowerCase())
+                )
+                .sort((a, b) => {
+                    let valA: string | number, valB: string | number;
+                    if (sortKey === 'name') {
+                        valA = a.name.toLowerCase();
+                        valB = b.name.toLowerCase();
+                    } else if (sortKey === 'email') {
+                        valA = (a.email ?? '').toLowerCase();
+                        valB = (b.email ?? '').toLowerCase();
+                    } else {
+                        // Reuse the per-student graded-percentage array already computed in
+                        // derivedByStudent instead of re-scanning studentRubrics twice per comparison.
+                        valA = derivedByStudent.get(a.id)?.pcts.length ?? 0;
+                        valB = derivedByStudent.get(b.id)?.pcts.length ?? 0;
+                    }
+                    if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+                    return 0;
+                }),
+        [students, isAllCohorts, selectedSet, studentSearch, sortKey, sortDir, derivedByStudent]
+    );
 
     function handleAddStudent() {
         if (!name.trim()) return;
