@@ -218,6 +218,9 @@ vi.mock('../../context/AppContext', () => {
     return {
         useApp: () => ({ ...base, ...appStateOverride }),
         useRoster: () => ({ ...base, ...appStateOverride }),
+        useStudents: () => ({ ...base, ...appStateOverride }),
+        useClasses: () => ({ ...base, ...appStateOverride }),
+        useGrading: () => ({ ...base, ...appStateOverride }),
         useAuthoring: () => ({ ...base, ...appStateOverride }),
         useAssessment: () => ({ ...base, ...appStateOverride }),
         useEssays: () => ({ ...base, ...appStateOverride }),

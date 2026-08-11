@@ -20,7 +20,16 @@ import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
-import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useEssays,
+    useFlashcards,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
@@ -88,7 +97,10 @@ export default function Dashboard() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const { students, studentRubrics, classes } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics, gradeScales, userTemplates, deleteUserTemplate } = useAuthoring();
     const { studentTests, tests } = useAssessment();
     const { essaySubmissions, sendMessage, notifyStudentMessage } = useEssays();

@@ -27,7 +27,7 @@ import type { EventData } from 'react-joyride';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
@@ -170,19 +170,10 @@ function calcStudentOverall(
 export default function StudentsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const {
-        students,
-        classes,
-        studentRubrics,
-        addStudent,
-        updateStudent,
-        deleteStudent,
-        addClass,
-        updateClass,
-        deleteClass,
-        mergeClasses,
-        setStudentPassword,
-    } = useRoster();
+    const { students, addStudent, updateStudent, deleteStudent, setStudentPassword } = useStudents();
+    const { classes, addClass, updateClass, deleteClass, mergeClasses } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics, gradeScales } = useAuthoring();
     const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
     const { settings, updateSettings } = useSettings();

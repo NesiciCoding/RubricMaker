@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
 import {
     ArrowLeft,
@@ -31,7 +31,9 @@ const COMBINED_ID = '__combined__';
 function ClassPicker({ rubricId }: { rubricId: string }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { classes, students } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
 
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -185,7 +187,10 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
 function ComparativeGradingSession({ classId, rubricId }: { classId: string; rubricId: string }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics, attachments, saveStudentRubric } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics, attachments, saveStudentRubric } = useGrading();
+
     const { rubrics, gradeScales } = useAuthoring();
     const { settings } = useSettings();
 

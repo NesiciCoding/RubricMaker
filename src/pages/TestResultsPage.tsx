@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock 
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useSettings, useStudents } from '../context/AppContext';
 import {
     calcTestMaxPoints,
     calcStudentTestRawPoints,
@@ -268,7 +268,8 @@ export default function TestResultsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
-    const { students } = useRoster();
+    const { students } = useStudents();
+
     const { gradeScales } = useAuthoring();
     const { tests, studentTests, saveStudentTest } = useAssessment();
     const { settings } = useSettings();

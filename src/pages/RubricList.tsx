@@ -26,7 +26,7 @@ import {
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
-import { useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { DEFAULT_FORMAT } from '../types';
@@ -50,7 +50,10 @@ import CohortFilter from '../components/CohortFilter';
 export default function RubricList() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics, createGroupStudentRubrics } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics, createGroupStudentRubrics } = useGrading();
+
     const { rubrics, addRubric, updateRubric, deleteRubric } = useAuthoring();
     const { settings } = useSettings();
 

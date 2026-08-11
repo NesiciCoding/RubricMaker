@@ -26,7 +26,15 @@ import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import { formatShortDate } from '../utils/dateInput';
-import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useFlashcards,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -47,7 +55,10 @@ import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../typ
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics, gradeScales } = useAuthoring();
     const { selfAssessments, speakingSessions, tests, studentTests } = useAssessment();
     const { standardMasteryTargets, flashcardDecks, flashcardAssignments, flashcardReviews } = useFlashcards();

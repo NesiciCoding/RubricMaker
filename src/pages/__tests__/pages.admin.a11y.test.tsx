@@ -181,6 +181,9 @@ vi.mock('../../context/AppContext', () => {
     return {
         useApp: () => base,
         useRoster: () => base,
+        useStudents: () => base,
+        useClasses: () => base,
+        useGrading: () => base,
         useAuthoring: () => base,
         useAssessment: () => base,
         useEssays: () => base,

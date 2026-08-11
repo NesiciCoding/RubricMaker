@@ -27,7 +27,7 @@ import {
     Bell,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAssessment, useAuthoring, useRoster, useSettings } from '../../context/AppContext';
+import { useAssessment, useAuthoring, useGrading, useSettings, useStudents } from '../../context/AppContext';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 
@@ -56,7 +56,9 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { studentRubrics, students } = useRoster();
+    const { students } = useStudents();
+    const { studentRubrics } = useGrading();
+
     const { rubrics } = useAuthoring();
     const { peerReviews } = useAssessment();
     const { settings } = useSettings();

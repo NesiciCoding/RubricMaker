@@ -7,7 +7,7 @@ import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { getActivityDashboardTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useEssays, useRoster } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useEssays, useGrading, useStudents } from '../context/AppContext';
 import { getActivityRows, buildDashboardMatrix } from '../utils/activityDashboardAggregator';
 import { getClassStandardsCoverage } from '../utils/standardsCoverageAggregator';
 import ClassCoverageGapPanel from '../components/Standards/ClassCoverageGapPanel';
@@ -26,7 +26,10 @@ const SECTION_LABELS: Record<string, string> = {
 export default function ActivityDashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { classes, students, studentRubrics, updateClass } = useRoster();
+    const { students } = useStudents();
+    const { classes, updateClass } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics, updateRubric } = useAuthoring();
     const { tests, studentTests, updateTest, gradingTasks, addGradingTasks, deleteGradingTask } = useAssessment();
     const { essayAssignments, addEssayAssignments, updateEssayGroup } = useEssays();
