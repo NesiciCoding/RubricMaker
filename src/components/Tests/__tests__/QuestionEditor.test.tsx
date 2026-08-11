@@ -14,8 +14,16 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+const makeAppContextMock = () => ({ settings: {} });
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({ settings: {} }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 // Replace TipTap-heavy editors with plain textareas (same pattern as StudentEssayPage.test.tsx /

@@ -14,14 +14,22 @@ const mockSettings: AppSettings = {
     defaultFormat: DEFAULT_FORMAT,
 };
 
+const makeAppContextMock = () => ({
+    settings: mockSettings,
+    updateSettings: vi.fn(),
+    classes: [],
+    students: [],
+    studentRubrics: [],
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        settings: mockSettings,
-        updateSettings: vi.fn(),
-        classes: [],
-        students: [],
-        studentRubrics: [],
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

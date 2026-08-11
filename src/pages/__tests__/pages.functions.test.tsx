@@ -177,7 +177,16 @@ function makeApp(overrides = {}) {
 
 let currentApp = makeApp();
 
-vi.mock('../../context/AppContext', () => ({ useApp: () => currentApp }));
+vi.mock('../../context/AppContext', () => ({
+    useApp: () => currentApp,
+    useRoster: () => currentApp,
+    useAuthoring: () => currentApp,
+    useAssessment: () => currentApp,
+    useEssays: () => currentApp,
+    useFlashcards: () => currentApp,
+    useSettings: () => currentApp,
+    usePlatform: () => currentApp,
+}));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({

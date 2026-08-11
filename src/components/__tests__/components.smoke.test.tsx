@@ -28,20 +28,28 @@ vi.mock('react-i18next', () => ({
     Trans: ({ i18nKey }: { i18nKey: string }) => React.createElement('span', null, i18nKey),
 }));
 
+const makeAppContextMock = () => ({
+    commentBank: [{ id: 'cb1', text: 'Well done!', tags: ['positive'], createdAt: '2024-01-01' }],
+    classes: [],
+    addStudent: vi.fn(),
+    addClass: vi.fn(),
+    addCommentBankItem: vi.fn(),
+    updateCommentBankItem: vi.fn(),
+    deleteCommentBankItem: vi.fn(),
+    favoriteStandards: [],
+    addFavoriteStandard: vi.fn(),
+    removeFavoriteStandard: vi.fn(),
+    isFavoriteStandard: vi.fn(() => false),
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        commentBank: [{ id: 'cb1', text: 'Well done!', tags: ['positive'], createdAt: '2024-01-01' }],
-        classes: [],
-        addStudent: vi.fn(),
-        addClass: vi.fn(),
-        addCommentBankItem: vi.fn(),
-        updateCommentBankItem: vi.fn(),
-        deleteCommentBankItem: vi.fn(),
-        favoriteStandards: [],
-        addFavoriteStandard: vi.fn(),
-        removeFavoriteStandard: vi.fn(),
-        isFavoriteStandard: vi.fn(() => false),
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('docx-preview', () => ({ renderAsync: vi.fn() }));

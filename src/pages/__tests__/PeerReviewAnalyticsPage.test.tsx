@@ -75,6 +75,13 @@ let mockUseApp: any;
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => mockUseApp,
+    useRoster: () => mockUseApp,
+    useAuthoring: () => mockUseApp,
+    useAssessment: () => mockUseApp,
+    useEssays: () => mockUseApp,
+    useFlashcards: () => mockUseApp,
+    useSettings: () => mockUseApp,
+    usePlatform: () => mockUseApp,
 }));
 
 vi.mock('react-i18next', () => ({

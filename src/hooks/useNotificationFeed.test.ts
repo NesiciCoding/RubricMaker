@@ -17,18 +17,26 @@ let mockNotificationDismissals: Array<{ id: string; type: string; entityId: stri
 const mockDismissNotification = vi.fn();
 const mockMarkMessageReadByTeacher = vi.fn();
 
+const makeAppContextMock = () => ({
+    students: mockStudents,
+    studentRubrics: mockStudentRubrics,
+    peerReviews: mockPeerReviews,
+    rubrics: mockRubrics,
+    messages: mockMessages,
+    notificationDismissals: mockNotificationDismissals,
+    settings: { overdueReminderThreshold: 7 },
+    dismissNotification: mockDismissNotification,
+    markMessageReadByTeacher: mockMarkMessageReadByTeacher,
+});
 vi.mock('../context/AppContext', () => ({
-    useApp: () => ({
-        students: mockStudents,
-        studentRubrics: mockStudentRubrics,
-        peerReviews: mockPeerReviews,
-        rubrics: mockRubrics,
-        messages: mockMessages,
-        notificationDismissals: mockNotificationDismissals,
-        settings: { overdueReminderThreshold: 7 },
-        dismissNotification: mockDismissNotification,
-        markMessageReadByTeacher: mockMarkMessageReadByTeacher,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 const rubric: Rubric = {

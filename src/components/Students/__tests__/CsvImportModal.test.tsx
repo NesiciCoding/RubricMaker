@@ -44,16 +44,24 @@ const mockAddClass = vi.fn((c: { name: string }) => ({ id: `class-${c.name.toLow
 let mockClasses: { id: string; name: string }[] = [{ id: 'class-1', name: 'Class A' }];
 let mockStudents: { id: string; name: string; email?: string; classId: string }[] = [];
 
+const makeAppContextMock = () => ({
+    addStudent: mockAddStudent,
+    updateStudent: mockUpdateStudent,
+    deleteStudent: mockDeleteStudent,
+    addClass: mockAddClass,
+    classes: mockClasses,
+    students: mockStudents,
+    settings: {},
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        addStudent: mockAddStudent,
-        updateStudent: mockUpdateStudent,
-        deleteStudent: mockDeleteStudent,
-        addClass: mockAddClass,
-        classes: mockClasses,
-        students: mockStudents,
-        settings: {},
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 const baseProps = {

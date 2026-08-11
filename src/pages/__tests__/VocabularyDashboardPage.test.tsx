@@ -56,16 +56,24 @@ const mockAnalysisResults: DocumentAnalysisResult[] = [
     },
 ];
 
+const makeAppContextMock = () => ({
+    rubrics: [mockRubric],
+    students: mockStudents,
+    classes: mockClasses,
+    studentRubrics: [],
+    settings: mockSettings,
+    analysisResults: mockAnalysisResults,
+    updateSettings: vi.fn(),
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [mockRubric],
-        students: mockStudents,
-        classes: mockClasses,
-        studentRubrics: [],
-        settings: mockSettings,
-        analysisResults: mockAnalysisResults,
-        updateSettings: vi.fn(),
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({
