@@ -5,7 +5,7 @@ import App from './App';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
-import './i18n';
+import { i18nReady } from './i18n';
 import { logEvent } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 
@@ -132,16 +132,23 @@ function renderBlocked() {
     );
 }
 
-if (isStudentRoute() || !('locks' in navigator)) {
-    renderApp();
-} else {
-    navigator.locks.request(TAB_LOCK, { ifAvailable: true }, (lock) => {
-        if (!lock) {
-            renderBlocked();
-            return;
-        }
+function boot() {
+    if (isStudentRoute() || !('locks' in navigator)) {
         renderApp();
-        // Hold the lock until the tab is closed (never-resolving promise)
-        return new Promise<void>(() => {});
-    });
+    } else {
+        navigator.locks.request(TAB_LOCK, { ifAvailable: true }, (lock) => {
+            if (!lock) {
+                renderBlocked();
+                return;
+            }
+            renderApp();
+            // Hold the lock until the tab is closed (never-resolving promise)
+            return new Promise<void>(() => {});
+        });
+    }
 }
+
+// Wait for the `en` fallback bundle before the first render so no untranslated keys flash.
+// `then(boot, boot)` — even if the fetch fails we still boot (a keyed UI beats a blank screen),
+// and the locale-load rejection is consumed rather than surfacing as an unhandled rejection.
+void i18nReady.then(boot, boot);

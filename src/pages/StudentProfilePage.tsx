@@ -1,7 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import type { TooltipPayloadEntry } from 'recharts';
 import {
     ArrowLeft,
     User,
@@ -33,8 +31,10 @@ import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
-import LearningGoalChart from '../components/Statistics/LearningGoalChart';
-import CefrProgressChart from '../components/Statistics/CefrProgressChart';
+// Charts pull in recharts (~297KB) — lazy-loaded so the profile route chunk stays lean.
+const LearningGoalChart = lazy(() => import('../components/Statistics/LearningGoalChart'));
+const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgressChart'));
+const ProfileTimelineChart = lazy(() => import('../components/Statistics/ProfileTimelineChart'));
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
@@ -774,62 +774,17 @@ export default function StudentProfilePage() {
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <TrendingUp size={18} /> Performance Timeline
                                     </h3>
-                                    <ResponsiveContainer width="100%" height={260}>
-                                        <LineChart
-                                            data={history}
-                                            margin={{ top: 10, right: 10, bottom: 20, left: -20 }}
-                                        >
-                                            <CartesianGrid
-                                                strokeDasharray="3 3"
-                                                vertical={false}
-                                                stroke="var(--border)"
-                                            />
-                                            <XAxis
-                                                dataKey="dateStr"
-                                                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                                tickMargin={12}
-                                            />
-                                            <YAxis
-                                                domain={[0, 100]}
-                                                tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    background: 'var(--bg-card)',
-                                                    border: '1px solid var(--border)',
-                                                    borderRadius: 8,
-                                                    fontSize: '0.85rem',
-                                                }}
-                                                labelStyle={{ color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}
-                                                itemStyle={{ color: 'var(--accent)', fontWeight: 600 }}
-                                                formatter={(
-                                                    val: unknown,
-                                                    _name: unknown,
-                                                    props: TooltipPayloadEntry
-                                                ) => [
-                                                    `${typeof val === 'number' ? val : 0}%`,
-                                                    (props.payload as (typeof history)[number]).rubric.name,
-                                                ]}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="score"
-                                                stroke="var(--accent)"
-                                                strokeWidth={3}
-                                                dot={{
-                                                    fill: 'var(--bg-card)',
-                                                    stroke: 'var(--accent)',
-                                                    strokeWidth: 2,
-                                                    r: 4,
-                                                }}
-                                                activeDot={{ r: 6, fill: 'var(--accent)' }}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                                    <Suspense fallback={<div style={{ height: 260 }} />}>
+                                        <ProfileTimelineChart history={history} />
+                                    </Suspense>
                                 </div>
                             )}
 
-                            {goals.length > 0 && <LearningGoalChart goals={goals} />}
+                            {goals.length > 0 && (
+                                <Suspense fallback={<div style={{ height: 200 }} />}>
+                                    <LearningGoalChart goals={goals} />
+                                </Suspense>
+                            )}
 
                             {/* CEFR / ERK Progress */}
                             {cefrProgress.length > 0 && (
@@ -849,7 +804,11 @@ export default function StudentProfilePage() {
                                         </span>
                                     </h3>
 
-                                    {cefrProgress.length >= 3 && <CefrProgressChart entries={cefrProgress} />}
+                                    {cefrProgress.length >= 3 && (
+                                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                                            <CefrProgressChart entries={cefrProgress} />
+                                        </Suspense>
+                                    )}
                                     {trackYearProgress && (
                                         <div style={{ marginTop: 16 }}>
                                             <CefrTrackYearBand

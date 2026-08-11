@@ -2,21 +2,26 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-import en from './locales/en.json';
-
 i18n.use(LanguageDetector)
     .use(initReactI18next)
     .init({
-        resources: {
-            en: {
-                translation: en,
-            },
-        },
+        resources: {},
         fallbackLng: 'en',
         interpolation: {
             escapeValue: false, // react already safes from xss
         },
+        // We gate the initial render on `i18nReady` (main.tsx) so `en` is always present before
+        // the first paint — no backend/suspense needed, and no flash of untranslated keys.
+        react: { useSuspense: false },
     });
+
+// `en` is the always-available fallback. It used to be bundled straight into the main entry
+// chunk (~66KB gzip that every visitor downloaded before first paint); load it as its own chunk
+// instead. `i18nReady` resolves once it's in the store; main.tsx awaits it before rendering.
+export const i18nReady = import('./locales/en.json').then(({ default: en }) => {
+    i18n.addResourceBundle('en', 'translation', en);
+    if (i18n.language?.split('-')[0] === 'en') i18n.emit('languageChanged', i18n.language);
+});
 
 // Non-English locale files are ~200KB of JSON each — loading all 5 upfront meant every
 // visitor downloaded ~1MB of translations regardless of language. 'en' stays bundled as

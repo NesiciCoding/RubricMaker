@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import { TIPTAP_CONTENT_STYLES } from './tiptapExtensions';
+import { TIPTAP_CONTENT_STYLES } from './tiptapContentStyles';
 
 interface Props {
     html: string;
