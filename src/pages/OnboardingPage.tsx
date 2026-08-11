@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../context/AppContext';
+import { usePlatform, useSettings } from '../context/AppContext';
 import type { UserRole } from '../types';
 
 type RoleChoice = UserRole;
@@ -17,8 +17,8 @@ type Step = 'role' | 'school' | 'done';
  */
 export default function OnboardingPage() {
     const { t } = useTranslation();
-    const { createSchool, joinSchool, updateSettings, signOutFromDatabase, updateUserRole, getCurrentDatabaseUserId } =
-        useApp();
+    const { updateSettings } = useSettings();
+    const { createSchool, joinSchool, signOutFromDatabase, updateUserRole, getCurrentDatabaseUserId } = usePlatform();
 
     const [step, setStep] = useState<Step>('role');
     const [role, setRole] = useState<RoleChoice>('teacher');

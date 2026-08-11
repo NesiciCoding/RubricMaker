@@ -6,7 +6,7 @@ import type { EventData } from 'react-joyride';
 import { getSpeakingTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Play, Pause, Square, Save, Mic, X, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import { calcEntryPoints, calcGradeSummary, criterionMaxPoints } from '../utils/gradeCalc';
 import { nanoid } from '../utils/nanoid';
 import RecordingControls from '../components/Recordings/RecordingControls';
@@ -32,7 +32,10 @@ export default function SpeakingSession() {
     const { rubricId, studentId } = useParams<{ rubricId: string; studentId: string }>();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { rubrics, students, gradeScales, settings, speakingSessions, saveSpeakingSession } = useApp();
+    const { students } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
+    const { speakingSessions, saveSpeakingSession } = useAssessment();
+    const { settings } = useSettings();
 
     const rubric = rubrics.find((r) => r.id === rubricId);
     const student = students.find((s) => s.id === studentId);

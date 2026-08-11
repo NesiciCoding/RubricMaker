@@ -17,7 +17,7 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster } from '../context/AppContext';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
@@ -61,17 +61,12 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
-    const {
-        newsFlashes,
-        newsFlashReads,
-        students,
-        flashcardDecks,
-        tests,
-        rubrics,
-        addNewsFlash,
-        updateNewsFlash,
-        deleteNewsFlash,
-    } = useApp();
+    const { students } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { tests } = useAssessment();
+    const { newsFlashes, newsFlashReads, addNewsFlash, updateNewsFlash, deleteNewsFlash } = useEssays();
+    const { flashcardDecks } = useFlashcards();
+
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [draft, setDraft] = useState<DraftState | null>(null);
     const [expandedReadsFor, setExpandedReadsFor] = useState<string | null>(null);

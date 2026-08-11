@@ -4,7 +4,7 @@ import { UserCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import ReconcileModal from '../components/Modals/ReconcileModal';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, usePlatform, useRoster, useSettings } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import {
     buildReconciledEntries,
@@ -17,16 +17,12 @@ import type { DbUser } from '../services/database';
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const {
-        rubrics,
-        studentRubrics,
-        peerReviews,
-        students,
-        settings,
-        saveStudentRubric,
-        deletePeerReview,
-        fetchSchoolMembers,
-    } = useApp();
+    const { studentRubrics, students, saveStudentRubric } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { peerReviews, deletePeerReview } = useAssessment();
+    const { settings } = useSettings();
+    const { fetchSchoolMembers } = usePlatform();
+
     const dbStatus = useDbStatus();
     const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_POINTS);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
