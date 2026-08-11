@@ -983,7 +983,6 @@ export default function StudentsPage() {
                                             );
                                             // Grade menu shows the rubrics linked to THIS student's class (not the
                                             // single active class), so links stay effective in the combined roster.
-                                            const studentClass = classById.get(s.classId);
                                             const studentRubricList = classRubricsById.get(s.classId) ?? rubrics;
                                             return (
                                                 <tr key={s.id}>
