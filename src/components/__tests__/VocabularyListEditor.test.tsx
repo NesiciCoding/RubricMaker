@@ -2,14 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VocabularyListEditor from '../Vocabulary/VocabularyListEditor';
-import { lookupWord } from '../../services/cambridgeApi';
+import { lookupWord } from '../../services/freeDictionaryApi';
 import type { VocabularyItem, RubricCriterion } from '../../types';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
-vi.mock('../../services/cambridgeApi', () => ({
+vi.mock('../../services/freeDictionaryApi', () => ({
     lookupWord: vi.fn(),
 }));
 
@@ -270,7 +270,7 @@ describe('VocabularyListEditor', () => {
         expect(onAdd).toHaveBeenCalledWith({ phrase: 'world', category: 'vocabulary' });
     });
 
-    describe('Cambridge lookup', () => {
+    describe('Dictionary lookup', () => {
         function enterEditMode(items: VocabularyItem[], extraProps: Record<string, unknown> = {}) {
             render(<VocabularyListEditor {...baseProps} items={items} {...extraProps} />);
             const editBtns = screen.getAllByRole('button');
@@ -278,31 +278,29 @@ describe('VocabularyListEditor', () => {
             fireEvent.click(editBtn!);
         }
 
-        it('does not show the Look up button when no cambridgeApiKey is set', () => {
+        it('shows the Look up button in edit mode (no key required)', () => {
             enterEditMode([makeItem()]);
-            expect(screen.queryByRole('button', { name: 'cambridge.lookup_button' })).toBeNull();
-        });
-
-        it('shows the Look up button when cambridgeApiKey is set', () => {
-            enterEditMode([makeItem()], { cambridgeApiKey: 'key123' });
             expect(screen.getByRole('button', { name: 'cambridge.lookup_button' })).toBeInTheDocument();
         });
 
-        it('fills empty cefrLevel and definition fields from a successful lookup', async () => {
+        it('fills an empty definition field from a successful lookup (level stays unset)', async () => {
             const onUpdate = vi.fn();
             (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({
-                level: 'B2',
+                level: null,
                 definition: 'a friendly greeting',
+                phonetic: '/ɡʊd ˈmɔːnɪŋ/',
+                partOfSpeech: 'noun',
+                example: null,
             });
             const items = [makeItem()];
-            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+            enterEditMode(items, { onUpdate });
 
             fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
 
             await waitFor(() =>
                 expect(onUpdate).toHaveBeenCalledWith({
                     ...items[0],
-                    cefrLevel: 'B2',
+                    cefrLevel: undefined,
                     definition: 'a friendly greeting',
                 })
             );
@@ -311,11 +309,14 @@ describe('VocabularyListEditor', () => {
         it('does not overwrite an existing cefrLevel or definition', async () => {
             const onUpdate = vi.fn();
             (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue({
-                level: 'B2',
+                level: null,
                 definition: 'a friendly greeting',
+                phonetic: null,
+                partOfSpeech: 'noun',
+                example: null,
             });
             const items = [makeItem({ cefrLevel: 'A1', definition: 'existing definition' })];
-            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+            enterEditMode(items, { onUpdate });
 
             fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
 
@@ -332,11 +333,11 @@ describe('VocabularyListEditor', () => {
             const onUpdate = vi.fn();
             (lookupWord as ReturnType<typeof vi.fn>).mockResolvedValue(null);
             const items = [makeItem()];
-            enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+            enterEditMode(items, { onUpdate });
 
             fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
 
-            await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning', 'key123'));
+            await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning'));
             expect(onUpdate).not.toHaveBeenCalled();
         });
 
@@ -346,11 +347,11 @@ describe('VocabularyListEditor', () => {
                 const onUpdate = vi.fn();
                 (lookupWord as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
                 const items = [makeItem()];
-                enterEditMode(items, { cambridgeApiKey: 'key123', onUpdate });
+                enterEditMode(items, { onUpdate });
 
                 fireEvent.click(screen.getByRole('button', { name: 'cambridge.lookup_button' }));
 
-                await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning', 'key123'));
+                await waitFor(() => expect(lookupWord).toHaveBeenCalledWith('good morning'));
                 await waitFor(() => expect(consoleError).toHaveBeenCalled());
                 expect(onUpdate).not.toHaveBeenCalled();
             } finally {
