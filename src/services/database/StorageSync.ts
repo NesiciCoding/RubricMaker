@@ -1256,6 +1256,7 @@ class StorageSyncService {
             if (entity === 'studentRubric') {
                 const res = await this.adapter.deleteStudentRubrics(ids);
                 if (!res.success) throw new Error(res.error);
+                this.pushOneFailCount = 0;
                 logEvent('sync', `pushMany:${entity}:delete`, { count: ids.length });
                 return true;
             }

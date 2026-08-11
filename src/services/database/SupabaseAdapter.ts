@@ -733,7 +733,7 @@ export class SupabaseAdapter {
     async fetchStudentRubrics(): Promise<StudentRubric[]> {
         try {
             const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-                this.db().from('student_rubrics').select('data').eq('is_peer_review', false)
+                this.db().from('student_rubrics').select('data').eq('is_peer_review', false).order('id')
             );
             return rows.map((r) => r.data);
         } catch (error) {
@@ -789,7 +789,7 @@ export class SupabaseAdapter {
     async fetchPeerReviews(): Promise<StudentRubric[]> {
         try {
             const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-                this.db().from('student_rubrics').select('data').eq('is_peer_review', true)
+                this.db().from('student_rubrics').select('data').eq('is_peer_review', true).order('id')
             );
             return rows.map((r) => r.data);
         } catch (error) {
