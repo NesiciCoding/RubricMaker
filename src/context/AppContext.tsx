@@ -2410,7 +2410,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const base = storageSync.didWipeLocalData() ? loadStore() : state;
+                    const base = storageSync.didWipeLocalData() ? loadStore() : currentStateRef.current;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     // Not seeded: this is the teacher's own owner-scoped connect flow, so a
                     // reflexive re-push of pulled data can't fail RLS the way it can for a
@@ -2426,7 +2426,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return ok;
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [state]
+        []
     );
 
     const disconnectDatabase = useCallback(() => {
@@ -2435,20 +2435,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const pushAllToDatabase = useCallback(async () => {
-        return (await loadDb()).storageSync.pushAll(state);
-    }, [state]);
+        return (await loadDb()).storageSync.pushAll(currentStateRef.current);
+    }, []);
 
     const pullFromDatabase = useCallback(async () => {
         const { storageSync } = await loadDb();
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
-            const merged = mergeStoreData(state, fresh, loadPendingQueue());
+            const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
             // Not seeded: same owner-scoped reasoning as connectDatabase above.
             applyHydrated(merged, false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state]);
+    }, []);
 
     const fetchAllUsers = useCallback(async (): Promise<DbUser[]> => {
         return (await loadDb()).storageSync.fetchAllProfiles();
@@ -2587,14 +2587,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return (await loadDb()).storageSync.initAuth(config);
     }, []);
 
-    const dismissMigrationPrompt = useCallback(
-        async (upload: boolean) => {
-            setShowMigrationPrompt(false);
-            localStorage.setItem(MIGRATION_DONE_KEY, 'true');
-            if (upload) await (await loadDb()).storageSync.pushAll(state);
-        },
-        [state]
-    );
+    const dismissMigrationPrompt = useCallback(async (upload: boolean) => {
+        setShowMigrationPrompt(false);
+        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+        if (upload) await (await loadDb()).storageSync.pushAll(currentStateRef.current);
+    }, []);
 
     const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
         return (await loadDb()).storageSync.signInWithGoogle();

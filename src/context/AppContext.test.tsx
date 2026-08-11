@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act, render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp, useStudents, useGrading, useSettings } from './AppContext';
+import { AppProvider, useApp, useStudents, useGrading, useSettings, usePlatform } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
@@ -647,6 +647,7 @@ describe('AppContext', () => {
         const gradingRenders: number[] = [];
         const studentsRenders: number[] = [];
         const settingsRenders: string[] = [];
+        const platformActionIds: unknown[] = [];
         let triggerGrade: (() => void) | null = null;
 
         function GradingProbe() {
@@ -665,6 +666,15 @@ describe('AppContext', () => {
             const { settings } = useSettings();
             settingsRenders.push(settings.language);
             return <div data-testid="settings-probe">{settings.language}</div>;
+        }
+
+        // Platform actions used to depend on the whole `state` ([state] useCallbacks),
+        // so ANY dispatch re-created them and re-rendered every platform consumer. They
+        // now read currentStateRef instead, so their identity must survive a dispatch.
+        function PlatformProbe() {
+            const { pushAllToDatabase, connectDatabase, dismissMigrationPrompt } = usePlatform();
+            platformActionIds.push(pushAllToDatabase, connectDatabase, dismissMigrationPrompt);
+            return null;
         }
 
         function TriggerProbe() {
@@ -686,14 +696,19 @@ describe('AppContext', () => {
                 <GradingProbe />
                 <StudentsProbe />
                 <SettingsProbe />
+                <PlatformProbe />
                 <TriggerProbe />
             </AppProvider>
         );
 
-        // Baseline: every probe rendered once.
+        // Baseline: every probe rendered once. (PlatformProbe may have rendered twice
+        // already — the mocked startup effect's landingState 'checking'->'show'
+        // transition legitimately re-renders platform consumers; what matters is that
+        // the dispatch below adds zero further platform renders.)
         expect(gradingRenders.length).toBe(1);
         expect(studentsRenders.length).toBe(1);
         expect(settingsRenders.length).toBe(1);
+        const platformRendersBeforeDispatch = platformActionIds.length;
 
         act(() => {
             triggerGrade!();
@@ -704,5 +719,11 @@ describe('AppContext', () => {
         expect(gradingRenders.length).toBeGreaterThan(1);
         expect(studentsRenders.length).toBe(1);
         expect(settingsRenders.length).toBe(1);
+
+        // And the state-reading platform actions keep their identity across the dispatch
+        // (every recorded identity is the same function) AND add zero new renders, so
+        // platform consumers stop re-rendering on unrelated dispatches.
+        expect(platformActionIds.length).toBe(platformRendersBeforeDispatch);
+        expect(new Set(platformActionIds).size).toBe(3);
     });
 });
