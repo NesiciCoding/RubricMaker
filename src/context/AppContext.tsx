@@ -1127,7 +1127,230 @@ interface AppContextValue extends StoreData {
     getCurrentDatabaseUserId: () => string | null;
 }
 
-const AppContext = createContext<AppContextValue | null>(null);
+// ─── Domain contexts ───────────────────────────────────────────────────────────
+// The provider value is split by domain so a dispatch that changes one collection only
+// re-renders consumers of that domain, instead of every useApp consumer. `useApp()`
+// below remains as a merged compatibility view for tests and object-form call sites.
+
+type RosterValue = Pick<
+    AppContextValue,
+    | 'students'
+    | 'classes'
+    | 'studentRubrics'
+    | 'attachments'
+    | 'archivedStudents'
+    | 'deletedStudentRubrics'
+    | 'addStudent'
+    | 'updateStudent'
+    | 'deleteStudent'
+    | 'restoreStudent'
+    | 'anonymizeStudent'
+    | 'addClass'
+    | 'updateClass'
+    | 'deleteClass'
+    | 'mergeClasses'
+    | 'saveStudentRubric'
+    | 'saveRubricSelfAssessment'
+    | 'createStudentRubric'
+    | 'createGroupStudentRubrics'
+    | 'deleteStudentRubric'
+    | 'restoreStudentRubric'
+    | 'addAttachment'
+    | 'deleteAttachment'
+    | 'setStudentPassword'
+>;
+
+type AuthoringValue = Pick<
+    AppContextValue,
+    | 'rubrics'
+    | 'gradeScales'
+    | 'favoriteStandards'
+    | 'commentBank'
+    | 'exportTemplates'
+    | 'userTemplates'
+    | 'questionBank'
+    | 'addRubric'
+    | 'updateRubric'
+    | 'deleteRubric'
+    | 'addGradeScale'
+    | 'updateGradeScale'
+    | 'deleteGradeScale'
+    | 'addFavoriteStandard'
+    | 'removeFavoriteStandard'
+    | 'isFavoriteStandard'
+    | 'addCommentBankItem'
+    | 'updateCommentBankItem'
+    | 'deleteCommentBankItem'
+    | 'recordCommentBankUsage'
+    | 'addQuestionBankItem'
+    | 'addSectionBankItem'
+    | 'addQuestionBankItems'
+    | 'updateQuestionBankItem'
+    | 'deleteQuestionBankItem'
+    | 'deleteQuestionBankItems'
+    | 'bulkUpdateQuestionBankItems'
+    | 'addExportTemplate'
+    | 'deleteExportTemplate'
+    | 'saveUserTemplate'
+    | 'deleteUserTemplate'
+    | 'syncRubricSnapshot'
+    | 'fetchRubricVersions'
+    | 'saveRubricVersion'
+    | 'restoreRubricVersion'
+    | 'addVocabularyItem'
+    | 'updateVocabularyItem'
+    | 'deleteVocabularyItem'
+    | 'deleteVocabularyItems'
+>;
+
+type AssessmentValue = Pick<
+    AppContextValue,
+    | 'tests'
+    | 'studentTests'
+    | 'peerReviews'
+    | 'selfAssessments'
+    | 'speakingSessions'
+    | 'analysisResults'
+    | 'documentComments'
+    | 'gradingTasks'
+    | 'savePeerReview'
+    | 'deletePeerReview'
+    | 'saveSelfAssessment'
+    | 'deleteSelfAssessment'
+    | 'saveSpeakingSession'
+    | 'deleteSpeakingSession'
+    | 'saveAnalysisResult'
+    | 'deleteAnalysisResult'
+    | 'addTest'
+    | 'updateTest'
+    | 'deleteTest'
+    | 'saveStudentTest'
+    | 'deleteStudentTest'
+    | 'addDocumentComment'
+    | 'resolveDocumentComment'
+    | 'deleteDocumentComment'
+    | 'addGradingTasks'
+    | 'deleteGradingTask'
+    | 'saveTestAssignment'
+    | 'fetchMyTestAssignments'
+    | 'fetchAssignedTestContent'
+    | 'fetchTestAssignmentTeacherKeys'
+    | 'setPlacementOverride'
+>;
+
+type EssaysValue = Pick<
+    AppContextValue,
+    | 'essayAssignments'
+    | 'essaySubmissions'
+    | 'essayTemplates'
+    | 'messages'
+    | 'newsFlashes'
+    | 'newsFlashReads'
+    | 'notificationDismissals'
+    | 'addEssayAssignments'
+    | 'updateEssayGroup'
+    | 'deleteEssayGroup'
+    | 'addEssaySubmission'
+    | 'saveEssayTemplate'
+    | 'deleteEssayTemplate'
+    | 'saveEssayAssignment'
+    | 'deleteEssayAssignment'
+    | 'fetchEssaySubmissions'
+    | 'fetchEssaySubmissionsForStudent'
+    | 'fetchAllEssaySubmissions'
+    | 'fetchMyEssayAssignments'
+    | 'fetchEssayAssignmentByKey'
+    | 'deleteEssaySubmission'
+    | 'getEssaySignedUrl'
+    | 'sendMessage'
+    | 'markMessageReadByTeacher'
+    | 'notifyStudentMessage'
+    | 'addNewsFlash'
+    | 'updateNewsFlash'
+    | 'deleteNewsFlash'
+    | 'markNewsFlashRead'
+    | 'dismissNotification'
+    | 'fetchMyMessages'
+    | 'sendMessageAsStudent'
+    | 'markMessagesReadByStudent'
+    | 'fetchMyNewsFlashes'
+    | 'markNewsFlashReadAsStudent'
+>;
+
+type FlashcardsValue = Pick<
+    AppContextValue,
+    | 'flashcardDecks'
+    | 'flashcardAssignments'
+    | 'flashcardReviews'
+    | 'standardMasteryTargets'
+    | 'addFlashcardDeck'
+    | 'updateFlashcardDeck'
+    | 'deleteFlashcardDeck'
+    | 'addStandardMasteryTarget'
+    | 'updateStandardMasteryTarget'
+    | 'deleteStandardMasteryTarget'
+    | 'addFlashcardAssignments'
+    | 'saveFlashcardReview'
+    | 'fetchMyFlashcardAssignments'
+    | 'fetchAssignedFlashcardDeck'
+    | 'fetchMyFlashcardReview'
+    | 'saveFlashcardReviewAsStudent'
+    | 'fetchMyStudentFlashcardDecks'
+    | 'saveFlashcardDeckAsStudent'
+    | 'deleteFlashcardDeckAsStudent'
+>;
+
+type SettingsValue = Pick<AppContextValue, 'settings' | 'updateSettings' | 'getActiveGradeScale'>;
+
+type PlatformValue = Pick<
+    AppContextValue,
+    | 'dispatch'
+    | 'showLanding'
+    | 'isCheckingSession'
+    | 'showMigrationPrompt'
+    | 'microsoftUser'
+    | 'enterLocalMode'
+    | 'connectForOAuth'
+    | 'dismissMigrationPrompt'
+    | 'signInWithGoogle'
+    | 'signInWithMicrosoftPersonal'
+    | 'signInWithAzureAD'
+    | 'signOutFromDatabase'
+    | 'loginMicrosoft'
+    | 'logoutMicrosoft'
+    | 'syncToOneDrive'
+    | 'restoreFromOneDrive'
+    | 'getCurrentDatabaseUserId'
+    | 'connectDatabase'
+    | 'disconnectDatabase'
+    | 'pushAllToDatabase'
+    | 'pullFromDatabase'
+    | 'fetchAllUsers'
+    | 'updateUserRole'
+    | 'updateMyProfile'
+    | 'fetchSchools'
+    | 'createSchool'
+    | 'joinSchool'
+    | 'updateSchool'
+    | 'deleteSchool'
+    | 'fetchSchoolMembers'
+    | 'removeSchoolMember'
+    | 'importBackup'
+>;
+
+const RosterContext = createContext<RosterValue | null>(null);
+const AuthoringContext = createContext<AuthoringValue | null>(null);
+const AssessmentContext = createContext<AssessmentValue | null>(null);
+const EssaysContext = createContext<EssaysValue | null>(null);
+const FlashcardsContext = createContext<FlashcardsValue | null>(null);
+const SettingsContext = createContext<SettingsValue | null>(null);
+const PlatformContext = createContext<PlatformValue | null>(null);
+
+function useContextOrThrow<T>(ctx: React.Context<T | null>, hookName: string): T {
+    const value = useContext(ctx);
+    if (!value) throw new Error(`${hookName} must be used within AppProvider`);
+    return value;
+}
 
 const LOCAL_MODE_KEY = 'rm_local_mode';
 const MIGRATION_DONE_KEY = 'rm_migration_done';
@@ -2463,21 +2686,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         [state.studentRubrics]
     );
 
-    const value: AppContextValue = useMemo(
+    // ─── Domain-split provider values ───────────────────────────────────────────
+    // Each domain memoizes on its own state slices (and stable action identities), so a
+    // dispatch that touches e.g. studentRubrics only re-renders roster consumers — not
+    // consumers that merely read rubrics, settings, or actions.
+    const rosterValue = useMemo(
         () => ({
-            ...state,
             students: activeStudents,
-            archivedStudents,
+            classes: state.classes,
             studentRubrics: activeStudentRubrics,
+            attachments: state.attachments,
+            archivedStudents,
             deletedStudentRubrics,
-            dispatch,
-            addRubric,
-            updateRubric,
-            deleteRubric,
             addStudent,
             updateStudent,
             deleteStudent,
             restoreStudent,
+            anonymizeStudent,
             addClass,
             updateClass,
             deleteClass,
@@ -2490,151 +2715,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
             restoreStudentRubric,
             addAttachment,
             deleteAttachment,
-            addGradeScale,
-            updateGradeScale,
-            deleteGradeScale,
-            updateSettings,
-            getActiveGradeScale,
-            addFavoriteStandard,
-            removeFavoriteStandard,
-            isFavoriteStandard,
-            addCommentBankItem,
-            updateCommentBankItem,
-            deleteCommentBankItem,
-            recordCommentBankUsage,
-            addQuestionBankItem,
-            addSectionBankItem,
-            addQuestionBankItems,
-            updateQuestionBankItem,
-            deleteQuestionBankItem,
-            deleteQuestionBankItems,
-            bulkUpdateQuestionBankItems,
-            addDocumentComment,
-            resolveDocumentComment,
-            deleteDocumentComment,
-            dismissNotification,
-            addExportTemplate,
-            deleteExportTemplate,
-            savePeerReview,
-            deletePeerReview,
-            saveSelfAssessment,
-            deleteSelfAssessment,
-            saveSpeakingSession,
-            deleteSpeakingSession,
-            syncRubricSnapshot,
-            fetchRubricVersions,
-            saveRubricVersion,
-            restoreRubricVersion,
-            addVocabularyItem,
-            updateVocabularyItem,
-            deleteVocabularyItem,
-            deleteVocabularyItems,
-            saveAnalysisResult,
-            deleteAnalysisResult,
-            addTest,
-            updateTest,
-            deleteTest,
-            saveStudentTest,
-            deleteStudentTest,
-            addEssayAssignments,
-            updateEssayGroup,
-            deleteEssayGroup,
-            addEssaySubmission,
-            saveEssayTemplate,
-            deleteEssayTemplate,
-            addGradingTasks,
-            deleteGradingTask,
-            sendMessage,
-            markMessageReadByTeacher,
-            addFlashcardDeck,
-            updateFlashcardDeck,
-            deleteFlashcardDeck,
-            addStandardMasteryTarget,
-            updateStandardMasteryTarget,
-            deleteStandardMasteryTarget,
-            addFlashcardAssignments,
-            saveFlashcardReview,
-            addNewsFlash,
-            updateNewsFlash,
-            deleteNewsFlash,
-            markNewsFlashRead,
-            saveUserTemplate,
-            deleteUserTemplate,
-            connectDatabase,
-            disconnectDatabase,
-            pushAllToDatabase,
-            pullFromDatabase,
-            fetchAllUsers,
-            updateUserRole,
-            updateMyProfile,
-            fetchSchools,
-            createSchool,
-            joinSchool,
-            updateSchool,
-            deleteSchool,
-            fetchSchoolMembers,
-            removeSchoolMember,
-            anonymizeStudent,
-            getCurrentDatabaseUserId,
-            saveEssayAssignment,
             setStudentPassword,
-            notifyStudentMessage,
-            deleteEssayAssignment,
-            fetchEssaySubmissions,
-            fetchEssaySubmissionsForStudent,
-            fetchAllEssaySubmissions,
-            fetchMyEssayAssignments,
-            fetchEssayAssignmentByKey,
-            deleteEssaySubmission,
-            getEssaySignedUrl,
-            saveTestAssignment,
-            fetchMyTestAssignments,
-            fetchAssignedTestContent,
-            fetchTestAssignmentTeacherKeys,
-            setPlacementOverride,
-            fetchMyMessages,
-            sendMessageAsStudent,
-            markMessagesReadByStudent,
-            fetchMyFlashcardAssignments,
-            fetchAssignedFlashcardDeck,
-            fetchMyFlashcardReview,
-            saveFlashcardReviewAsStudent,
-            fetchMyStudentFlashcardDecks,
-            saveFlashcardDeckAsStudent,
-            deleteFlashcardDeckAsStudent,
-            fetchMyNewsFlashes,
-            markNewsFlashReadAsStudent,
-            importBackup,
-            showLanding: landingState === 'show',
-            isCheckingSession: landingState === 'checking',
-            showMigrationPrompt,
-            enterLocalMode,
-            connectForOAuth,
-            dismissMigrationPrompt,
-            signInWithGoogle,
-            signInWithMicrosoftPersonal,
-            signInWithAzureAD,
-            signOutFromDatabase,
-            loginMicrosoft,
-            logoutMicrosoft,
-            syncToOneDrive,
-            restoreFromOneDrive,
-            microsoftUser,
         }),
         [
-            state,
             activeStudents,
             archivedStudents,
             activeStudentRubrics,
             deletedStudentRubrics,
-            dispatch,
-            addRubric,
-            updateRubric,
-            deleteRubric,
+            state.classes,
+            state.attachments,
             addStudent,
             updateStudent,
             deleteStudent,
             restoreStudent,
+            anonymizeStudent,
             addClass,
             updateClass,
             deleteClass,
@@ -2647,11 +2741,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
             restoreStudentRubric,
             addAttachment,
             deleteAttachment,
+            setStudentPassword,
+        ]
+    );
+
+    const authoringValue = useMemo(
+        () => ({
+            rubrics: state.rubrics,
+            gradeScales: state.gradeScales,
+            favoriteStandards: state.favoriteStandards,
+            commentBank: state.commentBank,
+            exportTemplates: state.exportTemplates,
+            userTemplates: state.userTemplates,
+            questionBank: state.questionBank,
+            addRubric,
+            updateRubric,
+            deleteRubric,
             addGradeScale,
             updateGradeScale,
             deleteGradeScale,
-            updateSettings,
-            getActiveGradeScale,
             addFavoriteStandard,
             removeFavoriteStandard,
             isFavoriteStandard,
@@ -2666,18 +2774,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteQuestionBankItem,
             deleteQuestionBankItems,
             bulkUpdateQuestionBankItems,
-            addDocumentComment,
-            resolveDocumentComment,
-            deleteDocumentComment,
-            dismissNotification,
             addExportTemplate,
             deleteExportTemplate,
-            savePeerReview,
-            deletePeerReview,
-            saveSelfAssessment,
-            deleteSelfAssessment,
-            saveSpeakingSession,
-            deleteSpeakingSession,
+            saveUserTemplate,
+            deleteUserTemplate,
             syncRubricSnapshot,
             fetchRubricVersions,
             saveRubricVersion,
@@ -2686,6 +2786,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
             updateVocabularyItem,
             deleteVocabularyItem,
             deleteVocabularyItems,
+        }),
+        [
+            state.rubrics,
+            state.gradeScales,
+            state.favoriteStandards,
+            state.commentBank,
+            state.exportTemplates,
+            state.userTemplates,
+            state.questionBank,
+            addRubric,
+            updateRubric,
+            deleteRubric,
+            addGradeScale,
+            updateGradeScale,
+            deleteGradeScale,
+            addFavoriteStandard,
+            removeFavoriteStandard,
+            isFavoriteStandard,
+            addCommentBankItem,
+            updateCommentBankItem,
+            deleteCommentBankItem,
+            recordCommentBankUsage,
+            addQuestionBankItem,
+            addSectionBankItem,
+            addQuestionBankItems,
+            updateQuestionBankItem,
+            deleteQuestionBankItem,
+            deleteQuestionBankItems,
+            bulkUpdateQuestionBankItems,
+            addExportTemplate,
+            deleteExportTemplate,
+            saveUserTemplate,
+            deleteUserTemplate,
+            syncRubricSnapshot,
+            fetchRubricVersions,
+            saveRubricVersion,
+            restoreRubricVersion,
+            addVocabularyItem,
+            updateVocabularyItem,
+            deleteVocabularyItem,
+            deleteVocabularyItems,
+        ]
+    );
+
+    const assessmentValue = useMemo(
+        () => ({
+            tests: state.tests,
+            studentTests: state.studentTests,
+            peerReviews: state.peerReviews,
+            selfAssessments: state.selfAssessments,
+            speakingSessions: state.speakingSessions,
+            analysisResults: state.analysisResults,
+            documentComments: state.documentComments,
+            gradingTasks: state.gradingTasks,
+            savePeerReview,
+            deletePeerReview,
+            saveSelfAssessment,
+            deleteSelfAssessment,
+            saveSpeakingSession,
+            deleteSpeakingSession,
             saveAnalysisResult,
             deleteAnalysisResult,
             addTest,
@@ -2693,16 +2853,135 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteTest,
             saveStudentTest,
             deleteStudentTest,
+            addDocumentComment,
+            resolveDocumentComment,
+            deleteDocumentComment,
+            addGradingTasks,
+            deleteGradingTask,
+            saveTestAssignment,
+            fetchMyTestAssignments,
+            fetchAssignedTestContent,
+            fetchTestAssignmentTeacherKeys,
+            setPlacementOverride,
+        }),
+        [
+            state.tests,
+            state.studentTests,
+            state.peerReviews,
+            state.selfAssessments,
+            state.speakingSessions,
+            state.analysisResults,
+            state.documentComments,
+            state.gradingTasks,
+            savePeerReview,
+            deletePeerReview,
+            saveSelfAssessment,
+            deleteSelfAssessment,
+            saveSpeakingSession,
+            deleteSpeakingSession,
+            saveAnalysisResult,
+            deleteAnalysisResult,
+            addTest,
+            updateTest,
+            deleteTest,
+            saveStudentTest,
+            deleteStudentTest,
+            addDocumentComment,
+            resolveDocumentComment,
+            deleteDocumentComment,
+            addGradingTasks,
+            deleteGradingTask,
+            saveTestAssignment,
+            fetchMyTestAssignments,
+            fetchAssignedTestContent,
+            fetchTestAssignmentTeacherKeys,
+            setPlacementOverride,
+        ]
+    );
+
+    const essaysValue = useMemo(
+        () => ({
+            essayAssignments: state.essayAssignments,
+            essaySubmissions: state.essaySubmissions,
+            essayTemplates: state.essayTemplates,
+            messages: state.messages,
+            newsFlashes: state.newsFlashes,
+            newsFlashReads: state.newsFlashReads,
+            notificationDismissals: state.notificationDismissals,
             addEssayAssignments,
             updateEssayGroup,
             deleteEssayGroup,
             addEssaySubmission,
             saveEssayTemplate,
             deleteEssayTemplate,
-            addGradingTasks,
-            deleteGradingTask,
+            saveEssayAssignment,
+            deleteEssayAssignment,
+            fetchEssaySubmissions,
+            fetchEssaySubmissionsForStudent,
+            fetchAllEssaySubmissions,
+            fetchMyEssayAssignments,
+            fetchEssayAssignmentByKey,
+            deleteEssaySubmission,
+            getEssaySignedUrl,
             sendMessage,
             markMessageReadByTeacher,
+            notifyStudentMessage,
+            addNewsFlash,
+            updateNewsFlash,
+            deleteNewsFlash,
+            markNewsFlashRead,
+            dismissNotification,
+            fetchMyMessages,
+            sendMessageAsStudent,
+            markMessagesReadByStudent,
+            fetchMyNewsFlashes,
+            markNewsFlashReadAsStudent,
+        }),
+        [
+            state.essayAssignments,
+            state.essaySubmissions,
+            state.essayTemplates,
+            state.messages,
+            state.newsFlashes,
+            state.newsFlashReads,
+            state.notificationDismissals,
+            addEssayAssignments,
+            updateEssayGroup,
+            deleteEssayGroup,
+            addEssaySubmission,
+            saveEssayTemplate,
+            deleteEssayTemplate,
+            saveEssayAssignment,
+            deleteEssayAssignment,
+            fetchEssaySubmissions,
+            fetchEssaySubmissionsForStudent,
+            fetchAllEssaySubmissions,
+            fetchMyEssayAssignments,
+            fetchEssayAssignmentByKey,
+            deleteEssaySubmission,
+            getEssaySignedUrl,
+            sendMessage,
+            markMessageReadByTeacher,
+            notifyStudentMessage,
+            addNewsFlash,
+            updateNewsFlash,
+            deleteNewsFlash,
+            markNewsFlashRead,
+            dismissNotification,
+            fetchMyMessages,
+            sendMessageAsStudent,
+            markMessagesReadByStudent,
+            fetchMyNewsFlashes,
+            markNewsFlashReadAsStudent,
+        ]
+    );
+
+    const flashcardsValue = useMemo(
+        () => ({
+            flashcardDecks: state.flashcardDecks,
+            flashcardAssignments: state.flashcardAssignments,
+            flashcardReviews: state.flashcardReviews,
+            standardMasteryTargets: state.standardMasteryTargets,
             addFlashcardDeck,
             updateFlashcardDeck,
             deleteFlashcardDeck,
@@ -2711,12 +2990,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteStandardMasteryTarget,
             addFlashcardAssignments,
             saveFlashcardReview,
-            addNewsFlash,
-            updateNewsFlash,
-            deleteNewsFlash,
-            markNewsFlashRead,
-            saveUserTemplate,
-            deleteUserTemplate,
+            fetchMyFlashcardAssignments,
+            fetchAssignedFlashcardDeck,
+            fetchMyFlashcardReview,
+            saveFlashcardReviewAsStudent,
+            fetchMyStudentFlashcardDecks,
+            saveFlashcardDeckAsStudent,
+            deleteFlashcardDeckAsStudent,
+        }),
+        [
+            state.flashcardDecks,
+            state.flashcardAssignments,
+            state.flashcardReviews,
+            state.standardMasteryTargets,
+            addFlashcardDeck,
+            updateFlashcardDeck,
+            deleteFlashcardDeck,
+            addStandardMasteryTarget,
+            updateStandardMasteryTarget,
+            deleteStandardMasteryTarget,
+            addFlashcardAssignments,
+            saveFlashcardReview,
+            fetchMyFlashcardAssignments,
+            fetchAssignedFlashcardDeck,
+            fetchMyFlashcardReview,
+            saveFlashcardReviewAsStudent,
+            fetchMyStudentFlashcardDecks,
+            saveFlashcardDeckAsStudent,
+            deleteFlashcardDeckAsStudent,
+        ]
+    );
+
+    const settingsValue = useMemo(
+        () => ({
+            settings: state.settings,
+            updateSettings,
+            getActiveGradeScale,
+        }),
+        [state.settings, updateSettings, getActiveGradeScale]
+    );
+
+    const platformValue = useMemo(
+        () => ({
+            dispatch,
+            showLanding: landingState === 'show',
+            isCheckingSession: landingState === 'checking',
+            showMigrationPrompt,
+            microsoftUser,
+            enterLocalMode,
+            connectForOAuth,
+            dismissMigrationPrompt,
+            signInWithGoogle,
+            signInWithMicrosoftPersonal,
+            signInWithAzureAD,
+            signOutFromDatabase,
+            loginMicrosoft,
+            logoutMicrosoft,
+            syncToOneDrive,
+            restoreFromOneDrive,
+            getCurrentDatabaseUserId,
             connectDatabase,
             disconnectDatabase,
             pushAllToDatabase,
@@ -2731,39 +3063,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             deleteSchool,
             fetchSchoolMembers,
             removeSchoolMember,
-            anonymizeStudent,
-            getCurrentDatabaseUserId,
-            saveEssayAssignment,
-            setStudentPassword,
-            notifyStudentMessage,
-            deleteEssayAssignment,
-            fetchEssaySubmissions,
-            fetchEssaySubmissionsForStudent,
-            fetchAllEssaySubmissions,
-            fetchMyEssayAssignments,
-            fetchEssayAssignmentByKey,
-            deleteEssaySubmission,
-            getEssaySignedUrl,
-            saveTestAssignment,
-            fetchMyTestAssignments,
-            fetchAssignedTestContent,
-            fetchTestAssignmentTeacherKeys,
-            setPlacementOverride,
-            fetchMyMessages,
-            sendMessageAsStudent,
-            markMessagesReadByStudent,
-            fetchMyFlashcardAssignments,
-            fetchAssignedFlashcardDeck,
-            fetchMyFlashcardReview,
-            saveFlashcardReviewAsStudent,
-            fetchMyStudentFlashcardDecks,
-            saveFlashcardDeckAsStudent,
-            deleteFlashcardDeckAsStudent,
-            fetchMyNewsFlashes,
-            markNewsFlashReadAsStudent,
             importBackup,
+        }),
+        [
+            dispatch,
             landingState,
             showMigrationPrompt,
+            microsoftUser,
             enterLocalMode,
             connectForOAuth,
             dismissMigrationPrompt,
@@ -2775,15 +3081,85 @@ export function AppProvider({ children }: { children: ReactNode }) {
             logoutMicrosoft,
             syncToOneDrive,
             restoreFromOneDrive,
-            microsoftUser,
+            getCurrentDatabaseUserId,
+            connectDatabase,
+            disconnectDatabase,
+            pushAllToDatabase,
+            pullFromDatabase,
+            fetchAllUsers,
+            updateUserRole,
+            updateMyProfile,
+            fetchSchools,
+            createSchool,
+            joinSchool,
+            updateSchool,
+            deleteSchool,
+            fetchSchoolMembers,
+            removeSchoolMember,
+            importBackup,
         ]
     );
 
-    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    return (
+        <RosterContext.Provider value={rosterValue}>
+            <AuthoringContext.Provider value={authoringValue}>
+                <AssessmentContext.Provider value={assessmentValue}>
+                    <EssaysContext.Provider value={essaysValue}>
+                        <FlashcardsContext.Provider value={flashcardsValue}>
+                            <SettingsContext.Provider value={settingsValue}>
+                                <PlatformContext.Provider value={platformValue}>{children}</PlatformContext.Provider>
+                            </SettingsContext.Provider>
+                        </FlashcardsContext.Provider>
+                    </EssaysContext.Provider>
+                </AssessmentContext.Provider>
+            </AuthoringContext.Provider>
+        </RosterContext.Provider>
+    );
 }
 
+export function useRoster(): RosterValue {
+    return useContextOrThrow(RosterContext, 'useRoster');
+}
+
+export function useAuthoring(): AuthoringValue {
+    return useContextOrThrow(AuthoringContext, 'useAuthoring');
+}
+
+export function useAssessment(): AssessmentValue {
+    return useContextOrThrow(AssessmentContext, 'useAssessment');
+}
+
+export function useEssays(): EssaysValue {
+    return useContextOrThrow(EssaysContext, 'useEssays');
+}
+
+export function useFlashcards(): FlashcardsValue {
+    return useContextOrThrow(FlashcardsContext, 'useFlashcards');
+}
+
+export function useSettings(): SettingsValue {
+    return useContextOrThrow(SettingsContext, 'useSettings');
+}
+
+export function usePlatform(): PlatformValue {
+    return useContextOrThrow(PlatformContext, 'usePlatform');
+}
+
+/**
+ * Merged compatibility view over every domain context. Re-renders whenever ANY domain
+ * changes — prefer the domain hooks (`useRoster`, `useAuthoring`, …) so a dispatch that
+ * touches one collection doesn't re-render consumers that don't read it.
+ */
 export function useApp(): AppContextValue {
-    const ctx = useContext(AppContext);
-    if (!ctx) throw new Error('useApp must be used within AppProvider');
-    return ctx;
+    const roster = useRoster();
+    const authoring = useAuthoring();
+    const assessment = useAssessment();
+    const essays = useEssays();
+    const flashcards = useFlashcards();
+    const settings = useSettings();
+    const platform = usePlatform();
+    return useMemo(
+        () => ({ ...settings, ...roster, ...authoring, ...assessment, ...essays, ...flashcards, ...platform }),
+        [roster, authoring, assessment, essays, flashcards, settings, platform]
+    );
 }
