@@ -10,7 +10,15 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useFlashcards,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import {
     calcGradeSummary,
     calcClassStats,
@@ -69,7 +77,10 @@ function exportChartAsPng(containerRef: React.RefObject<HTMLDivElement | null>, 
 }
 
 export default function StatisticsPage() {
-    const { students, classes, studentRubrics } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics, gradeScales } = useAuthoring();
     const { tests = [], studentTests = [] } = useAssessment();
     const { standardMasteryTargets } = useFlashcards();

@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useMemo, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import type { EventData } from 'react-joyride';
-import { usePlatform, useRoster, useSettings } from './context/AppContext';
+import { usePlatform, useSettings, useStudents } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
 import { getTutorialSteps } from './data/TutorialSteps';
 import { useTranslation } from 'react-i18next';
@@ -80,7 +80,8 @@ function RouteAnnouncer() {
 }
 
 export default function App() {
-    const { students } = useRoster();
+    const { students } = useStudents();
+
     const { settings, updateSettings } = useSettings();
     const { showLanding, isCheckingSession, signOutFromDatabase } = usePlatform();
 

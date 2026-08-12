@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useGrading, useSettings } from '../context/AppContext';
 import { useTranslation, Trans } from 'react-i18next';
 import type {
     Rubric,
@@ -101,7 +101,8 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { studentRubrics } = useRoster();
+    const { studentRubrics } = useGrading();
+
     const {
         rubrics,
         addRubric,

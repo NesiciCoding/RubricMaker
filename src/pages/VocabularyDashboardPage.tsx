@@ -7,13 +7,15 @@ import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistributionChart';
-import { useAssessment, useAuthoring, useRoster } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useStudents } from '../context/AppContext';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { getAllClassVocabProfiles, collectVocabExportRows } from '../utils/vocabProfileAggregator';
 import type { CefrLevel } from '../types';
 
 export default function VocabularyDashboardPage() {
-    const { classes, students } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
     const { analysisResults } = useAssessment();
 

@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, FileText, Radio, GripVertical } from 'lucide-react
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useAuthoring, useEssays, useRoster } from '../context/AppContext';
+import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
@@ -15,7 +15,9 @@ import CohortFilter from '../components/CohortFilter';
 export default function EssayListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
     const { essayAssignments, essaySubmissions, deleteEssayGroup, updateEssayGroup } = useEssays();
 

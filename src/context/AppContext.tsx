@@ -1340,7 +1340,40 @@ type PlatformValue = Pick<
     | 'importBackup'
 >;
 
-const RosterContext = createContext<RosterValue | null>(null);
+// The roster domain is itself split further so a grading dispatch (studentRubrics) only
+// re-renders grading consumers — not consumers that merely read students or classes.
+type StudentsValue = Pick<
+    AppContextValue,
+    | 'students'
+    | 'archivedStudents'
+    | 'addStudent'
+    | 'updateStudent'
+    | 'deleteStudent'
+    | 'restoreStudent'
+    | 'anonymizeStudent'
+    | 'setStudentPassword'
+>;
+
+type ClassesValue = Pick<AppContextValue, 'classes' | 'addClass' | 'updateClass' | 'deleteClass' | 'mergeClasses'>;
+
+type GradingValue = Pick<
+    AppContextValue,
+    | 'studentRubrics'
+    | 'deletedStudentRubrics'
+    | 'attachments'
+    | 'saveStudentRubric'
+    | 'saveRubricSelfAssessment'
+    | 'createStudentRubric'
+    | 'createGroupStudentRubrics'
+    | 'deleteStudentRubric'
+    | 'restoreStudentRubric'
+    | 'addAttachment'
+    | 'deleteAttachment'
+>;
+
+const StudentsContext = createContext<StudentsValue | null>(null);
+const ClassesContext = createContext<ClassesValue | null>(null);
+const GradingContext = createContext<GradingValue | null>(null);
 const AuthoringContext = createContext<AuthoringValue | null>(null);
 const AssessmentContext = createContext<AssessmentValue | null>(null);
 const EssaysContext = createContext<EssaysValue | null>(null);
@@ -2674,25 +2707,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // ─── Domain-split provider values ───────────────────────────────────────────
     // Each domain memoizes on its own state slices (and stable action identities), so a
-    // dispatch that touches e.g. studentRubrics only re-renders roster consumers — not
-    // consumers that merely read rubrics, settings, or actions.
-    const rosterValue = useMemo(
+    // dispatch that touches e.g. studentRubrics only re-renders that domain's consumers.
+    // The roster domain is split further: grading (studentRubrics/attachments) is isolated
+    // from the identity data (students, classes) so a grade save never re-renders pages
+    // that merely list students or classes.
+    const studentsValue = useMemo(
         () => ({
             students: activeStudents,
-            classes: state.classes,
-            studentRubrics: activeStudentRubrics,
-            attachments: state.attachments,
             archivedStudents,
-            deletedStudentRubrics,
             addStudent,
             updateStudent,
             deleteStudent,
             restoreStudent,
             anonymizeStudent,
+            setStudentPassword,
+        }),
+        [
+            activeStudents,
+            archivedStudents,
+            addStudent,
+            updateStudent,
+            deleteStudent,
+            restoreStudent,
+            anonymizeStudent,
+            setStudentPassword,
+        ]
+    );
+
+    const classesValue = useMemo(
+        () => ({
+            classes: state.classes,
             addClass,
             updateClass,
             deleteClass,
             mergeClasses,
+        }),
+        [state.classes, addClass, updateClass, deleteClass, mergeClasses]
+    );
+
+    const gradingValue = useMemo(
+        () => ({
+            studentRubrics: activeStudentRubrics,
+            deletedStudentRubrics,
+            attachments: state.attachments,
             saveStudentRubric: saveStudentRubricFn,
             saveRubricSelfAssessment,
             createStudentRubric,
@@ -2701,24 +2758,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             restoreStudentRubric,
             addAttachment,
             deleteAttachment,
-            setStudentPassword,
         }),
         [
-            activeStudents,
-            archivedStudents,
             activeStudentRubrics,
             deletedStudentRubrics,
-            state.classes,
             state.attachments,
-            addStudent,
-            updateStudent,
-            deleteStudent,
-            restoreStudent,
-            anonymizeStudent,
-            addClass,
-            updateClass,
-            deleteClass,
-            mergeClasses,
             saveStudentRubricFn,
             saveRubricSelfAssessment,
             createStudentRubric,
@@ -2727,7 +2771,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             restoreStudentRubric,
             addAttachment,
             deleteAttachment,
-            setStudentPassword,
         ]
     );
 
@@ -3087,24 +3130,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
 
     return (
-        <RosterContext.Provider value={rosterValue}>
-            <AuthoringContext.Provider value={authoringValue}>
-                <AssessmentContext.Provider value={assessmentValue}>
-                    <EssaysContext.Provider value={essaysValue}>
-                        <FlashcardsContext.Provider value={flashcardsValue}>
-                            <SettingsContext.Provider value={settingsValue}>
-                                <PlatformContext.Provider value={platformValue}>{children}</PlatformContext.Provider>
-                            </SettingsContext.Provider>
-                        </FlashcardsContext.Provider>
-                    </EssaysContext.Provider>
-                </AssessmentContext.Provider>
-            </AuthoringContext.Provider>
-        </RosterContext.Provider>
+        <StudentsContext.Provider value={studentsValue}>
+            <ClassesContext.Provider value={classesValue}>
+                <GradingContext.Provider value={gradingValue}>
+                    <AuthoringContext.Provider value={authoringValue}>
+                        <AssessmentContext.Provider value={assessmentValue}>
+                            <EssaysContext.Provider value={essaysValue}>
+                                <FlashcardsContext.Provider value={flashcardsValue}>
+                                    <SettingsContext.Provider value={settingsValue}>
+                                        <PlatformContext.Provider value={platformValue}>
+                                            {children}
+                                        </PlatformContext.Provider>
+                                    </SettingsContext.Provider>
+                                </FlashcardsContext.Provider>
+                            </EssaysContext.Provider>
+                        </AssessmentContext.Provider>
+                    </AuthoringContext.Provider>
+                </GradingContext.Provider>
+            </ClassesContext.Provider>
+        </StudentsContext.Provider>
     );
 }
 
+export function useStudents(): StudentsValue {
+    return useContextOrThrow(StudentsContext, 'useStudents');
+}
+
+export function useClasses(): ClassesValue {
+    return useContextOrThrow(ClassesContext, 'useClasses');
+}
+
+export function useGrading(): GradingValue {
+    return useContextOrThrow(GradingContext, 'useGrading');
+}
+
+/**
+ * Merged compatibility view over the students/classes/grading domains. Re-renders when any
+ * of them changes — prefer `useStudents` / `useClasses` / `useGrading` so a grade save
+ * doesn't re-render consumers that only list students or classes.
+ */
 export function useRoster(): RosterValue {
-    return useContextOrThrow(RosterContext, 'useRoster');
+    const students = useStudents();
+    const classes = useClasses();
+    const grading = useGrading();
+    return useMemo(() => ({ ...students, ...classes, ...grading }), [students, classes, grading]);
 }
 
 export function useAuthoring(): AuthoringValue {

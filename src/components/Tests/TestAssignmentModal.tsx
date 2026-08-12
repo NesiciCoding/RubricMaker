@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { X, Copy, Check, ClipboardCheck, Database, ExternalLink, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
-import { useAssessment, useRoster, useSettings } from '../../context/AppContext';
+import { useAssessment, useClasses, useSettings, useStudents } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment } from '../../utils/shareCode';
@@ -17,7 +17,9 @@ interface Props {
 
 export default function TestAssignmentModal({ test, onClose }: Props) {
     const { t } = useTranslation();
-    const { students, classes } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { saveTestAssignment } = useAssessment();
     const { settings } = useSettings();
 

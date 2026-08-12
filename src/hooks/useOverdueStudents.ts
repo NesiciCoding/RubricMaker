@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useRoster, useSettings } from '../context/AppContext';
+import { useGrading, useSettings, useStudents } from '../context/AppContext';
 
 export interface OverdueStudent {
     studentId: string;
@@ -12,7 +12,9 @@ export function useOverdueStudents(): {
     overdueStudents: OverdueStudent[];
     threshold: number;
 } {
-    const { students, studentRubrics } = useRoster();
+    const { students } = useStudents();
+    const { studentRubrics } = useGrading();
+
     const { settings } = useSettings();
 
     const threshold = settings.overdueReminderThreshold ?? 7;

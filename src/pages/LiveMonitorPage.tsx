@@ -5,7 +5,7 @@ import { Eye, EyeOff, AlertTriangle, Database, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAssessment, useEssays, useRoster } from '../context/AppContext';
+import { useAssessment, useEssays, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';
@@ -54,7 +54,8 @@ export interface LiveMonitorPageProps {
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
-    const { students } = useRoster();
+    const { students } = useStudents();
+
     const { tests, studentTests, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useAssessment();
 
     const { showToast } = useToast();

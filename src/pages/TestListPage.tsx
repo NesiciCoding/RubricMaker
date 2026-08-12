@@ -19,7 +19,7 @@ import {
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useSettings, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
@@ -40,7 +40,9 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { exportTemplates } = useAuthoring();
     const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest } = useAssessment();
     const { settings } = useSettings();

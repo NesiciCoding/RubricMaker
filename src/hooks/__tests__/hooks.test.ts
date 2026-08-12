@@ -19,13 +19,16 @@ const makeAppContextMock = () => ({
 });
 vi.mock('../../context/AppContext', () => ({
     useApp: () => makeAppContextMock(),
-    useRoster: () => ({ students: mockStudents, studentRubrics: mockStudentRubrics }),
-    useAuthoring: () => ({}),
-    useAssessment: () => ({}),
-    useEssays: () => ({}),
-    useFlashcards: () => ({}),
-    useSettings: () => ({ settings: { overdueReminderThreshold: mockThreshold } }),
-    usePlatform: () => ({}),
+    useRoster: () => makeAppContextMock(),
+    useStudents: () => makeAppContextMock(),
+    useClasses: () => makeAppContextMock(),
+    useGrading: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 // Mutable unsub functions so we can verify cleanup

@@ -30,18 +30,16 @@ const makeAppContextMock = () => ({
 });
 vi.mock('../context/AppContext', () => ({
     useApp: () => makeAppContextMock(),
-    useRoster: () => ({ students: mockStudents, studentRubrics: mockStudentRubrics }),
-    useAuthoring: () => ({ rubrics: mockRubrics }),
-    useAssessment: () => ({ peerReviews: mockPeerReviews }),
-    useEssays: () => ({
-        messages: mockMessages,
-        notificationDismissals: mockNotificationDismissals,
-        dismissNotification: mockDismissNotification,
-        markMessageReadByTeacher: mockMarkMessageReadByTeacher,
-    }),
-    useFlashcards: () => ({}),
-    useSettings: () => ({ settings: { overdueReminderThreshold: 7 } }),
-    usePlatform: () => ({}),
+    useRoster: () => makeAppContextMock(),
+    useStudents: () => makeAppContextMock(),
+    useClasses: () => makeAppContextMock(),
+    useGrading: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 const rubric: Rubric = {

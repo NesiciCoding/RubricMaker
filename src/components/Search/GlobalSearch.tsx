@@ -3,7 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
 import Modal from '../ui/Modal';
-import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster } from '../../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useEssays,
+    useFlashcards,
+    useStudents,
+} from '../../context/AppContext';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
 
 const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }>> = {
@@ -25,7 +32,9 @@ interface Props {
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
     const { tests } = useAssessment();
     const { essayAssignments, newsFlashes } = useEssays();

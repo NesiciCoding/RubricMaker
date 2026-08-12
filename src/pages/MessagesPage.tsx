@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mail, Plus, Send, X } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
-import { useEssays, useRoster, useSettings } from '../context/AppContext';
+import { useEssays, useSettings, useStudents } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import type { Message, MessageContextType } from '../types';
@@ -16,7 +16,8 @@ const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
 
 export default function MessagesPage() {
     const { t } = useTranslation();
-    const { students } = useRoster();
+    const { students } = useStudents();
+
     const { messages, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useEssays();
     const { settings } = useSettings();
 
