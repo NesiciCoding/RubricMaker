@@ -1419,7 +1419,14 @@ async function flushToLocalStorage(merged: StoreData, changedKeys?: Set<keyof St
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
+    // Latest-state ref (documented "latest ref" pattern, react.dev/useRef): written during
+    // render so it always holds the state of the current render. Actions below read it instead
+    // of closing over a slice (stable identity), and because render-phase writes happen before
+    // every effect, they observe the fresh snapshot even when invoked from a descendant's
+    // useLayoutEffect — an effect-based sync (layout or passive) would lag behind by a commit.
     const currentStateRef = useRef(state);
+    // eslint-disable-next-line react-hooks/refs -- intentional latest-ref write; idempotent per render
+    currentStateRef.current = state;
     // Backs the delta-sync diff effect further below (compares each render's
     // state to the last one to decide what to push to Supabase).
     const prevStateRef = useRef(state);
@@ -1450,11 +1457,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (isOffline()) showToast(t('toast.storage_full'), 'error');
         });
     }, [showToast, t]);
-
-    // Keep currentStateRef in sync so the reconnect handler always sees fresh state
-    useEffect(() => {
-        currentStateRef.current = state;
-    }, [state]);
 
     // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
     const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
@@ -1918,6 +1920,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
 
+    // These actions read state via currentStateRef instead of closing over a slice so their
+    // identity stays stable: a closure over e.g. `state.rubrics` would re-identify the action
+    // (and thus re-render every roster consumer) whenever rubrics change, even though rubrics
+    // belong to the authoring domain. Read-only helpers built from fresh state keep each domain
+    // value changing only when the slices it exposes change.
     const createStudentRubric = useCallback((rubricId: string, studentId: string): StudentRubric => {
         const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
         const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
@@ -1943,41 +1950,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
      * Grading any member through the normal single-student flow then duplicates its scores to the
      * rest of the group via the SAVE_STUDENT_RUBRIC reducer case — no separate group grading UI.
      */
-    const createGroupStudentRubrics = useCallback(
-        (rubricId: string, studentIds: string[]): StudentRubric[] => {
-            const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
-            const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
-                criterionId: c.id,
-                levelId: null,
-                comment: '',
-                checkedSubItems: [],
-            }));
-            const groupId = nanoid();
-            const srs = studentIds.map((studentId): StudentRubric => {
-                const existing = state.studentRubrics.find(
-                    (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
-                );
-                return {
-                    ...existing,
-                    id: existing?.id ?? nanoid(),
-                    rubricId,
-                    studentId,
-                    entries: entries.map((e) => ({ ...e })),
-                    overallComment: '',
-                    isPeerReview: false,
-                    groupId,
-                    gradedBy: undefined,
-                    gradedAt: undefined,
-                    submittedAt: undefined,
-                    notHandedIn: undefined,
-                    round: undefined,
-                };
-            });
-            srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
-            return srs;
-        },
-        [state.rubrics, state.studentRubrics]
-    );
+    const createGroupStudentRubrics = useCallback((rubricId: string, studentIds: string[]): StudentRubric[] => {
+        const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
+        const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
+            criterionId: c.id,
+            levelId: null,
+            comment: '',
+            checkedSubItems: [],
+        }));
+        const groupId = nanoid();
+        const srs = studentIds.map((studentId): StudentRubric => {
+            const existing = currentStateRef.current.studentRubrics.find(
+                (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
+            );
+            return {
+                ...existing,
+                id: existing?.id ?? nanoid(),
+                rubricId,
+                studentId,
+                entries: entries.map((e) => ({ ...e })),
+                overallComment: '',
+                isPeerReview: false,
+                groupId,
+                gradedBy: undefined,
+                gradedAt: undefined,
+                submittedAt: undefined,
+                notHandedIn: undefined,
+                round: undefined,
+            };
+        });
+        srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
+        return srs;
+    }, []);
 
     const deleteStudentRubric = useCallback((id: string, scope: 'student' | 'group') => {
         logAuditEvent('grade', 'student_rubric_delete', 'student_rubric', id, { scope });
@@ -2011,6 +2015,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         []
     );
 
+    // Read via currentStateRef for the same reason as createStudentRubric: gradeScales belongs to
+    // the authoring domain, so closing over it would re-render every settings consumer on any
+    // grade-scale change.
     const getActiveGradeScale = useCallback((): GradeScale => {
         const { gradeScales, settings } = currentStateRef.current;
         return gradeScales.find((gs) => gs.id === settings.defaultGradeScaleId) ?? gradeScales[0];

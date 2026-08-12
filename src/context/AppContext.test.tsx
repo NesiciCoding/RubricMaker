@@ -1,11 +1,12 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useLayoutEffect, useRef } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../test-utils/renderWithProviders';
-import { AppProvider, useApp, useRoster, useSettings } from './AppContext';
+import { AppProvider, useApp, useRoster, useSettings, useAuthoring } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
+import { DEFAULT_FORMAT } from '../types';
 
 // vi.hoisted so this spy can be created before vi.mock('../hooks/useToast', ...) runs
 // (vi.mock factories are hoisted above regular imports/consts) and still be referenced
@@ -687,5 +688,166 @@ describe('AppContext', () => {
 
         expect(rosterRenders.length).toBeGreaterThan(1); // roster consumer re-rendered
         expect(settingsRenders.length).toBe(1); // settings consumer did NOT
+    });
+
+    it('roster consumers do not re-render when authoring data (rubrics) changes', () => {
+        // Cross-domain action stability: createStudentRubric / createGroupStudentRubrics read
+        // rubrics via currentStateRef, so their identity (and thus rosterValue) must not change
+        // when the authoring rubrics collection changes.
+        const rosterRenders: number[] = [];
+        let triggerAddRubric: (() => void) | null = null;
+
+        function RosterProbe() {
+            const { students } = useRoster();
+            rosterRenders.push(students.length);
+            return <div data-testid="roster-probe">{students.length}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addRubric } = useAuthoring();
+            triggerAddRubric = () =>
+                addRubric({
+                    name: 'New Rubric',
+                    subject: '',
+                    description: '',
+                    criteria: [],
+                    gradeScaleId: 'default-scale',
+                    format: DEFAULT_FORMAT,
+                    attachmentIds: [],
+                    totalMaxPoints: 100,
+                    scoringMode: 'weighted-percentage',
+                });
+            return null;
+        }
+
+        renderWithRouter(
+            <>
+                <RosterProbe />
+                <TriggerProbe />
+            </>,
+            { withAppProvider: true }
+        );
+
+        expect(rosterRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddRubric!();
+        });
+
+        expect(rosterRenders.length).toBe(1); // roster consumer did NOT re-render
+    });
+
+    it('settings consumers do not re-render when authoring data (grade scales) changes', () => {
+        // getActiveGradeScale reads gradeScales via currentStateRef, so its identity (and thus
+        // settingsValue) must not change when the authoring grade-scales collection changes.
+        const settingsRenders: string[] = [];
+        let triggerAddGradeScale: (() => void) | null = null;
+
+        function SettingsProbe() {
+            const { settings } = useSettings();
+            settingsRenders.push(settings.language);
+            return <div data-testid="settings-probe">{settings.language}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addGradeScale } = useAuthoring();
+            triggerAddGradeScale = () => addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
+            return null;
+        }
+
+        renderWithRouter(
+            <>
+                <SettingsProbe />
+                <TriggerProbe />
+            </>,
+            { withAppProvider: true }
+        );
+
+        expect(settingsRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddGradeScale!();
+        });
+
+        expect(settingsRenders.length).toBe(1); // settings consumer did NOT re-render
+    });
+
+    it('actions invoked from a layout effect see the latest rubric state', () => {
+        // Regression for currentStateRef sync timing: the provider must refresh the ref in the
+        // layout phase (parent layout effects fire before descendants'), so an action called from
+        // a descendant's useLayoutEffect — e.g. pre-filling a just-created rubric — reads the
+        // fresh snapshot instead of the previous render's.
+        const entryCounts: number[] = [];
+        const rubricIdRef: { current: string } = { current: '' };
+
+        function LayoutEffectProbe() {
+            const { createStudentRubric, createGroupStudentRubrics } = useRoster();
+            const { addRubric } = useAuthoring();
+            const runRef = useRef(0);
+
+            useLayoutEffect(() => {
+                runRef.current += 1;
+                if (runRef.current === 1) {
+                    const rubric = addRubric({
+                        name: 'Layout Rubric',
+                        subject: '',
+                        description: '',
+                        gradeScaleId: 'default-scale',
+                        format: DEFAULT_FORMAT,
+                        attachmentIds: [],
+                        totalMaxPoints: 30,
+                        scoringMode: 'weighted-percentage',
+                        criteria: [
+                            { id: 'c1', title: 'C1', description: '', weight: 34, levels: [] },
+                            { id: 'c2', title: 'C2', description: '', weight: 33, levels: [] },
+                            { id: 'c3', title: 'C3', description: '', weight: 33, levels: [] },
+                        ],
+                    });
+                    rubricIdRef.current = rubric.id;
+                } else if (runRef.current === 2) {
+                    const single = createStudentRubric(rubricIdRef.current, 'student-1');
+                    entryCounts.push(single.entries.length);
+                    const group = createGroupStudentRubrics(rubricIdRef.current, ['student-1', 'student-2']);
+                    entryCounts.push(group[0].entries.length);
+                }
+            });
+
+            return <div data-testid="layout-rubric-probe" />;
+        }
+
+        renderWithRouter(<LayoutEffectProbe />, { withAppProvider: true });
+        act(() => {}); // flush the re-render scheduled by the first layout effect
+
+        // Each created StudentRubric must mirror the 3 criteria of the rubric added in run 1.
+        expect(entryCounts).toEqual([3, 3]);
+    });
+
+    it('getActiveGradeScale invoked from a layout effect sees the latest grade-scale state', () => {
+        const observedNames: string[] = [];
+
+        function LayoutEffectScaleProbe() {
+            const { getActiveGradeScale, updateSettings } = useSettings();
+            const { addGradeScale } = useAuthoring();
+            const runRef = useRef(0);
+
+            useLayoutEffect(() => {
+                runRef.current += 1;
+                if (runRef.current === 1) {
+                    const scale = addGradeScale({ name: 'Layout Scale', type: 'points', ranges: [] });
+                    updateSettings({ defaultGradeScaleId: scale.id });
+                } else if (runRef.current === 2) {
+                    observedNames.push(getActiveGradeScale().name);
+                }
+            });
+
+            return <div data-testid="layout-scale-probe" />;
+        }
+
+        renderWithRouter(<LayoutEffectScaleProbe />, { withAppProvider: true });
+        act(() => {}); // flush the re-render scheduled by the first layout effect
+
+        // With the fix the ref is refreshed in the layout phase, so the action sees the scale
+        // added in run 1; with a passive-effect sync it would still resolve the old default.
+        expect(observedNames).toEqual(['Layout Scale']);
     });
 });
