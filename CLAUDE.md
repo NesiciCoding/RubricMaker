@@ -95,7 +95,19 @@ Conflict resolution for concurrent edits from different devices lives in `src/ut
 
 ### State management
 
-All app state lives in `AppContext` (`src/context/AppContext.tsx`). Pages and components consume it via `useContext(AppContext)`. Do not introduce Redux, Zustand, or any other state library — the existing pattern is intentional.
+All app state lives in `AppContext` (`src/context/AppContext.tsx`). Do not introduce Redux, Zustand, or any other state library — the existing pattern is intentional.
+
+`AppContext` splits its value into seven domain contexts so a dispatch that touches one collection only re-renders consumers that read that domain:
+
+- `useRoster()` — students, classes, student rubrics, attachments
+- `useAuthoring()` — rubrics, grade scales, comment bank, question bank, templates
+- `useAssessment()` — tests, student tests, peer reviews, self-assessments, speaking sessions, analysis results
+- `useEssays()` — essay assignments/submissions/templates, messages, news flashes
+- `useFlashcards()` — flashcard decks/assignments/reviews, standard mastery targets
+- `useSettings()` — settings, `updateSettings`, `getActiveGradeScale`
+- `usePlatform()` — auth, landing/session, database connection, schools, backup
+
+**Consume the domain hook for the data you read.** The old `useApp()` merged view — which spread every domain into one value and re-rendered on any change — is deleted, and a surface test (`src/context/AppContext.surface.test.tsx`) pins that it must not come back. Components that need several domains call each hook, e.g. `const { students } = useRoster(); const { rubrics } = useAuthoring();`. Pages and tests that need slices from many domains should subscribe via `useStoreSelector` (`src/context/useStore`) so they re-render only when one of the selected slices changes; tests composing domain hooks inside a single `renderHook` are capped at three by the `max-domains-in-render-hook` lint rule.
 
 Secondary contexts: `ToastContext` (notifications), `MobileMenuContext` (nav state).
 

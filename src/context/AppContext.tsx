@@ -245,7 +245,9 @@ function recordAutoVersion(rubric: Rubric): void {
     }
 }
 
-function reducer(state: StoreData, action: Action): StoreData {
+// Exported so the reducer can be unit-tested directly (the provider wraps it in
+// loggingReducer for the app itself).
+export function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
         case 'SET_ALL':
             return action.payload;
@@ -1838,15 +1840,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return rubric;
     }, []);
 
-    const updateRubric = useCallback(
-        (r: Rubric) => {
-            const existing = state.rubrics.find((x) => x.id === r.id);
-            if (existing) recordAutoVersion(existing);
-            dispatch({ type: 'UPDATE_RUBRIC', payload: { ...r, updatedAt: new Date().toISOString() } });
-            logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
-        },
-        [state.rubrics]
-    );
+    const updateRubric = useCallback((r: Rubric) => {
+        const existing = state.rubrics.find((x) => x.id === r.id);
+        if (existing) recordAutoVersion(existing);
+        dispatch({ type: 'UPDATE_RUBRIC', payload: { ...r, updatedAt: new Date().toISOString() } });
+        logAuditEvent('grade', 'rubric_edit', 'rubric', r.id);
+    }, []);
 
     const deleteRubric = useCallback((id: string) => dispatch({ type: 'DELETE_RUBRIC', id }), []);
 
@@ -1924,69 +1923,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // (and thus re-render every roster consumer) whenever rubrics change, even though rubrics
     // belong to the authoring domain. Read-only helpers built from fresh state keep each domain
     // value changing only when the slices it exposes change.
-    const createStudentRubric = useCallback(
-        (rubricId: string, studentId: string): StudentRubric => {
-            const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
-            const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
-                criterionId: c.id,
-                levelId: null,
-                comment: '',
-                checkedSubItems: [],
-            }));
-            const sr: StudentRubric = {
-                id: nanoid(),
-                rubricId,
-                studentId,
-                entries,
-                overallComment: '',
-                isPeerReview: false,
-            };
-            dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
-            return sr;
-        },
-        []
-    );
+    const createStudentRubric = useCallback((rubricId: string, studentId: string): StudentRubric => {
+        const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
+        const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
+            criterionId: c.id,
+            levelId: null,
+            comment: '',
+            checkedSubItems: [],
+        }));
+        const sr: StudentRubric = {
+            id: nanoid(),
+            rubricId,
+            studentId,
+            entries,
+            overallComment: '',
+            isPeerReview: false,
+        };
+        dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr });
+        return sr;
+    }, []);
 
     /**
      * Phase 1 group grading: creates one StudentRubric per student, all sharing a fresh groupId.
      * Grading any member through the normal single-student flow then duplicates its scores to the
      * rest of the group via the SAVE_STUDENT_RUBRIC reducer case — no separate group grading UI.
      */
-    const createGroupStudentRubrics = useCallback(
-        (rubricId: string, studentIds: string[]): StudentRubric[] => {
-            const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
-            const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
-                criterionId: c.id,
-                levelId: null,
-                comment: '',
-                checkedSubItems: [],
-            }));
-            const groupId = nanoid();
-            const srs = studentIds.map((studentId): StudentRubric => {
-                const existing = currentStateRef.current.studentRubrics.find(
-                    (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
-                );
-                return {
-                    ...existing,
-                    id: existing?.id ?? nanoid(),
-                    rubricId,
-                    studentId,
-                    entries: entries.map((e) => ({ ...e })),
-                    overallComment: '',
-                    isPeerReview: false,
-                    groupId,
-                    gradedBy: undefined,
-                    gradedAt: undefined,
-                    submittedAt: undefined,
-                    notHandedIn: undefined,
-                    round: undefined,
-                };
-            });
-            srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
-            return srs;
-        },
-        []
-    );
+    const createGroupStudentRubrics = useCallback((rubricId: string, studentIds: string[]): StudentRubric[] => {
+        const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
+        const entries: ScoreEntry[] = (rubric?.criteria ?? []).map((c) => ({
+            criterionId: c.id,
+            levelId: null,
+            comment: '',
+            checkedSubItems: [],
+        }));
+        const groupId = nanoid();
+        const srs = studentIds.map((studentId): StudentRubric => {
+            const existing = currentStateRef.current.studentRubrics.find(
+                (sr) => sr.rubricId === rubricId && sr.studentId === studentId && !sr.isPeerReview
+            );
+            return {
+                ...existing,
+                id: existing?.id ?? nanoid(),
+                rubricId,
+                studentId,
+                entries: entries.map((e) => ({ ...e })),
+                overallComment: '',
+                isPeerReview: false,
+                groupId,
+                gradedBy: undefined,
+                gradedAt: undefined,
+                submittedAt: undefined,
+                notHandedIn: undefined,
+                round: undefined,
+            };
+        });
+        srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
+        return srs;
+    }, []);
 
     const deleteStudentRubric = useCallback((id: string, scope: 'student' | 'group') => {
         logAuditEvent('grade', 'student_rubric_delete', 'student_rubric', id, { scope });
@@ -2188,30 +2181,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return loadRubricVersions(rubricId);
     }, []);
 
-    const saveRubricVersion = useCallback(
-        async (rubricId: string, label?: string) => {
-            const rubric = state.rubrics.find((r) => r.id === rubricId);
-            if (!rubric) return;
-            const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label, snapshot: rubric };
-            const { evictedIds } = upsertRubricVersion(rubricId, version);
-            const db = getDb();
-            if (db?.storageSync.isConnected()) {
-                await db.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
-                for (const evictedId of evictedIds)
-                    void db.storageSync.pushOne('rubricVersion', 'delete', null, evictedId);
-            }
-        },
-        [state.rubrics]
-    );
+    const saveRubricVersion = useCallback(async (rubricId: string, label?: string) => {
+        const rubric = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
+        if (!rubric) return;
+        const version: RubricVersion = { id: nanoid(), savedAt: new Date().toISOString(), label, snapshot: rubric };
+        const { evictedIds } = upsertRubricVersion(rubricId, version);
+        const db = getDb();
+        if (db?.storageSync.isConnected()) {
+            await db.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
+            for (const evictedId of evictedIds) void db.storageSync.pushOne('rubricVersion', 'delete', null, evictedId);
+        }
+    }, []);
 
-    const restoreRubricVersion = useCallback(
-        (rubricId: string, snapshot: Rubric) => {
-            const existing = state.rubrics.find((r) => r.id === rubricId);
-            if (existing) recordAutoVersion(existing);
-            dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, snapshot });
-        },
-        [state.rubrics]
-    );
+    const restoreRubricVersion = useCallback((rubricId: string, snapshot: Rubric) => {
+        const existing = currentStateRef.current.rubrics.find((r) => r.id === rubricId);
+        if (existing) recordAutoVersion(existing);
+        dispatch({ type: 'RESTORE_RUBRIC_VERSION', rubricId, snapshot });
+    }, []);
 
     const addVocabularyItem = useCallback((rubricId: string, item: Omit<VocabularyItem, 'id'>): VocabularyItem => {
         const v: VocabularyItem = { ...item, id: nanoid() };
@@ -2386,7 +2372,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                 if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
                 if (fresh) {
-                    const base = storageSync.didWipeLocalData() ? loadStore() : state;
+                    const base = storageSync.didWipeLocalData() ? loadStore() : currentStateRef.current;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
                     // Not seeded: this is the teacher's own owner-scoped connect flow, so a
                     // reflexive re-push of pulled data can't fail RLS the way it can for a
@@ -2402,7 +2388,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return ok;
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [state]
+        []
     );
 
     const disconnectDatabase = useCallback(() => {
@@ -2411,20 +2397,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const pushAllToDatabase = useCallback(async () => {
-        return (await loadDb()).storageSync.pushAll(state);
-    }, [state]);
+        return (await loadDb()).storageSync.pushAll(currentStateRef.current);
+    }, []);
 
     const pullFromDatabase = useCallback(async () => {
         const { storageSync } = await loadDb();
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
         if (fresh) {
-            const merged = mergeStoreData(state, fresh, loadPendingQueue());
+            const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
             // Not seeded: same owner-scoped reasoning as connectDatabase above.
             applyHydrated(merged, false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state]);
+    }, []);
 
     const fetchAllUsers = useCallback(async (): Promise<DbUser[]> => {
         return (await loadDb()).storageSync.fetchAllProfiles();
@@ -2563,14 +2548,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return (await loadDb()).storageSync.initAuth(config);
     }, []);
 
-    const dismissMigrationPrompt = useCallback(
-        async (upload: boolean) => {
-            setShowMigrationPrompt(false);
-            localStorage.setItem(MIGRATION_DONE_KEY, 'true');
-            if (upload) await (await loadDb()).storageSync.pushAll(state);
-        },
-        [state]
-    );
+    const dismissMigrationPrompt = useCallback(async (upload: boolean) => {
+        setShowMigrationPrompt(false);
+        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+        if (upload) await (await loadDb()).storageSync.pushAll(currentStateRef.current);
+    }, []);
 
     const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
         return (await loadDb()).storageSync.signInWithGoogle();

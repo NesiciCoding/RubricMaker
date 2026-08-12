@@ -3,7 +3,8 @@ import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, GradeScale, Rubric, Student } from '../../types';
+import type { AppSettings, Class, GradeScale, Rubric, Student, StudentRubric } from '../../types';
+import type { CefrStudentOverview } from '../../utils/cefrStudentAggregator';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -29,6 +30,37 @@ const mockRubric: Rubric = {
 
 const mockClass: Class = { id: 'c1', name: 'Class A' };
 const mockStudent: Student = { id: 's1', name: 'Alice', classId: 'c1' };
+const mockStudent2: Student = { id: 's2', name: 'Bob', classId: 'c1' };
+
+// Graded rubric records — reused by reference across renders so the cache can prove it skips
+// students whose records are untouched.
+const srAlice: StudentRubric = {
+    id: 'sr-a1',
+    rubricId: 'r1',
+    studentId: 's1',
+    entries: [],
+    overallComment: '',
+    isPeerReview: false,
+    gradedAt: '2024-01-01T00:00:00Z',
+};
+const srBob: StudentRubric = {
+    id: 'sr-b1',
+    rubricId: 'r1',
+    studentId: 's2',
+    entries: [],
+    overallComment: '',
+    isPeerReview: false,
+    gradedAt: '2024-02-01T00:00:00Z',
+};
+const srBob2: StudentRubric = {
+    id: 'sr-b2',
+    rubricId: 'r1',
+    studentId: 's2',
+    entries: [],
+    overallComment: '',
+    isPeerReview: false,
+    gradedAt: '2024-03-01T00:00:00Z',
+};
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -51,7 +83,7 @@ const mockNavigate = vi.fn();
 // Stable refs to avoid infinite render loops via useMemo/useEffect deps.
 const mockClassesArr = [mockClass];
 const mockStudentsArr = [mockStudent];
-const mockStudentRubricsArr: never[] = [];
+const mockStudentRubricsArr: StudentRubric[] = [];
 const mockRubricsArr = [mockRubric];
 const mockGradeScalesArr = [mockGradeScale];
 const mockSelfAssessmentsArr: never[] = [];
@@ -90,6 +122,22 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+vi.mock('../../utils/cefrStudentAggregator', () => ({
+    getCefrStudentOverview: vi.fn(
+        () =>
+            ({
+                cells: [],
+                cellMap: new Map(),
+                standardSets: [],
+                skillsWithRubricData: 0,
+                overallConfidenceRate: 0,
+                standardsCovered: 0,
+                practiceCefrProgress: [],
+            }) satisfies CefrStudentOverview
+    ),
+    highestLevelForSkill: vi.fn(() => null),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -253,5 +301,42 @@ describe('StudentsPage', () => {
         fireEvent.click(screen.getByText('studentsPage.all_cohorts'));
         expect(screen.getByText('studentsPage.table_class')).toBeInTheDocument();
         expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: undefined });
+    });
+
+    it("recomputes only the affected student when one student's data changes", async () => {
+        const { getCefrStudentOverview } = await import('../../utils/cefrStudentAggregator');
+        const overviewSpy = vi.mocked(getCefrStudentOverview);
+        overviewSpy.mockClear();
+
+        try {
+            mockAppValue.students = [mockStudent, mockStudent2];
+            mockAppValue.studentRubrics = [srAlice, srBob];
+            renderPage();
+
+            const studentIds = () => overviewSpy.mock.calls.map((c) => c[0]);
+            expect(studentIds().sort()).toEqual(['s1', 's2']);
+
+            // Search churn (no data change) must NOT re-run the per-student aggregation.
+            fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
+                target: { value: 'x' },
+            });
+            expect(studentIds().sort()).toEqual(['s1', 's2']);
+
+            // Bob gets a second grade; Alice's records keep their object identity.
+            const callsBeforeUpdate = overviewSpy.mock.calls.length;
+            mockAppValue.studentRubrics = [srAlice, srBob, srBob2];
+            fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
+                target: { value: 'xy' },
+            });
+
+            // Exactly one new aggregation run — for Bob only.
+            const newCalls = overviewSpy.mock.calls.slice(callsBeforeUpdate).map((c) => c[0]);
+            expect(newCalls).toEqual(['s2']);
+        } finally {
+            // Restore the default fixtures even when an assertion fails, so later tests
+            // never inherit Bob's records or the extra rubric rows.
+            mockAppValue.students = mockStudentsArr;
+            mockAppValue.studentRubrics = mockStudentRubricsArr;
+        }
     });
 });
