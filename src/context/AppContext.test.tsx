@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
-import { renderHook, act, render } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderWithRouter } from '../test-utils/renderWithProviders';
 import { AppProvider, useApp, useRoster, useSettings } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
@@ -666,12 +667,13 @@ describe('AppContext', () => {
             return null;
         }
 
-        render(
-            <AppProvider>
+        renderWithRouter(
+            <>
                 <RosterProbe />
                 <SettingsProbe />
                 <TriggerProbe />
-            </AppProvider>
+            </>,
+            { withAppProvider: true }
         );
 
         // Baseline: both probes rendered once; the settings probe never subscribes to

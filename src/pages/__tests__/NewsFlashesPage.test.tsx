@@ -57,6 +57,13 @@ const mockAppValue: Record<string, unknown> = {
 
 vi.mock('../../context/AppContext', () => ({
     useApp: () => mockAppValue,
+    useRoster: () => mockAppValue,
+    useAuthoring: () => mockAppValue,
+    useAssessment: () => mockAppValue,
+    useEssays: () => mockAppValue,
+    useFlashcards: () => mockAppValue,
+    useSettings: () => mockAppValue,
+    usePlatform: () => mockAppValue,
 }));
 
 vi.mock('../../components/Editor/TiptapEditor', () => ({

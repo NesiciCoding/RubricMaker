@@ -12,26 +12,34 @@ vi.mock('react-router-dom', async () => {
 
 const mockAddDeck = vi.fn();
 const mockDeleteDeck = vi.fn();
-
 let mockDecks: FlashcardDeck[] = [];
 let mockAssignments: FlashcardAssignment[] = [];
 
+const makeAppValue = () => ({
+    flashcardDecks: mockDecks,
+    flashcardAssignments: mockAssignments,
+    addFlashcardDeck: mockAddDeck,
+    deleteFlashcardDeck: mockDeleteDeck,
+    students: [],
+    studentRubrics: [],
+    settings: {
+        defaultGradeScaleId: 'gs1',
+        theme: 'dark',
+        language: 'en',
+        accentColor: '#3b82f6',
+    },
+    updateSettings: vi.fn(),
+});
+
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        flashcardDecks: mockDecks,
-        flashcardAssignments: mockAssignments,
-        addFlashcardDeck: mockAddDeck,
-        deleteFlashcardDeck: mockDeleteDeck,
-        students: [],
-        studentRubrics: [],
-        settings: {
-            defaultGradeScaleId: 'gs1',
-            theme: 'dark',
-            language: 'en',
-            accentColor: '#3b82f6',
-        },
-        updateSettings: vi.fn(),
-    }),
+    useApp: () => makeAppValue(),
+    useRoster: () => makeAppValue(),
+    useAuthoring: () => makeAppValue(),
+    useAssessment: () => makeAppValue(),
+    useEssays: () => makeAppValue(),
+    useFlashcards: () => makeAppValue(),
+    useSettings: () => makeAppValue(),
+    usePlatform: () => makeAppValue(),
 }));
 
 vi.mock('react-i18next', () => ({
