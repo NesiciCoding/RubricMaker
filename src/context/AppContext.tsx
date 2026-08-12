@@ -507,7 +507,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                                 <SettingsProvider ctx={actionsCtx} state={state}>
                                     <PlatformProvider
                                         ctx={platformCtx}
-                                        state={state}
                                         landingState={landingState}
                                         showMigrationPrompt={showMigrationPrompt}
                                     >

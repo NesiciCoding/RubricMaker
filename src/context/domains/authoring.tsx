@@ -210,7 +210,11 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         const db = getDb();
         if (db?.storageSync.isConnected()) {
             await db.storageSync.pushOne('rubricVersion', 'upsert', { ...version, rubricId }, version.id);
-            for (const evictedId of evictedIds) void db.storageSync.pushOne('rubricVersion', 'delete', null, evictedId);
+            for (const evictedId of evictedIds) {
+                db.storageSync
+                    .pushOne('rubricVersion', 'delete', null, evictedId)
+                    .catch((e) => console.error('[sync] failed to push rubricVersion eviction', e));
+            }
         }
     };
     const restoreRubricVersion = (rubricId: string, snapshot: Rubric) => {
