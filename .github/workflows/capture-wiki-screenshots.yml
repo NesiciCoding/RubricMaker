@@ -9,6 +9,11 @@
 # refresh is one commit whose message names the capture date, and the diff
 # (images + Screenshots.md statuses + _capture-report.md) is fully inspectable.
 #
+# An embed guard runs after capture: every captured (✅) screenshot must be
+# embedded in at least one wiki page, or the job fails and the refresh is not
+# published — this is what keeps a freshly captured image from silently
+# disappearing into images/ without ever being shown in the documentation.
+#
 # Triggers:
 #   - workflow_dispatch  — manual (optionally restricted to specific filenames).
 #   - schedule           — nightly sweep that picks up new screenshot placeholders
@@ -170,6 +175,15 @@ jobs:
           fi
           # shellcheck disable=SC2086
           node wiki/scripts/capture-wiki-screenshots.mjs $ONLY_FLAG
+
+      - name: Check screenshot embeds
+        # Every captured (✅) screenshot must be embedded in at least one wiki
+        # page, or the run fails and nothing is published — otherwise images
+        # could sit in images/ without ever being shown in the documentation.
+        # Runs on the wiki checkout, which has the freshly captured images and
+        # the updated Screenshots.md statuses.
+        run: |
+          node wiki/scripts/capture-wiki-screenshots.mjs --check-embeds
 
       - name: Show capture summary
         run: |
