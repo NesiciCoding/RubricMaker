@@ -1,4 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import quarantine from './e2e/quarantine.json' with { type: 'json' };
+
+// Flaky-spec quarantine: specs listed in e2e/quarantine.json (as
+// "<file>.spec.ts" with a reason) are excluded from every gating project so
+// they can't block the pipeline, and are run by the weekly Quarantine Check
+// workflow (project below) which unquarantines them once they're stable.
+// Add a spec here with a reason instead of deleting it.
+const quarantinePatterns = quarantine.map((q) => `**/${q.spec}`);
 
 export default defineConfig({
     testDir: './e2e/specs',
@@ -37,6 +45,7 @@ export default defineConfig({
                 '**/35-admin-dashboard.spec.ts',
                 '**/36-marketplace.spec.ts',
                 '**/37-live-monitor.spec.ts',
+                ...quarantinePatterns,
             ],
         },
         {
@@ -55,6 +64,7 @@ export default defineConfig({
                 '**/35-admin-dashboard.spec.ts',
                 '**/36-marketplace.spec.ts',
                 '**/37-live-monitor.spec.ts',
+                ...quarantinePatterns,
             ],
         },
         {
@@ -73,6 +83,7 @@ export default defineConfig({
                 '**/35-admin-dashboard.spec.ts',
                 '**/36-marketplace.spec.ts',
                 '**/37-live-monitor.spec.ts',
+                ...quarantinePatterns,
             ],
         },
         // Speaking session recording — needs a fake camera/mic so MediaRecorder
@@ -86,6 +97,7 @@ export default defineConfig({
                 },
             },
             testMatch: ['**/34-speaking-session.spec.ts'],
+            testIgnore: [...quarantinePatterns],
         },
         {
             name: 'mobile-chrome',
@@ -96,6 +108,7 @@ export default defineConfig({
                 '**/04b-grading-mobile.spec.ts',
                 '**/12-navigation.spec.ts',
             ],
+            testIgnore: [...quarantinePatterns],
         },
         // Supabase integration tests — require `npm run db:start` before running.
         // Run with: npm run e2e:supabase
@@ -114,6 +127,24 @@ export default defineConfig({
                 '**/36-marketplace.spec.ts',
                 '**/37-live-monitor.spec.ts',
             ],
+            testIgnore: [...quarantinePatterns],
+        },
+        // Runs ONLY the quarantined specs (Desktop Chrome + fake media, since
+        // recording specs are the usual flaky suspects). Not part of the gating
+        // run — the weekly Quarantine Check workflow uses this project to
+        // verify quarantined specs are stable again before unquarantining them.
+        // With an empty e2e/quarantine.json this project matches nothing and
+        // `--project=quarantine` exits 1 unless `--pass-with-no-tests` is
+        // passed — the weekly workflow guards the empty list explicitly.
+        {
+            name: 'quarantine',
+            use: {
+                ...devices['Desktop Chrome'],
+                launchOptions: {
+                    args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+                },
+            },
+            testMatch: quarantinePatterns,
         },
     ],
     webServer: {

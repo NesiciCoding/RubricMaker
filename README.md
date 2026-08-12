@@ -130,6 +130,7 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) — what the provisioned dashboards show and how to customize them
 - [Magister integration](docs/MAGISTER_INTEGRATION.md) — importing students from Magister SIS
 - [Self-hosting operations](docs/SELF_HOSTING_OPS.md) — backup/restore, upgrades, resource sizing, pg_cron setup, troubleshooting
+- [Branch protection & production environment](docs/BRANCH_PROTECTION.md) — recommended required CI checks for `main` and required reviewers for production deploys
 
 ---
 
@@ -154,6 +155,7 @@ To run the project locally:
 **Other useful commands:**
 
 ```bash
+npm run check        # Full pre-push gate: typecheck + lint + format + unit tests
 npm run typecheck    # TypeScript check (run before commits)
 npm run lint         # ESLint
 npm run test         # Vitest unit tests

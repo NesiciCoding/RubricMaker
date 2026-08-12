@@ -17,6 +17,14 @@ scripts/deploy.sh
 playwright-report/
 playwright-results/
 test-results/
+blob-report/
+
+# Vitest JUnit output (consumed by the auto-quarantine detector)
+unit-results/
+
+# Python
+__pycache__/
+*.pyc
 
 # Backup output
 backups/
