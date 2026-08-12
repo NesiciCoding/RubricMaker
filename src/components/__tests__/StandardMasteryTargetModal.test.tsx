@@ -29,12 +29,21 @@ const mockAddStandardMasteryTarget = vi.fn();
 const mockUpdateStandardMasteryTarget = vi.fn();
 const mockSettings = vi.hoisted(() => ({ standardsApiKey: '' }));
 
+const makeAppValue = () => ({
+    settings: mockSettings,
+    addStandardMasteryTarget: mockAddStandardMasteryTarget,
+    updateStandardMasteryTarget: mockUpdateStandardMasteryTarget,
+});
+
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        settings: mockSettings,
-        addStandardMasteryTarget: mockAddStandardMasteryTarget,
-        updateStandardMasteryTarget: mockUpdateStandardMasteryTarget,
-    }),
+    useApp: () => makeAppValue(),
+    useRoster: () => makeAppValue(),
+    useAuthoring: () => makeAppValue(),
+    useAssessment: () => makeAppValue(),
+    useEssays: () => makeAppValue(),
+    useFlashcards: () => makeAppValue(),
+    useSettings: () => makeAppValue(),
+    usePlatform: () => makeAppValue(),
 }));
 
 vi.mock('react-i18next', () => ({

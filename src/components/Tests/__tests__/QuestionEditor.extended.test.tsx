@@ -17,8 +17,17 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+const makeAppValue = () => ({ settings: {}, addQuestionBankItem: mockAddQuestionBankItem });
+
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({ settings: {}, addQuestionBankItem: mockAddQuestionBankItem }),
+    useApp: () => makeAppValue(),
+    useRoster: () => makeAppValue(),
+    useAuthoring: () => makeAppValue(),
+    useAssessment: () => makeAppValue(),
+    useEssays: () => makeAppValue(),
+    useFlashcards: () => makeAppValue(),
+    useSettings: () => makeAppValue(),
+    usePlatform: () => makeAppValue(),
 }));
 
 vi.mock('../../../hooks/useToast', () => ({

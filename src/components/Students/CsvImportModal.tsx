@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useRoster, useSettings } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { matchCsvRows, summarizeImport, type ImportSummary, type MatchedImportRow } from '../../utils/csvImportMatch';
@@ -25,7 +25,9 @@ type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { t } = useTranslation();
-    const { addStudent, addClass, updateStudent, deleteStudent, classes, students, settings } = useApp();
+    const { addStudent, addClass, updateStudent, deleteStudent, classes, students } = useRoster();
+    const { settings } = useSettings();
+
     const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
     const [detectedFormat, setDetectedFormat] = useState<DetectedFormat>(null);

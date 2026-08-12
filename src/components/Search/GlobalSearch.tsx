@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
 import Modal from '../ui/Modal';
-import { useApp } from '../../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster } from '../../context/AppContext';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
 
 const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }>> = {
@@ -25,7 +25,12 @@ interface Props {
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, tests, students, classes, essayAssignments, flashcardDecks, newsFlashes } = useApp();
+    const { students, classes } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { tests } = useAssessment();
+    const { essayAssignments, newsFlashes } = useEssays();
+    const { flashcardDecks } = useFlashcards();
+
     const [query, setQuery] = useState('');
     // Keep the input responsive: run the full-corpus search at lower priority so it coalesces
     // rapid keystrokes instead of re-scanning every rubric/test/student on each keypress.
