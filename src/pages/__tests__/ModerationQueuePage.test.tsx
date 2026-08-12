@@ -68,18 +68,26 @@ const mockFetchSchoolMembers = vi.fn().mockResolvedValue([]);
 
 let appOverrides: Record<string, unknown> = {};
 
+const makeAppContextMock = () => ({
+    rubrics: [mockRubric],
+    studentRubrics: [baseline],
+    peerReviews: [secondMarker],
+    students: mockStudents,
+    settings: mockSettings,
+    saveStudentRubric: mockSaveStudentRubric,
+    deletePeerReview: mockDeletePeerReview,
+    fetchSchoolMembers: mockFetchSchoolMembers,
+    ...appOverrides,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [mockRubric],
-        studentRubrics: [baseline],
-        peerReviews: [secondMarker],
-        students: mockStudents,
-        settings: mockSettings,
-        saveStudentRubric: mockSaveStudentRubric,
-        deletePeerReview: mockDeletePeerReview,
-        fetchSchoolMembers: mockFetchSchoolMembers,
-        ...appOverrides,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('../../hooks/useDbStatus', () => ({

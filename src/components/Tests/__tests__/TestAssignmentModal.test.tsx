@@ -39,13 +39,21 @@ const classAStudents = mockStudents.filter((s) => s.classId === 'c1');
 
 const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
 
+const makeAppContextMock = () => ({
+    students: mockStudents,
+    classes: [mockClass, mockClass2],
+    settings: mockSettings,
+    saveTestAssignment: mockSaveTestAssignment,
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        students: mockStudents,
-        classes: [mockClass, mockClass2],
-        settings: mockSettings,
-        saveTestAssignment: mockSaveTestAssignment,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

@@ -70,15 +70,23 @@ const deleteQuestionBankItem = vi.fn();
 const deleteQuestionBankItems = vi.fn();
 const bulkUpdateQuestionBankItems = vi.fn();
 
+const makeAppContextMock = () => ({
+    questionBank,
+    addQuestionBankItems,
+    updateQuestionBankItem,
+    deleteQuestionBankItem,
+    deleteQuestionBankItems,
+    bulkUpdateQuestionBankItems,
+});
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({
-        questionBank,
-        addQuestionBankItems,
-        updateQuestionBankItem,
-        deleteQuestionBankItem,
-        deleteQuestionBankItems,
-        bulkUpdateQuestionBankItems,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

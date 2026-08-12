@@ -116,27 +116,35 @@ vi.mock('react-router-dom', async () => {
     return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const makeAppContextMock = () => ({
+    rubrics: [mockRubric],
+    studentRubrics: [mockSr],
+    peerReviews: [],
+    addRubric: mockAddRubric,
+    updateRubric: mockUpdateRubric,
+    syncRubricSnapshot: mockSyncRubricSnapshot,
+    fetchRubricVersions: mockFetchRubricVersions,
+    saveRubricVersion: mockSaveRubricVersion,
+    restoreRubricVersion: mockRestoreRubricVersion,
+    gradeScales: [mockGradeScale],
+    settings: mockSettings,
+    addVocabularyItem: vi.fn(),
+    updateVocabularyItem: vi.fn(),
+    deleteVocabularyItem: vi.fn(),
+    deleteVocabularyItems: vi.fn(),
+    classes: [],
+    students: [],
+    ...appOverrides,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        rubrics: [mockRubric],
-        studentRubrics: [mockSr],
-        peerReviews: [],
-        addRubric: mockAddRubric,
-        updateRubric: mockUpdateRubric,
-        syncRubricSnapshot: mockSyncRubricSnapshot,
-        fetchRubricVersions: mockFetchRubricVersions,
-        saveRubricVersion: mockSaveRubricVersion,
-        restoreRubricVersion: mockRestoreRubricVersion,
-        gradeScales: [mockGradeScale],
-        settings: mockSettings,
-        addVocabularyItem: vi.fn(),
-        updateVocabularyItem: vi.fn(),
-        deleteVocabularyItem: vi.fn(),
-        deleteVocabularyItems: vi.fn(),
-        classes: [],
-        students: [],
-        ...appOverrides,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

@@ -10,8 +10,16 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
+const makeAppContextMock = () => ({ settings: {}, addQuestionBankItem: vi.fn() });
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => ({ settings: {}, addQuestionBankItem: vi.fn() }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('../../Editor/EssayEditor', () => ({

@@ -24,19 +24,27 @@ vi.mock('react-router-dom', async () => {
     return { ...actual, useNavigate: () => mockNavigate, useParams: () => routeParams };
 });
 
+const makeAppContextMock = () => ({
+    students: mockStudents,
+    classes: mockClasses,
+    rubrics: [],
+    studentRubrics: [],
+    selfAssessments: [],
+    analysisResults: [],
+    settings: mockSettings,
+    tests: [],
+    studentTests: [],
+    flashcardDecks: [],
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        students: mockStudents,
-        classes: mockClasses,
-        rubrics: [],
-        studentRubrics: [],
-        selfAssessments: [],
-        analysisResults: [],
-        settings: mockSettings,
-        tests: [],
-        studentTests: [],
-        flashcardDecks: [],
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

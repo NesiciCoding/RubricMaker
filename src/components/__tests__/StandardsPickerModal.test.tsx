@@ -14,13 +14,21 @@ const mockRemoveFavorite = vi.fn();
 const mockIsFavorite = vi.fn(() => false);
 let mockFavoriteStandards: LinkedStandard[] = [];
 
+const makeAppContextMock = () => ({
+    favoriteStandards: mockFavoriteStandards,
+    addFavoriteStandard: mockAddFavorite,
+    removeFavoriteStandard: mockRemoveFavorite,
+    isFavoriteStandard: mockIsFavorite,
+});
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        favoriteStandards: mockFavoriteStandards,
-        addFavoriteStandard: mockAddFavorite,
-        removeFavoriteStandard: mockRemoveFavorite,
-        isFavoriteStandard: mockIsFavorite,
-    }),
+    useApp: () => makeAppContextMock(),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 const mockFetchJurisdictions = vi.fn();
