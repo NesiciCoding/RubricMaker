@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp } from './AppContext';
+import { AppProvider, useSettings } from './AppContext';
 import { THEME_BUNDLES } from '../data/themes';
 import * as storage from '../store/storage';
 import type { AppSettings } from '../types';
@@ -111,7 +111,7 @@ describe('Theme bundle application', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it.each(THEME_BUNDLES)('applying the "$id" bundle updates settings to match the bundle', (theme) => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         act(() => {
             applyTheme(result.current.updateSettings, result.current.settings, theme);
@@ -126,7 +126,7 @@ describe('Theme bundle application', () => {
     });
 
     it('preserves all other defaultFormat fields when applying a theme (spread regression)', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
         const before = result.current.settings.defaultFormat;
         const theme = THEME_BUNDLES[0];
 
@@ -155,7 +155,7 @@ describe('Theme bundle application', () => {
     });
 
     it('switching between two bundles updates settings to the latest bundle', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
         const [first, second] = THEME_BUNDLES;
 
         act(() => {

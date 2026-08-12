@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp } from './AppContext';
+import { AppProvider, useRoster, useAuthoring, useAssessment } from './AppContext';
 import type { Rubric, RubricVersion } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -117,7 +117,7 @@ describe('AppContext — extended actions', () => {
     // ─── Students & Classes ───────────────────────────────────────────────────
 
     it('adds and deletes a student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         let id: string;
         act(() => {
             const s = result.current.addStudent({ name: 'Bob', classId: 'c1' });
@@ -131,7 +131,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('updates a student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         act(() => {
             result.current.addStudent({ name: 'Bob', classId: 'c1' });
         });
@@ -142,7 +142,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('adds, updates, and deletes a class', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         act(() => {
             result.current.addClass({ name: 'Class A' });
         });
@@ -158,7 +158,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('deleteClass with deleteStudents=true removes students in that class', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         act(() => {
             result.current.addClass({ name: 'Class A' });
         });
@@ -176,7 +176,7 @@ describe('AppContext — extended actions', () => {
     // ─── Self Assessments ─────────────────────────────────────────────────────
 
     it('saves and deletes a self assessment', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const sa = { id: 'sa1', rubricId: 'r1', studentId: 's1', ratings: [], submittedAt: '2024-01-01' };
         act(() => {
             result.current.saveSelfAssessment(sa);
@@ -191,7 +191,7 @@ describe('AppContext — extended actions', () => {
     // ─── Speaking Sessions ────────────────────────────────────────────────────
 
     it('saves and updates a speaking session', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const session = {
             id: 'ss1',
             rubricId: 'r1',
@@ -211,7 +211,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('deletes a speaking session', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const session = {
             id: 'ss1',
             rubricId: 'r1',
@@ -232,7 +232,7 @@ describe('AppContext — extended actions', () => {
     // ─── Rubric Versioning ────────────────────────────────────────────────────
 
     it('saves a rubric version', async () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -246,7 +246,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('restores a rubric version', async () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -269,7 +269,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('saveRubricVersion does nothing for unknown rubricId', async () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         await act(async () => {
             await result.current.saveRubricVersion('unknown');
         });
@@ -278,7 +278,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('restoreRubricVersion does nothing for unknown rubricId', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         act(() => {
             result.current.restoreRubricVersion('unknown', makeRubric() as Rubric);
         });
@@ -288,7 +288,7 @@ describe('AppContext — extended actions', () => {
     // ─── Rubric Snapshot Sync ─────────────────────────────────────────────────
 
     it('syncRubricSnapshot updates student rubrics with new criteria', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -319,7 +319,7 @@ describe('AppContext — extended actions', () => {
     // ─── Soft-delete grades (Phase 15.3) ─────────────────────────────────────
 
     it('deleteStudentRubric soft-deletes a solo grade and restoreStudentRubric brings it back', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -347,7 +347,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('deleteStudentRubric with scope "group" soft-deletes every sibling sharing groupId', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -370,7 +370,7 @@ describe('AppContext — extended actions', () => {
     });
 
     it('deleteStudentRubric with scope "student" only removes the target and detaches it from the group', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring() }), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -398,7 +398,7 @@ describe('AppContext — extended actions', () => {
     // ─── Vocabulary Items ─────────────────────────────────────────────────────
 
     it('adds, updates, and deletes vocabulary items', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         act(() => {
             result.current.addRubric(makeRubric());
         });
@@ -425,7 +425,7 @@ describe('AppContext — extended actions', () => {
     // ─── Analysis Results ─────────────────────────────────────────────────────
 
     it('saves and deletes analysis results', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const ar = {
             id: 'ar1',
             studentId: 's1',

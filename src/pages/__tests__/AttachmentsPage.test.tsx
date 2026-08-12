@@ -62,7 +62,6 @@ const mockAppValue: Record<string, unknown> = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useAuthoring: () => mockAppValue,
     useAssessment: () => mockAppValue,

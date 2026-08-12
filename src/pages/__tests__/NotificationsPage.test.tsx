@@ -84,14 +84,13 @@ vi.mock('../../hooks/useNotificationFeed', () => ({
     }),
 }));
 
-// Topbar (rendered by NotificationsPage) reads settings/classes off useApp() directly.
+// Topbar (rendered by NotificationsPage) reads settings/classes off the domain hooks directly.
 const makeAppContextMock = () => ({
     settings: { theme: 'dark', language: 'en' },
     updateSettings: vi.fn(),
     classes: [],
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),

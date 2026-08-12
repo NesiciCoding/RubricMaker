@@ -89,7 +89,7 @@ const mockFlashcardDeck: FlashcardDeck = {
     updatedAt: '2024-01-01T00:00:00Z',
 };
 
-// Per-test overrides merged into the mocked useApp() return value. Default empty so
+// Per-test overrides merged into the mocked domain-hook return value. Default empty so
 // the shared mock stays as the other suites expect; a suite that needs seeded data
 // (e.g. TestResultsPage's graded-submission view) sets this in beforeEach and resets
 // it in afterEach.
@@ -97,7 +97,7 @@ let appStateOverride: Record<string, unknown> = {};
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-// Build the context value ONCE so useApp() returns stable array references across
+// Build the context value ONCE so the domain hooks return stable array references across
 // renders — a fresh object/array each call makes any page whose effect depends on a
 // context array re-run that effect forever (setState → re-render → new array ref →
 // effect → …), which OOMs the worker. `appStateOverride` is spread on top so seeded
@@ -216,7 +216,6 @@ const base = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({ ...base, ...appStateOverride }),
     useRoster: () => ({ ...base, ...appStateOverride }),
     useAuthoring: () => ({ ...base, ...appStateOverride }),
     useAssessment: () => ({ ...base, ...appStateOverride }),

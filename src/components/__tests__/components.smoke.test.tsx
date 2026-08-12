@@ -42,7 +42,6 @@ const makeAppContextMock = () => ({
     isFavoriteStandard: vi.fn(() => false),
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),

@@ -7,7 +7,7 @@ import { useDbStatus } from '../useDbStatus';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-// Mutable state consumed by useApp mock (useOverdueStudents)
+// Mutable state consumed by the AppContext mock (useOverdueStudents)
 let mockStudents: Student[] = [];
 let mockStudentRubrics: StudentRubric[] = [];
 let mockThreshold = 7;
@@ -18,14 +18,13 @@ const makeAppContextMock = () => ({
     settings: { overdueReminderThreshold: mockThreshold },
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
-    useRoster: () => ({ students: mockStudents, studentRubrics: mockStudentRubrics }),
-    useAuthoring: () => ({}),
-    useAssessment: () => ({}),
-    useEssays: () => ({}),
-    useFlashcards: () => ({}),
-    useSettings: () => ({ settings: { overdueReminderThreshold: mockThreshold } }),
-    usePlatform: () => ({}),
+    useRoster: () => makeAppContextMock(),
+    useAuthoring: () => makeAppContextMock(),
+    useAssessment: () => makeAppContextMock(),
+    useEssays: () => makeAppContextMock(),
+    useFlashcards: () => makeAppContextMock(),
+    useSettings: () => makeAppContextMock(),
+    usePlatform: () => makeAppContextMock(),
 }));
 
 // Mutable unsub functions so we can verify cleanup

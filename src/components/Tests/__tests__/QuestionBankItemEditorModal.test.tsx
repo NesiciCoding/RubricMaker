@@ -12,7 +12,6 @@ vi.mock('react-i18next', () => ({
 
 const makeAppContextMock = () => ({ settings: {}, addQuestionBankItem: vi.fn() });
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),

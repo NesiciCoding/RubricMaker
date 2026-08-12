@@ -146,7 +146,6 @@ function makeApp(overrides = {}) {
 let currentApp = makeApp();
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => currentApp,
     useRoster: () => currentApp,
     useAuthoring: () => currentApp,
     useAssessment: () => currentApp,
