@@ -76,7 +76,17 @@ export default {
             },
             VariableDeclarator(node) {
                 if (!isComponentName(node.id.name)) return;
-                const init = node.init;
+                let init = node.init;
+                // Unwrap memo(...) so memoized capitalized components are inspected like
+                // any other component — the callback inside memo is the component body.
+                while (
+                    init &&
+                    init.type === 'CallExpression' &&
+                    init.callee.type === 'Identifier' &&
+                    init.callee.name === 'memo'
+                ) {
+                    init = init.arguments[0];
+                }
                 if (!init || !FUNCTION_TYPES.has(init.type)) return;
                 const used = new Set();
                 collectDomainHooks(init, used);

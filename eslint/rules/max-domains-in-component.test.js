@@ -21,8 +21,8 @@ ruleTester.run('max-domains-in-component', rule, {
         // Lowercase helpers / custom hooks are not components.
         'function useEverything() { useRoster(); useAuthoring(); useAssessment(); useEssays(); return 1; }',
         'const helper = () => { useRoster(); useAuthoring(); useAssessment(); useEssays(); };',
-        // Non-arrow const init (e.g. wrapped in memo) is not matched.
-        'const Page = memo(() => { useRoster(); useAuthoring(); useAssessment(); useEssays(); });',
+        // A memoized component with ≤3 domains is fine.
+        'const Page = memo(() => { useRoster(); useAuthoring(); useSettings(); return null; });',
     ],
     invalid: [
         {
@@ -35,6 +35,11 @@ ruleTester.run('max-domains-in-component', rule, {
         },
         {
             code: 'function Page() { const { students } = useRoster(); const { rubrics } = useAuthoring(); const { tests } = useAssessment(); const { decks } = useFlashcards(); const { settings } = useSettings(); const { essays } = useEssays(); return null; }',
+            errors: [{ messageId: 'tooManyDomains' }],
+        },
+        // Memoized components are inspected like any other component.
+        {
+            code: 'const Page = memo(() => { useRoster(); useAuthoring(); useAssessment(); useEssays(); });',
             errors: [{ messageId: 'tooManyDomains' }],
         },
     ],
