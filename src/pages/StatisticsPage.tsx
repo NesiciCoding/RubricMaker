@@ -10,7 +10,7 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
-import { useAuthoring, useSettings } from '../context/AppContext';
+import { useSettings } from '../context/AppContext';
 import { useStoreSelector } from '../context/useStore';
 import {
     calcGradeSummary,
