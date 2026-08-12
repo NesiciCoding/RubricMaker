@@ -57,8 +57,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Cheap preflight: decides whether the expensive capture job needs to run at
+  # all. For scheduled sweeps it asks the capture script itself (--check-pending)
+  # whether any row is not ✅ AND has a non-manual recipe — manual rows (mic
+  # permission, live Supabase, native dropdown…) stay ⬜ forever by design, so a
+  # naive "any ⬜ row?" check would re-run the whole capture every night for
+  # nothing. Manual and dispatched runs always set should_capture=true.
+  preflight:
+    name: Preflight (anything to capture?)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_capture: ${{ steps.check.outputs.should_capture }}
+    steps:
+      - name: Checkout wiki
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_ACTION_TOKEN }}
+        run: |
+          if [ -z "$WIKI_TOKEN" ]; then
+            echo "::error::WIKI_ACTION_TOKEN secret is not set. Create a PAT with the 'repo' scope" \
+                 "(write access to <owner>/RubricMaker.wiki) and add it as a repository secret." >&2
+            exit 1
+          fi
+          git clone --depth 1 \
+            "https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
+
+      - name: Decide whether to capture
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "Manual/dispatched run — always capture."
+            echo "should_capture=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          PENDING=$(node wiki/scripts/capture-wiki-screenshots.mjs --check-pending)
+          echo "$PENDING"
+          if echo "$PENDING" | grep -q 'pending=0'; then
+            echo "No new automatable placeholders — skipping capture."
+            echo "should_capture=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_capture=true" >> "$GITHUB_OUTPUT"
+          fi
+
   capture:
     name: Capture and publish screenshots
+    needs: preflight
+    if: needs.preflight.outputs.should_capture == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -93,29 +137,8 @@ jobs:
         env:
           WIKI_TOKEN: ${{ secrets.WIKI_ACTION_TOKEN }}
         run: |
-          if [ -z "$WIKI_TOKEN" ]; then
-            echo "::error::WIKI_ACTION_TOKEN secret is not set. Create a PAT with the 'repo' scope" \
-                 "(write access to <owner>/RubricMaker.wiki) and add it as a repository secret." >&2
-            exit 1
-          fi
           git clone --depth 1 \
             "https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
-
-      - name: Pre-check — anything automatable to capture?
-        # Scheduled sweep only. The script's own --check-pending is the source
-        # of truth: it counts rows that are not ✅ AND have a non-manual recipe.
-        # Manual rows (mic permission, live Supabase, native dropdown…) stay ⬜
-        # forever by design, so a naive "any ⬜ row?" check would re-run the
-        # whole job every night for nothing. Manual/dispatched runs always
-        # proceed so the caller gets a fresh report.
-        if: github.event_name == 'schedule'
-        run: |
-          PENDING=$(node wiki/scripts/capture-wiki-screenshots.mjs --check-pending)
-          echo "$PENDING"
-          if echo "$PENDING" | grep -q 'pending=0'; then
-            echo "No new automatable placeholders — nothing to capture."
-            exit 0
-          fi
 
       - name: Start dev server
         run: |
