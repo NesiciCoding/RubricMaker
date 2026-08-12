@@ -39,9 +39,9 @@ const makeAppContextMock = () => ({
 vi.mock('../../context/AppContext', () => ({
     useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
-    useStudents: () => makeAppContextMock(),
-    useClasses: () => makeAppContextMock(),
-    useGrading: () => makeAppContextMock(),
+    useStudents: () => ({ students: mockStudents }),
+    useClasses: () => ({ classes: mockClasses }),
+    useGrading: () => ({ studentRubrics: [] }),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),
     useEssays: () => makeAppContextMock(),

@@ -162,9 +162,15 @@ const mockUseApp = {
 vi.mock('../../context/AppContext', () => ({
     useApp: () => mockUseApp,
     useRoster: () => mockUseApp,
-    useStudents: () => mockUseApp,
-    useClasses: () => mockUseApp,
-    useGrading: () => mockUseApp,
+    useStudents: () => ({ students: mockUseApp.students }),
+    useClasses: () => ({ classes: mockUseApp.classes }),
+    useGrading: () => ({
+        studentRubrics: mockUseApp.studentRubrics,
+        attachments: mockUseApp.attachments,
+        saveStudentRubric: mockUseApp.saveStudentRubric,
+        deleteStudentRubric: mockUseApp.deleteStudentRubric,
+        addAttachment: mockUseApp.addAttachment,
+    }),
     useAuthoring: () => mockUseApp,
     useAssessment: () => mockUseApp,
     useEssays: () => mockUseApp,

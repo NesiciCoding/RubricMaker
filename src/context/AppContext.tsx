@@ -1354,6 +1354,8 @@ type StudentsValue = Pick<
 
 type ClassesValue = Pick<AppContextValue, 'classes' | 'addClass' | 'updateClass' | 'deleteClass' | 'mergeClasses'>;
 
+/** Rubric scoring state + actions (studentRubrics, attachments, saveStudentRubric, …).
+ *  Distinct from the `gradingTasks` co-grading assignment queue exposed on the assessment domain. */
 type GradingValue = Pick<
     AppContextValue,
     | 'studentRubrics'
