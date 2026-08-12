@@ -720,11 +720,12 @@ describe('AppContext', () => {
             return null;
         }
 
-        render(
-            <AppProvider>
+        renderWithRouter(
+            <>
                 <RosterProbe />
                 <TriggerProbe />
-            </AppProvider>
+            </>,
+            { withAppProvider: true }
         );
 
         expect(rosterRenders.length).toBe(1);
@@ -754,11 +755,12 @@ describe('AppContext', () => {
             return null;
         }
 
-        render(
-            <AppProvider>
+        renderWithRouter(
+            <>
                 <SettingsProbe />
                 <TriggerProbe />
-            </AppProvider>
+            </>,
+            { withAppProvider: true }
         );
 
         expect(settingsRenders.length).toBe(1);
