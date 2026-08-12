@@ -910,7 +910,16 @@ const KEYS = {
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
     notificationDismissals: 'rm_notification_dismissals',
+    migrationDone: 'rm_migration_done',
 };
+
+export function isMigrationDone(): boolean {
+    return localStorage.getItem(KEYS.migrationDone) === 'true';
+}
+
+export function markMigrationDone(): void {
+    localStorage.setItem(KEYS.migrationDone, 'true');
+}
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────
 

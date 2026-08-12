@@ -5,6 +5,8 @@ import { AppProvider, useApp } from './AppContext';
 import * as storage from '../store/storage';
 
 vi.mock('../store/storage', () => ({
+    isMigrationDone: vi.fn(() => false),
+    markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],
