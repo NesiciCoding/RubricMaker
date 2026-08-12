@@ -90,10 +90,8 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         dispatch({ type: 'DELETE_CLASS', id });
     };
     const mergeClasses = (sourceClassId: string, targetClassId: string) => {
-        // Move all students to the target class
         const studentsToMove = getState().students.filter((s) => s.classId === sourceClassId);
         studentsToMove.forEach((s) => updateStudent({ ...s, classId: targetClassId }));
-        // Merge rubricIds: union source and target rubric associations
         const sourceClass = getState().classes.find((c) => c.id === sourceClassId);
         const targetClass = getState().classes.find((c) => c.id === targetClassId);
         if (sourceClass && targetClass) {
@@ -104,7 +102,6 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
                 dispatch({ type: 'UPDATE_CLASS', payload: { ...targetClass, rubricIds: merged } });
             }
         }
-        // Delete the old class
         deleteClass(sourceClassId, false);
     };
     const saveStudentRubricFn = (sr: StudentRubric) => {
@@ -163,6 +160,7 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
                 submittedAt: undefined,
                 notHandedIn: undefined,
                 round: undefined,
+                deletedAt: undefined,
             };
         });
         srs.forEach((sr) => dispatch({ type: 'SAVE_STUDENT_RUBRIC', payload: sr }));
@@ -185,21 +183,11 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
     const setStudentPassword = async (studentEmail: string, password: string) =>
         (await loadDb()).storageSync.setStudentPassword(studentEmail, password);
     const anonymizeStudent = (id: string) => {
-        const original = getState().students.find((s) => s.id === id);
         logAuditEvent('admin', 'student_anonymize', 'student', id);
+        // The ANONYMIZE_STUDENT reducer mints the canonical record (name/email/anonymizedAt/
+        // updatedAt); the AppContext delta-sync effect then pushes that exact record when
+        // connected, so a manual loadDb/pushOne here would only risk drifting from it.
         dispatch({ type: 'ANONYMIZE_STUDENT', id });
-        if (original) {
-            const anonymized = {
-                ...original,
-                name: `Student-${original.id.slice(0, 8)}`,
-                email: undefined,
-                studentNumber: undefined,
-                anonymizedAt: new Date().toISOString(),
-            };
-            void loadDb()
-                .then(({ storageSync }) => storageSync.pushOne('student', 'upsert', anonymized))
-                .catch((e) => console.error('[sync] failed to push anonymized student', e));
-        }
     };
     return {
         addStudent,
@@ -245,7 +233,15 @@ export function useRosterValue(state: StoreData, actions: RosterActions): Roster
             deletedStudentRubrics: deletedStudentRubrics,
             ...actions,
         }),
-        [actions, activeStudents, activeStudentRubrics, state.classes, state.attachments]
+        [
+            actions,
+            activeStudents,
+            archivedStudents,
+            activeStudentRubrics,
+            deletedStudentRubrics,
+            state.classes,
+            state.attachments,
+        ]
     );
 }
 

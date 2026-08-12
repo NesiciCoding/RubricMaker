@@ -383,6 +383,9 @@ export function reducer(state: StoreData, action: Action): StoreData {
             return { ...state, gradeScales: next };
         }
         case 'DELETE_GRADE_SCALE': {
+            // Keep the collection non-empty: getActiveGradeScale falls back to the first
+            // scale, so an app with zero scales has no active scale to grade against.
+            if (state.gradeScales.length <= 1) return state;
             const next = state.gradeScales.filter((gs) => gs.id !== action.id);
             if (isOffline()) saveGradeScales(next);
             return { ...state, gradeScales: next };
@@ -1082,8 +1085,7 @@ export interface AppContextValue extends StoreData {
     getCurrentDatabaseUserId: () => string | null;
 }
 
-export const LOCAL_MODE_KEY = 'rm_local_mode';
-export const MIGRATION_DONE_KEY = 'rm_migration_done';
+export { LOCAL_MODE_KEY, MIGRATION_DONE_KEY } from '../store/storage';
 
 export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void>> = {
     rubrics: (m) => saveRubrics(m.rubrics),
