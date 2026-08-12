@@ -49,6 +49,11 @@ export { usePlatform } from './domains/platform';
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
+    // Latest-state ref (documented "latest ref" pattern, react.dev/useRef): written during
+    // render so it always holds the state of the current render. Actions below read it instead
+    // of closing over a slice (stable identity), and because render-phase writes happen before
+    // every effect, they observe the fresh snapshot even when invoked from a descendant's
+    // useLayoutEffect — an effect-based sync (layout or passive) would lag behind by a commit.
     const currentStateRef = useRef(state);
     // Synced during render (not in an effect) so ref-based action reads — including render-time
     // predicates like `isFavoriteStandard` — see the state being rendered. Deliberate deviation
