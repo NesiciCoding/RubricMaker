@@ -1,0 +1,202 @@
+# Capture the wiki's screenshot checklist against the running app and publish
+# the fresh PNGs + report to the GitHub wiki.
+#
+# Why a direct push instead of a PR: GitHub wikis are a separate, special git
+# repo (<repo>.wiki.git) and the wiki UI/API has no pull-request support, so a
+# PR cannot be opened against it. Publishing the commit straight to the wiki's
+# `master` (the standard workaround — see nimblehq's "Create pull requests for
+# your GitHub Wiki") keeps the wiki's own history as the review trail: every
+# refresh is one commit whose message names the capture date, and the diff
+# (images + Screenshots.md statuses + _capture-report.md) is fully inspectable.
+#
+# Triggers:
+#   - workflow_dispatch  — manual (optionally restricted to specific filenames).
+#   - schedule           — nightly sweep that picks up new screenshot placeholders
+#     added to Screenshots.md by wiki edits. GitHub cannot run a workflow on a
+#     wiki-repo push (the wiki is a separate repo with no Actions support), so a
+#     scheduled poll with a cheap pre-check (exit early when nothing is ⬜) is the
+#     closest built-in mechanism.
+#   - repository_dispatch — lets external tooling (or a future bot) trigger a
+#     capture the moment a placeholder is added: POST a repository_dispatch event
+#     with type `wiki-screenshots` to this repo.
+#
+# Setup (one-time):
+#   1. Create a Personal Access Token with the `repo` scope. It must have write
+#      access to BOTH this repo and its wiki (<owner>/RubricMaker.wiki).
+#   2. Add it as a repository secret named WIKI_ACTION_TOKEN.
+#
+# The capture script runs against the app's dev server because the sample-data
+# seeder (seedDemoData) is gated behind import.meta.env.DEV — a production build
+# would render every page empty. The dev server is started here and the script
+# connects to it on localhost:5173, exactly like the Playwright e2e suite does.
+name: Capture wiki screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: >-
+          Comma-separated screenshot filenames (without the images/ prefix and
+          .png suffix) to capture — leave empty for the full checklist.
+        required: false
+        type: string
+        default: ''
+  # Nightly sweep — picks up new ⬜ placeholders added by wiki edits.
+  schedule:
+    - cron: "0 3 * * *"
+  # External trigger (e.g. from a webhook/bot) for instant capture after a wiki
+  # edit: gh api repos/<owner>/<repo>/dispatches -f event_type=wiki-screenshots
+  repository_dispatch:
+    types: [wiki-screenshots]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wiki-screenshots
+  cancel-in-progress: false
+
+jobs:
+  # Cheap preflight: decides whether the expensive capture job needs to run at
+  # all. For scheduled sweeps it asks the capture script itself (--check-pending)
+  # whether any row is not ✅ AND has a non-manual recipe — manual rows (mic
+  # permission, live Supabase, native dropdown…) stay ⬜ forever by design, so a
+  # naive "any ⬜ row?" check would re-run the whole capture every night for
+  # nothing. Manual and dispatched runs always set should_capture=true.
+  preflight:
+    name: Preflight (anything to capture?)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      should_capture: ${{ steps.check.outputs.should_capture }}
+    steps:
+      - name: Checkout wiki
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_ACTION_TOKEN }}
+        run: |
+          if [ -z "$WIKI_TOKEN" ]; then
+            echo "::error::WIKI_ACTION_TOKEN secret is not set. Create a PAT with the 'repo' scope" \
+                 "(write access to <owner>/RubricMaker.wiki) and add it as a repository secret." >&2
+            exit 1
+          fi
+          git clone --depth 1 \
+            "https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
+
+      - name: Decide whether to capture
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "Manual/dispatched run — always capture."
+            echo "should_capture=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          PENDING=$(node wiki/scripts/capture-wiki-screenshots.mjs --check-pending)
+          echo "$PENDING"
+          if echo "$PENDING" | grep -q 'pending=0'; then
+            echo "No new automatable placeholders — skipping capture."
+            echo "should_capture=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_capture=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  capture:
+    name: Capture and publish screenshots
+    needs: preflight
+    if: needs.preflight.outputs.should_capture == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout app
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Checkout wiki
+        # The wiki lives in a separate repo; GITHUB_TOKEN does not reach it, so
+        # we clone with the WIKI_ACTION_TOKEN PAT (repo scope) instead.
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_ACTION_TOKEN }}
+        run: |
+          git clone --depth 1 \
+            "https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git" wiki
+
+      - name: Start dev server
+        run: |
+          npm run dev > /tmp/vite.log 2>&1 &
+          echo $! > /tmp/vite.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:5173/ > /dev/null 2>&1; then
+              echo "Dev server ready (attempt $i)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Dev server did not become ready on :5173" >&2
+          tail -50 /tmp/vite.log >&2 || true
+          exit 1
+
+      - name: Capture screenshots
+        # The script resolves Playwright from the current working directory
+        # first — run it from the app checkout so it uses the app's installed
+        # copy. It seeds the app's dev sample data per recipe, captures each
+        # checklist row into <wiki>/images, flips captured rows to ✅ in
+        # Screenshots.md, and writes _capture-report.md.
+        env:
+          ONLY_ARG: ${{ inputs.only }}
+        run: |
+          ONLY_FLAG=""
+          if [ -n "$ONLY_ARG" ]; then
+            ONLY_FLAG="--only $ONLY_ARG"
+          fi
+          # shellcheck disable=SC2086
+          node wiki/scripts/capture-wiki-screenshots.mjs $ONLY_FLAG
+
+      - name: Show capture summary
+        run: |
+          echo "Images written: $(ls wiki/images/*.png 2>/dev/null | wc -l)"
+          echo "---- report ----"
+          cat wiki/images/_capture-report.md 2>/dev/null | head -60 || true
+
+      - name: Commit and publish to wiki
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_ACTION_TOKEN }}
+        run: |
+          cd wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add images Screenshots.md
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to publish."
+            exit 0
+          fi
+          git commit -m "chore: refresh wiki screenshots ($(date -u +%Y-%m-%d))"
+          git push "https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git" master
+          echo "Published to the wiki: ${{ github.repository }}.wiki"
+
+      - name: Upload images as artifact (fallback if push is unavailable)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wiki-screenshots
+          path: wiki/images/*.png
+          if-no-files-found: ignore
