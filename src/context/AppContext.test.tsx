@@ -773,10 +773,11 @@ describe('AppContext', () => {
     });
 
     it('actions invoked from a layout effect see the latest rubric state', () => {
-        // Regression for currentStateRef sync timing: the provider must refresh the ref in the
-        // layout phase (parent layout effects fire before descendants'), so an action called from
-        // a descendant's useLayoutEffect — e.g. pre-filling a just-created rubric — reads the
-        // fresh snapshot instead of the previous render's.
+        // Regression for currentStateRef sync timing: the ref is written during render (not in an
+        // effect), so the first layout-effect run below dispatches an update and the second run —
+        // which fires after the re-render that dispatch produced — reads the ref's fresh snapshot
+        // instead of the previous render's. An effect-based sync (layout or passive) would lag
+        // behind by a commit and observe stale state.
         const entryCounts: number[] = [];
         const rubricIdRef: { current: string } = { current: '' };
 
@@ -846,8 +847,9 @@ describe('AppContext', () => {
         renderWithRouter(<LayoutEffectScaleProbe />, { withAppProvider: true });
         act(() => {}); // flush the re-render scheduled by the first layout effect
 
-        // With the fix the ref is refreshed in the layout phase, so the action sees the scale
-        // added in run 1; with a passive-effect sync it would still resolve the old default.
+        // The ref is written during render, so run 2 — which fires after the re-render caused by
+        // run 1's dispatch — sees the scale added in run 1; with an effect-based sync it would lag
+        // by a commit and still resolve the old default.
         expect(observedNames).toEqual(['Layout Scale']);
     });
 });
