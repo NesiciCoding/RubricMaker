@@ -3,7 +3,6 @@ import React, { createContext, useMemo, ReactNode } from 'react';
 import { Action, AppContextValue, PlatformCtx, flushToLocalStorage, useContextOrThrow } from '../storeCore';
 import type { UserRole } from '../../types';
 import {
-    StoreData,
     clearLocalData,
     importFullBackup,
     isLocalMode,
