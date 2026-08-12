@@ -147,6 +147,9 @@ let currentApp = makeApp();
 
 vi.mock('../../context/AppContext', () => ({
     useRoster: () => currentApp,
+    useStudents: () => currentApp,
+    useClasses: () => currentApp,
+    useGrading: () => currentApp,
     useAuthoring: () => currentApp,
     useAssessment: () => currentApp,
     useEssays: () => currentApp,

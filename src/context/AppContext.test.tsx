@@ -2,7 +2,15 @@ import React, { ReactNode, useLayoutEffect, useRef } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../test-utils/renderWithProviders';
-import { AppProvider, useRoster, useSettings, useAuthoring, useAssessment } from './AppContext';
+import {
+    AppProvider,
+    useRoster,
+    useStudents,
+    useGrading,
+    useSettings,
+    useAuthoring,
+    useAssessment,
+} from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
@@ -18,6 +26,8 @@ vi.mock('../hooks/useToast', () => ({
 
 // Mock storage functions so we don't actually write to localStorage/IndexedDB during tests
 vi.mock('../store/storage', () => ({
+    isMigrationDone: vi.fn(() => false),
+    markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],
@@ -646,14 +656,21 @@ describe('AppContext', () => {
         // consumers that only read a different domain. Each probe records every render
         // it performs; the probes are direct children of AppProvider so their re-render
         // is driven solely by the context value they subscribe to.
-        const rosterRenders: number[] = [];
+        const gradingRenders: number[] = [];
+        const studentsRenders: number[] = [];
         const settingsRenders: string[] = [];
-        let triggerAdd: (() => void) | null = null;
+        let triggerGrade: (() => void) | null = null;
 
-        function RosterProbe() {
-            const { students } = useRoster();
-            rosterRenders.push(students.length);
-            return <div data-testid="roster-probe">{students.length}</div>;
+        function GradingProbe() {
+            const { studentRubrics } = useGrading();
+            gradingRenders.push(studentRubrics.length);
+            return <div data-testid="grading-probe">{studentRubrics.length}</div>;
+        }
+
+        function StudentsProbe() {
+            const { students } = useStudents();
+            studentsRenders.push(students.length);
+            return <div data-testid="students-probe">{students.length}</div>;
         }
 
         function SettingsProbe() {
@@ -663,31 +680,43 @@ describe('AppContext', () => {
         }
 
         function TriggerProbe() {
-            const { addStudent } = useRoster();
-            triggerAdd = () => addStudent({ name: 'New Student', classId: 'default' });
+            const { saveStudentRubric } = useGrading();
+            triggerGrade = () =>
+                saveStudentRubric({
+                    id: 'sr1',
+                    rubricId: 'r1',
+                    studentId: 's1',
+                    entries: [],
+                    overallComment: '',
+                    isPeerReview: false,
+                });
             return null;
         }
 
         renderWithRouter(
             <>
-                <RosterProbe />
+                <GradingProbe />
+                <StudentsProbe />
                 <SettingsProbe />
                 <TriggerProbe />
             </>,
             { withAppProvider: true }
         );
 
-        // Baseline: both probes rendered once; the settings probe never subscribes to
-        // roster state, so it must not re-render when a student is added.
-        expect(rosterRenders.length).toBe(1);
+        // Baseline: every probe rendered once.
+        expect(gradingRenders.length).toBe(1);
+        expect(studentsRenders.length).toBe(1);
         expect(settingsRenders.length).toBe(1);
 
         act(() => {
-            triggerAdd!();
+            triggerGrade!();
         });
 
-        expect(rosterRenders.length).toBeGreaterThan(1); // roster consumer re-rendered
-        expect(settingsRenders.length).toBe(1); // settings consumer did NOT
+        // A grade save touches only the grading domain: the grading consumer re-renders,
+        // but students-only and settings-only consumers do not.
+        expect(gradingRenders.length).toBeGreaterThan(1);
+        expect(studentsRenders.length).toBe(1);
+        expect(settingsRenders.length).toBe(1);
     });
 
     it('roster consumers do not re-render when authoring data (rubrics) changes', () => {

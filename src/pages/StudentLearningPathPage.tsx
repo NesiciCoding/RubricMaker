@@ -6,7 +6,15 @@ import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
-import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useFlashcards,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import {
     getLearningPathRecommendations,
@@ -22,7 +30,10 @@ import type { InterventionFlag } from '../types';
 export default function StudentLearningPathPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics } = useGrading();
+
     const { rubrics } = useAuthoring();
     const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
     const { flashcardDecks } = useFlashcards();

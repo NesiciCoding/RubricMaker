@@ -910,6 +910,7 @@ const KEYS = {
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
     notificationDismissals: 'rm_notification_dismissals',
+    migrationDone: 'rm_migration_done',
 };
 
 // ─── Generic helpers ───────────────────────────────────────────────────────────

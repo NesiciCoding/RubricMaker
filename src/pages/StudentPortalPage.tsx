@@ -29,7 +29,16 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
-import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useEssays,
+    useFlashcards,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
 // Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
 // route chunk stays lean; they render only when their (below-the-fold) sections do.
@@ -132,7 +141,10 @@ const SECTION_TAB: Record<string, PortalTab> = {
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
-    const { students, classes, studentRubrics, saveRubricSelfAssessment } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics, saveRubricSelfAssessment } = useGrading();
+
     const { rubrics, gradeScales } = useAuthoring();
     const {
         peerReviews,

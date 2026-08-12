@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
-import { useAssessment, useAuthoring, useRoster } from '../context/AppContext';
+import { useAssessment, useAuthoring, useStudents } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import { getCefrDescriptors, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import type { CefrSkill, SelfAssessment, SelfAssessmentRating, LinkedCefrDescriptor, ConfidenceLevel } from '../types';
@@ -16,7 +16,8 @@ export default function SelfAssessPage() {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
-    const { students } = useRoster();
+    const { students } = useStudents();
+
     const { rubrics } = useAuthoring();
     const { selfAssessments, saveSelfAssessment } = useAssessment();
 

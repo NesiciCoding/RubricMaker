@@ -38,7 +38,7 @@ import { initClientLogger, setLoggerContext, STRESS_TEST_LOGGING_ENABLED } from 
 import { initAuditLogger, clearAuditLogger } from '../services/database/AuditLogger';
 import type { DatabaseConfig } from '../services/database';
 
-export { useRoster } from './domains/roster';
+export { useRoster, useStudents, useClasses, useGrading } from './domains/roster';
 export { useAuthoring } from './domains/authoring';
 export { useAssessment } from './domains/assessment';
 export { useEssays } from './domains/essays';

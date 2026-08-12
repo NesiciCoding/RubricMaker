@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useAssessment, useAuthoring, useEssays, useRoster } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useGrading, useStudents } from '../context/AppContext';
 import { useOverdueStudents } from './useOverdueStudents';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { DEFAULT_MODERATION_THRESHOLD_POINTS, getModerationQueue } from '../utils/coGradingModerationQueue';
@@ -69,7 +69,9 @@ export function useNotificationFeed(): UseNotificationFeedResult {
     // Defaulted rather than required: NotificationBell (and so this hook) renders on
     // nearly every page via Topbar, so any test double that predates this hook may not
     // stub every one of these collections.
-    const { students = [], studentRubrics = [] } = useRoster();
+    const { students = [] } = useStudents();
+    const { studentRubrics = [] } = useGrading();
+
     const { rubrics = [] } = useAuthoring();
     const { peerReviews = [] } = useAssessment();
     const { messages = [], notificationDismissals = [], dismissNotification, markMessageReadByTeacher } = useEssays();

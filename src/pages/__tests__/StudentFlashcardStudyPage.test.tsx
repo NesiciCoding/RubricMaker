@@ -48,6 +48,9 @@ const makeAppValue = () => ({
 vi.mock('../../context/AppContext', () => ({
     useApp: () => makeAppValue(),
     useRoster: () => makeAppValue(),
+    useStudents: () => makeAppValue(),
+    useClasses: () => makeAppValue(),
+    useGrading: () => makeAppValue(),
     useAuthoring: () => makeAppValue(),
     useAssessment: () => makeAppValue(),
     useEssays: () => makeAppValue(),

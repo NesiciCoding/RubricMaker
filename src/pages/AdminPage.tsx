@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAuthoring, usePlatform, useRoster, useSettings } from '../context/AppContext';
+import { useAuthoring, useClasses, useGrading, usePlatform, useSettings, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
@@ -432,7 +432,8 @@ function SchoolsTab() {
 
 function DatabaseTab() {
     const { t } = useTranslation();
-    const { classes } = useRoster();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
     const {
         connectDatabase,
@@ -1377,7 +1378,7 @@ function IntegrationsTab() {
 function DataTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const { students, anonymizeStudent, deleteStudent } = useRoster();
+    const { students, anonymizeStudent, deleteStudent } = useStudents();
 
     const [search, setSearch] = useState('');
 
@@ -1700,15 +1701,10 @@ function AuditTab() {
 function ArchiveTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const {
-        archivedStudents,
-        restoreStudent,
-        anonymizeStudent,
-        classes,
-        deletedStudentRubrics,
-        restoreStudentRubric,
-        students,
-    } = useRoster();
+    const { archivedStudents, restoreStudent, anonymizeStudent, students } = useStudents();
+    const { classes } = useClasses();
+    const { deletedStudentRubrics, restoreStudentRubric } = useGrading();
+
     const { rubrics } = useAuthoring();
 
     const classMap = new Map(classes.map((c) => [c.id, c.name]));

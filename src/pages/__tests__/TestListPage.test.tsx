@@ -81,6 +81,9 @@ const mockUseApp = {
 
 vi.mock('../../context/AppContext', () => ({
     useRoster: () => mockUseApp,
+    useStudents: () => mockUseApp,
+    useClasses: () => mockUseApp,
+    useGrading: () => mockUseApp,
     useAuthoring: () => mockUseApp,
     useAssessment: () => mockUseApp,
     useEssays: () => mockUseApp,

@@ -8,7 +8,7 @@ import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText, Ext
 import { nanoid } from '../utils/nanoid';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
-import { useAuthoring, useEssays, useRoster } from '../context/AppContext';
+import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
@@ -21,7 +21,9 @@ export default function EssayBuilderPage() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const { showToast } = useToast();
-    const { classes, students } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+
     const { rubrics } = useAuthoring();
     const { essayAssignments, essaySubmissions, addEssayAssignments, updateEssayGroup, addEssaySubmission } =
         useEssays();

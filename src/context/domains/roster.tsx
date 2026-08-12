@@ -37,6 +37,43 @@ export type RosterValue = Pick<
 
 const RosterContext = createContext<RosterValue | null>(null);
 
+// The roster domain is itself split further so a grading dispatch (studentRubrics) only
+// re-renders grading consumers — not consumers that merely read students or classes.
+// Each sub-value memoizes on its own slices, so a `saveStudentRubric` re-renders only
+// `useGrading` subscribers; `useRoster()` stays available as the merged compatibility view.
+export type StudentsValue = Pick<
+    RosterValue,
+    | 'students'
+    | 'archivedStudents'
+    | 'addStudent'
+    | 'updateStudent'
+    | 'deleteStudent'
+    | 'restoreStudent'
+    | 'anonymizeStudent'
+    | 'setStudentPassword'
+>;
+
+export type ClassesValue = Pick<RosterValue, 'classes' | 'addClass' | 'updateClass' | 'deleteClass' | 'mergeClasses'>;
+
+export type GradingValue = Pick<
+    RosterValue,
+    | 'studentRubrics'
+    | 'deletedStudentRubrics'
+    | 'attachments'
+    | 'saveStudentRubric'
+    | 'saveRubricSelfAssessment'
+    | 'createStudentRubric'
+    | 'createGroupStudentRubrics'
+    | 'deleteStudentRubric'
+    | 'restoreStudentRubric'
+    | 'addAttachment'
+    | 'deleteAttachment'
+>;
+
+const StudentsContext = createContext<StudentsValue | null>(null);
+const ClassesContext = createContext<ClassesValue | null>(null);
+const GradingContext = createContext<GradingValue | null>(null);
+
 export type RosterActions = Pick<
     RosterValue,
     | 'addStudent'
@@ -211,7 +248,15 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
     };
 }
 
-export function useRosterValue(state: StoreData, actions: RosterActions): RosterValue {
+export function useRosterValue(
+    state: StoreData,
+    actions: RosterActions
+): {
+    studentsValue: StudentsValue;
+    classesValue: ClassesValue;
+    gradingValue: GradingValue;
+    value: RosterValue;
+} {
     const activeStudents = useMemo(() => state.students.filter((s) => !s.archivedAt), [state.students]);
     const archivedStudents = useMemo(() => state.students.filter((s) => !!s.archivedAt), [state.students]);
     const activeStudentRubrics = useMemo(
@@ -223,26 +268,56 @@ export function useRosterValue(state: StoreData, actions: RosterActions): Roster
         [state.studentRubrics]
     );
 
-    return useMemo(
+    // Actions are identity-stable (memoized on ctx in RosterProvider), so each sub-value
+    // only changes when its own slices change.
+    const studentsValue = useMemo(
         () => ({
             students: activeStudents,
-            classes: state.classes,
-            studentRubrics: activeStudentRubrics,
-            attachments: state.attachments,
             archivedStudents: archivedStudents,
-            deletedStudentRubrics: deletedStudentRubrics,
-            ...actions,
+            addStudent: actions.addStudent,
+            updateStudent: actions.updateStudent,
+            deleteStudent: actions.deleteStudent,
+            restoreStudent: actions.restoreStudent,
+            anonymizeStudent: actions.anonymizeStudent,
+            setStudentPassword: actions.setStudentPassword,
         }),
-        [
-            actions,
-            activeStudents,
-            archivedStudents,
-            activeStudentRubrics,
-            deletedStudentRubrics,
-            state.classes,
-            state.attachments,
-        ]
+        [activeStudents, archivedStudents, actions]
     );
+    const classesValue = useMemo(
+        () => ({
+            classes: state.classes,
+            addClass: actions.addClass,
+            updateClass: actions.updateClass,
+            deleteClass: actions.deleteClass,
+            mergeClasses: actions.mergeClasses,
+        }),
+        [state.classes, actions]
+    );
+    const gradingValue = useMemo(
+        () => ({
+            studentRubrics: activeStudentRubrics,
+            deletedStudentRubrics: deletedStudentRubrics,
+            attachments: state.attachments,
+            saveStudentRubric: actions.saveStudentRubric,
+            saveRubricSelfAssessment: actions.saveRubricSelfAssessment,
+            createStudentRubric: actions.createStudentRubric,
+            createGroupStudentRubrics: actions.createGroupStudentRubrics,
+            deleteStudentRubric: actions.deleteStudentRubric,
+            restoreStudentRubric: actions.restoreStudentRubric,
+            addAttachment: actions.addAttachment,
+            deleteAttachment: actions.deleteAttachment,
+        }),
+        [activeStudentRubrics, deletedStudentRubrics, state.attachments, actions]
+    );
+
+    // Merged compatibility view: re-creates whenever any roster slice changes, which is
+    // exactly the granularity of the pre-split single RosterValue.
+    const value = useMemo(
+        () => ({ ...studentsValue, ...classesValue, ...gradingValue }),
+        [studentsValue, classesValue, gradingValue]
+    );
+
+    return { studentsValue, classesValue, gradingValue, value };
 }
 
 export function RosterProvider({
@@ -255,8 +330,28 @@ export function RosterProvider({
     children: ReactNode;
 }) {
     const actions = useMemo(() => createRosterActions(ctx), [ctx]);
-    const value = useRosterValue(state, actions);
-    return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;
+    const { studentsValue, classesValue, gradingValue, value } = useRosterValue(state, actions);
+    return (
+        <StudentsContext.Provider value={studentsValue}>
+            <ClassesContext.Provider value={classesValue}>
+                <GradingContext.Provider value={gradingValue}>
+                    <RosterContext.Provider value={value}>{children}</RosterContext.Provider>
+                </GradingContext.Provider>
+            </ClassesContext.Provider>
+        </StudentsContext.Provider>
+    );
+}
+
+export function useStudents(): StudentsValue {
+    return useContextOrThrow(StudentsContext, 'useStudents');
+}
+
+export function useClasses(): ClassesValue {
+    return useContextOrThrow(ClassesContext, 'useClasses');
+}
+
+export function useGrading(): GradingValue {
+    return useContextOrThrow(GradingContext, 'useGrading');
 }
 
 export function useRoster(): RosterValue {

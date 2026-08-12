@@ -24,7 +24,15 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useEssays, useRoster, useSettings } from '../context/AppContext';
+import {
+    useAssessment,
+    useAuthoring,
+    useClasses,
+    useEssays,
+    useGrading,
+    useSettings,
+    useStudents,
+} from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
@@ -35,7 +43,10 @@ import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId }
 
 export default function ExportPage() {
     const { t } = useTranslation();
-    const { students, classes, studentRubrics, saveStudentRubric } = useRoster();
+    const { students } = useStudents();
+    const { classes } = useClasses();
+    const { studentRubrics, saveStudentRubric } = useGrading();
+
     const { rubrics, gradeScales, exportTemplates } = useAuthoring();
     const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
     const { essayAssignments, essaySubmissions } = useEssays();
