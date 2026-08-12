@@ -29,7 +29,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
 // Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
 // route chunk stays lean; they render only when their (below-the-fold) sections do.
@@ -132,36 +132,31 @@ const SECTION_TAB: Record<string, PortalTab> = {
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
+    const { students, classes, studentRubrics, saveRubricSelfAssessment } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
     const {
-        students,
-        classes,
-        rubrics,
-        studentRubrics,
         peerReviews,
-        gradeScales,
-        settings,
         selfAssessments,
         analysisResults,
         tests,
         studentTests,
-        saveRubricSelfAssessment,
-        fetchMyEssayAssignments,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
+    } = useAssessment();
+    const {
+        fetchMyEssayAssignments,
         fetchMyMessages,
         sendMessageAsStudent,
         markMessagesReadByStudent,
-        flashcardAssignments,
-        flashcardDecks,
-        flashcardReviews,
-        fetchMyFlashcardAssignments,
         newsFlashes,
         newsFlashReads,
         fetchMyNewsFlashes,
         markNewsFlashRead,
         markNewsFlashReadAsStudent,
-        updateSettings,
-    } = useApp();
+    } = useEssays();
+    const { flashcardAssignments, flashcardDecks, flashcardReviews, fetchMyFlashcardAssignments } = useFlashcards();
+    const { settings, updateSettings } = useSettings();
+
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);

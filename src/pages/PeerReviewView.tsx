@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, AlertCircle, FileText, BarChart3 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster } from '../context/AppContext';
 import { nanoid } from '../utils/nanoid';
 import type { StudentRubric, ScoreEntry } from '../types';
 import Topbar from '../components/Layout/Topbar';
@@ -18,7 +18,10 @@ export default function PeerReviewView() {
     const reviewerId = searchParams.get('reviewerId') ?? studentId;
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { rubrics, students, peerReviews, savePeerReview } = useApp();
+    const { students } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { peerReviews, savePeerReview } = useAssessment();
+
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     const [rubric] = useState(rubrics.find((r) => r.id === rubricId));

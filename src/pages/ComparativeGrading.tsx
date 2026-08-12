@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import { useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
 import {
     ArrowLeft,
@@ -31,7 +31,9 @@ const COMBINED_ID = '__combined__';
 function ClassPicker({ rubricId }: { rubricId: string }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { classes, rubrics, students } = useApp();
+    const { classes, students } = useRoster();
+    const { rubrics } = useAuthoring();
+
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
     const rubric = rubrics.find((r) => r.id === rubricId);
@@ -183,8 +185,9 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
 function ComparativeGradingSession({ classId, rubricId }: { classId: string; rubricId: string }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { rubrics, students, classes, studentRubrics, attachments, saveStudentRubric, gradeScales, settings } =
-        useApp();
+    const { students, classes, studentRubrics, attachments, saveStudentRubric } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
+    const { settings } = useSettings();
 
     const [searchParams] = useSearchParams();
     const startStudentId = searchParams.get('start');

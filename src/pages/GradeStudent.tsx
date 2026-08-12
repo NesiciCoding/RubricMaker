@@ -41,7 +41,7 @@ import GradingActionsMenu, { type GradingAction } from '../components/Grading/Gr
 import GradingGrid from '../components/Grading/GradingGrid';
 import { FeedbackAudioPlayer } from '../components/Grading/FeedbackAudioPlayer';
 import TouchStepper from '../components/Grading/TouchStepper';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useEssays, usePlatform, useRoster, useSettings } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
@@ -62,22 +62,11 @@ export default function GradeStudent() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
+    const { students, classes, studentRubrics, attachments, saveStudentRubric, addAttachment, deleteStudentRubric } =
+        useRoster();
+    const { rubrics, gradeScales, addCommentBankItem, recordCommentBankUsage, commentBank } = useAuthoring();
+    const { analysisResults, saveAnalysisResult } = useAssessment();
     const {
-        rubrics,
-        students,
-        classes,
-        studentRubrics,
-        attachments,
-        analysisResults,
-        gradeScales,
-        settings,
-        saveStudentRubric,
-        updateSettings,
-        saveAnalysisResult,
-        addCommentBankItem,
-        recordCommentBankUsage,
-        commentBank,
-        addAttachment,
         saveEssayAssignment,
         essayAssignments,
         addEssayAssignments,
@@ -86,9 +75,10 @@ export default function GradeStudent() {
         fetchEssaySubmissionsForStudent,
         deleteEssaySubmission,
         getEssaySignedUrl,
-        fetchSchoolMembers,
-        deleteStudentRubric,
-    } = useApp();
+    } = useEssays();
+    const { settings, updateSettings } = useSettings();
+    const { fetchSchoolMembers } = usePlatform();
+
     const dbStatus = useDbStatus();
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);

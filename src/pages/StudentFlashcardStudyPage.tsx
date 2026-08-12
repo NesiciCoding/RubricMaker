@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useApp } from '../context/AppContext';
+import { useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import FlashcardStudySession from '../components/Flashcards/FlashcardStudySession';
 import FlashcardInsightsPanel from '../components/Flashcards/FlashcardInsightsPanel';
@@ -12,16 +12,17 @@ import type { FlashcardCardState, FlashcardDeck, FlashcardReview } from '../type
 export default function StudentFlashcardStudyPage() {
     const { studentId, deckId } = useParams<{ studentId: string; deckId: string }>();
     const { t } = useTranslation();
+    const { students } = useRoster();
     const {
-        students,
-        settings,
         flashcardDecks,
         flashcardReviews,
         saveFlashcardReview,
         fetchAssignedFlashcardDeck,
         fetchMyFlashcardReview,
         saveFlashcardReviewAsStudent,
-    } = useApp();
+    } = useFlashcards();
+    const { settings } = useSettings();
+
     const { isConnected } = useDbStatus();
 
     const student = students.find((s) => s.id === studentId);

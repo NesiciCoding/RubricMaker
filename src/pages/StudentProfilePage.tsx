@@ -26,7 +26,7 @@ import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import { formatShortDate } from '../utils/dateInput';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -47,22 +47,12 @@ import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../typ
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const {
-        students,
-        classes,
-        rubrics,
-        studentRubrics,
-        gradeScales,
-        settings,
-        selfAssessments,
-        speakingSessions,
-        standardMasteryTargets,
-        tests,
-        studentTests,
-        flashcardDecks,
-        flashcardAssignments,
-        flashcardReviews,
-    } = useApp();
+    const { students, classes, studentRubrics } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
+    const { selfAssessments, speakingSessions, tests, studentTests } = useAssessment();
+    const { standardMasteryTargets, flashcardDecks, flashcardAssignments, flashcardReviews } = useFlashcards();
+    const { settings } = useSettings();
+
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);

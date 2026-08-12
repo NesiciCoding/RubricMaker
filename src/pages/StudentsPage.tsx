@@ -27,7 +27,7 @@ import type { EventData } from 'react-joyride';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
@@ -280,13 +280,7 @@ export default function StudentsPage() {
     const {
         students,
         classes,
-        rubrics,
         studentRubrics,
-        gradeScales,
-        selfAssessments,
-        analysisResults,
-        tests,
-        studentTests,
         addStudent,
         updateStudent,
         deleteStudent,
@@ -294,10 +288,12 @@ export default function StudentsPage() {
         updateClass,
         deleteClass,
         mergeClasses,
-        settings,
-        updateSettings,
         setStudentPassword,
-    } = useApp();
+    } = useRoster();
+    const { rubrics, gradeScales } = useAuthoring();
+    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
+    const { settings, updateSettings } = useSettings();
+
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
 

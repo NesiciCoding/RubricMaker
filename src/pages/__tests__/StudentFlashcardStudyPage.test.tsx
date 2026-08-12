@@ -34,17 +34,26 @@ let mockReviews: FlashcardReview[] = [];
 let mockIsConnected = false;
 let mockUserRole: string | undefined = 'student';
 
+const makeAppValue = () => ({
+    students: [mockStudent],
+    settings: { ...mockSettings, userRole: mockUserRole },
+    flashcardDecks: mockDecks,
+    flashcardReviews: mockReviews,
+    saveFlashcardReview: mockSaveFlashcardReview,
+    fetchAssignedFlashcardDeck: vi.fn().mockResolvedValue(null),
+    fetchMyFlashcardReview: vi.fn().mockResolvedValue(null),
+    saveFlashcardReviewAsStudent: mockSaveFlashcardReviewAsStudent,
+});
+
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        students: [mockStudent],
-        settings: { ...mockSettings, userRole: mockUserRole },
-        flashcardDecks: mockDecks,
-        flashcardReviews: mockReviews,
-        saveFlashcardReview: mockSaveFlashcardReview,
-        fetchAssignedFlashcardDeck: vi.fn().mockResolvedValue(null),
-        fetchMyFlashcardReview: vi.fn().mockResolvedValue(null),
-        saveFlashcardReviewAsStudent: mockSaveFlashcardReviewAsStudent,
-    }),
+    useApp: () => makeAppValue(),
+    useRoster: () => makeAppValue(),
+    useAuthoring: () => makeAppValue(),
+    useAssessment: () => makeAppValue(),
+    useEssays: () => makeAppValue(),
+    useFlashcards: () => makeAppValue(),
+    useSettings: () => makeAppValue(),
+    usePlatform: () => makeAppValue(),
 }));
 
 vi.mock('../../hooks/useDbStatus', () => ({

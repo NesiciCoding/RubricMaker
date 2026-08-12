@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock 
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import {
     calcTestMaxPoints,
     calcStudentTestRawPoints,
@@ -268,7 +268,10 @@ export default function TestResultsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
-    const { tests, studentTests, students, gradeScales, settings, saveStudentTest } = useApp();
+    const { students } = useRoster();
+    const { gradeScales } = useAuthoring();
+    const { tests, studentTests, saveStudentTest } = useAssessment();
+    const { settings } = useSettings();
 
     const test = tests.find((tst) => tst.id === testId);
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);

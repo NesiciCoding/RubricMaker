@@ -11,7 +11,7 @@ import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
-import { useApp } from '../context/AppContext';
+import { useAssessment, useAuthoring, useRoster, useSettings } from '../context/AppContext';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
@@ -28,17 +28,11 @@ import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const {
-        students,
-        classes,
-        rubrics,
-        studentRubrics,
-        selfAssessments,
-        analysisResults,
-        settings,
-        tests,
-        studentTests,
-    } = useApp();
+    const { students, classes, studentRubrics } = useRoster();
+    const { rubrics } = useAuthoring();
+    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
+    const { settings } = useSettings();
+
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
