@@ -18,6 +18,36 @@ const DOMAIN_HOOKS = new Set([
 
 const MAX_DOMAINS = 3;
 
+/**
+ * Returns the AppContext domain-hook name that `identifier` resolves to, or null when the
+ * call is not a domain subscription.
+ *
+ * Resolves the callee through its binding so locally shadowed hooks and unrelated
+ * functions that merely share a name are not counted: only references whose variable is
+ * an ImportBinding from the AppContext module qualify. Aliased imports
+ * (import { useRoster as useR }) qualify because we return the imported specifier name —
+ * the canonical hook name used for counting and reporting.
+ */
+function appContextDomainHookFor(context, identifier) {
+    let scope = context.sourceCode.getScope(identifier);
+    let reference = null;
+    while (scope && !reference) {
+        reference = scope.references.find((r) => r.identifier === identifier) ?? null;
+        scope = scope.upper;
+    }
+    const variable = reference && reference.resolved;
+    const def = variable && variable.defs && variable.defs[0];
+    if (!def || def.type !== 'ImportBinding') return null;
+
+    const importedName = def.node.imported ? def.node.imported.name : def.node.name;
+    if (!DOMAIN_HOOKS.has(importedName)) return null;
+
+    let declaration = def.node;
+    while (declaration && declaration.type !== 'ImportDeclaration') declaration = declaration.parent;
+    const source = declaration && declaration.source && declaration.source.value;
+    return typeof source === 'string' && /(^|\/)AppContext$/.test(source) ? importedName : null;
+}
+
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
     meta: {
@@ -48,12 +78,9 @@ export default {
                 while (stack.length > 0) {
                     const current = stack.pop();
                     if (!current || typeof current.type !== 'string') continue;
-                    if (
-                        current.type === 'CallExpression' &&
-                        current.callee.type === 'Identifier' &&
-                        DOMAIN_HOOKS.has(current.callee.name)
-                    ) {
-                        used.add(current.callee.name);
+                    if (current.type === 'CallExpression' && current.callee.type === 'Identifier') {
+                        const hookName = appContextDomainHookFor(context, current.callee);
+                        if (hookName) used.add(hookName);
                     }
                     for (const key of Object.keys(current)) {
                         if (key === 'parent') continue;

@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../test-utils/renderWithProviders';
-import { AppProvider, useApp, useRoster, useSettings, useAuthoring, useAssessment } from './AppContext';
+import { AppProvider, useRoster, useSettings, useAuthoring, useAssessment } from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
