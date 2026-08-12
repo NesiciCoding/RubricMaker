@@ -19,14 +19,23 @@ const mockGetCurrentDatabaseUserId = vi.fn(() => 'user-1');
 
 const mockDocumentComments: DocumentComment[] = [];
 
+const makeAppValue = () => ({
+    documentComments: mockDocumentComments,
+    addDocumentComment: mockAddDocumentComment,
+    resolveDocumentComment: mockResolveDocumentComment,
+    deleteDocumentComment: mockDeleteDocumentComment,
+    getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
+});
+
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => ({
-        documentComments: mockDocumentComments,
-        addDocumentComment: mockAddDocumentComment,
-        resolveDocumentComment: mockResolveDocumentComment,
-        deleteDocumentComment: mockDeleteDocumentComment,
-        getCurrentDatabaseUserId: mockGetCurrentDatabaseUserId,
-    }),
+    useApp: () => makeAppValue(),
+    useRoster: () => makeAppValue(),
+    useAuthoring: () => makeAppValue(),
+    useAssessment: () => makeAppValue(),
+    useEssays: () => makeAppValue(),
+    useFlashcards: () => makeAppValue(),
+    useSettings: () => makeAppValue(),
+    usePlatform: () => makeAppValue(),
 }));
 
 vi.mock('react-i18next', () => ({
