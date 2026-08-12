@@ -16,7 +16,7 @@ import {
     loggingReducer,
     StoreData,
 } from './storeCore';
-import { createSelectorStore, StoreProvider } from './useStore';
+import { createSelectorStore, StoreActionsProvider, StoreProvider } from './useStore';
 
 import { RosterProvider } from './domains/roster';
 import { AuthoringProvider } from './domains/authoring';
@@ -495,25 +495,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return (
         <StoreProvider store={selectorStore}>
-            <RosterProvider ctx={actionsCtx} state={state}>
-                <AuthoringProvider ctx={actionsCtx} state={state}>
-                    <AssessmentProvider ctx={actionsCtx} state={state}>
-                        <EssaysProvider ctx={actionsCtx} state={state}>
-                            <FlashcardsProvider ctx={actionsCtx} state={state}>
-                                <SettingsProvider ctx={actionsCtx} state={state}>
-                                    <PlatformProvider
-                                        ctx={platformCtx}
-                                        landingState={landingState}
-                                        showMigrationPrompt={showMigrationPrompt}
-                                    >
-                                        {children}
-                                    </PlatformProvider>
-                                </SettingsProvider>
-                            </FlashcardsProvider>
-                        </EssaysProvider>
-                    </AssessmentProvider>
-                </AuthoringProvider>
-            </RosterProvider>
+            <StoreActionsProvider ctx={actionsCtx}>
+                <RosterProvider ctx={actionsCtx} state={state}>
+                    <AuthoringProvider ctx={actionsCtx} state={state}>
+                        <AssessmentProvider ctx={actionsCtx} state={state}>
+                            <EssaysProvider ctx={actionsCtx} state={state}>
+                                <FlashcardsProvider ctx={actionsCtx} state={state}>
+                                    <SettingsProvider ctx={actionsCtx} state={state}>
+                                        <PlatformProvider
+                                            ctx={platformCtx}
+                                            landingState={landingState}
+                                            showMigrationPrompt={showMigrationPrompt}
+                                        >
+                                            {children}
+                                        </PlatformProvider>
+                                    </SettingsProvider>
+                                </FlashcardsProvider>
+                            </EssaysProvider>
+                        </AssessmentProvider>
+                    </AuthoringProvider>
+                </RosterProvider>
+            </StoreActionsProvider>{' '}
         </StoreProvider>
     );
 }

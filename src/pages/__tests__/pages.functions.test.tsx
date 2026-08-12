@@ -194,8 +194,14 @@ vi.mock('../../context/useStore', () => ({
         selector({
             studentTests: [],
             tests: [],
+            essayTemplates: [],
+            flashcardAssignments: [],
+            flashcardDecks: [],
+            flashcardReviews: [],
+            userTemplates: [],
             ...currentApp,
         }),
+    useStoreActions: () => currentApp,
 }));
 
 vi.mock('react-i18next', () => ({

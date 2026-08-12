@@ -41,7 +41,8 @@ import GradingActionsMenu, { type GradingAction } from '../components/Grading/Gr
 import GradingGrid from '../components/Grading/GradingGrid';
 import { FeedbackAudioPlayer } from '../components/Grading/FeedbackAudioPlayer';
 import TouchStepper from '../components/Grading/TouchStepper';
-import { useAssessment, useAuthoring, useEssays, usePlatform, useRoster, useSettings } from '../context/AppContext';
+import { usePlatform } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
@@ -62,21 +63,50 @@ export default function GradeStudent() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics, attachments, saveStudentRubric, addAttachment, deleteStudentRubric } =
-        useRoster();
-    const { rubrics, gradeScales, addCommentBankItem, recordCommentBankUsage, commentBank } = useAuthoring();
-    const { analysisResults, saveAnalysisResult } = useAssessment();
     const {
-        saveEssayAssignment,
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        classes,
+        attachments,
+        rubrics,
+        gradeScales,
+        commentBank,
+        analysisResults,
         essayAssignments,
-        addEssayAssignments,
         essayTemplates,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        classes: s.classes,
+        attachments: s.attachments,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        commentBank: s.commentBank,
+        analysisResults: s.analysisResults,
+        essayAssignments: s.essayAssignments,
+        essayTemplates: s.essayTemplates,
+        settings: s.settings,
+    }));
+    // The roster domain exposes active (non-archived) students and non-deleted student
+    // rubrics; the store exposes the raw collections, so apply the same filters here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const {
+        saveStudentRubric,
+        addAttachment,
+        deleteStudentRubric,
+        addCommentBankItem,
+        recordCommentBankUsage,
+        saveAnalysisResult,
+        saveEssayAssignment,
+        addEssayAssignments,
         saveEssayTemplate,
         fetchEssaySubmissionsForStudent,
         deleteEssaySubmission,
         getEssaySignedUrl,
-    } = useEssays();
-    const { settings, updateSettings } = useSettings();
+        updateSettings,
+    } = useStoreActions();
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();

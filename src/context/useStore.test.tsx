@@ -2,7 +2,7 @@ import React from 'react';
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useAuthoring, useRoster } from './AppContext';
-import { useStoreSelector } from './useStore';
+import { useStoreActions, useStoreSelector } from './useStore';
 import type { Rubric, Student, Class } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -264,5 +264,62 @@ describe('useStoreSelector', () => {
         });
         expect(record).toHaveBeenCalledTimes(2);
         expect(record.mock.calls[0][0]).not.toBe(record.mock.calls[1][0]);
+    });
+});
+
+describe('useStoreActions', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        actions = null;
+    });
+
+    it('keeps a stable identity across unrelated dispatches and forced re-renders', () => {
+        const record = vi.fn();
+
+        // Actions read fresh state via getState() at call time, so the aggregated actions
+        // object is memoized on the stable actions ctx and must never change identity —
+        // action-only consumers therefore re-render on nothing.
+        function Probe() {
+            const [, setTick] = React.useState(0);
+            const storeActions = useStoreActions();
+            record(storeActions);
+            return <button onClick={() => setTick((t) => t + 1)}>rerender</button>;
+        }
+
+        const { getByRole } = renderWithProvider(<Probe />);
+        expect(record).toHaveBeenCalledTimes(1);
+        const first = record.mock.calls[0][0];
+        expect(first).toBeDefined();
+
+        // An action-only consumer does not re-render at all on an unrelated dispatch —
+        // the actions context value is stable, so React bails on every re-render.
+        act(() => {
+            actions!.addRubric(newRubric);
+        });
+        expect(record).toHaveBeenCalledTimes(1);
+
+        // Forced local re-render: still the same identity.
+        act(() => {
+            getByRole('button').click();
+        });
+        expect(record).toHaveBeenCalledTimes(2);
+        expect(record.mock.calls[1][0]).toBe(first);
+
+        // Another unrelated dispatch, then a forced re-render: still stable.
+        act(() => {
+            actions!.addStudent({ name: 'Alice', classId: 'c1' });
+        });
+        act(() => {
+            getByRole('button').click();
+        });
+        expect(record).toHaveBeenCalledTimes(3);
+        expect(record.mock.calls[2][0]).toBe(first);
+
+        // The actions surface spans every store domain (spot-check).
+        expect(typeof first.addStudent).toBe('function');
+        expect(typeof first.updateSettings).toBe('function');
+        expect(typeof first.saveStudentRubric).toBe('function');
+        expect(typeof first.getEssaySignedUrl).toBe('function');
+        expect(typeof first.saveAnalysisResult).toBe('function');
     });
 });

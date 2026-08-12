@@ -180,6 +180,10 @@ vi.mock('../../context/AppContext', () => ({
     useSettings: () => mockUseApp,
     usePlatform: () => mockUseApp,
 }));
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockUseApp),
+    useStoreActions: () => mockUseApp,
+}));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
 vi.mock('react-i18next', () => ({
