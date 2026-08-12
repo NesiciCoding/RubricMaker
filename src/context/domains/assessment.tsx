@@ -130,7 +130,9 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
     const addGradingTasks = (tasks: GradingTask[]) => {
         dispatch({ type: 'ADD_GRADING_TASKS', payload: tasks });
         void loadDb()
-            .then(({ storageSync }) => tasks.forEach((task) => storageSync.pushOne('gradingTask', 'upsert', task)))
+            .then(({ storageSync }) =>
+                Promise.all(tasks.map((task) => storageSync.pushOne('gradingTask', 'upsert', task)))
+            )
             .catch((e) => console.error('[sync] failed to push gradingTasks', e));
     };
     const deleteGradingTask = (id: string) => {

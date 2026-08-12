@@ -1,16 +1,17 @@
 // Generated from src/context/AppContext.tsx by the domain-split refactor.
 import React, { createContext, useMemo, ReactNode } from 'react';
-import {
-    Action,
-    AppContextValue,
-    LOCAL_MODE_KEY,
-    MIGRATION_DONE_KEY,
-    PlatformCtx,
-    flushToLocalStorage,
-    useContextOrThrow,
-} from '../storeCore';
+import { Action, AppContextValue, PlatformCtx, flushToLocalStorage, useContextOrThrow } from '../storeCore';
 import type { UserRole } from '../../types';
-import { StoreData, clearLocalData, importFullBackup, loadPendingQueue, loadStore } from '../../store/storage';
+import {
+    StoreData,
+    clearLocalData,
+    importFullBackup,
+    isLocalMode,
+    loadPendingQueue,
+    loadStore,
+    markMigrationDone,
+    setLocalMode,
+} from '../../store/storage';
 import { mergeStoreData } from '../../utils/syncMerge';
 import { saveSupabaseConfig } from '../../services/database/supabaseConfig';
 import { getDb, loadDb } from '../../services/database/lazyDb';
@@ -150,7 +151,7 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         return (await loadDb()).storageSync.updateMyProfile(updates);
     };
     const enterLocalMode = () => {
-        localStorage.setItem(LOCAL_MODE_KEY, 'true');
+        setLocalMode();
         setLandingState('hide');
     };
     const connectForOAuth = async (config: DatabaseConfig): Promise<boolean> => {
@@ -159,7 +160,7 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
     };
     const dismissMigrationPrompt = async (upload: boolean) => {
         setShowMigrationPrompt(false);
-        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+        markMigrationDone();
         if (upload) await (await loadDb()).storageSync.pushAll(getState());
     };
     const signInWithGoogle = async (): Promise<{ error?: string }> => {
@@ -185,7 +186,7 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         } else {
             showToast(t('toast.signout_pending_writes'), 'warning');
         }
-        if (localStorage.getItem(LOCAL_MODE_KEY) !== 'true') {
+        if (!isLocalMode()) {
             setLandingState('show');
         }
     };
@@ -254,7 +255,6 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
 }
 
 export function usePlatformValue(
-    state: StoreData,
     actions: PlatformActions,
     dispatch: React.Dispatch<Action>,
     landingState: 'checking' | 'show' | 'hide',
@@ -275,19 +275,17 @@ export function usePlatformValue(
 
 export function PlatformProvider({
     ctx,
-    state,
     landingState,
     showMigrationPrompt,
     children,
 }: {
     ctx: PlatformCtx;
-    state: StoreData;
     landingState: 'checking' | 'show' | 'hide';
     showMigrationPrompt: boolean;
     children: ReactNode;
 }) {
     const actions = useMemo(() => createPlatformActions(ctx), [ctx]);
-    const value = usePlatformValue(state, actions, ctx.dispatch, landingState, showMigrationPrompt);
+    const value = usePlatformValue(actions, ctx.dispatch, landingState, showMigrationPrompt);
     return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
 }
 

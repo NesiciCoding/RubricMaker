@@ -215,6 +215,33 @@ describe('useStoreSelector', () => {
         expect(record.mock.calls[1][0]).not.toBe(record.mock.calls[2][0]);
     });
 
+    it('returns a fresh selection when the selected object shape changes even if all values are undefined', () => {
+        // Regression: the shallow-compare must verify key ownership, not just value reads —
+        // otherwise { x: undefined } and { y: undefined } (different keys, equal counts) would
+        // compare equal and the stale cached shape would leak to the new selection.
+        const record = vi.fn();
+
+        function Probe() {
+            const [pickY, setPickY] = React.useState(false);
+            const selection = useStoreSelector<{ x?: undefined } | { y?: undefined }>(
+                pickY ? (s) => ({ y: undefined }) : (s) => ({ x: undefined })
+            );
+            record(selection);
+            return <button onClick={() => setPickY(true)}>pickY</button>;
+        }
+
+        const { getByRole } = renderWithProvider(<Probe />);
+        expect(record).toHaveBeenCalledTimes(1);
+        expect(record.mock.calls[0][0]).toEqual({ x: undefined });
+
+        act(() => {
+            getByRole('button').click();
+        });
+        expect(record).toHaveBeenCalledTimes(2);
+        expect(record.mock.calls[1][0]).toEqual({ y: undefined });
+        expect(record.mock.calls[1][0]).not.toBe(record.mock.calls[0][0]);
+    });
+
     it('keeps a derived (filtered) selection stable while the underlying collection is unchanged', () => {
         const record = vi.fn();
 
