@@ -1419,7 +1419,14 @@ async function flushToLocalStorage(merged: StoreData, changedKeys?: Set<keyof St
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
+    // Latest-state ref (documented "latest ref" pattern, react.dev/useRef): written during
+    // render so it always holds the state of the current render. Actions below read it instead
+    // of closing over a slice (stable identity), and because render-phase writes happen before
+    // every effect, they observe the fresh snapshot even when invoked from a descendant's
+    // useLayoutEffect — an effect-based sync (layout or passive) would lag behind by a commit.
     const currentStateRef = useRef(state);
+    // eslint-disable-next-line react-hooks/refs -- intentional latest-ref write; idempotent per render
+    currentStateRef.current = state;
     // Backs the delta-sync diff effect further below (compares each render's
     // state to the last one to decide what to push to Supabase).
     const prevStateRef = useRef(state);
@@ -1450,11 +1457,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (isOffline()) showToast(t('toast.storage_full'), 'error');
         });
     }, [showToast, t]);
-
-    // Keep currentStateRef in sync so the reconnect handler always sees fresh state
-    useEffect(() => {
-        currentStateRef.current = state;
-    }, [state]);
 
     // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
     const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
