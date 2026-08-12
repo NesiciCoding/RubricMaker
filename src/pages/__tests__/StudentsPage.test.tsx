@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, GradeScale, Rubric, Student, StudentRubric } from '../../types';
+import type { CefrStudentOverview } from '../../utils/cefrStudentAggregator';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -117,14 +118,18 @@ vi.mock('../../context/AppContext', () => ({
 }));
 
 vi.mock('../../utils/cefrStudentAggregator', () => ({
-    getCefrStudentOverview: vi.fn(() => ({
-        cells: [],
-        standardSets: [],
-        skillsWithRubricData: 0,
-        overallConfidenceRate: 0,
-        standardsCovered: 0,
-        practiceCefrProgress: [],
-    })),
+    getCefrStudentOverview: vi.fn(
+        () =>
+            ({
+                cells: [],
+                cellMap: new Map(),
+                standardSets: [],
+                skillsWithRubricData: 0,
+                overallConfidenceRate: 0,
+                standardsCovered: 0,
+                practiceCefrProgress: [],
+            }) satisfies CefrStudentOverview
+    ),
     highestLevelForSkill: vi.fn(() => null),
 }));
 
@@ -296,32 +301,35 @@ describe('StudentsPage', () => {
         const overviewSpy = vi.mocked(getCefrStudentOverview);
         overviewSpy.mockClear();
 
-        mockAppValue.students = [mockStudent, mockStudent2];
-        mockAppValue.studentRubrics = [srAlice, srBob];
-        renderPage();
+        try {
+            mockAppValue.students = [mockStudent, mockStudent2];
+            mockAppValue.studentRubrics = [srAlice, srBob];
+            renderPage();
 
-        const studentIds = () => overviewSpy.mock.calls.map((c) => c[0]);
-        expect(studentIds().sort()).toEqual(['s1', 's2']);
+            const studentIds = () => overviewSpy.mock.calls.map((c) => c[0]);
+            expect(studentIds().sort()).toEqual(['s1', 's2']);
 
-        // Search churn (no data change) must NOT re-run the per-student aggregation.
-        fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
-            target: { value: 'x' },
-        });
-        expect(studentIds().sort()).toEqual(['s1', 's2']);
+            // Search churn (no data change) must NOT re-run the per-student aggregation.
+            fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
+                target: { value: 'x' },
+            });
+            expect(studentIds().sort()).toEqual(['s1', 's2']);
 
-        // Bob gets a second grade; Alice's records keep their object identity.
-        const callsBeforeUpdate = overviewSpy.mock.calls.length;
-        mockAppValue.studentRubrics = [srAlice, srBob, srBob2];
-        fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
-            target: { value: 'xy' },
-        });
+            // Bob gets a second grade; Alice's records keep their object identity.
+            const callsBeforeUpdate = overviewSpy.mock.calls.length;
+            mockAppValue.studentRubrics = [srAlice, srBob, srBob2];
+            fireEvent.change(screen.getByPlaceholderText('studentsPage.search_students'), {
+                target: { value: 'xy' },
+            });
 
-        // Exactly one new aggregation run — for Bob only.
-        const newCalls = overviewSpy.mock.calls.slice(callsBeforeUpdate).map((c) => c[0]);
-        expect(newCalls).toEqual(['s2']);
-
-        // Restore the default fixtures for sibling tests.
-        mockAppValue.students = mockStudentsArr;
-        mockAppValue.studentRubrics = mockStudentRubricsArr;
+            // Exactly one new aggregation run — for Bob only.
+            const newCalls = overviewSpy.mock.calls.slice(callsBeforeUpdate).map((c) => c[0]);
+            expect(newCalls).toEqual(['s2']);
+        } finally {
+            // Restore the default fixtures even when an assertion fails, so later tests
+            // never inherit Bob's records or the extra rubric rows.
+            mockAppValue.students = mockStudentsArr;
+            mockAppValue.studentRubrics = mockStudentRubricsArr;
+        }
     });
 });
