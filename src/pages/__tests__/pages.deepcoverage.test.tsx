@@ -171,6 +171,18 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockUseApp,
 }));
 
+// Dashboard/StatisticsPage read data via the selector store; route selectors to the
+// same mocked app value, with array defaults for slices this file's mock omits.
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) =>
+        selector({
+            studentTests: [],
+            tests: [],
+            flashcardDecks: [],
+            ...mockUseApp,
+        }),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string) => key,
