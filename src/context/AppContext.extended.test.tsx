@@ -11,6 +11,8 @@ import { DEFAULT_FORMAT } from '../types';
 const versionStore = vi.hoisted(() => new Map<string, RubricVersion[]>());
 
 vi.mock('../store/storage', () => ({
+    isMigrationDone: vi.fn(() => false),
+    markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],

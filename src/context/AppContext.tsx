@@ -88,6 +88,8 @@ import {
     loadPendingQueue,
     onStorageQuotaExceeded,
     clearLocalData,
+    isMigrationDone,
+    markMigrationDone,
     sanitizeClassYears,
     loadRubricVersions,
     upsertRubricVersion,
@@ -1386,7 +1388,6 @@ function useContextOrThrow<T>(ctx: React.Context<T | null>, hookName: string): T
 }
 
 const LOCAL_MODE_KEY = 'rm_local_mode';
-const MIGRATION_DONE_KEY = 'rm_migration_done';
 
 // One writer per StoreData collection, so a flush can rewrite only the collections that
 // actually changed (a realtime tick touching one table shouldn't re-serialise all ~30).
@@ -1468,6 +1469,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
     const { showToast } = useToast();
     const { t } = useTranslation();
+    // The database-sync callbacks below keep [] deps so their identity survives language
+    // switches; route error toasts through this ref so they still use the current language.
+    const tRef = useRef(t);
+    useEffect(() => {
+        tRef.current = t;
+    }, [t]);
 
     // storage.ts swallows quota errors internally (saveStudentRubrics retries
     // once without audio first) so a reducer case never throws mid-update; this
@@ -1636,7 +1643,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         await configureAndEnter(config);
 
                         // Show migration prompt once if local data exists and hasn't been migrated
-                        if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
+                        if (!isMigrationDone() && !storageSync.didWipeLocalData()) {
                             const s = initialStateRef.current;
                             if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
                                 setShowMigrationPrompt(true);
@@ -2408,7 +2415,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 const _client = storageSync.adapter.getClient();
                 if (_client && _userId) initAuditLogger(_client, _userId);
                 const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-                if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                if (hydrateError) showToast(tRef.current('toast.sync_load_failed'), 'warning');
                 if (fresh) {
                     const base = storageSync.didWipeLocalData() ? loadStore() : currentStateRef.current;
                     const merged = mergeStoreData(base, fresh, loadPendingQueue());
@@ -2419,7 +2426,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     try {
                         await flushToLocalStorage(merged);
                     } catch {
-                        showToast(t('toast.storage_full'), 'error');
+                        showToast(tRef.current('toast.storage_full'), 'error');
                     }
                 }
             }
@@ -2441,7 +2448,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const pullFromDatabase = useCallback(async () => {
         const { storageSync } = await loadDb();
         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
-        if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+        if (hydrateError) showToast(tRef.current('toast.sync_load_failed'), 'warning');
         if (fresh) {
             const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
             // Not seeded: same owner-scoped reasoning as connectDatabase above.
@@ -2589,7 +2596,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const dismissMigrationPrompt = useCallback(async (upload: boolean) => {
         setShowMigrationPrompt(false);
-        localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+        markMigrationDone();
         if (upload) await (await loadDb()).storageSync.pushAll(currentStateRef.current);
     }, []);
 

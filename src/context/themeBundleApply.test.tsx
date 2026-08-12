@@ -8,6 +8,8 @@ import type { AppSettings } from '../types';
 
 // Mock storage so we don't write to localStorage/IndexedDB during tests.
 vi.mock('../store/storage', () => ({
+    isMigrationDone: vi.fn(() => false),
+    markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],

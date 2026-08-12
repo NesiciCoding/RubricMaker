@@ -10,12 +10,15 @@ import type { Rubric, GradeScale } from '../types';
 // (vi.mock factories are hoisted above regular imports/consts) and still be referenced
 // from inside tests below.
 const mockShowToast = vi.hoisted(() => vi.fn());
+const mockPushAll = vi.hoisted(() => vi.fn());
 vi.mock('../hooks/useToast', () => ({
     useToast: () => ({ showToast: mockShowToast }),
 }));
 
 // Mock storage functions so we don't actually write to localStorage/IndexedDB during tests
 vi.mock('../store/storage', () => ({
+    isMigrationDone: vi.fn(() => false),
+    markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],
@@ -80,6 +83,7 @@ vi.mock('../services/database', () => ({
         didWipeLocalData: () => false,
         pushOne: vi.fn(),
         pushMany: vi.fn(),
+        pushAll: mockPushAll,
     },
 }));
 
@@ -639,7 +643,7 @@ describe('AppContext', () => {
         });
     });
 
-    it('only re-renders consumers of the domain whose data changed', () => {
+    it('only re-renders consumers of the domain whose data changed', async () => {
         // Domain isolation: a dispatch that touches one collection must NOT re-render
         // consumers that only read a different domain. Each probe records every render
         // it performs; the probes are direct children of AppProvider so their re-render
@@ -647,7 +651,12 @@ describe('AppContext', () => {
         const gradingRenders: number[] = [];
         const studentsRenders: number[] = [];
         const settingsRenders: string[] = [];
-        const platformActionIds: unknown[] = [];
+        const platformSnapshots: Array<{
+            pushAll: unknown;
+            connect: unknown;
+            pull: unknown;
+            dismiss: unknown;
+        }> = [];
         let triggerGrade: (() => void) | null = null;
 
         function GradingProbe() {
@@ -672,8 +681,13 @@ describe('AppContext', () => {
         // so ANY dispatch re-created them and re-rendered every platform consumer. They
         // now read currentStateRef instead, so their identity must survive a dispatch.
         function PlatformProbe() {
-            const { pushAllToDatabase, connectDatabase, dismissMigrationPrompt } = usePlatform();
-            platformActionIds.push(pushAllToDatabase, connectDatabase, dismissMigrationPrompt);
+            const { pushAllToDatabase, connectDatabase, pullFromDatabase, dismissMigrationPrompt } = usePlatform();
+            platformSnapshots.push({
+                pushAll: pushAllToDatabase,
+                connect: connectDatabase,
+                pull: pullFromDatabase,
+                dismiss: dismissMigrationPrompt,
+            });
             return null;
         }
 
@@ -708,7 +722,8 @@ describe('AppContext', () => {
         expect(gradingRenders.length).toBe(1);
         expect(studentsRenders.length).toBe(1);
         expect(settingsRenders.length).toBe(1);
-        const platformRendersBeforeDispatch = platformActionIds.length;
+        const platformRendersBeforeDispatch = platformSnapshots.length;
+        const firstSnapshot = platformSnapshots[0];
 
         act(() => {
             triggerGrade!();
@@ -721,9 +736,20 @@ describe('AppContext', () => {
         expect(settingsRenders.length).toBe(1);
 
         // And the state-reading platform actions keep their identity across the dispatch
-        // (every recorded identity is the same function) AND add zero new renders, so
-        // platform consumers stop re-rendering on unrelated dispatches.
-        expect(platformActionIds.length).toBe(platformRendersBeforeDispatch);
-        expect(new Set(platformActionIds).size).toBe(3);
+        // AND add zero new renders, so platform consumers stop re-rendering on unrelated
+        // dispatches. Verify identity per action slot (not just the total count).
+        expect(platformSnapshots.length).toBe(platformRendersBeforeDispatch);
+        for (const slot of ['pushAll', 'connect', 'pull', 'dismiss'] as const) {
+            expect(platformSnapshots.every((s) => s[slot] === firstSnapshot[slot])).toBe(true);
+        }
+
+        // Latest-state behavior: the pushAllToDatabase captured BEFORE the dispatch is
+        // still stable, and when invoked after the update it pushes the NEW state.
+        await act(async () => {
+            await (firstSnapshot.pushAll as () => Promise<unknown>)();
+        });
+        expect(mockPushAll).toHaveBeenCalledTimes(1);
+        const pushedState = mockPushAll.mock.calls[0][0] as { studentRubrics: Array<{ id: string }> };
+        expect(pushedState.studentRubrics.map((sr) => sr.id)).toContain('sr1');
     });
 });
