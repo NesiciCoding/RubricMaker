@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { reducer } from './AppContext';
+import { reducer } from './storeCore';
 import { deleteRubricVersions } from '../store/storage';
 import type { StoreData } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';

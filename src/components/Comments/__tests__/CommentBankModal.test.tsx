@@ -21,7 +21,6 @@ const makeAppContextMock = () => ({
     deleteCommentBankItem: vi.fn(),
 });
 vi.mock('../../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useStudents: () => makeAppContextMock(),
     useClasses: () => makeAppContextMock(),

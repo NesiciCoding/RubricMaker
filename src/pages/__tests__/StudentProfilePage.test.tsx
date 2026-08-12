@@ -96,7 +96,6 @@ const mockAppValue = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useStudents: () => mockAppValue,
     useClasses: () => mockAppValue,
@@ -107,6 +106,10 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
 }));
 
 vi.mock('react-router-dom', async () => {

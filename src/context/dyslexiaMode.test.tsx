@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useApp } from './AppContext';
+import { AppProvider, useSettings } from './AppContext';
 import * as storage from '../store/storage';
 
 vi.mock('../store/storage', () => ({
@@ -93,7 +93,7 @@ describe('Dyslexia-friendly reading mode', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it('sets line-height/letter-spacing CSS vars and persists the setting when enabled', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         act(() => {
             result.current.updateSettings({ dyslexiaFriendlyMode: true });
@@ -106,7 +106,7 @@ describe('Dyslexia-friendly reading mode', () => {
     });
 
     it('removes the CSS vars when disabled again', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         act(() => {
             result.current.updateSettings({ dyslexiaFriendlyMode: true });
@@ -120,7 +120,7 @@ describe('Dyslexia-friendly reading mode', () => {
     });
 
     it('sets dir="rtl" when the active language is Arabic, and "ltr" otherwise', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         expect(document.documentElement.dir).toBe('ltr');
 

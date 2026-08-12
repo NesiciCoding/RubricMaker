@@ -33,7 +33,6 @@ vi.mock('../../services/database', () => ({
 let mockUseApp: any;
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockUseApp,
     useRoster: () => mockUseApp,
     useStudents: () => mockUseApp,
     useClasses: () => mockUseApp,

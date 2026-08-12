@@ -1,11 +1,20 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useLayoutEffect, useRef } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../test-utils/renderWithProviders';
-import { AppProvider, useApp, useStudents, useGrading, useSettings } from './AppContext';
+import {
+    AppProvider,
+    useRoster,
+    useStudents,
+    useGrading,
+    useSettings,
+    useAuthoring,
+    useAssessment,
+} from './AppContext';
 import * as storage from '../store/storage';
 import { storageSync } from '../services/database';
 import type { Rubric, GradeScale } from '../types';
+import { DEFAULT_FORMAT } from '../types';
 
 // vi.hoisted so this spy can be created before vi.mock('../hooks/useToast', ...) runs
 // (vi.mock factories are hoisted above regular imports/consts) and still be referenced
@@ -133,7 +142,7 @@ describe('AppContext', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it('should initialize with default loaded state', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         expect(result.current.rubrics).toEqual([]);
         expect(result.current.students).toEqual([]);
         expect(result.current.classes).toEqual([]);
@@ -142,7 +151,7 @@ describe('AppContext', () => {
     });
 
     it('should add a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
 
         const newRubric: Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'> = {
             name: 'Test Rubric',
@@ -168,7 +177,7 @@ describe('AppContext', () => {
     });
 
     it('should update a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
 
         act(() => {
             result.current.addRubric({
@@ -199,7 +208,7 @@ describe('AppContext', () => {
     });
 
     it('should delete a rubric', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useAuthoring(), ...useSettings() }), { wrapper });
         let addedId = '';
 
         act(() => {
@@ -228,7 +237,7 @@ describe('AppContext', () => {
     });
 
     it('should save and update student rubrics', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         const sr = { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false };
 
         act(() => {
@@ -244,7 +253,7 @@ describe('AppContext', () => {
     });
 
     it('should create a student rubric with default entries', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'R1',
@@ -268,7 +277,7 @@ describe('AppContext', () => {
     });
 
     it('should create group student rubrics sharing one groupId, and propagate scores on save', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -311,7 +320,7 @@ describe('AppContext', () => {
     });
 
     it('should only fan out collaborative criteria in group grading, leaving individually-scoped criteria per student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -362,7 +371,7 @@ describe('AppContext', () => {
     });
 
     it('should still fan out overallComment/globalModifier for an all-individually-scoped rubric, while entries stay per-student', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -408,7 +417,7 @@ describe('AppContext', () => {
     });
 
     it('should reuse an existing ungrouped StudentRubric instead of creating a duplicate', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => ({ ...useRoster(), ...useAuthoring(), ...useSettings() }), { wrapper });
         act(() => {
             result.current.addRubric({
                 name: 'Group Project',
@@ -442,7 +451,7 @@ describe('AppContext', () => {
     });
 
     it('should merge classes', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
         let c1 = '',
             c2 = '';
 
@@ -461,7 +470,7 @@ describe('AppContext', () => {
     });
 
     it('should manage favorite standards', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
         const std = { guid: 'std1', description: 'desc', standardSetTitle: '', jurisdictionTitle: '' };
 
         act(() => {
@@ -477,7 +486,7 @@ describe('AppContext', () => {
     });
 
     it('should manage comment bank items', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addCommentBankItem('Good job', ['tag1']);
@@ -497,7 +506,7 @@ describe('AppContext', () => {
     });
 
     it('should track comment bank usage without requiring a full item replace', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addCommentBankItem('Good job', ['tag1']);
@@ -518,7 +527,7 @@ describe('AppContext', () => {
     });
 
     it('should mange grade scales', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
@@ -538,7 +547,7 @@ describe('AppContext', () => {
     });
 
     it('should manage attachments', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useRoster(), { wrapper });
 
         act(() => {
             result.current.addAttachment({ name: 'File 1', mimeType: 'docx', size: 100, dataUrl: 'data' });
@@ -553,7 +562,7 @@ describe('AppContext', () => {
     });
 
     it('should manage export templates', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
 
         act(() => {
             result.current.addExportTemplate({ name: 'Template 1', dataUrl: 'data', levelHeaders: ['H1'], size: 100 });
@@ -568,7 +577,7 @@ describe('AppContext', () => {
     });
 
     it('should manage peer reviews', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useAssessment(), { wrapper });
         const pr = {
             id: 'pr1',
             rubricId: 'r1',
@@ -591,7 +600,7 @@ describe('AppContext', () => {
     });
 
     it('should retrieve active grade scale', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         let scale: GradeScale | undefined;
         act(() => {
@@ -601,7 +610,7 @@ describe('AppContext', () => {
     });
 
     it('should update settings', () => {
-        const { result } = renderHook(() => useApp(), { wrapper });
+        const { result } = renderHook(() => useSettings(), { wrapper });
 
         act(() => {
             result.current.updateSettings({ theme: 'dark' });
@@ -625,7 +634,7 @@ describe('AppContext', () => {
 
         it('shows the storage_full toast when the quota is exceeded while offline/disconnected', () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(false);
-            renderHook(() => useApp(), { wrapper });
+            renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
 
@@ -634,7 +643,7 @@ describe('AppContext', () => {
 
         it('stays silent when the quota is exceeded while connected — Supabase already has the real data', () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(true);
-            renderHook(() => useApp(), { wrapper });
+            renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
 
@@ -708,5 +717,168 @@ describe('AppContext', () => {
         expect(gradingRenders.length).toBeGreaterThan(1);
         expect(studentsRenders.length).toBe(1);
         expect(settingsRenders.length).toBe(1);
+    });
+
+    it('roster consumers do not re-render when authoring data (rubrics) changes', () => {
+        // Cross-domain action stability: createStudentRubric / createGroupStudentRubrics read
+        // rubrics via currentStateRef, so their identity (and thus rosterValue) must not change
+        // when the authoring rubrics collection changes.
+        const rosterRenders: number[] = [];
+        let triggerAddRubric: (() => void) | null = null;
+
+        function RosterProbe() {
+            const { students } = useRoster();
+            rosterRenders.push(students.length);
+            return <div data-testid="roster-probe">{students.length}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addRubric } = useAuthoring();
+            triggerAddRubric = () =>
+                addRubric({
+                    name: 'New Rubric',
+                    subject: '',
+                    description: '',
+                    criteria: [],
+                    gradeScaleId: 'default-scale',
+                    format: DEFAULT_FORMAT,
+                    attachmentIds: [],
+                    totalMaxPoints: 100,
+                    scoringMode: 'weighted-percentage',
+                });
+            return null;
+        }
+
+        renderWithRouter(
+            <>
+                <RosterProbe />
+                <TriggerProbe />
+            </>,
+            { withAppProvider: true }
+        );
+
+        expect(rosterRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddRubric!();
+        });
+
+        expect(rosterRenders.length).toBe(1); // roster consumer did NOT re-render
+    });
+
+    it('settings consumers do not re-render when authoring data (grade scales) changes', () => {
+        // getActiveGradeScale reads gradeScales via currentStateRef, so its identity (and thus
+        // settingsValue) must not change when the authoring grade-scales collection changes.
+        const settingsRenders: string[] = [];
+        let triggerAddGradeScale: (() => void) | null = null;
+
+        function SettingsProbe() {
+            const { settings } = useSettings();
+            settingsRenders.push(settings.language);
+            return <div data-testid="settings-probe">{settings.language}</div>;
+        }
+
+        function TriggerProbe() {
+            const { addGradeScale } = useAuthoring();
+            triggerAddGradeScale = () => addGradeScale({ name: 'New Scale', type: 'points', ranges: [] });
+            return null;
+        }
+
+        renderWithRouter(
+            <>
+                <SettingsProbe />
+                <TriggerProbe />
+            </>,
+            { withAppProvider: true }
+        );
+
+        expect(settingsRenders.length).toBe(1);
+
+        act(() => {
+            triggerAddGradeScale!();
+        });
+
+        expect(settingsRenders.length).toBe(1); // settings consumer did NOT re-render
+    });
+
+    it('actions invoked from a layout effect see the latest rubric state', () => {
+        // Regression for currentStateRef sync timing: the ref is written during render (not in an
+        // effect), so the first layout-effect run below dispatches an update and the second run —
+        // which fires after the re-render that dispatch produced — reads the ref's fresh snapshot
+        // instead of the previous render's. An effect-based sync (layout or passive) would lag
+        // behind by a commit and observe stale state.
+        const entryCounts: number[] = [];
+        const rubricIdRef: { current: string } = { current: '' };
+
+        function LayoutEffectProbe() {
+            const { createStudentRubric, createGroupStudentRubrics } = useRoster();
+            const { addRubric } = useAuthoring();
+            const runRef = useRef(0);
+
+            useLayoutEffect(() => {
+                runRef.current += 1;
+                if (runRef.current === 1) {
+                    const rubric = addRubric({
+                        name: 'Layout Rubric',
+                        subject: '',
+                        description: '',
+                        gradeScaleId: 'default-scale',
+                        format: DEFAULT_FORMAT,
+                        attachmentIds: [],
+                        totalMaxPoints: 30,
+                        scoringMode: 'weighted-percentage',
+                        criteria: [
+                            { id: 'c1', title: 'C1', description: '', weight: 34, levels: [] },
+                            { id: 'c2', title: 'C2', description: '', weight: 33, levels: [] },
+                            { id: 'c3', title: 'C3', description: '', weight: 33, levels: [] },
+                        ],
+                    });
+                    rubricIdRef.current = rubric.id;
+                } else if (runRef.current === 2) {
+                    const single = createStudentRubric(rubricIdRef.current, 'student-1');
+                    entryCounts.push(single.entries.length);
+                    const group = createGroupStudentRubrics(rubricIdRef.current, ['student-1', 'student-2']);
+                    entryCounts.push(group[0].entries.length);
+                }
+            });
+
+            return <div data-testid="layout-rubric-probe" />;
+        }
+
+        renderWithRouter(<LayoutEffectProbe />, { withAppProvider: true });
+        act(() => {}); // flush the re-render scheduled by the first layout effect
+
+        // Each created StudentRubric must mirror the 3 criteria of the rubric added in run 1.
+        expect(entryCounts).toEqual([3, 3]);
+    });
+
+    it('getActiveGradeScale invoked from a layout effect sees the latest grade-scale state', () => {
+        const observedNames: string[] = [];
+
+        function LayoutEffectScaleProbe() {
+            const { getActiveGradeScale, updateSettings } = useSettings();
+            const { addGradeScale } = useAuthoring();
+            const runRef = useRef(0);
+
+            useLayoutEffect(() => {
+                runRef.current += 1;
+                if (runRef.current === 1) {
+                    const scale = addGradeScale({ name: 'Layout Scale', type: 'points', ranges: [] });
+                    updateSettings({ defaultGradeScaleId: scale.id });
+                } else if (runRef.current === 2) {
+                    observedNames.push(getActiveGradeScale().name);
+                }
+            });
+
+            return <div data-testid="layout-scale-probe" />;
+        }
+
+        renderWithRouter(<LayoutEffectScaleProbe />, { withAppProvider: true });
+        act(() => {}); // flush the re-render scheduled by the first layout effect
+
+        // The ref is written during render, so run 2 — which fires after the re-render caused by
+        // run 1's dispatch — sees the scale added in run 1; with an effect-based sync it would lag
+        // by a commit and still resolve the old default.
+        expect(observedNames).toEqual(['Layout Scale']);
     });
 });

@@ -913,14 +913,6 @@ const KEYS = {
     migrationDone: 'rm_migration_done',
 };
 
-export function isMigrationDone(): boolean {
-    return localStorage.getItem(KEYS.migrationDone) === 'true';
-}
-
-export function markMigrationDone(): void {
-    localStorage.setItem(KEYS.migrationDone, 'true');
-}
-
 // ─── Generic helpers ───────────────────────────────────────────────────────────
 
 function load<T>(key: string, fallback: T): T {
@@ -955,6 +947,29 @@ function save<T>(key: string, value: T): void {
         }
         throw e;
     }
+}
+
+// ─── Local-mode / migration flags ──────────────────────────────────────────────
+// Raw localStorage (not the JSON load/save helpers): these flags are stored as
+// plain string values and are read across app boot, so the helpers keep the
+// exact string semantics the original direct accesses used.
+
+export const LOCAL_MODE_KEY = 'rm_local_mode';
+export const MIGRATION_DONE_KEY = 'rm_migration_done';
+
+/** Marks the app as running in local (database-less) mode. */
+export function setLocalMode(): void {
+    localStorage.setItem(LOCAL_MODE_KEY, 'true');
+}
+
+/** True while the app is in local mode (set via setLocalMode or the landing page). */
+export function isLocalMode(): boolean {
+    return localStorage.getItem(LOCAL_MODE_KEY) === 'true';
+}
+
+/** Marks the migration prompt as dismissed so it doesn't reappear on next launch. */
+export function markMigrationDone(): void {
+    localStorage.setItem(MIGRATION_DONE_KEY, 'true');
 }
 
 // ─── Rubric version history (Phase 18.4) ────────────────────────────────────────
@@ -1083,13 +1098,20 @@ export function loadStore(): StoreData {
         localStorage.removeItem(KEYS.commentSnippets);
     }
 
+    // getActiveGradeScale assumes a non-empty collection (falls back to the first scale),
+    // so an empty stored array is re-seeded with the defaults rather than left to produce
+    // an undefined "active scale" for every caller.
+    const gradeScales = load<GradeScale[]>(KEYS.gradeScales, DEFAULT_GRADE_SCALES);
+    const seededGradeScales = gradeScales.length > 0 ? gradeScales : DEFAULT_GRADE_SCALES;
+    if (seededGradeScales !== gradeScales) save(KEYS.gradeScales, seededGradeScales);
+
     return {
         rubrics,
         students: load<Student[]>(KEYS.students, []),
         classes: sanitizeClassYears(load<Class[]>(KEYS.classes, [{ id: 'default', name: 'Default Class' }])),
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),
         attachments: load<Attachment[]>(KEYS.attachments, []),
-        gradeScales: load<GradeScale[]>(KEYS.gradeScales, DEFAULT_GRADE_SCALES),
+        gradeScales: seededGradeScales,
         settings: load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
         commentBank,
@@ -1332,7 +1354,10 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] attachments failed validation — skipped');
         }
         if (data.gradeScales !== undefined) {
-            if (isObjectArray(data.gradeScales)) saveGradeScales(data.gradeScales as GradeScale[]);
+            // Empty collections are rejected so getActiveGradeScale's first-scale fallback
+            // stays valid; loadStore re-seeds defaults if one slips through.
+            if (isObjectArray(data.gradeScales) && data.gradeScales.length > 0)
+                saveGradeScales(data.gradeScales as GradeScale[]);
             else console.warn('[importFullBackup] gradeScales failed validation — skipped');
         }
         if (data.settings !== undefined) {

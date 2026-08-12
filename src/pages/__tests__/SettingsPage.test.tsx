@@ -26,7 +26,7 @@ const mockAddGradeScale = vi.fn(() => ({ ...mockGradeScale, id: 'gs2' }));
 const mockShowToast = vi.fn();
 
 // Stable references — see other page tests in this directory for why fresh array/object
-// literals on every useApp() call can cause infinite render loops via memo/effect deps.
+// literals on every domain-hook call can cause infinite render loops via memo/effect deps.
 const mockGradeScalesArr = [mockGradeScale];
 const mockCommentBankArr: never[] = [];
 const mockExportTemplatesArr: never[] = [];
@@ -59,7 +59,6 @@ const mockAppValue = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useStudents: () => mockAppValue,
     useClasses: () => mockAppValue,

@@ -65,7 +65,6 @@ const makeAppContextMock = () => ({
     dismissMigrationPrompt: mockDismissMigrationPrompt,
 });
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useStudents: () => makeAppContextMock(),
     useClasses: () => makeAppContextMock(),

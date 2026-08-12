@@ -45,7 +45,7 @@ const mockRubric: Rubric = {
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
 
-// Build the context value ONCE so useApp() returns stable array references across
+// Build the context value ONCE so the domain hooks return stable array references across
 // renders — a fresh object/array each call makes any page whose effect depends on a
 // context array re-run that effect forever (setState → re-render → new array ref →
 // effect → …), which OOMs the worker. In the real app these references are stable.
@@ -179,7 +179,6 @@ vi.mock('../../context/AppContext', () => {
         signOutFromDatabase: vi.fn(() => Promise.resolve()),
     };
     return {
-        useApp: () => base,
         useRoster: () => base,
         useStudents: () => base,
         useClasses: () => base,

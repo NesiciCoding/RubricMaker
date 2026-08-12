@@ -178,7 +178,6 @@ function makeApp(overrides = {}) {
 let currentApp = makeApp();
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => currentApp,
     useRoster: () => currentApp,
     useStudents: () => currentApp,
     useClasses: () => currentApp,
@@ -189,6 +188,23 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => currentApp,
     useSettings: () => currentApp,
     usePlatform: () => currentApp,
+}));
+
+// StatisticsPage reads data via the selector store; route selectors to the same
+// mocked app value, with array defaults for slices this file's mock omits.
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) =>
+        selector({
+            studentTests: [],
+            tests: [],
+            essayTemplates: [],
+            flashcardAssignments: [],
+            flashcardDecks: [],
+            flashcardReviews: [],
+            userTemplates: [],
+            ...currentApp,
+        }),
+    useStoreActions: () => currentApp,
 }));
 
 vi.mock('react-i18next', () => ({

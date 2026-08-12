@@ -172,7 +172,6 @@ Object.defineProperty(navigator, 'clipboard', {
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockUseApp,
     useRoster: () => mockUseApp,
     useStudents: () => mockUseApp,
     useClasses: () => mockUseApp,
@@ -183,6 +182,10 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockUseApp,
     useSettings: () => mockUseApp,
     usePlatform: () => mockUseApp,
+}));
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockUseApp),
+    useStoreActions: () => mockUseApp,
 }));
 vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 

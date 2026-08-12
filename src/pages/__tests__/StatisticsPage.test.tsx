@@ -77,7 +77,7 @@ const mockSettings: AppSettings = {
 const mockUpdateSettings = vi.fn();
 
 // Stable references: StatisticsPage has effects/memos keyed on `classes` etc. — a mock
-// that builds new array literals on every useApp() call defeats those memo deps and
+// that builds new array literals on every domain-hook call defeats those memo deps and
 // causes an infinite render loop (each render sees a "new" classes array).
 const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudentA, mockStudentB];
@@ -99,7 +99,6 @@ const mockAppValue = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockAppValue,
     useRoster: () => mockAppValue,
     useStudents: () => mockAppValue,
     useClasses: () => mockAppValue,
@@ -110,6 +109,16 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+// StatisticsPage reads data via the selector store; route selectors to the same
+// mocked app value, with array defaults for slices this file's mock omits.
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) =>
+        selector({
+            standardMasteryTargets: [],
+            ...mockAppValue,
+        }),
 }));
 
 vi.mock('recharts', async (importOriginal) => {

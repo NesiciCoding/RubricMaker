@@ -161,7 +161,6 @@ const mockUseApp = {
 };
 
 vi.mock('../../context/AppContext', () => ({
-    useApp: () => mockUseApp,
     useRoster: () => mockUseApp,
     useStudents: () => mockUseApp,
     useClasses: () => mockUseApp,
@@ -172,6 +171,22 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockUseApp,
     useSettings: () => mockUseApp,
     usePlatform: () => mockUseApp,
+}));
+
+// Dashboard/StatisticsPage read data via the selector store; route selectors to the
+// same mocked app value, with array defaults for slices this file's mock omits.
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) =>
+        selector({
+            studentTests: [],
+            tests: [],
+            flashcardDecks: [],
+            essayTemplates: [],
+            flashcardAssignments: [],
+            flashcardReviews: [],
+            ...mockUseApp,
+        }),
+    useStoreActions: () => mockUseApp,
 }));
 
 vi.mock('react-i18next', () => ({
