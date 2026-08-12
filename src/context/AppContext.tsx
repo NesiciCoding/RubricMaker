@@ -1,4 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState, ReactNode } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useReducer,
+    useRef,
+    useState,
+    ReactNode,
+} from 'react';
 import {
     LOCAL_MODE_KEY,
     MIGRATION_DONE_KEY,
@@ -455,14 +464,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }, [state]);
 
-    // Selector store: lets components subscribe to exactly the slices they render via
-    // useStoreSelector (see src/context/useStore.ts) instead of whole domain contexts.
-    // The store's getState closure reads the ref lazily (on subscribe/snapshot reads, not
-    // during this render), and the ref is synced during render above — same deliberate
-    // pattern as the ref-based action reads, so eslint-disable is warranted.
+    // The store's getState closure reads the ref lazily (on subscribe/snapshot reads), and
+    // the ref is synced during render above — same deliberate pattern as the ref-based
+    // action reads, so the eslint-disable is warranted.
     // eslint-disable-next-line react-hooks/refs
     const selectorStore = useMemo(() => createSelectorStore(() => currentStateRef.current, dispatch), [dispatch]);
-    useEffect(() => {
+    // Notify in the layout phase so selector consumers re-check their snapshots before paint.
+    useLayoutEffect(() => {
         selectorStore.notify();
     }, [state, selectorStore]);
 
@@ -490,7 +498,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
                                 <SettingsProvider ctx={actionsCtx} state={state}>
                                     <PlatformProvider
                                         ctx={platformCtx}
-                                        state={state}
                                         landingState={landingState}
                                         showMigrationPrompt={showMigrationPrompt}
                                     >

@@ -29,6 +29,7 @@ const makeAppContextMock = () => ({
     markMessageReadByTeacher: mockMarkMessageReadByTeacher,
 });
 vi.mock('../context/AppContext', () => ({
+    useApp: () => makeAppContextMock(),
     useRoster: () => makeAppContextMock(),
     useAuthoring: () => makeAppContextMock(),
     useAssessment: () => makeAppContextMock(),
