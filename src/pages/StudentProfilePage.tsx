@@ -26,7 +26,7 @@ import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import { formatShortDate } from '../utils/dateInput';
-import { useAssessment, useAuthoring, useFlashcards, useRoster, useSettings } from '../context/AppContext';
+import { useStoreSelector } from '../context/useStore';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -47,11 +47,41 @@ import type { GradeScale, Rubric, SessionRecording, StudentRubric } from '../typ
 export default function StudentProfilePage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics } = useRoster();
-    const { rubrics, gradeScales } = useAuthoring();
-    const { selfAssessments, speakingSessions, tests, studentTests } = useAssessment();
-    const { standardMasteryTargets, flashcardDecks, flashcardAssignments, flashcardReviews } = useFlashcards();
-    const { settings } = useSettings();
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        classes,
+        rubrics,
+        gradeScales,
+        selfAssessments,
+        speakingSessions,
+        tests,
+        studentTests,
+        standardMasteryTargets,
+        flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        classes: s.classes,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        selfAssessments: s.selfAssessments,
+        speakingSessions: s.speakingSessions,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        standardMasteryTargets: s.standardMasteryTargets,
+        flashcardDecks: s.flashcardDecks,
+        flashcardAssignments: s.flashcardAssignments,
+        flashcardReviews: s.flashcardReviews,
+        settings: s.settings,
+    }));
+    // The roster domain exposes active (non-archived) students and non-deleted student
+    // rubrics; the store exposes the raw collections, so apply the same filters here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);

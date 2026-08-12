@@ -1,5 +1,17 @@
-import React, { createContext, useCallback, useContext, useRef, useSyncExternalStore } from 'react';
-import type { Action, StoreData } from './storeCore';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useSyncExternalStore } from 'react';
+import type { Action, StoreActionsCtx, StoreData } from './storeCore';
+import { createRosterActions } from './domains/roster';
+import type { RosterActions } from './domains/roster';
+import { createAuthoringActions } from './domains/authoring';
+import type { AuthoringActions } from './domains/authoring';
+import { createAssessmentActions } from './domains/assessment';
+import type { AssessmentActions } from './domains/assessment';
+import { createEssaysActions } from './domains/essays';
+import type { EssaysActions } from './domains/essays';
+import { createFlashcardsActions } from './domains/flashcards';
+import type { FlashcardsActions } from './domains/flashcards';
+import { createSettingsActions } from './domains/settings';
+import type { SettingsActions } from './domains/settings';
 
 /**
  * Minimal external-store handle over the AppContext reducer. The store doesn't own
@@ -90,4 +102,42 @@ export function useStore(): SelectorStore {
     const store = useContext(StoreContext);
     if (!store) throw new Error('useStore must be used within AppProvider');
     return store;
+}
+
+/**
+ * All reducer actions across the six store domains, in one context. Actions are pure
+ * functions of the (stable) actions ctx — they read fresh state via getState() at call
+ * time — so this value never changes between dispatches. Reading actions here instead of
+ * from a domain context means a component that only triggers actions does not subscribe
+ * to any domain value and therefore never re-renders on unrelated data changes.
+ */
+export type StoreActions = RosterActions &
+    AuthoringActions &
+    AssessmentActions &
+    EssaysActions &
+    FlashcardsActions &
+    SettingsActions;
+
+const ActionsContext = createContext<StoreActions | null>(null);
+
+export function StoreActionsProvider({ ctx, children }: { ctx: StoreActionsCtx; children: React.ReactNode }) {
+    const value = useMemo(
+        () => ({
+            ...createRosterActions(ctx),
+            ...createAuthoringActions(ctx),
+            ...createAssessmentActions(ctx),
+            ...createEssaysActions(ctx),
+            ...createFlashcardsActions(ctx),
+            ...createSettingsActions(ctx),
+        }),
+        [ctx]
+    );
+    return <ActionsContext.Provider value={value}>{children}</ActionsContext.Provider>;
+}
+
+/** All reducer actions with stable identity; use for components that only trigger actions. */
+export function useStoreActions(): StoreActions {
+    const actions = useContext(ActionsContext);
+    if (!actions) throw new Error('useStoreActions must be used within AppProvider');
+    return actions;
 }

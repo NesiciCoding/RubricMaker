@@ -229,6 +229,7 @@ vi.mock('../../context/AppContext', () => ({
 // same mocked app value (base already carries every slice the selectors need).
 vi.mock('../../context/useStore', () => ({
     useStoreSelector: (selector: (state: any) => any) => selector({ ...base, ...appStateOverride }),
+    useStoreActions: () => ({ ...base, ...appStateOverride }),
 }));
 
 vi.mock('../../services/database', () => ({

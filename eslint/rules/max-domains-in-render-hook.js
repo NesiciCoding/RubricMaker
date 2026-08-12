@@ -6,17 +6,7 @@
 // unrelated domain changes and defeats the isolation the probe is meant to verify — it
 // should select the slices it actually reads via useStoreSelector instead.
 
-const DOMAIN_HOOKS = new Set([
-    'useRoster',
-    'useAuthoring',
-    'useAssessment',
-    'useEssays',
-    'useFlashcards',
-    'useSettings',
-    'usePlatform',
-]);
-
-const MAX_DOMAINS = 3;
+import { DOMAIN_HOOKS, MAX_DOMAINS } from './domain-hooks.js';
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
