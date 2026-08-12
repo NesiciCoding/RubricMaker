@@ -245,7 +245,9 @@ function recordAutoVersion(rubric: Rubric): void {
     }
 }
 
-function reducer(state: StoreData, action: Action): StoreData {
+// Exported so the reducer can be unit-tested directly (the provider wraps it in
+// loggingReducer for the app itself).
+export function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
         case 'SET_ALL':
             return action.payload;
