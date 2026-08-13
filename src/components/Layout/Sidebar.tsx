@@ -27,7 +27,7 @@ import {
     Bell,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAssessment, useAuthoring, useGrading, useSettings, useStudents } from '../../context/AppContext';
+import { useStoreSelector } from '../../context/useStore';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 
@@ -56,12 +56,13 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { students } = useStudents();
-    const { studentRubrics } = useGrading();
-
-    const { rubrics } = useAuthoring();
-    const { peerReviews } = useAssessment();
-    const { settings } = useSettings();
+    const { students, studentRubrics, rubrics, peerReviews, settings } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        peerReviews: s.peerReviews,
+        settings: s.settings,
+    }));
 
     const isAdmin = settings.userRole === 'admin';
     const location = useLocation();

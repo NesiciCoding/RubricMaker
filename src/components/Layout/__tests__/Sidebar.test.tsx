@@ -26,6 +26,12 @@ vi.mock('../../../context/AppContext', () => ({
     usePlatform: () => makeAppContextMock(),
 }));
 
+// Sidebar reads data via the selector store; route selectors to the same mock value.
+vi.mock('../../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(makeAppContextMock()),
+    useStoreActions: () => makeAppContextMock(),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string) => key,
