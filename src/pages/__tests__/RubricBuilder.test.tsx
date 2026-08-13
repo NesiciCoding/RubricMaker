@@ -149,6 +149,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => makeAppContextMock(),
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(makeAppContextMock()),
+    useStoreActions: () => makeAppContextMock(),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: string | Record<string, unknown>) => {

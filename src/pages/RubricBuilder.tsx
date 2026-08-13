@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useGrading, useSettings } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useTranslation, Trans } from 'react-i18next';
 import type {
     Rubric,
@@ -101,25 +101,27 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { studentRubrics } = useGrading();
+    const { studentRubrics, rubrics, gradeScales, peerReviews, settings } = useStoreSelector((s) => ({
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        peerReviews: s.peerReviews,
+        settings: s.settings,
+    }));
 
     const {
-        rubrics,
         addRubric,
         updateRubric,
         syncRubricSnapshot,
         fetchRubricVersions,
         saveRubricVersion,
         restoreRubricVersion,
-        gradeScales,
         addVocabularyItem,
         updateVocabularyItem,
         deleteVocabularyItem,
         deleteVocabularyItems,
         saveUserTemplate,
-    } = useAuthoring();
-    const { peerReviews } = useAssessment();
-    const { settings } = useSettings();
+    } = useStoreActions();
 
     const existing = id ? rubrics.find((r) => r.id === id) : undefined;
     const template = location.state?.template as Partial<Rubric> | undefined;
