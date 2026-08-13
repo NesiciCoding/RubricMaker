@@ -97,6 +97,53 @@ jobs:
           path: coverage/
           retention-days: 14
 
+  # Publishes the shields.io coverage badge (docs/badges/coverage.json) that the
+  # README displays. Coverage itself is computed in the `ci` job; this job only
+  # turns the resulting coverage-summary.json into an endpoint badge and commits
+  # it. Runs on main pushes and weekly schedule runs so the badge always mirrors
+  # the default branch — never on PRs, where a push would pollute the PR branch.
+  # Kept as its own job so the `ci` job keeps its contents: read permission;
+  # this one needs contents: write for the commit+push. GITHUB_TOKEN pushes do
+  # not re-trigger workflows, so there is no update loop.
+  coverage-badge:
+    name: Publish coverage badge
+    runs-on: ubuntu-latest
+    needs: ci
+    if: (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/main'
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        # persist-credentials stays enabled (the default) so `git push` below
+        # can authenticate with the GITHUB_TOKEN.
+
+      - name: Download coverage report
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: coverage-report
+          path: coverage
+
+      - name: Generate and publish coverage badge
+        run: |
+          node scripts/generate-coverage-badge.mjs
+          # Porcelain reports both modified and newly-created (??) files, so the
+          # very first publish (when docs/badges/coverage.json does not exist in
+          # the repo yet) is not skipped.
+          if [ -z "$(git status --porcelain -- docs/badges/)" ]; then
+            echo "Coverage badge unchanged — nothing to publish"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/badges/coverage.json
+          git commit -m "chore: update coverage badge"
+          # Rebase onto the latest main so the push stays a fast-forward.
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+          echo "Coverage badge published: $(node -p "require('./docs/badges/coverage.json').message") lines"
+
   # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split
   # across two shards. Each shard emits a blob report; `e2e-merge-reports`
   # merges them into the final HTML + JUnit reports after the shards finish.
