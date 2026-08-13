@@ -154,16 +154,21 @@ jobs:
           git add docs/badges/coverage.json
           git commit -m "chore: update coverage badge"
           # Publish to the dedicated coverage-badge branch (main is protected).
-          # Rebase onto the branch's current tip so concurrent publishes resolve
-          # and the push stays a fast-forward; the GITHUB_SHA guard above
-          # already ensures the coverage data is from the current main, so this
-          # rebase can never resurrect stale data. Explicit refspec + ls-remote
-          # so it works regardless of checkout clone config.
-          if git ls-remote --heads origin coverage-badge | grep -q 'refs/heads/coverage-badge'; then
-            git fetch -q origin coverage-badge:refs/remotes/origin/coverage-badge
-            git rebase refs/remotes/origin/coverage-badge
+          # The branch is written ONLY by this job and always represents "current
+          # main + badge", so force-push is safe: no history to preserve, no
+          # merge conflicts, and concurrent publishes converge (the GITHUB_SHA
+          # guard above already ensures only runs of the current main publish).
+          # Fetch first so --force-with-lease has a lease ref to compare against.
+          git fetch -q origin coverage-badge:refs/remotes/origin/coverage-badge 2>/dev/null || true
+          if git rev-parse -q --verify refs/remotes/origin/coverage-badge >/dev/null 2>&1; then
+            # Branch exists — force-with-lease rejects if it moved since our
+            # fetch (a concurrent publish), keeping us from clobbering it.
+            git push --force-with-lease origin HEAD:coverage-badge
+          else
+            # Very first publish — the branch doesn't exist yet, so a plain
+            # push creates it.
+            git push origin HEAD:coverage-badge
           fi
-          git push origin HEAD:coverage-badge
           echo "Coverage badge published: $(node -p "require('./docs/badges/coverage.json').message") lines"
 
   # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split
