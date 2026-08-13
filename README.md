@@ -1,128 +1,135 @@
 # Rubric Maker
 
+[![CI](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/NesiciCoding/RubricMaker/actions/workflows/codeql.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/codeql.yml)
+[![Lighthouse CI](https://github.com/NesiciCoding/RubricMaker/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/lighthouse.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/NesiciCoding/RubricMaker/main/docs/badges/coverage.json)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/NesiciCoding/RubricMaker)](LICENSE)
+[![Live demo](https://img.shields.io/badge/live%20demo-online-2ea44f?logo=github)](https://nesicicoding.github.io/RubricMaker/)
+
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-optional%20cloud-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://github.com/NesiciCoding/RubricMaker/wiki/Getting-started)
+[![WCAG](https://img.shields.io/badge/WCAG%202.1-AA-00897B)](https://github.com/NesiciCoding/RubricMaker/wiki/Features)
+
+<p align="center">
+  <img src="docs/images/landing-page.png" alt="Rubric Maker landing page" width="720">
+</p>
+
 A comprehensive rubric creation and grading tool built with React and TypeScript — self-hostable with full functionality, and offline-capable (with reduced capabilities) when no backend is configured. Designed for educators who need to design complex rubrics, grade students efficiently, and analyse performance — including language proficiency tracking aligned to the Common European Framework of Reference (CEFR).
+
+> 🚀 **Try it now** — the [live demo](https://nesicicoding.github.io/RubricMaker/) runs entirely in your browser. No account, no install, no backend.
+
+---
+
+## Contents
+
+- [Quick start](#quick-start)
+- [How to read this README](#how-to-read-this-readme)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Documentation](#documentation)
+- [Development 🧑‍💻](#development)
+- [Tech stack 🧑‍💻](#tech-stack)
+- [Deployment](#deployment)
+- [Developer reference 🧑‍💻](#developer-reference)
+- [Contributing & security 🧑‍💻](#contributing--security)
+
+---
+
+## Quick start
+
+Pick the path that fits:
+
+| You want to…                                    | Do this                                                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Try it immediately**                          | Open the [live demo](https://nesicicoding.github.io/RubricMaker/) — data stays in your browser |
+| **Run it locally** (no backend)                 | The three commands below; everything works in `localStorage`                                   |
+| **Run the full stack** (Docker + Supabase sync) | [Jump to the Docker quick start](#option-a-docker-full-stack)                                  |
+
+**Run locally (3 commands):**
+
+```bash
+git clone https://github.com/NesiciCoding/RubricMaker.git
+cd RubricMaker
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173). No backend or account is required — without one, all data lives in the browser's local storage.
+
+---
+
+## How to read this README
+
+This document is the landing page, not the manual. Everything below is organised by audience — start where you belong and follow the links for depth.
+
+| Reader                                               | Start with                                                                                                                                      |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Teachers & educators** — you want to use the app   | [Features](#features), then the [user documentation wiki](https://github.com/NesiciCoding/RubricMaker/wiki)                                     |
+| **Students** — you use the student portal            | [Student Portal wiki page](https://github.com/NesiciCoding/RubricMaker/wiki/Student-Portal)                                                     |
+| **School IT / admins** — you deploy and operate it   | [Deployment](#deployment) → [Installation wiki](https://github.com/NesiciCoding/RubricMaker/wiki/Installation)                                  |
+| **Developers** — you build or contribute to the code | [Development](#development) → [Tech stack](#tech-stack) → [Developer reference](#developer-reference) → [Contributing](#contributing--security) |
+
+Sections marked 🧑‍💻 in the contents are written for developers — if you're here to _use_ Rubric Maker, you can skip them entirely.
+
+---
 
 ## Features
 
-### 1. Rubric Builder
+The full, illustrated feature documentation lives in the [Features wiki page](https://github.com/NesiciCoding/RubricMaker/wiki/Features) (with screenshots). Here is the one-glance overview:
 
-- **Flexible structure**: Create rubrics with custom criteria and performance levels.
-- **Scoring modes**: Total Points (raw score), Weighted Percentage, and Single-Point Rubric.
-- **Advanced level options**: sub-item checklists within a level, point ranges (min/max), and score modifiers.
-- **Standards integration**: Link criteria to CCSS, NGSS, and other state/national standards via the Common Standards Project API.
-- **CEFR descriptors**: Attach CEFR Can-Do statements to individual criteria.
-- **Framework descriptors**: Link criteria to IB Learner Profile attributes or Bloom's Taxonomy levels.
-- **Grammar linker**: Tag criteria with English grammar standards grouped by topic (e.g. Past Simple → regular/irregular verbs), each with a CEFR level (levels follow the CEFR-J Grammar Profile). Linked grammar is auto-checked in scanned essays during grading — a per-criterion pass/fail breakdown that can be applied as a comment (rule/NLP-based detection, no AI).
-- **Rubric versioning**: Automatic snapshots on save; restore any previous version.
-- **Tests & quizzes**: Build multiple-choice, multiple-response (select all that apply), true/false, short-answer, open, fill-the-gap (with optional dropdown), matching, ordering, categorize, hot text, and audio-response tests with a duration, due date, optional Safe Exam Browser requirement, and grade scale. Audio-response questions have the student record a spoken answer in the browser (capped recording length, teacher-configurable), played back and graded manually like an open question — turning the test engine into a full four-skills tool alongside the existing listening (`audioUrl`) support. Question prompts and section reading passages use the same rich-text editor as essays (bold, tables, sub/superscript, links); fill-the-gap prompts get a click-to-insert gap pill instead of hand-typed `{{...}}` syntax, and multiple-choice/multiple-response options can each carry their own image for picture-choice questions. Link standards and CEFR descriptors per question, then assign tests to a class — each student gets a unique share link. The due date shows in the test list and defaults into each assignment's deadline. Every question type has an in-context help button explaining how to author and answer it.
-- **Practice mode & listening/reading/grammar practice**: Set a test's Mode to Practice for an ungraded, retakeable set (vs. the normal graded Assessment mode), and its Practice category to Listening, Reading, or Grammar. Tag a test with a target CEFR level/skill and attach an audio URL to any question for listening comprehension — the student sees an audio player above the answer area, alongside the existing image support. For grammar practice, tag a cloze/hot-text/matching question with a specific grammar item so it feeds a student's grammar practice recommendations. Practice-mode results surface as separate practice progress on the student's CEFR overview and never affect the graded chart.
-- **Test summary export**: From a test's Results panel, export a PDF or Word summary for one student or the whole class with per-question accuracy and a strong/developing/weak breakdown by linked standard or CEFR descriptor. For the whole class, a CSV export is also available: one row per student with overall score plus per-question and per-skill accuracy columns.
-- **Live monitoring**: While a test or essay is in progress (cloud sync enabled), watch a live presence/progress view per student — response grid for tests, live word count and draft preview for essays, plus advisory proctoring flags (tab switches, copy/paste, battery, Safe Exam Browser status).
-- **Marketplace**: Publish a rubric, test, flashcard deck, or question bank item for colleagues at your school to browse, clone, and upvote — filterable by type (requires cloud sync and a school).
-- **Department sharing**: Mark a rubric (or a Comment Bank item) read-only-visible to every teacher in your school with one toggle — unlike the Marketplace, this shares the live rubric, not a cloned snapshot.
-- **Manual reordering**: Drag-to-reorder rubrics, tests, essays, and classes in their respective lists and on the Activity Dashboard (per teacher, persists across reloads).
-- **Cohort filtering**: Filter the Rubrics, Tests, and Essays lists by year/track cohort — a student counts as in-cohort via their current class or any past class they've transferred from, so items stay visible to a cohort across a class change.
+| Area                           | What you can do                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rubric builder**             | Flexible criteria and performance levels; three scoring modes (total points, weighted percentage, single-point); sub-item checklists, point ranges and score modifiers; link criteria to CCSS/NGSS/Dutch kerndoelen standards, CEFR Can-Do descriptors, IB Learner Profile or Bloom's Taxonomy; grammar tagging; automatic versioning with restore.                                                |
+| **Tests & quizzes**            | Twelve question types (multiple-choice, multiple-response, true/false, short answer, open, fill-the-gap, matching, ordering, categorize, hot text, audio-response, …); rich-text prompts with inline images and click-to-insert gap pills; per-question standards/CEFR links; class assignments with unique share links, due dates, optional Safe Exam Browser, and grade scales.                  |
+| **Practice & placement**       | Practice mode (listening, reading, grammar) that never affects graded results; three adaptive placement engines — multistage routing, staircase (A2→C2 ladder), and a generator that pulls questions live from your question bank with Elo ordering — each producing a provisional CEFR estimate.                                                                                                  |
+| **Grading**                    | Click/level/slider scoring in a card or compact grid layout; keyboard shortcuts (1–5, A+1, …); score modifiers with a reason; voice-graded comments; a taggable comment bank with smart suggestions; group grading, comparative side-by-side grading, peer review with reviewer analytics, and self-assessment; co-grading with an independent second marking and a moderation queue for disputes. |
+| **Essays**                     | Standalone essay assignments with prompts, rubric links, word/time limits and live monitoring; a distraction-free student focus mode; rich-text TipTap editor; anonymous submission codes; OCR (Tesseract.js) and DOCX parsing for uploaded documents; inline anchored comments on submissions.                                                                                                    |
+| **Flashcards**                 | Anki-style decks scheduled with the FSRS spaced-repetition algorithm; vocabulary decks with phonetic/part-of-speech fields and grammar decks that feed grammar practice; import from CSV/XLSX/DOCX/TXT; assign to classes and inspect per-student learning insights; students can create their own decks and share them read-only with a teacher.                                                  |
+| **CEFR & language assessment** | Per-student and whole-class proficiency overviews (Reading, Writing, Speaking, Listening) benchmarked against track/year expected ranges; structured speaking sessions; rule-based learning paths and intervention flags; a grammar mastery profile merging test, flashcard and writing evidence; optional Cambridge English exam mapping.                                                         |
+| **Student portal**             | Unique shareable link per student (no login needed): grades, teacher comments and files, a combined to-do list, essays and tests, flashcard study, self-assessment, portal search, and messaging with the teacher.                                                                                                                                                                                 |
+| **Analytics**                  | Statistics dashboard with grade distributions, per-criterion breakdowns, and multi-class comparison with an insights panel; an activity dashboard (rubric × test × essay × class grid); vocabulary profile dashboards; per-student profiles with portfolios; overdue tracking.                                                                                                                     |
+| **Export**                     | PDF reports (individual or class); Word (.docx) with mail-merge and style templates; CSV with ready-made Magister/SOMtoday gradebook presets; aggregated period reports; per-student report cards; essay exports (Markdown/DOCX/PDF); calendar (.ics) exports.                                                                                                                                     |
+| **Collaboration**              | A school marketplace to publish/clone rubrics, tests, decks and bank items; one-toggle department sharing of live rubrics; live test/essay monitoring with proctoring flags; batch grading-task assignment to colleagues; student messaging and a notification center.                                                                                                                             |
+| **Accessibility**              | WCAG 2.1 AA (axe-core audits in CI); dyslexia-friendly reading mode; six theme bundles; in-app Joyride tours; global search (`Ctrl`/`Cmd`+`K`) with filter tokens.                                                                                                                                                                                                                                 |
 
-### 2. Grading Interface
+**Offline-first, cloud-ready:** the core grading workflow (rubrics, grading, statistics, flashcards) works fully offline with data in `localStorage`. Connecting an optional [Supabase](https://supabase.com) backend unlocks everything that needs a shared server — cross-device sync, multi-teacher collaboration, the student portal, messaging, notifications and the marketplace. If Supabase is configured but unavailable, the app continues with the reduced-capability `localStorage` fallback rather than failing.
 
-- **Student management**: Manage students and organise them into classes, each with a Dutch school year (groep 7/8, jaar 1–6) and VO track (VMBO-BB/KB/TL, HAVO, VWO) — jaar 1–6 only, groep 7/8 classes have no track. A student's own track can differ from their class default by at most one adjacent level. Classes can also carry a custom color for faster visual scanning, falling back to the track's default color.
-- **Interactive grading**: Click levels, toggle sub-items, or use the slider for point ranges.
-- **Card or grid layout**: Toggle between the stacked criterion cards and a compact criterion×level grid (multi-level rubrics). In the grid, selecting a cell opens a per-criterion detail panel with a fine-tune points slider, sub-item chips (single-point chips or expandable range scorers), a manual override control, and the comment composer. Single-point rubrics keep the card layout. Rarely-used header actions collapse behind a settings-cog menu.
-- **Keyboard shortcuts**: Number keys 1–5 set a level for the focused criterion; a criterion letter then a number (A+1, B+2) jumps straight to any criterion's level; Tab / Shift+Tab move focus, Ctrl+S saves and advances, and ? lists them all.
-- **Score modifiers**: Apply percentage, point, or level adjustments with a reason.
-- **Comment Bank**: Tag and insert reusable feedback snippets while grading. When a criterion has had a run of low scores, the bank opens with a "Suggested" group of comments tagged with that criterion's CEFR skill or level. Each insertion during grading is counted, and the `/comments` page's Sort control can surface your most-used comments first.
-- **Question Bank**: Save any test question to a reusable bank via a bookmark icon in the Test Builder's question editor, then insert saved questions into any other test. Bank items also carry a structured CEFR level in addition to free-text tags, and a whole reading/listening passage (content, audio, and its questions) can be bundled and saved as one reusable unit, then re-inserted as a fully-formed section. Tag and search saved questions from the `/question-bank` page, or bulk-load a set of questions (plain or section bundles) at once via the page's Import button (JSON file — a downloadable sample shows the expected shape, including the optional Elo rating field). Export the whole bank back to that same JSON shape via the page's Export button, for backup or handing to a colleague.
-- **Generate a test from the bank**: The Tests list's "Generate from bank" wizard assembles a new test from bank items matching teacher-picked criteria (tag, CEFR level, count per criterion), optionally organizing the result into CEFR-level sections — the exact shape the Staircase placement engine's level pools expect. Opens the normal Test Builder pre-filled for review before saving.
-- **Voice grading**: Dictate comments hands-free using speech recognition.
-- **Overall feedback**: Add general comments and file attachments per graded rubric.
-- **Unified document view**: Essay submissions and uploaded Word (.docx) attachments render through the same paginated, TipTap-formatted read-only view in both single-student and comparative grading. DOCX attachments default to a Mammoth-converted formatted view, with a "view as sent" toggle back to the original `docx-preview` rendering when the conversion loses layout fidelity.
-- **Inline document comments**: Select text in that document view to leave an anchored comment on essay or DOCX submissions, shown in a sidebar below the document with resolve/delete controls. Grading-side only — a view-only ProseMirror decoration layer, not part of the document's own content, so it never touches the underlying submission.
-- **Comparative grading**: Grade two students side-by-side for consistency.
-- **Group grading**: Pick two or more students to share one grade from the Rubrics list. Saving any member's grade fans its scores and comments out to the rest of the group — useful for group projects. Each student keeps their own record. Individual criteria can be excluded from group fan-out with the "Group grading" toggle per criterion in the Rubric Builder, so mixed rubrics (e.g. a shared project score plus an individual participation criterion) grade correctly.
-- **Peer review**: Students review each other's work against the same rubric.
-- **Peer review analytics**: Compare peer grades against the teacher baseline (consistency and leniency bias per reviewer), a feedback heatmap of which criteria attract the most peer comments, and round-over-round trends.
-- **Self-assessment**: Students self-assess against CEFR Can-Do statements.
-- **Co-grading & moderation**: Send a graded submission to a colleague for an independent second marking (reuses the peer review screen and math, applied teacher-to-teacher). Disputes above a configurable point threshold surface in a Moderation queue with a per-criterion delta breakdown and a keep/accept resolution. The sidebar shows a pending-dispute count, and the queue sorts oldest-first with a days-pending badge per item.
-- **At-risk student actions**: The Dashboard's At-Risk Students panel (2+ recent grades below 55%) lets you message a student or assign their recommended grammar practice deck directly from the card.
-- **Grading task assignment**: From the Activity Dashboard, batch-assign a class's ungraded submissions for a rubric to a specific colleague; pending tasks list above the grid and clear automatically once graded.
-- **Student messaging**: Portal-authenticated students can ask a question about a rubric grade, test, or essay (or a general question) from their portal; teachers reply from a dedicated Messages inbox, or start a thread themselves. Requires Supabase — a student with no portal login has no way to send or receive a message.
-- **Notification Center**: The bell icon surfaces overdue grading, unread messages, and pending moderation reviews at a glance; `/notifications` has the full, filterable, uncapped history. Dismissing an overdue-grading or moderation item snoozes it (it reappears once newly relevant) and syncs across devices — unread messages can only be cleared by reading them, since that's real shared state with the Messages inbox. Each of the three categories has its own opt-in nightly email digest (Settings → Email Digest, self-hosted only).
-- **Deleting a grade**: Remove a student's grade from their grading page (with confirmation). Group-graded grades prompt for scope — just that student's copy, or the whole group's shared grade. Deleted grades are soft-deleted and restorable from Admin → Archive → Recently deleted grades.
+---
 
-### 3. CEFR & Language Assessment
+## Screenshots
 
-- **Speaking sessions**: Structured speaking assessments with six pre-built dimensions aligned to Dutch VO CEFR targets (VMBO-BB through VWO). Audio (and, with cloud sync, video) recordings can be attached and play back from the student's portfolio. A Graded/Practice toggle lets a student record an ungraded, retakeable attempt before the graded one, kept as a separate record.
-- **CEFR overview**: Per-student and whole-class proficiency dashboards showing progress across Reading, Writing, Speaking, and Listening. A track/year expected-range band (from a per-track, per-school-year Dutch curriculum benchmark table) shows a student's current CEFR level as ahead, on track, or behind for their specific class year and VO track — not just a single track-wide target.
-- **Standard mastery targets**: Set an expected mastery percentage for a linked standard (CCSS, NGSS, Dutch kerndoelen, or custom) per school year/VO track from Settings → Teaching, configured once per standard and reused everywhere it's linked across rubrics — surfaces the same ahead/on-track/behind status on student and class learning-goal views.
-- **Student self-assessment**: Students rate themselves against Can-Do descriptors; reflection text is stored alongside teacher scores.
-- **Cambridge English exam mapping**: Optional setting shows the Cambridge English Qualification (A2 Key, B1 Preliminary, B2 First, C1 Advanced, C2 Proficiency) alongside CEFR level badges; vocabulary items can be enriched with a definition via the free Dictionary API (`dictionaryapi.dev`, no key required), while CEFR level is drawn from the bundled CEFR-J vocabulary data.
-- **Learning paths & interventions**: Rule-based (no AI) rubric recommendations for CEFR skills where a student trails the class average, plus flags for three or more consecutive low scores on the same criterion or CEFR skill — available from each student's profile. A separate Grammar practice section suggests a matching flashcard deck and practice test when a student repeatedly scores poorly on a grammar-linked criterion or question.
-- **Grammar Mastery Profile**: A student's profile page shows one row per grammar item merging evidence from every domain that tags it — test accuracy (`linkedGrammarItemId` on test questions), flashcard spaced-repetition progress (grammar-kind decks), and average score on rubric criteria linked to that grammar point via a framework descriptor. Pure aggregation over existing data, no new fields to author.
-- **Placement testing**: Author a placement test (Test Builder → Mode: Placement) with a choice of three calibration-free engines. **Multistage**: tag each section with a target CEFR level and a pass-threshold routing rule deciding which section the student sees next based on their score in the current one — students take one section at a time. **Staircase**: tag each section with a CEFR level instead (a question pool for that level); every student starts at A2, moves up after two correct answers in a row, down after a miss, and the run ends once the level settles — students answer one question at a time with no going back. **Generator**: set a CEFR range, optional skills, and a min/max question count instead of authoring any sections at all — every question is pulled live from the question bank at runtime by the server-authoritative `next-placement-question` edge function, using the same staircase adaptivity plus Elo item ordering; while a run is in progress, the Live Monitor shows the student's current CEFR level and Elo score, and a teacher can nudge the level up or down by one for the next question (recorded and shown on the results page). Every engine's results show the exact path taken, and the outcome is a provisional CEFR estimate — clearly badged as such — that feeds the student's CEFR overview and learning path until a real graded assessment replaces it. Within a staircase or generator level's question pool, each question can carry a teacher-set Elo rating (in the question editor, once it's assigned to a CEFR-level section, or automatically for generator picks) that decides which question in the pool is served first; left blank, self-calibration adjusts it from real response data over time. Elo ratings are teacher-only — never exposed to students — and the Statistics page's student view plots a placement-progress chart of the student's estimated level across attempts on an Elo-scaled, CEFR-banded axis.
-- **Vocabulary & grammar flashcards**: Anki-style flashcard decks scheduled with the FSRS spaced-repetition algorithm via `ts-fsrs`. Set a deck's type to Vocabulary or Grammar — grammar decks tag each card with a specific grammar item, feeding the grammar practice recommendations above. Vocabulary cards also carry optional **phonetic** (pronunciation/IPA) and **part-of-speech** fields, authored inline in the deck editor or imported as optional 4th/5th columns. Teachers build decks by hand or import cards from `.csv`, `.xlsx`, `.docx`, or `.txt` files, assign a deck to a class, and see per-student learner insights (progress by learning stage, focus items ranked by lapses/difficulty). Students study in their portal with Again/Hard/Good/Easy ratings, a session progress bar, the phonetic/part-of-speech shown on the card, and a deck word-list sidebar; progress syncs across devices when Supabase is connected and persists in `localStorage` in local mode. Legacy `.xls` is not supported (save as `.xlsx`/CSV). Students can also **create their own decks** from the portal's "My flashcards" section — private to them by default (owned by their portal session via `flashcard_decks.student_id`, hidden from every teacher deck list), with an optional one-tap **"Share with my teacher"** that surfaces the deck **read-only** in the teacher's library (badged "From a student"). Sharing flips a flag on the student's own record rather than cloning it, so the student stays the owner and the teacher can't edit or delete it.
-- **News flashes**: Teachers write a full article (TipTap rich-text editor — bold, italics, bullet/numbered lists) with a short summary teaser, optional CEFR level, tags, and a link to an existing flashcard deck, test, or rubric — the article is stored as HTML and renders with the same formatting for students. Flashes broadcast to every student of the teacher who created them and appear as a chronological timeline in the student portal with an unread badge — no per-student assignment step and no email notification. Each flash on the teacher-side list shows a read-receipt count with an expandable list of who's read it.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/grading-interface.png" alt="Grading interface" width="460"></td>
+    <td width="50%"><img src="docs/images/cefr-overview.png" alt="CEFR proficiency overview" width="460"></td>
+  </tr>
+  <tr>
+    <td><em>Interactive grading — click levels, slider scoring, comment bank, keyboard shortcuts</em></td>
+    <td><em>Per-student and whole-class CEFR overview, benchmarked by track and year</em></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/student-portal-overview.png" alt="Student portal" width="460"></td>
+    <td width="50%"><img src="docs/images/statistics-dashboard.png" alt="Statistics dashboard" width="460"></td>
+  </tr>
+  <tr>
+    <td><em>The student portal — grades, to-dos, essays, flashcards, and messaging</em></td>
+    <td><em>Statistics dashboard with grade distributions, per-criterion breakdowns, and multi-class comparison</em></td>
+  </tr>
+</table>
 
-### 4. Essay Writing
-
-- **Dedicated workspace**: A standalone "Essays" section (parallel to Tests) lists every essay assignment, with a builder for the prompt, rubric link, word/time limits, assigning to a class, copying per-student share links, importing submission codes, and a live monitor link.
-- **Essay assignments**: Teachers create prompts with optional CEFR-linked rubrics.
-- **Rich text editor**: TipTap (ProseMirror) editor with formatting toolbar, placeholder text, a drag handle for reordering blocks, a table-of-contents sidebar for long documents, `:shortcode:`/pasted-emoji normalization, and a "show formatting marks" toggle for spaces/tabs/paragraph breaks. Test Builder and Question Bank passage/prompt editors additionally support dropping or pasting an image to embed it inline (not available in the student essay editor).
-- **Submission codes**: Anonymous essay access via shareable codes — students submit without logging in.
-- **Student focus mode**: The essay page is a distraction-free writing view — an exit control and a live "draft saved" badge in the header, and a right sidebar carrying the prompt, the word/time targets, and a writing tip. The test page's sticky question timeline is a colour-coded palette (answered / unanswered / flagged / unseen) with a legend and a per-question "flag for review" toggle; adaptive staircase/generator runs, which have no fixed question set, show no palette.
-- **Document analysis**: OCR via Tesseract.js and DOCX parsing via Mammoth; vocabulary and grammar checking on uploaded documents.
-- **Essay import**: Import student essay text from uploaded DOCX or PDF files.
-- **Peer review**: Classmates leave structured feedback on submissions.
-- **Essay export**: From the Export page, export a student essay (or several at once) as Markdown, DOCX, or PDF — as separate files or combined into one document — optionally with the rubric grade and grammar/vocabulary analysis attached.
-
-### 5. Analytics & Reporting
-
-- **Statistics dashboard**: Class performance with Average, Median, Highest, and Lowest scores; grade distribution charts; per-criterion performance breakdown. A **Compare** tab lets you select up to 4 classes side-by-side — grouped average bars, per-criterion gap chart, multi-class trend overlay, and a collapsible Insights panel that flags struggling classes, weak criteria, and inter-class divergence. A **Custom Views** gallery offers a curated set of recommended charts you can show/hide and recolor, each exportable as PNG; the Criterion Heat Map follows the page's class filter.
-- **Activity Dashboard**: Grid of every rubric, test, and essay against every class — see submitted/total counts at a glance and take quick actions (link/unlink rubrics, bulk-assign essays, open test builder, assign ungraded students to a colleague, drag-reorder rows). Filter by school year and VO track.
-- **Vocabulary Profile dashboard**: Per-class and per-student CEFR vocabulary distribution (A1–C2), aggregated from document analysis results, with CSV export of vocabulary lists filtered by CEFR band.
-- **Student profiles**: Individual progress view across all rubrics, CEFR levels, and essays. A **Portfolio** tab shows a unified chronological timeline of grades, speaking sessions, and self-assessments.
-- **Overdue tracking**: Highlights students with assignments past due dates.
-- **Export options**:
-    - **PDF**: Individual student reports or bulk class export.
-    - **Word (.docx)**: Raw export or mail-merge templates with field substitution. Two independently-settable upload-a-blank-.docx templates in Settings: a rubric table template (column headers/colour) and an essay/period-report style template (heading and body font, extracted from the file's own styles). The active style template also applies to matching PDF exports (essay, rubric, and test summary PDFs), not just DOCX.
-    - **CSV**: Raw data for Excel, or a ready-made column preset for Magister/SOMtoday (Dutch 1-10 grade scale) via the gradebook format dropdown next to the CSV button.
-    - **Period report**: Aggregated CEFR progress report for a class over a date range, including a rasterized grade-trend chart when at least two rubrics are graded in the period.
-    - **Report cards**: A single consolidated DOCX per student combining rubric grades, standards coverage, learning goals, and CEFR overview, with toggleable sections; export one student or batch-export a whole class.
-    - **Calendar (.ics)**: Download every essay assignment's deadline as a single .ics file for import into any calendar app.
-    - **Essay exports**: Markdown, DOCX, and PDF preserve text color, highlights, fonts, alignment, tables, and checklists from the editor, not just bold/italic/links.
-
-### 6. Student Portal
-
-- **Shareable links**: Each student gets a unique portal link; no login required.
-- **View feedback**: Students see their grades, teacher comments, and attached files.
-- **Submit essays**: Anonymous essay submission via submission codes.
-- **Self-assessment**: Students complete CEFR self-assessments from their portal.
-- **My Work**: A combined to-do list of assigned essays and tests, grouped into Overdue/Planned/Completed with per-item status (not started/in progress/submitted). Tests open in one click from the list, backed by a `test_assignments` Supabase table mirroring `essay_assignments`.
-- **My Progress**: A radar chart of the student's own per-criterion scores, combined across every graded rubric (criteria with matching titles averaged together) or filtered to a single rubric.
-- **Portal search**: A search box in the portal header, scoped to that student's own graded rubrics, assigned tests/essays, and flashcard decks — selecting a result scrolls to its section on the page.
-- **Moderation & learning-path visibility**: A read-only notice when a grade is currently under co-grading moderation review (no delta/reviewer details exposed), plus the same rule-based learning-path and grammar-practice recommendations the teacher sees, in read-only form.
-
-### 7. Customisation & Accessibility
-
-- **Theme bundles**: Six named bundles (Academy, Nature, Midnight, Warm, Slate, Rose) set accent colour, UI font, and export header colour in one click. Eight quick accent-colour presets are also available.
-- **WCAG 2.1 AA**: Icon-only buttons carry `aria-label`; tab navigation uses `role="tablist"` / `role="tab"` with `aria-selected`; axe-core audits run in CI on key pages and components.
-- **Dyslexia-friendly reading mode**: Optional Settings toggle increases line-height and letter-spacing app-wide for dyslexic readers.
-- **In-app help**: A Joyride guided tour runs on first login and can be restarted from Settings. Page-specific tours are available on the Rubric Builder, Statistics, and Export pages via the "Tour this page" button.
-- **Global search**: A search icon in the Topbar (or `Ctrl`/`Cmd`+`K` from anywhere) opens a quick search across rubrics, tests, students, classes, and essays, with `type:`, `class:`, `year:`, and `track:` filter tokens (school year/VO track also match as free text, as does a rubric's CEFR level). Typing a student's name together with a rubric's name (e.g. "Anna vocabulary quiz") surfaces a shortcut straight to that student's grading page for that rubric, alongside the normal separate results. The Topbar also has an active-class selector that other pages (e.g. Statistics) read as their default class filter.
-
-### 8. Installation
-
-- **Installable PWA**: RubricMaker can be installed to a device's home screen or desktop (look for the install icon in the browser address bar) for an app-like, browser-chrome-free launch — useful for shared classroom devices. This only affects installability of the static app shell; it does not change the storage model, and the service worker never caches Supabase API requests (`/rest/`, `/auth/`, `/realtime/`, `/storage/`, `/functions/` paths are always network-only).
-
-### 9. Data Management
-
-- **Offline-capable**: Without a configured backend, all data lives in the browser's `localStorage` and no account is required — with reduced capabilities (no collaboration, student portal, or multi-device access).
-- **Cloud sync** (recommended): Supabase backend as the primary store for multi-device access and multi-teacher collaboration. Sync hydrates `localStorage` from Supabase on load, after reconnect, and in near-real-time whenever another device changes data (Postgres change events on every synced table, debounced into a single refresh — see `StorageSync.startRealtimeSync`); per-record conflicts resolve last-write-wins (newest `updatedAt` wins), and offline edits queued in the pending-sync queue are protected from being clobbered by stale cloud data until they are pushed (see `src/utils/syncMerge.ts`).
-- **Backup & restore**: Export the entire dataset to JSON; restore from any prior backup.
-- **Admin panel**: School-level management — user roles, onboarding, student anonymisation, data-retention policies.
+More illustrated walkthroughs — including manual captures of live-service features — are on the [wiki](https://github.com/NesiciCoding/RubricMaker/wiki).
 
 ---
 
 ## Documentation
+
+**User documentation (wiki):** [Home](https://github.com/NesiciCoding/RubricMaker/wiki) · [Getting started](https://github.com/NesiciCoding/RubricMaker/wiki/Getting-started) · [Features](https://github.com/NesiciCoding/RubricMaker/wiki/Features) · [Tests & Practice](https://github.com/NesiciCoding/RubricMaker/wiki/Tests-and-Practice) · [Flashcards](https://github.com/NesiciCoding/RubricMaker/wiki/Flashcards) · [Student Portal](https://github.com/NesiciCoding/RubricMaker/wiki/Student-Portal) · [Supabase Sync](https://github.com/NesiciCoding/RubricMaker/wiki/Supabase-Sync) · [FAQ](https://github.com/NesiciCoding/RubricMaker/wiki/FAQ)
+
+**Deployment & operations (repo `docs/`):**
 
 - [HestiaCP setup](docs/HESTIACP_SETUP.md) — shared hosting / cPanel-style VPS
 - [Virtualmin setup](docs/VIRTUALMIN_SETUP.md) — Virtualmin VPS deployment
@@ -138,13 +145,13 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 
 To run the project locally:
 
-1. **Install dependencies**:
+1. **Install dependencies:**
 
     ```bash
     npm install
     ```
 
-2. **Start the development server**:
+2. **Start the development server:**
 
     ```bash
     npm run dev
@@ -160,15 +167,139 @@ npm run typecheck    # TypeScript check (run before commits)
 npm run lint         # ESLint
 npm run test         # Vitest unit tests
 npm run coverage     # Coverage report
+npm run e2e          # Playwright end-to-end tests
 
 # Supabase local dev (optional)
 npm run db:start     # Start local Supabase stack
 npm run db:reset     # Reset and re-apply all migrations
 ```
 
+New to the codebase? See the [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) and [Architecture](https://github.com/NesiciCoding/RubricMaker/wiki/Architecture) wiki pages.
+
 ---
 
-## Routes
+## Tech stack
+
+| Layer              | Choice                                                                  |
+| ------------------ | ----------------------------------------------------------------------- |
+| UI                 | React 19 + TypeScript, built with Vite 8                                |
+| Styling            | Plain CSS + Radix UI primitives                                         |
+| Rich-text editing  | TipTap (ProseMirror)                                                    |
+| Backend & sync     | Supabase (optional — Postgres, auth, storage, realtime, edge functions) |
+| Spaced repetition  | `ts-fsrs` (FSRS algorithm)                                              |
+| Unit testing       | Vitest                                                                  |
+| End-to-end testing | Playwright                                                              |
+| CI / CD            | GitHub Actions (CI, CodeQL, Lighthouse, e2e, deployments)               |
+
+---
+
+## Deployment
+
+RubricMaker works in two modes:
+
+- **Offline-only** — data lives in the browser's local storage. No server needed. Works on GitHub Pages, SharePoint, or any static host.
+- **With database sync** — add an optional Supabase backend for multi-device sync, email login, and rubric sharing between teachers. Hosted on your own infrastructure.
+
+> Deploying for a school? Read the [Installation wiki page](https://github.com/NesiciCoding/RubricMaker/wiki/Installation) first — it walks through the choices end to end.
+
+### Option A: Docker (full stack)
+
+The easiest way to run the full stack. Requires [Docker](https://docs.docker.com/get-docker/).
+
+**Your own laptop or school LAN:**
+
+```bash
+cp .env.docker.example .env   # defaults work as-is for localhost
+docker-compose up -d --build
+```
+
+Open [http://localhost:8080](http://localhost:8080). To make it accessible to other teachers on the network, set `SITE_URL=http://<your-ip>:8080` in `.env` first.
+
+**VPS with a domain name (HTTPS):**
+
+```bash
+cp .env.docker.example .env
+# Edit .env:
+#   DOMAIN=rubricmaker.school.nl
+#   SITE_URL=https://rubricmaker.school.nl
+#   JWT_SECRET=<random 64-char string>   ← change this!
+#   POSTGRES_PASSWORD=<strong password>  ← change this!
+docker-compose --profile https up -d --build
+```
+
+Caddy obtains a free Let's Encrypt certificate automatically. Open ports 80 and 443 on your firewall.
+
+**Enabling email login (OTP):**
+
+Without SMTP, teachers log in anonymously. To allow email-linked accounts:
+
+```bash
+# In .env:
+MAILER_AUTOCONFIRM=false
+SMTP_HOST=smtp.office365.com   # or smtp.gmail.com, smtp-relay.brevo.com
+SMTP_USER=rubricmaker@school.nl
+SMTP_PASS=your-app-password
+
+docker-compose up -d --force-recreate auth
+```
+
+Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sends a code-only template (`public/email-templates/otp-code.html`) with no clickable confirmation link — some email security scanners (e.g. Microsoft Safe Links) automatically open links in incoming mail, which would consume the one-time token before the teacher can enter the code, causing "Token has expired or is invalid" errors.
+
+**Student login without email:** many schools' spam filters block or delay Supabase's default OTP sender, leaving students unable to sign in. As an alternative, a teacher can generate a password for any student with an email on file (Students page → key icon on that student's row) and share it with them directly — the student then signs in at the landing page with "Student login (password)". This depends on the `set-student-password` edge function, which requires a functions runtime in front of an API gateway — **this repo's own docker-compose.yml does not include one**, so this feature (and the DB-backed essay submission flow, which relies on `submit-essay`/`get-essay-assignment` the same way) only works when Supabase is provided by the [official self-hosted Supabase Docker stack](https://supabase.com/docs/guides/self-hosting/docker) (which ships a `functions` container behind Kong) or Supabase Cloud. On the official stack, deploy by copying the function's `index.ts` straight into that stack's `volumes/functions/set-student-password/index.ts` — there's no separate "deploy" step; the edge-runtime serves it as soon as the file is in place.
+
+**Backup and restore:**
+
+```bash
+./scripts/backup.sh              # saves to ./backups/YYYYMMDD_HHMMSS/
+./scripts/restore.sh backups/20260515_120000
+```
+
+**Updating to a new version:**
+
+```bash
+git pull
+docker-compose up -d --build    # rebuilds the app image, restarts services
+# Migrations run automatically on next startup
+```
+
+### Option B: Static hosting (offline mode only)
+
+No database sync — all data stays in the browser. Works on any static host.
+
+**Build:**
+
+```bash
+npm run build   # output in dist/
+```
+
+Deploy the `dist/` folder to GitHub Pages, Vercel, Netlify, or any web server.
+
+**SharePoint:**
+
+1. Run `npm run build`
+2. In `dist/`, rename `index.html` → `index.aspx`
+3. Upload the entire `dist/` folder to a SharePoint Document Library
+4. Click `index.aspx` to launch
+
+> For Standards Integration on SharePoint, add the SharePoint domain to your Common Standards Project API key's allowed origins.
+
+### Operational guides
+
+The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.md). Highlights:
+
+- **Nightly attachment cleanup (recommended):** attachment files and their DB rows are deleted automatically when they age past the owner's school retention period (default: 7 years). Schedule the bundled script with `crontab -e`: `0 2 * * * cd /path/to/rubricmaker && ./scripts/delete-old-attachments.sh >> /var/log/rubricmaker-cleanup.log 2>&1`. The script uses the Storage HTTP API (it does **not** delete rows directly from `storage.objects`, which Supabase blocks) and treats a 404 from storage as success so orphaned DB rows are always removed. On Supabase Cloud, schedule the `delete-old-attachments` edge function instead (Supabase Dashboard → Edge Functions).
+- **Nightly cloud backup (recommended for Supabase Cloud / the official self-hosted stack):** `scripts/backup.sh` above only works against this repo's own `docker-compose.yml` (it runs `docker-compose exec db pg_dump` against a hardcoded volume name). For Cloud or a separately self-hosted Supabase, use the `nightly-backup` edge function instead: it dumps each teacher/admin's rows via `public.export_owner_backup()` and uploads a JSON snapshot to the private `backups` Storage bucket (7 most recent per user), scheduled via Supabase Dashboard → Edge Functions or a `pg_cron` + `pg_net` job. Note this is a disaster-recovery snapshot of raw table rows — restoring means re-inserting the rows directly (e.g. via `psql`), not importing through the app's own Settings → Backup & Restore; and it's metadata only, so back up the `essays`/`recordings`/`attachments` buckets separately if you need the files themselves recoverable.
+- **Teacher email digest (optional, `pg_cron`-driven):** the `scheduled-digest` edge function emails opted-in teachers nightly about pending moderation disputes, overdue grading, or unread student messages (same three sources as the in-app Notification Center). It needs a functions runtime plus one-time per-deployment settings (`app.settings.project_url` / `app.settings.service_role_key` via `ALTER DATABASE …`) before it can send anything — see [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) for the full `pg_cron`/`pg_net` setup.
+- **Stress-test logging (optional):** set `VITE_STRESS_TEST_LOGGING=true` in `.env` (requires migration `035_client_logs.sql`, included with `db:reset`/`docker-compose db_migrate`) to log user actions, sync results and JS errors to a `client_logs` table — never free-text content. Unset and rebuild after the stress-test window.
+- **Observability (optional, for pilot/stress-test windows):** a standalone Loki + Promtail + Grafana stack (`docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d`, Grafana on `http://localhost:3001`) filters web-server and container logs, and can query `client_logs` via a Postgres datasource. Set `GRAFANA_ADMIN_PASSWORD` to a strong value in `.env.observability` — the stack refuses to start without it (no default credentials). See [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) and [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for remote HTTPS access and what each dashboard shows.
+
+---
+
+## Developer reference
+
+> 🧑‍💻 This section is for contributors — teachers and admins can stop here.
+
+### Routes
 
 | Path                                        | Page                                                                                                                                             |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -220,9 +351,7 @@ npm run db:reset     # Reset and re-apply all migrations
 | `/admin`                                    | Admin panel (admin role only)                                                                                                                    |
 | `/privacy`                                  | Privacy statement                                                                                                                                |
 
----
-
-## Key utility modules
+### Key utility modules
 
 | File                                    | Purpose                                                                                                                                                                                                        |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -268,196 +397,12 @@ npm run db:reset     # Reset and re-apply all migrations
 
 ---
 
-## Deployment
+## Contributing & security
 
-RubricMaker works in two modes:
+- [Contributing guide](https://github.com/NesiciCoding/RubricMaker/wiki/Contributing) — how to report issues, propose changes, and open pull requests
+- [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) — codebase conventions and workflow
+- [Roadmap](https://github.com/NesiciCoding/RubricMaker/wiki/Roadmap) — where the project is heading
+- [Security policy](SECURITY.md) — responsible disclosure
+- [Privacy statement](PRIVACY.md) — what the app collects and stores, and when it stays fully local
 
-- **Offline-only** — data lives in the browser's local storage. No server needed. Works on GitHub Pages, SharePoint, or any static host.
-- **With database sync** — add an optional Supabase backend for multi-device sync, email login, and rubric sharing between teachers. Hosted on your own infrastructure.
-
----
-
-### Docker (recommended — includes database sync)
-
-The easiest way to run the full stack. Requires [Docker](https://docs.docker.com/get-docker/).
-
-**Your own laptop or school LAN:**
-
-```bash
-cp .env.docker.example .env   # defaults work as-is for localhost
-docker-compose up -d --build
-```
-
-Open [http://localhost:8080](http://localhost:8080). To make it accessible to other teachers on the network, set `SITE_URL=http://<your-ip>:8080` in `.env` first.
-
-**VPS with a domain name (HTTPS):**
-
-```bash
-cp .env.docker.example .env
-# Edit .env:
-#   DOMAIN=rubricmaker.school.nl
-#   SITE_URL=https://rubricmaker.school.nl
-#   JWT_SECRET=<random 64-char string>   ← change this!
-#   POSTGRES_PASSWORD=<strong password>  ← change this!
-docker-compose --profile https up -d --build
-```
-
-Caddy obtains a free Let's Encrypt certificate automatically. Open ports 80 and 443 on your firewall.
-
-**Enabling email login (OTP):**
-
-Without SMTP, teachers log in anonymously. To allow email-linked accounts:
-
-```bash
-# In .env:
-MAILER_AUTOCONFIRM=false
-SMTP_HOST=smtp.office365.com   # or smtp.gmail.com, smtp-relay.brevo.com
-SMTP_USER=rubricmaker@school.nl
-SMTP_PASS=your-app-password
-
-docker-compose up -d --force-recreate auth
-```
-
-Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sends a code-only template (`public/email-templates/otp-code.html`, served by the `app` container at `/email-templates/otp-code.html`) with no clickable confirmation link — some email security scanners (e.g. Microsoft Safe Links) automatically open links in incoming mail, which would consume the one-time token before the teacher can enter the code, causing "Token has expired or is invalid" errors.
-
-**Student login without email:** many schools' spam filters block or delay Supabase's default OTP sender, leaving students unable to sign in. As an alternative, a teacher can generate a password for any student with an email on file (Students page → key icon on that student's row) and share it with them directly — the student then signs in at the landing page with "Student login (password)" using their email and that password. This depends on the `set-student-password` edge function, which requires a functions runtime in front of an API gateway — **this repo's own docker-compose.yml above does not include one** (no `functions` service, and `docker/nginx.prod.conf` has no `/functions/v1/` route), so this feature (and the DB-backed essay submission flow, which relies on `submit-essay`/`get-essay-assignment` the same way) only works when Supabase is provided by the [official self-hosted Supabase Docker stack](https://supabase.com/docs/guides/self-hosting/docker) (which ships a `functions` container behind Kong) or Supabase Cloud. On the official self-hosted stack, deploy by copying the function's `index.ts` straight into that stack's `volumes/functions/set-student-password/index.ts` — there's no separate "deploy" step; the edge-runtime serves it as soon as the file is in place.
-
-**Backup and restore:**
-
-```bash
-./scripts/backup.sh              # saves to ./backups/YYYYMMDD_HHMMSS/
-./scripts/restore.sh backups/20260515_120000
-```
-
-**Updating to a new version:**
-
-```bash
-git pull
-docker-compose up -d --build    # rebuilds the app image, restarts services
-# Migrations run automatically on next startup
-```
-
-**Nightly attachment cleanup (recommended):**
-
-Attachment files and their database rows are deleted automatically when they age past the owner's school retention period (default: 7 years for users not linked to a school). Schedule the bundled script with `crontab -e`:
-
-```cron
-0 2 * * *  cd /path/to/rubricmaker && ./scripts/delete-old-attachments.sh >> /var/log/rubricmaker-cleanup.log 2>&1
-```
-
-The script uses the Storage HTTP API — it does **not** delete rows directly from `storage.objects` (which Supabase blocks). It calls `public.get_overdue_attachments()` to find eligible rows, removes each file via `DELETE /storage/v1/object/attachments/{path}`, then cleans up the metadata rows. A 404 from storage is treated as success so orphaned DB rows are always removed.
-
-On Supabase Cloud, schedule the `delete-old-attachments` edge function instead (see [Supabase Dashboard → Edge Functions](https://supabase.com/dashboard/project/_/functions)).
-
-**Nightly cloud backup (recommended for Supabase Cloud and the official self-hosted stack):**
-
-`scripts/backup.sh` (see "Backup and restore" above) only works against **this repo's own `docker-compose.yml`** — it calls `docker-compose exec db pg_dump` and archives a hardcoded volume name (`rubricmaker_storage-data`), both specific to that bundled stack. It does nothing for Supabase Cloud or for a Supabase instance you're self-hosting separately (e.g. the [official self-hosted Supabase Docker stack](https://supabase.com/docs/guides/self-hosting/docker)) — different container/volume names, or no server access at all on Cloud.
-
-The `nightly-backup` edge function covers both of those cases instead: for every teacher/admin, it dumps their rows via `public.export_owner_backup()` and uploads a JSON snapshot to the private `backups` Storage bucket at `{userId}/{timestamp}.json`, keeping the 7 most recent per user. Like `set-student-password`, it needs a functions runtime — this repo's bundled `docker-compose.yml` doesn't have one, but the official self-hosted stack does (deploy by copying `index.ts` into that stack's `volumes/functions/nightly-backup/index.ts`, no separate deploy step), and so does Cloud.
-
-Schedule it nightly: on Cloud via [Supabase Dashboard → Edge Functions](https://supabase.com/dashboard/project/_/functions) or Cron Jobs; on the official self-hosted stack via a `pg_cron` + `pg_net` job or an external cron hitting the function URL. It authenticates the same way as `delete-old-attachments` — the scheduler must pass the project's service role key as a bearer token.
-
-This is a disaster-recovery snapshot of raw table rows, not a file you can feed back into the app's own JSON import (Settings → Backup & Restore) — restoring it means re-inserting the rows directly (e.g. via `psql` or the Supabase SQL editor), not through `importFullBackup()`. It's metadata only: rows that reference uploaded files (essay submissions, speaking-session recordings) store a Storage-bucket path, not the file itself, so back up the `essays`/`recordings`/`attachments` buckets separately if you need those files recoverable too. If you're self-hosting Supabase separately from this repo's stack, you may also want your own `pg_dump`-based backup of the whole instance — `export_owner_backup()` only covers the app's own tables, scoped per teacher/admin.
-
-**Teacher email digest (optional, `pg_cron`-driven):**
-
-Every other email this app sends is triggered synchronously from a frontend action and addressed to a student (`notify-student-graded`, `notify-student-message`). The `scheduled-digest` edge function is the first scheduled, teacher-facing send: nightly, it emails any teacher/admin who opted into at least one of three independent categories under Settings → Email Digest — pending moderation disputes, overdue grading, or unread student messages (the same three sources the in-app Notification Center at `/notifications` surfaces) — and has a non-zero count in at least one enabled category. Opting into all three still sends a single combined email, not three separate ones.
-
-Migration `059_scheduled_digest.sql` enables the `pg_net` extension and schedules `net.http_post` (via `cron.schedule`, same job runner `audit_logs` retention cleanup already uses) to call the function nightly at 06:00 UTC. `net.http_post` needs this project's URL and service-role key, which a shared migration file can't hardcode — set them once per deployment before the job can actually send anything:
-
-```sql
-ALTER DATABASE postgres SET app.settings.project_url = 'https://<project-ref>.supabase.co';
-ALTER DATABASE postgres SET app.settings.service_role_key = '<service-role-key>';
-```
-
-Deploy `scheduled-digest` the same way as `nightly-backup` (Cloud, or copy `index.ts` into the official self-hosted stack's `volumes/functions/scheduled-digest/index.ts`). See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) for the full self-hosted `pg_cron`/`pg_net` setup.
-
-**Stress-test logging (optional):**
-
-Before a school-wide rollout, you can enable a diagnostic event stream to a
-`client_logs` table for both the teacher and student portals — useful for
-running a full-class pilot and catching errors or sync failures afterwards.
-
-```bash
-# Apply migration 035_client_logs.sql (included with db:reset / docker-compose db_migrate)
-# In .env:
-VITE_STRESS_TEST_LOGGING=true
-docker-compose up -d --build
-```
-
-Logged events cover user actions (by type and id only), Supabase sync results
-and latency, and JS errors — never free-text content such as essay text,
-comments, or grades. Query `client_logs` via the Supabase SQL editor
-(`select * from client_logs order by created_at desc`). When the stress-test
-window is over, unset `VITE_STRESS_TEST_LOGGING` and rebuild.
-
----
-
-### Observability (optional, for pilot/stress-test windows)
-
-A standalone Loki + Promtail + Grafana stack for filtering server logs during
-a class pilot. Works independently of how RubricMaker itself is deployed —
-the combined Docker stack above, or a traditional Apache/Nginx +
-HestiaCP/Virtualmin server. Only Docker is required on the host running this
-stack.
-
-```bash
-cp .env.observability.example .env.observability
-# edit RUBRICMAKER_LOG_DIR (and SUPABASE_DB_* if querying client_logs)
-docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d
-```
-
-Open [http://localhost:3001](http://localhost:3001) (default login `admin` /
-`admin`, change via `GRAFANA_ADMIN_PASSWORD`). Grafana is bound to
-`127.0.0.1:3001` only — for remote access during a pilot, put it behind a
-reverse proxy (see [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md)
-for a worked example with HTTPS).
-
-Two dashboards are auto-provisioned into a **RubricMaker** folder: "Web &
-Container Logs" (Loki — always available) and "Client Diagnostics
-(`client_logs`)" (Postgres — populated when `SUPABASE_DB_*` and
-`VITE_STRESS_TEST_LOGGING=true` are set). See
-[Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for what each panel
-shows and how to customize them.
-
-**Log sources:**
-
-- **Web server logs** — Promtail scans `RUBRICMAKER_LOG_DIR` for
-  `*access*.log` / `*error*.log` files. Set it to your panel's log directory:
-  `/var/log/virtualmin` (Virtualmin), `/var/log` (HestiaCP — per-domain logs
-  under `/var/log/apache2/domains/` or `/var/log/nginx/domains/`).
-- **Combined Docker stack containers** — Promtail also scrapes container
-  stdout/stderr for the `rubricmaker` compose project directly (no extra
-  config needed); `docker/nginx.prod.conf` writes access/error logs to
-  stdout/stderr for this.
-- **`client_logs` table** (see "Stress-test logging" above) — set
-  `SUPABASE_DB_HOST`/`SUPABASE_DB_NAME`/`SUPABASE_DB_USER`/`SUPABASE_DB_PASSWORD`
-  to provision a Postgres datasource in Grafana for querying app-level events.
-  This is the one log source available regardless of deployment style,
-  including managed Supabase Cloud projects.
-- **Managed Supabase Cloud** — there are no local containers/files for the
-  Supabase services themselves; use the Supabase dashboard's Log Explorer for
-  those. This stack still covers your web server logs and `client_logs`.
-
----
-
-### Static hosting (offline mode only)
-
-No database sync — all data stays in the browser. Works on any static host.
-
-**Build:**
-
-```bash
-npm run build   # output in dist/
-```
-
-Deploy the `dist/` folder to GitHub Pages, Vercel, Netlify, or any web server.
-
-**SharePoint:**
-
-1. Run `npm run build`
-2. In `dist/`, rename `index.html` → `index.aspx`
-3. Upload the entire `dist/` folder to a SharePoint Document Library
-4. Click `index.aspx` to launch
-
-> For Standards Integration on SharePoint, add the SharePoint domain to your Common Standards Project API key's allowed origins.
+> **License:** [MIT](LICENSE) — free to use, modify and distribute, with attribution. See the [LICENSE](LICENSE) file for details.
