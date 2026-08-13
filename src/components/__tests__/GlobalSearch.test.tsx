@@ -65,6 +65,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
+}));
+
 import GlobalSearch from '../Search/GlobalSearch';
 
 function renderSearch(onClose = vi.fn()) {
