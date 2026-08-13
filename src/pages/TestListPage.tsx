@@ -19,7 +19,7 @@ import {
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useClasses, useSettings, useStudents } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { nanoid } from '../utils/nanoid';
@@ -40,12 +40,15 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-
-    const { exportTemplates } = useAuthoring();
-    const { tests, addTest, updateTest, deleteTest, studentTests, saveStudentTest } = useAssessment();
-    const { settings } = useSettings();
+    const { students, classes, exportTemplates, tests, studentTests, settings } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        exportTemplates: s.exportTemplates,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        settings: s.settings,
+    }));
+    const { addTest, updateTest, deleteTest, saveStudentTest } = useStoreActions();
 
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
