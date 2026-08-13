@@ -102,9 +102,14 @@ jobs:
   # turns the resulting coverage-summary.json into an endpoint badge and commits
   # it. Runs on main pushes and weekly schedule runs so the badge always mirrors
   # the default branch — never on PRs, where a push would pollute the PR branch.
-  # Kept as its own job so the `ci` job keeps its contents: read permission;
-  # this one needs contents: write for the commit+push. GITHUB_TOKEN pushes do
-  # not re-trigger workflows, so there is no update loop.
+  #
+  # The badge is pushed to a dedicated `coverage-badge` branch, NOT main: main
+  # is protected by the PR-Merge ruleset (PRs + required checks), so a direct
+  # main push by the GITHUB_TOKEN is rejected. The branch is written only by
+  # this job, so it can never diverge from reality, and shields.io reads any
+  # branch. Kept as its own job so the `ci` job keeps its contents: read
+  # permission; this one needs contents: write for the commit+push. GITHUB_TOKEN
+  # pushes do not re-trigger workflows, so there is no update loop.
   coverage-badge:
     name: Publish coverage badge
     runs-on: ubuntu-latest
@@ -137,8 +142,8 @@ jobs:
           # Only publish when this run's tested revision (GITHUB_SHA) is still
           # main's HEAD. If main moved on while CI ran (e.g. two pushes in a
           # row), skip: the newer run will publish fresher coverage. Without
-          # this guard, a slow run could rebase stale coverage data onto newer
-          # main commits and clobber the up-to-date badge.
+          # this guard, a slow run could publish stale coverage data computed
+          # from an older main revision and clobber the up-to-date badge.
           git fetch origin main
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
             echo "main moved since this run started — skipping publication (a newer run will publish)"
@@ -148,9 +153,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/badges/coverage.json
           git commit -m "chore: update coverage badge"
-          # HEAD is origin/main plus exactly this commit, so the push is a
-          # clean fast-forward — no rebase needed.
-          git push origin HEAD:main
+          # Publish to the dedicated coverage-badge branch (main is protected).
+          # Rebase onto the branch's current tip so concurrent publishes resolve
+          # and the push stays a fast-forward; the GITHUB_SHA guard above
+          # already ensures the coverage data is from the current main, so this
+          # rebase can never resurrect stale data. Explicit refspec + ls-remote
+          # so it works regardless of checkout clone config.
+          if git ls-remote --heads origin coverage-badge | grep -q 'refs/heads/coverage-badge'; then
+            git fetch -q origin coverage-badge:refs/remotes/origin/coverage-badge
+            git rebase refs/remotes/origin/coverage-badge
+          fi
+          git push origin HEAD:coverage-badge
           echo "Coverage badge published: $(node -p "require('./docs/badges/coverage.json').message") lines"
 
   # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split

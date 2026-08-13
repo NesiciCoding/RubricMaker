@@ -3,7 +3,7 @@
 [![CI](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/NesiciCoding/RubricMaker/actions/workflows/codeql.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/codeql.yml)
 [![Lighthouse CI](https://github.com/NesiciCoding/RubricMaker/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/lighthouse.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/NesiciCoding/RubricMaker/main/docs/badges/coverage.json)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/NesiciCoding/RubricMaker/coverage-badge/docs/badges/coverage.json)](https://github.com/NesiciCoding/RubricMaker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/NesiciCoding/RubricMaker)](LICENSE)
 [![Live demo](https://img.shields.io/badge/live%20demo-online-2ea44f?logo=github)](https://nesicicoding.github.io/RubricMaker/)
 
