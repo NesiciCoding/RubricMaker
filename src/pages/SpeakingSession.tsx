@@ -6,7 +6,7 @@ import type { EventData } from 'react-joyride';
 import { getSpeakingTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Play, Pause, Square, Save, Mic, X, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useSettings, useStudents } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { calcEntryPoints, calcGradeSummary, criterionMaxPoints } from '../utils/gradeCalc';
 import { nanoid } from '../utils/nanoid';
 import RecordingControls from '../components/Recordings/RecordingControls';
@@ -32,11 +32,14 @@ export default function SpeakingSession() {
     const { rubricId, studentId } = useParams<{ rubricId: string; studentId: string }>();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { students } = useStudents();
-
-    const { rubrics, gradeScales } = useAuthoring();
-    const { speakingSessions, saveSpeakingSession } = useAssessment();
-    const { settings } = useSettings();
+    const { students, rubrics, gradeScales, speakingSessions, settings } = useStoreSelector((s) => ({
+        students: s.students,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        speakingSessions: s.speakingSessions,
+        settings: s.settings,
+    }));
+    const { saveSpeakingSession } = useStoreActions();
 
     const rubric = rubrics.find((r) => r.id === rubricId);
     const student = students.find((s) => s.id === studentId);
