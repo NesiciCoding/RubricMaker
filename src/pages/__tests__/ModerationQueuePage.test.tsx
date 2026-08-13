@@ -92,6 +92,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => makeAppContextMock(),
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(makeAppContextMock()),
+    useStoreActions: () => makeAppContextMock(),
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: false }),
 }));

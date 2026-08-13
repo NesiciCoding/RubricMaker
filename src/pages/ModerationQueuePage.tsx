@@ -4,7 +4,8 @@ import { UserCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import ReconcileModal from '../components/Modals/ReconcileModal';
-import { useAssessment, useAuthoring, useGrading, usePlatform, useSettings, useStudents } from '../context/AppContext';
+import { usePlatform } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import {
     buildReconciledEntries,
@@ -17,12 +18,14 @@ import type { DbUser } from '../services/database';
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students } = useStudents();
-    const { studentRubrics, saveStudentRubric } = useGrading();
-
-    const { rubrics } = useAuthoring();
-    const { peerReviews, deletePeerReview } = useAssessment();
-    const { settings } = useSettings();
+    const { students, studentRubrics, rubrics, peerReviews, settings } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        peerReviews: s.peerReviews,
+        settings: s.settings,
+    }));
+    const { saveStudentRubric, deletePeerReview } = useStoreActions();
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();
