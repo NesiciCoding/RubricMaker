@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
-import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
@@ -50,10 +50,14 @@ export function filterAndSortListings(
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
-    const { rubrics, questionBank, addRubric, addQuestionBankItems } = useAuthoring();
-    const { tests, addTest } = useAssessment();
-    const { flashcardDecks, addFlashcardDeck } = useFlashcards();
-    const { settings } = useSettings();
+    const { rubrics, questionBank, tests, flashcardDecks, settings } = useStoreSelector((s) => ({
+        rubrics: s.rubrics,
+        questionBank: s.questionBank,
+        tests: s.tests,
+        flashcardDecks: s.flashcardDecks,
+        settings: s.settings,
+    }));
+    const { addRubric, addQuestionBankItems, addTest, addFlashcardDeck } = useStoreActions();
 
     const dbStatus = useDbStatus();
     const schoolId = settings.schoolId;

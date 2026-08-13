@@ -39,6 +39,7 @@ const mockAppValue: Record<string, unknown> = {
     rubrics: mockRubricsArr,
     tests: emptyArr,
     flashcardDecks: emptyArr,
+    questionBank: emptyArr,
     students: emptyArr,
     classes: emptyArr,
     studentRubrics: emptyArr,
@@ -46,6 +47,7 @@ const mockAppValue: Record<string, unknown> = {
     addRubric: mockAddRubric,
     addTest: vi.fn(),
     addFlashcardDeck: vi.fn(),
+    addQuestionBankItems: vi.fn(),
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -59,6 +61,11 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
 }));
 
 const mockDbState = vi.hoisted(() => ({
