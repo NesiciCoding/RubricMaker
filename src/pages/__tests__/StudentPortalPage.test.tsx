@@ -212,6 +212,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
+}));
+
 vi.mock('recharts', async (importOriginal) => {
     const mod = await importOriginal<typeof import('recharts')>();
     return {

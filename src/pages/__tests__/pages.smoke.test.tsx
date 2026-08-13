@@ -177,6 +177,8 @@ vi.mock('../../context/useStore', () => ({
             essayTemplates: [],
             flashcardAssignments: [],
             flashcardReviews: [],
+            newsFlashes: [],
+            newsFlashReads: [],
             ...mockUseApp,
         }),
     useStoreActions: () => mockUseApp,

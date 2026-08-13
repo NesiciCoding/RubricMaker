@@ -29,16 +29,7 @@ import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
 import { Joyride, STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
-import {
-    useAssessment,
-    useAuthoring,
-    useClasses,
-    useEssays,
-    useFlashcards,
-    useGrading,
-    useSettings,
-    useStudents,
-} from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
 // Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
 // route chunk stays lean; they render only when their (below-the-fold) sections do.
@@ -141,33 +132,55 @@ const SECTION_TAB: Record<string, PortalTab> = {
 
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-    const { studentRubrics, saveRubricSelfAssessment } = useGrading();
-
-    const { rubrics, gradeScales } = useAuthoring();
     const {
+        students,
+        classes,
+        studentRubrics,
+        rubrics,
+        gradeScales,
         peerReviews,
         selfAssessments,
         analysisResults,
         tests,
         studentTests,
+        newsFlashes,
+        newsFlashReads,
+        flashcardAssignments,
+        flashcardDecks,
+        flashcardReviews,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        peerReviews: s.peerReviews,
+        selfAssessments: s.selfAssessments,
+        analysisResults: s.analysisResults,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        newsFlashes: s.newsFlashes,
+        newsFlashReads: s.newsFlashReads,
+        flashcardAssignments: s.flashcardAssignments,
+        flashcardDecks: s.flashcardDecks,
+        flashcardReviews: s.flashcardReviews,
+        settings: s.settings,
+    }));
+    const {
+        saveRubricSelfAssessment,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
-    } = useAssessment();
-    const {
         fetchMyEssayAssignments,
         fetchMyMessages,
         sendMessageAsStudent,
         markMessagesReadByStudent,
-        newsFlashes,
-        newsFlashReads,
         fetchMyNewsFlashes,
         markNewsFlashRead,
         markNewsFlashReadAsStudent,
-    } = useEssays();
-    const { flashcardAssignments, flashcardDecks, flashcardReviews, fetchMyFlashcardAssignments } = useFlashcards();
-    const { settings, updateSettings } = useSettings();
+        fetchMyFlashcardAssignments,
+        updateSettings,
+    } = useStoreActions();
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
