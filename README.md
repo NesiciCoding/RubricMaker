@@ -31,11 +31,11 @@ A comprehensive rubric creation and grading tool built with React and TypeScript
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Documentation](#documentation)
-- [Development](#development)
-- [Tech stack](#tech-stack)
+- [Development 🧑‍💻](#development)
+- [Tech stack 🧑‍💻](#tech-stack)
 - [Deployment](#deployment)
-- [Developer reference](#developer-reference)
-- [Contributing & security](#contributing--security)
+- [Developer reference 🧑‍💻](#developer-reference)
+- [Contributing & security 🧑‍💻](#contributing--security)
 
 ---
 
@@ -96,7 +96,7 @@ The full, illustrated feature documentation lives in the [Features wiki page](ht
 | **Collaboration**              | A school marketplace to publish/clone rubrics, tests, decks and bank items; one-toggle department sharing of live rubrics; live test/essay monitoring with proctoring flags; batch grading-task assignment to colleagues; student messaging and a notification center.                                                                                                                             |
 | **Accessibility**              | WCAG 2.1 AA (axe-core audits in CI); dyslexia-friendly reading mode; six theme bundles; in-app Joyride tours; global search (`Ctrl`/`Cmd`+`K`) with filter tokens.                                                                                                                                                                                                                                 |
 
-**Offline-first, cloud-ready:** every feature above works fully offline with data in the browser. Connecting an optional [Supabase](https://supabase.com) backend unlocks sync across devices, multi-teacher collaboration, the student portal, messaging and the marketplace.
+**Offline-first, cloud-ready:** the core grading workflow (rubrics, grading, statistics, flashcards) works fully offline with data in `localStorage`. Connecting an optional [Supabase](https://supabase.com) backend unlocks everything that needs a shared server — cross-device sync, multi-teacher collaboration, the student portal, messaging, notifications and the marketplace. If Supabase is configured but unavailable, the app continues with the reduced-capability `localStorage` fallback rather than failing.
 
 ---
 
@@ -291,7 +291,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 - **Nightly cloud backup (recommended for Supabase Cloud / the official self-hosted stack):** `scripts/backup.sh` above only works against this repo's own `docker-compose.yml` (it runs `docker-compose exec db pg_dump` against a hardcoded volume name). For Cloud or a separately self-hosted Supabase, use the `nightly-backup` edge function instead: it dumps each teacher/admin's rows via `public.export_owner_backup()` and uploads a JSON snapshot to the private `backups` Storage bucket (7 most recent per user), scheduled via Supabase Dashboard → Edge Functions or a `pg_cron` + `pg_net` job. Note this is a disaster-recovery snapshot of raw table rows — restoring means re-inserting the rows directly (e.g. via `psql`), not importing through the app's own Settings → Backup & Restore; and it's metadata only, so back up the `essays`/`recordings`/`attachments` buckets separately if you need the files themselves recoverable.
 - **Teacher email digest (optional, `pg_cron`-driven):** the `scheduled-digest` edge function emails opted-in teachers nightly about pending moderation disputes, overdue grading, or unread student messages (same three sources as the in-app Notification Center). It needs a functions runtime plus one-time per-deployment settings (`app.settings.project_url` / `app.settings.service_role_key` via `ALTER DATABASE …`) before it can send anything — see [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) for the full `pg_cron`/`pg_net` setup.
 - **Stress-test logging (optional):** set `VITE_STRESS_TEST_LOGGING=true` in `.env` (requires migration `035_client_logs.sql`, included with `db:reset`/`docker-compose db_migrate`) to log user actions, sync results and JS errors to a `client_logs` table — never free-text content. Unset and rebuild after the stress-test window.
-- **Observability (optional, for pilot/stress-test windows):** a standalone Loki + Promtail + Grafana stack (`docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d`, Grafana on `http://localhost:3001`, login `admin`/`admin`) filters web-server and container logs, and can query `client_logs` via a Postgres datasource. See [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) and [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for remote HTTPS access and what each dashboard shows.
+- **Observability (optional, for pilot/stress-test windows):** a standalone Loki + Promtail + Grafana stack (`docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d`, Grafana on `http://localhost:3001`) filters web-server and container logs, and can query `client_logs` via a Postgres datasource. Set `GRAFANA_ADMIN_PASSWORD` to a strong value in `.env.observability` — the stack refuses to start without it (no default credentials). See [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) and [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for remote HTTPS access and what each dashboard shows.
 
 ---
 
@@ -405,4 +405,4 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 - [Security policy](SECURITY.md) — responsible disclosure
 - [Privacy statement](PRIVACY.md) — what the app collects and stores, and when it stays fully local
 
-> **License:** the repository does not yet carry a license file — ask the maintainers before reusing any code.
+> **License:** [MIT](LICENSE) — free to use, modify and distribute, with attribution. See the [LICENSE](LICENSE) file for details.

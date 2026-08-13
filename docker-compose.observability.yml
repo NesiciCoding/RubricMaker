@@ -6,10 +6,10 @@
 #
 # ── Usage ──────────────────────────────────────────────────────────────────
 #   cp .env.observability.example .env.observability
-#   # edit RUBRICMAKER_LOG_DIR (and SUPABASE_DB_* if querying client_logs)
+#   # set GRAFANA_ADMIN_PASSWORD (required — no default), edit RUBRICMAKER_LOG_DIR
+#   # (and SUPABASE_DB_* if querying client_logs)
 #   docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d
-#   Open http://localhost:3001 (default login: admin / admin, change via
-#   GRAFANA_ADMIN_PASSWORD)
+#   Open http://localhost:3001 (login as admin with your GRAFANA_ADMIN_PASSWORD)
 #
 # See README.md → Deployment → Observability for the three log-source variants
 # (traditional web server logs, combined-stack containers, client_logs table).
@@ -61,7 +61,9 @@ services:
       - ./docker/observability/grafana-dashboards-provider.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
       - ./docker/observability/dashboards:/etc/grafana/provisioning/dashboards/json:ro
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      # No default — fails fast if GRAFANA_ADMIN_PASSWORD is unset so the
+      # stack can never come up with a well-known admin password.
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env.observability}"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       # Set when Grafana sits behind a reverse-proxy subdomain, so links,
       # redirects and auth cookies use the right external URL.

@@ -134,13 +134,22 @@ jobs:
             echo "Coverage badge unchanged — nothing to publish"
             exit 0
           fi
+          # Only publish when this run's tested revision (GITHUB_SHA) is still
+          # main's HEAD. If main moved on while CI ran (e.g. two pushes in a
+          # row), skip: the newer run will publish fresher coverage. Without
+          # this guard, a slow run could rebase stale coverage data onto newer
+          # main commits and clobber the up-to-date badge.
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "main moved since this run started — skipping publication (a newer run will publish)"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/badges/coverage.json
           git commit -m "chore: update coverage badge"
-          # Rebase onto the latest main so the push stays a fast-forward.
-          git fetch origin main
-          git rebase origin/main
+          # HEAD is origin/main plus exactly this commit, so the push is a
+          # clean fast-forward — no rebase needed.
           git push origin HEAD:main
           echo "Coverage badge published: $(node -p "require('./docs/badges/coverage.json').message") lines"
 
