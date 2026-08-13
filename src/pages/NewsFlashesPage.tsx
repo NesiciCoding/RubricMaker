@@ -17,7 +17,7 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
-import { useAssessment, useAuthoring, useEssays, useFlashcards, useStudents } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
@@ -61,12 +61,15 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
-    const { students } = useStudents();
-
-    const { rubrics } = useAuthoring();
-    const { tests } = useAssessment();
-    const { newsFlashes, newsFlashReads, addNewsFlash, updateNewsFlash, deleteNewsFlash } = useEssays();
-    const { flashcardDecks } = useFlashcards();
+    const { students, rubrics, tests, newsFlashes, newsFlashReads, flashcardDecks } = useStoreSelector((s) => ({
+        students: s.students,
+        rubrics: s.rubrics,
+        tests: s.tests,
+        newsFlashes: s.newsFlashes,
+        newsFlashReads: s.newsFlashReads,
+        flashcardDecks: s.flashcardDecks,
+    }));
+    const { addNewsFlash, updateNewsFlash, deleteNewsFlash } = useStoreActions();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [draft, setDraft] = useState<DraftState | null>(null);
