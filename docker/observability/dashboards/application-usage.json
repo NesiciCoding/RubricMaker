@@ -1,0 +1,581 @@
+{
+  "uid": "rubricmaker-application-usage",
+  "title": "RubricMaker — Application Usage & Data Health",
+  "description": "Product-level activity across every RubricMaker domain, queried directly from the Supabase database tables. Requires SUPABASE_DB_HOST (and related vars) in .env.observability so the 'Supabase Postgres (client_logs)' datasource is provisioned. No app instrumentation needed — works for any deployment with a reachable database.",
+  "tags": ["rubricmaker"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Teachers",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM profiles",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Schools",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM schools",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Classes",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM classes",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Students",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM students",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Rubrics",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM rubrics",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Grades",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM student_rubrics WHERE is_peer_review = false",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Tests",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM tests",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Test attempts",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM student_tests",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Essay assignments",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM essay_assignments",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Essay submissions",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM essay_submissions",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Flashcard decks",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM flashcard_decks",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Marketplace listings",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM marketplace_listings",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Flashcard reviews",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM flashcard_reviews",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Messages",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM messages",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Question bank items",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM question_bank_items",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Peer reviews",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM student_rubrics WHERE is_peer_review = true",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Active teachers (range)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT owner_id) FROM rubrics WHERE $__timeFilter(created_at)",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Grading tasks",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM grading_tasks",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Daily activity — content created",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS rubrics FROM rubrics WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup((COALESCE(data->>'gradedAt', data->>'updatedAt'))::timestamptz, '1d') AS time, count(*) AS grades FROM student_rubrics WHERE is_peer_review = false AND COALESCE(data->>'gradedAt', data->>'updatedAt') IS NOT NULL AND $__timeFilter((COALESCE(data->>'gradedAt', data->>'updatedAt'))::timestamptz) GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(submitted_at, '1d') AS time, count(*) AS essays FROM essay_submissions WHERE $__timeFilter(submitted_at) GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup((data->>'startedAt')::timestamptz, '1d') AS time, count(*) AS test_attempts FROM student_tests WHERE $__timeFilter((data->>'startedAt')::timestamptz) GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Signups & marketplace per day",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS signups FROM profiles WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1d') AS time, count(*) AS listings FROM marketplace_listings WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Entity counts by domain",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 'teachers' AS domain, count(*) AS count FROM profiles UNION ALL SELECT 'schools', count(*) FROM schools UNION ALL SELECT 'classes', count(*) FROM classes UNION ALL SELECT 'students', count(*) FROM students UNION ALL SELECT 'rubrics', count(*) FROM rubrics UNION ALL SELECT 'grades', count(*) FROM student_rubrics WHERE is_peer_review = false UNION ALL SELECT 'peer_reviews', count(*) FROM student_rubrics WHERE is_peer_review = true UNION ALL SELECT 'tests', count(*) FROM tests UNION ALL SELECT 'test_attempts', count(*) FROM student_tests UNION ALL SELECT 'essay_assignments', count(*) FROM essay_assignments UNION ALL SELECT 'essay_submissions', count(*) FROM essay_submissions UNION ALL SELECT 'messages', count(*) FROM messages UNION ALL SELECT 'flashcard_decks', count(*) FROM flashcard_decks UNION ALL SELECT 'flashcard_reviews', count(*) FROM flashcard_reviews UNION ALL SELECT 'question_bank_items', count(*) FROM question_bank_items UNION ALL SELECT 'marketplace_listings', count(*) FROM marketplace_listings UNION ALL SELECT 'grading_tasks', count(*) FROM grading_tasks ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Students & grades per school",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.name AS school, (SELECT count(*) FROM students st JOIN profiles p ON p.id = st.owner_id WHERE p.school_id = s.id) AS students, (SELECT count(*) FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE p.school_id = s.id AND sr.is_peer_review = false) AS grades FROM schools s ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Most active teachers (grades)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT p.email AS teacher, count(*) AS grades, max((sr.data->>'gradedAt')::timestamptz) AS last_graded FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE sr.is_peer_review = false GROUP BY p.email ORDER BY 2 DESC LIMIT 20"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "table",
+      "title": "Latest activity per domain",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT 'profiles' AS domain, max(created_at) AS last_activity FROM profiles UNION ALL SELECT 'rubrics', max(updated_at) FROM rubrics UNION ALL SELECT 'grades', max((data->>'updatedAt')::timestamptz) FROM student_rubrics WHERE is_peer_review = false UNION ALL SELECT 'test_attempts', max((data->>'startedAt')::timestamptz) FROM student_tests UNION ALL SELECT 'essay_submissions', max(submitted_at) FROM essay_submissions UNION ALL SELECT 'messages', max(created_at) FROM messages UNION ALL SELECT 'flashcard_decks', max((data->>'updatedAt')::timestamptz) FROM flashcard_decks UNION ALL SELECT 'flashcard_reviews', max((data->>'updatedAt')::timestamptz) FROM flashcard_reviews UNION ALL SELECT 'marketplace', max(updated_at) FROM marketplace_listings ORDER BY 2 DESC NULLS LAST"
+        }
+      ]
+    }
+  ]
+}

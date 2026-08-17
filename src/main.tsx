@@ -6,10 +6,41 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import { i18nReady } from './i18n';
-import { logEvent } from './services/logging/clientLogger';
+import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 
 setupPwaUpdatePrompt();
+
+function reportWebVitals() {
+    if (!STRESS_TEST_LOGGING_ENABLED) return;
+
+    try {
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+        if (nav) logMetric('page_load', Math.round(nav.duration));
+    } catch {
+        // Navigation Timing unsupported
+    }
+
+    const observe = (type: string, name: string, pick: (entry: PerformanceEntry) => number) => {
+        try {
+            const observer = new PerformanceObserver((list) => {
+                for (const entry of list.getEntries()) logMetric(name, pick(entry));
+            });
+            observer.observe({ type, buffered: true });
+        } catch {
+            // metric unsupported in this browser
+        }
+    };
+
+    observe('largest-contentful-paint', 'lcp', (e) => Math.round(e.startTime));
+    observe('first-contentful-paint', 'fcp', (e) => Math.round(e.startTime));
+    observe('layout-shift', 'cls', (e) => (e as PerformanceEntry & { value?: number }).value ?? 0);
+    observe('first-input', 'fid', (e) => {
+        const timing = e as PerformanceEntry & { processingStart?: number };
+        return Math.round((timing.processingStart ?? e.startTime) - e.startTime);
+    });
+}
+reportWebVitals();
 
 // Student-facing pages below are outside AppProvider, so the theme effect in
 // AppContext never runs for them — set data-theme here so they aren't stuck on
