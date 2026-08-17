@@ -47,6 +47,21 @@ export class StudentEssayPage {
         await this.page.keyboard.type(text);
     }
 
+    // ── Telemetry helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Simulate the student switching away from the tab. Mirrors
+     * StudentTestPage.triggerTabSwitch: useLiveSessionTelemetry listens for
+     * `document.visibilitychange` (when hidden) and `window.blur`, and a plain
+     * blur event triggers the listener without overriding the read-only
+     * visibilityState property.
+     */
+    async triggerTabSwitch(): Promise<void> {
+        await this.page.evaluate(() => {
+            window.dispatchEvent(new Event('blur'));
+        });
+    }
+
     /** The word count display in the header */
     wordCountDisplay(): Locator {
         return this.page.locator('text=/\\d+ words/');
@@ -62,6 +77,14 @@ export class StudentEssayPage {
     /** The submission code textarea shown after a successful submit */
     submissionCodeArea(): Locator {
         return this.page.locator('textarea[readonly]');
+    }
+
+    /**
+     * The ProseMirror editor after submit with readOnlyAfterSubmit — TipTap flips
+     * contenteditable to "false" so the student can review but not edit.
+     */
+    lockedEditor(): Locator {
+        return this.page.locator('.ProseMirror[contenteditable="false"]');
     }
 
     /** Copy button next to the submission code */
