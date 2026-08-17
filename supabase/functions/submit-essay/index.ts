@@ -5,6 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { resolveStudentEmail } from './email.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -25,15 +26,13 @@ serve(async (req) => {
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
     // Service-role client for privileged DB/Storage operations
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
     // Verify the student's JWT
-    const { data: { user }, error: authErr } = await admin.auth.getUser(
-        authHeader.replace('Bearer ', ''),
-    );
+    const {
+        data: { user },
+        error: authErr,
+    } = await admin.auth.getUser(authHeader.replace('Bearer ', ''));
     if (authErr || !user) return json({ error: 'Invalid or expired token' }, 401);
 
     let body: {
@@ -60,11 +59,13 @@ serve(async (req) => {
     // in their JWT, so fall back to the client-supplied value for those cases.
     // If the auth record has an email and the client sent a different one, reject the
     // request to prevent one student from claiming another's submission slot.
-    const authEmail = user.email ?? null;
-    if (authEmail && bodyEmail && authEmail.toLowerCase() !== bodyEmail.toLowerCase()) {
+    // The empty-string-anonymous-session guard lives in resolveStudentEmail (email.ts).
+    // `authEmail` is kept in scope: the anonymous-session roster check below needs it.
+    const authEmail = user.email ? user.email : null;
+    const { email: studentEmail, mismatch } = resolveStudentEmail(authEmail, bodyEmail);
+    if (mismatch) {
         return json({ error: 'Email mismatch: submitted email does not match your account' }, 403);
     }
-    const studentEmail = authEmail ?? bodyEmail ?? null;
 
     if (!studentEmail) {
         return json({ error: 'Missing required field: studentEmail' }, 400);
@@ -108,7 +109,8 @@ serve(async (req) => {
             .select('data')
             .eq('id', assignment.student_id)
             .single();
-        const rosterEmail: string | null = (studentRow?.data as Record<string, unknown> | null)?.email as string ?? null;
+        const rosterEmail: string | null =
+            ((studentRow?.data as Record<string, unknown> | null)?.email as string) ?? null;
         if (rosterEmail && rosterEmail.toLowerCase() !== studentEmail.toLowerCase()) {
             return json({ error: 'Email does not match the student record for this assignment' }, 403);
         }
@@ -143,21 +145,22 @@ serve(async (req) => {
     if (uploadErr) return json({ error: `Storage upload failed: ${uploadErr.message}` }, 500);
 
     // Insert submission row (UNIQUE constraint is the final duplicate guard)
-    const { error: insertErr } = await admin
-        .from('essay_submissions')
-        .insert({
-            id: submissionId,
-            assignment_id: assignmentId,
-            student_email: studentEmail ?? null,
-            student_user_id: user.id,
-            word_count: wordCount,
-            word_limit_status: wordLimitStatus,
-            submitted_at: new Date().toISOString(),
-            storage_path: storagePath,
-        });
+    const { error: insertErr } = await admin.from('essay_submissions').insert({
+        id: submissionId,
+        assignment_id: assignmentId,
+        student_email: studentEmail ?? null,
+        student_user_id: user.id,
+        word_count: wordCount,
+        word_limit_status: wordLimitStatus,
+        submitted_at: new Date().toISOString(),
+        storage_path: storagePath,
+    });
 
     if (insertErr) {
-        await admin.storage.from('essays').remove([storagePath]).catch(() => {});
+        await admin.storage
+            .from('essays')
+            .remove([storagePath])
+            .catch(() => {});
         if (insertErr.code === '23505') {
             return json({ error: 'You have already submitted this assignment' }, 409);
         }

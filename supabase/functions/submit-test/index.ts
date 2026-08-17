@@ -19,6 +19,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sanitizeAnswers, isAssignmentExpired, attemptPolicyFor } from './validation.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -502,8 +503,8 @@ serve(async (req) => {
     // scoreAnswer() on the teacher-facing side (src/utils/testCalc.ts) treats as an
     // already-graded manual score and uses verbatim instead of auto-scoring. Reconstructing
     // the answer objects here (rather than trusting the spread) means a forged pointsEarned
-    // can never reach storage in the first place.
-    const sanitizedAnswers: MinimalAnswer[] = answers.map((a) => ({ questionId: a.questionId, response: a.response }));
+    // can never reach storage in the first place — see sanitizeAnswers in validation.ts.
+    const sanitizedAnswers: MinimalAnswer[] = sanitizeAnswers(answers);
 
     // Rate limit: at most 5 submissions per user per 60 seconds (mirrors submit-essay).
     const sixtySecondsAgo = new Date(Date.now() - 60_000).toISOString();
@@ -527,7 +528,7 @@ serve(async (req) => {
 
     if (assignErr || !assignment) return json({ error: 'Assignment not found' }, 404);
 
-    if (assignment.expires_at && new Date(assignment.expires_at) < new Date()) {
+    if (isAssignmentExpired(assignment.expires_at)) {
         return json({ error: 'Assignment deadline has passed' }, 403);
     }
 
@@ -679,8 +680,7 @@ serve(async (req) => {
     // number of times on a 23505 conflict, re-counting each time, rather than failing a valid
     // retake outright — but only for practice mode; assessment-mode conflicts are always a
     // genuine duplicate submission and should fail immediately, as before.
-    const isPractice = assignment.mode === 'practice';
-    const maxAttempts = isPractice ? 5 : 1;
+    const { isPractice, maxAttempts } = attemptPolicyFor(assignment.mode);
 
     for (let retry = 0; retry < maxAttempts; retry++) {
         let attemptNumber = 1;

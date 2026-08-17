@@ -33,6 +33,8 @@ interface StudentLiveState {
         questionsAsked?: number;
     } | null;
     lastUpdateAt: string | null;
+    /** Set when the student broadcasts 'submitted' (or a persisted submission exists). */
+    submitted?: boolean;
 }
 
 function emptyLiveState(studentId: string): StudentLiveState {
@@ -73,7 +75,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
 
-    const { fetchEssayAssignmentByKey } = useEssays();
+    const { fetchEssayAssignmentByKey, fetchEssaySubmissions } = useEssays();
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 
@@ -86,11 +88,34 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             return;
         }
         let cancelled = false;
+        const assignmentId = params.assignmentId; // narrowed: the guard above already checked it
         setEssayAssignmentLoading(true);
-        fetchEssayAssignmentByKey(params.assignmentId)
+        fetchEssayAssignmentByKey(assignmentId)
             .then((result) => {
                 if (cancelled) return;
                 setEssayAssignment(result ?? null);
+                if (!result) return;
+                // A submission may already be persisted (the student handed in before
+                // the monitor opened) — reflect it immediately instead of waiting for
+                // a live 'submitted' broadcast from a still-open student tab.
+                void fetchEssaySubmissions(assignmentId)
+                    .then((rows) => {
+                        if (cancelled || rows.length === 0) return;
+                        setLiveStates((prev) => {
+                            const current = prev[result.studentId] ?? emptyLiveState(result.studentId);
+                            return {
+                                ...prev,
+                                [result.studentId]: {
+                                    ...current,
+                                    submitted: true,
+                                    lastUpdateAt: new Date().toISOString(),
+                                },
+                            };
+                        });
+                    })
+                    .catch(() => {
+                        // Non-fatal: the live broadcast path still covers an in-session submit.
+                    });
             })
             .catch(() => {
                 if (!cancelled) setEssayAssignment(null);
@@ -101,7 +126,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         return () => {
             cancelled = true;
         };
-    }, [kind, params.assignmentId, hasDb, fetchEssayAssignmentByKey]);
+    }, [kind, params.assignmentId, hasDb, fetchEssayAssignmentByKey, fetchEssaySubmissions]);
 
     // ── Test teacherKey lookup (Realtime channel name = the per-student teacherKey,
     // not a testId/studentId guess — see assignmentKeyFor below) ─────────────────
@@ -231,6 +256,19 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         };
                     });
                 })
+                .on('broadcast', { event: 'submitted' }, () => {
+                    setLiveStates((prev) => {
+                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
+                        return {
+                            ...prev,
+                            [row.studentId]: {
+                                ...current,
+                                submitted: true,
+                                lastUpdateAt: new Date().toISOString(),
+                            },
+                        };
+                    });
+                })
                 .subscribe();
             return channel;
         });
@@ -318,7 +356,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                           ...snapshotAnswers,
                       ]
                     : row.persistedAnswers;
-            return { ...row, presence, flags, live, mergedAnswers };
+            return {
+                ...row,
+                presence,
+                flags,
+                live,
+                mergedAnswers,
+                // Essays have no persisted student_tests row to derive a status from —
+                // the monitor learns about a hand-in via the student's 'submitted'
+                // broadcast or the essay_submissions check on mount.
+                status: row.status ?? (live.submitted ? 'submitted' : undefined),
+            };
         });
         // `tick` forces presence to be re-derived against the current time as heartbeats age.
         // eslint-disable-next-line react-hooks/exhaustive-deps

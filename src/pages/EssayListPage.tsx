@@ -7,6 +7,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { useOnlineEssaySubmissions } from '../hooks/useOnlineEssaySubmissions';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import type { CohortFilter as CohortFilterValue } from '../types';
@@ -20,6 +21,7 @@ export default function EssayListPage() {
 
     const { rubrics } = useAuthoring();
     const { essayAssignments, essaySubmissions, deleteEssayGroup, updateEssayGroup } = useEssays();
+    const onlineEssaySubmissions = useOnlineEssaySubmissions();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [cohortFilter, setCohortFilter] = React.useState<CohortFilterValue>(ALL_COHORTS);
@@ -104,11 +106,16 @@ export default function EssayListPage() {
                                     {groups.map(({ teacherKey, rows }, idx) => {
                                         const first = rows[0];
                                         const rubric = rubrics.find((r) => r.id === first.rubricId);
-                                        const submittedCount = new Set(
-                                            essaySubmissions
+                                        // Offline (pasted-code) submissions come from the hydrated
+                                        // essaySubmissions; online hand-ins (essay_submissions via
+                                        // submit-essay) are added via useOnlineEssaySubmissions —
+                                        // otherwise the count would stay 0 for portal submissions.
+                                        const submittedCount = new Set([
+                                            ...essaySubmissions
                                                 .filter((s) => s.teacherKey === teacherKey)
-                                                .map((s) => s.assignmentStudentId)
-                                        ).size;
+                                                .map((s) => s.assignmentStudentId),
+                                            ...(onlineEssaySubmissions.get(teacherKey) ?? []),
+                                        ]).size;
                                         return (
                                             <Draggable
                                                 key={teacherKey}

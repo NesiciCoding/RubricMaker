@@ -50,6 +50,13 @@ export interface UseLiveSessionTelemetryReturn {
     flush: () => ProctorEvent[];
     /** True once a Realtime broadcast channel is active (DB mode, enabled). */
     isBroadcasting: boolean;
+    /**
+     * Sends a one-off broadcast on the active session channel (no-op when no
+     * channel is live). Used for state transitions the channel owner needs to
+     * see immediately — e.g. the student broadcasting 'submitted' just before
+     * `enabled` flips false and tears the channel down.
+     */
+    broadcast: (event: string, payload?: unknown) => void;
 }
 
 function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnapshot): boolean {
@@ -102,6 +109,10 @@ export function useLiveSessionTelemetry({
         eventsRef.current = [...eventsRef.current, event];
         setEvents(eventsRef.current);
         channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
+    }, []);
+
+    const broadcast = useCallback((event: string, payload?: unknown) => {
+        void channelRef.current?.send({ type: 'broadcast', event, payload });
     }, []);
 
     const flush = useCallback((): ProctorEvent[] => {
@@ -260,5 +271,5 @@ export function useLiveSessionTelemetry({
         return () => clearInterval(interval);
     }, [enabled, getSnapshot, hasDb]);
 
-    return { events, flush, isBroadcasting };
+    return { events, flush, isBroadcasting, broadcast };
 }

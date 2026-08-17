@@ -10,6 +10,7 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { useAuthoring, useClasses, useEssays, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
+import { useOnlineEssaySubmissions } from '../hooks/useOnlineEssaySubmissions';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import { encodeEssayAssignment } from '../utils/shareCode';
@@ -27,6 +28,10 @@ export default function EssayBuilderPage() {
     const { rubrics } = useAuthoring();
     const { essayAssignments, essaySubmissions, addEssayAssignments, updateEssayGroup, addEssaySubmission } =
         useEssays();
+    // Online hand-ins (essay_submissions via submit-essay) are NOT part of the
+    // hydrated `essaySubmissions` (which tracks only offline pasted-code imports),
+    // so the roster badge would stay Pending for a portal submission without this.
+    const onlineEssaySubmissions = useOnlineEssaySubmissions();
 
     // The canonical group is every row saved under this exact teacherKey (the bulk
     // "Assign to Students" fan-out). `existing` is looked up directly rather than via
@@ -372,9 +377,12 @@ export default function EssayBuilderPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                             {rows.map((row) => {
                                 const student = students.find((s) => s.id === row.studentId);
-                                const submitted = essaySubmissions.some(
-                                    (s) => s.teacherKey === row.teacherKey && s.assignmentStudentId === row.studentId
-                                );
+                                const submitted =
+                                    essaySubmissions.some(
+                                        (s) =>
+                                            s.teacherKey === row.teacherKey && s.assignmentStudentId === row.studentId
+                                    ) ||
+                                    (onlineEssaySubmissions.get(row.teacherKey)?.has(row.studentId) ?? false);
                                 // A row can share this rubric without belonging to this page's
                                 // bulk group — e.g. assigned individually from GradeStudent.
                                 const isIndividual = row.teacherKey !== teacherKeyParam;

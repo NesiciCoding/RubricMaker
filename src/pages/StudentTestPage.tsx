@@ -497,6 +497,13 @@ export default function StudentTestPage() {
                     testId: effectiveTestId,
                     answerCount: testAnswers.length,
                 });
+                // Tell the teacher's live monitor the quiz was handed in — the last
+                // broadcast before `setSubmitted(true)` below disables telemetry and
+                // tears the channel down. Mirrors StudentEssayPage's 'submitted'
+                // broadcast; LiveMonitorPage listens for it on both kinds. The
+                // monitor also re-derives status from persisted student_tests rows,
+                // so a reload after the fact still shows Submitted.
+                telemetry.broadcast('submitted', { submittedAt, answerCount: testAnswers.length });
             }
         }
 

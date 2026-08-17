@@ -50,8 +50,25 @@ function isStudentRoute() {
 const router = createHashRouter([
     { path: '/feedback/:code', element: <StudentFeedbackPage /> },
     { path: '/preview/:code', element: <RubricPreviewPage /> },
-    { path: '/essay/:code', element: <StudentEssayPage /> },
-    { path: '/test/:code', element: <StudentTestPage /> },
+    // Student pages need toasts (e.g. the live-monitor nudge check-in banner), so
+    // wrap them in ToastProvider like the main app route — without it, the
+    // ToastContext default makes showToast a silent no-op.
+    {
+        path: '/essay/:code',
+        element: (
+            <ToastProvider>
+                <StudentEssayPage />
+            </ToastProvider>
+        ),
+    },
+    {
+        path: '/test/:code',
+        element: (
+            <ToastProvider>
+                <StudentTestPage />
+            </ToastProvider>
+        ),
+    },
     {
         path: '*',
         element: (
