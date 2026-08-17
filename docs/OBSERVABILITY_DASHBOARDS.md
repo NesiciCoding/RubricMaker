@@ -68,6 +68,19 @@ categories are emitted alongside the original `action`/`sync`/`error`/
 
 These power the **Performance & Web Vitals** dashboard below.
 
+### Historical data
+
+Migration `073_client_logs_backfill.sql` best-effort backfills `path` for rows
+written before migration 072 (when the column didn't exist yet): it recovers
+the route from `meta->>'path'` where present, maps `essay_*` events to
+`/essay/<teacherKey>` (the `:code` route param is the teacherKey), and maps
+`test_*` events to `/test` (their `meta` holds the testId, not the URL code).
+The `pageview`/`metric` categories themselves can't be reconstructed — they
+were never captured before 072 — so the **Performance & Web Vitals** dashboard
+is forward-looking (data from the first deploy of the instrumented build),
+while the **Application Usage & Data Health** dashboard covers history via the
+domain tables.
+
 ### Reading `meta`
 
 `meta` is a JSON column with different shapes per event:
