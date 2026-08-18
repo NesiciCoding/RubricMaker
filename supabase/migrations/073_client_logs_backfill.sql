@@ -17,12 +17,18 @@
 --     not the URL code, so path = /test (page-level only)
 -- Everything else stays NULL and is simply excluded from per-page panels.
 -- Idempotent: only touches rows where path IS NULL, safe to re-run.
+--
+-- Note: (meta->>'teacherKey') is parenthesized because || and ->> share the
+-- same operator precedence in Postgres and bind left-to-right — without the
+-- parens, '/essay/' || meta ->> 'teacherKey' would be parsed as
+-- ('/essay/' || meta) ->> 'teacherKey', casting the literal to jsonb and
+-- failing with "invalid input syntax for type json".
 
 update public.client_logs
 set path = coalesce(
     nullif(meta->>'path', ''),
     case
-        when name like 'essay_%' and meta->>'teacherKey' is not null then '/essay/' || meta->>'teacherKey'
+        when name like 'essay_%' and meta->>'teacherKey' is not null then '/essay/' || (meta->>'teacherKey')
         when name like 'essay_%' then '/essay'
         when name like 'test_%' then '/test'
     end
