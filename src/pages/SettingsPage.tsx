@@ -88,9 +88,9 @@ export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         gradeScales,
         commentBank,
         exportTemplates,
@@ -108,6 +108,9 @@ export default function SettingsPage() {
         standardMasteryTargets: s.standardMasteryTargets,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const {
         addGradeScale,
         updateGradeScale,
