@@ -198,7 +198,7 @@ jobs:
         run: npm ci
 
       - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -298,9 +298,12 @@ jobs:
         with:
           version: 2.104.0
 
+      # Cold-starting the local stack pulls several images from ghcr.io on a
+      # fresh hosted runner, which has intermittently exceeded 5 minutes and
+      # killed the job (see PRs #449, #456, #459). Give it ample headroom.
       - name: Start local Supabase stack
         run: supabase start
-        timeout-minutes: 5
+        timeout-minutes: 10
 
       - name: Export Supabase credentials
         run: |
