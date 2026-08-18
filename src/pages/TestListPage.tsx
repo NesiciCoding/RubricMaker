@@ -40,7 +40,14 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 export default function TestListPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, exportTemplates, tests, studentTests, settings } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        classes,
+        exportTemplates,
+        tests,
+        studentTests,
+        settings,
+    } = useStoreSelector((s) => ({
         students: s.students,
         classes: s.classes,
         exportTemplates: s.exportTemplates,
@@ -48,6 +55,9 @@ export default function TestListPage() {
         studentTests: s.studentTests,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // appear in cohort filters or per-student statistics.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { addTest, updateTest, deleteTest, saveStudentTest } = useStoreActions();
 
     const activeStyleTemplate = exportTemplates.find((t) => t.kind === 'style' && t.id === settings.styleTemplateId);
