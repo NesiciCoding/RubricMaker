@@ -6,10 +6,98 @@ import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 import { i18nReady } from './i18n';
-import { logEvent } from './services/logging/clientLogger';
+import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 
 setupPwaUpdatePrompt();
+
+function reportWebVitals() {
+    if (!STRESS_TEST_LOGGING_ENABLED) return;
+
+    try {
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+        if (nav) logMetric('page_load', Math.round(nav.duration));
+    } catch {
+        // Navigation Timing unsupported
+    }
+
+    // FCP and FID fire once per visit by definition, so the observer can log them directly.
+    const observe = (type: string, name: string, pick: (entry: PerformanceEntry) => number) => {
+        try {
+            const observer = new PerformanceObserver((list) => {
+                for (const entry of list.getEntries()) logMetric(name, pick(entry));
+            });
+            observer.observe({ type, buffered: true });
+        } catch {
+            // metric unsupported in this browser
+        }
+    };
+
+    observe('first-contentful-paint', 'fcp', (e) => Math.round(e.startTime));
+    observe('first-input', 'fid', (e) => {
+        const timing = e as PerformanceEntry & { processingStart?: number };
+        return Math.round((timing.processingStart ?? e.startTime) - e.startTime);
+    });
+
+    // LCP reports a candidate per render and CLS is a session-window aggregate, so neither
+    // should be logged per raw entry: track them and emit one finalized value per visit.
+    let lcp: number | undefined;
+    let lcpFinalized = false;
+    try {
+        const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+                const e = entry as PerformanceEntry & { startTime: number; isFinal?: boolean };
+                lcp = e.startTime;
+                if (e.isFinal) {
+                    logMetric('lcp', Math.round(e.startTime));
+                    lcpFinalized = true;
+                    observer.disconnect();
+                }
+            }
+        });
+        observer.observe({ type: 'largest-contentful-paint', buffered: true });
+    } catch {
+        // metric unsupported in this browser
+    }
+
+    let clsMaxSession = 0;
+    let clsSessionValue = 0;
+    let clsSessionStart = -1;
+    let clsLastShift = -1;
+    let clsSeen = false;
+    try {
+        const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+                const e = entry as PerformanceEntry & { value?: number; hadRecentInput?: boolean };
+                if (e.hadRecentInput) continue; // recent-input rule: ignore shifts near user input
+                const now = e.startTime;
+                // New session window after a >1s gap or once the current window exceeds 5s.
+                if (clsLastShift === -1 || now - clsLastShift > 1000 || now - clsSessionStart > 5000) {
+                    clsSessionValue = e.value ?? 0;
+                    clsSessionStart = now;
+                } else {
+                    clsSessionValue += e.value ?? 0;
+                }
+                clsLastShift = now;
+                clsSeen = true;
+                clsMaxSession = Math.max(clsMaxSession, clsSessionValue);
+            }
+        });
+        observer.observe({ type: 'layout-shift', buffered: true });
+    } catch {
+        // metric unsupported in this browser
+    }
+
+    window.addEventListener(
+        'pagehide',
+        () => {
+            if (lcp !== undefined && !lcpFinalized) logMetric('lcp', Math.round(lcp));
+            if (clsSeen) logMetric('cls', Math.round(clsMaxSession * 10000) / 10000);
+        },
+        { once: true }
+    );
+}
+reportWebVitals();
 
 // Student-facing pages below are outside AppProvider, so the theme effect in
 // AppContext never runs for them — set data-theme here so they aren't stuck on

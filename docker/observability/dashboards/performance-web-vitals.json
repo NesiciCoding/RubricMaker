@@ -1,0 +1,286 @@
+{
+  "uid": "rubricmaker-performance-web-vitals",
+  "title": "RubricMaker — Performance & Web Vitals",
+  "description": "Client-side performance and per-page usage, driven by the 'metric' and 'pageview' categories in client_logs (migration 072 + VITE_STRESS_TEST_LOGGING=true). Requires the 'Supabase Postgres (client_logs)' datasource (SUPABASE_DB_* in .env.observability).",
+  "tags": ["rubricmaker"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Pageviews (range)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(*) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'pageview'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Active sessions (range)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT session_id) FROM client_logs WHERE $__timeFilter(created_at)",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Distinct pages (range)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT path) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'pageview' AND path IS NOT NULL",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Avg page load (ms)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT round(avg((meta->>'value')::numeric)) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'page_load'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "p75 LCP (ms)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric)) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'lcp'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "p75 FID (ms)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 0 }, "overrides": [] },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric)) FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'fid'",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Pageviews per minute by page",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS time, path AS metric, count(*) AS pageviews FROM client_logs WHERE $__timeFilter(created_at) AND category = 'pageview' AND path IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Web vitals (p75, ms)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '5m') AS time, percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric) AS lcp_p75 FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'lcp' GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '5m') AS time, percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric) AS fcp_p75 FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'fcp' GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '5m') AS time, percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric) AS fid_p75 FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'fid' GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '5m') AS time, percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric) AS page_load_p75 FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'page_load' GROUP BY 1 ORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Slowest pages (avg page load)",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT path, count(*) AS loads, round(avg((meta->>'value')::numeric)) AS avg_ms FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' AND name = 'page_load' AND path IS NOT NULL GROUP BY path ORDER BY 3 DESC LIMIT 15"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Web vitals summary",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT name, count(*) AS samples, round(avg((meta->>'value')::numeric)::numeric, 1) AS avg, round(percentile_cont(0.75) WITHIN GROUP (ORDER BY (meta->>'value')::numeric)::numeric, 1) AS p75, round(max((meta->>'value')::numeric)::numeric, 1) AS max FROM client_logs WHERE $__timeFilter(created_at) AND category = 'metric' GROUP BY name ORDER BY name"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Sessions by role",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(role, 'unknown') AS role, count(DISTINCT session_id) AS sessions, count(*) AS events FROM client_logs WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 2 DESC"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Recent pageviews",
+      "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": {},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT created_at AS time, role, path, session_id FROM client_logs WHERE $__timeFilter(created_at) AND category = 'pageview' ORDER BY created_at DESC LIMIT 100"
+        }
+      ]
+    }
+  ]
+}

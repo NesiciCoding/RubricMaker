@@ -4810,6 +4810,67 @@ ALTER TABLE public.marketplace_listings
 ALTER TABLE public.marketplace_listings
   VALIDATE CONSTRAINT marketplace_listings_kind_check;
 
+-- ── 072_client_logs_observability.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 072: observability enrichment for client_logs.
+-- Adds a `path` column (the hash-router route, e.g. /rubrics or /essay/<code>)
+-- so dashboards can break activity and performance down per page, and a
+-- composite index that keeps category+time and pageview+time queries cheap.
+-- Only written when the client build sets VITE_STRESS_TEST_LOGGING=true.
+
+alter table if exists public.client_logs
+  add column if not exists path text;
+
+create index if not exists client_logs_category_created_idx
+  on public.client_logs (category, created_at);
+
+create index if not exists client_logs_path_created_idx
+  on public.client_logs (path, created_at);
+
+-- ── 073_client_logs_backfill.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 073: best-effort backfill of client_logs.path for rows written
+-- before migration 072 added the column (those rows have path = NULL).
+--
+-- The `path` column only exists from migration 072, so older rows are NULL.
+-- Most cannot be reconstructed (meta holds ids/counts/durations, never the
+-- URL), and the `pageview`/`metric` categories never existed before 072 —
+-- those are forward-looking only. The Performance & Web Vitals dashboard
+-- therefore shows data from the first deploy of the instrumented build;
+-- historical usage is covered by the Application Usage & Data Health
+-- dashboard, which reads the domain tables directly.
+--
+-- What this migration DOES recover for the rows that carry the information:
+--   * any row whose meta already stored a route under meta->>'path'
+--   * essay events (StudentEssayPage at /essay/:code): the route param IS
+--     the teacherKey, and essay_* events log it, so path = /essay/<teacherKey>
+--   * test events (StudentTestPage at /test/:code): meta holds the testId,
+--     not the URL code, so path = /test (page-level only)
+-- Everything else stays NULL and is simply excluded from per-page panels.
+-- Idempotent: only touches rows where path IS NULL, safe to re-run.
+--
+-- Note: (meta->>'teacherKey') is parenthesized because || and ->> share the
+-- same operator precedence in Postgres and bind left-to-right — without the
+-- parens, '/essay/' || meta ->> 'teacherKey' would be parsed as
+-- ('/essay/' || meta) ->> 'teacherKey', casting the literal to jsonb and
+-- failing with "invalid input syntax for type json".
+
+update public.client_logs
+set path = coalesce(
+    nullif(meta->>'path', ''),
+    case
+        when name like 'essay_%' and meta->>'teacherKey' is not null then '/essay/' || (meta->>'teacherKey')
+        when name like 'essay_%' then '/essay'
+        when name like 'test_%' then '/test'
+    end
+)
+where path is null
+  and (
+      (meta is not null and meta ? 'path' and nullif(meta->>'path', '') is not null)
+      or name like 'essay_%'
+      or name like 'test_%'
+  );
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -4920,5 +4981,7 @@ insert into public._migrations (name) values
     ('069_feedback_audio_storage.sql'),
     ('070_flashcard_decks_policy_guards.sql'),
     ('071_marketplace_kind_constraint_guard.sql'),
+    ('072_client_logs_observability.sql'),
+    ('073_client_logs_backfill.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

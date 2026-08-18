@@ -12,6 +12,7 @@ import MigrationPrompt from './components/auth/MigrationPrompt';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
+import { PageViewLogger } from './components/ui/PageViewLogger';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
@@ -147,6 +148,7 @@ export default function App() {
 
         return (
             <ErrorBoundary>
+                <PageViewLogger />
                 <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
                         <Route path="/portal/:studentId" element={<StudentPortalPage />} />
@@ -201,6 +203,7 @@ export default function App() {
                     </ErrorBoundary>
                 )}
                 <RouteAnnouncer />
+                <PageViewLogger />
                 <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
                 <main className="main-area" id="main-content">
                     <ErrorBoundary>

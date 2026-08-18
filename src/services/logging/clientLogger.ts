@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type LogCategory = 'action' | 'sync' | 'error' | 'lifecycle';
+export type LogCategory = 'action' | 'sync' | 'error' | 'lifecycle' | 'pageview' | 'metric';
 export type LogLevel = 'info' | 'warn' | 'error';
 
 export interface ClientLoggerContext {
@@ -17,6 +17,7 @@ interface LogRow {
     category: LogCategory;
     name: string;
     level: LogLevel;
+    path: string | null;
     meta: Record<string, unknown> | null;
 }
 
@@ -58,7 +59,8 @@ export function logEvent(
     category: LogCategory,
     name: string,
     meta?: Record<string, unknown>,
-    level: LogLevel = 'info'
+    level: LogLevel = 'info',
+    path?: string
 ): void {
     if (!STRESS_TEST_LOGGING_ENABLED) return;
     buffer.push({
@@ -69,10 +71,28 @@ export function logEvent(
         category,
         name,
         level,
+        path: path ?? (currentPath() || null),
         meta: meta ?? null,
     });
     if (buffer.length > MAX_QUEUED_SIZE) buffer = buffer.slice(-MAX_QUEUED_SIZE);
     if (buffer.length >= MAX_BUFFER_SIZE) flush();
+}
+
+export function logPageView(path?: string): void {
+    logEvent('pageview', 'pageview', undefined, 'info', path);
+}
+
+export function logMetric(name: string, value: number, extra?: Record<string, unknown>): void {
+    logEvent('metric', name, { value, ...extra });
+}
+
+function currentPath(): string {
+    try {
+        const hash = window.location.hash.replace(/^#/, '');
+        return hash ? hash.split('?')[0] : window.location.pathname;
+    } catch {
+        return '';
+    }
 }
 
 function flush(): void {

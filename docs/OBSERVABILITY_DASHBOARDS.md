@@ -1,8 +1,8 @@
 # Grafana Dashboards
 
 The standalone observability stack (`docker-compose.observability.yml`)
-auto-provisions two dashboards into a **RubricMaker** folder in Grafana, on
-top of the Loki and `client_logs` Postgres datasources described in
+auto-provisions four dashboards into a **RubricMaker** folder in Grafana, on
+top of the Loki and Postgres datasources described in
 `README.md` → "Observability". This page explains what each panel shows and
 how to extend them.
 
@@ -55,6 +55,32 @@ don't use the stress-test logging feature.
 | Top action types | The most frequent action names in the selected range — what teachers/students are actually doing during the pilot. |
 | Recent warnings & errors | Raw rows for `level IN ('warn', 'error')`, including the `meta` JSON (error messages, entity ids, durations) for debugging a specific failure. |
 
+Since migration `072_client_logs_observability.sql`, every row also carries a
+`path` column (the hash-router route the event happened on), and two new
+categories are emitted alongside the original `action`/`sync`/`error`/
+`lifecycle`:
+
+- `pageview` — one row per in-app route change (`logPageView`, fired by the
+  `PageViewLogger` component on every route).
+- `metric` — numeric measurements (`logMetric`): `page_load` (Navigation
+  Timing), and the Web Vitals `lcp` / `fcp` / `fid` (ms) and `cls` (unitless
+  score), all recorded in `meta->>'value'`.
+
+These power the **Performance & Web Vitals** dashboard below.
+
+### Historical data
+
+Migration `073_client_logs_backfill.sql` best-effort backfills `path` for rows
+written before migration 072 (when the column didn't exist yet): it recovers
+the route from `meta->>'path'` where present, maps `essay_*` events to
+`/essay/<teacherKey>` (the `:code` route param is the teacherKey), and maps
+`test_*` events to `/test` (their `meta` holds the testId, not the URL code).
+The `pageview`/`metric` categories themselves can't be reconstructed — they
+were never captured before 072 — so the **Performance & Web Vitals** dashboard
+is forward-looking (data from the first deploy of the instrumented build),
+while the **Application Usage & Data Health** dashboard covers history via the
+domain tables.
+
 ### Reading `meta`
 
 `meta` is a JSON column with different shapes per event:
@@ -89,6 +115,55 @@ the UI, so they survive a `docker compose down -v`.
   for `client_logs` use `{"type": "postgres", "uid": "client_logs_postgres"}`.
   Both UIDs are fixed in `docker/observability/grafana-datasources.yml` so
   dashboard JSON can reference them directly.
+
+---
+
+## 3. Application Usage & Data Health
+
+**Source:** the "Supabase Postgres (client_logs)" datasource (despite the
+name, it reaches the whole Supabase schema). No app instrumentation required —
+this dashboard reads the domain tables directly, so it works for any
+deployment with a reachable database (including existing/legacy data),
+regardless of `VITE_STRESS_TEST_LOGGING`.
+
+| Panel | What it shows |
+|---|---|
+| Stat rows (18 panels) | Total row counts per domain: teachers, schools, classes, students, rubrics, grades, tests, test attempts, essay assignments/submissions, flashcard decks/reviews, marketplace listings, messages, question-bank items, peer reviews, grading tasks — plus distinct active teachers in the time range. |
+| Daily activity — content created | Rubrics created, grades recorded (`gradedAt`/`updatedAt`), essay submissions, and test attempts per day — the shape of teacher/student work over time. |
+| Signups & marketplace per day | New `profiles` and published marketplace listings per day. |
+| Entity counts by domain | One table ranking every domain by row count, so a silent table (e.g. a broken sync path that stopped writing) is visible at a glance. |
+| Students & grades per school | Multi-tenant breakdown — students and grades attributable to each school. |
+| Most active teachers (grades) | Teachers ranked by grades recorded, with last-graded timestamp. |
+| Latest activity per domain | Most recent write per domain — spot a domain whose last activity is stale. |
+
+Many of the jsonb-document tables (`student_rubrics`, `tests`,
+`student_tests`, `flashcard_*`) have no real `created_at` column, so these
+panels cast the ISO timestamps inside the `data` jsonb (`data->>'gradedAt'`,
+`data->>'startedAt'`, `data->>'updatedAt'`). The queries are defensive
+(`IS NOT NULL` + `COALESCE` fallbacks) so rows missing a field are simply
+excluded rather than erroring.
+
+---
+
+## 4. Performance & Web Vitals
+
+**Source:** the "Supabase Postgres (client_logs)" datasource, reading the
+`pageview` and `metric` categories from `client_logs`. Requires
+`VITE_STRESS_TEST_LOGGING=true` **and** migration
+`072_client_logs_observability.sql`.
+
+| Panel | What it shows |
+|---|---|
+| Pageviews / Active sessions / Distinct pages | Usage volume in the selected range, from `category = 'pageview'`. |
+| Avg page load / p75 LCP / p75 FID | Headline performance numbers from `meta->>'value'` of `page_load` / `lcp` / `fid`. |
+| Pageviews per minute by page | Time series of traffic per route — which screens get used when. |
+| Web vitals (p75, ms) | LCP / FCP / FID / page-load 75th percentile over time — watch for regressions after a deploy. |
+| Slowest pages (avg page load) | Routes ranked by average `page_load` — the pages worth optimizing first. |
+| Web vitals summary | Per-metric sample count, mean, p75, and max. Note `cls` is a unitless score, not ms. |
+| Sessions by role | Sessions and event volume per `role`. |
+| Recent pageviews | Raw pageview rows for debugging a specific session. |
+
+---
 
 See [Observability on a HestiaCP subdomain](OBSERVABILITY_HESTIACP.md) for
 deploying this stack behind HTTPS.
