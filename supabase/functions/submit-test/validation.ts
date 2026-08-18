@@ -27,7 +27,8 @@ export function sanitizeAnswers(answers: MinimalAnswer[]): MinimalAnswer[] {
 
 /** Deadline guard — expired assignments (or rows with no deadline) reject/allow accordingly. */
 export function isAssignmentExpired(expiresAt: string | null | undefined, now: Date = new Date()): boolean {
-    return !!expiresAt && new Date(expiresAt) < now;
+    // Inclusive: a submission at the exact expiration instant is already past the deadline.
+    return !!expiresAt && new Date(expiresAt) <= now;
 }
 
 /**

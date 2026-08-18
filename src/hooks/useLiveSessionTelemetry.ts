@@ -51,12 +51,16 @@ export interface UseLiveSessionTelemetryReturn {
     /** True once a Realtime broadcast channel is active (DB mode, enabled). */
     isBroadcasting: boolean;
     /**
-     * Sends a one-off broadcast on the active session channel (no-op when no
-     * channel is live). Used for state transitions the channel owner needs to
-     * see immediately — e.g. the student broadcasting 'submitted' just before
-     * `enabled` flips false and tears the channel down.
+     * Sends a one-off broadcast on the active session channel and resolves with
+     * the server acknowledgement ('ok'), a timeout, or an error — or 'ok'
+     * immediately when no channel is live. Used for state transitions the
+     * channel owner needs to see — e.g. the student broadcasting 'submitted'
+     * just before `enabled` flips false and tears the channel down. Callers
+     * that gate UI on the broadcast (like the submitted confirmation) should
+     * await it; the channel is configured with `broadcast.ack: true` so the
+     * promise only resolves once the Realtime server confirmed receipt.
      */
-    broadcast: (event: string, payload?: unknown) => void;
+    broadcast: (event: string, payload?: unknown) => Promise<'ok' | 'timed out' | 'error'>;
 }
 
 function shallowEqualSnapshot(a: LiveSessionSnapshot | null, b: LiveSessionSnapshot): boolean {
@@ -111,8 +115,11 @@ export function useLiveSessionTelemetry({
         channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
     }, []);
 
-    const broadcast = useCallback((event: string, payload?: unknown) => {
-        void channelRef.current?.send({ type: 'broadcast', event, payload });
+    const broadcast = useCallback((event: string, payload?: unknown): Promise<'ok' | 'timed out' | 'error'> => {
+        // send() is typed as a branded `string` in this realtime-js version; its runtime
+        // values are exactly 'ok' | 'timed out' | 'error' (see RealtimeChannel.send).
+        return (channelRef.current?.send({ type: 'broadcast', event, payload }) ??
+            Promise.resolve('ok' as const)) as Promise<'ok' | 'timed out' | 'error'>;
     }, []);
 
     const flush = useCallback((): ProctorEvent[] => {
@@ -131,7 +138,12 @@ export function useLiveSessionTelemetry({
         const client = createClient(supabaseUrl!, supabaseAnonKey!, {
             auth: { persistSession: false, autoRefreshToken: false, storageKey: 'rm_monitor_ephemeral' },
         });
-        const channel = client.channel(`monitor:${kind}:${assignmentKey}`);
+        // ack:true makes send() resolve only after the server confirms receipt —
+        // important for the 'submitted' broadcast, which is fire-and-forget today
+        // but must not be silently dropped right before the channel tears down.
+        const channel = client.channel(`monitor:${kind}:${assignmentKey}`, {
+            config: { broadcast: { ack: true, self: false } },
+        });
         channel.on('broadcast', { event: 'nudge' }, ({ payload }) => {
             onNudgeRef.current?.((payload as { message: string }).message);
         });

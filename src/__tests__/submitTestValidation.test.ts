@@ -37,6 +37,10 @@ describe('submit-test isAssignmentExpired', () => {
         expect(isAssignmentExpired('2026-08-17T12:00:01Z', now)).toBe(false);
     });
 
+    it('rejects a submission at the exact expiration instant', () => {
+        expect(isAssignmentExpired('2026-08-17T12:00:00Z', now)).toBe(true);
+    });
+
     it('allows rows with no deadline', () => {
         expect(isAssignmentExpired(null, now)).toBe(false);
         expect(isAssignmentExpired(undefined, now)).toBe(false);

@@ -470,6 +470,12 @@ serve(async (req) => {
     } catch {
         return json({ error: 'Invalid request body' }, 400);
     }
+    // `req.json()` of the literal JSON `null` resolves to `null` (it only throws on
+    // malformed JSON), so destructuring it below would crash with a 500 instead of
+    // the 400 the validation block is meant to produce.
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return json({ error: 'Invalid request body' }, 400);
+    }
 
     const { assignmentId, submissionId, answers, startedAt, submittedAt, events, sectionPath, levelPath } = body;
     if (
