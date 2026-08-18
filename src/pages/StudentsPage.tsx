@@ -278,9 +278,9 @@ export default function StudentsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         rubrics,
         gradeScales,
         selfAssessments,
@@ -300,6 +300,11 @@ export default function StudentsPage() {
         studentTests: s.studentTests,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    // (DELETE_STUDENT soft-deletes via archivedAt — without this filter the student
+    // row would remain visible after deletion.)
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const {
         addStudent,
         updateStudent,
