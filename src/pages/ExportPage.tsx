@@ -36,9 +36,9 @@ import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId }
 export default function ExportPage() {
     const { t } = useTranslation();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         rubrics,
         gradeScales,
         exportTemplates,
@@ -64,6 +64,9 @@ export default function ExportPage() {
         essaySubmissions: s.essaySubmissions,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const { saveStudentRubric, updateSettings } = useStoreActions();
 
     const { showToast } = useToast();
