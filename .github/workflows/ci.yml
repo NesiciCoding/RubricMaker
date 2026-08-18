@@ -296,9 +296,12 @@ jobs:
         with:
           version: 2.104.0
 
+      # Cold-starting the local stack pulls several images from ghcr.io on a
+      # fresh hosted runner, which has intermittently exceeded 5 minutes and
+      # killed the job (see PRs #449, #456, #459). Give it ample headroom.
       - name: Start local Supabase stack
         run: supabase start
-        timeout-minutes: 5
+        timeout-minutes: 10
 
       - name: Export Supabase credentials
         run: |
