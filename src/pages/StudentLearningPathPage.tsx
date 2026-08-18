@@ -23,9 +23,9 @@ export default function StudentLearningPathPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         rubrics,
         selfAssessments,
         analysisResults,
@@ -45,6 +45,9 @@ export default function StudentLearningPathPage() {
         flashcardDecks: s.flashcardDecks,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
