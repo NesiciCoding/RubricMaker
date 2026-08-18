@@ -555,7 +555,7 @@
           "datasource": { "type": "postgres", "uid": "client_logs_postgres" },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT p.email AS teacher, count(*) AS grades, max((sr.data->>'gradedAt')::timestamptz) AS last_graded FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE sr.is_peer_review = false GROUP BY p.email ORDER BY 2 DESC LIMIT 20"
+          "rawSql": "SELECT COALESCE(NULLIF(p.display_name, ''), left(p.email, 1) || '•••') AS teacher, count(*) AS grades, max((sr.data->>'gradedAt')::timestamptz) AS last_graded FROM student_rubrics sr JOIN profiles p ON p.id = sr.grader_id WHERE sr.is_peer_review = false GROUP BY 1 ORDER BY 2 DESC LIMIT 20"
         }
       ]
     },

@@ -78,12 +78,10 @@ export function logEvent(
     if (buffer.length >= MAX_BUFFER_SIZE) flush();
 }
 
-/** Record a hash-router navigation (pageview) for per-page usage dashboards. */
 export function logPageView(path?: string): void {
     logEvent('pageview', 'pageview', undefined, 'info', path);
 }
 
-/** Record a numeric measurement (web vitals, page load, etc.) for performance dashboards. */
 export function logMetric(name: string, value: number, extra?: Record<string, unknown>): void {
     logEvent('metric', name, { value, ...extra });
 }
