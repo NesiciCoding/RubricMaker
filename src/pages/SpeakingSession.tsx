@@ -32,13 +32,22 @@ export default function SpeakingSession() {
     const { rubricId, studentId } = useParams<{ rubricId: string; studentId: string }>();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { students, rubrics, gradeScales, speakingSessions, settings } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        rubrics,
+        gradeScales,
+        speakingSessions,
+        settings,
+    } = useStoreSelector((s) => ({
         students: s.students,
         rubrics: s.rubrics,
         gradeScales: s.gradeScales,
         speakingSessions: s.speakingSessions,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // be reachable from a speaking-session route.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveSpeakingSession } = useStoreActions();
 
     const rubric = rubrics.find((r) => r.id === rubricId);
