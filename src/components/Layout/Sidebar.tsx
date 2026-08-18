@@ -56,16 +56,27 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { students, studentRubrics, rubrics, peerReviews, settings } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        peerReviews,
+        userRole,
+    } = useStoreSelector((s) => ({
         students: s.students,
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         peerReviews: s.peerReviews,
-        settings: s.settings,
+        userRole: s.settings.userRole,
     }));
 
-    const isAdmin = settings.userRole === 'admin';
+    const isAdmin = userRole === 'admin';
     const location = useLocation();
+
+    // Same active-filtering the roster domain hooks applied: soft-deleted (archived)
+    // students and soft-deleted student rubrics must not count toward pending work.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     // Same default threshold as ModerationQueuePage's own initial state; colleagueIds is
     // left undefined here (falls back to the "not a known student id" heuristic) since
