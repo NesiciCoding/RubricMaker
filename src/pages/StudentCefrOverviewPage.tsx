@@ -12,10 +12,25 @@ import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPa
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useStoreSelector } from '../context/useStore';
+import type { StoreData } from '../store/storage';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
 import { VO_TRACK_LABELS, VO_TRACK_DEFAULT_CEFR, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+
+// Module-scope selector: stable identity so useStoreSelector's snapshot cache
+// never treats the selection as changed between unrelated renders.
+const selectCefrOverviewData = (s: StoreData) => ({
+    students: s.students,
+    classes: s.classes,
+    studentRubrics: s.studentRubrics,
+    rubrics: s.rubrics,
+    selfAssessments: s.selfAssessments,
+    analysisResults: s.analysisResults,
+    tests: s.tests,
+    studentTests: s.studentTests,
+    settings: s.settings,
+});
 
 /**
  * Renders the CEFR overview page for the student identified by the current route `id`.
@@ -29,26 +44,19 @@ export default function StudentCefrOverviewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         rubrics,
         selfAssessments,
         analysisResults,
         tests,
         studentTests,
         settings,
-    } = useStoreSelector((s) => ({
-        students: s.students,
-        classes: s.classes,
-        studentRubrics: s.studentRubrics,
-        rubrics: s.rubrics,
-        selfAssessments: s.selfAssessments,
-        analysisResults: s.analysisResults,
-        tests: s.tests,
-        studentTests: s.studentTests,
-        settings: s.settings,
-    }));
+    } = useStoreSelector(selectCefrOverviewData);
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
