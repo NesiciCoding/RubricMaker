@@ -105,6 +105,7 @@ const mockShowToast = vi.fn();
 const mockExportPdf = vi.fn();
 const mockExportDocx = vi.fn();
 const mockSyncRubricSnapshot = vi.fn();
+const mockSaveUserTemplate = vi.fn();
 const mockFetchRubricVersions = vi.fn(async () => [] as typeof mockVersions);
 const mockSaveRubricVersion = vi.fn(async () => {});
 const mockRestoreRubricVersion = vi.fn();
@@ -126,6 +127,7 @@ const makeAppContextMock = () => ({
     fetchRubricVersions: mockFetchRubricVersions,
     saveRubricVersion: mockSaveRubricVersion,
     restoreRubricVersion: mockRestoreRubricVersion,
+    saveUserTemplate: mockSaveUserTemplate,
     gradeScales: [mockGradeScale],
     settings: mockSettings,
     addVocabularyItem: vi.fn(),
@@ -519,9 +521,14 @@ describe('RubricBuilder', () => {
     // ── Save-as-template, print, JSON export ──────────────────────────────────────
 
     it('saves the rubric as a template from the export menu', () => {
+        mockSaveUserTemplate.mockClear();
+        mockShowToast.mockClear();
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.action_export'));
         fireEvent.click(screen.getByText('rubricBuilder.action_save_as_template'));
+        expect(mockSaveUserTemplate).toHaveBeenCalledWith(
+            expect.objectContaining({ name: mockRubric.name, subject: mockRubric.subject })
+        );
         expect(mockShowToast).toHaveBeenCalled();
     });
 

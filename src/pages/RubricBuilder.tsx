@@ -101,13 +101,21 @@ export default function RubricBuilder() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
-    const { studentRubrics, rubrics, gradeScales, peerReviews, settings } = useStoreSelector((s) => ({
+    const {
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        gradeScales,
+        peerReviews,
+        settings,
+    } = useStoreSelector((s) => ({
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         gradeScales: s.gradeScales,
         peerReviews: s.peerReviews,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const {
         addRubric,
