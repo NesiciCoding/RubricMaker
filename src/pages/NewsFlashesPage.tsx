@@ -61,7 +61,14 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
-    const { students, rubrics, tests, newsFlashes, newsFlashReads, flashcardDecks } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        rubrics,
+        tests,
+        newsFlashes,
+        newsFlashReads,
+        flashcardDecks,
+    } = useStoreSelector((s) => ({
         students: s.students,
         rubrics: s.rubrics,
         tests: s.tests,
@@ -69,6 +76,9 @@ export default function NewsFlashesPage() {
         newsFlashReads: s.newsFlashReads,
         flashcardDecks: s.flashcardDecks,
     }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // be selectable as news-flash recipients.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { addNewsFlash, updateNewsFlash, deleteNewsFlash } = useStoreActions();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
