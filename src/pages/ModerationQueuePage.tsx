@@ -18,13 +18,22 @@ import type { DbUser } from '../services/database';
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, studentRubrics, rubrics, peerReviews, settings } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        peerReviews,
+        settings,
+    } = useStoreSelector((s) => ({
         students: s.students,
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         peerReviews: s.peerReviews,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const { saveStudentRubric, deletePeerReview } = useStoreActions();
     const { fetchSchoolMembers } = usePlatform();
 
