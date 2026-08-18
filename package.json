@@ -70,7 +70,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.31.0",
-    "mammoth": "^1.8.0",
+    "mammoth": "^1.12.1",
     "papaparse": "^5.6.0",
     "pdfjs-dist": "^6.2.108",
     "qrcode": "^1.5.4",
