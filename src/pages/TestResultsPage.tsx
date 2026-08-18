@@ -268,13 +268,22 @@ export default function TestResultsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
-    const { students, gradeScales, tests, studentTests, settings } = useStoreSelector((s) => ({
+    const {
+        students: allStudents,
+        gradeScales,
+        tests,
+        studentTests,
+        settings,
+    } = useStoreSelector((s) => ({
         students: s.students,
         gradeScales: s.gradeScales,
         tests: s.tests,
         studentTests: s.studentTests,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // resolve from a results route.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const { saveStudentTest } = useStoreActions();
 
     const test = tests.find((tst) => tst.id === testId);
