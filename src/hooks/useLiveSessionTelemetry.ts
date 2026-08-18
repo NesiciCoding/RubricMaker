@@ -137,6 +137,16 @@ export function useLiveSessionTelemetry({
         });
         channel.subscribe((status) => {
             setIsBroadcasting(status === 'SUBSCRIBED');
+            if (status !== 'SUBSCRIBED') return;
+            // Announce the join immediately: the regular heartbeat only fires every
+            // ~20s, so without this the teacher's monitor would keep showing the
+            // student as disconnected for that whole window after they connect.
+            // Sending an 'active' heartbeat here makes presence truthful right away.
+            channel.send({
+                type: 'broadcast',
+                event: 'event',
+                payload: { type: 'heartbeat', at: new Date().toISOString(), value: 'active' },
+            });
         });
         channelRef.current = channel;
         return () => {

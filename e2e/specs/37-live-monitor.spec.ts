@@ -407,6 +407,21 @@ test.describe('Live monitor — test kind', () => {
             await studentTestPage.goto(teacherKey);
             await expect(studentTestPage.testTitle(rmTest.name)).toBeVisible({ timeout: 15_000 });
 
+            // Wait until the student's session channel is actually live — the
+            // live-monitoring disclosure only renders once the telemetry hook
+            // reports SUBSCRIBED, so the nudge can't be sent before the student
+            // is ready to receive it.
+            await expect(studentPage.getByText(/can see your work live while you take this test/i)).toBeVisible({
+                timeout: 15_000,
+            });
+
+            // Teacher-side readiness: the row only shows "Active" once the
+            // teacher's channel has received the student's join heartbeat — i.e.
+            // BOTH sides are subscribed on the shared channel, so the nudge is
+            // guaranteed to arrive (a broadcast sent before the teacher's channel
+            // finished joining is silently dropped).
+            await expect(supabasePage.getByText('Active').first()).toBeVisible({ timeout: 15_000 });
+
             // Teacher sends the check-in nudge on the shared Realtime channel.
             await supabasePage.getByRole('button', { name: 'Nudge' }).click();
 
