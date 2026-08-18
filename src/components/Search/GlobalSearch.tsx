@@ -25,17 +25,26 @@ interface Props {
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, rubrics, tests, essayAssignments, newsFlashes, flashcardDecks } = useStoreSelector(
-        (s) => ({
-            students: s.students,
-            classes: s.classes,
-            rubrics: s.rubrics,
-            tests: s.tests,
-            essayAssignments: s.essayAssignments,
-            newsFlashes: s.newsFlashes,
-            flashcardDecks: s.flashcardDecks,
-        })
-    );
+    const {
+        students: allStudents,
+        classes,
+        rubrics,
+        tests,
+        essayAssignments,
+        newsFlashes,
+        flashcardDecks,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        rubrics: s.rubrics,
+        tests: s.tests,
+        essayAssignments: s.essayAssignments,
+        newsFlashes: s.newsFlashes,
+        flashcardDecks: s.flashcardDecks,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // surface in search results.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
 
     const [query, setQuery] = useState('');
     // Keep the input responsive: run the full-corpus search at lower priority so it coalesces
