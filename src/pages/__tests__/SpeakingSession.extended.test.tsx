@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
+import type { StoreData } from '../../store/storage';
 import type {
     AppSettings,
     Class,
@@ -77,14 +78,13 @@ const mockClassesArr = [mockClass];
 const mockGradeScalesArr = [mockGradeScale];
 const emptyArr: never[] = [];
 
-const mockAppValue: Record<string, unknown> = {
+const mockAppValue: Partial<StoreData> = {
     rubrics: mockRubricsArr,
     students: mockStudentsArr,
     classes: mockClassesArr,
     gradeScales: mockGradeScalesArr,
     settings: mockSettings,
     speakingSessions: emptyArr,
-    saveSpeakingSession: mockSaveSpeakingSession,
     studentRubrics: emptyArr,
 };
 
@@ -100,6 +100,12 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: <T,>(selector: (state: StoreData) => T): T => selector(mockAppValue as StoreData),
+    // SpeakingSession only triggers saveSpeakingSession; keep the action mock narrow.
+    useStoreActions: () => ({ saveSpeakingSession: mockSaveSpeakingSession }),
 }));
 
 vi.mock('react-router-dom', async () => {

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, GradeScale, Student, Test as RmTest, StudentTest } from '../../types';
+import type { StoreData } from '../../store/storage';
 
 const mockSettings: AppSettings = {
     defaultGradeScaleId: 'gs1',
@@ -90,6 +91,11 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockUseApp,
     useSettings: () => mockUseApp,
     usePlatform: () => mockUseApp,
+}));
+
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: <T,>(selector: (state: StoreData) => T): T => selector(mockUseApp as unknown as StoreData),
+    useStoreActions: () => mockUseApp,
 }));
 
 vi.mock('react-i18next', () => ({

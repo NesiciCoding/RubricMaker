@@ -29,15 +29,8 @@ import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
 import StandardMasteryTargetModal from '../components/Standards/StandardMasteryTargetModal';
 import Modal from '../components/ui/Modal';
 import Topbar from '../components/Layout/Topbar';
-import {
-    useAuthoring,
-    useClasses,
-    useFlashcards,
-    useGrading,
-    usePlatform,
-    useSettings,
-    useStudents,
-} from '../context/AppContext';
+import { usePlatform } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
@@ -94,23 +87,39 @@ const ROLE_META: Record<
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-    const { studentRubrics } = useGrading();
-
     const {
+        students: allStudents,
+        classes,
+        studentRubrics: allStudentRubrics,
         gradeScales,
+        commentBank,
+        exportTemplates,
+        rubrics,
+        standardMasteryTargets,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        gradeScales: s.gradeScales,
+        commentBank: s.commentBank,
+        exportTemplates: s.exportTemplates,
+        rubrics: s.rubrics,
+        standardMasteryTargets: s.standardMasteryTargets,
+        settings: s.settings,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const {
         addGradeScale,
         updateGradeScale,
         deleteGradeScale,
-        commentBank,
-        exportTemplates,
         addExportTemplate,
         deleteExportTemplate,
-        rubrics,
-    } = useAuthoring();
-    const { standardMasteryTargets, deleteStandardMasteryTarget } = useFlashcards();
-    const { settings, updateSettings } = useSettings();
+        deleteStandardMasteryTarget,
+        updateSettings,
+    } = useStoreActions();
     const { importBackup } = usePlatform();
 
     const { showToast } = useToast();

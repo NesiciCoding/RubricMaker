@@ -3,14 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, ClipboardList, User, Users, BookOpen, GraduationCap, Layers, Newspaper } from 'lucide-react';
 import Modal from '../ui/Modal';
-import {
-    useAssessment,
-    useAuthoring,
-    useClasses,
-    useEssays,
-    useFlashcards,
-    useStudents,
-} from '../../context/AppContext';
+import { useStoreSelector } from '../../context/useStore';
 import { searchAll, type SearchResult, type SearchResultType } from '../../utils/globalSearch';
 
 const TYPE_ICONS: Record<SearchResultType, React.ComponentType<{ size?: number }>> = {
@@ -32,13 +25,26 @@ interface Props {
 export default function GlobalSearch({ onClose, growFrom }: Props) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-
-    const { rubrics } = useAuthoring();
-    const { tests } = useAssessment();
-    const { essayAssignments, newsFlashes } = useEssays();
-    const { flashcardDecks } = useFlashcards();
+    const {
+        students: allStudents,
+        classes,
+        rubrics,
+        tests,
+        essayAssignments,
+        newsFlashes,
+        flashcardDecks,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        rubrics: s.rubrics,
+        tests: s.tests,
+        essayAssignments: s.essayAssignments,
+        newsFlashes: s.newsFlashes,
+        flashcardDecks: s.flashcardDecks,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // surface in search results.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
 
     const [query, setQuery] = useState('');
     // Keep the input responsive: run the full-corpus search at lower priority so it coalesces

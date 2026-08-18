@@ -24,15 +24,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
-import {
-    useAssessment,
-    useAuthoring,
-    useClasses,
-    useEssays,
-    useGrading,
-    useSettings,
-    useStudents,
-} from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
@@ -43,14 +35,39 @@ import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId }
 
 export default function ExportPage() {
     const { t } = useTranslation();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-    const { studentRubrics, saveStudentRubric } = useGrading();
-
-    const { rubrics, gradeScales, exportTemplates } = useAuthoring();
-    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
-    const { essayAssignments, essaySubmissions } = useEssays();
-    const { settings, updateSettings } = useSettings();
+    const {
+        students: allStudents,
+        classes,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        gradeScales,
+        exportTemplates,
+        selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
+        essayAssignments,
+        essaySubmissions,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        exportTemplates: s.exportTemplates,
+        selfAssessments: s.selfAssessments,
+        analysisResults: s.analysisResults,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        essayAssignments: s.essayAssignments,
+        essaySubmissions: s.essaySubmissions,
+        settings: s.settings,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const { saveStudentRubric, updateSettings } = useStoreActions();
 
     const { showToast } = useToast();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');

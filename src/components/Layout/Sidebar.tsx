@@ -27,7 +27,7 @@ import {
     Bell,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useAssessment, useAuthoring, useGrading, useSettings, useStudents } from '../../context/AppContext';
+import { useStoreSelector } from '../../context/useStore';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 
@@ -56,15 +56,27 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
-    const { students } = useStudents();
-    const { studentRubrics } = useGrading();
+    const {
+        students: allStudents,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        peerReviews,
+        userRole,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        peerReviews: s.peerReviews,
+        userRole: s.settings.userRole,
+    }));
 
-    const { rubrics } = useAuthoring();
-    const { peerReviews } = useAssessment();
-    const { settings } = useSettings();
-
-    const isAdmin = settings.userRole === 'admin';
+    const isAdmin = userRole === 'admin';
     const location = useLocation();
+
+    // Same active-filtering the roster domain hooks applied: soft-deleted (archived)
+    // students and soft-deleted student rubrics must not count toward pending work.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = React.useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     // Same default threshold as ModerationQueuePage's own initial state; colleagueIds is
     // left undefined here (falls back to the "not a known student id" heuristic) since

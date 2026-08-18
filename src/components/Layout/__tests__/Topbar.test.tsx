@@ -18,6 +18,8 @@ const makeAppContextMock = () => ({
     rubrics: [],
     tests: [],
     essayAssignments: [],
+    newsFlashes: [],
+    flashcardDecks: [],
 });
 vi.mock('../../../context/AppContext', () => ({
     useRoster: () => makeAppContextMock(),
@@ -30,6 +32,12 @@ vi.mock('../../../context/AppContext', () => ({
     useFlashcards: () => makeAppContextMock(),
     useSettings: () => makeAppContextMock(),
     usePlatform: () => makeAppContextMock(),
+}));
+
+// Topbar renders the GlobalSearch modal, which reads data via the selector store;
+// route selectors to the same mock value.
+vi.mock('../../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: unknown) => unknown) => selector(makeAppContextMock()),
 }));
 
 vi.mock('react-i18next', () => ({

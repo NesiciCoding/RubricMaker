@@ -74,6 +74,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
+}));
+
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
     return { ...actual, useNavigate: () => vi.fn() };

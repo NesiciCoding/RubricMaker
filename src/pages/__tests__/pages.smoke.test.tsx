@@ -148,6 +148,18 @@ const mockUseApp = {
     fetchMyEssayAssignments: vi.fn(() => Promise.resolve([])),
     deleteEssaySubmission: vi.fn(),
     getEssaySignedUrl: vi.fn(() => Promise.resolve(null)),
+    // StudentPortalPage mounts fetch/messaging/flashcard/news actions (local mode:
+    // these resolve empty and the app state below supplies the rows).
+    saveRubricSelfAssessment: vi.fn(),
+    fetchMyTestAssignments: vi.fn(() => Promise.resolve([])),
+    fetchAssignedTestContent: vi.fn(() => Promise.resolve(null)),
+    fetchMyMessages: vi.fn(() => Promise.resolve([])),
+    sendMessageAsStudent: vi.fn(() => Promise.resolve()),
+    markMessagesReadByStudent: vi.fn(() => Promise.resolve()),
+    fetchMyNewsFlashes: vi.fn(() => Promise.resolve([])),
+    markNewsFlashRead: vi.fn(),
+    markNewsFlashReadAsStudent: vi.fn(() => Promise.resolve()),
+    fetchMyFlashcardAssignments: vi.fn(() => Promise.resolve([])),
 };
 
 // ─── Module mocks ──────────────────────────────────────────────────────────────
@@ -177,6 +189,8 @@ vi.mock('../../context/useStore', () => ({
             essayTemplates: [],
             flashcardAssignments: [],
             flashcardReviews: [],
+            newsFlashes: [],
+            newsFlashReads: [],
             ...mockUseApp,
         }),
     useStoreActions: () => mockUseApp,

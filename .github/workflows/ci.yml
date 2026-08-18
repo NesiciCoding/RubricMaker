@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # No branch filter on pull_request: stacked PRs (base = another PR's head, e.g.
+  # gh stack) would otherwise never trigger CI, since their base is not main. The
+  # full diff is validated when the stack reaches main regardless.
   pull_request:
-    branches: ["main"]
   push:
     branches: ["main"]
   # Runs when a PR enters the merge queue — the queue tests on a temporary

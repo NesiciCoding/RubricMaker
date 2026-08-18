@@ -69,6 +69,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: (selector: (state: any) => any) => selector(mockAppValue),
+    useStoreActions: () => mockAppValue,
+}));
+
 vi.mock('../../components/Editor/TiptapEditor', () => ({
     default: ({ onChange }: { onChange: (html: string) => void }) =>
         React.createElement(

@@ -2,12 +2,14 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import type { AppSettings } from '../../../types';
+import type { StoreData } from '../../../store/storage';
 import Sidebar from '../Sidebar';
 
 let mockUserRole: string = 'user';
 
-const makeAppContextMock = () => ({
-    settings: { userRole: mockUserRole },
+const makeAppContextMock = (): Partial<StoreData> => ({
+    settings: { userRole: mockUserRole } as AppSettings,
     rubrics: [],
     studentRubrics: [],
     peerReviews: [],
@@ -24,6 +26,12 @@ vi.mock('../../../context/AppContext', () => ({
     useFlashcards: () => makeAppContextMock(),
     useSettings: () => makeAppContextMock(),
     usePlatform: () => makeAppContextMock(),
+}));
+
+// Sidebar reads data via the selector store; route selectors to the same mock value.
+vi.mock('../../../context/useStore', () => ({
+    useStoreSelector: <T,>(selector: (state: StoreData) => T): T => selector(makeAppContextMock() as StoreData),
+    useStoreActions: () => makeAppContextMock(),
 }));
 
 vi.mock('react-i18next', () => ({

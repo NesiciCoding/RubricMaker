@@ -1,9 +1,10 @@
 import React from 'react';
-import { screen, fireEvent, act } from '@testing-library/react';
+import { screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, MarketplaceListing, Rubric } from '../../types';
+import type { AppSettings, MarketplaceListing, QuestionBankItem, Rubric } from '../../types';
+import type { StoreData } from '../../store/storage';
 
 const mockRubric: Rubric = {
     id: 'r1',
@@ -29,16 +30,44 @@ const mockSettings: AppSettings = {
 };
 
 const mockAddRubric = vi.fn(() => ({ ...mockRubric, id: 'new-r' }));
+const mockAddQuestionBankItems = vi.fn();
+const mockCloneListing = vi.fn();
 const mockListListings = vi.fn().mockResolvedValue([]);
 
 const mockRubricsArr = [mockRubric];
 const emptyArr: never[] = [];
 
+const mockQuestionBankItem: QuestionBankItem = {
+    id: 'qb1',
+    cefrLevel: 'B1',
+    question: {
+        id: 'q1',
+        prompt: 'What is the capital of France?',
+        type: 'multiple-choice',
+        points: 1,
+        options: [
+            { id: 'o1', text: 'Paris', isCorrect: true },
+            { id: 'o2', text: 'Rome', isCorrect: false },
+        ],
+    },
+    tags: ['culture'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+};
+
+type MockStore = Partial<StoreData> & {
+    addRubric: typeof mockAddRubric;
+    addTest: (...args: unknown[]) => unknown;
+    addFlashcardDeck: (...args: unknown[]) => unknown;
+    addQuestionBankItems: typeof mockAddQuestionBankItems;
+};
+
 // Base app value — settings without schoolId → disabled state.
-const mockAppValue: Record<string, unknown> = {
+const mockAppValue: MockStore = {
     rubrics: mockRubricsArr,
     tests: emptyArr,
     flashcardDecks: emptyArr,
+    questionBank: emptyArr,
     students: emptyArr,
     classes: emptyArr,
     studentRubrics: emptyArr,
@@ -46,6 +75,7 @@ const mockAppValue: Record<string, unknown> = {
     addRubric: mockAddRubric,
     addTest: vi.fn(),
     addFlashcardDeck: vi.fn(),
+    addQuestionBankItems: mockAddQuestionBankItems,
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -59,6 +89,11 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+vi.mock('../../context/useStore', () => ({
+    useStoreSelector: <T,>(selector: (state: StoreData) => T): T => selector(mockAppValue as StoreData),
+    useStoreActions: () => mockAppValue,
 }));
 
 const mockDbState = vi.hoisted(() => ({
@@ -75,7 +110,7 @@ vi.mock('../../services/database', () => ({
         adapter: {
             listMarketplaceListings: (...args: unknown[]) => mockListListings(...args),
             upvoteListing: vi.fn().mockResolvedValue({ success: true }),
-            cloneListing: vi.fn().mockResolvedValue({ success: true }),
+            cloneMarketplaceListing: (...args: unknown[]) => mockCloneListing(...args),
             publishRubricToMarketplace: vi.fn().mockResolvedValue({ success: true }),
         },
     },
@@ -102,6 +137,8 @@ describe('MarketplacePage', () => {
     beforeEach(async () => {
         mockListListings.mockClear();
         mockAddRubric.mockClear();
+        mockAddQuestionBankItems.mockClear();
+        mockCloneListing.mockClear();
         mockDbState.isConnected = false;
         mockDbState.currentUser = null;
         const mod = await import('../MarketplacePage');
@@ -121,30 +158,30 @@ describe('MarketplacePage', () => {
 
     it('shows the connected marketplace view when connected with schoolId in settings', async () => {
         mockDbState.isConnected = true;
-        (mockAppValue as Record<string, unknown>).settings = { ...mockSettings, schoolId: 'school-1' };
+        mockAppValue.settings = { ...mockSettings, schoolId: 'school-1' };
         await act(async () => {
             renderPage();
         });
         expect(screen.getByText('marketplace.title')).toBeInTheDocument();
         expect(screen.getByText('marketplace.publish_button')).toBeInTheDocument();
-        (mockAppValue as Record<string, unknown>).settings = mockSettings;
+        mockAppValue.settings = mockSettings;
     });
 
     it('shows the publish form when publish button is clicked', async () => {
         mockDbState.isConnected = true;
-        (mockAppValue as Record<string, unknown>).settings = { ...mockSettings, schoolId: 'school-1' };
+        mockAppValue.settings = { ...mockSettings, schoolId: 'school-1' };
         await act(async () => {
             renderPage();
         });
         fireEvent.click(screen.getByText('marketplace.publish_button'));
         expect(screen.getByText('marketplace.publish_title')).toBeInTheDocument();
         expect(screen.getByText('marketplace.publish_select_entity')).toBeInTheDocument();
-        (mockAppValue as Record<string, unknown>).settings = mockSettings;
+        mockAppValue.settings = mockSettings;
     });
 
     it('renders marketplace listings when available', async () => {
         mockDbState.isConnected = true;
-        (mockAppValue as Record<string, unknown>).settings = { ...mockSettings, schoolId: 'school-1' };
+        mockAppValue.settings = { ...mockSettings, schoolId: 'school-1' };
         const listing: MarketplaceListing = {
             id: 'l1',
             schoolId: 'school-1',
@@ -165,7 +202,39 @@ describe('MarketplacePage', () => {
         });
         expect(await screen.findByText('Grammar Rubric')).toBeInTheDocument();
         expect(screen.getByText('A grammar rubric for B2 students')).toBeInTheDocument();
-        (mockAppValue as Record<string, unknown>).settings = mockSettings;
+        mockAppValue.settings = mockSettings;
+    });
+
+    it('clones a question-bank listing into the local bank', async () => {
+        mockDbState.isConnected = true;
+        mockAppValue.settings = { ...mockSettings, schoolId: 'school-1' };
+        const listing: MarketplaceListing = {
+            id: 'l2',
+            schoolId: 'school-1',
+            publishedBy: 'u1',
+            kind: 'questionBankItem',
+            snapshot: mockQuestionBankItem,
+            name: 'Capital Cities',
+            subject: 'English',
+            description: '',
+            cefrLevels: ['B1'],
+            upvoteCount: 2,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+        };
+        mockListListings.mockResolvedValueOnce([listing]);
+        mockCloneListing.mockResolvedValueOnce({ kind: 'questionBankItem', entity: mockQuestionBankItem });
+        await act(async () => {
+            renderPage();
+        });
+        fireEvent.click(await screen.findByTitle('marketplace.clone_title'));
+        await waitFor(() => expect(mockCloneListing).toHaveBeenCalledWith('l2'));
+        await waitFor(() =>
+            expect(mockAddQuestionBankItems).toHaveBeenCalledWith([
+                expect.objectContaining({ cefrLevel: 'B1', tags: ['culture'] }),
+            ])
+        );
+        mockAppValue.settings = mockSettings;
     });
 });
 

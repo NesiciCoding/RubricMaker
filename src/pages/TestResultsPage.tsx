@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock 
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAssessment, useAuthoring, useSettings, useStudents } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import {
     calcTestMaxPoints,
     calcStudentTestRawPoints,
@@ -268,11 +268,23 @@ export default function TestResultsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
-    const { students } = useStudents();
-
-    const { gradeScales } = useAuthoring();
-    const { tests, studentTests, saveStudentTest } = useAssessment();
-    const { settings } = useSettings();
+    const {
+        students: allStudents,
+        gradeScales,
+        tests,
+        studentTests,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        gradeScales: s.gradeScales,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        settings: s.settings,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; archived students must not
+    // resolve from a results route.
+    const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const { saveStudentTest } = useStoreActions();
 
     const test = tests.find((tst) => tst.id === testId);
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);

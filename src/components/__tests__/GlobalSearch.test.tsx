@@ -3,7 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Rubric, Student, Class } from '../../types';
+import type { Rubric, Student, Class } from '../../types';
+import type { StoreData } from '../../store/storage';
 
 const mockNavigate = vi.fn();
 
@@ -42,7 +43,7 @@ const mockStudentsArr = [mockStudent];
 const mockClassesArr = [mockClass];
 const emptyArr: never[] = [];
 
-const mockAppValue = {
+const mockAppValue: Partial<StoreData> = {
     rubrics: mockRubricsArr,
     tests: emptyArr,
     students: mockStudentsArr,
@@ -63,6 +64,11 @@ vi.mock('../../context/AppContext', () => ({
     useFlashcards: () => mockAppValue,
     useSettings: () => mockAppValue,
     usePlatform: () => mockAppValue,
+}));
+
+vi.mock('../../context/useStore', () => ({
+    // GlobalSearch only reads data; it never calls useStoreActions.
+    useStoreSelector: <T,>(selector: (state: StoreData) => T): T => selector(mockAppValue as StoreData),
 }));
 
 import GlobalSearch from '../Search/GlobalSearch';

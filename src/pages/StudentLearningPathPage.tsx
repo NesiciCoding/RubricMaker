@@ -6,15 +6,7 @@ import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
-import {
-    useAssessment,
-    useAuthoring,
-    useClasses,
-    useFlashcards,
-    useGrading,
-    useSettings,
-    useStudents,
-} from '../context/AppContext';
+import { useStoreSelector } from '../context/useStore';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import {
     getLearningPathRecommendations,
@@ -30,14 +22,32 @@ import type { InterventionFlag } from '../types';
 export default function StudentLearningPathPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { students } = useStudents();
-    const { classes } = useClasses();
-    const { studentRubrics } = useGrading();
-
-    const { rubrics } = useAuthoring();
-    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
-    const { flashcardDecks } = useFlashcards();
-    const { settings } = useSettings();
+    const {
+        students: allStudents,
+        classes,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
+        flashcardDecks,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        selfAssessments: s.selfAssessments,
+        analysisResults: s.analysisResults,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        flashcardDecks: s.flashcardDecks,
+        settings: s.settings,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';

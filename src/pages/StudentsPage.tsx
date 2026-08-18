@@ -27,7 +27,7 @@ import type { EventData } from 'react-joyride';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
@@ -277,13 +277,45 @@ const derivedByStudentCache = new Map<string, { key: StudentDerivedKey; value: S
 export default function StudentsPage() {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { students, addStudent, updateStudent, deleteStudent, setStudentPassword } = useStudents();
-    const { classes, addClass, updateClass, deleteClass, mergeClasses } = useClasses();
-    const { studentRubrics } = useGrading();
-
-    const { rubrics, gradeScales } = useAuthoring();
-    const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
-    const { settings, updateSettings } = useSettings();
+    const {
+        students: allStudents,
+        classes,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        gradeScales,
+        selfAssessments,
+        analysisResults,
+        tests,
+        studentTests,
+        settings,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        gradeScales: s.gradeScales,
+        selfAssessments: s.selfAssessments,
+        analysisResults: s.analysisResults,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        settings: s.settings,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    // (DELETE_STUDENT soft-deletes via archivedAt — without this filter the student
+    // row would remain visible after deletion.)
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const {
+        addStudent,
+        updateStudent,
+        deleteStudent,
+        setStudentPassword,
+        addClass,
+        updateClass,
+        deleteClass,
+        mergeClasses,
+        updateSettings,
+    } = useStoreActions();
 
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
