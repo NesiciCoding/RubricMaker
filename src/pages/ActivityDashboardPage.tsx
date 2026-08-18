@@ -26,17 +26,28 @@ const SECTION_LABELS: Record<string, string> = {
 export default function ActivityDashboardPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { students, classes, studentRubrics, rubrics, tests, studentTests, gradingTasks, essayAssignments } =
-        useStoreSelector((s) => ({
-            students: s.students,
-            classes: s.classes,
-            studentRubrics: s.studentRubrics,
-            rubrics: s.rubrics,
-            tests: s.tests,
-            studentTests: s.studentTests,
-            gradingTasks: s.gradingTasks,
-            essayAssignments: s.essayAssignments,
-        }));
+    const {
+        students: allStudents,
+        classes,
+        studentRubrics: allStudentRubrics,
+        rubrics,
+        tests,
+        studentTests,
+        gradingTasks,
+        essayAssignments,
+    } = useStoreSelector((s) => ({
+        students: s.students,
+        classes: s.classes,
+        studentRubrics: s.studentRubrics,
+        rubrics: s.rubrics,
+        tests: s.tests,
+        studentTests: s.studentTests,
+        gradingTasks: s.gradingTasks,
+        essayAssignments: s.essayAssignments,
+    }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const {
         updateClass,
         updateRubric,
