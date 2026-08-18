@@ -134,6 +134,7 @@ const mockRubricsWithCriteriaArr = [mockRubricWithCriteria];
 const mockGradedStudentRubricsArr = [mockGradedStudentRubric, mockGradedStudentRubric2];
 const mockPeerReviewsArr = [mockPeerReview];
 const mockSaveRubricSelfAssessment = vi.fn();
+const mockUpdateSettings = vi.fn();
 
 // A baseline grade plus a colleague's second-marker grade far enough apart (delta 4 >= the
 // default moderation threshold of 2) to land in the pending moderation queue.
@@ -197,6 +198,7 @@ const mockAppValue: Record<string, unknown> = {
     fetchMyNewsFlashes: mockFetchMyNewsFlashes,
     markNewsFlashRead: mockMarkNewsFlashRead,
     markNewsFlashReadAsStudent: mockMarkNewsFlashReadAsStudent,
+    updateSettings: mockUpdateSettings,
 };
 
 vi.mock('../../context/AppContext', () => ({

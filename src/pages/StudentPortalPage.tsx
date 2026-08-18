@@ -133,9 +133,9 @@ const SECTION_TAB: Record<string, PortalTab> = {
 export default function StudentPortalPage() {
     const { studentId } = useParams<{ studentId: string }>();
     const {
-        students,
+        students: allStudents,
         classes,
-        studentRubrics,
+        studentRubrics: allStudentRubrics,
         rubrics,
         gradeScales,
         peerReviews,
@@ -167,6 +167,9 @@ export default function StudentPortalPage() {
         flashcardReviews: s.flashcardReviews,
         settings: s.settings,
     }));
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const {
         saveRubricSelfAssessment,
         fetchMyTestAssignments,
