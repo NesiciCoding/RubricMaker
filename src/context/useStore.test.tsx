@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AppProvider, useAuthoring, useRoster } from './AppContext';
-import { useStoreActions, useStoreSelector } from './useStore';
+import { render, renderHook, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { AppProvider, useAuthoring, useRoster, useSettings } from './AppContext';
+import { createSelectorStore, StoreProvider, useStore, useStoreActions, useStoreSelector } from './useStore';
+import type { StoreData } from '../store/storage';
 import type { Rubric, Student, Class } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 
@@ -90,10 +91,14 @@ vi.mock('../services/database', () => ({
         getCurrentUserId: () => null,
         adapter: { getClient: () => null },
         onNetworkReconnect: () => () => {},
+        onRealtimeChange: () => () => {},
         onAuthChange: () => () => {},
         configure: () => Promise.resolve(false),
         setToastFn: () => {},
         hydrate: () => Promise.resolve({ data: null, error: null }),
+        hydratePartial: () => Promise.resolve({ data: null, fullFallback: false }),
+        hasSession: () => false,
+        initAuth: () => Promise.resolve(),
         didWipeLocalData: () => false,
         pushOne: vi.fn(),
         pushMany: vi.fn(),
@@ -267,6 +272,48 @@ describe('useStoreSelector', () => {
     });
 });
 
+describe('useStore', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        actions = null;
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('returns the selector store when rendered inside StoreProvider', () => {
+        const store = createSelectorStore(
+            () => ({}) as StoreData,
+            () => {}
+        );
+        const { result } = renderHook(() => useStore(), {
+            wrapper: ({ children }) => <StoreProvider store={store}>{children}</StoreProvider>,
+        });
+        expect(result.current.getState).toBeDefined();
+        expect(result.current.dispatch).toBeDefined();
+        expect(typeof result.current.subscribe).toBe('function');
+        expect(typeof result.current.notify).toBe('function');
+    });
+
+    it('throws when used outside StoreProvider', () => {
+        expect(() => renderHook(() => useStore())).toThrow('useStore must be used within AppProvider');
+    });
+
+    it('throws when useStoreSelector is used outside StoreProvider', () => {
+        expect(() => renderHook(() => useStoreSelector((s) => s))).toThrow(
+            'useStoreSelector must be used within AppProvider'
+        );
+    });
+
+    it('throws when useStoreActions is used outside StoreActionsProvider', () => {
+        expect(() => renderHook(() => useStoreActions())).toThrow('useStoreActions must be used within AppProvider');
+    });
+});
+
 describe('useStoreActions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -321,5 +368,57 @@ describe('useStoreActions', () => {
         expect(typeof first.saveStudentRubric).toBe('function');
         expect(typeof first.getEssaySignedUrl).toBe('function');
         expect(typeof first.saveAnalysisResult).toBe('function');
+    });
+});
+
+describe('useStoreSelector — primitive selections', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        actions = null;
+    });
+
+    it('re-renders when a primitive (non-object) selection changes', () => {
+        // Regression for the shallow-compare's non-object branch: a numeric selection
+        // (e.g. students.length) is not an object, so Object.is() can't match after a
+        // real change — the shallow-compare must return false and the new value must be
+        // served even though both sides are primitives.
+        const record = vi.fn();
+
+        function CountProbe() {
+            const count = useStoreSelector((s) => s.students.length);
+            record(count);
+            return <div data-testid="count">{count}</div>;
+        }
+
+        renderWithProvider(<CountProbe />);
+        expect(record).toHaveBeenLastCalledWith(0);
+
+        act(() => {
+            actions!.addStudent({ name: 'Alice', classId: 'c1' });
+        });
+        expect(record).toHaveBeenLastCalledWith(1);
+        expect(record).toHaveBeenCalledTimes(2);
+
+        act(() => {
+            actions!.addStudent({ name: 'Bob', classId: 'c1' });
+        });
+        expect(record).toHaveBeenLastCalledWith(2);
+    });
+
+    it('getActiveGradeScale falls back to the first scale when the default id is unknown', () => {
+        // Covers the `?? gradeScales[0]` fallback in createSettingsActions.
+        const { result } = renderHook(() => useSettings(), {
+            wrapper: ({ children }) => <AppProvider>{children}</AppProvider>,
+        });
+
+        act(() => {
+            result.current.updateSettings({ defaultGradeScaleId: 'does-not-exist' });
+        });
+
+        let scale: { id: string } | undefined;
+        act(() => {
+            scale = result.current.getActiveGradeScale();
+        });
+        expect(scale?.id).toBe('default-scale');
     });
 });

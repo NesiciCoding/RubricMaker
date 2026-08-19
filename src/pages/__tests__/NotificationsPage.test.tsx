@@ -221,4 +221,43 @@ describe('NotificationsPage', () => {
         fireEvent.click(screen.getByText('notifications.filter_unread_message'));
         expect(screen.queryByText('notifications.clear_all')).not.toBeInTheDocument();
     });
+
+    it('navigates to messages and moderation from their item views', async () => {
+        mockFeed = {
+            items: [messageItem, moderationItem],
+            overdueItems: [],
+            messageItems: [messageItem],
+            moderationItems: [moderationItem],
+        };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        const views = screen.getAllByText('notifications.action_view');
+        fireEvent.click(views[0]);
+        expect(mockNavigate).toHaveBeenCalledWith('/messages');
+        fireEvent.click(views[1]);
+        expect(mockNavigate).toHaveBeenCalledWith('/moderation');
+    });
+
+    it('shows no detail line for a moderation item without pending days', async () => {
+        const noDays = { ...moderationItem, pendingDays: null };
+        mockFeed = { items: [noDays], overdueItems: [], messageItems: [], moderationItems: [noDays] };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        expect(screen.getByText('Cleo')).toBeInTheDocument();
+    });
+
+    it('clear-all on the moderation filter only dismisses moderation items', async () => {
+        mockFeed = {
+            items: [overdueItem, moderationItem],
+            overdueItems: [overdueItem],
+            messageItems: [],
+            moderationItems: [moderationItem],
+        };
+        const { default: NotificationsPage } = await import('../NotificationsPage');
+        renderWithRouter(<NotificationsPage />);
+        fireEvent.click(screen.getByText('notifications.filter_moderation_pending'));
+        fireEvent.click(screen.getByText('notifications.clear_all'));
+        expect(mockDismissAll).toHaveBeenCalledWith('moderation_pending');
+        expect(mockDismissAll).not.toHaveBeenCalledWith('overdue_grading');
+    });
 });

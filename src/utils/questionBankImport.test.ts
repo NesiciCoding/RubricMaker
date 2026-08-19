@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseQuestionBankJson, exportQuestionBankJson } from './questionBankImport';
+import { parseQuestionBankJson, exportQuestionBankJson, parseQuestionBankFile } from './questionBankImport';
 import type { QuestionBankItem } from '../types';
 
 describe('parseQuestionBankJson', () => {
@@ -166,6 +166,78 @@ describe('parseQuestionBankJson', () => {
         expect(result.warnings[0].key).toBe('questionBank.import_warn_unknown_category');
     });
 
+    it('normalizes every optional field with its fallback', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({
+                items: [
+                    {
+                        question: {
+                            prompt: 'Everything at once',
+                            type: 'matching',
+                            options: [{ isCorrect: true, imageUrl: 'https://example.com/pic.png' }, { text: '' }],
+                            expectedAnswer: 'Fallback answer',
+                            expectedNumericValue: 42,
+                            numericTolerance: 0.5,
+                            matchingPairs: [{}, { left: 'Cat', right: 'Meow' }],
+                            orderItems: [{}, { text: 'First' }],
+                            categories: [{ label: 'Verb' }, {}],
+                            categorizeItems: [{ text: '', categoryId: '0' }, { categoryId: 'Verb' }],
+                            hotTextPassage: '<p>Passage</p>',
+                            hotTextCorrectIndices: [0, 2],
+                            partialCredit: true,
+                            linkedStandards: [
+                                {},
+                                { guid: 'G1', description: 'd', standardSetTitle: 's', jurisdictionTitle: 'j' },
+                            ],
+                            linkedCefrDescriptors: [{}, { descriptorId: 'd1', level: 'B1', skill: 'listening' }],
+                            imageUrl: 'https://example.com/q.png',
+                            audioUrl: 'https://example.com/q.mp3',
+                            hint: 'Think harder',
+                            maxRecordingSeconds: 30,
+                        },
+                    },
+                    {
+                        // Categories present but no categorizeItems → defaults to []
+                        question: {
+                            prompt: 'No categorize items',
+                            type: 'categorize',
+                            categories: [{ label: 'Verb' }],
+                        },
+                    },
+                ],
+            })
+        );
+
+        const q = result.items[0].question!;
+        expect(q.expectedAnswer).toBe('Fallback answer');
+        expect(q.expectedNumericValue).toBe(42);
+        expect(q.numericTolerance).toBe(0.5);
+        expect(q.options?.[0].imageUrl).toBe('https://example.com/pic.png');
+        expect(q.options?.[1].text).toBe('');
+        expect(q.matchingPairs?.[0]).toMatchObject({ left: '', right: '' });
+        expect(q.orderItems?.[0].text).toBe('');
+        expect(q.categories?.[1].label).toBe('');
+        expect(q.categorizeItems?.[0]).toMatchObject({ text: '', categoryId: q.categories?.[0].id });
+        expect(q.hotTextPassage).toBe('<p>Passage</p>');
+        expect(q.hotTextCorrectIndices).toEqual([0, 2]);
+        expect(q.partialCredit).toBe(true);
+        expect(q.linkedStandards?.[0]).toMatchObject({
+            guid: '',
+            description: '',
+            standardSetTitle: '',
+            jurisdictionTitle: '',
+        });
+        expect(q.linkedCefrDescriptors?.[0]).toMatchObject({ descriptorId: '', level: 'A1', skill: 'reading' });
+        expect(q.imageUrl).toBe('https://example.com/q.png');
+        expect(q.audioUrl).toBe('https://example.com/q.mp3');
+        expect(q.hint).toBe('Think harder');
+        expect(q.maxRecordingSeconds).toBe(30);
+        // No unknown-category warning: '0' and 'Verb' both resolve
+        expect(result.warnings).toEqual([]);
+
+        expect(result.items[1].question!.categorizeItems).toEqual([]);
+    });
+
     it('carries through CEFR and grammar links, tags, and explanation', () => {
         const result = parseQuestionBankJson(
             JSON.stringify({
@@ -230,6 +302,25 @@ describe('parseQuestionBankJson', () => {
         expect(question.linkedCefrDescriptors).toHaveLength(1);
         expect(question.linkedCefrDescriptors?.[0].descriptorId).toBe('good');
         expect(result.warnings.filter((w) => w.key === 'questionBank.import_warn_invalid_descriptor')).toHaveLength(2);
+    });
+
+    it('omits linkedCefrDescriptors entirely when every descriptor is invalid', () => {
+        const result = parseQuestionBankJson(
+            JSON.stringify({
+                items: [
+                    {
+                        question: {
+                            prompt: 'Hi',
+                            type: 'open',
+                            linkedCefrDescriptors: [{ descriptorId: 'bad', level: 'Z9', skill: 'telepathy' }],
+                        },
+                    },
+                ],
+            })
+        );
+        const question = result.items[0].question!;
+        expect(question.linkedCefrDescriptors).toBeUndefined();
+        expect(result.warnings.filter((w) => w.key === 'questionBank.import_warn_invalid_descriptor')).toHaveLength(1);
     });
 
     it('parses a section bundle with its nested questions', () => {
@@ -395,5 +486,36 @@ describe('public/sample-question-bank.json', () => {
         );
         expect(allQuestions.length).toBeGreaterThan(0);
         expect(allQuestions.every((q) => typeof q.eloRating === 'number')).toBe(true);
+    });
+});
+
+describe('parseQuestionBankFile', () => {
+    const makeFile = (name: string, content: string, size?: number): File => {
+        const blob = new Blob([content]);
+        return new File([blob], name, { type: 'application/json' });
+    };
+
+    it('rejects a non-JSON file extension with a warning', async () => {
+        const result = await parseQuestionBankFile(makeFile('bank.csv', 'a,b\nc,d'));
+        expect(result.items).toEqual([]);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_unsupported_file_type');
+        expect(result.warnings[0].params).toEqual({ ext: 'csv' });
+    });
+
+    it('rejects a file over the size cap with a warning', async () => {
+        const big = new File([new Blob(['x'])], 'bank.json', { type: 'application/json' });
+        Object.defineProperty(big, 'size', { value: 6 * 1024 * 1024 });
+        const result = await parseQuestionBankFile(big);
+        expect(result.items).toEqual([]);
+        expect(result.warnings[0].key).toBe('questionBank.import_warn_file_too_large');
+    });
+
+    it('parses a valid JSON file', async () => {
+        const result = await parseQuestionBankFile(
+            makeFile('bank.json', JSON.stringify({ items: [{ question: { prompt: 'Hi', type: 'open' } }] }))
+        );
+        expect(result.warnings).toEqual([]);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].question!.prompt).toBe('Hi');
     });
 });

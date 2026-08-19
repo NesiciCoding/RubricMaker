@@ -34,11 +34,12 @@ vi.mock('../../context/AppContext', () => ({
 let mockUnsubSync = vi.fn();
 let mockUnsubAuth = vi.fn();
 let capturedAuthCallback: ((user: unknown) => void) | null = null;
+let capturedSyncCallback: (() => void) | null = null;
 
 vi.mock('../../services/database', () => ({
     storageSync: {
         subscribe: vi.fn((cb: () => void) => {
-            void cb; // captured but not triggered in most tests
+            capturedSyncCallback = cb;
             return mockUnsubSync;
         }),
         onAuthChange: vi.fn((cb: (user: unknown) => void) => {
@@ -291,6 +292,7 @@ describe('useDbStatus', () => {
         mockUnsubSync = vi.fn();
         mockUnsubAuth = vi.fn();
         capturedAuthCallback = null;
+        capturedSyncCallback = null;
         vi.clearAllMocks();
     });
 
@@ -322,6 +324,14 @@ describe('useDbStatus', () => {
             capturedAuthCallback!(fakeUser);
         });
         expect(result.current.currentUser).toEqual(fakeUser);
+    });
+
+    it('re-renders when a storage sync event fires', () => {
+        const { result } = renderHook(() => useDbStatus());
+        act(() => {
+            capturedSyncCallback!();
+        });
+        expect(result.current.isConnected).toBe(false);
     });
 
     it('calls both unsub functions on unmount', () => {

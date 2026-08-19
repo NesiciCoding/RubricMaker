@@ -140,6 +140,43 @@ describe('estimatePlacement', () => {
         expect(result?.level).toBe('A1');
         expect(result?.path.find((s) => s.sectionId === 'routing')?.level).toBeUndefined();
     });
+
+    it('uses empty sections and a missing section title fallback', () => {
+        const test = makeTest({ sections: undefined });
+        const st = makeStudentTest({ sectionPath: ['ghost'] });
+        const result = estimatePlacement(test, st);
+        // No section in the map -> untagged, so no estimate.
+        expect(result).toBeNull();
+    });
+
+    it('keeps an earlier best when a later passed step is not higher', () => {
+        const st = makeStudentTest({
+            sectionPath: ['routing', 'easy', 'hard'],
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-easy', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = estimatePlacement(makeTest(), st);
+        // Passed steps: routing A2, easy A1, hard B1 -> best is B1 (hard).
+        expect(result?.level).toBe('B1');
+        expect(result?.path).toHaveLength(3);
+    });
+
+    it('keeps an earlier worst when a later failed step is not lower', () => {
+        const st = makeStudentTest({
+            sectionPath: ['routing', 'hard', 'easy'],
+            answers: [
+                { questionId: 'q-routing', response: 'wrong' },
+                { questionId: 'q-hard', response: 'wrong' },
+                { questionId: 'q-easy', response: 'wrong' },
+            ],
+        });
+        const result = estimatePlacement(makeTest(), st);
+        // No passed steps -> lowest tagged across routing A2, hard B1, easy A1 = A1.
+        expect(result?.level).toBe('A1');
+    });
 });
 
 describe('estimatePlacement — staircase engine', () => {

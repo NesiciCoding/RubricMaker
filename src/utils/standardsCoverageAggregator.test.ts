@@ -147,4 +147,66 @@ describe('getClassStandardsCoverage', () => {
         const result = getClassStandardsCoverage('c1', classes, students, [], rubrics);
         expect(result.gap.map((g) => g.guid)).toEqual(['std3']);
     });
+
+    it('collects a criterion-level single linkedStandard into the roster', () => {
+        const rubrics = [
+            makeRubric('r1', [
+                {
+                    id: 'crit1',
+                    title: 'Crit',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: {
+                        guid: 'std-single',
+                        description: 'Single standard',
+                        standardSetTitle: 'CCSS',
+                        jurisdictionTitle: 'US',
+                    },
+                    levels: [{ id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] }],
+                },
+            ]),
+        ];
+        const result = getClassStandardsCoverage('c1', classes, students, [], rubrics);
+        expect(result.gap.map((g) => g.guid)).toEqual(['std-single']);
+    });
+
+    it('sorts entries by statementNotation, falling back to description when absent', () => {
+        const rubrics = [
+            makeRubric('r1', [
+                {
+                    id: 'crit1',
+                    title: 'Crit',
+                    description: '',
+                    weight: 100,
+                    linkedStandards: [
+                        {
+                            guid: 'std-with-notation',
+                            statementNotation: 'A.1',
+                            description: 'Has notation',
+                            standardSetTitle: '',
+                            jurisdictionTitle: '',
+                        },
+                        {
+                            guid: 'std-no-notation-1',
+                            description: 'Zebra without notation',
+                            standardSetTitle: '',
+                            jurisdictionTitle: '',
+                        },
+                        {
+                            guid: 'std-no-notation-2',
+                            description: 'Apple without notation',
+                            standardSetTitle: '',
+                            jurisdictionTitle: '',
+                        },
+                    ],
+                    levels: [{ id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] }],
+                },
+            ]),
+        ];
+        const result = getClassStandardsCoverage('c1', classes, students, [], rubrics);
+        // 'A.1' sorts first; the two notation-less entries sort by their descriptions
+        expect(result.gap.map((g) => g.guid)).toEqual(['std-with-notation', 'std-no-notation-2', 'std-no-notation-1']);
+        expect(result.gap[1].statementNotation).toBeUndefined();
+        expect(result.gap[2].statementNotation).toBeUndefined();
+    });
 });

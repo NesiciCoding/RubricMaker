@@ -40,4 +40,29 @@ describe('getCohortStudentIds', () => {
         const ids = getCohortStudentIds(students, classes, { voTrack: 'all', year: 'jaar-3' });
         expect(ids.size).toBe(3);
     });
+
+    it('skips students whose class is not in the class list', () => {
+        const ids = getCohortStudentIds([{ id: 'ghost', name: 'Ghost', classId: 'unknown-class' }], classes, {
+            voTrack: 'havo',
+            year: 'jaar-3',
+        });
+        expect(ids.has('ghost')).toBe(false);
+    });
+
+    it('skips students with no class at all', () => {
+        const ids = getCohortStudentIds([{ id: 'solo', name: 'Solo', classId: '' }], classes, {
+            voTrack: 'all',
+            year: 'all',
+        });
+        expect(ids.has('solo')).toBe(false);
+    });
+
+    it('excludes classes whose year does not match the filter', () => {
+        const classesWithYear: Class[] = [...classes, { id: 'c4', name: 'Havo 4A', year: 'jaar-4', voTrack: 'havo' }];
+        const ids = getCohortStudentIds([{ id: 's4', name: 'Older year', classId: 'c4' }], classesWithYear, {
+            voTrack: 'all',
+            year: 'jaar-3',
+        });
+        expect(ids.has('s4')).toBe(false);
+    });
 });

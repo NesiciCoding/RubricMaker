@@ -119,6 +119,14 @@ describe('useVoiceGrading', () => {
         expect(onGrade).not.toHaveBeenCalled();
     });
 
+    it('score command ignores NaN indices', () => {
+        const onGrade = vi.fn();
+        renderHook(() => useVoiceGrading(onGrade, vi.fn()));
+        const { commands } = mockUseSpeechRecognition.mock.calls[0][0];
+        commands[1].callback('abc', 'def');
+        expect(onGrade).not.toHaveBeenCalled();
+    });
+
     it('comment command ignores empty match', () => {
         const onComment = vi.fn();
         renderHook(() => useVoiceGrading(vi.fn(), onComment));

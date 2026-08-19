@@ -299,6 +299,76 @@ describe('RubricPreviewPage — valid rubric code', () => {
         renderPage(<RubricPreviewPage />, `/preview/${validCode}`, '/preview/:code');
         expect(screen.getByText('A test rubric description')).toBeInTheDocument();
     });
+
+    it('falls back to the invalid-link view when no code is provided', () => {
+        renderPage(<RubricPreviewPage />, '/preview', '/preview/:code?');
+        expect(screen.getByText('Invalid rubric link')).toBeInTheDocument();
+    });
+
+    it('applies default format colors when format fields are missing', () => {
+        const bareRubric: Rubric = {
+            ...mockRubric,
+            format: {
+                ...DEFAULT_FORMAT,
+                accentColor: undefined,
+                headerColor: undefined,
+                headerTextColor: undefined,
+                fontFamily: undefined,
+                showPoints: undefined,
+            } as unknown as Rubric['format'],
+        };
+        renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(bareRubric)}`, '/preview/:code');
+        expect(screen.getByText('Essay Rubric')).toBeInTheDocument();
+    });
+
+    it('renders criteria and levels without ids or level lists', () => {
+        const sparseRubric: Rubric = {
+            ...mockRubric,
+            criteria: [
+                {
+                    id: 'c-no-levels',
+                    title: 'Sparse Criterion',
+                    description: 'No id, no levels',
+                    weight: 100,
+                } as unknown as Rubric['criteria'][number],
+            ],
+        };
+        renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(sparseRubric)}`, '/preview/:code');
+        expect(screen.getByText('Sparse Criterion')).toBeInTheDocument();
+    });
+
+    it('renders levels without ids and a fixed-point level label', () => {
+        const sparseLevelsRubric: Rubric = {
+            ...mockRubric,
+            format: { ...DEFAULT_FORMAT, showPoints: true } as Rubric['format'],
+            criteria: [
+                {
+                    title: 'Points Criterion',
+                    description: 'Levels with equal min/max',
+                    weight: 100,
+                    levels: [
+                        {
+                            label: 'Fixed',
+                            minPoints: 50,
+                            maxPoints: 50,
+                            description: 'Fixed point',
+                            subItems: [],
+                        } as unknown as Rubric['criteria'][number]['levels'][number],
+                        {
+                            label: 'Range',
+                            minPoints: 30,
+                            maxPoints: 49,
+                            description: 'Range',
+                            subItems: [],
+                        } as unknown as Rubric['criteria'][number]['levels'][number],
+                    ],
+                } as unknown as Rubric['criteria'][number],
+            ],
+        };
+        renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(sparseLevelsRubric)}`, '/preview/:code');
+        expect(screen.getByText('Fixed')).toBeInTheDocument();
+        expect(screen.getByText('50pt')).toBeInTheDocument();
+    });
 });
 
 // ─── StudentFeedbackPage — valid code ────────────────────────────────────────
@@ -338,6 +408,63 @@ describe('StudentFeedbackPage — valid feedback code', () => {
     it('renders overall comment', () => {
         renderPage(<StudentFeedbackPage />, `/feedback/${validCode}`, '/feedback/:code');
         expect(screen.getByText('Good work overall')).toBeInTheDocument();
+    });
+
+    it('falls back to the invalid-link view when no code is provided', () => {
+        renderPage(<StudentFeedbackPage />, '/feedback', '/feedback/:code?');
+        expect(screen.getByText('Invalid or expired link')).toBeInTheDocument();
+    });
+
+    it('applies default colors when format fields are missing and shows student email', () => {
+        const bareRubric: Rubric = {
+            ...mockRubric,
+            format: { ...DEFAULT_FORMAT, accentColor: undefined, fontFamily: undefined } as unknown as Rubric['format'],
+        };
+        const code = encodeFeedbackCode({
+            sr: mockSr,
+            rubric: bareRubric,
+            student: { ...mockStudent, email: 'alice@example.com' },
+            scale: mockGradeScale,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    it('shows the feedback-only notice and an audio player when present', () => {
+        const srWithAudio: StudentRubric = {
+            ...mockSr,
+            feedbackOnly: true,
+            entries: [
+                {
+                    criterionId: 'c1',
+                    levelId: 'l2',
+                    checkedSubItems: [],
+                    comment: '',
+                    audioDataUrl: 'data:audio/wav;base64,AAAA',
+                },
+            ],
+        };
+        // The level has no description and the entry has no comment, so the level-pill
+        // row falls back to margin 0 — exercising the empty-profile path.
+        const bareRubric: Rubric = {
+            ...mockRubric,
+            format: undefined as unknown as Rubric['format'],
+            criteria: [
+                {
+                    ...mockRubric.criteria[0],
+                    levels: mockRubric.criteria[0].levels.map((l) => ({ ...l, description: '' })),
+                },
+            ],
+        };
+        const code = encodeFeedbackCode({
+            sr: srWithAudio,
+            rubric: bareRubric,
+            student: mockStudent,
+            scale: mockGradeScale,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(screen.getByText(/Your teacher has released feedback/)).toBeInTheDocument();
+        expect(screen.getByText('Audio feedback:')).toBeInTheDocument();
     });
 });
 

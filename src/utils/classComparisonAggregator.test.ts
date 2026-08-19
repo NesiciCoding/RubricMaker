@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { compareClasses, buildMultiClassTrend, getInsights } from './classComparisonAggregator';
-import type { Rubric, StudentRubric, Student, Class, RubricCriterion } from '../types';
+import type { Rubric, StudentRubric, Student, Class, RubricCriterion, GradeRange, GradeScale } from '../types';
 
 // ─── Builders ─────────────────────────────────────────────────────────────────
 
@@ -238,6 +238,22 @@ describe('buildMultiClassTrend', () => {
         const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, []);
         expect(trend[0]['__name_cls1']).toBe('Class A');
     });
+
+    it('falls back to the classId for unknown classes in the legend', () => {
+        const rubrics = [mkRubric('r1', [c1, c2])];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 5, c2: 5 })];
+        const trend = buildMultiClassTrend(['cls1'], [], srs, students, rubrics, []);
+        expect(trend[0]['__name_cls1']).toBe('cls1');
+    });
+
+    it('falls back to the first grade scale when the rubric scale is missing', () => {
+        const rubrics = [{ ...mkRubric('r1', [c1, c2]), gradeScaleId: 'missing-scale' }];
+        const srs = [mkSR('a', 'r1', 's1', { c1: 5, c2: 5 })];
+        const scale: GradeScale = { id: 'scale-1', name: 'Fallback', type: 'letter', ranges: [] as GradeRange[] };
+        const trend = buildMultiClassTrend(['cls1'], classes, srs, students, rubrics, [scale]);
+        expect(trend).toHaveLength(1);
+        expect(trend[0].rubricName).toBe('Rubric r1');
+    });
 });
 
 // ─── getInsights ──────────────────────────────────────────────────────────────
@@ -337,6 +353,16 @@ describe('getInsights', () => {
         // struggling (avg 40<55), weak c2 (gap 25), divergence (c1: 90 vs 40 = 50pp)
         const results = [good('a', 'Weak A', 40, { c1: 40, c2: 15 }), good('b', 'Strong B', 80, { c1: 90, c2: 75 })];
         expect(getInsights(results, [c1, c2]).length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('treats a missing criterion average as zero in both insight loops', () => {
+        const missing = { id: 'c-missing', title: 'Missing', description: '', weight: 100, levels: [] };
+        // results only carry c1; criteria list includes c-missing so both ?? 0 fallbacks fire
+        const results = [good('a', 'A', 80, { c1: 60 }), good('b', 'B', 30, { c1: 30 })];
+        const insights = getInsights(results, [c1, missing]);
+        // The missing criterion's ?? 0 fires in both loops; weak_criterion flags it, and c1 still drives divergence.
+        expect(insights.some((i) => i.kind === 'weak_criterion' && i.messageParams.criterion === 'Missing')).toBe(true);
+        expect(insights.some((i) => i.kind === 'divergence')).toBe(true);
     });
 
     it('does not flag struggling or weak_criterion for class with studentCount 0', () => {

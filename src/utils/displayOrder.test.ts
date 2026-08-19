@@ -11,6 +11,11 @@ describe('sortByDisplayOrder', () => {
         ];
         expect(sortByDisplayOrder(items).map((i) => i.id)).toEqual(['c', 'a', 'd', 'b']);
     });
+
+    it('falls back to empty string createdAt for items missing both order and date', () => {
+        const items = [{ id: 'a' }, { id: 'b' }] as Array<{ id: string; displayOrder?: number; createdAt?: string }>;
+        expect(sortByDisplayOrder(items).map((i) => i.id)).toEqual(['a', 'b']);
+    });
 });
 
 describe('reorderDisplayOrder', () => {

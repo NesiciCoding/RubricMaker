@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     parseJsonToRubric,
     splitCells,
@@ -14,6 +14,9 @@ vi.mock('mammoth', () => ({
     }),
 }));
 
+// Mutable so per-test PDF fixtures can vary (empty pages, non-string items, etc.).
+const pdfTextItems = vi.hoisted(() => ({ items: [] as Array<Record<string, unknown>> }));
+
 vi.mock('pdfjs-dist', () => ({
     version: '1.0',
     GlobalWorkerOptions: { workerSrc: '' },
@@ -21,20 +24,24 @@ vi.mock('pdfjs-dist', () => ({
         promise: Promise.resolve({
             numPages: 1,
             getPage: vi.fn().mockResolvedValue({
-                getTextContent: vi.fn().mockResolvedValue({
-                    items: [
-                        { str: 'Criterion', transform: [0, 0, 0, 0, 0, 100] },
-                        { str: '  Excellent  ', transform: [0, 0, 0, 0, 0, 100] },
-                        { str: '  Satisfactory  ', transform: [0, 0, 0, 0, 0, 100] },
-                        { str: 'C1', transform: [0, 0, 0, 0, 0, 80] },
-                        { str: '  L1  ', transform: [0, 0, 0, 0, 0, 80] },
-                        { str: '  L2  ', transform: [0, 0, 0, 0, 0, 80] },
-                    ],
-                }),
+                getTextContent: vi.fn().mockImplementation(() => Promise.resolve({ items: pdfTextItems.items })),
             }),
         }),
     }),
 }));
+
+const DEFAULT_PDF_ITEMS = [
+    { str: 'Criterion', transform: [0, 0, 0, 0, 0, 100] },
+    { str: '  Excellent  ', transform: [0, 0, 0, 0, 0, 100] },
+    { str: '  Satisfactory  ', transform: [0, 0, 0, 0, 0, 100] },
+    { str: 'C1', transform: [0, 0, 0, 0, 0, 80] },
+    { str: '  L1  ', transform: [0, 0, 0, 0, 0, 80] },
+    { str: '  L2  ', transform: [0, 0, 0, 0, 0, 80] },
+];
+
+beforeEach(() => {
+    pdfTextItems.items = [...DEFAULT_PDF_ITEMS];
+});
 
 describe('rubricImport', () => {
     describe('parseJsonToRubric', () => {
@@ -126,6 +133,31 @@ describe('rubricImport', () => {
             expect(result.headers).toEqual([]);
             expect(result.rows).toEqual([['Line 1'], ['Line 2']]);
         });
+
+        it('appends short continuation lines to the previous row', () => {
+            const lines = [
+                'Criterion  Excellent  Satisfactory  Poor',
+                'Content    Great      Ok            Bad',
+                'a continued description of the content criterion',
+                'Design     Pretty     Fine          Ugly',
+            ];
+            const result = detectTableFromLines(lines);
+            expect(result.headers).toEqual(['Criterion', 'Excellent', 'Satisfactory', 'Poor']);
+            expect(result.rows).toHaveLength(2);
+            // The short line is appended to the previous row's last cell.
+            expect(result.rows[0][3]).toContain('a continued description');
+            expect(result.rows[1]).toEqual(['Design', 'Pretty', 'Fine', 'Ugly']);
+        });
+
+        it('ignores short lines that appear before any row has started', () => {
+            const lines = [
+                'Criterion  Excellent  Satisfactory  Poor',
+                'just a stray short line with no tabular structure',
+            ];
+            const result = detectTableFromLines(lines);
+            expect(result.headers).toEqual(['Criterion', 'Excellent', 'Satisfactory', 'Poor']);
+            expect(result.rows).toHaveLength(0);
+        });
     });
 
     describe('buildParsedRubric', () => {
@@ -168,6 +200,25 @@ describe('rubricImport', () => {
             expect(result.headers).toEqual(['H1', 'H2']);
             expect(result.rows).toEqual([['R1C1', 'R1C2']]);
         });
+
+        it('returns empty headers and rows when the table has a single row', () => {
+            const container = document.createElement('div');
+            container.innerHTML = `<table><tr><td>OnlyRow</td></tr></table>`;
+            const table = container.querySelector('table')!;
+            const result = extractTableFromHtml(table);
+            expect(result.headers).toEqual([]);
+            expect(result.rows).toEqual([]);
+        });
+
+        it('skips rows whose cells are all empty', () => {
+            const container = document.createElement('div');
+            container.innerHTML = `<table><tr><td></td><td></td></tr><tr><td>R1</td><td>R2</td></tr></table>`;
+            const table = container.querySelector('table')!;
+            const result = extractTableFromHtml(table);
+            // The all-empty first row is dropped, leaving a single row → no header/body split.
+            expect(result.headers).toEqual([]);
+            expect(result.rows).toEqual([]);
+        });
     });
 
     describe('parseDocxToRubric', () => {
@@ -179,11 +230,76 @@ describe('rubricImport', () => {
             expect(result.criteria.length).toBe(1);
             expect(result.criteria[0].title).toBe('C1');
         });
+
+        it('picks the largest table when the document contains several', async () => {
+            const { parseDocxToRubric } = await import('./rubricImport');
+            const mammoth = await import('mammoth');
+            vi.mocked(mammoth.convertToHtml).mockResolvedValueOnce({
+                value: `
+                    <table><tr><td>Crit</td><td>Good</td><td>Poor</td></tr><tr><td>C1</td><td>L1</td><td>L2</td></tr></table>
+                    <table><tr><td>Small</td><td>Table</td></tr><tr><td>A</td><td>B</td></tr></table>
+                `,
+                messages: [],
+            });
+            const file = new File([''], 'multi.docx');
+            const result = await parseDocxToRubric(file);
+            // The first table (6 cells) wins; the second (4 cells) loses the largest-table contest.
+            expect(result.criteria).toHaveLength(1);
+            expect(result.criteria[0].levels).toHaveLength(2);
+        });
+
+        it('returns an empty result when the document contains no table', async () => {
+            const { parseDocxToRubric } = await import('./rubricImport');
+            const mammoth = await import('mammoth');
+            vi.mocked(mammoth.convertToHtml).mockResolvedValueOnce({ value: '<p>No tables here</p>', messages: [] });
+            const file = new File([''], 'notes.docx');
+            const result = await parseDocxToRubric(file);
+
+            expect(result.criteria).toHaveLength(0);
+            expect(result.confidence).toBe('low');
+            expect(result.warnings[0]).toContain('No table found');
+        });
     });
 
     describe('parsePdfToRubric', () => {
         it('successfully parses pdf', async () => {
             const { parsePdfToRubric } = await import('./rubricImport');
+            const file = new File([''], 'test.pdf');
+            const result = await parsePdfToRubric(file);
+
+            expect(result.criteria.length).toBe(1);
+            expect(result.criteria[0].title).toBe('C1');
+        });
+
+        it('skips PDF text items that carry no string payload', async () => {
+            const { parsePdfToRubric } = await import('./rubricImport');
+            pdfTextItems.items = [
+                { transform: [0, 0, 0, 0, 0, 100] }, // no 'str' key
+                ...DEFAULT_PDF_ITEMS,
+            ];
+            const file = new File([''], 'test.pdf');
+            const result = await parsePdfToRubric(file);
+
+            expect(result.criteria.length).toBe(1);
+            expect(result.criteria[0].title).toBe('C1');
+        });
+
+        it('returns an empty result when no text can be extracted from the PDF', async () => {
+            const { parsePdfToRubric } = await import('./rubricImport');
+            pdfTextItems.items = [];
+            const file = new File([''], 'scanned.pdf');
+            const result = await parsePdfToRubric(file);
+
+            expect(result.criteria).toHaveLength(0);
+            expect(result.warnings[0]).toContain('Could not extract any text');
+        });
+
+        it('skips blank lines assembled from whitespace-only text items', async () => {
+            const { parsePdfToRubric } = await import('./rubricImport');
+            pdfTextItems.items = [
+                ...DEFAULT_PDF_ITEMS,
+                { str: '   ', transform: [0, 0, 0, 0, 0, 90] }, // own line (y=90), trims to empty
+            ];
             const file = new File([''], 'test.pdf');
             const result = await parsePdfToRubric(file);
 
@@ -244,6 +360,34 @@ describe('encodeRubricShareCode / decodeRubricShareCode', () => {
         const bad = btoa(encodeURIComponent(JSON.stringify({ name: 'x' })));
         expect(() => decodeRubricShareCode(bad)).toThrow('Invalid share code');
     });
+
+    it('defaults missing name/subject/description fields when decoding a share code', async () => {
+        const { encodeRubricShareCode, decodeRubricShareCode } = await import('./rubricImport');
+        const code = encodeRubricShareCode({
+            id: 'r1',
+            name: 'x',
+            subject: 'x',
+            description: 'x',
+            criteria: [],
+            gradeScaleId: 'gs1',
+            scoringMode: 'weighted-percentage',
+            totalMaxPoints: 100,
+            format: 'grid' as any,
+            attachmentIds: [],
+            createdAt: '',
+            updatedAt: '',
+        });
+        // Strip the optional fields from the encoded JSON before decoding.
+        const stripped = JSON.parse(decodeURIComponent(atob(code)));
+        delete stripped.name;
+        delete stripped.subject;
+        delete stripped.description;
+        const decoded = decodeRubricShareCode(btoa(encodeURIComponent(JSON.stringify(stripped))));
+        expect(decoded.name).toBe('');
+        expect(decoded.subject).toBe('');
+        expect(decoded.description).toBe('');
+        expect(decoded.criteria).toEqual([]);
+    });
 });
 
 // ─── buildParsedRubric with various table shapes ──────────────────────────────
@@ -269,6 +413,54 @@ describe('buildParsedRubric edge cases', () => {
             'test'
         );
         expect(result.criteria.length).toBe(1);
+    });
+
+    it('treats a single-column header row as having no level columns', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric({ headers: ['Criterion'], rows: [['C1']] }, 'test');
+        expect(result.criteria).toHaveLength(0);
+        expect(result.warnings).toContain('Found a table but could not detect level columns.');
+    });
+
+    it('skips rows with no cells at all', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric(
+            {
+                headers: ['criterion', 'Level A', 'Level B'],
+                rows: [[], ['C1', 'desc A', 'desc B']],
+            },
+            'test'
+        );
+        expect(result.criteria).toHaveLength(1);
+        expect(result.criteria[0].title).toBe('C1');
+    });
+
+    it('treats a long first header without a criterion keyword as a level column', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric(
+            {
+                headers: ['Performance descriptors for this assessment are listed below', 'Good', 'Poor'],
+                rows: [['C1', 'Well done', 'Needs work']],
+            },
+            'test'
+        );
+        expect(result.criteria).toHaveLength(1);
+        // criterionColIdx === -1 → every header is a level, and descriptions start at column 0
+        expect(result.criteria[0].levels).toHaveLength(3);
+        expect(result.criteria[0].levels[0].label).toBe('Performance descriptors for this assessment are listed below');
+        expect(result.criteria[0].levels[0].description).toBe('C1');
+    });
+
+    it('falls back to an empty description when a row is shorter than the level columns', async () => {
+        const { buildParsedRubric } = await import('./rubricImport');
+        const result = buildParsedRubric(
+            {
+                headers: ['criterion', 'Level A', 'Level B'],
+                rows: [['C1', 'only one description']],
+            },
+            'test'
+        );
+        expect(result.criteria[0].levels[1].description).toBe('');
     });
 
     it('returns "no criteria" error when all rows have empty criterion name', async () => {
@@ -461,6 +653,73 @@ describe('parseJsonToRubric — edge case branches', () => {
         const file = new File([JSON.stringify(json)], 'rubric.json', { type: 'application/json' });
         const result = await parseJsonToRubric(file);
         expect(result.criteria[0].linkedStandards).toBeUndefined();
+    });
+
+    it('applies defaults for missing or non-numeric JSON fields', async () => {
+        const json = {
+            name: 'Defaults',
+            criteria: [
+                {
+                    // no title, no description, no weight, no linkedStandard, no linkedStandards
+                    levels: [
+                        {
+                            // no label
+                            minPoints: 'five', // non-numeric
+                            maxPoints: null, // non-numeric
+                        },
+                    ],
+                },
+                {
+                    title: 'No levels at all',
+                    weight: 'heavy', // non-numeric
+                },
+            ],
+        };
+        const file = new File([JSON.stringify(json)], 'defaults.json');
+        const result = await parseJsonToRubric(file);
+        const first = result.criteria[0];
+        expect(first.title).toBe('Untitled Criterion');
+        expect(first.description).toBe('');
+        expect(first.weight).toBe(0);
+        expect(first.linkedStandard).toBeUndefined();
+        expect(first.linkedStandards).toBeUndefined();
+        expect(first.levels).toHaveLength(1);
+        expect(first.levels[0].label).toBe('Level');
+        expect(first.levels[0].minPoints).toBe(0);
+        expect(first.levels[0].maxPoints).toBe(0);
+        expect(first.levels[0].subItems).toHaveLength(0);
+        const second = result.criteria[1];
+        expect(second.weight).toBe(0);
+        expect(second.levels).toHaveLength(0);
+    });
+
+    it('applies defaults for sub-items with no label and non-numeric points', async () => {
+        const json = {
+            criteria: [
+                {
+                    title: 'Crit',
+                    levels: [{ subItems: [{ points: 'three' }] }],
+                },
+            ],
+        };
+        const file = new File([JSON.stringify(json)], 'sub.json');
+        const result = await parseJsonToRubric(file);
+        const subItem = result.criteria[0].levels[0].subItems[0];
+        expect(subItem.label).toBe('');
+        expect(subItem.points).toBe(0);
+        expect(subItem.linkedStandards).toBeUndefined();
+    });
+
+    it('reports a non-Error rejection with String(err)', async () => {
+        const file = {
+            name: 'boom.json',
+            text: async () => {
+                throw 'plain string failure';
+            },
+        } as unknown as File;
+        const result = await parseJsonToRubric(file);
+        expect(result.criteria).toHaveLength(0);
+        expect(result.warnings[0]).toContain('plain string failure');
     });
 
     it('deep-clones subItems with linkedStandards inside levels', async () => {

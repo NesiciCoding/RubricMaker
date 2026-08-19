@@ -1,5 +1,24 @@
-import { describe, it, expect } from 'vitest';
-import { parseCsvText, parseLines, splitLine, cardsFromRows } from './flashcardImport';
+import { describe, it, expect, vi } from 'vitest';
+import {
+    parseCsvText,
+    parseLines,
+    splitLine,
+    cardsFromRows,
+    parseFlashcardFile,
+    UnsupportedFlashcardFileError,
+} from './flashcardImport';
+
+// Dynamic imports used by parseFlashcardFile for the binary formats.
+vi.mock('read-excel-file/browser', () => ({
+    readSheet: vi.fn(async () => [
+        ['apple', 'appel'],
+        ['house', 'huis'],
+    ]),
+}));
+
+vi.mock('mammoth', () => ({
+    extractRawText: vi.fn(async () => ({ value: 'apple - appel\nhouse - huis' })),
+}));
 
 describe('parseCsvText', () => {
     it('parses front,back,example columns', () => {
@@ -12,6 +31,11 @@ describe('parseCsvText', () => {
 
     it('skips a header row', () => {
         const cards = parseCsvText('Front,Back\napple,appel');
+        expect(cards).toEqual([{ front: 'apple', back: 'appel' }]);
+    });
+
+    it('skips a header row detected via the back column alone', () => {
+        const cards = parseCsvText('Item,Translation\napple,appel');
         expect(cards).toEqual([{ front: 'apple', back: 'appel' }]);
     });
 
@@ -91,5 +115,43 @@ describe('cardsFromRows', () => {
             { front: 'seven', back: '7' },
             { front: 'eight', back: 'acht' },
         ]);
+    });
+});
+
+describe('parseFlashcardFile', () => {
+    it('parses a csv file', async () => {
+        const file = new File(['apple,appel\nhouse,huis'], 'cards.csv', { type: 'text/csv' });
+        const cards = await parseFlashcardFile(file);
+        expect(cards).toEqual([
+            { front: 'apple', back: 'appel' },
+            { front: 'house', back: 'huis' },
+        ]);
+    });
+
+    it('parses a txt file line-by-line', async () => {
+        const file = new File(['apple - appel\nhouse - huis'], 'words.txt', { type: 'text/plain' });
+        const cards = await parseFlashcardFile(file);
+        expect(cards.map((c) => c.front)).toEqual(['apple', 'house']);
+    });
+
+    it('parses an xlsx workbook through read-excel-file', async () => {
+        const file = new File([''], 'cards.xlsx');
+        const cards = await parseFlashcardFile(file);
+        expect(cards).toEqual([
+            { front: 'apple', back: 'appel' },
+            { front: 'house', back: 'huis' },
+        ]);
+    });
+
+    it('parses a docx file through mammoth raw-text extraction', async () => {
+        const file = new File([''], 'cards.docx');
+        const cards = await parseFlashcardFile(file);
+        expect(cards.map((c) => c.front)).toEqual(['apple', 'house']);
+    });
+
+    it('throws UnsupportedFlashcardFileError for legacy or unknown extensions', async () => {
+        const file = new File([''], 'cards.xls');
+        await expect(parseFlashcardFile(file)).rejects.toThrow(UnsupportedFlashcardFileError);
+        await expect(parseFlashcardFile(file)).rejects.toThrow('Unsupported flashcard file type: xls');
     });
 });

@@ -94,4 +94,10 @@ describe('parseStyleTemplate', () => {
         const result = await parseStyleTemplate(file);
         expect(result).toEqual({});
     });
+
+    it('returns an empty result when word/styles.xml is not well-formed XML', async () => {
+        const file = await makeDocxFile('<w:styles><w:unclosed');
+        const result = await parseStyleTemplate(file);
+        expect(result).toEqual({});
+    });
 });

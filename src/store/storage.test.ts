@@ -12,6 +12,16 @@ import {
     saveFavoriteStandards,
     saveCommentBank,
     mergeLegacyCommentSnippets,
+    setLocalMode,
+    isLocalMode,
+    markMigrationDone,
+    saveCriterionClipboard,
+    loadCriterionClipboard,
+    loadUserTemplates,
+    saveUserTemplates,
+    loadTestDraft,
+    saveTestDraft,
+    clearTestDraft,
     saveExportTemplates,
     savePeerReviews,
     saveSelfAssessments,
@@ -234,6 +244,20 @@ describe('save functions', () => {
         expect(() => saveStudentRubrics([])).toThrow('disk error');
 
         setItemSpy.mockRestore();
+    });
+
+    it('notifies the handler and drops the write from the shared save path on quota', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => saveRubrics([])).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
     });
 
     it('saveAttachments persists', () => {
@@ -553,6 +577,41 @@ describe('pending sync queue', () => {
         expect(loadPendingQueue()).toHaveLength(2);
     });
 
+    it('addToPendingQueue swallows non-quota queue write failures without notifying', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('disk error');
+        });
+
+        expect(() => addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } })).not.toThrow();
+        expect(handler).not.toHaveBeenCalled();
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('addToPendingQueue notifies the quota handler when the queue write fails', () => {
+        const handler = vi.fn();
+        onStorageQuotaExceeded(handler);
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota exceeded', 'QuotaExceededError');
+        });
+
+        expect(() => addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } })).not.toThrow();
+        expect(handler).toHaveBeenCalledTimes(1);
+
+        setItemSpy.mockRestore();
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('stripAudioForOfflineCache passes rubrics without any audio through unchanged', () => {
+        const srs: StudentRubric[] = [
+            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false },
+        ];
+        expect(stripAudioForOfflineCache(srs)).toEqual(srs);
+    });
+
     it('addToPendingQueue replaces upsert with delete for same entity+id', () => {
         addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
         addToPendingQueue({ entity: 'rubric', action: 'delete', payload: null, entityId: 'r1' });
@@ -773,5 +832,295 @@ describe('rubric version history (Phase 18.4)', () => {
         const merged = mergeLegacyCommentSnippets(snippets, bank);
         expect(merged).toHaveLength(1);
         expect(merged[0].text).toBe('Already migrated');
+    });
+});
+
+describe('local-mode and migration flags', () => {
+    it('setLocalMode / isLocalMode / markMigrationDone round-trip through localStorage', () => {
+        expect(isLocalMode()).toBe(false);
+        setLocalMode();
+        expect(isLocalMode()).toBe(true);
+        localStorage.removeItem('rm_local_mode');
+        expect(isLocalMode()).toBe(false);
+
+        markMigrationDone();
+        expect(localStorage.getItem('rm_migration_done')).toBe('true');
+    });
+});
+
+describe('save() error handling', () => {
+    it('rethrows non-quota errors so callers see real failures', () => {
+        const original = localStorage.setItem.bind(localStorage);
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('storage is corrupted');
+        });
+        try {
+            expect(() => saveSettings(makeSettings())).toThrow('storage is corrupted');
+        } finally {
+            spy.mockRestore();
+        }
+    });
+});
+
+describe('loadStore migrations', () => {
+    it('lifts embedded legacy rubric versions into the per-rubric version store', () => {
+        localStorage.setItem(
+            'rm_rubrics',
+            JSON.stringify([
+                {
+                    ...makeRubric(),
+                    versions: [{ id: 'v1', savedAt: '2024-01-02', label: 'v1', snapshot: makeRubric() }],
+                },
+            ])
+        );
+        const store = loadStore();
+        expect(store.rubrics).toHaveLength(1);
+        expect((store.rubrics[0] as Rubric & { versions?: unknown }).versions).toBeUndefined();
+        expect(loadRubricVersions('r1')).toHaveLength(1);
+    });
+
+    it('lifts legacy comment snippets into the comment bank and removes the old key', () => {
+        localStorage.setItem('rm_comment_snippets', JSON.stringify([{ id: 'cs1', text: 'Legacy', tag: 'positive' }]));
+        localStorage.setItem('rm_comment_bank', JSON.stringify([]));
+        const store = loadStore();
+        expect(store.commentBank).toHaveLength(1);
+        expect(store.commentBank[0].id).toBe('cs1');
+        expect(localStorage.getItem('rm_comment_snippets')).toBeNull();
+        // The lifted snippet had no updatedAt → createdAt falls back to now.
+        expect(store.commentBank[0].createdAt).toBeTruthy();
+    });
+
+    it('re-seeds an empty stored grade-scale collection with the defaults', () => {
+        localStorage.setItem('rm_grade_scales', JSON.stringify([]));
+        const store = loadStore();
+        expect(store.gradeScales).toEqual(DEFAULT_GRADE_SCALES);
+        expect(JSON.parse(localStorage.getItem('rm_grade_scales')!)).toEqual(DEFAULT_GRADE_SCALES);
+    });
+});
+
+describe('stripAudioForOfflineCache', () => {
+    it('strips audioDataUrl only from entries that carry it', () => {
+        const srs: StudentRubric[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [
+                    { criterionId: 'c1', levelId: null, comment: '', checkedSubItems: [], audioDataUrl: 'data:audio' },
+                    { criterionId: 'c2', levelId: null, comment: '', checkedSubItems: [] },
+                ],
+                overallComment: '',
+                isPeerReview: false,
+            },
+        ];
+        const stripped = stripAudioForOfflineCache(srs);
+        expect(stripped[0].entries[0].audioDataUrl).toBeUndefined();
+        expect(stripped[0].entries[1].audioDataUrl).toBeUndefined();
+        // Original entries untouched.
+        expect(srs[0].entries[0].audioDataUrl).toBe('data:audio');
+    });
+});
+
+describe('importFullBackup — every field', () => {
+    const validBackup = {
+        rubrics: [{ id: 'r1', criteria: [] }],
+        students: [{ id: 's1', name: 'A', classId: 'c1' }],
+        classes: [{ id: 'c1', name: 'C' }],
+        studentRubrics: [
+            { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false },
+        ],
+        attachments: [{ id: 'a1', name: 'A', mimeType: 'docx', size: 1, dataUrl: 'd' }],
+        gradeScales: [{ id: 'gs1', name: 'G', type: 'points', ranges: [] }],
+        settings: { theme: 'dark' },
+        favoriteStandards: [{ guid: 'fs1', description: 'd', standardSetTitle: '', jurisdictionTitle: '' }],
+        commentBank: [{ id: 'cb1', text: 'T', tags: [] }],
+        commentSnippets: [{ id: 'cs1', text: 'T', tag: 'x' }],
+        exportTemplates: [{ id: 'et1', name: 'T', dataUrl: 'd', levelHeaders: [], size: 1 }],
+        peerReviews: [
+            {
+                id: 'pr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                reviewerId: 's2',
+                entries: [],
+                overallComment: '',
+                isPeerReview: true,
+            },
+        ],
+        selfAssessments: [{ id: 'sa1', rubricId: 'r1', studentId: 's1', ratings: [], submittedAt: '2024-01-01' }],
+        speakingSessions: [
+            { id: 'ss1', rubricId: 'r1', studentId: 's1', criteria: [], overallComment: '', gradedAt: '2024-01-01' },
+        ],
+        analysisResults: [
+            {
+                id: 'ar1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'a1',
+                extractedText: '',
+                analyzedAt: '2024-01-01',
+                detectedItems: [],
+                grammarErrors: [],
+                grammarCheckerUsed: 'none',
+            },
+        ],
+        tests: [{ id: 't1', name: 'T', questions: [], requireSEB: false, shuffleQuestions: false }],
+        studentTests: [
+            { id: 'st1', testId: 't1', studentId: 's1', answers: [], status: 'submitted', startedAt: '2024-01-01' },
+        ],
+        essayAssignments: [
+            {
+                teacherKey: 'tk1',
+                studentId: 's1',
+                title: 'E',
+                prompt: 'P',
+                assignedAt: '2024-01-01',
+                createdAt: '2024-01-01',
+                rubricId: 'r1',
+            },
+        ],
+        essaySubmissions: [
+            {
+                id: 'es1',
+                assignmentRubricId: 'r1',
+                assignmentStudentId: 's1',
+                teacherKey: 'tk1',
+                contentHtml: '',
+                wordCount: 0,
+                submittedAt: '2024-01-01',
+            },
+        ],
+        essayTemplates: [{ id: 'ett1', title: 'T', prompt: 'P', rubricId: 'r1', createdAt: '2024-01-01' }],
+        gradingTasks: [
+            { id: 'gt1', rubricId: 'r1', studentId: 's1', assignedToTeacher: 't1', assignedAt: '2024-01-01' },
+        ],
+        messages: [
+            {
+                id: 'm1',
+                studentId: 's1',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'teacher',
+                body: 'B',
+                createdAt: '2024-01-01',
+                readByTeacher: false,
+                readByStudent: false,
+            },
+        ],
+        userTemplates: [{ id: 'ut1', name: 'T', subject: '', criteria: [], savedAt: '2024-01-01' }],
+        flashcardDecks: [{ id: 'd1', name: 'D', cards: [] }],
+        flashcardAssignments: [{ deckId: 'd1', studentId: 's1', deckName: 'D', cardCount: 0, createdAt: '2024-01-01' }],
+        flashcardReviews: [{ id: 'd1:s1', deckId: 'd1', studentId: 's1', cardStates: {}, updatedAt: '2024-01-01' }],
+        standardMasteryTargets: [{ id: 'mt1', standardGuid: 'g1', year: '1', targetPercentage: 80 }],
+        newsFlashes: [{ id: 'nf1', title: 'N', kind: 'article' }],
+        newsFlashReads: [{ id: 'nf1:s1', flashId: 'nf1', studentId: 's1', readAt: '2024-01-01' }],
+        questionBank: [
+            { id: 'q1', question: { type: 'multiple-choice', text: 'Q' }, tags: [], createdAt: '2024-01-01' },
+        ],
+        documentComments: [
+            {
+                id: 'dc1',
+                attachmentId: 'a1',
+                authorId: 't1',
+                text: 'X',
+                createdAt: '2024-01-01',
+                resolved: false,
+                anchor: { from: 0, to: 1 },
+            },
+        ],
+        notificationDismissals: [
+            { id: 'od:s1', type: 'overdue_grading', entityId: 's1', fingerprint: 'f', dismissedAt: '2024-01-01' },
+        ],
+    };
+
+    it('restores every field from a valid backup', () => {
+        const result = importFullBackup(JSON.stringify(validBackup));
+        expect(result).toBe(true);
+        const store = loadStore();
+        expect(store.rubrics).toHaveLength(1);
+        expect(store.students).toHaveLength(1);
+        expect(store.classes).toHaveLength(1);
+        expect(store.studentRubrics).toHaveLength(1);
+        expect(store.attachments).toHaveLength(1);
+        expect(store.gradeScales).toHaveLength(1);
+        expect(store.settings.theme).toBe('dark');
+        expect(store.favoriteStandards).toHaveLength(1);
+        // The backup's legacy commentSnippets entry is lifted into the bank.
+        expect(store.commentBank).toHaveLength(2);
+        expect(store.commentBank.find((c) => c.id === 'cs1')?.tags).toEqual(['x']);
+        expect(store.exportTemplates).toHaveLength(1);
+        expect(store.peerReviews).toHaveLength(1);
+        expect(store.selfAssessments).toHaveLength(1);
+        expect(store.speakingSessions).toHaveLength(1);
+        expect(store.analysisResults).toHaveLength(1);
+        expect(store.tests).toHaveLength(1);
+        expect(store.studentTests).toHaveLength(1);
+        expect(store.essayAssignments).toHaveLength(1);
+        expect(store.essaySubmissions).toHaveLength(1);
+        expect(store.essayTemplates).toHaveLength(1);
+        expect(store.gradingTasks).toHaveLength(1);
+        expect(store.messages).toHaveLength(1);
+        expect(store.userTemplates).toHaveLength(1);
+        expect(store.flashcardDecks).toHaveLength(1);
+        expect(store.flashcardAssignments).toHaveLength(1);
+        expect(store.flashcardReviews).toHaveLength(1);
+        expect(store.standardMasteryTargets).toHaveLength(1);
+        expect(store.newsFlashes).toHaveLength(1);
+        expect(store.newsFlashReads).toHaveLength(1);
+        expect(store.questionBank).toHaveLength(1);
+        expect(store.documentComments).toHaveLength(1);
+        expect(store.notificationDismissals).toHaveLength(1);
+    });
+
+    it('skips every field when its value fails validation', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const invalid = Object.fromEntries(Object.keys(validBackup).map((key) => [key, 'not-an-array-or-object']));
+        // Override the fields whose validators differ from a plain non-array string.
+        const result = importFullBackup(JSON.stringify(invalid));
+        expect(result).toBe(true);
+        expect(warnSpy).toHaveBeenCalled();
+        warnSpy.mockRestore();
+        // Nothing was restored.
+        const store = loadStore();
+        expect(store.rubrics).toEqual([]);
+        expect(store.students).toEqual([]);
+        expect(store.tests).toEqual([]);
+    });
+});
+
+describe('clipboard, user templates, and test drafts', () => {
+    it('saveCriterionClipboard / loadCriterionClipboard round-trip', () => {
+        expect(loadCriterionClipboard()).toBeNull();
+        saveCriterionClipboard({ id: 'c1', title: 'T', description: '', weight: 50, levels: [] });
+        expect(loadCriterionClipboard()?.title).toBe('T');
+    });
+
+    it('loadUserTemplates defaults to empty and round-trips saves', () => {
+        expect(loadUserTemplates()).toEqual([]);
+        saveUserTemplates([{ id: 'ut1', name: 'T', subject: '', criteria: [], savedAt: '2024-01-01' }]);
+        expect(loadUserTemplates()).toHaveLength(1);
+    });
+
+    it('loadTestDraft / saveTestDraft / clearTestDraft round-trip', () => {
+        expect(loadTestDraft('draft:1')).toBeNull();
+        saveTestDraft('draft:1', { answers: { q1: 'a' }, savedAt: '2024-01-01' });
+        expect(loadTestDraft('draft:1')?.answers.q1).toBe('a');
+        clearTestDraft('draft:1');
+        expect(loadTestDraft('draft:1')).toBeNull();
+    });
+
+    it('loadTestTimer returns null when sessionStorage throws or holds garbage', () => {
+        const original = sessionStorage.getItem.bind(sessionStorage);
+        const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            throw new Error('blocked');
+        });
+        try {
+            expect(loadTestTimer('timer:1')).toBeNull();
+        } finally {
+            spy.mockRestore();
+        }
+        void original;
+        // Garbage and negative values are already covered by the existing timer tests.
     });
 });

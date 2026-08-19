@@ -141,4 +141,38 @@ describe('checkGrammar — compromise fallback', () => {
         expect(result.source).toBe('compromise');
         expect(Array.isArray(result.errors)).toBe(true);
     });
+
+    it('flags a verbless sentence longer than 10 characters as a fragment', async () => {
+        const result = await checkGrammar('A very large green apple on the table');
+        expect(result.source).toBe('compromise');
+        const fragment = result.errors.find((e) => e.ruleId === 'COMPROMISE_FRAGMENT');
+        expect(fragment).toBeDefined();
+        expect(fragment!.offset).toBeGreaterThanOrEqual(0);
+    });
+
+    it('does not flag a short verbless phrase as a fragment', async () => {
+        const result = await checkGrammar('a dog');
+        expect(result.source).toBe('compromise');
+        expect(result.errors.filter((e) => e.ruleId === 'COMPROMISE_FRAGMENT')).toHaveLength(0);
+    });
+
+    it('falls back to compromise when the LanguageTool request times out', async () => {
+        vi.useFakeTimers();
+        try {
+            (fetch as ReturnType<typeof vi.fn>).mockImplementation(
+                (_url: string, init?: RequestInit) =>
+                    new Promise((_resolve, reject) => {
+                        init?.signal?.addEventListener('abort', () =>
+                            reject(new DOMException('Aborted', 'AbortError'))
+                        );
+                    })
+            );
+            const promise = checkGrammar('the the cat', 'en-US');
+            await vi.advanceTimersByTimeAsync(8000);
+            const result = await promise;
+            expect(result.source).toBe('compromise');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });

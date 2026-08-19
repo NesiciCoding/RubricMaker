@@ -1,6 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { cloneQuestionWithFreshIds, cloneBankItemIntoTest } from './testQuestionClone';
+import { cloneQuestionWithFreshIds, cloneBankItemIntoTest, newQuestion } from './testQuestionClone';
 import type { TestQuestion, QuestionBankItem } from '../types';
+
+describe('newQuestion', () => {
+    it('builds a fresh multiple-choice question with two blank options', () => {
+        const q = newQuestion();
+        expect(q.id).toBeTruthy();
+        expect(q.prompt).toBe('');
+        expect(q.type).toBe('multiple-choice');
+        expect(q.options).toHaveLength(2);
+        expect(q.options![0].isCorrect).toBe(true);
+        expect(q.options![1].isCorrect).toBe(false);
+        expect(q.sectionId).toBeUndefined();
+    });
+
+    it('carries an optional sectionId through', () => {
+        const q = newQuestion('sec-1');
+        expect(q.sectionId).toBe('sec-1');
+    });
+});
 
 describe('cloneQuestionWithFreshIds', () => {
     const base: TestQuestion = {
@@ -76,6 +94,19 @@ describe('cloneQuestionWithFreshIds', () => {
         expect(clone.categorizeItems![0].categoryId).toBe(newCatAId);
         expect(clone.categorizeItems![1].categoryId).toBe(newCatBId);
     });
+
+    it('keeps the original categoryId when it does not match any category', () => {
+        const question: TestQuestion = {
+            id: 'q4',
+            prompt: 'Sort these',
+            type: 'categorize',
+            points: 2,
+            categories: [{ id: 'catA', label: 'Animals' }],
+            categorizeItems: [{ id: 'i1', text: 'Dog', categoryId: 'missing-cat' }],
+        };
+        const clone = cloneQuestionWithFreshIds(question);
+        expect(clone.categorizeItems![0].categoryId).toBe('missing-cat');
+    });
 });
 
 describe('cloneBankItemIntoTest', () => {
@@ -149,5 +180,24 @@ describe('cloneBankItemIntoTest', () => {
         const second = cloneBankItemIntoTest(sectionItem);
         expect(first.section!.id).not.toBe(second.section!.id);
         expect(first.questions[0].id).not.toBe(second.questions[0].id);
+    });
+
+    it('throws when a section-kind item is missing its section payload', () => {
+        const broken: QuestionBankItem = {
+            id: 'broken-section',
+            kind: 'section',
+            tags: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        expect(() => cloneBankItemIntoTest(broken)).toThrow(/has no section payload/);
+    });
+
+    it('throws when a non-section item is missing its question payload', () => {
+        const broken: QuestionBankItem = {
+            id: 'broken-question',
+            tags: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        expect(() => cloneBankItemIntoTest(broken)).toThrow(/has no question payload/);
     });
 });

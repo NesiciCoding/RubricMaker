@@ -77,4 +77,62 @@ describe('diffRubricVersions', () => {
         const snap = makeSnapshot([makeCriterion('c1')]);
         expect(diffRubricVersions(snap, snap)).toEqual([]);
     });
+
+    it('detects a level added within a shared criterion', () => {
+        const from = makeSnapshot([makeCriterion('c1', { levels: [makeLevel('l1')] })]);
+        const to = makeSnapshot([
+            makeCriterion('c1', { levels: [makeLevel('l1'), makeLevel('l2', { label: 'Excellent' })] }),
+        ]);
+        const diff = diffRubricVersions(from, to);
+        expect(diff).toHaveLength(1);
+        expect(diff[0].levelDiffs).toEqual([{ status: 'added', id: 'l2', label: 'Excellent', fieldChanges: [] }]);
+    });
+
+    it('detects a level removed from a shared criterion', () => {
+        const from = makeSnapshot([makeCriterion('c1', { levels: [makeLevel('l1'), makeLevel('l2')] })]);
+        const to = makeSnapshot([makeCriterion('c1', { levels: [makeLevel('l1')] })]);
+        const diff = diffRubricVersions(from, to);
+        expect(diff).toHaveLength(1);
+        expect(diff[0].levelDiffs).toEqual([{ status: 'removed', id: 'l2', label: 'Good', fieldChanges: [] }]);
+    });
+
+    it('detects label, description, and sub-item count changes on a level', () => {
+        const from = makeSnapshot([
+            makeCriterion('c1', {
+                levels: [makeLevel('l1', { label: 'Good', description: 'old', subItems: [{ id: 'si1', label: 'x' }] })],
+            }),
+        ]);
+        const to = makeSnapshot([
+            makeCriterion('c1', {
+                levels: [
+                    makeLevel('l1', {
+                        label: 'Great',
+                        description: 'new',
+                        subItems: [
+                            { id: 'si1', label: 'x' },
+                            { id: 'si2', label: 'y' },
+                        ],
+                    }),
+                ],
+            }),
+        ]);
+        const diff = diffRubricVersions(from, to);
+        expect(diff[0].levelDiffs[0].fieldChanges.map((c) => c.field)).toEqual(['label', 'description', 'subItems']);
+    });
+
+    it('detects a criterion description change', () => {
+        const from = makeSnapshot([makeCriterion('c1', { description: 'old desc' })]);
+        const to = makeSnapshot([makeCriterion('c1', { description: 'new desc' })]);
+        const diff = diffRubricVersions(from, to);
+        expect(diff).toHaveLength(1);
+        expect(diff[0].fieldChanges).toEqual([{ field: 'description', from: '', to: '' }]);
+    });
+
+    it('detects a criterion title change', () => {
+        const from = makeSnapshot([makeCriterion('c1', { title: 'Old title' })]);
+        const to = makeSnapshot([makeCriterion('c1', { title: 'New title' })]);
+        const diff = diffRubricVersions(from, to);
+        expect(diff).toHaveLength(1);
+        expect(diff[0].fieldChanges).toEqual([{ field: 'title', from: 'Old title', to: 'New title' }]);
+    });
 });
