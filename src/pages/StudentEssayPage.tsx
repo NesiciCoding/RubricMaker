@@ -443,6 +443,16 @@ export default function StudentEssayPage() {
             } else {
                 logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
                 adapter.clearStoredEmail();
+                // Tell the teacher's live monitor the essay was handed in — the last
+                // broadcast before `setSubmitted(true)` below disables telemetry and
+                // tears the channel down. The monitor also re-checks essay_submissions
+                // on mount, so a reload after the fact still shows Submitted. Await
+                // the server ack so the live flip isn't silently dropped; on failure
+                // the persisted-row path still covers the monitor.
+                const ack = await telemetry.broadcast('submitted', { submittedAt: now, wordCount });
+                if (ack !== 'ok') {
+                    logEvent('error', 'submitted_broadcast_failed', { ack }, 'error');
+                }
             }
         }
 
