@@ -236,11 +236,7 @@ test.describe('Live monitor — essay kind', () => {
         await expect(supabasePage.getByLabel('Submitted')).not.toBeVisible();
 
         // ── Student: connect and write while the teacher watches ───────────────
-        const { studentContext, studentPage, essay } = await openStudentEssay(
-            browser,
-            teacherKey,
-            'monitor.submit@school.nl'
-        );
+        const { studentContext, essay } = await openStudentEssay(browser, teacherKey, 'monitor.submit@school.nl');
         try {
             const sentence =
                 'The tide came in slowly covering the sandbars where the gulls had been resting all morning.';

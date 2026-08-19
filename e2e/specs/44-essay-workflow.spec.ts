@@ -15,6 +15,7 @@ import { test, expect } from '../fixtures/app.fixture';
 import { buildClass, buildRubric, buildStudent } from '../fixtures/data.factory';
 import { readLocalStorage } from '../fixtures/storage.helpers';
 import { StudentEssayPage, buildEssayCode } from '../pages/StudentEssayPage';
+import { EssayBuilderPage } from '../pages/EssayBuilderPage';
 import type { Browser } from '@playwright/test';
 import type { EssayAssignment } from '../../src/types';
 
@@ -39,20 +40,18 @@ test.describe('Essay workflow — full lifecycle (offline)', () => {
         });
 
         // ── 1. Teacher builds the essay in EssayBuilderPage ─────────────────
-        await appPage.goto('/#/essays/new');
-        await appPage.reload();
-        await appPage.waitForSelector('.main-area', { timeout: 20_000 });
-
-        await appPage.locator('input.form-input[type="text"]').first().fill('Climate Change Essay');
-        await appPage.locator('#eb-prompt-body').fill('Write about the impact of climate change on your region.');
-        await appPage.locator('#eb-min-words').fill('20');
-        await appPage.locator('#eb-max-words').fill('200');
-        await appPage.locator('#eb-time-limit').fill('45');
-        await appPage.getByRole('combobox', { name: 'Rubric' }).selectOption('E2E Essay Rubric');
+        const builder = new EssayBuilderPage(appPage);
+        await builder.gotoNew();
+        await builder.fillBasics('Climate Change Essay', {
+            prompt: 'Write about the impact of climate change on your region.',
+            minWords: '20',
+            maxWords: '200',
+            timeLimit: '45',
+        });
+        await builder.selectRubric('E2E Essay Rubric');
 
         // ── 2. Teacher assigns the essay to the class ───────────────────────
-        await appPage.getByRole('button', { name: /assign to students/i }).click();
-        await appPage.getByRole('button', { name: 'E2E Essay Class' }).click();
+        await builder.assignToClass('E2E Essay Class');
 
         // EssayAssignmentModal opens — the footer's "Assign to students" is the
         // one that persists the fan-out (the builder's trigger is aria-hidden

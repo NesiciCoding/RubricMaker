@@ -148,7 +148,7 @@ serve(async (req) => {
     const { error: insertErr } = await admin.from('essay_submissions').insert({
         id: submissionId,
         assignment_id: assignmentId,
-        student_email: studentEmail ?? null,
+        student_email: studentEmail,
         student_user_id: user.id,
         word_count: wordCount,
         word_limit_status: wordLimitStatus,

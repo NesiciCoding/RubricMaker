@@ -103,12 +103,20 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         if (cancelled || rows.length === 0) return;
                         setLiveStates((prev) => {
                             const current = prev[result.studentId] ?? emptyLiveState(result.studentId);
+                            // Rows are newest-first; use the persisted hand-in time so a
+                            // submission made before the monitor opened shows its real age
+                            // (not "just now"), while never rewinding a fresher live update.
+                            const persistedAt = rows[0]?.submittedAt ?? null;
+                            const lastUpdateAt =
+                                persistedAt && (!current.lastUpdateAt || persistedAt > current.lastUpdateAt)
+                                    ? persistedAt
+                                    : (current.lastUpdateAt ?? new Date().toISOString());
                             return {
                                 ...prev,
                                 [result.studentId]: {
                                     ...current,
                                     submitted: true,
-                                    lastUpdateAt: new Date().toISOString(),
+                                    lastUpdateAt,
                                 },
                             };
                         });

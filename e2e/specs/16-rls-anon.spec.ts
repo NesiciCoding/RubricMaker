@@ -310,7 +310,7 @@ test.describe('Short-code essay flow (integration)', () => {
 // ── 5. Admin dashboard loading tabs ──────────────────────────────────────────
 
 test.describe('Admin dashboard tabs (require admin role)', () => {
-    test('Users tab resolves and does not stay stuck on loading', async ({ adminSupabasePage }) => {
+    test('Users tab resolves and does not stay stuck on loading', async ({ adminSupabasePage, testUserEmail }) => {
         // Navigate to the admin page. adminSupabasePage is forcibly promoted to
         // role='admin' — the "first user ever becomes admin" trigger can't be
         // relied on once other tests (e.g. the short-code flow above) create
@@ -319,8 +319,10 @@ test.describe('Admin dashboard tabs (require admin role)', () => {
         await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         // "Users" tab is active by default — wait for loading to resolve.
-        // It should show either a user row OR the "No users found" message,
-        // never "Loading users…" indefinitely.
+        // The content must actually render: the current test user appears as a
+        // row (or the "No users found" empty state shows), never "Loading
+        // users…" indefinitely.
+        await expect(adminSupabasePage.getByText(testUserEmail).first()).toBeVisible({ timeout: 15_000 });
         await expect(adminSupabasePage.locator('text=/loading users/i')).not.toBeVisible({ timeout: 15_000 });
     });
 
@@ -331,6 +333,10 @@ test.describe('Admin dashboard tabs (require admin role)', () => {
         // Click the Schools tab
         await adminSupabasePage.getByRole('button', { name: /schools/i }).click();
 
+        // The content must actually render: the fixture-created school appears
+        // as a card (or the "No schools yet." empty state shows), never
+        // "Loading schools…" indefinitely.
+        await expect(adminSupabasePage.getByText('E2E Test School').first()).toBeVisible({ timeout: 15_000 });
         await expect(adminSupabasePage.locator('text=/loading schools/i')).not.toBeVisible({ timeout: 15_000 });
     });
 });
