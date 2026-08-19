@@ -182,4 +182,20 @@ describe('StandardMasteryTargetModal', () => {
         fireEvent.click(screen.getByRole('button', { name: 'common.cancel' }));
         expect(onClose).toHaveBeenCalledTimes(2);
     });
+
+    it('reopens the picker via the change button and closes it without selecting', () => {
+        mockSettings.standardsApiKey = 'key';
+        render(<StandardMasteryTargetModal onClose={vi.fn()} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'settings.mastery_target_choose_standard' }));
+        fireEvent.click(screen.getByRole('button', { name: 'mock-picker-select', hidden: true }));
+
+        // Change button reopens the picker for the now-set standard.
+        fireEvent.click(screen.getByRole('button', { name: 'common.change', hidden: false }));
+        expect(screen.getByRole('button', { name: 'mock-picker-close', hidden: true })).toBeInTheDocument();
+
+        // Closing the picker keeps the selected standard.
+        fireEvent.click(screen.getByRole('button', { name: 'mock-picker-close', hidden: true }));
+        expect(screen.getByText('RH.6-8.1')).toBeInTheDocument();
+    });
 });

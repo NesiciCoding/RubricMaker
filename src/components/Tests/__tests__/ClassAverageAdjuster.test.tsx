@@ -128,6 +128,67 @@ describe('ClassAverageAdjuster', () => {
         }
     });
 
+    it('shows the no-submissions message for an empty class', () => {
+        render(<ClassAverageAdjuster test={test} studentTests={[]} students={students} onSaveStudentTest={vi.fn()} />);
+        expect(screen.getByText('tests.results.adjuster_no_submissions')).toBeInTheDocument();
+    });
+
+    it('edits the applied adjustment with the delta input and handles a non-numeric target', () => {
+        const studentTests = makeStudentTests();
+        render(
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={vi.fn()}
+            />
+        );
+
+        const targetInput = screen.getByLabelText('tests.results.target_average') as HTMLInputElement;
+        fireEvent.change(targetInput, { target: { value: 'not-a-number' } });
+        expect(targetInput.value).toBe('0');
+
+        const deltaInput = screen.getByLabelText('tests.results.applied_adjustment') as HTMLInputElement;
+        fireEvent.change(deltaInput, { target: { value: '2' } });
+        expect(deltaInput.value).toBe('2');
+
+        fireEvent.change(deltaInput, { target: { value: 'oops' } });
+        expect(deltaInput.value).toBe('0');
+    });
+
+    it('falls back to the student id when a student is not in the roster', () => {
+        const studentTests = makeStudentTests().map((st) => ({ ...st, studentId: 'ghost-1' }));
+        render(
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={vi.fn()}
+            />
+        );
+        expect(screen.getAllByText('ghost-1')).toHaveLength(2);
+    });
+
+    it('skips students without an adjustment when reverting', () => {
+        const studentTests = makeStudentTests().map((st, i) =>
+            i === 0
+                ? { ...st, adjustmentPoints: 1, adjustment: { points: 1, appliedAt: '2026-06-01T00:00:00.000Z' } }
+                : st
+        );
+        const onSave = vi.fn();
+        render(
+            <ClassAverageAdjuster
+                test={test}
+                studentTests={studentTests}
+                students={students}
+                onSaveStudentTest={onSave}
+            />
+        );
+
+        fireEvent.click(screen.getByText(/tests.results.revert_adjustment/));
+        expect(onSave).toHaveBeenCalledTimes(1);
+    });
+
     it('reverts an applied adjustment and restores raw points', () => {
         const studentTests: StudentTest[] = makeStudentTests().map((st) => ({
             ...st,

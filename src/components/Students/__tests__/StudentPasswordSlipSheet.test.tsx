@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import StudentPasswordSlipSheet from '../StudentPasswordSlipSheet';
 import type { PasswordSlip } from '../StudentPasswordSlipSheet';
@@ -10,14 +10,11 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-const mockToCanvas = vi.fn();
+const mockToCanvas = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('qrcode', () => ({
     default: {
-        toCanvas: (...args: unknown[]) => {
-            mockToCanvas(...args);
-            return Promise.resolve();
-        },
+        toCanvas: (...args: unknown[]) => mockToCanvas(...args),
     },
 }));
 
@@ -62,6 +59,17 @@ describe('StudentPasswordSlipSheet', () => {
 
         fireEvent.click(screen.getByRole('button', { name: '4 studentsPage.password_slip_columns' }));
         expect(grid.style.gridTemplateColumns).toBe('repeat(4, 1fr)');
+
+        fireEvent.click(screen.getByRole('button', { name: '2 studentsPage.password_slip_columns' }));
+        expect(grid.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
+    });
+
+    it('logs a QR canvas failure without crashing', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockToCanvas.mockRejectedValueOnce(new Error('canvas boom'));
+        render(<StudentPasswordSlipSheet slips={[slips[0]]} onClose={vi.fn()} />);
+        await waitFor(() => expect(errorSpy).toHaveBeenCalled());
+        errorSpy.mockRestore();
     });
 
     it('triggers the browser print dialog and calls onClose', () => {

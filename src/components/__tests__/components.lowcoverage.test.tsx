@@ -75,6 +75,20 @@ describe('ClassCoverageGapPanel', () => {
         // Badge shows rounded avg percentage and rubric count interpolation
         expect(screen.getByText(/82%/)).toBeInTheDocument();
     });
+
+    it('uses the yellow badge tier for a covered entry below 70%', () => {
+        const { container } = render(
+            <ClassCoverageGapPanel covered={[{ ...mockEntry, averagePercentage: 55 }]} gap={[]} />
+        );
+        expect(container.querySelector('.badge-yellow')).toBeTruthy();
+    });
+
+    it('uses the red badge tier for a covered entry below 50%', () => {
+        const { container } = render(
+            <ClassCoverageGapPanel covered={[{ ...mockEntry, averagePercentage: 40 }]} gap={[]} />
+        );
+        expect(container.querySelector('.badge-red')).toBeTruthy();
+    });
 });
 
 // ─── LiveDraftPanel ───────────────────────────────────────────────────────────
@@ -214,5 +228,21 @@ describe('RubricVersionDiffModal', () => {
         render(<RubricVersionDiffModal from={baseRubric} to={baseRubric} onClose={onClose} />);
         fireEvent.click(screen.getByLabelText('common.close'));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders description field changes and level diffs', () => {
+        const levelChanged: Omit<Rubric, 'versions'> = {
+            ...baseRubric,
+            criteria: [
+                {
+                    ...baseRubric.criteria[0],
+                    description: 'Updated criterion description',
+                    levels: [{ ...baseRubric.criteria[0].levels[0], label: 'Excellent v2' }],
+                },
+            ],
+        };
+        render(<RubricVersionDiffModal from={baseRubric} to={levelChanged} onClose={vi.fn()} />);
+        expect(screen.getByText('rubricBuilder.diff_description_changed')).toBeInTheDocument();
+        expect(screen.getByText('Excellent v2')).toBeInTheDocument();
     });
 });

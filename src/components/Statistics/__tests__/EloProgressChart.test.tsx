@@ -4,6 +4,34 @@ import { describe, it, expect, vi } from 'vitest';
 import EloProgressChart from '../EloProgressChart';
 import type { EloProgressPoint } from '../../../utils/eloProgressAggregator';
 
+vi.mock('recharts', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('recharts')>();
+    return {
+        ...mod,
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 400 }),
+        Tooltip: ({
+            formatter,
+            labelFormatter,
+        }: {
+            formatter?: (v: unknown, n: unknown, item?: unknown) => unknown;
+            labelFormatter?: (label: unknown) => unknown;
+        }) => (
+            <div data-testid="tooltip">
+                {formatter
+                    ? String(
+                          formatter(900, 'eloValue', {
+                              payload: { level: 'A2', date: '2024-01-01T10:00:00Z', testName: 'Placement Test' },
+                          })
+                      )
+                    : ''}
+                {formatter ? String(formatter(900, 'eloValue', {})) : ''}
+                {labelFormatter ? String(labelFormatter(2)) : ''}
+            </div>
+        ),
+    };
+});
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, params?: Record<string, unknown>) => (params ? `${key} ${JSON.stringify(params)}` : key),
@@ -42,5 +70,25 @@ describe('EloProgressChart', () => {
         expect(table.querySelectorAll('tbody tr')).toHaveLength(2);
         expect(table.textContent).toContain('A2');
         expect(table.textContent).toContain('B1');
+    });
+
+    it('formats the tooltip with the level, date, and test name', () => {
+        render(<EloProgressChart points={[makePoint()]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('A2 ·');
+        expect(out).toContain('Placement Test');
+    });
+
+    it('returns empty strings when the tooltip has no payload', () => {
+        render(<EloProgressChart points={[makePoint()]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain(','); // the ['', ''] pair serialized
+    });
+
+    it('formats the tooltip label with the attempt index', () => {
+        render(<EloProgressChart points={[makePoint()]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('statistics.elo_chart_tooltip_attempt');
+        expect(out).toContain('2');
     });
 });

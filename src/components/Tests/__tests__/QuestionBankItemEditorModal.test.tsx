@@ -79,6 +79,37 @@ describe('QuestionBankItemEditorModal', () => {
         );
     });
 
+    it('propagates section edits through onChange and saves them', () => {
+        const onSave = vi.fn();
+        render(<QuestionBankItemEditorModal item={sectionItem} onSave={onSave} onClose={vi.fn()} />);
+        fireEvent.change(screen.getByDisplayValue('Reading passage'), { target: { value: 'Updated passage' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                kind: 'section',
+                section: expect.objectContaining({ title: 'Updated passage' }),
+            })
+        );
+    });
+
+    it('propagates question edits through onChange and saves them', () => {
+        const onSave = vi.fn();
+        render(<QuestionBankItemEditorModal item={questionItem} onSave={onSave} onClose={vi.fn()} />);
+        fireEvent.change(screen.getByDisplayValue('What is 2 + 2?'), { target: { value: 'What is 3 + 3?' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({ question: expect.objectContaining({ prompt: 'What is 3 + 3?' }) })
+        );
+    });
+
+    it('clears the CEFR level when the none option is selected', () => {
+        const onSave = vi.fn();
+        render(<QuestionBankItemEditorModal item={questionItem} onSave={onSave} onClose={vi.fn()} />);
+        fireEvent.change(screen.getByLabelText('questionBank.cefr_level_label'), { target: { value: '' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ cefrLevel: undefined }));
+    });
+
     it('cancel calls onClose without calling onSave', () => {
         const onSave = vi.fn();
         const onClose = vi.fn();

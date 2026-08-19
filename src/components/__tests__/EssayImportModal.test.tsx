@@ -217,6 +217,12 @@ describe('EssayImportModal', () => {
             vi.unstubAllGlobals();
         });
 
+        it('does not show the database tab when onFetchSubmissions is missing', () => {
+            const props = dbProps({ onFetchSubmissions: undefined });
+            render(<EssayImportModal {...props} />);
+            expect(screen.queryByText('From database')).not.toBeInTheDocument();
+        });
+
         it('does not show the database tab when db is not connected', () => {
             mockDbConnected = false;
             render(<EssayImportModal {...dbProps()} />);
