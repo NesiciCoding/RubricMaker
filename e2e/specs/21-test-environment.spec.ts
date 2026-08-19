@@ -131,6 +131,13 @@ test.describe('Testing environment — full lifecycle (offline)', () => {
             await appExpect(studentTestPage.submissionCodeArea()).toBeVisible({ timeout: 5_000 });
             submissionCode = await studentTestPage.getSubmissionCode();
             appExpect(submissionCode.length).toBeGreaterThan(20);
+
+            // After an offline submit the page locks: the answer inputs and the
+            // submit control are gone, only the confirmation + backup code remain
+            // (the offline mirror of the DB-mode lock asserted in 37-live-monitor).
+            await appExpect(studentTestPage.submitButton()).not.toBeVisible();
+            await appExpect(studentPage.getByPlaceholder(/type your answer/i)).not.toBeVisible();
+            await appExpect(studentPage.getByPlaceholder(/write your answer here/i)).not.toBeVisible();
         } finally {
             await studentContext.close();
         }

@@ -14,7 +14,7 @@
  *  6. Student onboarding role option updates DB role to 'student'
  */
 import { test, expect, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY } from '../fixtures/supabase.fixture';
-import { StudentEssayPage, buildShortCode, mockGetEssayAssignment } from '../pages/StudentEssayPage';
+import { StudentEssayPage, buildShortCode } from '../pages/StudentEssayPage';
 
 // ── Shared admin headers ──────────────────────────────────────────────────────
 
@@ -60,28 +60,25 @@ async function deleteUser(userId: string): Promise<void> {
 async function injectLocalSupabaseConfig(page: import('@playwright/test').Page): Promise<void> {
     await page.addInitScript(
         ({ url, key }: { url: string; key: string }) => {
-            localStorage.setItem(
-                'rm_supabase_config',
-                JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }),
-            );
+            localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
         },
-        { url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
+        { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
     );
 }
 
-/** Route the submit-essay edge function to succeed. */
-async function mockSubmitEssay(page: import('@playwright/test').Page): Promise<void> {
-    await page.route(`${SUPABASE_URL}/functions/v1/submit-essay`, (route) =>
-        route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({ success: true }),
-        }),
-    );
+/** Create a confirmed teacher user via the admin API (mirrors the supabasePage fixture). */
+async function createConfirmedUser(email: string): Promise<string> {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: svcHeaders,
+        body: JSON.stringify({ email, email_confirm: true }),
+    });
+    if (!res.ok) throw new Error(`Failed to create teacher user: ${res.status} ${await res.text()}`);
+    return ((await res.json()) as { id: string }).id;
 }
 
 /** Create an essay assignment row directly via the service role REST API. */
-async function createAssignment(ownerUserId: string, teacherKey: string): Promise<void> {
+async function createAssignment(ownerUserId: string, teacherKey: string, expiresAt?: string): Promise<void> {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/essay_assignments`, {
         method: 'POST',
         headers: { ...svcHeaders, Prefer: 'return=minimal' },
@@ -95,6 +92,7 @@ async function createAssignment(ownerUserId: string, teacherKey: string): Promis
             max_words: 500,
             require_seb: false,
             read_only_after_submit: true,
+            ...(expiresAt ? { expires_at: expiresAt } : {}),
         }),
     });
     if (!res.ok && res.status !== 409 /* already exists */) {
@@ -157,15 +155,12 @@ test.describe('Essay assignments RLS for anonymous users (migration 031)', () =>
     test('anonymous session returns empty set when selecting all essay_assignments', async () => {
         const { accessToken, userId } = await anonSignIn();
         try {
-            const res = await fetch(
-                `${SUPABASE_URL}/rest/v1/essay_assignments?select=id,title,prompt`,
-                {
-                    headers: {
-                        apikey: SUPABASE_ANON_KEY,
-                        Authorization: `Bearer ${accessToken}`,
-                    },
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/essay_assignments?select=id,title,prompt`, {
+                headers: {
+                    apikey: SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${accessToken}`,
                 },
-            );
+            });
             expect(res.ok).toBe(true);
             const rows = (await res.json()) as unknown[];
             // After migration 031 the is_anonymous SELECT policy is gone.
@@ -180,79 +175,169 @@ test.describe('Essay assignments RLS for anonymous users (migration 031)', () =>
 // ── 4. Short-code essay flow with real DB ─────────────────────────────────────
 
 test.describe('Short-code essay flow (integration)', () => {
-    const TEACHER_KEY = 'int-test-key-0000000001';
+    /** Unique per run so parallel tests in this file never share an assignment row. */
+    const makeTeacherKey = () => `int-test-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-    test('short-code: email gate → content fetch → submission', async ({ page, testUserEmail }) => {
-        // The supabasePage fixture creates a teacher user and signs them in.
-        // But here we only need the user ID for the assignment owner_id — we
-        // look it up via the admin API rather than going through the app.
-        const listRes = await fetch(
-            `${SUPABASE_URL}/auth/v1/admin/users?per_page=1000`,
-            { headers: svcHeaders },
-        );
-        const { users } = (await listRes.json()) as { users: { id: string; email: string }[] };
-        const teacher = users.find((u) => u.email === testUserEmail);
-        if (!teacher) test.skip(); // fixture user not found — skip rather than fail
+    test('short-code: email gate → edge-function content fetch → edge-function submission', async ({
+        page,
+        testUserEmail,
+    }) => {
+        // The old test looked for a fixture-created teacher user that was never
+        // actually created (only `testUserEmail` was destructured), so it always
+        // hit `test.skip()`. Create the owner user explicitly — deleting it in
+        // the finally cascades to the assignment and its submission rows.
+        const teacherId = await createConfirmedUser(testUserEmail);
+        try {
+            const teacherKey = makeTeacherKey();
+            await createAssignment(teacherId, teacherKey);
 
-        await createAssignment(teacher!.id, TEACHER_KEY);
+            // Both edge functions are exercised for REAL — no route mocks.
+            // This is exactly the flow the submit-essay anonymous fix covers:
+            // a GoTrue anonymous session carries an empty-string email claim
+            // (not null), and the function now falls back to the client-supplied
+            // email instead of rejecting the submission as "Missing required
+            // field: studentEmail".
+            await injectLocalSupabaseConfig(page);
 
-        await injectLocalSupabaseConfig(page);
-        // Mock the get-essay-assignment edge function — it may not be deployed locally.
-        await mockGetEssayAssignment(page, SUPABASE_URL, {
-            content: {
-                title: 'Integration Test Essay',
-                prompt: 'Explain why automated tests are valuable.',
-            },
-        });
-        await mockSubmitEssay(page);
+            const essay = new StudentEssayPage(page);
+            await essay.goto(buildShortCode(teacherKey));
 
-        const essay = new StudentEssayPage(page);
-        await essay.goto(buildShortCode(TEACHER_KEY));
+            // Email gate must appear (DB mode detected via rm_supabase_config)
+            await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
 
-        // Email gate must appear (DB mode detected via rm_supabase_config)
-        await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+            // Prompt must NOT be visible before authentication
+            await expect(page.getByText('Explain why automated tests are valuable.')).not.toBeVisible();
 
-        // Prompt must NOT be visible before authentication
-        await expect(page.getByText('Explain why automated tests are valuable.')).not.toBeVisible();
+            // Authenticate (anonymous sign-in) and verify the REAL
+            // get-essay-assignment edge function returns the seeded content
+            await essay.fillEmailAndStart('student@school.nl');
+            await expect(essay.editor()).toBeVisible({ timeout: 15_000 });
+            await expect(page.getByText('Explain why automated tests are valuable.')).toBeVisible({ timeout: 5_000 });
 
-        // Authenticate and verify content loads
-        await essay.fillEmailAndStart('student@school.nl');
-        await expect(essay.editor()).toBeVisible({ timeout: 15_000 });
-        await expect(page.getByText('Explain why automated tests are valuable.')).toBeVisible({ timeout: 5_000 });
+            // Submit through the REAL submit-essay edge function and verify success
+            const sentence = 'Automated tests catch regressions early and provide fast feedback.';
+            await essay.typeInEditor(sentence);
+            await essay.submitButton().click();
+            await expect(essay.dbSuccessBanner()).toBeVisible({ timeout: 10_000 });
 
-        // Submit and verify success
-        await essay.typeInEditor('Automated tests catch regressions early and provide fast feedback.');
-        await essay.submitButton().click();
-        await expect(essay.dbSuccessBanner()).toBeVisible({ timeout: 10_000 });
+            // The online submission actually persisted server-side (submit-essay
+            // wrote the row + storage object) — 9 words, tied to the anonymous
+            // student email from the gate.
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/essay_submissions?assignment_id=eq.${teacherKey}&select=word_count,student_email`,
+                { headers: svcHeaders }
+            );
+            expect(res.ok).toBeTruthy();
+            const rows = (await res.json()) as { word_count: number; student_email: string | null }[];
+            expect(rows).toHaveLength(1);
+            expect(rows[0].word_count).toBe(9);
+            expect(rows[0].student_email).toBe('student@school.nl');
+        } finally {
+            await deleteUser(teacherId);
+        }
+    });
+
+    test('short-code: an expired assignment is rejected at the gate', async ({ page, testUserEmail }) => {
+        const teacherId = await createConfirmedUser(testUserEmail);
+        try {
+            const teacherKey = makeTeacherKey();
+            // Deadline already passed — get-essay-assignment must return 410 and
+            // the page must show the expiry guard instead of the editor.
+            await createAssignment(teacherId, teacherKey, new Date(Date.now() - 60_000).toISOString());
+            await injectLocalSupabaseConfig(page);
+
+            const essay = new StudentEssayPage(page);
+            await essay.goto(buildShortCode(teacherKey));
+
+            // The email gate still appears first (content is fetched only after auth).
+            await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+            await essay.fillEmailAndStart('student@school.nl');
+
+            // The real edge function reports the expiry; the editor never renders.
+            await expect(essay.deadlinePassedMessage()).toBeVisible({ timeout: 15_000 });
+            await expect(essay.editor()).not.toBeVisible();
+        } finally {
+            await deleteUser(teacherId);
+        }
+    });
+
+    test('short-code: a duplicate anonymous submission hits the UNIQUE guard (409)', async ({
+        browser,
+        page,
+        testUserEmail,
+    }) => {
+        const teacherId = await createConfirmedUser(testUserEmail);
+        try {
+            const teacherKey = makeTeacherKey();
+            await createAssignment(teacherId, teacherKey);
+            await injectLocalSupabaseConfig(page);
+
+            // First anonymous submission with this email succeeds.
+            const essay = new StudentEssayPage(page);
+            await essay.goto(buildShortCode(teacherKey));
+            await expect(essay.emailInput()).toBeVisible({ timeout: 10_000 });
+            await essay.fillEmailAndStart('student@school.nl');
+            await expect(essay.editor()).toBeVisible({ timeout: 15_000 });
+            await essay.typeInEditor('First submission.');
+            await essay.submitButton().click();
+            await expect(essay.dbSuccessBanner()).toBeVisible({ timeout: 10_000 });
+
+            // A fresh context is a NEW anonymous user, but the UNIQUE
+            // (assignment_id, student_email) index (migrations 022/024) rejects a
+            // second hand-in for the same email — submit-essay returns 409 and the
+            // page falls back to the inline error + backup code.
+            const secondContext = await browser.newContext();
+            try {
+                const secondPage = await secondContext.newPage();
+                await injectLocalSupabaseConfig(secondPage);
+                const essay2 = new StudentEssayPage(secondPage);
+                await essay2.goto(buildShortCode(teacherKey));
+                await expect(essay2.emailInput()).toBeVisible({ timeout: 10_000 });
+                await essay2.fillEmailAndStart('student@school.nl');
+                await expect(essay2.editor()).toBeVisible({ timeout: 15_000 });
+                await essay2.typeInEditor('Second submission.');
+                await essay2.submitButton().click();
+                await expect(essay2.submissionErrorMessage()).toBeVisible({ timeout: 10_000 });
+            } finally {
+                await secondContext.close();
+            }
+        } finally {
+            await deleteUser(teacherId);
+        }
     });
 });
 
 // ── 5. Admin dashboard loading tabs ──────────────────────────────────────────
 
 test.describe('Admin dashboard tabs (require admin role)', () => {
-    test('Users tab resolves and does not stay stuck on loading', async ({ supabasePage }) => {
-        // Navigate to the admin page. Only the first user (admin) can see it.
-        await supabasePage.goto('http://localhost:5173/#/admin');
-        await supabasePage.waitForSelector('.page-content', { timeout: 15_000 });
+    test('Users tab resolves and does not stay stuck on loading', async ({ adminSupabasePage, testUserEmail }) => {
+        // Navigate to the admin page. adminSupabasePage is forcibly promoted to
+        // role='admin' — the "first user ever becomes admin" trigger can't be
+        // relied on once other tests (e.g. the short-code flow above) create
+        // users first on the same fresh stack.
+        await adminSupabasePage.goto('http://localhost:5173/#/admin');
+        await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         // "Users" tab is active by default — wait for loading to resolve.
-        // It should show either a user row OR the "No users found" message,
-        // never "Loading users…" indefinitely.
-        await expect(
-            supabasePage.locator('text=/loading users/i'),
-        ).not.toBeVisible({ timeout: 15_000 });
+        // The content must actually render: the current test user appears as a
+        // row (or the "No users found" empty state shows), never "Loading
+        // users…" indefinitely.
+        await expect(adminSupabasePage.getByText(testUserEmail).first()).toBeVisible({ timeout: 15_000 });
+        await expect(adminSupabasePage.locator('text=/loading users/i')).not.toBeVisible({ timeout: 15_000 });
     });
 
-    test('Schools tab resolves and does not stay stuck on loading', async ({ supabasePage }) => {
-        await supabasePage.goto('http://localhost:5173/#/admin');
-        await supabasePage.waitForSelector('.page-content', { timeout: 15_000 });
+    test('Schools tab resolves and does not stay stuck on loading', async ({ adminSupabasePage }) => {
+        await adminSupabasePage.goto('http://localhost:5173/#/admin');
+        await adminSupabasePage.waitForSelector('.page-content', { timeout: 15_000 });
 
         // Click the Schools tab
-        await supabasePage.getByRole('button', { name: /schools/i }).click();
+        await adminSupabasePage.getByRole('button', { name: /schools/i }).click();
 
-        await expect(
-            supabasePage.locator('text=/loading schools/i'),
-        ).not.toBeVisible({ timeout: 15_000 });
+        // The content must actually render: the fixture-created school appears
+        // as a card (or the "No schools yet." empty state shows), never
+        // "Loading schools…" indefinitely.
+        await expect(adminSupabasePage.getByText('E2E Test School').first()).toBeVisible({ timeout: 15_000 });
+        await expect(adminSupabasePage.locator('text=/loading schools/i')).not.toBeVisible({ timeout: 15_000 });
     });
 });
 
@@ -270,10 +355,7 @@ test.describe('Admin dashboard tabs (require admin role)', () => {
 // using the access_token extracted from localStorage.
 
 test.describe('protect_role_changes trigger (migration 030)', () => {
-    test('user-role profile owner can self-downgrade to student', async ({
-        page,
-        testUserEmail,
-    }) => {
+    test('user-role profile owner can self-downgrade to student', async ({ page, testUserEmail }) => {
         const adminHeaders = {
             apikey: SUPABASE_SERVICE_KEY,
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
@@ -310,16 +392,22 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
                 properties?: { action_link?: string };
             };
             const actionLink = linkData.action_link ?? linkData.properties?.action_link;
-            if (!actionLink) { test.skip(); return; }
+            if (!actionLink) {
+                test.skip();
+                return;
+            }
 
             // Inject rm_supabase_config so the browser supabase-js client connects to
             // the local stack and processes the magic-link redirect correctly.
             await page.addInitScript(
                 ({ url, key }: { url: string; key: string }) => {
-                    localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key }));
+                    localStorage.setItem(
+                        'rm_supabase_config',
+                        JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key })
+                    );
                     localStorage.setItem('rm_migration_done', 'true');
                 },
-                { url: SUPABASE_URL, key: SUPABASE_ANON_KEY },
+                { url: SUPABASE_URL, key: SUPABASE_ANON_KEY }
             );
 
             // Drive the magic-link flow so supabase-js stores the session.
@@ -327,7 +415,7 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
             await page.waitForURL('http://localhost:5173/**', { timeout: 15_000 });
             await page.waitForFunction(
                 () => Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
-                { timeout: 60_000, polling: 300 },
+                { timeout: 60_000, polling: 300 }
             );
 
             // Extract the access_token from the browser's localStorage.
@@ -335,10 +423,10 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
             const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
             const rawSession = await page.evaluate(
                 (key: string) => localStorage.getItem(key),
-                `sb-${projectRef}-auth-token`,
+                `sb-${projectRef}-auth-token`
             );
             const accessToken = rawSession
-                ? (JSON.parse(rawSession) as { access_token?: string }).access_token ?? null
+                ? ((JSON.parse(rawSession) as { access_token?: string }).access_token ?? null)
                 : null;
 
             if (!accessToken) {
@@ -362,10 +450,9 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
             expect(patchRes.ok).toBe(true);
 
             // Confirm the role was actually persisted (not silently swallowed).
-            const profileRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`,
-                { headers: { ...adminHeaders } },
-            );
+            const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=role`, {
+                headers: { ...adminHeaders },
+            });
             expect(profileRes.ok).toBe(true);
             const profiles = (await profileRes.json()) as { role: string }[];
             expect(profiles[0]?.role).toBe('student');
