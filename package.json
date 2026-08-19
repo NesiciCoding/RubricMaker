@@ -23,11 +23,12 @@
     "e2e:chromium": "playwright test --project=chromium",
     "e2e:report": "playwright show-report playwright-report",
     "e2e:codegen": "playwright codegen http://localhost:5173",
-    "e2e:supabase": "playwright test --project=supabase --workers=1",
+    "e2e:supabase": "bash scripts/e2e-preflight.sh && playwright test --project=supabase --workers=1",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
+    "edge:fix": "bash scripts/edge-fix.sh",
     "postinstall": "node scripts/patch-rollup-native.cjs",
     "prepare": "husky"
   },
