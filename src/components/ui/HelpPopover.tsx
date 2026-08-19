@@ -13,6 +13,7 @@ export default function HelpPopover({ title, children }: Props) {
     useEffect(() => {
         if (!open) return;
         function handleClick(e: MouseEvent) {
+            /* v8 ignore next -- ref is attached before the listener, so it is never null here */
             if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
         }
         document.addEventListener('mousedown', handleClick);

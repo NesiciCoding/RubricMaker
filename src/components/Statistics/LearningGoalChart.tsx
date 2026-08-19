@@ -21,7 +21,7 @@ interface Props {
 }
 
 /** Colour a per-rubric bar by how its score sits against the goal's target percentage. */
-function barColor(pct: number, target: number | undefined): string {
+export function barColor(pct: number, target: number | undefined): string {
     if (target === undefined) return 'var(--accent)';
     if (pct >= target) return 'var(--green)';
     if (pct >= target * 0.8) return 'var(--yellow)';

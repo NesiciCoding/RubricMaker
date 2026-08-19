@@ -73,6 +73,7 @@ export default function EssayImportModal({
     const [dbError, setDbError] = useState('');
 
     const loadSubmissions = useCallback(async () => {
+        /* v8 ignore next -- only invoked when hasDb (which requires onFetchSubmissions) */
         if (!hasDb || !onFetchSubmissions) return;
         setLoadingDb(true);
         setDbError('');
@@ -161,6 +162,7 @@ export default function EssayImportModal({
 
     const handleDelete = useCallback(
         async (sub: DbSubmission) => {
+            /* v8 ignore next -- delete button only renders when onDeleteSubmission is provided */
             if (!onDeleteSubmission) return;
             if (!confirm(`Delete this submission from ${sub.studentEmail ?? 'student'}? This cannot be undone.`))
                 return;

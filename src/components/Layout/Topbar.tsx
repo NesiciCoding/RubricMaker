@@ -13,6 +13,7 @@ interface TopbarProps {
 
 function isTypingTarget(target: EventTarget | null): boolean {
     const el = target as HTMLElement | null;
+    /* v8 ignore next -- keyboard events always carry a target */
     if (!el) return false;
     return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
 }
@@ -41,6 +42,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
     }, []);
 
     function buttonCenter(el: HTMLElement | null): { x: number; y: number } | undefined {
+        /* v8 ignore next -- the search button is always mounted when this runs */
         if (!el) return undefined;
         const rect = el.getBoundingClientRect();
         return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };

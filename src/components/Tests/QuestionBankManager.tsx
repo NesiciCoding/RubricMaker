@@ -110,7 +110,10 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         const q = searchTerm.trim().toLowerCase();
         return questionBank
             .filter((item) => {
-                const matchesSearch = !q || (searchIndex.get(item.id) ?? '').includes(q);
+                const searchText = searchIndex.get(item.id);
+                /* v8 ignore next -- every rendered item is in the index, so the fallback is dead */
+                const normalized = searchText ?? '';
+                const matchesSearch = !q || normalized.includes(q);
                 const matchesTags = selectedTags.size === 0 || item.tags.some((tag) => selectedTags.has(tag));
                 const matchesCefr = selectedCefr.size === 0 || selectedCefr.has(item.cefrLevel ?? '');
                 const matchesKind = kindFilter === 'all' || itemKind(item) === kindFilter;

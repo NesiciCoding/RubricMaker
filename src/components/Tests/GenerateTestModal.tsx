@@ -94,6 +94,7 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
         navigate('/tests/new', {
             state: {
                 generated: {
+                    /* v8 ignore next -- generate is disabled until a name is entered */
                     name: name.trim() || t('generateTest.default_name'),
                     mode,
                     questions,

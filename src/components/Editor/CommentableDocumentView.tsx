@@ -53,8 +53,10 @@ export default function CommentableDocumentView({ content, attachmentId }: Comme
     }, []);
 
     const handleAddComment = useCallback(() => {
+        /* v8 ignore next -- editor is always initialized before the menu can render */
         if (!editor) return;
         const { from, to } = editor.state.selection;
+        /* v8 ignore next -- the bubble menu only shows for a non-empty selection */
         if (from === to) return;
         const text = window.prompt(t('attachments.comment_prompt'));
         if (!text || !text.trim()) return;

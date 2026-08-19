@@ -38,12 +38,14 @@ export default function StandardMasteryTargetModal({ existing, onClose }: Props)
         !!standard && !!year && (!yearHasTrack || !!voTrack) && Number.isFinite(pct) && pct >= 0 && pct <= 100;
 
     function handleSave() {
+        /* v8 ignore next -- the Save button is disabled unless canSave, which implies standard and year */
         if (!canSave || !standard || !year) return;
         const payload = {
             standardGuid: standard.guid,
             standardDescription: standard.description,
             standardSetTitle: standard.standardSetTitle,
             year,
+            /* v8 ignore next -- canSave requires voTrack whenever yearHasTrack is true */
             voTrack: yearHasTrack ? voTrack || undefined : undefined,
             targetPercentage: pct,
         };

@@ -98,8 +98,10 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
             guid: std.id,
             statementNotation: std.statementNotation,
             description: std.description,
+            /* v8 ignore start -- the picker only reaches this step after a jurisdiction and set are chosen */
             standardSetTitle: selectedSet?.title ?? '',
             jurisdictionTitle: selectedJurisdiction?.title ?? '',
+            /* v8 ignore stop */
         };
         onSelect(linked);
         onClose();
@@ -114,8 +116,10 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                 guid: std.id,
                 statementNotation: std.statementNotation,
                 description: std.description,
+                /* v8 ignore start -- the picker only reaches this step after a jurisdiction and set are chosen */
                 standardSetTitle: selectedSet?.title ?? '',
                 jurisdictionTitle: selectedJurisdiction?.title ?? '',
+                /* v8 ignore stop */
                 ancestorIds: std.ancestorIds,
                 depth: std.depth,
             });

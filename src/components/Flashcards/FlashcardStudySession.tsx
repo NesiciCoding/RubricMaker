@@ -46,6 +46,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
         reviewedCount + queue.length > 0 ? Math.round((reviewedCount / (reviewedCount + queue.length)) * 100) : 0;
 
     function handleRate(rating: FlashcardRating) {
+        /* v8 ignore next -- rating buttons only render when a card is current */
         if (!card) return;
         const now = new Date();
         const nextState = rateCard(states[card.id], rating, now);

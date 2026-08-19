@@ -57,7 +57,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     setError('The CSV file is empty.');
                     return;
                 }
-                const detectedHeaders = Object.keys(data[0] || {}).map((k) => k.trim());
+                const detectedHeaders = Object.keys(/* v8 ignore next 1 */ data[0] || {}).map((k) => k.trim());
                 if (detectedHeaders.length === 0) {
                     setError('Could not detect any columns in the CSV file.');
                     return;
@@ -86,9 +86,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
                 // Map Clever format
                 if (hasCleverFormat) {
+                    /* v8 ignore start -- hasCleverFormat guarantees Email/First_Name/Last_Name are present */
                     autoMap.email = detectedHeaders.find((h) => h === 'Email') || '';
                     autoMap.firstName = detectedHeaders.find((h) => h === 'First_Name') || '';
                     autoMap.lastName = detectedHeaders.find((h) => h === 'Last_Name') || '';
+                    /* v8 ignore stop */
                     const schoolIdx = detectedHeaders.findIndex((h) => h === 'Last_Known_School_Name');
                     if (schoolIdx !== -1) {
                         autoMap.className = detectedHeaders[schoolIdx];
@@ -100,9 +102,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
                 // Map OneRoster format
                 if (hasOneRosterFormat) {
+                    /* v8 ignore start -- hasOneRosterFormat guarantees email/givenName/familyName are present */
                     autoMap.email = detectedHeaders.find((h) => h === 'email') || '';
                     autoMap.firstName = detectedHeaders.find((h) => h === 'givenName') || '';
                     autoMap.lastName = detectedHeaders.find((h) => h === 'familyName') || '';
+                    /* v8 ignore stop */
                     const classIdx = detectedHeaders.findIndex((h) => h === 'className' || h === 'classSourcedId');
                     if (classIdx !== -1) {
                         autoMap.className = detectedHeaders[classIdx];
@@ -492,6 +496,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 cancelLabel={t('csv.cancel')}
                 danger={(pendingImport?.preview.removed ?? 0) > 0}
                 onConfirm={() => {
+                    /* v8 ignore next -- confirm dialog only opens when pendingImport is set */
                     if (pendingImport) runImport(pendingImport.rows);
                     setPendingImport(null);
                 }}

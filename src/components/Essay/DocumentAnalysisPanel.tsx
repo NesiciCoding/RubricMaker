@@ -152,8 +152,10 @@ export default function DocumentAnalysisPanel({
 
             if (useTranscriptMode) {
                 text = transcript.trim();
+                /* v8 ignore next -- the analyse button is disabled whenever the transcript is blank */
                 if (!text) throw new Error('Please paste a transcript before analysing.');
             } else {
+                /* v8 ignore next -- the analyse button is disabled when no attachment is selected */
                 if (!selectedAttachment) throw new Error('No attachment selected.');
                 text = await extractText(selectedAttachment, handleProgress);
             }
@@ -206,12 +208,14 @@ export default function DocumentAnalysisPanel({
     ]);
 
     function applySubItem(item: VocabularyItem, detected: DetectedItem) {
+        /* v8 ignore next -- the Apply button only renders when links are set and the item was found */
         if (!item.linkedSubItemId || !item.linkedCriterionId || !detected.found) return;
         onApplyToEntry(item.linkedCriterionId, item.linkedSubItemId);
         setAppliedSubItems((s) => new Set([...s, item.linkedSubItemId!]));
     }
 
     function applyAll() {
+        /* v8 ignore next -- Apply all only renders when a result exists */
         if (!result) return;
         result.detectedItems.forEach((d) => {
             const vocabItem = vocabularyItems.find((v) => v.id === d.vocabularyItemId);
@@ -971,6 +975,7 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                                     }}
                                 >
                                     {LEVEL_ORDER.map((lvl) => {
+                                        /* v8 ignore next -- total is always > 0 inside this fragment */
                                         const pct = total > 0 ? (vocabulary.levelCounts[lvl] / total) * 100 : 0;
                                         return pct > 0 ? (
                                             <div

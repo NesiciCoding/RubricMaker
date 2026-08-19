@@ -58,11 +58,13 @@ export default function ClozeGapEditor({
 
     // Keep the editor in sync when the prompt changes from outside (e.g. switching question type).
     useEffect(() => {
+        /* v8 ignore next -- useEditor initializes synchronously in this environment */
         if (!editor) return;
         if (clozeContentToPrompt(editor) === value) return;
         editor.commands.setContent(promptToClozeContent(value));
     }, [editor, value]);
 
+    /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
 
     return (

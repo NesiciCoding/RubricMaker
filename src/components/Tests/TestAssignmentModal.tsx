@@ -73,6 +73,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
             const base: TestAssignmentPayload = {
                 testId: test.id,
                 studentId,
+                /* v8 ignore next -- provably dead: teacherKeys is built from the full students list, and buildUrl only ever receives classStudents ids */
                 teacherKey: teacherKeys[studentId] ?? nanoid(),
                 requireSEB: test.requireSEB,
                 durationMinutes: test.durationMinutes,

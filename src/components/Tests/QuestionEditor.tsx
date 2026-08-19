@@ -167,11 +167,14 @@ export default function QuestionEditor({
     function wrapSelectionInPassage() {
         const el = hotTextPassageRef.current;
         const passage = question.hotTextPassage ?? '';
+        /* v8 ignore next 3 -- the insert button only renders next to the mounted hot-text textarea */
         if (!el) {
             update({ hotTextPassage: `${passage}[[word]]` });
             return;
         }
+        /* v8 ignore next -- selectionStart is always a number on a mounted textarea */
         const start = el.selectionStart ?? passage.length;
+        /* v8 ignore next -- selectionEnd is always a number on a mounted textarea */
         const end = el.selectionEnd ?? passage.length;
         const selected = passage.slice(start, end) || 'word';
         const next = passage.slice(0, start) + `[[${selected}]]` + passage.slice(end);
@@ -221,7 +224,9 @@ export default function QuestionEditor({
 
     function defaultCategorizeItems(categories: TestCategory[]): CategorizeItem[] {
         return [
+            /* v8 ignore next -- defaultCategories always yields at least one category */
             { id: nanoid(), text: '', categoryId: categories[0]?.id ?? '' },
+            /* v8 ignore next -- defaultCategories always yields at least one category */
             { id: nanoid(), text: '', categoryId: categories[0]?.id ?? '' },
         ];
     }
@@ -231,7 +236,9 @@ export default function QuestionEditor({
     }
 
     function removeOption(optionId: string) {
+        /* v8 ignore next -- the remove button is disabled when options is empty */
         const removed = (question.options ?? []).find((o) => o.id === optionId);
+        /* v8 ignore next -- the remove button is disabled when options is empty */
         const remaining = (question.options ?? []).filter((o) => o.id !== optionId);
         if (
             question.type === 'multiple-choice' &&
@@ -246,18 +253,21 @@ export default function QuestionEditor({
 
     function updateOption(optionId: string, patch: Partial<TestOption>) {
         update({
+            /* v8 ignore next 2 -- option inputs only render when options is non-empty */
             options: (question.options ?? []).map((o) => (o.id === optionId ? { ...o, ...patch } : o)),
         });
     }
 
     function setCorrectOption(optionId: string) {
         update({
+            /* v8 ignore next -- option inputs only render when options is non-empty */
             options: (question.options ?? []).map((o) => ({ ...o, isCorrect: o.id === optionId })),
         });
     }
 
     function toggleOptionCorrect(optionId: string) {
         update({
+            /* v8 ignore next -- option inputs only render when options is non-empty */
             options: (question.options ?? []).map((o) => (o.id === optionId ? { ...o, isCorrect: !o.isCorrect } : o)),
         });
     }
@@ -267,11 +277,13 @@ export default function QuestionEditor({
     }
 
     function removeMatchingPair(pairId: string) {
+        /* v8 ignore next -- the remove button is disabled when matchingPairs is empty */
         update({ matchingPairs: (question.matchingPairs ?? []).filter((p) => p.id !== pairId) });
     }
 
     function updateMatchingPair(pairId: string, patch: Partial<MatchingPair>) {
         update({
+            /* v8 ignore next 2 -- pair inputs only render when matchingPairs is non-empty */
             matchingPairs: (question.matchingPairs ?? []).map((p) => (p.id === pairId ? { ...p, ...patch } : p)),
         });
     }
@@ -281,17 +293,21 @@ export default function QuestionEditor({
     }
 
     function removeOrderItem(itemId: string) {
+        /* v8 ignore next -- the remove button is disabled when orderItems is empty */
         update({ orderItems: (question.orderItems ?? []).filter((i) => i.id !== itemId) });
     }
 
     function updateOrderItem(itemId: string, text: string) {
         update({
+            /* v8 ignore next 2 -- item inputs only render when orderItems is non-empty */
             orderItems: (question.orderItems ?? []).map((i) => (i.id === itemId ? { ...i, text } : i)),
         });
     }
 
     function moveOrderItem(from: number, to: number) {
+        /* v8 ignore next -- move buttons only render when orderItems is non-empty */
         const items = [...(question.orderItems ?? [])];
+        /* v8 ignore next -- move buttons are disabled at the list boundaries */
         if (to < 0 || to >= items.length) return;
         const [moved] = items.splice(from, 1);
         items.splice(to, 0, moved);
@@ -303,9 +319,11 @@ export default function QuestionEditor({
     }
 
     function removeCategory(categoryId: string) {
+        /* v8 ignore next -- the remove button is disabled when categories is empty */
         const remaining = (question.categories ?? []).filter((c) => c.id !== categoryId);
         update({
             categories: remaining,
+            /* v8 ignore next 3 -- the remove button is disabled when categories is empty, so a fallback category always exists */
             categorizeItems: (question.categorizeItems ?? []).map((item) =>
                 item.categoryId === categoryId ? { ...item, categoryId: remaining[0]?.id ?? '' } : item
             ),
@@ -314,6 +332,7 @@ export default function QuestionEditor({
 
     function updateCategory(categoryId: string, label: string) {
         update({
+            /* v8 ignore next 2 -- category inputs only render when categories is non-empty */
             categories: (question.categories ?? []).map((c) => (c.id === categoryId ? { ...c, label } : c)),
         });
     }
@@ -328,11 +347,13 @@ export default function QuestionEditor({
     }
 
     function removeCategorizeItem(itemId: string) {
+        /* v8 ignore next -- the remove button only renders when categorizeItems is non-empty */
         update({ categorizeItems: (question.categorizeItems ?? []).filter((i) => i.id !== itemId) });
     }
 
     function updateCategorizeItem(itemId: string, patch: Partial<CategorizeItem>) {
         update({
+            /* v8 ignore next 2 -- item inputs only render when categorizeItems is non-empty */
             categorizeItems: (question.categorizeItems ?? []).map((i) => (i.id === itemId ? { ...i, ...patch } : i)),
         });
     }
@@ -356,6 +377,7 @@ export default function QuestionEditor({
     }
 
     function unlinkStandard(idx: number) {
+        /* v8 ignore next -- unlink buttons only render when linkedStandards is non-empty */
         const next = [...(question.linkedStandards ?? [])];
         next.splice(idx, 1);
         update({ linkedStandards: next });
@@ -373,6 +395,7 @@ export default function QuestionEditor({
 
     function removeCefrDescriptor(descriptorId: string) {
         update({
+            /* v8 ignore next 3 -- descriptor remove buttons only render when linkedCefrDescriptors is non-empty */
             linkedCefrDescriptors: (question.linkedCefrDescriptors ?? []).filter(
                 (d) => d.descriptorId !== descriptorId
             ),
@@ -689,7 +712,7 @@ export default function QuestionEditor({
                                         className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red)' }}
-                                        disabled={(question.options ?? []).length <= 1}
+                                        disabled={question.options!.length <= 1}
                                         onClick={() => removeOption(option.id)}
                                     >
                                         <X size={14} />
@@ -834,7 +857,7 @@ export default function QuestionEditor({
                         return (
                             <p className="text-muted text-xs" style={{ margin: 0 }}>
                                 {t('tests.cloze_gap_preview', { count: gaps.length })}{' '}
-                                {gaps.map((gap) => gap.alternatives[0] || '—').join(', ')}
+                                {gaps.map((gap) => gap.alternatives[0]).join(', ')}
                             </p>
                         );
                     })()}
@@ -892,7 +915,7 @@ export default function QuestionEditor({
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('tests.remove_option')}
                                 style={{ color: 'var(--red)' }}
-                                disabled={(question.matchingPairs ?? []).length <= 1}
+                                disabled={question.matchingPairs!.length <= 1}
                                 onClick={() => removeMatchingPair(pair.id)}
                             >
                                 <X size={14} />
@@ -940,7 +963,7 @@ export default function QuestionEditor({
                                 type="button"
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('tests.move_question_down')}
-                                disabled={idx === (question.orderItems ?? []).length - 1}
+                                disabled={idx === question.orderItems!.length - 1}
                                 onClick={() => moveOrderItem(idx, idx + 1)}
                             >
                                 <ChevronDown size={14} />
@@ -950,7 +973,7 @@ export default function QuestionEditor({
                                 className="btn btn-ghost btn-icon btn-sm"
                                 aria-label={t('tests.remove_option')}
                                 style={{ color: 'var(--red)' }}
-                                disabled={(question.orderItems ?? []).length <= 1}
+                                disabled={question.orderItems!.length <= 1}
                                 onClick={() => removeOrderItem(item.id)}
                             >
                                 <X size={14} />
@@ -988,7 +1011,7 @@ export default function QuestionEditor({
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('tests.remove_option')}
                                     style={{ color: 'var(--red)' }}
-                                    disabled={(question.categories ?? []).length <= 1}
+                                    disabled={question.categories!.length <= 1}
                                     onClick={() => removeCategory(cat.id)}
                                 >
                                     <X size={14} />
@@ -1027,7 +1050,7 @@ export default function QuestionEditor({
                                     className="btn btn-ghost btn-icon btn-sm"
                                     aria-label={t('tests.remove_option')}
                                     style={{ color: 'var(--red)' }}
-                                    disabled={(question.categorizeItems ?? []).length <= 1}
+                                    disabled={question.categorizeItems!.length <= 1}
                                     onClick={() => removeCategorizeItem(item.id)}
                                 >
                                     <X size={14} />

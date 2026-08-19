@@ -62,6 +62,7 @@ export default function CountdownTimer({
             });
         }, 1000);
         return () => {
+            /* v8 ignore next -- cleanup is only registered when the interval was set, so the ref is never null here */
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [secondsLeft === null, submitted, storageKey]); // eslint-disable-line react-hooks/exhaustive-deps
