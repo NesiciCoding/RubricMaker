@@ -194,25 +194,68 @@ find_kong() {
     return 1
 }
 
-# Call one function through kong with the anon key. Healthy runtime: anything
-# but 503/502 (401/403/404/405/… all prove the worker booted). Detached mount:
-# 503 BootError. Returns 0 = booted, 1 = failed, 2 = skipped (no kong/token).
+# POST a real body through kong so the function HANDLER runs (edge JWT check →
+# worker boot → handler → body parse → DB lookup), not just the method check.
+# Two tiers:
+#   1. anon key: passes the edge JWT check and boots the worker; the handler
+#      then rejects at GoTrue auth (401/403) — proves boot + handler entry.
+#   2. anonymous session (created via GoTrue): passes auth, parses the body,
+#      and hits the DB → 404 for a bogus ID — full handler execution.
+# Only read-only `get-*` functions get the body probe (no side effects); any
+# other function keeps the plain method check. Healthy runtime: anything but
+# 503/502. Detached mount: 503 BootError. Returns 0 = booted, 1 = failed,
+# 2 = skipped (no kong/token).
 probe_kong() {
-    local code="" port=""
+    local code="" port="" base=""
+    local body='{"assignmentId":"__edgefix_probe__"}'
     [ -n "${KONG:-}" ] || find_kong || { warn "no kong container found — skipping the function probe."; return 2; }
     port="$(docker port "$KONG" 8000/tcp 2>/dev/null | head -1 | grep -oE '[0-9]+$' || true)"
     if [ -n "$port" ]; then
-        code="$(curl -s -m 15 -o /dev/null -w '%{http_code}' \
-            -H "Authorization: Bearer $ANON_KEY" \
-            "http://127.0.0.1:$port/functions/v1/$PROBE_FUNC" || true)"
+        base="http://127.0.0.1:$port"
+        if [[ "$PROBE_FUNC" == get-* ]]; then
+            code="$(curl -s -m 15 -o /dev/null -w '%{http_code}' -X POST \
+                -H "Authorization: Bearer $ANON_KEY" \
+                -H "Content-Type: application/json" \
+                -d "$body" \
+                "$base/functions/v1/$PROBE_FUNC" || true)"
+            # Auth-first handlers return 401/403 for the key-only token — that
+            # already proves the worker booted. Go one tier deeper with a real
+            # anonymous session so the handler runs to completion.
+            if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+                local token
+                token="$(curl -s -m 15 -X POST "$base/auth/v1/signup" \
+                    -H "apikey: $ANON_KEY" \
+                    -H "Authorization: Bearer $ANON_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d '{}' 2>/dev/null | grep -oE '"access_token":"[^"]+"' | head -1 | cut -d'"' -f4 || true)"
+                if [ -n "$token" ]; then
+                    code="$(curl -s -m 15 -o /dev/null -w '%{http_code}' -X POST \
+                        -H "Authorization: Bearer $token" \
+                        -H "Content-Type: application/json" \
+                        -d "$body" \
+                        "$base/functions/v1/$PROBE_FUNC" || true)"
+                    log "function probe: POST /functions/v1/$PROBE_FUNC (anonymous session) via kong -> ${code:-no response}"
+                else
+                    warn "could not create an anonymous session — accepting the auth-rejected probe result"
+                    log "function probe: POST /functions/v1/$PROBE_FUNC (anon key) via kong -> ${code:-no response}"
+                fi
+            else
+                log "function probe: POST /functions/v1/$PROBE_FUNC (anon key) via kong -> ${code:-no response}"
+            fi
+        else
+            code="$(curl -s -m 15 -o /dev/null -w '%{http_code}' -X GET \
+                -H "Authorization: Bearer $ANON_KEY" \
+                "$base/functions/v1/$PROBE_FUNC" || true)"
+            log "function probe: GET /functions/v1/$PROBE_FUNC via kong -> ${code:-no response}"
+        fi
     else
-        # No published port — probe from inside the network.
+        # No published kong port — probe from inside the network (method check only).
         code="$(docker run --rm --network "$NETWORK" "$PROBE_IMAGE" sh -c \
             "wget -q -S -O /dev/null --header='Authorization: Bearer $ANON_KEY' -T 10 \
             http://$KONG:8000/functions/v1/$PROBE_FUNC 2>&1 | grep -oE 'HTTP/[0-9.]+ [0-9]{3}' | tail -1" \
             | grep -oE '[0-9]{3}$' || true)"
+        log "function probe: GET /functions/v1/$PROBE_FUNC via kong (in-network) -> ${code:-no response}"
     fi
-    log "function probe: GET /functions/v1/$PROBE_FUNC via kong -> ${code:-no response}"
     [ -n "$code" ] && [ "$code" != "503" ] && [ "$code" != "502" ]
 }
 
@@ -245,6 +288,8 @@ PROBE_FUNC=""
 for cand in get-test-assignment get-essay-assignment; do
     [ -d "$FUNCTIONS_SRC/$cand" ] && PROBE_FUNC="$cand" && break
 done
+# Prefer a read-only `get-*` function (the body probe must not have side effects).
+[ -z "$PROBE_FUNC" ] && PROBE_FUNC="$(ls -A "$FUNCTIONS_SRC" 2>/dev/null | grep -v '^\.' | grep '^get-' | head -1 || true)"
 [ -z "$PROBE_FUNC" ] && PROBE_FUNC="$(ls -A "$FUNCTIONS_SRC" 2>/dev/null | grep -v '^\.' | head -1 || true)"
 
 # ── 6. Main: fix if needed, then verify with probes ──────────────────────────
