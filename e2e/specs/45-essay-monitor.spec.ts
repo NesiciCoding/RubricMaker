@@ -309,8 +309,11 @@ test.describe('Live monitor — essay kind', () => {
             // teacher's channel has received the student's join heartbeat — i.e.
             // BOTH sides are subscribed on the shared channel, so the nudge is
             // guaranteed to arrive (a broadcast sent before the teacher's channel
-            // finished joining is silently dropped).
-            await expect(supabasePage.getByText('Active').first()).toBeVisible({ timeout: 15_000 });
+            // finished joining is silently dropped). Exact match — the sort
+            // select's "Active first" option also contains the substring.
+            await expect(supabasePage.getByText('Active', { exact: true }).first()).toBeVisible({
+                timeout: 15_000,
+            });
 
             // Teacher sends the check-in nudge on the shared Realtime channel.
             await supabasePage.getByRole('button', { name: 'Nudge' }).click();
