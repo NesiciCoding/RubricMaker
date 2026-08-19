@@ -84,4 +84,35 @@ describe('TestSubmissionImportModal', () => {
         expect(onSave).not.toHaveBeenCalled();
         expect(screen.getByText('tests.results.import_error_wrong_test')).toBeInTheDocument();
     });
+
+    it('merges a re-imported submission into the existing StudentTest', () => {
+        const onSave = vi.fn();
+        // An existing attempt for the same student/test keeps its id through the merge
+        const existingSt = {
+            id: 'existing-st',
+            testId: 't1',
+            studentId: 's1',
+            answers: [],
+            status: 'in_progress' as const,
+            startedAt: '2026-01-01T08:00:00.000Z',
+        };
+        const code = encodeTestSubmission(submission);
+        render(
+            <TestSubmissionImportModal
+                test={test}
+                studentTests={[existingSt, { ...existingSt, id: 'other', studentId: 's9' }]}
+                onSave={onSave}
+                onClose={vi.fn()}
+            />
+        );
+
+        const textarea = screen.getByLabelText('tests.results.import_code_label');
+        fireEvent.change(textarea, { target: { value: code } });
+        fireEvent.click(screen.getByText(/tests.results.import_btn/));
+
+        const saved = onSave.mock.calls[0][0];
+        expect(saved.id).toBe('existing-st');
+        expect(saved.status).toBe('submitted');
+        expect(saved.submittedAt).toBe(submission.submittedAt);
+    });
 });

@@ -366,4 +366,126 @@ describe('StandardsPickerModal', () => {
         fireEvent.change(search, { target: { value: 'zzz no match zzz' } });
         expect(screen.getByText('No standards match your search.')).toBeInTheDocument();
     });
+
+    it('falls back to a generic message when a non-Error rejection is thrown', async () => {
+        mockFetchStandardSets.mockRejectedValueOnce('plain string failure');
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('Unknown error')).toBeInTheDocument());
+    });
+
+    it('shows a generic message when the set detail rejects with a non-Error', async () => {
+        mockFetchStandardSetDetail.mockRejectedValueOnce('plain string failure');
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('ELA Standards')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('ELA Standards'));
+        await waitFor(() => expect(screen.getByText('Unknown error')).toBeInTheDocument());
+    });
+
+    it('filters standard sets whose subject is missing via a title search', async () => {
+        mockFetchStandardSets.mockResolvedValue([
+            { id: 's3', title: 'Bare Set', subject: '', educationLevels: ['8'] },
+            ...standardSets,
+        ]);
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('ELA Standards')).toBeInTheDocument());
+        // Searching by title evaluates the (subject || '') fallback for the subject-less set.
+        fireEvent.change(screen.getByPlaceholderText('Search standard sets...'), { target: { value: 'Math' } });
+        expect(screen.getByText('Math Standards')).toBeInTheDocument();
+        expect(screen.queryByText('ELA Standards')).toBeNull();
+        expect(screen.queryByText('Bare Set')).toBeNull();
+    });
+
+    it('renders a set without education levels without a suffix', async () => {
+        mockFetchStandardSets.mockResolvedValue([
+            { id: 's3', title: 'Bare Set', subject: 'English', educationLevels: [] },
+        ]);
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('Bare Set')).toBeInTheDocument());
+        expect(screen.queryByText(/·/)).toBeNull();
+    });
+
+    it('searches standards by description when statementNotation is missing', async () => {
+        mockFetchStandardSetDetail.mockResolvedValue({
+            id: 's1',
+            title: 'ELA Standards',
+            subject: 'English',
+            standards: {
+                ...standardsMap,
+                bare: { id: 'bare', description: 'Bare description only', depth: 0, ancestorIds: [] },
+            },
+        });
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('ELA Standards')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('ELA Standards'));
+        await waitFor(() => expect(screen.getByText('Cite textual evidence')).toBeInTheDocument());
+        // Searching by a description that matches only the notation-less standard runs the ?? '' fallback.
+        fireEvent.change(screen.getByPlaceholderText('Search standards...'), { target: { value: 'central' } });
+        expect(screen.getByText('Determine central ideas')).toBeInTheDocument();
+        expect(screen.queryByText('Bare description only')).toBeNull();
+        expect(screen.queryByText('Cite textual evidence')).toBeNull();
+    });
+
+    it('sorts standards by description when statementNotation is missing', async () => {
+        mockFetchStandardSetDetail.mockResolvedValue({
+            id: 's1',
+            title: 'ELA Standards',
+            subject: 'English',
+            standards: {
+                ...standardsMap,
+                bare: { id: 'bare', description: 'Alpha first', depth: 0, ancestorIds: [] },
+                bare2: { id: 'bare2', description: 'Beta second', depth: 0, ancestorIds: [] },
+            },
+        });
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('California'));
+        await waitFor(() => expect(screen.getByText('ELA Standards')).toBeInTheDocument());
+        fireEvent.click(screen.getByText('ELA Standards'));
+        await waitFor(() => expect(screen.getByText('Cite textual evidence')).toBeInTheDocument());
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'alpha-asc' } });
+        const texts = screen
+            .getAllByText(/Alpha first|Beta second|Cite textual evidence|Determine central ideas/)
+            .map((el) => el.textContent);
+        expect(texts[0]).toBe('Alpha first');
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'alpha-desc' } });
+        const desc = screen
+            .getAllByText(/Alpha first|Beta second|Cite textual evidence|Determine central ideas/)
+            .map((el) => el.textContent);
+        expect(desc[0]).toBe('Determine central ideas');
+    });
+
+    it('searches favorites by description when statementNotation is missing', async () => {
+        mockFavoriteStandards = [
+            {
+                guid: 'fav1',
+                description: 'Favorite bare description',
+                standardSetTitle: 'ELA Standards',
+                jurisdictionTitle: 'California',
+            },
+            {
+                guid: 'fav2',
+                statementNotation: 'RH.6-8.9',
+                description: 'Favorite with notation',
+                standardSetTitle: 'ELA Standards',
+                jurisdictionTitle: 'California',
+            },
+        ];
+        render(<StandardsPickerModal {...baseProps} />);
+        await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
+        fireEvent.click(screen.getByText(/favorites \(2\)/i));
+        // Matching only the notation-less favorite's description runs the ?? '' fallback on the other.
+        fireEvent.change(screen.getByPlaceholderText('Search favorites...'), { target: { value: 'with notation' } });
+        expect(screen.getByText('Favorite with notation')).toBeInTheDocument();
+        expect(screen.queryByText('Favorite bare description')).toBeNull();
+    });
 });

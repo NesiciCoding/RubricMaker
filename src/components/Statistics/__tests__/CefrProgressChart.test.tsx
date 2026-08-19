@@ -3,10 +3,27 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import CefrProgressChart, { CefrEntry } from '../CefrProgressChart';
 
+vi.mock('recharts', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('recharts')>();
+    return {
+        ...mod,
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 400 }),
+        Tooltip: ({ formatter }: { formatter?: (v: unknown) => unknown }) => (
+            <div data-testid="tooltip">
+                {formatter ? String(formatter(75)) : ''}
+                {formatter ? String(formatter(null)) : ''}
+            </div>
+        ),
+    };
+});
+
+const i18nState = vi.hoisted(() => ({ language: 'en' }));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string) => key,
-        i18n: { language: 'en' },
+        i18n: { language: i18nState.language },
     }),
 }));
 
@@ -56,5 +73,51 @@ describe('CefrProgressChart', () => {
         ];
         const { container } = render(<CefrProgressChart entries={entries} />);
         expect(container.firstChild).toBeTruthy();
+    });
+
+    it('formats the tooltip value with a percent sign', () => {
+        const entries = [makeEntry('A1', 'reading'), makeEntry('A1', 'writing'), makeEntry('A1', 'listening')];
+        render(<CefrProgressChart entries={entries} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('75%');
+        expect(out).toContain(''); // null → ''
+    });
+
+    it('uses the Dutch skill label when the language is Dutch', () => {
+        i18nState.language = 'nl';
+        const entries = [makeEntry('A1', 'reading'), makeEntry('A1', 'writing'), makeEntry('A1', 'listening')];
+        render(<CefrProgressChart entries={entries} />);
+        expect(screen.getAllByText('Lezen').length).toBeGreaterThan(0);
+    });
+
+    it('falls back to the raw skill id when it has no label', () => {
+        // 'grammar' is not a real CefrSkill — the probe verifies the raw-id fallback for a label-less skill
+        const entries = [
+            makeEntry('B2', 'grammar' as CefrEntry['skill']),
+            makeEntry('B2', 'reading'),
+            makeEntry('B2', 'writing'),
+        ];
+        render(<CefrProgressChart entries={entries} />);
+        expect(screen.getAllByText('grammar').length).toBeGreaterThan(0);
+    });
+
+    it('zeros out a skill/level combination with no entry', () => {
+        // reading at A1/B1; writing only at A1 → writing@B1 gets 0
+        const entries = [makeEntry('A1', 'reading'), makeEntry('B1', 'reading'), makeEntry('A1', 'writing')];
+        const { container } = render(<CefrProgressChart entries={entries} />);
+        expect(container.firstChild).toBeTruthy();
+        expect(screen.getAllByText('0%').length).toBeGreaterThan(0);
+    });
+
+    it('styles an unachieved level with a dashed stroke', () => {
+        const entries = [
+            makeEntry('B2', 'reading', 40), // achieved=false
+            makeEntry('B2', 'writing', 40),
+            makeEntry('B2', 'listening', 40),
+        ];
+        const { container } = render(<CefrProgressChart entries={entries} />);
+        // unachieved → fillOpacity 0.1 and strokeDasharray '4 2'
+        const dashed = container.querySelector('[stroke-dasharray]');
+        expect(dashed).toBeTruthy();
     });
 });

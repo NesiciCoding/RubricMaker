@@ -11,6 +11,13 @@ vi.mock('recharts', async (importOriginal) => {
         ...mod,
         ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
             React.cloneElement(children, { width: 600, height: 400 }),
+        Tooltip: ({ formatter }: { formatter?: (v: unknown) => unknown }) => (
+            <div data-testid="tooltip">
+                {formatter ? String(formatter(1)) : ''}
+                {formatter ? String(formatter(2)) : ''}
+                {formatter ? String(formatter('nope')) : ''}
+            </div>
+        ),
     };
 });
 
@@ -74,5 +81,15 @@ describe('ScoreHistogram component', () => {
         const { container } = render(<ScoreHistogram scores={[30, 60, 90]} />);
         // Recharts renders an SVG
         expect(container.querySelector('svg')).toBeTruthy();
+    });
+
+    it('formats the tooltip with student counts and percentages', () => {
+        render(<ScoreHistogram scores={[30, 60, 90]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        // 1 student → singular; 2 students → plural; non-number count → 0
+        expect(out).toContain('1 student');
+        expect(out).toContain('2 students');
+        expect(out).toContain('0 student');
+        expect(out).toContain('Count');
     });
 });

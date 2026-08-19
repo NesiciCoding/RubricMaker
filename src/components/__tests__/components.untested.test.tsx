@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CefrCellData, CefrCellDescriptor, StandardSetGroup } from '../../utils/cefrStudentAggregator';
+import type { CefrLevel } from '../../types';
 import CefrOverviewGrid from '../CEFR/CefrOverviewGrid';
 import StandardsCoveragePanel from '../Standards/StandardsCoveragePanel';
 import LoginButtons from '../auth/LoginButtons';
@@ -57,11 +58,16 @@ vi.mock('../../services/database', () => ({
     },
 }));
 
+let mockRubrics: unknown[] = [];
+let mockStudents: unknown[] = [];
+let mockClasses: unknown[] = [];
+let mockShowMigrationPrompt = true;
+
 const makeAppContextMock = () => ({
-    rubrics: [],
-    students: [],
-    classes: [],
-    showMigrationPrompt: true,
+    rubrics: mockRubrics,
+    students: mockStudents,
+    classes: mockClasses,
+    showMigrationPrompt: mockShowMigrationPrompt,
     dismissMigrationPrompt: mockDismissMigrationPrompt,
 });
 vi.mock('../../context/AppContext', () => ({
@@ -256,6 +262,57 @@ describe('CefrOverviewGrid', () => {
         render(<CefrOverviewGrid cells={[cell]} lang="en" />);
         fireEvent.click(screen.getByTitle('cefrOverview.cell_developing'));
         expect(screen.getByText('cefrOverview.cell_no_data')).toBeInTheDocument();
+    });
+
+    it('renders a developing cell with a rubric score using the amber color path', () => {
+        const cell = makeCell({ state: 'developing', rubricCount: 1, avgScore: 55 });
+        render(<CefrOverviewGrid cells={[cell]} lang="en" />);
+        expect(screen.getByText('55%')).toBeInTheDocument();
+    });
+
+    it('renders a not-started cell with a rubric score using the muted color path', () => {
+        const cell = makeCell({ state: 'not-started', rubricCount: 1, avgScore: 40 });
+        render(<CefrOverviewGrid cells={[cell]} lang="en" />);
+        expect(screen.getByText('40%')).toBeInTheDocument();
+    });
+
+    it('renders text-profile vocabulary and grammar estimates when present', () => {
+        const cell = makeCell({
+            state: 'achieved',
+            rubricCount: 1,
+            avgScore: 80,
+            textVocabEstimate: 'B1' as CefrLevel,
+            textGrammarEstimate: 'B2' as CefrLevel,
+        });
+        render(<CefrOverviewGrid cells={[cell]} lang="en" />);
+        expect(screen.getByText('VB1')).toBeInTheDocument();
+        expect(screen.getByText('GB2')).toBeInTheDocument();
+    });
+
+    it('renders only the vocabulary estimate when grammar is absent', () => {
+        const cell = makeCell({
+            state: 'achieved',
+            rubricCount: 1,
+            avgScore: 80,
+            textVocabEstimate: 'A2' as CefrLevel,
+        });
+        render(<CefrOverviewGrid cells={[cell]} lang="en" />);
+        expect(screen.getByText('VA2')).toBeInTheDocument();
+        expect(screen.queryByText(/^G/)).toBeNull();
+    });
+
+    it('renders Dutch descriptor text when lang=nl and a descriptor is expanded', () => {
+        const cell = makeCell({
+            state: 'achieved',
+            rubricCount: 1,
+            avgScore: 90,
+            totalDescriptors: 1,
+            confidentCount: 1,
+            descriptors: [makeDescriptor()],
+        });
+        render(<CefrOverviewGrid cells={[cell]} lang="nl" />);
+        fireEvent.click(screen.getByTitle('cefrOverview.cell_achieved'));
+        expect(screen.getByText('Ik kan eenvoudige teksten lezen')).toBeInTheDocument();
     });
 });
 
@@ -591,7 +648,13 @@ describe('LoginButtons', () => {
 // ─── MigrationPrompt ──────────────────────────────────────────────────────────
 
 describe('MigrationPrompt', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockRubrics = [];
+        mockStudents = [];
+        mockClasses = [];
+        mockShowMigrationPrompt = true;
+    });
 
     it('renders without crash when showMigrationPrompt=true', () => {
         render(<MigrationPrompt />);
@@ -617,6 +680,38 @@ describe('MigrationPrompt', () => {
         render(<MigrationPrompt />);
         fireEvent.click(screen.getByRole('button', { name: /skip for now/i }));
         expect(mockDismissMigrationPrompt).toHaveBeenCalledWith(false);
+    });
+
+    it('renders nothing when showMigrationPrompt is false', () => {
+        mockShowMigrationPrompt = false;
+        render(<MigrationPrompt />);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('closing the modal without choosing dismisses without uploading', () => {
+        render(<MigrationPrompt />);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+        expect(mockDismissMigrationPrompt).toHaveBeenCalledWith(false);
+    });
+
+    it('shows singular counts when there is one rubric, student, and class', () => {
+        mockRubrics = [{}];
+        mockStudents = [{}];
+        mockClasses = [{}];
+        render(<MigrationPrompt />);
+        expect(screen.getByText(/1 rubric/)).toBeInTheDocument();
+        expect(screen.getByText(/1 student/)).toBeInTheDocument();
+        expect(screen.getByText(/1 class/)).toBeInTheDocument();
+    });
+
+    it('pluralizes counts when there are multiple rubrics, students, and classes', () => {
+        mockRubrics = [{}, {}];
+        mockStudents = [{}, {}, {}];
+        mockClasses = [{}, {}];
+        render(<MigrationPrompt />);
+        expect(screen.getByText(/2 rubrics/)).toBeInTheDocument();
+        expect(screen.getByText(/3 students/)).toBeInTheDocument();
+        expect(screen.getByText(/2 classes/)).toBeInTheDocument();
     });
 
     it('clicking Upload calls dismissMigrationPrompt(true)', async () => {

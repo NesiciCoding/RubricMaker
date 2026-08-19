@@ -75,6 +75,70 @@ describe('QuestionBankImportModal', () => {
         );
     });
 
+    it('shows the preview limit and the more-rows notice for large imports', async () => {
+        render(<QuestionBankImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+
+        const items = [
+            ...Array.from({ length: 11 }, (_, i) => ({
+                tags: [],
+                question: { prompt: `Q${i}`, type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+            })),
+            {
+                tags: ['reading'],
+                cefrLevel: 'B1',
+                kind: 'section',
+                section: {
+                    title: 'Passage',
+                    questions: [
+                        { prompt: 'Who?', type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+                        { prompt: 'What?', type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+                    ],
+                },
+            },
+            'not-an-object',
+        ];
+        await selectFile(jsonFile({ items }));
+
+        await waitFor(() => expect(screen.getByText(/questionBank\.import_more_rows/)).toBeInTheDocument());
+        expect(screen.getAllByText(/Q/)).toHaveLength(8);
+        expect(screen.getByText('questionBank.import_preview:{"count":12}')).toBeInTheDocument();
+        expect(screen.getByText(/questionBank\.import_warn_malformed_item/)).toBeInTheDocument();
+    });
+
+    it('renders a section-bundle preview with its CEFR level', async () => {
+        render(<QuestionBankImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+
+        await selectFile(
+            jsonFile({
+                items: [
+                    {
+                        kind: 'section',
+                        cefrLevel: 'B1',
+                        section: {
+                            title: 'Reading passage',
+                            questions: [
+                                { prompt: 'Who?', type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+                                { prompt: 'What?', type: 'short-answer', points: 1, expectedAnswers: ['x'] },
+                            ],
+                        },
+                    },
+                ],
+            })
+        );
+
+        await waitFor(() =>
+            expect(
+                screen.getByText('questionBank.section_bundle_title:{"title":"Reading passage"}')
+            ).toBeInTheDocument()
+        );
+        expect(screen.getByText('questionBank.section_bundle_meta:{"count":2} · B1')).toBeInTheDocument();
+    });
+
+    it('opens the file picker via the choose button', () => {
+        render(<QuestionBankImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+        fireEvent.click(screen.getByText('questionBank.import_choose_file'));
+    });
+
     it('rejects an oversized file without reading it', async () => {
         render(<QuestionBankImportModal onImport={vi.fn()} onClose={vi.fn()} />);
 

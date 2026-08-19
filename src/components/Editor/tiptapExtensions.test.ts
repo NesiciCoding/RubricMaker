@@ -8,6 +8,20 @@ import {
     TIPTAP_CONTENT_STYLES,
 } from './tiptapExtensions';
 
+// A corrupt image file can't be read as a data URL — exercise the rejection path.
+vi.mock('../../utils/fileToDataUrl', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../utils/fileToDataUrl')>();
+    return {
+        ...actual,
+        fileToDataUrl: (file: Blob) => {
+            if (file instanceof File && file.name === 'corrupt.png') {
+                return Promise.reject(new Error('read failed'));
+            }
+            return actual.fileToDataUrl(file);
+        },
+    };
+});
+
 const editors: Editor[] = [];
 
 function makeEditor(content = '<p>Hello <strong>world</strong></p>'): Editor {
@@ -188,6 +202,22 @@ describe('createImageEmbedExtension', () => {
 
         const big = new File([new ArrayBuffer(5 * 1024 * 1024 + 1)], 'huge.png', { type: 'image/png' });
         onDrop(fakeEditor, [big], 0);
+        await vi.waitFor(() => expect(insertContentAt).not.toHaveBeenCalled());
+    });
+
+    it('swallows a file that cannot be read as a data URL without inserting anything', async () => {
+        const insertContentAt = vi.fn(() => ({ focus: () => ({ run: vi.fn(() => true) }) }));
+        const fakeEditor = {
+            state: { selection: { anchor: 0 } },
+            chain: () => ({ insertContentAt }),
+        };
+        const [, fileHandler] = createImageEmbedExtension();
+        const { onDrop } = fileHandler.options as unknown as {
+            onDrop: (editor: unknown, files: File[], pos?: number) => void;
+        };
+
+        const corrupt = new File(['corrupt'], 'corrupt.png', { type: 'image/png' });
+        expect(() => onDrop(fakeEditor, [corrupt], 0)).not.toThrow();
         await vi.waitFor(() => expect(insertContentAt).not.toHaveBeenCalled());
     });
 });

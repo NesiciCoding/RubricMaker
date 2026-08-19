@@ -2,11 +2,12 @@
  * Smoke tests for components that were at 0% coverage.
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as mammoth from 'mammoth';
 import type { Attachment, VocabularyItem } from '../../types';
 import AttachmentViewer from '../Attachments/AttachmentViewer';
+import { renderAsync } from 'docx-preview';
 import VocabularyListEditor from '../Vocabulary/VocabularyListEditor';
 import CommentBankModal from '../Comments/CommentBankModal';
 import ImportRubricModal from '../Rubric/ImportRubricModal';
@@ -56,14 +57,29 @@ vi.mock('../../context/AppContext', () => ({
 
 vi.mock('docx-preview', () => ({ renderAsync: vi.fn() }));
 
+const mockLookupWord = vi.hoisted(() => vi.fn());
+vi.mock('../../services/freeDictionaryApi', () => ({
+    lookupWord: (...args: unknown[]) => mockLookupWord(...args),
+}));
+
 vi.mock('mammoth', () => ({
     convertToHtml: vi.fn().mockResolvedValue({ value: '<p>Converted docx content</p>' }),
 }));
 
 vi.mock('../Editor/EssayEditor', () => ({
-    default: ({ content, editable }: { content: string; editable?: boolean }) => (
-        <div data-testid="essay-editor" data-editable={String(!!editable)} data-content={content} />
-    ),
+    default: ({
+        content,
+        editable,
+        onChange,
+    }: {
+        content: string;
+        editable?: boolean;
+        onChange?: (html: string) => void;
+    }) => {
+        // Emit an edit so the read-only onChange (noop) is exercised.
+        if (onChange) onChange('<p>x</p>');
+        return <div data-testid="essay-editor" data-editable={String(!!editable)} data-content={content} />;
+    },
 }));
 
 vi.mock('../Editor/CommentableDocumentView', () => ({
@@ -217,6 +233,89 @@ describe('AttachmentViewer', () => {
         expect(container.querySelector('iframe')).toBeFalsy();
     });
 
+    it('renders no essay content when the html dataUrl is not valid base64', () => {
+        render(
+            <AttachmentViewer
+                attachment={{ ...makeAttachment('text/html', 'broken.html'), dataUrl: 'data:text/html;base64,@@@' }}
+            />
+        );
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+    });
+
+    it('clears the docx preview container when rendering the original view succeeds', async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockResolvedValue(new Blob(['fake docx bytes']));
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        const originalToggle = await screen.findByText('attachments.view_original');
+        fireEvent.click(originalToggle);
+        await waitFor(() => expect(renderAsync).toHaveBeenCalled());
+        globalThis.fetch = origFetch;
+    });
+
+    it('ignores the docx conversion result after unmounting', async () => {
+        let resolveConvert: (v: { value: string }) => void = () => {};
+        (mammoth.convertToHtml as ReturnType<typeof vi.fn>).mockImplementationOnce(
+            () =>
+                new Promise<{ value: string }>((res) => {
+                    resolveConvert = res;
+                })
+        );
+        const { unmount } = render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        // Let the dynamic mammoth import resolve and the effect call convertToHtml first.
+        await new Promise((r) => setTimeout(r, 0));
+        unmount();
+        resolveConvert({ value: '<p>late</p>' });
+        await new Promise((r) => setTimeout(r, 0));
+    });
+
+    it('ignores the docx conversion error after unmounting', async () => {
+        vi.mocked(mammoth.convertToHtml).mockRejectedValueOnce(new Error('late failure'));
+        const { unmount } = render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        // Unmount before the dynamic import resolves so the rejection lands with `cancelled` set.
+        unmount();
+        await new Promise((r) => setTimeout(r, 0));
+        expect(screen.queryByText(/Failed to preview Word document/i)).not.toBeInTheDocument();
+    });
+
+    it('switches back to the formatted view via its toggle', async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error('fetch failed'));
+        render(
+            <AttachmentViewer
+                attachment={makeAttachment(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'doc.docx'
+                )}
+            />
+        );
+        fireEvent.click(await screen.findByText('attachments.view_original'));
+        await screen.findByText(/Failed to preview Word document/i);
+        fireEvent.click(screen.getByText('attachments.view_formatted'));
+        expect(screen.getByText('attachments.view_formatted')).toHaveClass('btn-primary');
+        globalThis.fetch = origFetch;
+    });
+
     it('renders the commentable document view for essay html when commentable is set (26.3)', () => {
         const html = '<p>Hello <strong>World</strong></p>';
         const dataUrl = `data:text/html;base64,${btoa(unescape(encodeURIComponent(html)))}`;
@@ -311,6 +410,75 @@ describe('VocabularyListEditor', () => {
         const grammarBtn = screen.getByRole('button', { name: /grammar/i });
         fireEvent.click(grammarBtn);
         expect(grammarBtn.className).toMatch(/btn-primary/);
+    });
+
+    it('edits an item inline: clears optional fields and changes the CEFR level', () => {
+        const onUpdate = vi.fn();
+        const items: VocabularyItem[] = [
+            {
+                id: 'v1',
+                phrase: 'good morning',
+                category: 'vocabulary',
+                linkedCriterionId: 'c1',
+                notes: 'note',
+                cefrLevel: 'A1',
+                definition: 'def',
+            },
+        ];
+        const criteria = [{ id: 'c1', title: 'Structure' }] as never[];
+        render(<VocabularyListEditor {...baseProps} items={items} criteria={criteria} onUpdate={onUpdate} />);
+        const row = (screen.getByText('good morning') as HTMLElement).closest('.card') as HTMLElement;
+        fireEvent.click(row.querySelector('button')!); // chevron opens the inline editor
+        expect((screen.getByDisplayValue('good morning') as HTMLInputElement).value).toBe('good morning');
+
+        const combos = within(row).getAllByRole('combobox');
+        // [0] category, [1] linked criterion, [2] CEFR level
+        fireEvent.change(combos[1], { target: { value: '' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', linkedCriterionId: undefined }));
+
+        fireEvent.change(combos[2], { target: { value: 'B1' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', cefrLevel: 'B1' }));
+        fireEvent.change(combos[2], { target: { value: '' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', cefrLevel: undefined }));
+
+        fireEvent.change(within(row).getByPlaceholderText(/Notes/), { target: { value: '' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', notes: undefined }));
+
+        const defInput = within(row).getByPlaceholderText('cambridge.definition_placeholder');
+        fireEvent.change(defInput, { target: { value: 'new def' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', definition: 'new def' }));
+        fireEvent.change(defInput, { target: { value: '' } });
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'v1', definition: undefined }));
+    });
+
+    it('fills only the fields a dictionary lookup returns', async () => {
+        mockLookupWord.mockResolvedValue({ level: 'A1', definition: undefined });
+        const onUpdate = vi.fn();
+        render(
+            <VocabularyListEditor
+                {...baseProps}
+                items={[{ id: 'v1', phrase: 'bonjour', category: 'vocabulary' }]}
+                onUpdate={onUpdate}
+            />
+        );
+        const row = (screen.getByText('bonjour') as HTMLElement).closest('.card') as HTMLElement;
+        fireEvent.click(row.querySelector('button')!); // chevron opens the inline editor
+        fireEvent.click(within(row).getByTitle('cambridge.lookup_button'));
+        await waitFor(() =>
+            expect(onUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'v1', cefrLevel: 'A1', definition: undefined })
+            )
+        );
+    });
+
+    it('renders an empty linked-criterion label when the criterion is missing', () => {
+        render(
+            <VocabularyListEditor
+                {...baseProps}
+                items={[{ id: 'v1', phrase: 'orphan', category: 'vocabulary', linkedCriterionId: 'gone' }]}
+            />
+        );
+        expect(screen.getByText('orphan')).toBeInTheDocument();
     });
 });
 
