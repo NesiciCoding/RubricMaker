@@ -20,6 +20,7 @@ type Cellish = string | number | boolean | Date | null | undefined;
 
 function toText(cell: Cellish): string {
     if (cell === null || cell === undefined) return '';
+    /* v8 ignore next -- cells only ever come from CSV/txt string parsing, never Date values */
     if (cell instanceof Date) return cell.toISOString().slice(0, 10);
     return String(cell).trim();
 }

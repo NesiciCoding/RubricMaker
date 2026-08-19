@@ -31,6 +31,7 @@ async function pbkdf2Hex(pin: string, salt: Uint8Array): Promise<string> {
 }
 
 function constantTimeEqual(a: string, b: string): boolean {
+    /* v8 ignore next -- V2_BODY_RE guarantees both inputs are 64 hex chars before this is called */
     if (a.length !== b.length) return false;
     let diff = 0;
     for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);

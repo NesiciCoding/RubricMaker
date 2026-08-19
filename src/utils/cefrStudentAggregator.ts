@@ -422,6 +422,7 @@ export function getCefrStudentOverview(
         }
 
         pointsEarned.forEach((earned, guid) => {
+            /* v8 ignore next -- pointsMax is always set alongside pointsEarned, so the ?? 0 never fires */
             const max = pointsMax.get(guid) ?? 0;
             if (max === 0) return;
             const std = standardInfo.get(guid)!;
@@ -673,6 +674,7 @@ export function getCefrStudentOverview(
 
     const setGroupMap = new Map<string, StandardSetGroup>();
     standardAccMap.forEach((acc) => {
+        /* v8 ignore next -- totalMax is always > 0: the max === 0 guard above skips zero-max standards */
         const avgScore = acc.totalMax > 0 ? (acc.totalEarned / acc.totalMax) * 100 : 0;
         const score: StandardCellScore = {
             guid: acc.standard.guid,

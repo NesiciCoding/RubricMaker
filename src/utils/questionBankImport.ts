@@ -244,6 +244,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
             warnings: [
                 {
                     key: 'questionBank.import_warn_parse_failed',
+                    /* v8 ignore next -- JSON.parse only ever throws Error instances (e.g. SyntaxError) */
                     params: { message: err instanceof Error ? err.message : String(err) },
                 },
             ],

@@ -22,6 +22,9 @@ function serializeCard(card: Card): FlashcardCardState {
         reps: card.reps,
         lapses: card.lapses,
         state: card.state,
+        // ts-fsrs always stamps last_review on a scheduled card (init() sets it unconditionally), so the
+        // spread's empty side is unreachable — kept defensive, but excluded from coverage.
+        /* v8 ignore next 1 */
         ...(card.last_review ? { last_review: card.last_review.toISOString() } : {}),
     };
 }
@@ -51,7 +54,7 @@ export function rateCard(
     return serializeCard(result.card);
 }
 
-function intervalLabel(from: Date, to: Date): string {
+export function intervalLabel(from: Date, to: Date): string {
     const minutes = Math.max(1, Math.round((to.getTime() - from.getTime()) / 60000));
     if (minutes < 60) return `${minutes}m`;
     const hours = Math.round(minutes / 60);

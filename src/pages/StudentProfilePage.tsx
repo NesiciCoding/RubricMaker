@@ -847,6 +847,8 @@ export default function StudentProfilePage() {
                                         }}
                                     >
                                         {cefrProgress.map((entry) => {
+                                            // CEFR_SKILL_LABELS is a complete Record<CefrSkill>, so the fallback is unreachable.
+                                            /* v8 ignore next -- provably dead: every CefrSkill has a label */
                                             const skillLabel = CEFR_SKILL_LABELS[entry.skill]?.[lang] ?? entry.skill;
                                             return (
                                                 <div

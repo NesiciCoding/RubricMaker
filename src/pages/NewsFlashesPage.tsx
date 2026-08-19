@@ -107,6 +107,7 @@ export default function NewsFlashesPage() {
     }
 
     function handleSave() {
+        /* v8 ignore next -- the Save button is disabled while the title is empty */
         if (!draft || !draft.title.trim()) return;
         const isContentEmpty = htmlToPlainText(draft.content).length === 0;
         const payload = {

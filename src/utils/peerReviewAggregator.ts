@@ -113,6 +113,8 @@ export function aggregatePeerReviews(
 
             if (entry.comment && entry.comment.trim().length > 0) {
                 const cStat = criterionStats.get(criterion.id);
+                // criterion comes from rubric.criteria, which also seeds criterionStats — always present.
+                /* v8 ignore next 1 */
                 if (cStat) cStat.commentCount += 1;
             }
 

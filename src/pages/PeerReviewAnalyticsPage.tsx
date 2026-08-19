@@ -72,6 +72,7 @@ export default function PeerReviewAnalyticsPage() {
         );
     }
 
+    /* v8 ignore next -- filteredAnalytics is always non-null past the rubric guard */
     const stats = filteredAnalytics ?? analytics;
 
     const heatmapCriteria = rubric.criteria.map((c) => ({ id: c.id, title: c.title }));

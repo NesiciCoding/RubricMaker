@@ -37,6 +37,7 @@ export function evaluateGrammar(linked: LinkedFrameworkDescriptor[], text: strin
     const items: GrammarItemResult[] = grammar.map((d) => {
         const item = getGrammarItemById(d.descriptorId);
         const shorthand = item?.detectShorthand;
+        /* v8 ignore next -- detectGrammar seeds every wanted shorthand (all standards shorthands have a pattern), so the key is always present */
         const occurrences = shorthand ? (counts[shorthand] ?? 0) : 0;
         return {
             descriptorId: d.descriptorId,

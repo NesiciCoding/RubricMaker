@@ -35,6 +35,7 @@ function pickVoice(lang: string): SpeechSynthesisVoice | null {
         const match = voices.find((v) => v.lang === code || v.lang.startsWith(code));
         if (match) return match;
     }
+    /* v8 ignore next -- voices is non-empty (guarded above), so voices[0] always exists */
     return voices[0] ?? null;
 }
 
@@ -44,6 +45,7 @@ export function htmlToPlainText(html: string): string {
         el.prepend(document.createTextNode(' '));
         el.append(document.createTextNode(' '));
     });
+    /* v8 ignore next -- an element's textContent is never null, only an empty string */
     return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 

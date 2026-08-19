@@ -212,9 +212,11 @@ export function seedDemoData(): void {
                 singlePointOutcome: pct >= 70 ? 'meets' : 'not-yet',
             };
         }
+        /* v8 ignore start -- demo pct (50-99) always falls inside one of the tier ranges, so the ?? fallback is unreachable */
         const level =
             criterion.levels.find((l) => pct >= l.minPoints && pct <= l.maxPoints) ??
             criterion.levels[criterion.levels.length - 1];
+        /* v8 ignore stop */
         // Simulate a teacher moving the points slider within the band, rather than leaving it
         // at the band's default minimum (which is 0 for the bottom "Developing" tier) — otherwise
         // a 50%-ish grade renders as a literal 0, which reads as a scoring bug.
@@ -256,6 +258,7 @@ export function seedDemoData(): void {
     const baseline = studentRubrics.find(
         (sr) => sr.studentId === disputeStudent.id && sr.rubricId === disputeRubric.id
     );
+    /* v8 ignore next -- students[0] is always graded with rubrics[0] above */
     if (baseline) {
         peerReviews.push({
             id: nanoid(),

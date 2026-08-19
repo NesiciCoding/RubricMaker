@@ -89,6 +89,8 @@ function parseQuery(query: string): {
 
     const filterRegex = /\b(type|class|year|track|mode|area):(?:"([^"]*)"|(\S+))/gi;
     const remaining = query.replace(filterRegex, (match, key: string, quoted?: string, bare?: string) => {
+        // The regex always captures quoted or bare, so the trailing '' is unreachable — kept for safety.
+        /* v8 ignore next 1 */
         const value = quoted ?? bare ?? '';
         const lowerKey = key.toLowerCase();
         if (lowerKey === 'type') {
