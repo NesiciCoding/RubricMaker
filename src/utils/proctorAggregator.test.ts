@@ -41,6 +41,14 @@ describe('derivePresence', () => {
         const events = [heartbeat(120, 'active'), heartbeat(5, 'active'), heartbeat(60, 'idle')];
         expect(derivePresence(events, NOW)).toBe('active');
     });
+
+    it('ignores non-heartbeat events when looking for the latest heartbeat', () => {
+        const events: ProctorEvent[] = [
+            { type: 'tab_switch', at: '2024-01-01T12:00:00.000Z' },
+            { type: 'copy', at: '2024-01-01T12:00:05.000Z' },
+        ];
+        expect(derivePresence(events, NOW)).toBe('disconnected');
+    });
 });
 
 describe('summarizeProctorFlags', () => {
@@ -83,6 +91,22 @@ describe('summarizeProctorFlags', () => {
         const events: ProctorEvent[] = [{ type: 'battery', at: '2024-01-01T12:00:00.000Z', value: '' }];
         expect(summarizeProctorFlags(events).battery).toBeNull();
         expect(summarizeProctorFlags([{ type: 'battery', at: '2024-01-01T12:00:00.000Z' }]).battery).toBeNull();
+    });
+
+    it('treats a battery value that is not a number as null', () => {
+        const events: ProctorEvent[] = [{ type: 'battery', at: '2024-01-01T12:00:00.000Z', value: 'full' }];
+        expect(summarizeProctorFlags(events).battery).toBeNull();
+        // Also when the charging marker is present but the level is non-numeric
+        const events2: ProctorEvent[] = [{ type: 'battery', at: '2024-01-01T12:00:00.000Z', value: 'full+' }];
+        expect(summarizeProctorFlags(events2).battery).toBeNull();
+    });
+
+    it('keeps the newest reading when an older battery event arrives later in the list', () => {
+        const events: ProctorEvent[] = [
+            { type: 'battery', at: '2024-01-01T12:05:00.000Z', value: '80' },
+            { type: 'battery', at: '2024-01-01T12:00:00.000Z', value: '60' }, // older timestamp → ignored
+        ];
+        expect(summarizeProctorFlags(events).battery).toEqual({ level: 80, charging: false });
     });
 
     it('sets sebActive when a seb_status event reports true', () => {
@@ -205,5 +229,15 @@ describe('calcTestTimeOnTask', () => {
         const studentTests: StudentTest[] = [submission('s1', '2024-01-01T10:00:00.000Z', '2024-01-01T10:35:00.000Z')];
         const summary = calcTestTimeOnTask({ ...test, durationMinutes: 40 }, studentTests);
         expect(summary.perStudent[0].isOutlier).toBe(false);
+    });
+
+    it('averages the two middle durations for an even number of submissions', () => {
+        const studentTests: StudentTest[] = [
+            submission('s1', '2024-01-01T10:00:00.000Z', '2024-01-01T10:20:00.000Z'), // 20 min
+            submission('s2', '2024-01-01T10:00:00.000Z', '2024-01-01T10:30:00.000Z'), // 30 min
+        ];
+        const summary = calcTestTimeOnTask(test, studentTests);
+        expect(summary.medianMinutes).toBe(25);
+        expect(summary.averageMinutes).toBe(25);
     });
 });

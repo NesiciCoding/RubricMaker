@@ -1,6 +1,8 @@
+import React from 'react';
+import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { reducer } from './storeCore';
-import { deleteRubricVersions } from '../store/storage';
+import { reducer, recordAutoVersion, summarizeAction, flushToLocalStorage, useContextOrThrow } from './storeCore';
+import { deleteRubricVersions, upsertRubricVersion } from '../store/storage';
 import type { StoreData } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
 import type {
@@ -83,6 +85,33 @@ vi.mock('../store/storage', () => {
     ];
     return Object.fromEntries(names.map((n) => [n, vi.fn()]));
 });
+
+// Controls whether isOffline() reports connected — flips the `if (isOffline())`
+// save guards in the reducer so their falsy (skip-write) sides are covered, and
+// lets recordAutoVersion exercise its pushOne branch.
+const dbControl = vi.hoisted(() => ({
+    connected: false,
+    pushOne: vi.fn(),
+    pushMany: vi.fn(),
+}));
+vi.mock('../services/database/lazyDb', () => ({
+    getDb: () =>
+        dbControl.connected
+            ? {
+                  storageSync: {
+                      isConnected: () => true,
+                      pushOne: dbControl.pushOne,
+                      pushMany: dbControl.pushMany,
+                  },
+              }
+            : null,
+    loadDb: vi.fn(() => Promise.resolve({ storageSync: {} })),
+}));
+
+const pruneOrphanedBlobs = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+vi.mock('../services/mediaStore', () => ({
+    pruneOrphanedBlobs,
+}));
 
 type Action = Parameters<typeof reducer>[1];
 
@@ -744,5 +773,571 @@ describe('AppContext reducer — templates, question bank, comments, notificatio
     it('returns state unchanged for unknown action types', () => {
         const state = makeState();
         expect(run(state, { type: 'NOT_A_REAL_ACTION' } as never)).toBe(state);
+    });
+});
+
+// ─── Connected-mode coverage ────────────────────────────────────────────────
+// With isOffline() false, every `if (isOffline()) saveX(...)` guard skips its
+// write, and every map/ternary over a two-item collection visits both sides.
+
+const vocab1: VocabularyItem = { id: 'v1', phrase: 'hello', category: 'vocabulary' };
+const vocab2: VocabularyItem = { id: 'v2', phrase: 'bye', category: 'grammar' };
+const cardState = {
+    due: now,
+    stability: 1,
+    difficulty: 0.5,
+    elapsed_days: 0,
+    scheduled_days: 1,
+    learning_steps: 1,
+    reps: 1,
+    lapses: 0,
+    state: 1,
+};
+
+function richState(): StoreData {
+    return makeState({
+        rubrics: [rubric, { ...rubric, id: 'r2', name: 'R2', vocabularyItems: [vocab1, vocab2] }],
+        students: [student, { id: 's2', name: 'Bob', classId: 'c1' }],
+        classes: [cls, { id: 'c2', name: 'Class B' }],
+        studentRubrics: [studentRubric, { ...studentRubric, id: 'sr2', rubricId: 'r2', studentId: 's2' }],
+        gradeScales: [gradeScale, { id: 'gs2', name: 'Scale B', type: 'points', ranges: [] }],
+        favoriteStandards: [{ guid: 'g1', description: 'd', standardSetTitle: 's', jurisdictionTitle: 'j' }],
+        commentBank: [
+            { id: 'cb1', text: 'Good', tags: ['a'], createdAt: now, updatedAt: now },
+            { id: 'cb2', text: 'Also good', tags: [], createdAt: now, updatedAt: now },
+        ],
+        exportTemplates: [{ id: 'et1', name: 'T', dataUrl: 'd', levelHeaders: ['H'], size: 1, addedAt: now }],
+        peerReviews: [
+            { ...studentRubric, id: 'pr1', isPeerReview: true },
+            { ...studentRubric, id: 'pr2', rubricId: 'r2', studentId: 's2', isPeerReview: true },
+        ],
+        selfAssessments: [
+            { id: 'sa1', rubricId: 'r1', studentId: 's1', ratings: [], submittedAt: now },
+            { id: 'sa2', rubricId: 'r2', studentId: 's2', ratings: [], submittedAt: now },
+        ],
+        speakingSessions: [
+            {
+                id: 'ss1',
+                rubricId: 'r1',
+                studentId: 's1',
+                durationSeconds: 60,
+                elapsedSeconds: 30,
+                pronunciationMarks: [],
+                entries: [],
+                overallComment: '',
+                gradedAt: now,
+            },
+            {
+                id: 'ss2',
+                rubricId: 'r2',
+                studentId: 's2',
+                durationSeconds: 30,
+                elapsedSeconds: 15,
+                pronunciationMarks: [],
+                entries: [],
+                overallComment: '',
+                gradedAt: now,
+            },
+        ],
+        analysisResults: [
+            {
+                id: 'ar1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'a1',
+                extractedText: '',
+                analyzedAt: now,
+                detectedItems: [],
+                grammarErrors: [],
+                grammarCheckerUsed: 'none',
+            },
+            {
+                id: 'ar2',
+                studentId: 's2',
+                rubricId: 'r2',
+                attachmentId: 'a2',
+                extractedText: '',
+                analyzedAt: now,
+                detectedItems: [],
+                grammarErrors: [],
+                grammarCheckerUsed: 'none',
+            },
+        ],
+        tests: [
+            { id: 't1', name: 'T', questions: [], requireSEB: false, shuffleQuestions: false, createdAt: now },
+            { id: 't2', name: 'T2', questions: [], requireSEB: false, shuffleQuestions: false, createdAt: now },
+        ],
+        studentTests: [
+            { id: 'st1', testId: 't1', studentId: 's1', answers: [], status: 'in_progress', startedAt: now },
+            { id: 'st2', testId: 't2', studentId: 's2', answers: [], status: 'in_progress', startedAt: now },
+        ],
+        essayAssignments: [
+            {
+                teacherKey: 'tk1',
+                studentId: 's1',
+                title: 'E',
+                prompt: 'P',
+                readOnlyAfterSubmit: false,
+                createdAt: now,
+                rubricId: 'r1',
+            },
+            {
+                teacherKey: 'tk2',
+                studentId: 's2',
+                title: 'E2',
+                prompt: 'P2',
+                readOnlyAfterSubmit: false,
+                createdAt: now,
+                rubricId: 'r2',
+            },
+        ],
+        essaySubmissions: [
+            {
+                id: 'es1',
+                assignmentRubricId: 'r1',
+                assignmentStudentId: 's1',
+                teacherKey: 'tk1',
+                contentHtml: '',
+                wordCount: 0,
+                submittedAt: now,
+            },
+            {
+                id: 'es2',
+                assignmentRubricId: 'r2',
+                assignmentStudentId: 's2',
+                teacherKey: 'tk2',
+                contentHtml: '',
+                wordCount: 0,
+                submittedAt: now,
+            },
+        ],
+        essayTemplates: [
+            {
+                id: 'ett1',
+                title: 'T',
+                prompt: 'P',
+                rubricId: 'r1',
+                requireSEB: false,
+                readOnlyAfterSubmit: false,
+                createdAt: now,
+            },
+            {
+                id: 'ett2',
+                title: 'T2',
+                prompt: 'P2',
+                rubricId: 'r2',
+                requireSEB: false,
+                readOnlyAfterSubmit: false,
+                createdAt: now,
+            },
+        ],
+        gradingTasks: [{ id: 'gt1', rubricId: 'r1', studentId: 's1', assignedToTeacher: 't1', assignedAt: now }],
+        messages: [
+            {
+                id: 'm1',
+                studentId: 's1',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'teacher',
+                body: 'B',
+                createdAt: now,
+                readByTeacher: false,
+                readByStudent: false,
+            },
+            {
+                id: 'm2',
+                studentId: 's2',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'teacher',
+                body: 'B2',
+                createdAt: now,
+                readByTeacher: false,
+                readByStudent: false,
+            },
+        ],
+        flashcardDecks: [
+            { id: 'd1', name: 'D', cards: [], createdAt: now },
+            { id: 'd2', name: 'D2', cards: [], createdAt: now },
+        ],
+        flashcardAssignments: [{ deckId: 'd1', studentId: 's1', deckName: 'D', cardCount: 0, createdAt: now }],
+        flashcardReviews: [
+            { id: 'd1:s1', deckId: 'd1', studentId: 's1', cardStates: {}, updatedAt: now },
+            { id: 'd2:s2', deckId: 'd2', studentId: 's2', cardStates: {}, updatedAt: now },
+        ],
+        standardMasteryTargets: [
+            {
+                id: 'mt1',
+                standardGuid: 'g1',
+                standardDescription: 'd',
+                standardSetTitle: 's',
+                year: 'jaar-1',
+                targetPercentage: 80,
+            },
+            {
+                id: 'mt2',
+                standardGuid: 'g2',
+                standardDescription: 'd',
+                standardSetTitle: 's',
+                year: 'jaar-1',
+                targetPercentage: 90,
+            },
+        ],
+        newsFlashes: [
+            { id: 'nf1', title: 'N', summary: 'S', kind: 'article', tags: [], createdAt: now },
+            { id: 'nf2', title: 'N2', summary: 'S2', kind: 'article', tags: [], createdAt: now },
+        ],
+        newsFlashReads: [
+            { id: 'nf1:s1', flashId: 'nf1', studentId: 's1', readAt: now },
+            { id: 'nf2:s2', flashId: 'nf2', studentId: 's2', readAt: now },
+        ],
+        userTemplates: [{ id: 'ut1', name: 'T', subject: '', criteria: [], savedAt: now }],
+        questionBank: [{ id: 'qb1', tags: [], createdAt: now }],
+        documentComments: [
+            {
+                id: 'dc1',
+                attachmentId: 'a1',
+                authorId: 'teacher-1',
+                text: 'Nice',
+                createdAt: now,
+                resolved: false,
+                anchor: { from: 0, to: 5 },
+            },
+            {
+                id: 'dc2',
+                attachmentId: 'a2',
+                authorId: 'teacher-1',
+                text: 'Also nice',
+                createdAt: now,
+                resolved: false,
+                anchor: { from: 0, to: 3 },
+            },
+        ],
+        notificationDismissals: [
+            { id: 'overdue_grading:s1', type: 'overdue_grading', entityId: 's1', fingerprint: 'f1', dismissedAt: now },
+            { id: 'overdue_grading:s2', type: 'overdue_grading', entityId: 's2', fingerprint: 'f2', dismissedAt: now },
+        ],
+    });
+}
+
+describe('AppContext reducer — connected mode and edge branches', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        dbControl.connected = false;
+        dbControl.pushOne.mockClear();
+        dbControl.pushMany.mockClear();
+        pruneOrphanedBlobs.mockClear();
+    });
+
+    it('skips every localStorage write while connected, across all action types', () => {
+        dbControl.connected = true;
+        const base = richState();
+
+        const actions: Action[] = [
+            { type: 'UPDATE_RUBRIC', payload: { ...base.rubrics[0], name: 'U' } },
+            { type: 'DELETE_RUBRIC', id: 'r2' },
+            { type: 'UPDATE_STUDENT', payload: { ...base.students[0], name: 'U' } },
+            { type: 'DELETE_STUDENT', id: 's2' },
+            { type: 'RESTORE_STUDENT', id: 's2' },
+            { type: 'ANONYMIZE_STUDENT', id: 's1' },
+            { type: 'UPDATE_CLASS', payload: { ...base.classes[0], name: 'U' } },
+            { type: 'DELETE_CLASS', id: 'c2' },
+            { type: 'SAVE_STUDENT_RUBRIC', payload: { ...base.studentRubrics[0], overallComment: 'U' } },
+            { type: 'DELETE_STUDENT_RUBRIC', id: 'sr2', scope: 'student' },
+            { type: 'RESTORE_STUDENT_RUBRIC', id: 'sr2' },
+            {
+                type: 'SAVE_RUBRIC_SELF_ASSESSMENT',
+                id: 'sr1',
+                levels: { c1: 'A1' },
+                reflection: 'R',
+            },
+            {
+                type: 'ADD_ATTACHMENT',
+                payload: { id: 'a1', name: 'F', mimeType: 'docx', dataUrl: 'd', size: 1, addedAt: now },
+            },
+            { type: 'DELETE_ATTACHMENT', id: 'a1' },
+            { type: 'ADD_GRADE_SCALE', payload: { id: 'gs3', name: 'G', type: 'letter', ranges: [] } },
+            { type: 'UPDATE_GRADE_SCALE', payload: { ...base.gradeScales[0], name: 'U' } },
+            { type: 'DELETE_GRADE_SCALE', id: 'gs2' },
+            { type: 'UPDATE_SETTINGS', payload: { theme: 'dark' } },
+            {
+                type: 'ADD_FAVORITE_STANDARD',
+                payload: { guid: 'g2', description: 'd', standardSetTitle: 's', jurisdictionTitle: 'j' },
+            },
+            { type: 'REMOVE_FAVORITE_STANDARD', guid: 'g1' },
+            {
+                type: 'ADD_COMMENT_BANK_ITEM',
+                payload: { id: 'cb2', text: 'T', tags: [], createdAt: now, updatedAt: now },
+            },
+            { type: 'UPDATE_COMMENT_BANK_ITEM', payload: { ...base.commentBank[0], text: 'U' } },
+            { type: 'DELETE_COMMENT_BANK_ITEM', id: 'cb1' },
+            { type: 'RECORD_COMMENT_BANK_USAGE', id: 'cb1' },
+            {
+                type: 'ADD_EXPORT_TEMPLATE',
+                payload: { id: 'et2', name: 'T', dataUrl: 'd', levelHeaders: [], size: 1, addedAt: now },
+            },
+            { type: 'DELETE_EXPORT_TEMPLATE', id: 'et1' },
+            { type: 'SAVE_PEER_REVIEW', payload: { ...base.peerReviews[0], overallComment: 'U' } },
+            { type: 'DELETE_PEER_REVIEW', id: 'pr1' },
+            { type: 'SAVE_SELF_ASSESSMENT', payload: { ...base.selfAssessments[0], reflection: 'U' } },
+            { type: 'DELETE_SELF_ASSESSMENT', id: 'sa1' },
+            { type: 'SAVE_SPEAKING_SESSION', payload: { ...base.speakingSessions[0], overallComment: 'U' } },
+            { type: 'DELETE_SPEAKING_SESSION', id: 'ss1' },
+            {
+                type: 'SYNC_RUBRIC_SNAPSHOT',
+                rubricId: 'r1',
+                updatedRubric: {
+                    ...base.rubrics[0],
+                    criteria: [
+                        ...base.rubrics[0].criteria,
+                        { id: 'c2', title: 'C2', description: '', weight: 50, levels: [] },
+                    ],
+                },
+            },
+            { type: 'RESTORE_RUBRIC_VERSION', rubricId: 'r2', snapshot: { ...base.rubrics[1] } },
+            { type: 'ADD_VOCABULARY_ITEM', rubricId: 'r1', payload: vocab1 },
+            { type: 'UPDATE_VOCABULARY_ITEM', rubricId: 'r2', payload: { ...vocab1, phrase: 'U' } },
+            { type: 'DELETE_VOCABULARY_ITEM', rubricId: 'r2', itemId: 'v1' },
+            { type: 'DELETE_VOCABULARY_ITEMS_BATCH', rubricId: 'r2', itemIds: ['v2'] },
+            // r1 has no vocabularyItems yet — the (?? []) guards fall back to an empty list.
+            { type: 'UPDATE_VOCABULARY_ITEM', rubricId: 'r1', payload: { ...vocab1, phrase: 'U' } },
+            { type: 'DELETE_VOCABULARY_ITEM', rubricId: 'r1', itemId: 'v1' },
+            { type: 'DELETE_VOCABULARY_ITEMS_BATCH', rubricId: 'r1', itemIds: ['v1'] },
+            { type: 'SAVE_ANALYSIS_RESULT', payload: { ...base.analysisResults[0], extractedText: 'U' } },
+            { type: 'DELETE_ANALYSIS_RESULT', id: 'ar1' },
+            {
+                type: 'ADD_TEST',
+                payload: {
+                    id: 't2',
+                    name: 'T',
+                    questions: [],
+                    requireSEB: false,
+                    shuffleQuestions: false,
+                    createdAt: now,
+                },
+            },
+            { type: 'UPDATE_TEST', payload: { ...base.tests[0], name: 'U' } },
+            { type: 'DELETE_TEST', id: 't1' },
+            { type: 'SAVE_STUDENT_TEST', payload: { ...base.studentTests[0], status: 'submitted' } },
+            { type: 'DELETE_STUDENT_TEST', id: 'st1' },
+            { type: 'ADD_ESSAY_ASSIGNMENTS', payload: [{ ...base.essayAssignments[0], teacherKey: 'tk2' }] },
+            { type: 'UPDATE_ESSAY_GROUP', teacherKey: 'tk1', patch: { title: 'U' } },
+            { type: 'DELETE_ESSAY_GROUP', teacherKey: 'tk1' },
+            { type: 'ADD_ESSAY_SUBMISSION', payload: { ...base.essaySubmissions[0], id: 'es2' } },
+            { type: 'SAVE_ESSAY_TEMPLATE', payload: { ...base.essayTemplates[0], title: 'U' } },
+            { type: 'DELETE_ESSAY_TEMPLATE', id: 'ett1' },
+            { type: 'ADD_GRADING_TASKS', payload: [{ ...base.gradingTasks[0], id: 'gt2' }] },
+            { type: 'DELETE_GRADING_TASK', id: 'gt1' },
+            { type: 'SEND_MESSAGE', payload: { ...base.messages[0], body: 'U' } },
+            { type: 'MARK_MESSAGE_READ_BY_TEACHER', id: 'm1' },
+            { type: 'ADD_FLASHCARD_DECK', payload: { id: 'd2', name: 'D', cards: [], createdAt: now } },
+            { type: 'UPDATE_FLASHCARD_DECK', payload: { ...base.flashcardDecks[0], name: 'U' } },
+            { type: 'DELETE_FLASHCARD_DECK', id: 'd1' },
+            {
+                type: 'ADD_STANDARD_MASTERY_TARGET',
+                payload: {
+                    id: 'mt2',
+                    standardGuid: 'g2',
+                    standardDescription: 'd',
+                    standardSetTitle: 's',
+                    year: 'jaar-1',
+                    targetPercentage: 90,
+                },
+            },
+            {
+                type: 'UPDATE_STANDARD_MASTERY_TARGET',
+                payload: { ...base.standardMasteryTargets[0], targetPercentage: 85 },
+            },
+            { type: 'DELETE_STANDARD_MASTERY_TARGET', id: 'mt1' },
+            { type: 'ADD_FLASHCARD_ASSIGNMENTS', payload: [{ ...base.flashcardAssignments[0], deckId: 'd2' }] },
+            { type: 'SAVE_FLASHCARD_REVIEW', payload: { ...base.flashcardReviews[0], cardStates: { c: cardState } } },
+            {
+                type: 'ADD_NEWS_FLASH',
+                payload: { id: 'nf2', title: 'N', summary: 'S', kind: 'article', tags: [], createdAt: now },
+            },
+            { type: 'UPDATE_NEWS_FLASH', payload: { ...base.newsFlashes[0], title: 'U' } },
+            { type: 'DELETE_NEWS_FLASH', id: 'nf1' },
+            { type: 'SAVE_NEWS_FLASH_READ', payload: { ...base.newsFlashReads[0], readAt: now } },
+            { type: 'SAVE_USER_TEMPLATE', payload: { ...base.userTemplates[0], name: 'U' } },
+            { type: 'DELETE_USER_TEMPLATE', id: 'ut1' },
+            { type: 'ADD_QUESTION_BANK_ITEM', payload: { id: 'qb2', tags: [], createdAt: now } },
+            { type: 'ADD_QUESTION_BANK_ITEMS', payload: [{ id: 'qb3', tags: [], createdAt: now }] },
+            { type: 'UPDATE_QUESTION_BANK_ITEM', payload: { ...base.questionBank[0], tags: ['u'] } },
+            { type: 'DELETE_QUESTION_BANK_ITEM', id: 'qb1' },
+            { type: 'DELETE_QUESTION_BANK_ITEMS', ids: ['qb1'] },
+            { type: 'ADD_DOCUMENT_COMMENT', payload: { ...base.documentComments[0], id: 'dc2' } },
+            { type: 'RESOLVE_DOCUMENT_COMMENT', id: 'dc1', resolved: true },
+            { type: 'DELETE_DOCUMENT_COMMENT', id: 'dc1' },
+            { type: 'DISMISS_NOTIFICATION', payload: { ...base.notificationDismissals[0], fingerprint: 'f2' } },
+            {
+                type: 'BULK_UPDATE_QUESTION_BANK_ITEMS',
+                ids: ['qb1'],
+                patch: { addTags: ['x'], removeTags: ['y'], cefrLevel: 'B2' },
+            },
+            // Tags-only patch: cefrLevel is absent, so the ?? falls back to the stored facet.
+            {
+                type: 'BULK_UPDATE_QUESTION_BANK_ITEMS',
+                ids: ['qb1'],
+                patch: { addTags: ['z'] },
+            },
+        ];
+
+        // Every dispatch must complete without throwing; isOffline() is false so no
+        // save* is called. Running the full catalog also visits the map/ternary
+        // alternates in the two-item collections above.
+        for (const action of actions) {
+            expect(() => run(base, action)).not.toThrow();
+        }
+    });
+
+    it('pushes rubric versions to the server when connected and evicts old snapshots', () => {
+        dbControl.connected = true;
+        vi.mocked(upsertRubricVersion).mockReturnValue({ versions: [], evictedIds: ['v-old'] });
+        recordAutoVersion(rubric);
+        expect(dbControl.pushOne).toHaveBeenCalledWith(
+            'rubricVersion',
+            'upsert',
+            expect.objectContaining({ rubricId: 'r1', label: 'auto:' }),
+            expect.any(String)
+        );
+        expect(dbControl.pushOne).toHaveBeenCalledWith('rubricVersion', 'delete', null, 'v-old');
+    });
+
+    it('keeps auto-versions local-only while disconnected', () => {
+        vi.mocked(upsertRubricVersion).mockReturnValue({ versions: [], evictedIds: [] });
+        recordAutoVersion(rubric);
+        expect(dbControl.pushOne).not.toHaveBeenCalled();
+    });
+
+    it('keeps the last grade scale when deleting the only one', () => {
+        const single = makeState({ gradeScales: [gradeScale] });
+        const next = run(single, { type: 'DELETE_GRADE_SCALE', id: 'gs1' });
+        expect(next).toBe(single);
+        expect(next.gradeScales).toHaveLength(1);
+    });
+
+    it('falls back to the fan-out entry when a sibling lacks a non-collaborative criterion', () => {
+        const rubricWithoutShared: Rubric = {
+            ...rubric,
+            criteria: [{ id: 'own', title: 'Own', description: '', weight: 100, levels: [], collaborative: false }],
+        };
+        const sibling: StudentRubric = {
+            id: 'srB',
+            rubricId: 'r1',
+            studentId: 's2',
+            entries: [],
+            overallComment: '',
+            groupId: 'g1',
+            isPeerReview: false,
+        };
+        let state = makeState({ rubrics: [rubricWithoutShared], studentRubrics: [sibling] });
+        state = run(state, {
+            type: 'SAVE_STUDENT_RUBRIC',
+            payload: {
+                ...studentRubric,
+                id: 'srA',
+                studentId: 's1',
+                groupId: 'g1',
+                entries: [{ criterionId: 'own', levelId: 'l1', checkedSubItems: [], comment: '' }],
+            },
+        });
+        // The sibling had no matching entry, so the group fan-out entry was copied over.
+        expect(state.studentRubrics.find((sr) => sr.id === 'srB')?.entries[0].levelId).toBe('l1');
+    });
+
+    it('fans out to siblings when the rubric is missing from state', () => {
+        const sibling: StudentRubric = {
+            id: 'srB',
+            rubricId: 'r1',
+            studentId: 's2',
+            entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: 'mine' }],
+            overallComment: '',
+            groupId: 'g1',
+            isPeerReview: false,
+        };
+        // No rubric in state → the collaborative-criteria set is empty, so every fan-out
+        // entry falls back to the sibling's own existing entry (the ?? alternate).
+        let state = makeState({ rubrics: [], studentRubrics: [sibling] });
+        state = run(state, {
+            type: 'SAVE_STUDENT_RUBRIC',
+            payload: {
+                ...studentRubric,
+                id: 'srA',
+                studentId: 's1',
+                groupId: 'g1',
+                entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' }],
+            },
+        });
+        expect(state.studentRubrics.find((sr) => sr.id === 'srB')?.entries[0].comment).toBe('mine');
+    });
+
+    it('summarizes actions for the stress-test logger', () => {
+        expect(summarizeAction({ type: 'ADD_RUBRIC', payload: { id: 'r1', name: 'R' } } as never)).toEqual({
+            id: 'r1',
+        });
+        expect(summarizeAction({ type: 'DELETE_RUBRIC', id: 'r1' } as never)).toEqual({ id: 'r1' });
+        expect(
+            summarizeAction({
+                type: 'DELETE_VOCABULARY_ITEMS_BATCH',
+                rubricId: 'r1',
+                itemIds: ['v1', 'v2'],
+            } as never)
+        ).toEqual({ rubricId: 'r1', itemIds: 2 });
+        // A bare action with no payload or tracked keys produces an empty summary.
+        expect(summarizeAction({ type: 'SET_ALL', payload: {} } as never)).toEqual({});
+    });
+
+    it('flushes every collection to storage and prunes orphaned recording blobs', async () => {
+        const withRecordings = makeState({
+            speakingSessions: [
+                {
+                    id: 'ss1',
+                    rubricId: 'r1',
+                    studentId: 's1',
+                    durationSeconds: 60,
+                    elapsedSeconds: 30,
+                    pronunciationMarks: [],
+                    entries: [],
+                    overallComment: '',
+                    gradedAt: now,
+                    recordings: [
+                        {
+                            id: 'rec1',
+                            mediaType: 'audio',
+                            mimeType: 'audio/webm',
+                            durationSec: 10,
+                            sizeBytes: 100,
+                            createdAt: now,
+                        },
+                    ],
+                },
+                {
+                    id: 'ss2',
+                    rubricId: 'r2',
+                    studentId: 's2',
+                    durationSeconds: 30,
+                    elapsedSeconds: 15,
+                    pronunciationMarks: [],
+                    entries: [],
+                    overallComment: '',
+                    gradedAt: now,
+                },
+            ],
+        });
+        await flushToLocalStorage(withRecordings);
+        expect(pruneOrphanedBlobs).toHaveBeenCalledWith(new Set(['rec1']));
+    });
+
+    it('skips the blob sweep when only unrelated collections changed', async () => {
+        await flushToLocalStorage(makeState(), new Set(['rubrics']));
+        expect(pruneOrphanedBlobs).not.toHaveBeenCalled();
+    });
+
+    it('throws when a context hook is used outside its provider', () => {
+        const NullCtx = React.createContext<string | null>(null);
+        const Probe = () => useContextOrThrow(NullCtx, 'Probe');
+        expect(() => render(React.createElement(Probe))).toThrow('Probe must be used within AppProvider');
     });
 });

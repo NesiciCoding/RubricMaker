@@ -269,4 +269,96 @@ describe('searchAll', () => {
             expect(results.map((r) => r.id)).toEqual(['t2']);
         });
     });
+
+    describe('mode:/area: filter edge cases', () => {
+        const practice: Test = { ...test, id: 't-practice', mode: 'practice' };
+        const assessment: Test = { ...test, id: 't-assessment' };
+
+        it('narrows tests by mode: to practice runs only', () => {
+            const results = searchAll('mode:practice', makeData({ tests: [practice, assessment] }));
+            expect(results.map((r) => r.id)).toEqual(['t-practice']);
+        });
+
+        it('narrows tests by mode: to assessment runs only', () => {
+            const results = searchAll('mode:assessment', makeData({ tests: [practice, assessment] }));
+            expect(results.map((r) => r.id)).toEqual(['t-assessment']);
+        });
+
+        it('skips tests whose mode does not match the filter', () => {
+            const results = searchAll('mode:assessment', makeData({ tests: [practice] }));
+            expect(results).toEqual([]);
+        });
+
+        it('leaves an unrecognized mode: value in the free text instead of filtering', () => {
+            const results = searchAll('mode:fun quiz', makeData({ tests: [assessment] }));
+            expect(results).toEqual([]);
+        });
+
+        it('leaves an unrecognized area: value in the free text instead of filtering', () => {
+            const results = searchAll('area:writing', makeData({ tests: [assessment] }));
+            expect(results).toEqual([]);
+        });
+
+        it('leaves an unrecognized type: alias in the free text instead of filtering', () => {
+            const results = searchAll('type:assignment persuasive', makeData({ rubrics: [rubric] }));
+            expect(results).toEqual([]);
+        });
+    });
+
+    describe('anonymized students and dedupe', () => {
+        it('skips anonymized students entirely, including the compound grade shortcut', () => {
+            const anonymized: Student = { ...student, id: 's-anon', anonymizedAt: '2026-01-01' };
+            const results = searchAll(
+                'José García Persuasive Essay',
+                makeData({ students: [anonymized], rubrics: [rubric], classes: [cls] })
+            );
+            expect(results).toEqual([]);
+        });
+
+        it('dedupes results when an entity matches both the compound shortcut and its own block', () => {
+            const sameNameRubric: Rubric = { ...rubric, id: 'r-same', name: 'José García' };
+            const results = searchAll('José García', makeData({ students: [student], rubrics: [sameNameRubric] }));
+            const keys = results.map((r) => `${r.type}-${r.id}`);
+            expect(new Set(keys).size).toBe(keys.length);
+            expect(keys).toEqual(['grade-s1:r-same', 'student-s1', 'rubric-r-same']);
+        });
+    });
+
+    describe('filter fallbacks and cache', () => {
+        const deck: FlashcardDeck = { id: 'd-cache', name: 'Phrasal Verbs', cards: [], createdAt: '2026-01-01' };
+
+        it('caches the plain-text conversion of a news flash across searches on the same object', () => {
+            const withContent: NewsFlash = { ...newsFlash, content: '<p>phrasal verbs</p>' };
+            const data = makeData({ newsFlashes: [withContent] });
+            expect(searchAll('phrasal verbs', data).map((r) => r.id)).toEqual(['nf1']);
+            expect(searchAll('phrasal verbs', data).map((r) => r.id)).toEqual(['nf1']);
+        });
+
+        it('handles a classless student under class:/year:/track: filters', () => {
+            const noClass: Student = { id: 's-nc', name: 'Solo', classId: '' };
+            const results = searchAll(
+                'class:5A year:jaar-3 track:havo solo',
+                makeData({ students: [noClass], classes: [cls] })
+            );
+            expect(results).toEqual([]);
+        });
+
+        it('handles a classless student under a year: filter', () => {
+            const noClass: Student = { id: 's-nc', name: 'Solo', classId: '' };
+            expect(searchAll('year:jaar-3 solo', makeData({ students: [noClass] }))).toEqual([]);
+        });
+
+        it('handles a classless student under a track: filter', () => {
+            const noClass: Student = { id: 's-nc', name: 'Solo', classId: '' };
+            expect(searchAll('track:havo solo', makeData({ students: [noClass] }))).toEqual([]);
+        });
+
+        it('excludes essays, decks, and news flashes that do not match the query', () => {
+            const results = searchAll(
+                'zzz-no-match',
+                makeData({ essayAssignments: [essay], flashcardDecks: [deck], newsFlashes: [newsFlash] })
+            );
+            expect(results).toEqual([]);
+        });
+    });
 });

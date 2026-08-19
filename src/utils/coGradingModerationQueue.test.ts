@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getModerationQueue, isSecondMarkerEntry } from './coGradingModerationQueue';
+import { buildReconciledEntries, getModerationQueue, isSecondMarkerEntry } from './coGradingModerationQueue';
 import type { Rubric, Student, StudentRubric } from '../types';
 
 const rubric: Rubric = {
@@ -130,5 +130,91 @@ describe('getModerationQueue', () => {
         const entry = { ...secondMarker('l2'), gradedBy: 'colleague-uuid-1 typo' };
         const queue = getModerationQueue([rubric], [baseline()], [entry], students, 1, ['colleague-uuid-1']);
         expect(queue).toHaveLength(0);
+    });
+
+    it('skips second-marker entries whose rubric no longer exists', () => {
+        const orphan = { ...secondMarker('l2'), rubricId: 'missing-rubric' };
+        const queue = getModerationQueue([rubric], [baseline()], [orphan], students, 1);
+        expect(queue).toHaveLength(0);
+    });
+
+    it('skips second-marker entries with no baseline grade to compare against', () => {
+        const orphan = { ...secondMarker('l2'), studentId: 'no-baseline-student' };
+        const queue = getModerationQueue([rubric], [baseline()], [orphan], students, 1);
+        expect(queue).toHaveLength(0);
+    });
+});
+
+describe('getModerationQueue edge cases', () => {
+    it('skips criteria that a marker entry did not grade', () => {
+        const twoCriterionRubric: Rubric = {
+            ...rubric,
+            criteria: [
+                ...rubric.criteria,
+                {
+                    id: 'c2',
+                    title: 'Language',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l1', label: 'OK', minPoints: 0, maxPoints: 5, description: '', subItems: [] }],
+                },
+            ],
+        };
+        const queue = getModerationQueue(
+            [twoCriterionRubric],
+            [baseline()], // only c1
+            [secondMarker('l2')], // only c1
+            students,
+            1
+        );
+        expect(queue).toHaveLength(1);
+        expect(queue[0].criteria).toHaveLength(1);
+    });
+
+    it('sorts multiple disputed items by total absolute delta, descending', () => {
+        const baselineStu1 = baseline();
+        const secondStu1 = secondMarker('l2'); // 10 -> 5 points
+        const baselineStu2 = { ...baseline(), id: 'sr3', studentId: 'stu2' };
+        const secondStu2 = { ...secondMarker('l2'), id: 'sr4', studentId: 'stu2' };
+        const queue = getModerationQueue(
+            [rubric],
+            [baselineStu1, baselineStu2],
+            [secondStu1, secondStu2],
+            [
+                { id: 'stu1', name: 'A', classId: 'c1' },
+                { id: 'stu2', name: 'B', classId: 'c1' },
+            ] as Student[],
+            1
+        );
+        expect(queue).toHaveLength(2);
+        expect(queue[0].totalAbsDelta).toBeGreaterThanOrEqual(queue[1].totalAbsDelta);
+    });
+});
+
+describe('buildReconciledEntries', () => {
+    it('averages the two markers per criterion', () => {
+        const item = {
+            baseline: baseline(),
+            criteria: [{ criterionId: 'c1', title: 'Structure', baselinePoints: 10, secondMarkerPoints: 6, delta: -4 }],
+        } as never;
+        const reconciled = buildReconciledEntries(item);
+        expect(reconciled[0].overridePoints).toBe(8);
+    });
+
+    it('leaves entries untouched when they have no second-marker delta', () => {
+        const item = {
+            baseline: {
+                ...baseline(),
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] },
+                    { criterionId: 'c2', levelId: 'l1', comment: '', checkedSubItems: [] },
+                ],
+            },
+            criteria: [{ criterionId: 'c1', title: 'Structure', baselinePoints: 10, secondMarkerPoints: 6, delta: -4 }],
+        } as never;
+        const reconciled = buildReconciledEntries(item);
+        expect(reconciled).toHaveLength(2);
+        expect(reconciled[0].overridePoints).toBe(8);
+        expect(reconciled[1]).not.toHaveProperty('overridePoints');
     });
 });

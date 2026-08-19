@@ -320,3 +320,251 @@ describe('withEvidenceOnly', () => {
         expect(withEvidenceOnly(withOne)).toHaveLength(1);
     });
 });
+
+// ─── Remaining branch coverage ────────────────────────────────────────────────
+
+describe('getStudentMasteryProfile — test evidence guards', () => {
+    it('ignores a StudentTest referencing a test that is not in the list', () => {
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 'ghost-test',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, studentTests });
+        expect(rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!.test).toBeNull();
+    });
+
+    it('ignores questions without a linked grammar item', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Plain test',
+            questions: [{ id: 'q1', prompt: '...', type: 'cloze', points: 1 }], // no linkedGrammarItemId
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, tests: [test], studentTests });
+        expect(rows.every((r) => r.test === null)).toBe(true);
+    });
+
+    it('ignores linked questions the student did not answer', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [{ id: 'q1', prompt: '...', type: 'cloze', points: 1, linkedGrammarItemId: GRAMMAR_ITEM_ID }],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [], // no answer for q1
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, tests: [test], studentTests });
+        expect(rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!.test).toBeNull();
+    });
+
+    it('auto-scores answers without a stored pointsEarned', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Pick the right form',
+                    type: 'multiple-choice',
+                    points: 1,
+                    linkedGrammarItemId: GRAMMAR_ITEM_ID,
+                    options: [
+                        { id: 'right', text: 'works', isCorrect: true },
+                        { id: 'wrong', text: 'work', isCorrect: false },
+                    ],
+                },
+            ],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'right' }], // no pointsEarned
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, tests: [test], studentTests });
+        const row = rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!;
+        expect(row.test).toEqual({ attempts: 1, correctAttempts: 1, accuracyPct: 100 });
+    });
+});
+
+describe('getStudentMasteryProfile — flashcard state guards', () => {
+    function cardState(state: number, due: string, stability: number) {
+        return {
+            due,
+            stability,
+            difficulty: 3,
+            elapsed_days: 1,
+            scheduled_days: 1,
+            learning_steps: 0,
+            reps: 1,
+            lapses: 0,
+            state,
+            last_review: '2026-01-01T00:00:00.000Z',
+        };
+    }
+
+    it('classifies every FSRS state bucket, including cards with no state and cards without a grammar link', () => {
+        const deck: FlashcardDeck = {
+            id: 'd1',
+            name: 'Grammar deck',
+            cards: [
+                { id: 'c-review-low', front: 'x', back: 'y', linkedGrammarItemId: GRAMMAR_ITEM_ID },
+                { id: 'c-new', front: 'x', back: 'y', linkedGrammarItemId: GRAMMAR_ITEM_ID },
+                { id: 'c-learning-due', front: 'x', back: 'y', linkedGrammarItemId: GRAMMAR_ITEM_ID },
+                { id: 'c-plain', front: 'x', back: 'y' }, // no linkedGrammarItemId → skipped
+            ],
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const assignments: FlashcardAssignment[] = [
+            {
+                deckId: 'd1',
+                studentId: 's1',
+                deckName: 'Grammar deck',
+                cardCount: 4,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const reviews: FlashcardReview[] = [
+            {
+                id: 'd1:s1',
+                deckId: 'd1',
+                studentId: 's1',
+                updatedAt: '2026-01-01T00:00:00.000Z',
+                cardStates: {
+                    // Review but low stability → not mastered → reviewCount
+                    'c-review-low': cardState(2, '2099-01-01T00:00:00.000Z', 1),
+                    // New state → newCount
+                    'c-new': cardState(0, '2099-01-01T00:00:00.000Z', 0),
+                    // Learning state + past due → dueCount + learningCount
+                    'c-learning-due': cardState(1, '2020-01-01T00:00:00.000Z', 0),
+                },
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', {
+            ...emptyDeps,
+            flashcardDecks: [deck],
+            flashcardAssignments: assignments,
+            flashcardReviews: reviews,
+        });
+        const row = rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!;
+        expect(row.flashcards).toEqual({
+            cardCount: 3,
+            newCount: 1, // c-new (state New)
+            learningCount: 1, // c-learning-due
+            reviewCount: 1, // c-review-low
+            masteredCount: 0,
+            dueCount: 1, // c-learning-due is past due
+        });
+    });
+});
+
+describe('getStudentMasteryProfile — writing evidence guards', () => {
+    it('skips non-grammar criteria, zero-max criteria, and criteria with no student entry', () => {
+        const descriptor: import('../types').LinkedFrameworkDescriptor = {
+            descriptorId: GRAMMAR_ITEM_ID,
+            framework: 'grammar',
+            categoryId: 'present-simple',
+            categoryLabelEn: 'Present Simple',
+            categoryLabelNl: 'Tegenwoordige tijd',
+            categoryColor: '#3b82f6',
+            descriptionEn: 'Affirmative',
+            descriptionNl: 'Bevestigend',
+        };
+        const rubric: Rubric = {
+            id: 'r1',
+            name: 'Essay rubric',
+            subject: 'English',
+            description: '',
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Grammar accuracy',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l1', label: 'Good', minPoints: 4, maxPoints: 4, description: '', subItems: [] }],
+                    frameworkDescriptors: [descriptor],
+                },
+                {
+                    id: 'c2',
+                    title: 'No grammar links',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l2', label: 'Good', minPoints: 4, maxPoints: 4, description: '', subItems: [] }],
+                    // no frameworkDescriptors → grammarLinks empty → skipped
+                },
+                {
+                    id: 'c3',
+                    title: 'Zero-max grammar',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l3', label: 'Good', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+                    frameworkDescriptors: [descriptor],
+                },
+                {
+                    id: 'c4',
+                    title: 'No student entry',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l4', label: 'Good', minPoints: 4, maxPoints: 4, description: '', subItems: [] }],
+                    frameworkDescriptors: [descriptor],
+                },
+            ],
+            gradeScaleId: 'none',
+            format: DEFAULT_FORMAT,
+            attachmentIds: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            totalMaxPoints: 4,
+            scoringMode: 'weighted-percentage',
+        };
+        const studentRubrics: StudentRubric[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }], // only c1 graded
+                overallComment: '',
+                gradedAt: '2026-01-01T00:00:00.000Z',
+                isPeerReview: false,
+            },
+        ];
+        const rows = getStudentMasteryProfile('s1', { ...emptyDeps, rubrics: [rubric], studentRubrics });
+        const row = rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!;
+        expect(row.writing).toEqual({ instances: 1, avgPct: 100 }); // only c1 contributes
+    });
+});

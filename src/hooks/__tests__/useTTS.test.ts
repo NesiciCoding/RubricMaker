@@ -148,6 +148,77 @@ describe('useTTS', () => {
         expect(utterance.voice).toBe(nlVoice);
     });
 
+    it('falls back through the language map to the raw language tag for unknown locales', () => {
+        const ptVoice = { lang: 'pt-PT', name: 'Portuguese' } as SpeechSynthesisVoice;
+        mockSpeechSynthesis.getVoices.mockReturnValue([ptVoice]);
+
+        const { result } = renderHook(() => useTTS({ lang: 'pt' }));
+        act(() => {
+            result.current.speak('Olá');
+        });
+
+        const utterance = (mockSpeechSynthesis.speak.mock.calls[0] as unknown[])[0] as {
+            voice: SpeechSynthesisVoice;
+        };
+        expect(utterance.voice).toBe(ptVoice);
+    });
+
+    it('refreshes voice state when the voiceschanged event fires', () => {
+        const { result } = renderHook(() => useTTS({ lang: 'en' }));
+        const voicesChanged = mockSpeechSynthesis.addEventListener.mock.calls.find(
+            ([type]) => type === 'voiceschanged'
+        );
+        expect(voicesChanged).toBeDefined();
+        act(() => {
+            (voicesChanged![1] as () => void)();
+        });
+        expect(result.current.status).toBe('idle');
+    });
+
+    it('fires the utterance lifecycle callbacks', () => {
+        const { result } = renderHook(() => useTTS({ lang: 'en' }));
+        act(() => {
+            result.current.speak('Hello');
+        });
+        const utter = (mockSpeechSynthesis.speak.mock.calls[0] as unknown[])[0] as {
+            onstart: (() => void) | null;
+            onend: (() => void) | null;
+            onerror: (() => void) | null;
+            onboundary: ((e: { charIndex: number }) => void) | null;
+        };
+
+        act(() => utter.onstart?.());
+        expect(result.current.status).toBe('speaking');
+
+        act(() => utter.onboundary?.({ charIndex: 42 }));
+        expect(result.current.charIndex).toBe(42);
+
+        act(() => utter.onend?.());
+        expect(result.current.status).toBe('idle');
+        expect(result.current.charIndex).toBe(0);
+
+        act(() => {
+            result.current.speak('Again');
+        });
+        const utter2 = (mockSpeechSynthesis.speak.mock.calls[1] as unknown[])[0] as {
+            onerror: (() => void) | null;
+        };
+        act(() => utter2.onerror?.());
+        expect(result.current.status).toBe('idle');
+    });
+
+    it('is a no-op for speak/pause/resume/stop when unsupported', () => {
+        vi.stubGlobal('speechSynthesis', undefined);
+        const { result } = renderHook(() => useTTS({ lang: 'en' }));
+        act(() => {
+            result.current.speak('x');
+            result.current.pause();
+            result.current.resume();
+            result.current.stop();
+        });
+        expect(result.current.status).toBe('unsupported');
+    });
+
     it('falls back to first available voice when no match', () => {
         const onlyVoice = { lang: 'ja-JP', name: 'Japanese' } as SpeechSynthesisVoice;
         mockSpeechSynthesis.getVoices.mockReturnValue([onlyVoice]);

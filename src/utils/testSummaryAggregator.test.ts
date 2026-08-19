@@ -110,6 +110,17 @@ describe('calcQuestionBreakdowns — single student', () => {
         const breakdowns = calcQuestionBreakdowns('s1', studentTests, test);
         expect(breakdowns.every((b) => b.sampleSize === 0 && b.accuracyPct === 0)).toBe(true);
     });
+
+    it('uses manual pointsEarned and scores zero-point questions as 0', () => {
+        const zeroPoint: TestQuestion = { id: 'q-zero', prompt: 'Bonus', type: 'open', points: 0 };
+        const test = makeTest({ questions: [zeroPoint] });
+        const studentTests = [
+            makeStudentTest({ answers: [{ questionId: 'q-zero', response: 'x', pointsEarned: 100 }] }),
+        ];
+        const [row] = calcQuestionBreakdowns('s1', studentTests, test);
+        expect(row.sampleSize).toBe(1);
+        expect(row.accuracyPct).toBe(0);
+    });
 });
 
 describe('calcQuestionBreakdowns — cohort mode', () => {
@@ -219,6 +230,25 @@ describe('calcSkillBreakdowns', () => {
         expect(skills[0].groupId).toBe('cefr-1');
         expect(skills[0].label).toBe('Can understand routine info');
     });
+
+    it('falls back to the standard description without statementNotation, and handles zero-point questions', () => {
+        const zeroPoint: TestQuestion = {
+            id: 'q-zero',
+            prompt: 'Bonus',
+            type: 'open',
+            points: 0,
+            linkedStandards: [
+                { guid: 'std-nn', description: 'No notation', standardSetTitle: 'CCSS', jurisdictionTitle: 'US' },
+            ],
+        };
+        const test = makeTest({ questions: [zeroPoint] });
+        const studentTests = [makeStudentTest({ answers: [{ questionId: 'q-zero', response: 'x' }] })];
+        const skills = calcSkillBreakdowns('s1', studentTests, test);
+        expect(skills).toHaveLength(1);
+        expect(skills[0].label).toBe('No notation');
+        expect(skills[0].sampleSize).toBe(1);
+        expect(skills[0].accuracyPct).toBe(0);
+    });
 });
 
 describe('calcTestStrongWeakSummary', () => {
@@ -287,6 +317,26 @@ describe('mergeTestStrongWeakSummaries', () => {
         expect(merged.skills[0].bucket).toBe('weak');
         expect(merged.skills[0].sampleSize).toBe(2);
         expect(merged.skills[0].questionIds).toEqual(['q1', 'q2']);
+    });
+
+    it('keeps a zero accuracy for a skill group with no samples', () => {
+        const summary = {
+            studentId: 's1',
+            questions: [],
+            skills: [
+                {
+                    groupId: 'std-empty',
+                    label: 'Empty',
+                    questionIds: ['q1'],
+                    accuracyPct: 0,
+                    bucket: 'weak' as const,
+                    sampleSize: 0,
+                },
+            ],
+        };
+        const merged = mergeTestStrongWeakSummaries([summary]);
+        expect(merged.skills[0].accuracyPct).toBe(0);
+        expect(merged.skills[0].sampleSize).toBe(0);
     });
 });
 
@@ -380,5 +430,84 @@ describe('calcTestItemAnalysis', () => {
         ];
         const [row] = calcTestItemAnalysis(studentTests, test);
         expect(row.sampleSize).toBe(1);
+    });
+
+    it('handles multiple-response, open, and zero-point questions, skipping unanswered ones', () => {
+        const mrQ: TestQuestion = {
+            id: 'q-mr',
+            prompt: 'Pick all',
+            type: 'multiple-response',
+            points: 4,
+            options: [
+                { id: 'x', text: 'X', isCorrect: true },
+                { id: 'y', text: 'Y', isCorrect: false },
+            ],
+        };
+        const openQ: TestQuestion = { id: 'q-open2', prompt: 'Explain', type: 'open', points: 6 };
+        const zeroQ: TestQuestion = {
+            id: 'q-zero',
+            prompt: 'Bonus',
+            type: 'multiple-choice',
+            points: 0,
+            options: [
+                { id: 'a', text: 'A', isCorrect: false },
+                { id: 'b', text: 'B', isCorrect: true },
+            ],
+        };
+        const itemTest: Test = {
+            id: 't2',
+            name: 'Mixed item test',
+            questions: [mrQ, openQ, zeroQ],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't2',
+                studentId: 's1',
+                answers: [
+                    { questionId: 'q-mr', response: '["x","y"]' },
+                    { questionId: 'q-open2', response: 'text' },
+                    { questionId: 'q-zero', response: 'b' },
+                ],
+                status: 'submitted',
+                startedAt: '2026-01-01T09:00:00.000Z',
+                rawTotalPoints: 10,
+            },
+            {
+                id: 'st2',
+                testId: 't2',
+                studentId: 's2',
+                answers: [{ questionId: 'q-mr', response: 'not json' }],
+                status: 'submitted',
+                startedAt: '2026-01-01T09:00:00.000Z',
+                rawTotalPoints: 0,
+            },
+            {
+                id: 'st3',
+                testId: 't2',
+                studentId: 's3',
+                answers: [{ questionId: 'q-mr', response: '["y"]' }],
+                status: 'submitted',
+                startedAt: '2026-01-01T09:00:00.000Z',
+                rawTotalPoints: 0,
+            },
+        ];
+        const rows = calcTestItemAnalysis(studentTests, itemTest);
+
+        const mr = rows.find((r) => r.questionId === 'q-mr')!;
+        expect(mr.sampleSize).toBe(3);
+        expect(mr.topDistractor).toEqual({ optionId: 'y', text: 'Y', count: 2, isCorrect: false });
+
+        const open = rows.find((r) => r.questionId === 'q-open2')!;
+        expect(open.sampleSize).toBe(1);
+        expect(open.topDistractor).toBeNull();
+
+        const zero = rows.find((r) => r.questionId === 'q-zero')!;
+        expect(zero.sampleSize).toBe(1);
+        expect(zero.discrimination).toBeNull();
+        expect(zero.topDistractor).toBeNull();
     });
 });

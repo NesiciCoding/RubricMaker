@@ -688,4 +688,55 @@ describe('mergeStoreData', () => {
         const result = mergeStoreData(local, remote, []);
         expect(result.standardMasteryTargets).toEqual([remoteTarget]);
     });
+
+    it('applies LWW via updatedAt for every remaining timestamped collection', () => {
+        const lwwCollections = [
+            'tests',
+            'studentTests',
+            'flashcardDecks',
+            'flashcardReviews',
+            'newsFlashes',
+            'questionBank',
+            'documentComments',
+            'notificationDismissals',
+            'standardMasteryTargets',
+        ] as const;
+        for (const key of lwwCollections) {
+            const localItem = {
+                id: 'x',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+            } as unknown as StoreData[(typeof lwwCollections)[number]][number];
+            const remoteItem = {
+                id: 'x',
+                updatedAt: '2024-01-02T00:00:00.000Z',
+            } as unknown as StoreData[(typeof lwwCollections)[number]][number];
+            const local = baseStoreData({ [key]: [localItem] } as Partial<StoreData>);
+            const remote: Partial<StoreData> = { [key]: [remoteItem] };
+
+            const result = mergeStoreData(local, remote, []);
+            expect(result[key]).toEqual([remoteItem]);
+        }
+    });
+
+    it('merges the non-timestamped collections: remote-only kept, local-only dropped', () => {
+        const collections = [
+            { key: 'attachments', local: { id: 'att-local' }, remote: { id: 'att-remote' } },
+            { key: 'exportTemplates', local: { id: 'et-local' }, remote: { id: 'et-remote' } },
+            { key: 'messages', local: { id: 'msg-local' }, remote: { id: 'msg-remote' } },
+            {
+                key: 'flashcardAssignments',
+                local: { deckId: 'd1', studentId: 's1' },
+                remote: { deckId: 'd1', studentId: 's2' },
+            },
+            { key: 'newsFlashReads', local: { id: 'read-local' }, remote: { id: 'read-remote' } },
+        ] as const;
+
+        for (const c of collections) {
+            const local = baseStoreData({ [c.key]: [c.local] } as Partial<StoreData>);
+            const remote = { [c.key]: [c.remote] } as Partial<StoreData>;
+
+            const result = mergeStoreData(local, remote, []);
+            expect(result[c.key]).toEqual([c.remote]);
+        }
+    });
 });

@@ -153,6 +153,15 @@ describe('buildDashboardMatrix', () => {
             const matrix = buildDashboardMatrix(activities, classes, students, [], [], []);
             expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(0);
         });
+
+        it('skips grades from students whose class is not in the class list', () => {
+            const activities = [{ kind: 'rubric' as const, id: 'r1', name: 'R1' }];
+            // 'ghost' student exists in studentRubrics but not in `students`/`classes`
+            const srs = [mkSR('a', 'r1', 'ghost')];
+            const matrix = buildDashboardMatrix(activities, classes, students, srs, [], []);
+            expect(matrix['rubric:r1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['rubric:r1']['cls2'].submittedCount).toBe(0);
+        });
     });
 
     describe('test cells', () => {
@@ -189,6 +198,14 @@ describe('buildDashboardMatrix', () => {
             const sts = [mkST('a', 't_other', 's1', 'submitted')];
             const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
             expect(matrix['test:t1']['cls1'].submittedCount).toBe(0);
+        });
+
+        it('skips attempts from students whose class is not in the class list', () => {
+            const activities = [{ kind: 'test' as const, id: 't1', name: 'T1' }];
+            const sts = [mkST('a', 't1', 'ghost', 'submitted')];
+            const matrix = buildDashboardMatrix(activities, classes, students, [], sts, []);
+            expect(matrix['test:t1']['cls1'].submittedCount).toBe(0);
+            expect(matrix['test:t1']['cls1'].isLinked).toBe(false);
         });
     });
 

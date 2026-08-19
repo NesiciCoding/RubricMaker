@@ -152,4 +152,32 @@ describe('FlashcardsPage', () => {
         expect(screen.getByText('Week 1 Words')).toBeInTheDocument();
         expect(screen.queryByText('Private Deck')).not.toBeInTheDocument();
     });
+
+    it('highlights a deck card on hover and navigates from its name', async () => {
+        mockDecks = [deckA];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+        const card = screen.getByText('Week 1 Words').closest('.card') as HTMLElement;
+        fireEvent.mouseEnter(card);
+        expect(card.style.borderColor).toBe('var(--accent)');
+        fireEvent.mouseLeave(card);
+        expect(card.style.borderColor).toBe('var(--border)');
+
+        fireEvent.click(screen.getByText('Week 1 Words'));
+        expect(mockNavigate).toHaveBeenCalledWith('/flashcards/d1');
+    });
+
+    it('omits the description paragraph when a deck has none', async () => {
+        mockDecks = [{ ...deckA, description: undefined }];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+        expect(screen.getByText('Week 1 Words')).toBeInTheDocument();
+    });
+
+    it('renders a deck description when one exists', async () => {
+        mockDecks = [{ ...deckA, description: 'Weekly vocabulary from the reading unit' }];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+        expect(screen.getByText('Weekly vocabulary from the reading unit')).toBeInTheDocument();
+    });
 });

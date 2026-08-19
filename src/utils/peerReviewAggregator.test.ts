@@ -185,4 +185,53 @@ describe('peerReviewAggregator', () => {
         expect(reviewer.comparisonCount).toBe(4);
         expect(reviewer.consistency).toBeCloseTo((2 + 2 + 0 + 1) / 4);
     });
+
+    it('merges multiple reviews within the same round and defaults an unset round to 1', () => {
+        const baselines = [baseline('s1', 8, 8), baseline('s2', 8, 8)];
+        const reviews = [
+            peerReview('pr1', 's1', 'rA', undefined, { points: 10 }, { points: 10 }),
+            peerReview('pr2', 's2', 'rB', 1, { points: 8 }, { points: 8 }),
+        ];
+
+        const result = aggregatePeerReviews(rubric, reviews, baselines);
+
+        expect(result.rounds).toHaveLength(1);
+        expect(result.rounds[0].round).toBe(1);
+        expect(result.rounds[0].reviewCount).toBe(2);
+        expect(result.rounds[0].comparisonCount).toBe(4);
+    });
+
+    it('skips entries that reference an unknown criterion', () => {
+        const baselines = [baseline('s1', 8, 8)];
+        const review = peerReview('pr1', 's1', 'r2', 1, { points: 8 }, { points: 8 });
+        const reviews = [
+            {
+                ...review,
+                entries: [
+                    ...review.entries,
+                    { criterionId: 'ghost', levelId: 'l1', overridePoints: 1, checkedSubItems: [], comment: '' },
+                ],
+            },
+        ];
+
+        const result = aggregatePeerReviews(rubric, reviews, baselines);
+
+        expect(result.totalComparisons).toBe(2);
+        expect(result.totalMissingBaseline).toBe(0);
+        expect(result.criteria.every((c) => c.comparisonCount === 1)).toBe(true);
+    });
+
+    it('counts an entry as missing baseline when the baseline lacks that criterion', () => {
+        const partialBaseline: StudentRubric = {
+            ...baseline('s1', 8, 8),
+            entries: [{ criterionId: 'c1', levelId: 'l1', overridePoints: 8, checkedSubItems: [], comment: '' }],
+        };
+        const reviews = [peerReview('pr1', 's1', 'r2', 1, { points: 10 }, { points: 9 })];
+
+        const result = aggregatePeerReviews(rubric, reviews, [partialBaseline]);
+
+        expect(result.totalComparisons).toBe(1);
+        expect(result.totalMissingBaseline).toBe(1);
+        expect(result.reviewers[0].missingBaselineCount).toBe(1);
+    });
 });

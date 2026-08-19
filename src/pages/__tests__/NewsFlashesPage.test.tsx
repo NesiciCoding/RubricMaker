@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import type { Class, FlashcardDeck, NewsFlash, NewsFlashRead, Rubric, Student, Test } from '../../types';
@@ -230,5 +230,82 @@ describe('NewsFlashesPage', () => {
         renderPage();
         expect(screen.getByText('newsFlashes.open_link')).toBeInTheDocument();
         expect(screen.getByText('newsFlashes.open_link').closest('a')).toHaveAttribute('href', 'https://example.com');
+    });
+
+    it('edits a minimal flash and saves it with every optional field cleared', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByLabelText('newsFlashes.action_edit')[1]); // f2 has no content/url/cefr/link
+        expect(screen.getByText('newsFlashes.edit_title')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('newsFlashes.field_title'), { target: { value: 'Edited bare' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateNewsFlash).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 'f2',
+                title: 'Edited bare',
+                content: undefined,
+                url: undefined,
+                cefrLevel: undefined,
+                linkedResourceType: undefined,
+                linkedResourceId: undefined,
+            })
+        );
+    });
+
+    it('skips the update when the edited flash disappears from the list', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByLabelText('newsFlashes.action_edit')[0]);
+        (mockAppValue.newsFlashes as NewsFlash[]).splice(0, 1); // f1 removed while the modal is open
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateNewsFlash).not.toHaveBeenCalled();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('renders the test and rubric linked badges on listed flashes', () => {
+        (mockAppValue.newsFlashes as NewsFlash[]).push(
+            { ...mockFlash2, id: 'f3', linkedResourceType: 'test', linkedResourceId: 't1' },
+            { ...mockFlash2, id: 'f4', linkedResourceType: 'rubric', linkedResourceId: 'r1' }
+        );
+        renderPage();
+        expect(screen.getByText('newsFlashes.linked_test')).toBeInTheDocument();
+        expect(screen.getByText('newsFlashes.linked_rubric')).toBeInTheDocument();
+    });
+
+    it('collapses read receipts on a second click and falls back to the student id', () => {
+        (mockAppValue.newsFlashReads as NewsFlashRead[]).push({
+            id: 'f1:ghost',
+            flashId: 'f1',
+            studentId: 'ghost',
+            readAt: '2024-01-04T00:00:00Z',
+        });
+        renderPage();
+        const receipt = screen.getByText('newsFlashes.read_receipt_count:{"read":2,"total":2}');
+        fireEvent.click(receipt);
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        expect(screen.getByText('ghost')).toBeInTheDocument();
+        fireEvent.click(receipt);
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    });
+
+    it('saves a linked type without a linked id as undefined', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);
+        fireEvent.change(screen.getByLabelText('newsFlashes.field_title'), { target: { value: 'No item picked' } });
+        fireEvent.change(screen.getByLabelText('newsFlashes.field_linked_resource'), { target: { value: 'rubric' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddNewsFlash).toHaveBeenCalledWith(
+            expect.objectContaining({ linkedResourceType: 'rubric', linkedResourceId: undefined })
+        );
+    });
+
+    it('closes the editor modal via Escape and the cancel button', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);
+        const dialog = screen.getByRole('dialog');
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);
+        fireEvent.click(within(screen.getByRole('dialog')).getByText('common.cancel'));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 });

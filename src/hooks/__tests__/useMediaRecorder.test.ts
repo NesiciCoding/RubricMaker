@@ -134,6 +134,52 @@ describe('useMediaRecorder', () => {
         expect(MockMediaRecorder.instances).toHaveLength(1);
     });
 
+    it('stops the stream tracks when the MediaRecorder constructor throws', async () => {
+        const { stream, track } = makeStream();
+        getUserMedia.mockResolvedValue(stream);
+        class ThrowingRecorder {
+            constructor() {
+                throw new Error('no recorder support');
+            }
+        }
+        vi.stubGlobal('MediaRecorder', ThrowingRecorder);
+
+        const { result } = renderHook(() => useMediaRecorder());
+        let started = true;
+        await act(async () => {
+            started = await result.current.start();
+        });
+
+        expect(started).toBe(false);
+        expect(track.stop).toHaveBeenCalled();
+        expect(result.current.status).toBe('error');
+        expect(result.current.error).toBeInstanceOf(Error);
+    });
+
+    it('skips stopping a recorder that is already inactive on unmount', async () => {
+        class NoOpStartRecorder {
+            state: 'inactive' | 'recording' = 'inactive';
+            stream: MediaStream;
+            constructor(stream: MediaStream) {
+                this.stream = stream;
+            }
+            start() {}
+            stop() {
+                this.state = 'inactive';
+            }
+        }
+        vi.stubGlobal('MediaRecorder', NoOpStartRecorder);
+        const stopSpy = vi.spyOn(NoOpStartRecorder.prototype, 'stop');
+        const { result, unmount } = renderHook(() => useMediaRecorder());
+        await act(async () => {
+            await result.current.start();
+        });
+        expect(result.current.status).toBe('recording');
+        unmount();
+        expect(stopSpy).not.toHaveBeenCalled();
+        stopSpy.mockRestore();
+    });
+
     it('supports concurrent named recordings', async () => {
         const { result } = renderHook(() => useMediaRecorder());
         await act(async () => {

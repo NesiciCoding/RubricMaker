@@ -100,4 +100,12 @@ describe('buildEloProgress', () => {
         );
         expect(points[0].date).toBe('2024-01-05T00:00:00Z');
     });
+
+    it('falls back to startedAt when neither submittedAt nor gradedAt is set', () => {
+        const points = buildEloProgress(
+            [makeStudentTest({ status: 'submitted', submittedAt: undefined, gradedAt: undefined })],
+            [makeTest()]
+        );
+        expect(points[0].date).toBe('2024-01-01T10:00:00Z');
+    });
 });

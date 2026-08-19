@@ -137,4 +137,18 @@ describe('aggregateClassCriterionAverages', () => {
         expect(result.rubric?.id).toBe('r1');
         expect(result.bars).toEqual([{ name: 'Criterion c1', pct: 50 }]);
     });
+
+    it('scores a missing criterion entry as zero points', () => {
+        const rubric = mkRubric('r1', [mkCriterion('c1'), mkCriterion('c2')], 'writing');
+        const s1 = mkStudent('s1', 'class-a');
+        // Only c1 is graded; c2 has no entry on this grading.
+        const srs = [mkSR('sr1', rubric.id, s1.id, { criterionId: 'c1', levelId: 'c1-hi' })];
+
+        const result = aggregateClassCriterionAverages(srs, [rubric], [s1], undefined);
+
+        expect(result.bars).toEqual([
+            { name: 'Criterion c1', pct: 100 },
+            { name: 'Criterion c2', pct: 0 },
+        ]);
+    });
 });

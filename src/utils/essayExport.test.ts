@@ -54,6 +54,28 @@ describe('htmlToMarkdown', () => {
         expect(md).toContain('<mark style="background-color: #fef08a">flagged</mark>');
         expect(md).toContain('<span style="color: #663399">purple</span>');
     });
+
+    it('falls back to data-color and plain ==highlight== syntax for unstyled marks', () => {
+        expect(htmlToMarkdown('<p><mark data-color="#ff0000">red</mark></p>')).toBe(
+            '<mark style="background-color: #ff0000">red</mark>'
+        );
+        expect(htmlToMarkdown('<p><mark>plain</mark></p>')).toBe('==plain==');
+    });
+
+    it('renders links without an href and spans without styles as plain text', () => {
+        const md = htmlToMarkdown('<p><a>no href</a> and <span>no styles</span></p>');
+        expect(md).toBe('[no href]() and no styles');
+    });
+
+    it('returns the raw row text for empty tables and unknown block elements', () => {
+        expect(htmlToMarkdown('<table></table>')).toBe('');
+        expect(htmlToMarkdown('<div>Standalone block</div>')).toBe('Standalone block');
+    });
+
+    it('falls back to the li text for task-list items without a wrapping div', () => {
+        const md = htmlToMarkdown('<ul data-type="taskList"><li>Plain item</li></ul>');
+        expect(md).toBe('- [ ] Plain item');
+    });
 });
 
 describe('htmlToDocxChildren', () => {

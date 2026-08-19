@@ -52,4 +52,20 @@ describe('evaluateGrammar', () => {
         expect(html).toContain('✘');
         expect(html).toContain('⊘');
     });
+
+    it('builds a Dutch comment with Dutch labels when descLang is nl', () => {
+        const linked = [grammarLink('gr-past-simple-irregular', 'Irregular verbs')];
+        const result = evaluateGrammar(linked, 'I went home.');
+        const t = ((key: string) => key) as unknown as Parameters<typeof buildGrammarComment>[1];
+        const html = buildGrammarComment(result, t, 'nl');
+        expect(html).toContain('Verleden tijd');
+        expect(html).toContain('Irregular verbs'); // descriptionNl mirrors descriptionEn in the fixture
+    });
+
+    it('counts zero occurrences for an auto-detectable item whose shorthand has no pattern', () => {
+        const linked = [grammarLink('gr-gerund', 'Gerund')];
+        const result = evaluateGrammar(linked, 'I enjoy reading books.');
+        expect(result.items[0].autoDetectable).toBe(false);
+        expect(result.items[0].occurrences).toBe(0);
+    });
 });

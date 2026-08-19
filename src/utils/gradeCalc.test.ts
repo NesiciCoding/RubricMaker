@@ -10,8 +10,12 @@ import {
     calcGradeColor,
     calcGradeSummary,
     calcClassStats,
+    orderedLevels,
+    criterionMaxPointsOrOne,
+    criterionPercentage,
 } from './gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Rubric } from '../types';
+import type { GradeSummary } from './gradeCalc';
 
 describe('gradeCalc utilities', () => {
     const mockCriteria: RubricCriterion[] = [
@@ -590,6 +594,241 @@ describe('gradeCalc utilities', () => {
             const stats = calcClassStats(summaries, null);
             expect(stats.median).toBe(55);
             expect(stats.average).toBe(55);
+        });
+    });
+
+    // ─── Coverage: orderedLevels / max-points helpers ───────────────────────
+
+    describe('orderedLevels', () => {
+        const criterion: RubricCriterion = {
+            id: 'c1',
+            title: '',
+            description: '',
+            weight: 1,
+            levels: [
+                { id: 'l1', label: 'Low', minPoints: 0, maxPoints: 1, description: '', subItems: [] },
+                { id: 'l2', label: 'High', minPoints: 2, maxPoints: 3, description: '', subItems: [] },
+            ],
+        };
+
+        it('keeps the original order for a best-first format', () => {
+            expect(orderedLevels(criterion, { levelOrder: 'best-first' }).map((l) => l.id)).toEqual(['l1', 'l2']);
+        });
+
+        it('reverses the levels for a worst-first format', () => {
+            expect(orderedLevels(criterion, { levelOrder: 'worst-first' }).map((l) => l.id)).toEqual(['l2', 'l1']);
+        });
+    });
+
+    describe('criterionMaxPointsOrOne / criterionPercentage', () => {
+        it('floors at 1 when the criterion has no points', () => {
+            const zero: RubricCriterion = {
+                id: 'c1',
+                title: '',
+                description: '',
+                weight: 1,
+                levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+            };
+            expect(criterionMaxPointsOrOne(zero)).toBe(1);
+        });
+
+        it('returns 0 when the criterion has no assignable points', () => {
+            const zero: RubricCriterion = {
+                id: 'c1',
+                title: '',
+                description: '',
+                weight: 1,
+                levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+            };
+            expect(criterionPercentage(undefined, zero)).toBe(0);
+            expect(
+                criterionPercentage({ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }, zero)
+            ).toBe(0);
+        });
+    });
+
+    describe('calcEntryPoints — level not found', () => {
+        it('returns 0 when the entry references a level that no longer exists', () => {
+            const entry: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: 'deleted-level',
+                checkedSubItems: [],
+                comment: '',
+            };
+            expect(calcEntryPoints(entry, mockCriteria[0])).toBe(0);
+        });
+    });
+
+    describe('calcEntryPoints — sub-item fallback without points', () => {
+        it('adds 0 for a checked legacy sub-item that has no maxPoints or points', () => {
+            const criterion: RubricCriterion = {
+                id: 'c1',
+                title: '',
+                description: '',
+                weight: 1,
+                levels: [
+                    {
+                        id: 'l1',
+                        label: '',
+                        minPoints: 0,
+                        maxPoints: 10,
+                        description: '',
+                        subItems: [{ id: 'si-no-points', label: 'Unweighted checkbox' }],
+                    },
+                ],
+            };
+            const entry: ScoreEntry = {
+                criterionId: 'c1',
+                levelId: 'l1',
+                checkedSubItems: ['si-no-points'],
+                comment: '',
+                selectedPoints: 4,
+            };
+            // 4 + 0 (no points on the sub-item) = 4, capped at level maxPoints (10)
+            expect(calcEntryPoints(entry, criterion)).toBe(4);
+        });
+    });
+
+    describe('calcGradeSummary — total-points mode with zero max', () => {
+        it('returns 0 percentage when total-points max and calculated max are both 0', () => {
+            const zeroCriteria: RubricCriterion[] = [
+                {
+                    id: 'c1',
+                    title: '',
+                    description: '',
+                    weight: 0,
+                    levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 0, description: '', subItems: [] }],
+                },
+            ];
+            const studentRubric: StudentRubric = {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [],
+            };
+            const rubric: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'> = {
+                scoringMode: 'total-points',
+                totalMaxPoints: 0,
+            };
+            const scale: GradeScale = {
+                id: 's1',
+                type: 'letter',
+                name: 'Scale',
+                ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
+            };
+            const summary = calcGradeSummary(studentRubric, zeroCriteria, scale, rubric);
+            expect(summary.percentage).toBe(0);
+            expect(summary.configuredMaxPoints).toBe(0);
+        });
+    });
+
+    describe('calcClassStats — score below the lowest range', () => {
+        it('omits a score that matches no range from the distribution', () => {
+            const scale: GradeScale = {
+                id: 's1',
+                type: 'letter',
+                name: 'Scale',
+                ranges: [
+                    { min: 80, max: 100, label: 'High', color: '#1' },
+                    { min: 0, max: 79, label: 'Low', color: '#2' },
+                ],
+            };
+            // -5 is below every range min → matchRange returns undefined → not counted anywhere
+            const stats = calcClassStats([{ modifiedPercentage: -5 } as GradeSummary], scale);
+            expect(stats.distribution).toEqual([
+                { label: 'High', color: '#1', count: 0 },
+                { label: 'Low', color: '#2', count: 0 },
+            ]);
+        });
+    });
+
+    describe('calcGradeColor — percentage below the lowest range', () => {
+        it('falls back to the neutral color when no range matches', () => {
+            const scale: GradeScale = {
+                id: 's1',
+                type: 'letter',
+                name: 'Scale',
+                ranges: [{ min: 50, max: 100, label: 'P', color: '#0f0' }],
+            };
+            expect(calcGradeColor(-5, scale)).toBe('#6b7280');
+            expect(calcLetterGrade(-5, scale)).toBe('—');
+        });
+    });
+
+    describe('calcRawScore — unknown criterion', () => {
+        it('skips entries whose criterion no longer exists', () => {
+            const entry: ScoreEntry = { criterionId: 'deleted', levelId: 'l1a', checkedSubItems: [], comment: '' };
+            expect(calcRawScore([entry], mockCriteria)).toBe(0);
+        });
+    });
+
+    describe('criterionPercentage — missing entry', () => {
+        it('returns 0 when there is no entry at all', () => {
+            expect(criterionPercentage(undefined, mockCriteria[0])).toBe(0);
+        });
+    });
+
+    describe('calcWeightedScore — missing entry for a criterion', () => {
+        it('contributes 0 for a criterion with no matching entry', () => {
+            const criteria: RubricCriterion[] = [
+                {
+                    id: 'c1',
+                    title: '',
+                    description: '',
+                    weight: 50,
+                    levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+                },
+                {
+                    id: 'c2',
+                    title: '',
+                    description: '',
+                    weight: 50,
+                    levels: [{ id: 'l1', label: '', minPoints: 0, maxPoints: 10, description: '', subItems: [] }],
+                },
+            ];
+            const entries: ScoreEntry[] = [
+                { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 10 },
+            ];
+            // c1 = 100% * 50; c2 = 0% * 50 → 50%
+            expect(calcWeightedScore(entries, criteria)).toBe(50);
+        });
+    });
+
+    describe('calcGradeSummary — ungraded entry and null scale', () => {
+        const scale: GradeScale = {
+            id: 's1',
+            type: 'letter',
+            name: 'Scale',
+            ranges: [{ min: 0, max: 100, label: 'P', color: '#000' }],
+        };
+
+        it('does not count an entry with no level, override, or single-point outcome as graded', () => {
+            const studentRubric: StudentRubric = {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [{ criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '' }],
+            };
+            const summary = calcGradeSummary(studentRubric, mockCriteria, scale);
+            expect(summary.gradedCount).toBe(0);
+        });
+
+        it('returns placeholder letter grade and neutral color when no scale is given', () => {
+            const studentRubric: StudentRubric = {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 'stu1',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [{ criterionId: 'c1', levelId: 'l1a', checkedSubItems: [], comment: '', selectedPoints: 5 }],
+            };
+            const summary = calcGradeSummary(studentRubric, mockCriteria, null);
+            expect(summary.letterGrade).toBe('—');
+            expect(summary.gradeColor).toBe('#6b7280');
         });
     });
 });

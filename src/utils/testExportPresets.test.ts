@@ -135,4 +135,136 @@ describe('buildTestResultsCsv', () => {
         // (which would drag Q1/skill accuracy down to 50% while Score % stayed at 100%).
         expect(miaRows[0]).toBe('Mia Lee,9999,100.0,100,100,100');
     });
+
+    it('tie-breaks submissions with the same attemptNumber by submission time, newest wins', () => {
+        const sameNumber: StudentTest[] = [
+            {
+                id: 'st-tie-old',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 1,
+                answers: [{ questionId: 'q1', response: 'o1' }],
+                status: 'graded',
+                startedAt: '2024-01-05T00:00:00.000Z',
+                submittedAt: '2024-01-05T00:00:00.000Z',
+            },
+            {
+                id: 'st-tie-new',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 1,
+                answers: [
+                    { questionId: 'q1', response: 'o2' },
+                    { questionId: 'q2', response: 'anything', pointsEarned: 1 },
+                ],
+                status: 'graded',
+                startedAt: '2024-01-06T00:00:00.000Z',
+                submittedAt: '2024-01-06T00:00:00.000Z',
+            },
+        ];
+        const csv = buildTestResultsCsv(test, sameNumber, students);
+        expect(csv).toContain('Jane Doe,1234,100.0');
+    });
+
+    it('keeps the higher attemptNumber when a lower-numbered attempt appears later in the list', () => {
+        // The attempts are listed out of order — a higher-numbered attempt first, a lower one second.
+        const outOfOrder: StudentTest[] = [
+            {
+                id: 'st-oo-2',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 2,
+                answers: [
+                    { questionId: 'q1', response: 'o2' },
+                    { questionId: 'q2', response: 'anything', pointsEarned: 1 },
+                ],
+                status: 'graded',
+                startedAt: '2024-01-06T00:00:00.000Z',
+                submittedAt: '2024-01-06T00:00:00.000Z',
+            },
+            {
+                id: 'st-oo-1',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 1,
+                answers: [{ questionId: 'q1', response: 'o1' }],
+                status: 'graded',
+                startedAt: '2024-01-05T00:00:00.000Z',
+                submittedAt: '2024-01-05T00:00:00.000Z',
+            },
+        ];
+        const csv = buildTestResultsCsv(test, outOfOrder, students);
+        expect(csv).toContain('Jane Doe,1234,100.0');
+    });
+
+    it('keeps the already-latest submission when the candidate is older', () => {
+        const sameNumber: StudentTest[] = [
+            {
+                id: 'st-tie-new',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 1,
+                answers: [
+                    { questionId: 'q1', response: 'o2' },
+                    { questionId: 'q2', response: 'anything', pointsEarned: 1 },
+                ],
+                status: 'graded',
+                startedAt: '2024-01-06T00:00:00.000Z',
+                submittedAt: '2024-01-06T00:00:00.000Z',
+            },
+            {
+                id: 'st-tie-old',
+                testId: 'test1',
+                studentId: 's1',
+                attemptNumber: 1,
+                answers: [{ questionId: 'q1', response: 'o1' }],
+                status: 'graded',
+                startedAt: '2024-01-05T00:00:00.000Z',
+                submittedAt: '2024-01-05T00:00:00.000Z',
+            },
+        ];
+        const csv = buildTestResultsCsv(test, sameNumber, students);
+        expect(csv).toContain('Jane Doe,1234,100.0');
+    });
+
+    it('treats missing attemptNumber as 1 and falls back to startedAt when submittedAt is absent', () => {
+        const noTimestamps: StudentTest[] = [
+            {
+                id: 'st-nn-old',
+                testId: 'test1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'o1' }],
+                status: 'graded',
+                startedAt: '2024-01-05T00:00:00.000Z',
+            },
+            {
+                id: 'st-nn-new',
+                testId: 'test1',
+                studentId: 's1',
+                answers: [
+                    { questionId: 'q1', response: 'o2' },
+                    { questionId: 'q2', response: 'anything', pointsEarned: 1 },
+                ],
+                status: 'graded',
+                startedAt: '2024-01-06T00:00:00.000Z',
+            },
+        ];
+        const csv = buildTestResultsCsv(test, noTimestamps, students);
+        expect(csv).toContain('Jane Doe,1234,100.0');
+    });
+
+    it('emits empty student columns when the submission references an unknown student', () => {
+        const ghost: StudentTest[] = [
+            {
+                id: 'st-ghost',
+                testId: 'test1',
+                studentId: 'nobody',
+                answers: [],
+                status: 'graded',
+                startedAt: '2024-01-02T00:00:00.000Z',
+            },
+        ];
+        const csv = buildTestResultsCsv(test, ghost, students);
+        expect(csv).toContain(',,0.0');
+    });
 });
