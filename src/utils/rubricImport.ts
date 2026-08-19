@@ -87,6 +87,7 @@ export function extractTableFromHtml(table: Element): RawTable {
     table.querySelectorAll('tr').forEach((tr) => {
         const cells: string[] = [];
         tr.querySelectorAll('td, th').forEach((td) => {
+            /* v8 ignore next -- DOM textContent is always a string, so the ?? '' fallback is unreachable */
             cells.push(td.textContent?.trim() ?? '');
         });
         if (cells.some((c) => c.length > 0)) rows.push(cells);
@@ -263,6 +264,8 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
     if (levelLabels.length < 2)
         warnings.push('Only one level was detected — columns may not have been parsed correctly.');
 
+    /* v8 ignore next -- 'low' is unreachable here: the levelLabels.length === 0 and criteria.length === 0
+       guards above already returned an empty result, so both counts are >= 1 at this point */
     const confidence: ParsedRubric['confidence'] =
         criteria.length >= 2 && levelLabels.length >= 2
             ? 'high'

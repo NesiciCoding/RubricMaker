@@ -193,6 +193,7 @@ export function getStudentGoalScores(
             if (max === 0) return; // avoid division by zero
 
             const info = standardInfo.get(guid)!;
+            /* v8 ignore next -- max is guaranteed > 0 by the guard above */
             const pct = max > 0 ? (earned / max) * 100 : 0;
 
             const scoreInfo: GoalScoreInfo = {

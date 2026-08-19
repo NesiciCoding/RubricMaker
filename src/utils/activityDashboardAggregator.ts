@@ -54,6 +54,7 @@ export function buildDashboardMatrix(
         const n = totalStudentsByClass.get(s.classId);
         if (n !== undefined) totalStudentsByClass.set(s.classId, n + 1);
     }
+    /* v8 ignore next -- totalFor is only ever called with cls.id from `classes`, which seeds the map */
     const totalFor = (classId: string) => totalStudentsByClass.get(classId) ?? 0;
 
     const bucket = <T>(rows: T[], keyOf: (row: T) => string): Map<string, T[]> => {

@@ -184,6 +184,7 @@ export function useLiveSessionTelemetry({
 
         let battery: BatteryManagerLike | null = null;
         const report = () => {
+            /* v8 ignore next -- report only fires after getBattery assigns battery */
             if (!battery) return;
             pushEvent({
                 type: 'battery',

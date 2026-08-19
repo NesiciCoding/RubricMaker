@@ -120,6 +120,8 @@ export function calcSkillBreakdowns(
         const samples: number[] = [];
         for (const questionId of group.questionIds) {
             const question = questionsById.get(questionId);
+            // group.questionIds are collected from the same test.questions, so a missing question is unreachable.
+            /* v8 ignore next 1 */
             if (!question) continue;
             for (const byQuestion of answersByStudent) {
                 const answer = byQuestion.get(questionId);

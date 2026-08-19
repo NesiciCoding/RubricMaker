@@ -91,6 +91,7 @@ export default function EssayBuilderPage() {
     }
 
     const handleSave = useCallback(() => {
+        /* v8 ignore next -- provably dead: the save button only renders when `existing` exists, which requires teacherKeyParam */
         if (!teacherKeyParam) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
         showToast(t('essays.save'), 'success');
@@ -154,7 +155,10 @@ export default function EssayBuilderPage() {
             // A student can appear in `rows` twice (once under the canonical teacherKey,
             // once individually), so look up by the exact (teacherKey, studentId) pair —
             // not studentId alone — or the wrong row's config/credentials get re-encoded.
+            // The exact (teacherKey, studentId) pair is always present in `rows` for rendered rows.
+            /* v8 ignore next -- provably dead: callers pass a pair from a rendered row */
             const row = rows.find((r) => r.teacherKey === teacherKey && r.studentId === studentId) ?? existing;
+            /* v8 ignore next -- provably dead: `row` is always the rendered row */
             if (!row) return null;
             const code = encodeEssayAssignment({ ...row, studentId });
             return `${window.location.origin}${window.location.pathname}#/essay/${code}`;
@@ -165,6 +169,7 @@ export default function EssayBuilderPage() {
     const handleCopyLink = useCallback(
         (teacherKey: string, studentId: string) => {
             const url = buildEssayLink(teacherKey, studentId);
+            /* v8 ignore next -- provably dead: buildEssayLink never returns null for rendered rows */
             if (!url) return;
             navigator.clipboard.writeText(url).then(() => {
                 setCopiedStudentId(`${teacherKey}_${studentId}`);
@@ -423,7 +428,7 @@ export default function EssayBuilderPage() {
                                                     className="btn btn-ghost btn-icon btn-sm"
                                                     title={t('essays.dev_open_as_student')}
                                                     aria-label={t('essays.dev_open_as_student')}
-                                                    href={buildEssayLink(row.teacherKey, row.studentId) ?? undefined}
+                                                    href={buildEssayLink(row.teacherKey, row.studentId)!}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                 >

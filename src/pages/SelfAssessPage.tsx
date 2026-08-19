@@ -259,6 +259,7 @@ export default function SelfAssessPage() {
 
                 {/* Descriptors grouped by skill */}
                 {Array.from(bySkill.entries()).map(([skill, descriptors]) => {
+                    /* v8 ignore next -- provably dead: skill is always a key of CEFR_SKILL_LABELS and lang is always 'en'|'nl' */
                     const skillLabel = CEFR_SKILL_LABELS[skill]?.[lang] ?? skill;
                     return (
                         <div key={skill} className="card" style={{ marginBottom: 20 }}>

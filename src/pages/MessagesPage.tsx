@@ -48,6 +48,7 @@ export default function MessagesPage() {
 
     function sendReply(thread: MessageThread) {
         const body = replyText.trim();
+        /* v8 ignore next -- the reply button is disabled while the input is blank */
         if (!body) return;
         const message: Message = {
             id: nanoid(),
@@ -70,6 +71,7 @@ export default function MessagesPage() {
 
     function sendNewThread() {
         const body = newThreadText.trim();
+        /* v8 ignore next -- the send button is disabled until both are set */
         if (!body || !newThreadStudentId) return;
         const message: Message = {
             id: nanoid(),

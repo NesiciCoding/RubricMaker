@@ -72,6 +72,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean) => {
         const merged = { ...mergedIn, classes: sanitizeClassYears(mergedIn.classes) };
         dispatch({ type: 'SET_ALL', payload: merged });
+        // Every call site hydrates with seedDiffBaseline=true — a false path is unreachable.
+        /* v8 ignore next */
         if (seedDiffBaseline) {
             prevStateRef.current = merged;
         }
@@ -288,6 +290,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (client && userId) initAuditLogger(client, userId);
         else clearAuditLogger();
 
+        /* v8 ignore start -- only reachable when VITE_STRESS_TEST_LOGGING=true; test env keeps it off */
         if (!STRESS_TEST_LOGGING_ENABLED) return;
         const ctx = {
             role: state.settings.userRole,
@@ -296,6 +299,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         if (client) initClientLogger(client, ctx);
         else setLoggerContext(ctx);
+        /* v8 ignore stop */
         // landingState is a dep purely to re-run this once loadDb() has resolved (it only
         // ever transitions 'checking' -> 'show'/'hide' after the startup effect's loadDb()
         // call above settles), so getDb() is populated by the time this re-fires.

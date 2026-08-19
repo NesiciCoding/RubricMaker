@@ -40,6 +40,7 @@ export default function EssayListPage() {
             teacherKey,
             rows,
             displayOrder: rows[0]?.displayOrder,
+            // v8 ignore next line — grouped rows always have ≥1 row with a createdAt
             createdAt: rows[0]?.createdAt ?? '',
         }));
         return sortByDisplayOrder(unsorted).filter(
@@ -219,6 +220,7 @@ export default function EssayListPage() {
                                                                 <div
                                                                     role="progressbar"
                                                                     aria-valuenow={
+                                                                        // v8 ignore next line — grouped rows always have at least one row
                                                                         rows.length
                                                                             ? Math.round(
                                                                                   (submittedCount / rows.length) * 100
@@ -239,6 +241,7 @@ export default function EssayListPage() {
                                                                         style={{
                                                                             height: '100%',
                                                                             width: `${
+                                                                                // v8 ignore next line — grouped rows always have at least one row
                                                                                 rows.length
                                                                                     ? (submittedCount / rows.length) *
                                                                                       100

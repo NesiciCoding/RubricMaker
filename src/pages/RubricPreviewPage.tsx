@@ -140,6 +140,7 @@ export default function RubricPreviewPage() {
                                     style={{
                                         padding: '14px 16px',
                                         borderRight:
+                                            /* v8 ignore next -- the body only renders when levels is defined, so the ?? 1 never fires */
                                             li < (criterion.levels?.length ?? 1) - 1 ? '1px solid #e2e8f0' : 'none',
                                         borderTop: '1px solid #e2e8f0',
                                     }}

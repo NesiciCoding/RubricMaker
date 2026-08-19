@@ -136,6 +136,7 @@ export default function SpeakingSession() {
             });
         }, 1000);
         return () => {
+            /* v8 ignore next -- provably dead: a cleanup is only ever registered when the interval was just set */
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
     }, [timerRunning, durationSeconds, autoLock, stopTimer]);
@@ -194,6 +195,7 @@ export default function SpeakingSession() {
 
     // ── Save ────────────────────────────────────────────────────────────────────
     function handleSave() {
+        /* v8 ignore next -- provably dead: both save buttons only render when rubric and student exist */
         if (!rubric || !student) return;
         const session: SpeakingSessionType = {
             id: existingSession?.id ?? nanoid(),

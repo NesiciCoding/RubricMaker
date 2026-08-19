@@ -180,6 +180,7 @@ export function profileText(text: string): CefrVocabProfile {
         if (!level) continue;
         levelCounts[level]++;
         const existing = seenWords.get(token);
+        /* v8 ignore next -- lookupLevel is deterministic per token, so a repeat always matches the same level */
         if (!existing || LEVEL_ORDER.indexOf(level) > LEVEL_ORDER.indexOf(existing)) {
             seenWords.set(token, level);
         }

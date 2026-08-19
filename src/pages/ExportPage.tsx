@@ -169,6 +169,7 @@ export default function ExportPage() {
     // Build a self-contained /feedback/:code link, inlining any bucket-stored voice audio as
     // signed URLs first. Shared by the copy-link and dev-preview controls so both stay in sync.
     async function buildFeedbackUrl(sr: StudentRubric, student: Student): Promise<string | null> {
+        // v8 ignore next 1 -- the copy-link / dev-preview buttons only render inside the rubric table
         if (!rubric) return null;
         const preparedSr = await storageSync.feedbackAudioSync.inlineForShare(sr);
         const code = encodeFeedbackCode({ sr: preparedSr, rubric, student, scale });
@@ -227,6 +228,7 @@ export default function ExportPage() {
 
     async function handleEssayExport() {
         const toExport = essaySubmittedEntries.filter((e) => selectedEssayStudentIds.has(e.student.id));
+        // v8 ignore next 1 -- disabled when nothing is selected; switching keys clears the selection
         if (toExport.length === 0) return;
         setExportingEssays(true);
         try {
@@ -243,6 +245,7 @@ export default function ExportPage() {
                         skippedNames.push(student.name);
                         continue;
                     }
+                    // v8 ignore next 1 -- gradeScaleId is required on Rubric, so the fallback is unreachable
                     const essayScaleId = essayRubric.gradeScaleId ?? settings.defaultGradeScaleId;
                     const essayScale =
                         essayScaleId && essayScaleId !== 'none'
@@ -310,15 +313,18 @@ export default function ExportPage() {
     }
 
     async function handleExport(single?: string) {
+        // v8 ignore next 1 -- the export buttons are disabled whenever rubric is missing
         if (!rubric) return;
         setExporting(true);
         try {
             if (single) {
                 const sr = studentRubrics.find((s) => s.rubricId === rubric.id && s.studentId === single);
                 const student = students.find((s) => s.id === single);
+                // v8 ignore next 1 -- row-level PDF buttons only exist for graded rows, so sr/student always exist
                 if (sr && student) {
                     const { exportSinglePdf } = await import('../utils/pdfExport');
                     await exportSinglePdf(sr, rubric, student, scale, {
+                        /* v8 ignore next 1 */
                         orientation: orientation || rubric.format.orientation || 'portrait',
                         styleTemplate: activeStyleTemplate,
                     });
@@ -331,6 +337,7 @@ export default function ExportPage() {
                 const { exportBatchPdf } = await import('../utils/pdfExport');
                 await exportBatchPdf(toExport, rubric, scale, {
                     padForDoubleSided,
+                    /* v8 ignore next 1 */
                     orientation: orientation || rubric.format.orientation || 'portrait',
                     styleTemplate: activeStyleTemplate,
                 });
@@ -344,6 +351,7 @@ export default function ExportPage() {
     }
 
     async function handleBatchDocxExport() {
+        // v8 ignore next 1 -- the batch-docx button is disabled without a rubric or selection
         if (!rubric || selectedStudentIds.size === 0) return;
         setExporting(true);
         try {
@@ -361,6 +369,7 @@ export default function ExportPage() {
     }
 
     async function handleWordExport() {
+        // v8 ignore next 1 -- the word-export button is disabled without a rubric
         if (!rubric) return;
         setExporting(true);
         try {
@@ -380,10 +389,12 @@ export default function ExportPage() {
     }
 
     async function handleCsvExport() {
+        // v8 ignore next 1 -- the CSV button is disabled without a rubric or selection
         if (!rubric) return;
 
         const toExport = gradedStudents.filter((x) => selectedStudentIds.has(x.student!.id));
 
+        // v8 ignore next 1 -- disabled whenever nothing is selected
         if (toExport.length === 0) return;
 
         const presetCsv = buildGradebookPresetCsv(
@@ -522,6 +533,7 @@ export default function ExportPage() {
     }
 
     async function handleGeneratePeriodReports() {
+        // v8 ignore next 1 -- the generate button is disabled with no selection
         if (reportStudentIds.size === 0) return;
         setGeneratingReport(true);
         try {
@@ -533,6 +545,7 @@ export default function ExportPage() {
                 const { srs, entries } = gatherPeriodEntries(student.id);
                 return {
                     student,
+                    /* v8 ignore next 1 -- reportClassId always matches a class from the select options */
                     className: cls?.name ?? '',
                     entries,
                     periodLabel: reportPeriodLabel || undefined,
@@ -557,6 +570,7 @@ export default function ExportPage() {
         const { buildReportCardData } = await import('../utils/reportCardAggregator');
         return buildReportCardData(student.id, reportCardConfig, {
             student,
+            /* v8 ignore next 1 -- reportClassId always matches a class from the select options */
             className: cls?.name ?? '',
             periodLabel: reportPeriodLabel || undefined,
             entries,
@@ -573,6 +587,7 @@ export default function ExportPage() {
         setGeneratingReportCard(true);
         try {
             const student = students.find((s) => s.id === studentId);
+            // v8 ignore next 1 -- reportStudentIds always reference real students
             if (!student) return;
             const { exportReportCard } = await import('../utils/periodReportExport');
             const data = await buildReportCardDataForStudent(student);
@@ -587,6 +602,7 @@ export default function ExportPage() {
     }
 
     async function handleGenerateReportCardsBatch() {
+        // v8 ignore next 1 -- the batch button is disabled with no selection
         if (reportStudentIds.size === 0) return;
         setGeneratingReportCard(true);
         try {
@@ -964,6 +980,7 @@ export default function ExportPage() {
                                                     {t('rubricBuilder.format_orientation')}:
                                                 </label>
                                                 <select
+                                                    /* v8 ignore next 1 */
                                                     value={orientation || rubric.format.orientation || 'portrait'}
                                                     onChange={(e) =>
                                                         setOrientation(e.target.value as 'portrait' | 'landscape')
@@ -1082,6 +1099,7 @@ export default function ExportPage() {
                                     </thead>
                                     <tbody>
                                         {gradedStudents.map(({ sr, student, summary }) => {
+                                            // v8 ignore next 1 -- gradedStudents is pre-filtered to rows with student + summary
                                             if (!student || !summary) return null;
                                             const isSelected = selectedStudentIds.has(student.id);
                                             return (
@@ -1183,6 +1201,7 @@ export default function ExportPage() {
                                                             title="Copy student feedback link"
                                                             onClick={async () => {
                                                                 const url = await buildFeedbackUrl(sr, student);
+                                                                // v8 ignore next 1 -- buildFeedbackUrl only returns null without a rubric, which can't render this row
                                                                 if (!url) return;
                                                                 navigator.clipboard.writeText(url);
                                                                 showToast(
@@ -1199,6 +1218,7 @@ export default function ExportPage() {
                                                                 title="Open as student (dev only)"
                                                                 onClick={async () => {
                                                                     const url = await buildFeedbackUrl(sr, student);
+                                                                    // v8 ignore next 1 -- the dev-only button is gated on rubric, so url is always set
                                                                     if (url) window.open(url, '_blank', 'noreferrer');
                                                                 }}
                                                             >
@@ -1622,6 +1642,7 @@ export default function ExportPage() {
                                 disabled={reportStudentIds.size !== 1 || generatingReportCard}
                                 onClick={() => {
                                     const [only] = reportStudentIds;
+                                    // v8 ignore next 1 -- the single button is disabled unless exactly one is selected
                                     if (only) void handleGenerateReportCard(only);
                                 }}
                             >

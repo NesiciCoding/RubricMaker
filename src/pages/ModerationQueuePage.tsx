@@ -93,6 +93,7 @@ export default function ModerationQueuePage() {
     function resolveAcceptSecondMarker(baselineId: string, secondMarkerEntryId: string) {
         const secondMarker = peerReviews.find((pr) => pr.id === secondMarkerEntryId);
         const baseline = studentRubrics.find((sr) => sr.id === baselineId);
+        /* v8 ignore next -- the queue item guarantees both exist when this button renders */
         if (!secondMarker || !baseline) return;
         saveStudentRubric({
             ...baseline,

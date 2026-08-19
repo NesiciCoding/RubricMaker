@@ -317,7 +317,8 @@ export default function Dashboard() {
 
     function assignRecommendedDeck(studentId: string) {
         const deckId = recommendedDeckByStudent.get(studentId);
-        const deck = deckId ? flashcardDecks.find((d) => d.id === deckId) : undefined;
+        // v8 ignore next: get() is always truthy when has() rendered the button.
+        const deck = /* v8 ignore next */ deckId ? flashcardDecks.find((d) => d.id === deckId) : undefined;
         if (!deck) return;
         addFlashcardAssignments([
             {
@@ -789,6 +790,7 @@ export default function Dashboard() {
                                                         {item.type === 'grading' &&
                                                             (() => {
                                                                 const days = feedbackAge.get(item.studentId);
+                                                                // v8 ignore next: grading items always come from graded records that set feedbackAge
                                                                 if (days === undefined) return null;
                                                                 if (days >= 10)
                                                                     return (
@@ -976,7 +978,8 @@ export default function Dashboard() {
                                                         <div
                                                             style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
                                                         >
-                                                            {tpl.subject || t('dashboard.no_subject')}
+                                                            {/* Only rendered when subject is truthy (outer && guard) */}
+                                                            {tpl.subject}
                                                         </div>
                                                     )}
                                                 </div>

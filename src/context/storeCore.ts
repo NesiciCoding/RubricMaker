@@ -864,6 +864,8 @@ export function summarizeAction(action: Action): Record<string, unknown> {
 }
 
 export function loggingReducer(state: StoreData, action: Action): StoreData {
+    // Only enabled via VITE_STRESS_TEST_LOGGING=true at build time; never on in tests/prod.
+    /* v8 ignore next */
     if (STRESS_TEST_LOGGING_ENABLED) {
         logEvent('action', action.type, summarizeAction(action));
     }

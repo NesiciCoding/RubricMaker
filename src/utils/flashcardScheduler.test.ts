@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { rateCard, previewIntervals, buildStudyQueue, isMastered, NEW_CARDS_PER_SESSION } from './flashcardScheduler';
-import type { FlashcardCard, FlashcardDeck, FlashcardReview } from '../types';
+import {
+    rateCard,
+    previewIntervals,
+    buildStudyQueue,
+    isMastered,
+    intervalLabel,
+    NEW_CARDS_PER_SESSION,
+} from './flashcardScheduler';
+import type { FlashcardCard, FlashcardCardState, FlashcardDeck, FlashcardReview } from '../types';
 
 const NOW = new Date('2026-07-04T10:00:00Z');
 
@@ -51,6 +58,38 @@ describe('previewIntervals', () => {
         for (const rating of [1, 2, 3, 4] as const) {
             expect(labels[rating]).toMatch(/^\d+(m|h|d|mo)$/);
         }
+    });
+
+    it('computes intervals from an existing card state, even one without a stored last_review', () => {
+        const learned = rateCard(undefined, 3, NOW);
+        const { last_review, ...withoutReview } = learned;
+        void last_review;
+        const later = new Date(NOW.getTime() + 30 * 24 * 3600 * 1000);
+        const labels = previewIntervals(withoutReview, later);
+        for (const rating of [1, 2, 3, 4] as const) {
+            expect(labels[rating]).toMatch(/^\d+(m|h|d|mo)$/);
+        }
+    });
+
+    it('renders month-scale intervals for a high-stability card', () => {
+        const stable: FlashcardCardState = { ...rateCard(undefined, 3, NOW), stability: 50, state: 2 };
+        expect(previewIntervals(stable, NOW)[3]).toMatch(/mo$/);
+    });
+});
+
+describe('intervalLabel', () => {
+    it('renders minute, hour, day, and month labels from a start/end pair', () => {
+        const from = new Date('2026-07-04T10:00:00Z');
+        expect(intervalLabel(from, new Date(from.getTime() + 5 * 60 * 1000))).toBe('5m');
+        expect(intervalLabel(from, new Date(from.getTime() + 3 * 3600 * 1000))).toBe('3h');
+        expect(intervalLabel(from, new Date(from.getTime() + 7 * 24 * 3600 * 1000))).toBe('7d');
+        expect(intervalLabel(from, new Date(from.getTime() + 100 * 24 * 3600 * 1000))).toBe('3mo');
+    });
+
+    it('clamps sub-minute and negative gaps to 1 minute', () => {
+        const from = new Date('2026-07-04T10:00:00Z');
+        expect(intervalLabel(from, new Date(from.getTime() + 10 * 1000))).toBe('1m');
+        expect(intervalLabel(from, new Date(from.getTime() - 60 * 1000))).toBe('1m');
     });
 });
 
