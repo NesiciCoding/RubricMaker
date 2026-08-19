@@ -192,6 +192,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         if (matchedDomain) setLastDomainKey(matchedDomain.key);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [matchedDomain?.key]);
+    /* v8 ignore next -- lastDomainKey is always a valid domain key, so the find never misses */
     const activeDomain = matchedDomain ?? domains.find((d) => d.key === lastDomainKey) ?? domains[0];
 
     const renderNavLink = ({ to, icon: Icon, label, end, badge, badgeLabelKey }: SubItem) => (

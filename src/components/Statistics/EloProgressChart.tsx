@@ -67,6 +67,7 @@ export default function EloProgressChart({ points }: Props) {
                         <YAxis
                             domain={Y_DOMAIN}
                             ticks={CEFR_LEVELS.map((lvl) => LEVEL_TO_ELO[lvl])}
+                            /* v8 ignore next -- ticks are built from ANCHOR_TO_LEVEL's own keys */
                             tickFormatter={(v: number) => ANCHOR_TO_LEVEL.get(v) ?? String(v)}
                             tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                             width={36}

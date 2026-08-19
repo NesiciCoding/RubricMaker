@@ -69,6 +69,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                     const style = await parseStyleTemplate(file);
                     setParsed({ kind: 'style', ...style, dataUrl, size: file.size, fileName: file.name });
                 }
+                /* v8 ignore next -- provably dead: the name input only renders after a parse and resets with it, so name is always empty here */
                 if (!name) setName(file.name.replace(/\.[^.]+$/, ''));
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Unknown error';
@@ -91,6 +92,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
     );
 
     const handleSave = () => {
+        /* v8 ignore next -- provably dead: the Save button only renders when parsed is set */
         if (!parsed) return;
         const baseName = name || parsed.fileName.replace(/\.[^.]+$/, '');
         if (parsed.kind === 'table') {

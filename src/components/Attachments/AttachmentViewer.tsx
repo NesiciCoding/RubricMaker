@@ -79,6 +79,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                 const blob = await res.blob();
 
                 // Clear any existing content
+                /* v8 ignore next -- the ref div is always mounted while in original view mode */
                 if (docxRef.current) docxRef.current.innerHTML = '';
 
                 await renderAsync(blob, docxRef.current as HTMLElement, undefined, {

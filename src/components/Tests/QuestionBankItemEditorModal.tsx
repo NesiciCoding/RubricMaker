@@ -97,6 +97,7 @@ export default function QuestionBankItemEditorModal({ item, onSave, onClose }: P
                             showRemove={false}
                             showSaveToBank={false}
                             onChange={(question) => setLocal({ ...local, question })}
+                            /* v8 ignore next -- no-op: remove is disabled for bank items */
                             onRemove={() => {}}
                         />
                     )

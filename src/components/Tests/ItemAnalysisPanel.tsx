@@ -10,7 +10,7 @@ interface Props {
     studentTests: StudentTest[];
 }
 
-function discriminationColor(value: number | null): string {
+export function discriminationColor(value: number | null): string {
     if (value === null) return 'var(--text-muted)';
     if (value < 0.1) return 'var(--red)';
     if (value < 0.3) return 'var(--yellow)';

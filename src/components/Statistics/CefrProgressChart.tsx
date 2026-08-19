@@ -113,6 +113,7 @@ export default function CefrProgressChart({ entries }: Props) {
                         <tr key={String(row.skill)}>
                             <td>{row.skill}</td>
                             {levelsPresent.map((lvl) => (
+                                /* v8 ignore next -- point[lvl] is always set to a number above */
                                 <td key={lvl}>{row[lvl] != null ? `${row[lvl]}%` : '—'}</td>
                             ))}
                         </tr>

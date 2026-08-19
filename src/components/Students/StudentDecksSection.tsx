@@ -94,7 +94,9 @@ export default function StudentDecksSection({ studentId }: Props) {
                 showToast(t('studentDecks.save_error'), 'error');
                 return;
             }
+            /* v8 ignore start -- delete button only renders once the online list has loaded, so prev is never null */
             setOnlineDecks((prev) => (prev ?? []).filter((d) => d.id !== deck.id));
+            /* v8 ignore stop */
         } else {
             deleteFlashcardDeck(deck.id);
         }

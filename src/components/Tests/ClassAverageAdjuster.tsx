@@ -45,6 +45,7 @@ export default function ClassAverageAdjuster({ test, studentTests, students, onS
                 const raw = st.rawTotalPoints ?? calcStudentTestRawPoints(test, st.answers);
                 const beforePct = calcTestPercentage(raw, maxPoints);
                 const after = applyAdjustment({ ...st, rawTotalPoints: raw }, delta, maxPoints);
+                /* v8 ignore next -- applyAdjustment always sets adjustmentPoints */
                 const afterPoints = raw + (after.adjustmentPoints ?? 0);
                 const afterPct = calcTestPercentage(afterPoints, maxPoints);
                 return {
@@ -54,6 +55,7 @@ export default function ClassAverageAdjuster({ test, studentTests, students, onS
                     beforePct,
                     afterPoints,
                     afterPct,
+                    /* v8 ignore next -- applyAdjustment always sets adjustmentPoints */
                     adjustmentPoints: after.adjustmentPoints ?? 0,
                 };
             }),

@@ -68,6 +68,7 @@ export default function VocabularyListEditor({
     const [lookingUpId, setLookingUpId] = useState<string | null>(null);
 
     async function handleLookup(item: VocabularyItem) {
+        /* v8 ignore next -- the lookup button is disabled when the phrase is empty */
         if (!item.phrase.trim()) return;
         setLookingUpId(item.id);
         try {

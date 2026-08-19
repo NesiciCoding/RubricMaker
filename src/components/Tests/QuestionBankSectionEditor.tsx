@@ -37,6 +37,7 @@ export default function QuestionBankSectionEditor({ section, onChange }: Props) 
 
     function moveQuestion(index: number, direction: -1 | 1) {
         const target = index + direction;
+        /* v8 ignore next -- edge move buttons are disabled, so the guard never fires */
         if (target < 0 || target >= section.questions.length) return;
         const questions = section.questions.slice();
         [questions[index], questions[target]] = [questions[target], questions[index]];

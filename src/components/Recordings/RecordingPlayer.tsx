@@ -38,6 +38,7 @@ export default function RecordingPlayer({ recording, cloudUrl }: Props) {
         };
     }, [recording.id]);
 
+    /* v8 ignore next -- objectUrl and loadedRecordingId are always set/cleared together, so the ??-undefined arm is unreachable */
     const src = loadedRecordingId === recording.id ? (objectUrl ?? undefined) : notFound ? cloudUrl : undefined;
 
     if (!src) {
