@@ -60,4 +60,43 @@ describe('searchPortal', () => {
         );
         expect(results.map((r) => r.type).sort()).toEqual(['flashcard', 'grade', 'work']);
     });
+
+    it('skips history entries that do not match the query', () => {
+        const results = searchPortal(
+            'persuas',
+            makeData({
+                history: [
+                    { rubricId: 'r1', rubricName: 'Persuasive Essay' },
+                    { rubricId: 'r2', rubricName: 'Algebra Quiz' },
+                ],
+            })
+        );
+        expect(results.map((r) => r.id)).toEqual(['r1']);
+    });
+
+    it('skips work entries that do not match the query', () => {
+        const results = searchPortal(
+            'grammar',
+            makeData({
+                work: [
+                    { key: 'test-tk1', label: 'Grammar Quiz' },
+                    { key: 'essay-tk2', label: 'Persuasive Essay' },
+                ],
+            })
+        );
+        expect(results.map((r) => r.id)).toEqual(['test-tk1']);
+    });
+
+    it('skips flashcard decks that do not match the query', () => {
+        const results = searchPortal(
+            'vocab',
+            makeData({
+                flashcards: [
+                    { deckId: 'd1', deckName: 'Unit 4 Vocabulary' },
+                    { deckId: 'd2', deckName: 'Geography Atlas' },
+                ],
+            })
+        );
+        expect(results.map((r) => r.id)).toEqual(['d1']);
+    });
 });

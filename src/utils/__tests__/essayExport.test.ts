@@ -209,6 +209,31 @@ describe('essayExport', () => {
             // No runs — just the paragraph properties node.
             expect(JSON.stringify(rootOf(children[0]))).not.toContain('w:rPr');
         });
+
+        it('carries right/justify/left alignment', () => {
+            const [right] = htmlToDocxChildren('<p style="text-align: right">R</p>');
+            expect(JSON.stringify(rootOf(right))).toContain('right');
+            const [justify] = htmlToDocxChildren('<p style="text-align: justify">J</p>');
+            expect(JSON.stringify(rootOf(justify))).toContain('both');
+            const [left] = htmlToDocxChildren('<p style="text-align: left">L</p>');
+            expect(JSON.stringify(rootOf(left))).toContain('left');
+        });
+
+        it('carries underline, mark data-color, and non-numeric font-size fallbacks', () => {
+            const [p] = htmlToDocxChildren(
+                '<p><u>under</u><mark data-color="#00ff00">hl</mark><span style="font-size: abc">x</span></p>'
+            );
+            const props = JSON.stringify(rootOf(p));
+            expect(props).toContain('w:u');
+            expect(props).toContain('00ff00');
+        });
+
+        it('falls back to the li itself for task-list items without a wrapping div', () => {
+            const children = htmlToDocxChildren('<ul data-type="taskList"><li>Plain</li></ul>');
+            expect(children).toHaveLength(1);
+            expect(JSON.stringify(rootOf(children[0]))).toContain('☐');
+            expect(JSON.stringify(rootOf(children[0]))).toContain('Plain');
+        });
     });
 
     describe('exportEssayMarkdown', () => {
@@ -255,6 +280,13 @@ describe('essayExport', () => {
             expect(mockPrintHtml).toHaveBeenCalledTimes(2);
         });
 
+        it('exports each essay separately for docx', async () => {
+            await exportEssaysBatch(entries, 'docx', 'separate');
+            expect(mockToBlob).toHaveBeenCalledTimes(2);
+            expect(mockSaveAs.mock.calls[0][1]).toBe('Alice_Smith_My_Essay.docx');
+            expect(mockSaveAs.mock.calls[1][1]).toBe('Bob_Jones_Second.docx');
+        });
+
         it('combines markdown essays into a single file separated by rules', async () => {
             await exportEssaysBatch(entries, 'markdown', 'combined');
             expect(mockSaveAs).toHaveBeenCalledTimes(1);
@@ -292,6 +324,96 @@ describe('essayExport', () => {
             );
             expect(mockToBlob).toHaveBeenCalledTimes(1);
             expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'Alice_Smith_My_Essay_with_rubric.docx');
+        });
+
+        it('exports docx including the grammar/vocabulary analysis section when provided', async () => {
+            const analysis = {
+                id: 'a1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'att1',
+                extractedText: 'x',
+                analyzedAt: '2024-01-01',
+                detectedItems: [
+                    { vocabularyItemId: 'v1', found: true, occurrences: 3, contexts: ['c'] },
+                    { vocabularyItemId: 'missing', found: false, occurrences: 0, contexts: [] },
+                ],
+                grammarErrors: [], // no grammar issues → the section header is skipped
+                grammarCheckerUsed: 'none' as const,
+            };
+            const vocabRubric: Rubric = {
+                ...rubric,
+                vocabularyItems: [{ id: 'v1', phrase: 'hello', category: 'vocabulary' }],
+            };
+            await exportEssayWithRubric(
+                assignment,
+                student,
+                submission,
+                studentRubric,
+                vocabRubric,
+                scale,
+                'docx',
+                analysis,
+                undefined
+            );
+            expect(mockToBlob).toHaveBeenCalledTimes(1);
+            expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'Alice_Smith_My_Essay_with_rubric.docx');
+        });
+
+        it('lists grammar issues in the docx when the analysis found errors', async () => {
+            const analysis = {
+                id: 'a1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'att1',
+                extractedText: 'x',
+                analyzedAt: '2024-01-01',
+                detectedItems: [],
+                grammarErrors: [{ message: 'missing comma', offset: 0, length: 1, suggestions: [] }],
+                grammarCheckerUsed: 'none' as const,
+            };
+            await exportEssayWithRubric(
+                assignment,
+                student,
+                submission,
+                studentRubric,
+                rubric,
+                scale,
+                'docx',
+                analysis,
+                undefined
+            );
+            expect(mockToBlob).toHaveBeenCalledTimes(1);
+            expect(mockSaveAs).toHaveBeenCalledWith(expect.any(Blob), 'Alice_Smith_My_Essay_with_rubric.docx');
+        });
+
+        it('renders an empty analysis section when there is nothing detected', async () => {
+            const analysis = {
+                id: 'a1',
+                studentId: 's1',
+                rubricId: 'r1',
+                attachmentId: 'att1',
+                extractedText: 'x',
+                analyzedAt: '2024-01-01',
+                detectedItems: [],
+                grammarErrors: [],
+                grammarCheckerUsed: 'none' as const,
+            };
+            await exportEssayWithRubric(
+                assignment,
+                student,
+                submission,
+                studentRubric,
+                rubric,
+                scale,
+                'pdf',
+                analysis,
+                undefined
+            );
+            expect(mockPrintHtml).toHaveBeenCalledTimes(1);
+            const html = (mockPrintHtml.mock.calls[0] as unknown[])[0] as string;
+            expect(html).not.toContain('<li>'); // no vocab rows, no grammar rows
+            expect(html).toContain('Grammar &amp; Vocabulary Analysis');
         });
 
         it('exports pdf including the analysis section when provided', async () => {

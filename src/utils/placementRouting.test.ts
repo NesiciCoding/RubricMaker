@@ -173,6 +173,11 @@ describe('resolveNextSection', () => {
             resolveNextSection(dangling, 'routing', [{ questionId: 'q1', response: 'right' }], ['routing'])
         ).toBeNull();
     });
+
+    it('returns null when the test has no sections at all', () => {
+        const noSections = makeTest({ sections: undefined, questions: [mcQuestion('q1', 'routing')] });
+        expect(resolveNextSection(noSections, 'routing', [], ['routing'])).toBeNull();
+    });
 });
 
 describe('maxPointsForPath', () => {
@@ -214,5 +219,9 @@ describe('hasRoutingCycle', () => {
             ],
         });
         expect(hasRoutingCycle(test)).toBe(false);
+    });
+
+    it('is false when the test has no sections', () => {
+        expect(hasRoutingCycle(makeTest({ sections: undefined }))).toBe(false);
     });
 });

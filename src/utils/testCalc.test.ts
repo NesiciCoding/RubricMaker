@@ -15,6 +15,7 @@ import {
     scoreCategorize,
     scoreHotText,
     autoScoreResponse,
+    withAskedQuestionSnapshots,
 } from './testCalc';
 import type { Test, StudentTest, TestQuestion } from '../types';
 
@@ -155,6 +156,12 @@ describe('scoreShortAnswerExact', () => {
         expect(scoreShortAnswerExact(question, 'Paris')).toBe(0);
         expect(scoreShortAnswerExact(question, 'Lyon')).toBe(2);
     });
+
+    it('falls back to the legacy expectedAnswer when expectedAnswers is an empty array', () => {
+        const question = { ...saQuestion, expectedAnswers: [] };
+        expect(scoreShortAnswerExact(question, ' paris ')).toBe(2);
+        expect(scoreShortAnswerExact(question, 'Lyon')).toBe(0);
+    });
 });
 
 const numericQuestion: TestQuestion = {
@@ -242,6 +249,16 @@ describe('scoreMultipleResponse', () => {
         expect(scoreMultipleResponse(mrQuestion, 'not json')).toBe(2);
     });
 
+    it('awards 0 when the question has no options', () => {
+        expect(scoreMultipleResponse({ ...mrQuestion, options: [] }, JSON.stringify(['a']))).toBe(0);
+    });
+
+    it('defaults an undefined options list to empty', () => {
+        const { options, ...rest } = mrQuestion;
+        void options;
+        expect(scoreMultipleResponse(rest as TestQuestion, JSON.stringify(['a']))).toBe(0);
+    });
+
     it('is all-or-nothing when partialCredit is false', () => {
         const strict = { ...mrQuestion, partialCredit: false };
         expect(scoreMultipleResponse(strict, JSON.stringify(['a', 'b']))).toBe(4);
@@ -290,6 +307,10 @@ describe('scoreCloze', () => {
         expect(scoreCloze(clozeDropdownQuestion, JSON.stringify({ 0: 'Paris', 1: 'Berlin' }))).toBe(4);
         expect(scoreCloze(clozeDropdownQuestion, JSON.stringify({ 0: 'London', 1: 'Berlin' }))).toBe(2);
     });
+
+    it('returns 0 when the prompt has no gaps', () => {
+        expect(scoreCloze({ ...clozeQuestion, prompt: 'No gaps at all.' }, JSON.stringify({ 0: 'Paris' }))).toBe(0);
+    });
 });
 
 const matchingQuestion: TestQuestion = {
@@ -319,6 +340,16 @@ describe('scoreMatching', () => {
     it('treats unparsable responses as no answers', () => {
         expect(scoreMatching(matchingQuestion, '')).toBe(0);
         expect(scoreMatching(matchingQuestion, 'not json')).toBe(0);
+    });
+
+    it('defaults to no pairs when matchingPairs is undefined', () => {
+        const { matchingPairs, ...rest } = matchingQuestion;
+        void matchingPairs;
+        expect(scoreMatching(rest as TestQuestion, JSON.stringify({}))).toBe(0);
+    });
+
+    it('returns 0 when there are no pairs', () => {
+        expect(scoreMatching({ ...matchingQuestion, matchingPairs: [] }, JSON.stringify({}))).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {
@@ -353,6 +384,16 @@ describe('scoreOrdering', () => {
     it('treats unparsable responses as no answer', () => {
         expect(scoreOrdering(orderingQuestion, '')).toBe(0);
         expect(scoreOrdering(orderingQuestion, 'not json')).toBe(0);
+    });
+
+    it('defaults to no items when orderItems is undefined', () => {
+        const { orderItems, ...rest } = orderingQuestion;
+        void orderItems;
+        expect(scoreOrdering(rest as TestQuestion, JSON.stringify(['i1']))).toBe(0);
+    });
+
+    it('returns 0 when there are no order items', () => {
+        expect(scoreOrdering({ ...orderingQuestion, orderItems: [] }, JSON.stringify(['i1']))).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {
@@ -393,6 +434,16 @@ describe('scoreCategorize', () => {
     it('treats unparsable responses as no answers', () => {
         expect(scoreCategorize(categorizeQuestion, '')).toBe(0);
         expect(scoreCategorize(categorizeQuestion, 'not json')).toBe(0);
+    });
+
+    it('defaults to no items when categorizeItems is undefined', () => {
+        const { categorizeItems, ...rest } = categorizeQuestion;
+        void categorizeItems;
+        expect(scoreCategorize(rest as TestQuestion, JSON.stringify({}))).toBe(0);
+    });
+
+    it('returns 0 when there are no categorize items', () => {
+        expect(scoreCategorize({ ...categorizeQuestion, categorizeItems: [] }, JSON.stringify({}))).toBe(0);
     });
 
     it('is all-or-nothing when partialCredit is false', () => {
@@ -436,6 +487,12 @@ describe('scoreHotText', () => {
         const empty = { ...hotTextQuestion, hotTextPassage: 'No fragments here.' };
         expect(scoreHotText(empty, JSON.stringify([0]))).toBe(0);
     });
+
+    it('defaults an undefined passage to empty and scores 0', () => {
+        const { hotTextPassage, ...rest } = hotTextQuestion;
+        void hotTextPassage;
+        expect(scoreHotText(rest as TestQuestion, JSON.stringify([0]))).toBe(0);
+    });
 });
 
 describe('autoScoreResponse for hot-text', () => {
@@ -457,6 +514,12 @@ describe('autoScoreResponse for true-false', () => {
         const { correctBoolean, ...rest } = tfQuestion;
         void correctBoolean;
         expect(autoScoreResponse(rest as TestQuestion, 'true')).toBe(2);
+    });
+
+    it('treats a numeric question without an expected value as unscored', () => {
+        const { expectedNumericValue, ...rest } = numericQuestion;
+        void expectedNumericValue;
+        expect(autoScoreResponse(rest as TestQuestion, '3.14')).toBe(0);
     });
 });
 
@@ -535,5 +598,26 @@ describe('applyAdjustment', () => {
         const original = makeStudentTest({ rawTotalPoints: 6 });
         applyAdjustment(original, 3, 12);
         expect(original.adjustmentPoints).toBeUndefined();
+    });
+
+    it('treats a missing rawTotalPoints as 0', () => {
+        const st = applyAdjustment(makeStudentTest(), 3, 12);
+        expect(st.adjustmentPoints).toBe(3);
+    });
+});
+
+describe('withAskedQuestionSnapshots', () => {
+    it('returns the test unchanged when there are no snapshots', () => {
+        const test = makeTest();
+        expect(withAskedQuestionSnapshots(test, {})).toBe(test);
+    });
+
+    it('appends asked-question snapshots to the question list', () => {
+        const test = makeTest();
+        const snapshot: TestQuestion = { id: 'q-snap', prompt: 'Snapshot question', type: 'open', points: 5 };
+        const merged = withAskedQuestionSnapshots(test, { askedQuestionSnapshots: [snapshot] });
+        expect(merged.questions).toHaveLength(4);
+        expect(merged.questions[3]).toBe(snapshot);
+        expect(merged.id).toBe(test.id);
     });
 });

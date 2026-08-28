@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getCefrStudentOverview, highestLevelForSkill, overallLevel, modeSkillLevel } from './cefrStudentAggregator';
+import {
+    getCefrStudentOverview,
+    highestLevelForSkill,
+    overallLevel,
+    modeSkillLevel,
+    aggregateCefrProgress,
+} from './cefrStudentAggregator';
 import type { CefrCellData } from './cefrStudentAggregator';
 import type { Rubric, StudentRubric, SelfAssessment, DocumentAnalysisResult, Test, StudentTest } from '../types';
 
@@ -1335,5 +1341,385 @@ describe('getCefrStudentOverview — placement-mode test scores', () => {
         expect(result.cells).toHaveLength(0);
         expect(result.practiceCefrProgress).toHaveLength(0);
         expect(result.placement?.level).toBe('B1');
+    });
+
+    it('skips a placement submission that cannot produce an estimate (no routing path)', () => {
+        const test = makePlacementTest();
+        const st = makeStudentTest({ testId: 't-placement', sectionPath: [] });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.placement).toBeUndefined();
+    });
+});
+
+// ─── Remaining branch coverage (aggregateCefrProgress + step guards) ─────────
+
+describe('aggregateCefrProgress', () => {
+    it('groups history by skill+level and averages scores and thresholds', () => {
+        const result = aggregateCefrProgress([
+            {
+                rubric: { cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 },
+                score: 80,
+                dateStr: '2024-01-01',
+            },
+            {
+                rubric: { cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 },
+                score: 60,
+                dateStr: '2024-02-01',
+            },
+            { rubric: { cefrTargetLevel: 'A2', cefrSkill: 'reading' }, score: 50 },
+        ]);
+        expect(result).toHaveLength(2);
+        const writing = result.find((r) => r.skill === 'writing' && r.level === 'B1')!;
+        expect(writing.avgScore).toBe(70);
+        expect(writing.threshold).toBe(70);
+        expect(writing.count).toBe(2);
+        expect(writing.achieved).toBe(true);
+        expect(writing.lastDate).toBe('2024-02-01');
+        const reading = result.find((r) => r.skill === 'reading')!;
+        expect(reading.avgScore).toBe(50);
+        expect(reading.threshold).toBe(70); // default threshold
+        expect(reading.achieved).toBe(false);
+        expect(reading.lastDate).toBeUndefined();
+    });
+
+    it('drops entries without a cefrTargetLevel', () => {
+        const result = aggregateCefrProgress([{ rubric: { cefrSkill: 'writing' }, score: 80 }]);
+        expect(result).toHaveLength(0);
+    });
+
+    it('defaults the skill to writing and sorts ascending by level ordinal', () => {
+        const result = aggregateCefrProgress([
+            { rubric: { cefrTargetLevel: 'C1' }, score: 90 },
+            { rubric: { cefrTargetLevel: 'A1' }, score: 90 },
+        ]);
+        expect(result.map((r) => r.level)).toEqual(['A1', 'C1']);
+        expect(result.every((r) => r.skill === 'writing')).toBe(true);
+    });
+});
+
+describe('getCefrStudentOverview — remaining step guards', () => {
+    it('skips a test whose questions sum to zero points (maxPoints guard)', () => {
+        const test = makeTest({ questions: [{ id: 'q0', prompt: 'Zero', type: 'open', points: 0 }] });
+        const st = makeStudentTest();
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toHaveLength(0);
+    });
+
+    it('ignores in-progress submissions entirely (neither graded cells nor practice)', () => {
+        const test = makeTest({ mode: 'practice' });
+        const st = makeStudentTest({ status: 'in_progress' });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cells).toHaveLength(0);
+        expect(result.practiceCefrProgress).toHaveLength(0);
+    });
+
+    it('auto-computes raw points and falls back to startedAt when submittedAt is missing', () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Q',
+                    type: 'multiple-choice',
+                    points: 10,
+                    options: [
+                        { id: 'right', text: 'Right', isCorrect: true },
+                        { id: 'wrong', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+            ],
+        });
+        const st = makeStudentTest({
+            rawTotalPoints: undefined, // no stored total → recomputed from answers
+            submittedAt: undefined, // falls back to startedAt for the evidence date
+            answers: [{ questionId: 'q1', response: 'right' }],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        const cell = result.cellMap.get('listening__B1')!;
+        expect(cell.avgScore).toBe(100);
+        expect(cell.evidence[0].gradedAt).toBe(st.startedAt);
+    });
+
+    it('skips a linked descriptor question the student did not answer', () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Q',
+                    type: 'open',
+                    points: 10,
+                    linkedCefrDescriptors: [
+                        { descriptorId: 'd1', level: 'A2', skill: 'reading', descriptionEn: '', descriptionNl: '' },
+                    ],
+                },
+            ],
+        });
+        const st = makeStudentTest({ answers: [] }); // no answer for q1
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('reading__A2')).toBeUndefined();
+        // The test's own cell still gets the overall score evidence.
+        expect(result.cellMap.get('listening__B1')?.rubricCount).toBe(1);
+    });
+
+    it('falls back to startedAt for practice attempt timestamps when submittedAt is missing', () => {
+        const test = makeTest({ mode: 'practice' });
+        const st = makeStudentTest({ submittedAt: undefined, rawTotalPoints: 8 });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.practiceCefrProgress[0].lastAttemptAt).toBe(st.startedAt);
+    });
+
+    it('falls back to the descriptor id when a self-assessment references an unknown descriptor', () => {
+        const sa: SelfAssessment = {
+            id: 'sa1',
+            rubricId: 'r1',
+            studentId: 's1',
+            submittedAt: '2024-01-10',
+            ratings: [{ descriptorId: 'unknown-desc-xyz', level: 'B1', skill: 'writing', confident: true }],
+        };
+        const result = getCefrStudentOverview('s1', [], [], [sa]);
+        const cell = result.cellMap.get('writing__B1')!;
+        expect(cell.descriptors[0]).toEqual({
+            descriptorId: 'unknown-desc-xyz',
+            descriptionEn: 'unknown-desc-xyz',
+            descriptionNl: 'unknown-desc-xyz',
+            confidentInSelfAssess: true,
+        });
+    });
+
+    it('reports no-data when a track-based year has no track selected', () => {
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, 'jaar-3', undefined);
+        expect(result.trackYearProgress?.expectedRange).toBeUndefined();
+        expect(result.trackYearProgress?.status).toBe('no-data');
+    });
+
+    it('walks the sub-item max fallback chain (points-only, neither, maxPoints-only)', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-chain',
+            description: 'Chain standard',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [
+                        {
+                            id: 'l1',
+                            label: 'A',
+                            minPoints: 0,
+                            maxPoints: 100,
+                            description: '',
+                            subItems: [
+                                { id: 'siA', label: 'A', points: 10 }, // maxPoints missing → points used
+                                { id: 'siB', label: 'B' }, // neither → 0
+                                { id: 'siC', label: 'C', maxPoints: 5 }, // points missing → maxPoints used as earned
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+        const sr = makeSr({
+            entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: ['siA', 'siB', 'siC'], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [sr], [rubric], []);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        expect(set.standards[0].guid).toBe('std-chain');
+        // earned: 10 + 0 + 5 over max: 10 + 0 + 5 → 100%
+        expect(set.standards[0].avgScore).toBe(100);
+    });
+
+    it('accumulates a shared standard across multiple graded rubrics into one entry', () => {
+        const std: import('../types').LinkedStandard = {
+            guid: 'std-shared',
+            description: 'Shared standard',
+            standardSetTitle: 'CCSS',
+            jurisdictionTitle: 'US',
+        };
+        const rubricA = makeRubric({
+            id: 'ra',
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const rubricB = makeRubric({
+            id: 'rb',
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'C1',
+                    description: '',
+                    weight: 100,
+                    linkedStandard: std,
+                    levels: [{ id: 'l1', label: 'A', minPoints: 0, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const srA = makeSr({
+            id: 'srA',
+            rubricId: 'ra',
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 80, checkedSubItems: [], comment: '' }],
+        });
+        const srB = makeSr({
+            id: 'srB',
+            rubricId: 'rb',
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 60, checkedSubItems: [], comment: '' }],
+        });
+        const result = getCefrStudentOverview('s1', [srA, srB], [rubricA, rubricB], []);
+        const set = result.standardSets.find((g) => g.setTitle === 'CCSS')!;
+        expect(set.standards[0]).toEqual(expect.objectContaining({ guid: 'std-shared', rubricCount: 2, avgScore: 70 }));
+    });
+
+    it('merges multiple assessment tests targeting the same skill/level into one graded cell', () => {
+        const testA = makeTest({ id: 'tA' });
+        const testB = makeTest({ id: 'tB' });
+        const stA = makeStudentTest({ id: 'stA', testId: 'tA', rawTotalPoints: 8 });
+        const stB = makeStudentTest({ id: 'stB', testId: 'tB', rawTotalPoints: 5 });
+        const result = getCefrStudentOverview(
+            's1',
+            [],
+            [],
+            [],
+            undefined,
+            undefined,
+            undefined,
+            [testA, testB],
+            [stA, stB]
+        );
+        const cell = result.cellMap.get('listening__B1')!;
+        expect(cell.rubricCount).toBe(2);
+        expect(cell.avgScore).toBe(65); // (80 + 50) / 2
+    });
+
+    it('marks a descriptor cell achieved once even when two questions target the same descriptor', () => {
+        const test = makeTest({
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: 'Q1',
+                    type: 'short-answer',
+                    points: 5,
+                    expectedAnswer: 'Paris',
+                    linkedCefrDescriptors: [
+                        { descriptorId: 'd1', level: 'A2', skill: 'reading', descriptionEn: '', descriptionNl: '' },
+                    ],
+                },
+                {
+                    id: 'q2',
+                    prompt: 'Q2',
+                    type: 'short-answer',
+                    points: 5,
+                    expectedAnswer: 'Rome',
+                    linkedCefrDescriptors: [
+                        { descriptorId: 'd1', level: 'A2', skill: 'reading', descriptionEn: '', descriptionNl: '' },
+                    ],
+                },
+            ],
+        });
+        const st = makeStudentTest({
+            rawTotalPoints: 10,
+            answers: [
+                { questionId: 'q1', response: 'Paris' },
+                { questionId: 'q2', response: 'Rome' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('reading__A2')?.rubricAchieved).toBe(true);
+    });
+
+    it('falls back to startedAt for the placement estimate date when submittedAt is missing', () => {
+        const test = makeTest({
+            id: 't-placement',
+            mode: 'placement',
+            cefrTargetLevel: undefined,
+            cefrSkill: undefined,
+            questions: [
+                {
+                    id: 'q-routing',
+                    prompt: 'Routing question',
+                    type: 'multiple-choice',
+                    points: 10,
+                    sectionId: 'routing',
+                    options: [
+                        { id: 'right', text: 'Right', isCorrect: true },
+                        { id: 'wrong', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+                {
+                    id: 'q-hard',
+                    prompt: 'Hard question',
+                    type: 'multiple-choice',
+                    points: 10,
+                    sectionId: 'hard',
+                    options: [
+                        { id: 'right', text: 'Right', isCorrect: true },
+                        { id: 'wrong', text: 'Wrong', isCorrect: false },
+                    ],
+                },
+            ],
+            sections: [
+                {
+                    id: 'routing',
+                    title: 'Routing',
+                    cefrLevel: 'A2',
+                    routing: { thresholdPct: 60, passSectionId: 'hard', failSectionId: 'easy' },
+                },
+                { id: 'easy', title: 'Easy', cefrLevel: 'A1' },
+                { id: 'hard', title: 'Hard', cefrLevel: 'B1' },
+            ],
+        });
+        const st = makeStudentTest({
+            testId: 't-placement',
+            sectionPath: ['routing', 'hard'],
+            submittedAt: undefined,
+            answers: [
+                { questionId: 'q-routing', response: 'right' },
+                { questionId: 'q-hard', response: 'right' },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.placement?.assessedAt).toBe(st.startedAt);
+    });
+
+    it('keeps the higher of two vocab estimates for the same cell, ignoring a lower later one', () => {
+        const rubric = makeRubric({ id: 'r1', cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 });
+        const sr = makeSr();
+        const high = makeAnalysisResult({ id: 'ar-high', vocabEstimatedLevel: 'C1', grammarEstimatedLevel: undefined });
+        const lower = makeAnalysisResult({
+            id: 'ar-lower',
+            vocabEstimatedLevel: 'A2',
+            grammarEstimatedLevel: undefined,
+        });
+
+        const result = getCefrStudentOverview('s1', [sr], [rubric], [], [high, lower]);
+        const cell = result.cellMap.get('writing__B1')!;
+        expect(cell.textVocabEstimate).toBe('C1');
+    });
+
+    it('keeps the higher of two grammar estimates for the same cell, ignoring a lower later one', () => {
+        const rubric = makeRubric({ id: 'r1', cefrTargetLevel: 'B1', cefrSkill: 'writing', cefrAchieveThreshold: 70 });
+        const sr = makeSr();
+        const high = makeAnalysisResult({ id: 'ar-high', vocabEstimatedLevel: undefined, grammarEstimatedLevel: 'B2' });
+        const lower = makeAnalysisResult({
+            id: 'ar-lower',
+            vocabEstimatedLevel: undefined,
+            grammarEstimatedLevel: 'A1',
+        });
+
+        const result = getCefrStudentOverview('s1', [sr], [rubric], [], [high, lower]);
+        const cell = result.cellMap.get('writing__B1')!;
+        expect(cell.textGrammarEstimate).toBe('B2');
     });
 });

@@ -153,4 +153,30 @@ describe('aggregateFrameworkScores', () => {
         const bucket = result.find((b) => b.categoryId === bloomId)!;
         expect(bucket.count).toBe(0);
     });
+
+    it('skips criteria that have no entry in the student rubric', () => {
+        const bloomId = BLOOM_LEVELS[0].id;
+        const criteria = [criterion('c1', bloomId, 'blooms', 10), criterion('c2', bloomId, 'blooms', 10)];
+        // Only c1 has an entry — c2's missing entry must be skipped, not crash
+        const rubrics = [sr('sr1', 'c1', 'l-best', 8)];
+        const result = aggregateFrameworkScores('blooms', rubrics, criteria);
+        const bucket = result.find((b) => b.categoryId === bloomId)!;
+        expect(bucket.count).toBe(1);
+        expect(bucket.avgPercentage).toBeCloseTo(80);
+    });
+
+    it('treats a criterion with undefined frameworkDescriptors as having none', () => {
+        const bloomId = BLOOM_LEVELS[0].id;
+        const noDescriptors: RubricCriterion = {
+            id: 'c1',
+            title: 'c1',
+            description: '',
+            weight: 100,
+            levels: [level('l1', 10)],
+            // frameworkDescriptors omitted entirely → undefined → defaulted to []
+        };
+        const rubrics = [sr('sr1', 'c1', 'l1', 10)];
+        const result = aggregateFrameworkScores('blooms', rubrics, [noDescriptors]);
+        result.forEach((b) => expect(b.count).toBe(0));
+    });
 });

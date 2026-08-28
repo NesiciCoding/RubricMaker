@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getStudentGoalScores, getClassGoalScores } from './learningGoalsAggregator';
-import type { Rubric, StudentRubric } from '../types';
+import type { Rubric, StudentRubric, StandardMasteryTarget } from '../types';
 
 describe('learningGoalsAggregator', () => {
     it('aggregates scores accurately for criterion-level standards', () => {
@@ -410,6 +410,418 @@ describe('getStudentGoalScores — uncovered branches', () => {
         // earned = minPoints (7), max = max of levels (10)
         expect(results[0].history[0].earnedPoints).toBe(7);
         expect(results[0].history[0].maxPoints).toBe(10);
+    });
+
+    it('skips a submission whose rubric cannot be found', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'missing-rubric',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results).toHaveLength(0);
+    });
+
+    it('skips entries whose criterion cannot be found in the rubric', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [
+                    { criterionId: 'missing-criterion', levelId: 'l1', checkedSubItems: [], comment: '' },
+                    { criterionId: 'c1', levelId: 'l1', selectedPoints: 8, checkedSubItems: [], comment: '' },
+                ],
+            },
+        ];
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results).toHaveLength(1);
+        expect(results[0].guid).toBe('std1');
+        expect(results[0].history[0].earnedPoints).toBe(8);
+    });
+
+    it('skips an entry whose level cannot be found in the rubric (stale levelId)', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 8, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [
+                    { criterionId: 'c1', levelId: 'stale-level', checkedSubItems: [], comment: '' },
+                    { criterionId: 'c1', levelId: 'l1', selectedPoints: 8, checkedSubItems: [], comment: '' },
+                ],
+            },
+        ];
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        // Only the valid entry contributes points; the stale-level entry is skipped silently.
+        expect(results).toHaveLength(1);
+        expect(results[0].guid).toBe('std1');
+        expect(results[0].history[0].earnedPoints).toBe(8);
+    });
+
+    it('falls back through the sub-item max chain and the minPoints fallback when neither maxPoints nor points are set', () => {
+        // Sub-item declares only minPoints: max resolves to 0 via `si.maxPoints ?? si.points ?? 0`
+        // and then the `max === 0 && si.minPoints !== undefined` fallback (which also ends at 0).
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            {
+                                id: 'l1',
+                                label: 'Good',
+                                minPoints: 0,
+                                maxPoints: 10,
+                                description: '',
+                                subItems: [{ id: 'si1', label: 'Sub', minPoints: 5 }],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: ['si1'], comment: '' }],
+            },
+        ];
+        // The sub-item max resolves to 0, so the standard is excluded by the division-by-zero guard.
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results).toHaveLength(0);
+    });
+
+    it('uses the sub-item max as earned when a checked sub-item has maxPoints but no points', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            {
+                                id: 'l1',
+                                label: 'Good',
+                                minPoints: 0,
+                                maxPoints: 10,
+                                description: '',
+                                subItems: [{ id: 'si1', label: 'Sub', maxPoints: 5 }],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: ['si1'], comment: '' }],
+            },
+        ];
+        const results = getStudentGoalScores('s1', studentRubrics, rubrics);
+        expect(results).toHaveLength(1);
+        expect(results[0].history[0].earnedPoints).toBe(5);
+        expect(results[0].history[0].maxPoints).toBe(5);
+    });
+
+    it('applies mastery targets with ahead/behind/on-track status and voTrack/year matching', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 0, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const srFor = (earned: number) => ({
+            id: 'sr1',
+            rubricId: 'r1',
+            studentId: 's1',
+            overallComment: '',
+            gradedAt: '2023-01-01',
+            isPeerReview: false,
+            entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: earned, checkedSubItems: [], comment: '' }],
+        });
+        const target: StandardMasteryTarget = {
+            id: 'mt1',
+            standardGuid: 'std1',
+            standardDescription: 'desc',
+            standardSetTitle: 'S',
+            year: 'jaar-3',
+            voTrack: 'havo',
+            targetPercentage: 80,
+        };
+
+        // 9/10 = 90% > 80 → ahead
+        const ahead = getStudentGoalScores('s1', [srFor(9)], rubrics, [target], 'jaar-3', 'havo')[0];
+        expect(ahead.targetPercentage).toBe(80);
+        expect(ahead.status).toBe('ahead');
+
+        // 7/10 = 70% < 80 → behind
+        const behind = getStudentGoalScores('s1', [srFor(7)], rubrics, [target], 'jaar-3', 'havo')[0];
+        expect(behind.status).toBe('behind');
+
+        // 8/10 = 80% = 80 → on-track
+        const onTrack = getStudentGoalScores('s1', [srFor(8)], rubrics, [target], 'jaar-3', 'havo')[0];
+        expect(onTrack.status).toBe('on-track');
+    });
+
+    it('walks past non-matching mastery targets (wrong guid, year, or voTrack) before finding the match', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 0, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 9, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const base: Omit<StandardMasteryTarget, 'standardGuid' | 'year' | 'voTrack' | 'targetPercentage'> = {
+            id: 'x',
+            standardDescription: 'desc',
+            standardSetTitle: 'S',
+        };
+        const targets: StandardMasteryTarget[] = [
+            { ...base, standardGuid: 'other-std', year: 'jaar-3', voTrack: 'havo', targetPercentage: 60 },
+            { ...base, standardGuid: 'std1', year: 'jaar-2', voTrack: 'havo', targetPercentage: 60 },
+            { ...base, standardGuid: 'std1', year: 'jaar-3', voTrack: undefined, targetPercentage: 60 },
+            { ...base, standardGuid: 'std1', year: 'jaar-3', voTrack: 'havo', targetPercentage: 80 },
+        ];
+        const result = getStudentGoalScores('s1', studentRubrics, rubrics, targets, 'jaar-3', 'havo')[0];
+        expect(result.targetPercentage).toBe(80);
+        expect(result.status).toBe('ahead'); // 90% > 80
+    });
+
+    it('matches a voTrack-less target when no voTrack is requested (uniform track years)', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 0, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 8, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const target: StandardMasteryTarget = {
+            id: 'mt1',
+            standardGuid: 'std1',
+            standardDescription: 'desc',
+            standardSetTitle: 'S',
+            year: 'groep-8',
+            targetPercentage: 80, // no voTrack — uniform across tracks
+        };
+        const result = getStudentGoalScores('s1', studentRubrics, rubrics, [target], 'groep-8')[0];
+        expect(result.targetPercentage).toBe(80);
+        expect(result.status).toBe('on-track'); // 80% = 80
+    });
+
+    it('returns no mastery target when masteryTargets are supplied without a schoolYear', () => {
+        const rubrics: any[] = [
+            {
+                id: 'r1',
+                name: 'Rubric',
+                subject: 'Math',
+                description: '',
+                gradeScaleId: '1',
+                criteria: [
+                    {
+                        id: 'c1',
+                        title: 'Crit',
+                        description: '',
+                        weight: 100,
+                        linkedStandard: { guid: 'std1', description: 'desc' },
+                        levels: [
+                            { id: 'l1', label: 'Good', minPoints: 0, maxPoints: 10, description: '', subItems: [] },
+                        ],
+                    },
+                ],
+            },
+        ];
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                entries: [{ criterionId: 'c1', levelId: 'l1', selectedPoints: 9, checkedSubItems: [], comment: '' }],
+            },
+        ];
+        const target: StandardMasteryTarget = {
+            id: 'mt1',
+            standardGuid: 'std1',
+            standardDescription: 'desc',
+            standardSetTitle: 'S',
+            year: 'jaar-3',
+            voTrack: 'havo',
+            targetPercentage: 80,
+        };
+        const result = getStudentGoalScores('s1', studentRubrics, rubrics, [target]);
+        expect(result[0].targetPercentage).toBeUndefined();
+        expect(result[0].status).toBeUndefined();
     });
 
     it('skips standard aggregation when maxPointsPerStandard is 0 (division-by-zero guard)', () => {

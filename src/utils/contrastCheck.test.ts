@@ -55,6 +55,11 @@ describe('contrastRatio', () => {
         expect(parseHex('#fff')).toEqual({ r: 255, g: 255, b: 255 });
         expect(() => parseHex('abc#def')).toThrow('Invalid hex color');
     });
+
+    it('accepts an Rgb object directly', () => {
+        expect(contrastRatio({ r: 0, g: 0, b: 0 }, '#ffffff')).toBeCloseTo(21, 1);
+        expect(contrastRatio('#000000', { r: 255, g: 255, b: 255 })).toBeCloseTo(21, 1);
+    });
 });
 
 describe('surface text tokens meet AAA (>=7:1)', () => {

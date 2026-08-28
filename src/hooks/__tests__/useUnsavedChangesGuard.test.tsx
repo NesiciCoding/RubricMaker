@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Link, useLocation } from 'react-router-dom';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
@@ -70,6 +70,20 @@ describe('useUnsavedChangesGuard', () => {
 
         await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
         expect(screen.getByText('path:/')).toBeInTheDocument();
+    });
+
+    it('ignores the confirm result when the component unmounts mid-confirmation', async () => {
+        let resolveConfirm!: (leave: boolean) => void;
+        mockConfirm.mockImplementation(() => new Promise((resolve) => (resolveConfirm = resolve)));
+        const { unmount } = renderWithRouter(<Harness isDirty={true} />);
+        fireEvent.click(screen.getByRole('link', { name: 'navigate' }));
+
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+        unmount();
+        await act(async () => {
+            resolveConfirm(true);
+        });
+        expect(screen.queryByText('path:/other')).not.toBeInTheDocument();
     });
 
     it('registers a beforeunload handler that blocks tab close while dirty', () => {

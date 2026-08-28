@@ -159,6 +159,12 @@ describe('collectVocabExportRows', () => {
         expect(collectVocabExportRows([], [])).toEqual([]);
     });
 
+    it('handles a rubric without a vocabularyItems field', () => {
+        const rubric = makeRubric({});
+        const rows = collectVocabExportRows([rubric], []);
+        expect(rows).toEqual([]);
+    });
+
     it('prefers rubric-sourced rows over analysis-sourced rows for the same word', () => {
         const rubric = makeRubric({
             vocabularyItems: [
@@ -175,5 +181,67 @@ describe('collectVocabExportRows', () => {
         const rows = collectVocabExportRows([rubric], results);
         const phenomenonRow = rows.find((r) => r.word.toLowerCase() === 'phenomenon');
         expect(phenomenonRow).toMatchObject({ source: 'rubric', definition: 'rubric-defined' });
+    });
+
+    it('defaults a rubric item without a definition to an empty string', () => {
+        const rubric = makeRubric({
+            vocabularyItems: [
+                { id: 'v1', phrase: 'phenomenon', category: 'vocabulary', cefrLevel: 'C1' },
+                { id: 'v2', phrase: 'disparities', category: 'vocabulary', cefrLevel: 'C1', definition: 'differences' },
+            ],
+        });
+        const rows = collectVocabExportRows([rubric], []);
+        expect(rows.find((r) => r.word === 'phenomenon')?.definition).toBe('');
+        expect(rows.find((r) => r.word === 'disparities')?.definition).toBe('differences');
+    });
+
+    it('skips analysis results without extracted text in the export', () => {
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: '' })];
+        expect(collectVocabExportRows([], results)).toEqual([]);
+    });
+
+    it('applies the CEFR band filter to analysis-sourced words too', () => {
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT })];
+        // Every ADVANCED_TEXT highlight is C1, so an A2 band filters all of them out.
+        expect(collectVocabExportRows([], results, 'A2')).toEqual([]);
+    });
+
+    it('skips analysis-sourced rows for words already collected from a rubric', () => {
+        const rubric = makeRubric({
+            vocabularyItems: [
+                {
+                    id: 'v1',
+                    phrase: 'unprecedented',
+                    category: 'vocabulary',
+                    cefrLevel: 'C1',
+                    definition: 'never seen before',
+                },
+            ],
+        });
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT })];
+        const rows = collectVocabExportRows([rubric], results);
+        expect(rows.find((r) => r.word.toLowerCase() === 'unprecedented')?.source).toBe('rubric');
+        expect(rows.some((r) => r.source === 'analysis' && r.word.toLowerCase() === 'unprecedented')).toBe(false);
+    });
+
+    it('dedupes the same highlighted word across multiple analyses', () => {
+        const results = [
+            makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT }),
+            makeAnalysis({ id: 'a2', studentId: 's1', extractedText: ADVANCED_TEXT }),
+        ];
+        const rows = collectVocabExportRows([], results);
+        const words = rows.map((r) => r.word.toLowerCase());
+        expect(new Set(words).size).toBe(words.length);
+    });
+
+    it('sorts export rows by CEFR level, then alphabetically', () => {
+        const rubric = makeRubric({
+            vocabularyItems: [
+                { id: 'v1', phrase: 'phenomenon', category: 'vocabulary', cefrLevel: 'C1', definition: 'an event' },
+                { id: 'v2', phrase: 'cat', category: 'vocabulary', cefrLevel: 'A1', definition: 'an animal' },
+            ],
+        });
+        const rows = collectVocabExportRows([rubric], []);
+        expect(rows.map((r) => r.level)).toEqual(['A1', 'C1']);
     });
 });

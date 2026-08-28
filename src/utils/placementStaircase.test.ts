@@ -9,6 +9,7 @@ import {
     eloExpectedScore,
     updateItemElo,
     cefrMidpoint,
+    cefrEloRange,
     pickNearestEloItem,
     STAIRCASE_START_LEVEL,
     STEP_UP_AFTER_CORRECT,
@@ -222,6 +223,19 @@ describe('resolveNextStaircaseQuestion', () => {
         expect(a).not.toBeNull();
         expect(b).not.toBeNull();
     });
+
+    it('returns null when the start level has no questions at all', () => {
+        // Only B1 sections exist — the A2 start-level pool is empty
+        const test = makeTest({ B1: 3 });
+        expect(resolveNextStaircaseQuestion(test, [], 'code1')).toBeNull();
+    });
+});
+
+describe('levelQuestions', () => {
+    it('defaults to an empty section list when sections is undefined', () => {
+        const test = makeTest({ A1: 2 }, { sections: undefined as unknown as Test['sections'] });
+        expect(levelQuestions(test, 'A1')).toEqual([]);
+    });
 });
 
 describe('eloExpectedScore', () => {
@@ -305,6 +319,19 @@ describe('cefrMidpoint', () => {
 
     it('returns the level itself for a single-level range', () => {
         expect(cefrMidpoint('B1', 'B1')).toBe('B1');
+    });
+});
+
+describe('cefrEloRange', () => {
+    it('centers a band of CEFR_ELO_BAND_HALF_WIDTH around the level anchor', () => {
+        const a2 = cefrEloRange('A2');
+        const anchor = LEVEL_TO_ELO['A2'];
+        expect(a2.min).toBe(anchor - 150);
+        expect(a2.max).toBe(anchor + 150);
+    });
+
+    it('produces adjacent bands that tile without overlap', () => {
+        expect(cefrEloRange('A2').max).toBe(cefrEloRange('B1').min);
     });
 });
 

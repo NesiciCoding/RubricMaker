@@ -84,6 +84,35 @@ describe('useLiveSessionTelemetry', () => {
         expect(sebEvents[0].value).toBe(true);
     });
 
+    it('captures nothing when the battery promise rejects', async () => {
+        const nav = navigator as Navigator & { getBattery?: () => Promise<unknown> };
+        nav.getBattery = vi.fn().mockRejectedValue(new Error('denied'));
+
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
+        );
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(result.current.events.some((e) => e.type === 'battery')).toBe(false);
+        delete nav.getBattery;
+    });
+
+    it('ignores visibilitychange when the tab becomes visible again', () => {
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
+        );
+
+        Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+        act(() => {
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+
+        expect(result.current.events.some((e) => e.type === 'tab_switch')).toBe(false);
+    });
+
     it('does not capture battery events when the Battery Status API is unavailable', async () => {
         const { result } = renderHook(() =>
             useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
@@ -214,6 +243,100 @@ describe('useLiveSessionTelemetry', () => {
             vi.advanceTimersByTime(5_000);
         });
         expect(getSnapshot).toHaveBeenCalled();
+    });
+
+    it('forwards nudge broadcasts to the onNudge callback', () => {
+        const onNudge = vi.fn();
+        renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                onNudge,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        const broadcasts = mockChannel.on.mock.calls.filter(([type]) => type === 'broadcast');
+        expect(broadcasts.length).toBeGreaterThan(0);
+        act(() => {
+            (broadcasts[broadcasts.length - 1][2] as (payload: unknown) => void)({
+                payload: { message: 'nudge!' },
+            });
+        });
+        expect(onNudge).toHaveBeenCalledWith('nudge!');
+    });
+
+    it('reflects the realtime subscription status in isBroadcasting', () => {
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({
+                kind: 'test',
+                assignmentKey: 'key1',
+                enabled: true,
+                supabaseUrl: 'https://example.supabase.co',
+                supabaseAnonKey: 'anon-key',
+            })
+        );
+
+        const subscribes = mockChannel.subscribe.mock.calls;
+        act(() => {
+            (subscribes[subscribes.length - 1][0] as (status: string) => void)('SUBSCRIBED');
+        });
+        expect(result.current.isBroadcasting).toBe(true);
+    });
+
+    it('dedupes rapid consecutive tab switches', () => {
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
+        );
+
+        act(() => {
+            window.dispatchEvent(new Event('blur'));
+            window.dispatchEvent(new Event('blur'));
+        });
+
+        expect(result.current.events.filter((e) => e.type === 'tab_switch')).toHaveLength(1);
+    });
+
+    it('tracks keyboard and pointer activity for idle detection', () => {
+        vi.useFakeTimers();
+        const { result } = renderHook(() =>
+            useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
+        );
+
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent('keydown'));
+            window.dispatchEvent(new PointerEvent('pointerdown'));
+            window.dispatchEvent(new PointerEvent('pointermove'));
+        });
+        act(() => {
+            vi.advanceTimersByTime(20_000);
+        });
+
+        const heartbeats = result.current.events.filter((e) => e.type === 'heartbeat');
+        expect(heartbeats[heartbeats.length - 1].value).toBe('active');
+    });
+
+    it('unmounts cleanly while the battery promise is still pending', async () => {
+        let resolveBattery!: (b: unknown) => void;
+        const nav = navigator as Navigator & { getBattery?: () => Promise<unknown> };
+        nav.getBattery = vi.fn(() => new Promise((resolve) => (resolveBattery = resolve)));
+
+        const { unmount } = renderHook(() =>
+            useLiveSessionTelemetry({ kind: 'test', assignmentKey: 'key1', enabled: true })
+        );
+        unmount();
+        await act(async () => {
+            resolveBattery({
+                level: 0.5,
+                charging: true,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            });
+            await Promise.resolve();
+        });
+        delete nav.getBattery;
     });
 
     it('opens the realtime client on an isolated storage key so it cannot collide with a real session', () => {

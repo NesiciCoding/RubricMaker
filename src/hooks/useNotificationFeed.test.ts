@@ -302,6 +302,25 @@ describe('useNotificationFeed', () => {
             expect(result.current.moderationItems).toHaveLength(0);
         });
 
+        it('dismissAll("overdue_grading") dismisses every currently-visible overdue item', () => {
+            mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+            const gradedAt = daysAgo(10);
+            mockStudentRubrics = [
+                {
+                    id: 'sr1',
+                    rubricId: 'r1',
+                    studentId: 's1',
+                    entries: [],
+                    overallComment: '',
+                    isPeerReview: false,
+                    gradedAt,
+                } as StudentRubric,
+            ];
+            const { result } = renderHook(() => useNotificationFeed());
+            result.current.dismissAll('overdue_grading');
+            expect(mockDismissNotification).toHaveBeenCalledWith('overdue_grading', 's1', gradedAt);
+        });
+
         it('dismissAll("moderation_pending") dismisses every currently-visible moderation item', () => {
             mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
             mockRubrics = [rubric];
@@ -315,6 +334,156 @@ describe('useNotificationFeed', () => {
                 secondMarker.gradedAt
             );
         });
+    });
+
+    it('handles message threads and moderation items from unknown students', () => {
+        mockMessages = [
+            {
+                id: 'm1',
+                studentId: 'ghost',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'student',
+                body: 'hello',
+                createdAt: daysAgo(1),
+                readByTeacher: false,
+                readByStudent: true,
+            },
+        ];
+        mockRubrics = [rubric];
+        mockStudentRubrics = [
+            {
+                id: 'sr-base-ghost',
+                rubricId: 'r1',
+                studentId: 'ghost',
+                entries: [{ criterionId: 'crit1', levelId: 'lvl1', checkedSubItems: [], comment: '' }],
+                overallComment: '',
+                isPeerReview: false,
+            },
+        ];
+        mockPeerReviews = [
+            {
+                id: 'sr-ghost',
+                rubricId: 'r1',
+                studentId: 'ghost',
+                entries: [{ criterionId: 'crit1', levelId: 'lvl2', checkedSubItems: [], comment: '' }],
+                overallComment: '',
+                isPeerReview: true,
+                gradedBy: 'colleague-2',
+            },
+        ];
+        const { result } = renderHook(() => useNotificationFeed());
+
+        expect(result.current.messageItems[0].studentName).toBe('ghost');
+        expect(result.current.moderationItems).toHaveLength(1);
+        expect(result.current.moderationItems[0].studentName).toBe('ghost');
+        expect(result.current.moderationItems[0].pendingDays).toBeNull();
+        expect(result.current.moderationItems[0].fingerprint).toBe('');
+    });
+
+    it('sorts message threads, overdue students, and moderation items by recency', () => {
+        mockStudents = [
+            { id: 's1', name: 'Alice', classId: 'c1' },
+            { id: 's2', name: 'Bob', classId: 'c1' },
+            { id: 's3', name: 'Cara', classId: 'c1' },
+            { id: 's4', name: 'Dan', classId: 'c1' },
+        ];
+        mockMessages = [
+            {
+                id: 'm-old',
+                studentId: 's2',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'student',
+                body: 'older',
+                createdAt: daysAgo(5),
+                readByTeacher: false,
+                readByStudent: true,
+            },
+            {
+                id: 'm-new',
+                studentId: 's1',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'student',
+                body: 'newer',
+                createdAt: daysAgo(1),
+                readByTeacher: false,
+                readByStudent: true,
+            },
+        ];
+        mockRubrics = [rubric];
+        mockStudentRubrics = [
+            baseline,
+            {
+                id: 'sr-base-s2',
+                rubricId: 'r1',
+                studentId: 's2',
+                entries: [{ criterionId: 'crit1', levelId: 'lvl1', checkedSubItems: [], comment: '' }],
+                overallComment: '',
+                isPeerReview: false,
+            },
+            {
+                id: 'sr-overdue-1',
+                rubricId: 'r1',
+                studentId: 's3',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(20),
+            } as StudentRubric,
+            {
+                id: 'sr-overdue-2',
+                rubricId: 'r1',
+                studentId: 's4',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+                gradedAt: daysAgo(30),
+            } as StudentRubric,
+        ];
+        mockPeerReviews = [
+            secondMarker,
+            {
+                id: 'sr-third',
+                rubricId: 'r1',
+                studentId: 's2',
+                entries: [{ criterionId: 'crit1', levelId: 'lvl2', checkedSubItems: [], comment: '' }],
+                overallComment: '',
+                gradedAt: daysAgo(1),
+                isPeerReview: true,
+                gradedBy: 'colleague-3',
+            },
+        ];
+        const { result } = renderHook(() => useNotificationFeed());
+        expect(result.current.messageItems[0].studentId).toBe('s2');
+        expect(result.current.moderationItems[0].studentId).toBe('s1');
+        expect(result.current.overdueItems).toHaveLength(2);
+        expect(result.current.overdueItems[0].studentName).toBe('Dan');
+    });
+
+    it('markAllMessagesRead marks every thread read', () => {
+        mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+        mockMessages = [
+            {
+                id: 'm1',
+                studentId: 's1',
+                contextType: 'general',
+                contextId: null,
+                contextLabel: null,
+                sender: 'student',
+                body: 'help',
+                createdAt: daysAgo(1),
+                readByTeacher: false,
+                readByStudent: true,
+            },
+        ];
+        const { result } = renderHook(() => useNotificationFeed());
+        result.current.markAllMessagesRead();
+        expect(mockMarkMessageReadByTeacher).toHaveBeenCalledWith('m1');
     });
 
     it('merges all three sources into one sorted feed', () => {
