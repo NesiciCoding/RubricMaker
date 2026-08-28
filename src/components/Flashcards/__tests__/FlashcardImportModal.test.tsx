@@ -104,6 +104,11 @@ describe('FlashcardImportModal', () => {
         await waitFor(() => expect(screen.getByText(/import_preview/)).toBeInTheDocument());
     });
 
+    it('opens the file picker via the choose button', () => {
+        render(<FlashcardImportModal onImport={vi.fn()} onClose={vi.fn()} />);
+        fireEvent.click(screen.getByText('flashcards.import_choose_file'));
+    });
+
     it('closes via the header close button', () => {
         const onClose = vi.fn();
         render(<FlashcardImportModal onImport={vi.fn()} onClose={onClose} />);

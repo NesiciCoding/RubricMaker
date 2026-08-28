@@ -12,6 +12,10 @@ const fakeEditor = vi.hoisted(() => ({
     },
 }));
 
+const mockCommentHighlightConfig = vi.hoisted(() => ({
+    config: null as { onCommentClick?: (id: string) => void } | null,
+}));
+
 const mockAddDocumentComment = vi.fn();
 const mockResolveDocumentComment = vi.fn();
 const mockDeleteDocumentComment = vi.fn();
@@ -43,25 +47,49 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('./EssayEditor', () => {
-    const MockEssayEditor = ({ onEditorReady }: { onEditorReady?: (editor: typeof fakeEditor | null) => void }) => {
+    const MockEssayEditor = ({
+        onEditorReady,
+        onChange,
+    }: {
+        onEditorReady?: (editor: typeof fakeEditor | null) => void;
+        onChange?: (html: string) => void;
+    }) => {
         React.useEffect(() => {
             onEditorReady?.(fakeEditor);
+            // Simulate TipTap emitting an edit so the read-only onChange (noop) runs.
+            onChange?.('<p>edited</p>');
             return () => onEditorReady?.(null);
-        }, [onEditorReady]);
+        }, [onEditorReady, onChange]);
         return <div data-testid="mock-essay-editor" />;
     };
     return { default: MockEssayEditor };
 });
 
+const bubbleShouldShowFns = vi.hoisted(() => [] as Array<(p: { state: { selection: { empty: boolean } } }) => boolean>);
+
 vi.mock('@tiptap/react/menus', () => ({
-    BubbleMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    BubbleMenu: ({
+        shouldShow,
+        children,
+    }: {
+        shouldShow: (p: { state: { selection: { empty: boolean } } }) => boolean;
+        children: React.ReactNode;
+    }) => {
+        bubbleShouldShowFns.push(shouldShow);
+        return <div>{children}</div>;
+    },
 }));
 
 vi.mock('./commentDecorations', async (importOriginal) => {
     const actual = await importOriginal<typeof import('./commentDecorations')>();
     return {
         ...actual,
-        CommentHighlight: { configure: vi.fn(() => ({ name: 'commentHighlightMock' })) },
+        CommentHighlight: {
+            configure: vi.fn((config: { onCommentClick?: (id: string) => void }) => {
+                mockCommentHighlightConfig.config = config;
+                return { name: 'commentHighlightMock' };
+            }),
+        },
     };
 });
 
@@ -155,6 +183,17 @@ describe('CommentableDocumentView', () => {
         promptSpy.mockRestore();
     });
 
+    it('activates a comment when its highlight is clicked in the document', async () => {
+        mockDocumentComments.push(makeComment({ id: 'c1' }));
+        render(<CommentableDocumentView content="<p>Hello</p>" attachmentId="att-1" />);
+        await waitFor(() => expect(mockCommentHighlightConfig.config).not.toBeNull());
+
+        mockCommentHighlightConfig.config!.onCommentClick?.('c1');
+        await waitFor(() => {
+            expect(fakeEditor.commands.setActiveDocumentComment).toHaveBeenCalledWith('c1');
+        });
+    });
+
     it('attributes comments to the local user when no database user is set', async () => {
         mockGetCurrentDatabaseUserId.mockReturnValue(null as unknown as string);
         const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('local note');
@@ -164,5 +203,16 @@ describe('CommentableDocumentView', () => {
         fireEvent.click(await screen.findByText('attachments.comment_add'));
         expect(mockAddDocumentComment).toHaveBeenCalledWith(expect.objectContaining({ authorId: 'local' }));
         promptSpy.mockRestore();
+    });
+});
+
+describe('BubbleMenu visibility predicate', () => {
+    it('runs the shouldShow predicate for both selection states', () => {
+        render(<CommentableDocumentView content="<p>hi</p>" attachmentId="att-1" />);
+        expect(bubbleShouldShowFns.length).toBeGreaterThan(0);
+        for (const fn of bubbleShouldShowFns) {
+            expect(fn({ state: { selection: { empty: false } } })).toBe(true);
+            expect(fn({ state: { selection: { empty: true } } })).toBe(false);
+        }
     });
 });

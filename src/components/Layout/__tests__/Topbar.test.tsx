@@ -9,8 +9,10 @@ const mockClasses = [
     { id: 'c2', name: '5B' },
 ];
 
+let mockTheme: string = 'dark';
+
 const makeAppContextMock = () => ({
-    settings: { theme: 'dark' },
+    settings: { theme: mockTheme },
     updateSettings: mockUpdateSettings,
     students: [],
     studentRubrics: [],
@@ -82,6 +84,15 @@ describe('Topbar', () => {
         expect(container.querySelector('.topbar')).toBeTruthy();
     });
 
+    it('toggles back to dark when the theme is light', () => {
+        mockUpdateSettings.mockClear();
+        mockTheme = 'light';
+        render(<Topbar title="Test" />);
+        fireEvent.click(screen.getByTitle('common.toggle_theme'));
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ theme: 'dark' });
+        mockTheme = 'dark';
+    });
+
     it('renders a class selector bound to settings.activeClassId', () => {
         render(<Topbar title="Test" />);
         const select = screen.getByLabelText('search.active_class_label') as HTMLSelectElement;
@@ -101,5 +112,22 @@ describe('Topbar', () => {
         render(<Topbar title="Test" />);
         fireEvent.click(screen.getByTitle('search.open_search'));
         expect(screen.getByPlaceholderText('search.placeholder')).toBeInTheDocument();
+    });
+
+    it('does not open the search shortcut while typing in an input', () => {
+        render(<Topbar title="Test" />);
+        const input = document.createElement('input');
+        document.body.appendChild(input);
+        fireEvent.keyDown(input, { key: 'k', ctrlKey: true });
+        expect(screen.queryByPlaceholderText('search.placeholder')).not.toBeInTheDocument();
+        input.remove();
+    });
+
+    it('closes the global search modal', () => {
+        render(<Topbar title="Test" />);
+        fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+        expect(screen.getByPlaceholderText('search.placeholder')).toBeInTheDocument();
+        fireEvent.keyDown(document.body, { key: 'Escape' });
+        expect(screen.queryByPlaceholderText('search.placeholder')).not.toBeInTheDocument();
     });
 });

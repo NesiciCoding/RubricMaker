@@ -46,7 +46,9 @@ describe('ClozeGapEditor', () => {
                 insertDropdownGapLabel="+ dropdown"
             />
         );
-        fireEvent.click(screen.getByRole('button', { name: '+ gap' }));
+        const gapBtn = screen.getByRole('button', { name: '+ gap' });
+        fireEvent.mouseDown(gapBtn);
+        fireEvent.click(gapBtn);
         await waitFor(() => {
             expect(onChange).toHaveBeenCalled();
             expect(onChange.mock.calls.at(-1)![0]).toContain('{{answer}}');
@@ -64,7 +66,9 @@ describe('ClozeGapEditor', () => {
                 insertDropdownGapLabel="+ dropdown"
             />
         );
-        fireEvent.click(screen.getByRole('button', { name: '+ dropdown' }));
+        const dropdownBtn = screen.getByRole('button', { name: '+ dropdown' });
+        fireEvent.mouseDown(dropdownBtn);
+        fireEvent.click(dropdownBtn);
         await waitFor(() => {
             expect(onChange).toHaveBeenCalled();
             expect(onChange.mock.calls.at(-1)![0]).toContain('{{correct|wrong1|wrong2}}');

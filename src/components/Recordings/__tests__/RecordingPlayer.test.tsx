@@ -95,4 +95,24 @@ describe('RecordingPlayer', () => {
         unmount();
         expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
     });
+
+    it('ignores the blob result when unmounted before it resolves', async () => {
+        let resolveGetBlob!: (value: unknown) => void;
+        mockGetBlob.mockImplementation(
+            () =>
+                new Promise((r) => {
+                    resolveGetBlob = r;
+                })
+        );
+        const { unmount } = render(<RecordingPlayer recording={audioRecording} />);
+        unmount();
+        resolveGetBlob({
+            id: 'rec1',
+            blob: new Blob(['x'], { type: 'audio/webm' }),
+            mimeType: 'audio/webm',
+            createdAt: '2024-01-01T00:00:00.000Z',
+        });
+        // The cancelled guard returns before creating any object URL
+        await waitFor(() => expect(URL.createObjectURL).not.toHaveBeenCalled());
+    });
 });

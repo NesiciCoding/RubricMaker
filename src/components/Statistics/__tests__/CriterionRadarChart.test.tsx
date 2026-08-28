@@ -11,6 +11,12 @@ vi.mock('recharts', async (importOriginal) => {
         ...mod,
         ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
             React.cloneElement(children, { width: 600, height: 400 }),
+        Tooltip: ({ formatter }: { formatter?: (v: unknown) => unknown }) => (
+            <div data-testid="tooltip">
+                {formatter ? String(formatter(75)) : ''}
+                {formatter ? String(formatter(null)) : ''}
+            </div>
+        ),
     };
 });
 
@@ -74,5 +80,12 @@ describe('CriterionRadarChart', () => {
 
     it('renders without crashing when accentColor is a CSS var string', () => {
         expect(() => render(<CriterionRadarChart data={threePoint} accentColor="var(--accent)" />)).not.toThrow();
+    });
+
+    it('formats the tooltip value with a percent sign', () => {
+        render(<CriterionRadarChart data={threePoint} accentColor="#3b82f6" />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('75%');
+        expect(out).toContain(''); // null → ''
     });
 });

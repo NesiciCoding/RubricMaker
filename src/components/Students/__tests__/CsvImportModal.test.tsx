@@ -370,6 +370,71 @@ describe('CsvImportModal', () => {
         expect(mockAddClass).toHaveBeenCalledWith({ name: 'Period 1' });
     });
 
+    it('detects Clever format without a school column and falls back to the default class', () => {
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Email: 'a@x.com', First_Name: 'Ann', Last_Name: 'A' }] });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.getByText('Detected: Clever format')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Ann A',
+            email: 'a@x.com',
+            classId: 'class-1',
+        });
+    });
+
+    it('detects OneRoster format without a class column and falls back to the default class', () => {
+        parseImpl = (_file, opts) => opts.complete({ data: [{ givenName: 'Bob', familyName: 'B', email: 'b@x.com' }] });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.getByText('Detected: OneRoster format')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Bob B',
+            email: 'b@x.com',
+            classId: 'class-1',
+        });
+    });
+
+    it('creates a single class when two rows share the same new class name', () => {
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    { Name: 'Ann A', Email: '', Class: 'New Class' },
+                    { Name: 'Bob B', Email: '', Class: 'New Class' },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
+
+        expect(mockAddClass).toHaveBeenCalledTimes(1);
+        expect(mockAddClass).toHaveBeenCalledWith({ name: 'New Class' });
+        expect(mockAddStudent).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps the previous email when a matched row has no email', () => {
+        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+        parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'Alice Anderson', Email: '', Class: 'Class A' }] });
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+
+        expect(mockUpdateStudent).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'student-1', email: 'alice@school.com', classId: 'class-1' })
+        );
+        expect(mockAddStudent).not.toHaveBeenCalled();
+    });
+
+    it('cancels the sync confirmation without importing', () => {
+        render(<CsvImportModal {...baseProps} />);
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+
+        const cancels = screen.getAllByRole('button', { name: /cancel/i });
+        fireEvent.click(cancels[cancels.length - 1]);
+        expect(mockAddStudent).not.toHaveBeenCalled();
+        expect(screen.queryByText('csv.sync_confirm_title')).not.toBeInTheDocument();
+    });
+
     it('generic format detection still works when specific formats do not match', () => {
         parseImpl = (_file, opts) =>
             opts.complete({

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import CriterionHeatmap, { pctToColor } from '../CriterionHeatmap';
 
@@ -131,5 +131,50 @@ describe('CriterionHeatmap component', () => {
             />
         );
         expect(screen.getByText('0%')).toBeTruthy();
+    });
+
+    it('calls onToggleExpand with the student id when a row name is clicked', () => {
+        const onToggle = vi.fn();
+        render(
+            <CriterionHeatmap
+                students={[{ id: 's1', name: 'Alice' }]}
+                criteria={[{ id: 'c1', title: 'A' }]}
+                scores={{ s1: { c1: 50 } }}
+                onToggleExpand={onToggle}
+            />
+        );
+        const row = screen.getByRole('button', { name: 'Alice' });
+        expect(row.getAttribute('tabindex')).toBe('0');
+        fireEvent.click(row);
+        expect(onToggle).toHaveBeenCalledWith('s1');
+    });
+
+    it('renders the expanded detail row via renderDetail for the expanded student', () => {
+        render(
+            <CriterionHeatmap
+                students={[{ id: 's1', name: 'Alice' }]}
+                criteria={[{ id: 'c1', title: 'A' }]}
+                scores={{ s1: { c1: 50 } }}
+                expandedId="s1"
+                renderDetail={(studentId) => <div data-testid="detail">detail for {studentId}</div>}
+            />
+        );
+        expect(screen.getByTestId('detail')).toHaveTextContent('detail for s1');
+    });
+
+    it('does not render a detail row for a non-expanded student', () => {
+        render(
+            <CriterionHeatmap
+                students={[
+                    { id: 's1', name: 'Alice' },
+                    { id: 's2', name: 'Bob' },
+                ]}
+                criteria={[{ id: 'c1', title: 'A' }]}
+                scores={{ s1: { c1: 50 }, s2: { c1: 40 } }}
+                expandedId="s1"
+                renderDetail={() => <div data-testid="detail">detail</div>}
+            />
+        );
+        expect(screen.getAllByTestId('detail')).toHaveLength(1);
     });
 });

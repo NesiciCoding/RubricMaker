@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { Rubric, Student, Class } from '../../types';
+import type { AppSettings, Rubric, Student, Class, Test } from '../../types';
 import type { StoreData } from '../../store/storage';
 
 const mockNavigate = vi.fn();
@@ -43,9 +43,11 @@ const mockStudentsArr = [mockStudent];
 const mockClassesArr = [mockClass];
 const emptyArr: never[] = [];
 
+const mockTestsArr: Test[] = [];
+
 const mockAppValue: Partial<StoreData> = {
     rubrics: mockRubricsArr,
-    tests: emptyArr,
+    tests: mockTestsArr,
     students: mockStudentsArr,
     classes: mockClassesArr,
     essayAssignments: emptyArr,
@@ -84,6 +86,7 @@ function renderSearch(onClose = vi.fn()) {
 describe('GlobalSearch', () => {
     beforeEach(() => {
         mockNavigate.mockClear();
+        mockTestsArr.length = 0;
     });
 
     it('renders the search input and hint when query is empty', () => {
@@ -119,5 +122,41 @@ describe('GlobalSearch', () => {
         fireEvent.click(screen.getByText('Essay Rubric'));
         expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('r1'));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows a practice badge on practice-mode test results', () => {
+        mockTestsArr.push({
+            id: 't1',
+            name: 'Practice Grammar Drill',
+            description: 'daily drill',
+            questions: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00Z',
+            mode: 'practice',
+        });
+        renderSearch();
+        fireEvent.change(screen.getByLabelText('search.placeholder'), { target: { value: 'Practice Grammar' } });
+        expect(screen.getByText('Practice Grammar Drill')).toBeInTheDocument();
+        expect(screen.getByText('search.practice_badge')).toBeInTheDocument();
+        expect(screen.queryByText('search.placement_badge')).not.toBeInTheDocument();
+    });
+
+    it('shows a placement badge on placement-mode test results', () => {
+        mockTestsArr.push({
+            id: 't2',
+            name: 'Placement Entry Test',
+            description: 'initial level',
+            questions: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00Z',
+            mode: 'placement',
+        });
+        renderSearch();
+        fireEvent.change(screen.getByLabelText('search.placeholder'), { target: { value: 'Placement Entry' } });
+        expect(screen.getByText('Placement Entry Test')).toBeInTheDocument();
+        expect(screen.getByText('search.placement_badge')).toBeInTheDocument();
+        expect(screen.queryByText('search.practice_badge')).not.toBeInTheDocument();
     });
 });
