@@ -48,6 +48,8 @@ function estimateLevel(levelCounts: Record<CefrLevel, number>): CefrLevel {
     for (const level of [...LEVEL_ORDER].reverse()) {
         if (levelCounts[level] / total >= 0.05) return level;
     }
+    // Unreachable: with six CEFR levels the largest share is always ≥ 1/6 > 5%.
+    /* v8 ignore next 1 */
     return 'A1';
 }
 

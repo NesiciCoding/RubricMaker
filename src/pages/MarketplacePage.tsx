@@ -122,6 +122,7 @@ export default function MarketplacePage() {
 
     async function handlePublish() {
         const entity = publishOptions.find((r) => r.id === publishEntityId);
+        // v8 ignore next: the select only offers publishOptions ids and the button only renders with a schoolId
         if (!entity || !schoolId) return;
         setPublishing(true);
         const result = await storageSync.adapter.publishToMarketplace(

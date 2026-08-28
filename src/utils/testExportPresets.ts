@@ -60,6 +60,9 @@ export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], stu
 
         test.questions.forEach((question, index) => {
             const breakdown = questionBreakdowns.find((b) => b.questionId === question.id);
+            // calcQuestionBreakdowns always emits one entry per test question, so the empty fallback is
+            // unreachable — kept defensive, but excluded from coverage.
+            /* v8 ignore next 1 */
             row[`Q${index + 1} Accuracy %`] = breakdown ? breakdown.accuracyPct.toFixed(0) : '';
         });
 

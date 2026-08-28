@@ -42,6 +42,7 @@ export function aggregateClassCriterionAverages(
             return entry ? calcEntryPoints(entry, c) : 0;
         });
         const max = criterionMaxPointsOrOne(c);
+        /* v8 ignore next -- gradingsForRubric always contains candidateGradings[0], so scores is never empty */
         const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
         return { name: c.title, pct: parseFloat(((avg / max) * 100).toFixed(1)) };
     });

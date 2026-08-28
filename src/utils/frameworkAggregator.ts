@@ -56,9 +56,11 @@ export function aggregateFrameworkScores(
         if (!bucket) {
             return {
                 categoryId: id,
+                /* v8 ignore start -- id comes from the canonical list, so meta is always found and complete */
                 categoryLabelEn: meta?.labelEn ?? id,
                 categoryLabelNl: meta?.labelNl ?? id,
                 categoryColor: meta?.color ?? '#94a3b8',
+                /* v8 ignore stop */
                 avgPercentage: NaN,
                 count: 0,
             };

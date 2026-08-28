@@ -354,6 +354,7 @@ export default function StudentCefrOverviewPage() {
                             {overview.cells
                                 .filter((c) => c.rubricCount > 0)
                                 .map((cell) => {
+                                    // v8 ignore next line — every CefrSkill is a key in CEFR_SKILL_LABELS with both langs
                                     const skillLabel = CEFR_SKILL_LABELS[cell.skill]?.[lang] ?? cell.skill;
                                     return (
                                         <div

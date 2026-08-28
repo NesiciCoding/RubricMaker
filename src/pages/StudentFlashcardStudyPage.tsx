@@ -64,6 +64,7 @@ export default function StudentFlashcardStudyPage() {
         return computeDeckInsights(deck, {
             id: '',
             deckId: deck.id,
+            /* v8 ignore next -- deck requires the deckId param, so studentId is always set here */
             studentId: studentId ?? '',
             cardStates: sessionStates ?? initialReview?.cardStates ?? {},
             updatedAt: '',

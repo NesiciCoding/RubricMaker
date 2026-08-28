@@ -93,6 +93,7 @@ function testEvidenceByItem(
         out.set(itemId, {
             attempts,
             correctAttempts: correct,
+            /* v8 ignore next -- attempts is always >= 1: entries are only created when incremented */
             accuracyPct: attempts > 0 ? (correct / attempts) * 100 : 0,
         });
     }
@@ -176,6 +177,7 @@ function writingEvidenceByItem(
 
     const out = new Map<string, MasteryWritingEvidence>();
     for (const [itemId, { total, count }] of sums) {
+        /* v8 ignore next -- count is always >= 1: entries are only created when incremented */
         out.set(itemId, { instances: count, avgPct: count > 0 ? total / count : 0 });
     }
     return out;

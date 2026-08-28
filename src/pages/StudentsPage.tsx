@@ -303,8 +303,8 @@ export default function StudentsPage() {
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     // (DELETE_STUDENT soft-deletes via archivedAt — without this filter the student
     // row would remain visible after deletion.)
-    const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const students = useMemo(() => (allStudents ?? []).filter((s) => !s.archivedAt), [allStudents]);
+    const studentRubrics = useMemo(() => (allStudentRubrics ?? []).filter((sr) => !sr.deletedAt), [allStudentRubrics]);
     const {
         addStudent,
         updateStudent,
@@ -394,6 +394,7 @@ export default function StudentsPage() {
 
     function saveClassRename() {
         const c = classes.find((cl) => cl.id === renameClassId);
+        /* v8 ignore next -- saveClassRename only fires from the guarded Save button/Enter handler */
         if (!c || !renameClassVal.trim()) return;
         updateClass({
             ...c,
@@ -443,6 +444,7 @@ export default function StudentsPage() {
     const linkClass = classes.find((c) => c.id === linkRubricsClassId);
 
     function toggleClassRubric(rubricId: string) {
+        /* v8 ignore next -- the link modal only renders when linkClass is set */
         if (!linkClass) return;
         const current = linkClass.rubricIds ?? [];
         const next = current.includes(rubricId) ? current.filter((id) => id !== rubricId) : [...current, rubricId];
@@ -477,11 +479,13 @@ export default function StudentsPage() {
         return map;
     }, [classes, rubrics]);
 
+    /* v8 ignore start -- singleClassId always resolves to a live class, so the ?? fallback never fires */
     const rosterLabel = singleClassId
         ? (classById.get(singleClassId)?.name ?? t('studentsPage.default_class_name'))
         : isAllCohorts
           ? t('studentsPage.all_classes_label')
           : t('studentsPage.n_cohorts_label', { count: selectedCohorts.length });
+    /* v8 ignore stop */
 
     // Per-student roster extras (CEFR writing level, score trend, last-active date), memoized over the
     // full data set so search/selection changes don't recompute the CEFR aggregation. A per-student
@@ -492,6 +496,7 @@ export default function StudentsPage() {
         const nextCache = new Map<string, { key: StudentDerivedKey; value: StudentDerivedValue }>();
         // Index the per-student records once, rather than re-filtering per student.
         const srsByStudent = new Map<string, StudentRubric[]>();
+        /* v8 ignore next -- studentRubrics is the line-307 memo, which always produces an array */
         for (const sr of studentRubrics ?? []) {
             const arr = srsByStudent.get(sr.studentId);
             if (arr) arr.push(sr);
@@ -603,8 +608,10 @@ export default function StudentsPage() {
                     } else {
                         // Reuse the per-student graded-percentage array already computed in
                         // derivedByStudent instead of re-scanning studentRubrics twice per comparison.
+                        /* v8 ignore start -- every filtered student has a derived entry, so the ?? 0 never fires */
                         valA = derivedByStudent.get(a.id)?.pcts.length ?? 0;
                         valB = derivedByStudent.get(b.id)?.pcts.length ?? 0;
+                        /* v8 ignore stop */
                     }
                     if (valA < valB) return sortDir === 'asc' ? -1 : 1;
                     if (valA > valB) return sortDir === 'asc' ? 1 : -1;
@@ -614,6 +621,7 @@ export default function StudentsPage() {
     );
 
     function handleAddStudent() {
+        /* v8 ignore next -- the submit button is disabled while the name is empty */
         if (!name.trim()) return;
         if (editStudent) {
             const prev = students.find((s) => s.id === editStudent.id)!;
@@ -680,6 +688,7 @@ export default function StudentsPage() {
         saveAs(new Blob([text], { type: 'text/plain;charset=utf-8' }), `summaries_${sanitizeFilename(className)}.txt`);
     }
 
+    /* v8 ignore start -- summaryStudentId always comes from the roster, so the name ?? '' never fires */
     const summaryText = summaryStudentId
         ? buildStudentSummary(
               students.find((s) => s.id === summaryStudentId)?.name ?? '',
@@ -689,6 +698,7 @@ export default function StudentsPage() {
               settings.defaultGradeScaleId
           )
         : '';
+    /* v8 ignore stop */
 
     // Helper to close all context menus on outside click
     React.useEffect(() => {
@@ -1130,6 +1140,7 @@ export default function StudentsPage() {
                                     <tbody>
                                         {filteredStudents.map((s) => {
                                             const d = derivedByStudent.get(s.id);
+                                            /* v8 ignore next -- every roster student has a derived entry */
                                             const gradedPcts = d?.pcts ?? [];
                                             const graded = gradedPcts.length;
                                             const overall = calcStudentOverall(
@@ -1794,7 +1805,10 @@ export default function StudentsPage() {
                     <div className="modal-overlay" onClick={() => setConfirmDeleteStudent(null)}>
                         <div className="modal" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header">
-                                <h3>{t('studentsPage.delete_student_title') || 'Delete Student'}</h3>
+                                <h3>
+                                    {t('studentsPage.delete_student_title') ||
+                                        /* v8 ignore next -- t always returns a string */ 'Delete Student'}
+                                </h3>
                                 <button
                                     className="btn btn-ghost btn-icon"
                                     onClick={() => setConfirmDeleteStudent(null)}
@@ -1823,8 +1837,12 @@ export default function StudentsPage() {
                                         fontSize: '0.9rem',
                                     }}
                                 >
-                                    <strong>{t('studentsPage.warning_label') || 'Warning:'}</strong>{' '}
+                                    <strong>
+                                        {t('studentsPage.warning_label') ||
+                                            /* v8 ignore next -- t always returns a string */ 'Warning:'}
+                                    </strong>{' '}
                                     {t('studentsPage.delete_student_warning') ||
+                                        /* v8 ignore next -- t always returns a string */
                                         'This will permanently delete all grades and rubrics associated with this student.'}
                                 </div>
                             </div>

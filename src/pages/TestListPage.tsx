@@ -97,6 +97,7 @@ export default function TestListPage() {
 
     async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx') {
         const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+        // v8 ignore next: the results panel (and its export buttons) only render with submissions
         if (relevantStudentTests.length === 0) return;
         setExporting(true);
         try {
@@ -133,6 +134,7 @@ export default function TestListPage() {
 
     async function handleExportTestResultsCsv(test: Test) {
         const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
+        // v8 ignore next: the results panel (and its export buttons) only render with submissions
         if (relevantStudentTests.length === 0) return;
         setExporting(true);
         try {
@@ -154,6 +156,7 @@ export default function TestListPage() {
 
     function handleDuplicate(testId: string) {
         const test = tests.find((tst) => tst.id === testId);
+        // v8 ignore next line — the duplicate button only renders for tests in visibleTests
         if (!test) return;
         const newTest = addTest({
             ...test,
@@ -780,6 +783,7 @@ export default function TestListPage() {
                 {assigningTestId &&
                     (() => {
                         const test = tests.find((tst) => tst.id === assigningTestId);
+                        // v8 ignore next line — assign buttons only render for existing tests
                         if (!test) return null;
                         return <TestAssignmentModal test={test} onClose={() => setAssigningTestId(null)} />;
                     })()}
@@ -787,6 +791,7 @@ export default function TestListPage() {
                 {importingTestId &&
                     (() => {
                         const test = tests.find((tst) => tst.id === importingTestId);
+                        // v8 ignore next line — import buttons only render for existing tests
                         if (!test) return null;
                         return (
                             <TestSubmissionImportModal

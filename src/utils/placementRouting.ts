@@ -60,6 +60,7 @@ export function resolveNextSection(
 
     const pct = scoreSectionPct(test, sectionId, answers);
     const nextId = pct >= section.routing.thresholdPct ? section.routing.passSectionId : section.routing.failSectionId;
+    /* v8 ignore next -- sections undefined already returned null above, so ?? [] is unreachable here */
     const nextExists = (test.sections ?? []).some((s) => s.id === nextId);
     if (!nextExists || visited.includes(nextId)) return null;
     return nextId;

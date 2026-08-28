@@ -58,6 +58,7 @@ function styleValue(el: HTMLElement, prop: string): string | undefined {
 }
 
 function inlineMarkdown(el: ChildNode): string {
+    /* v8 ignore next -- DOM text nodes always have a string value, so the ?? '' is unreachable */
     if (el.nodeType === Node.TEXT_NODE) return el.textContent ?? '';
     const node = el as HTMLElement;
     const inner = Array.from(node.childNodes).map(inlineMarkdown).join('');
@@ -131,6 +132,7 @@ function blockToMarkdown(node: Element, listDepth = 0): string {
                               ? `${i + 1}.`
                               : '-';
                         // Task items wrap their text in a <div>/<label>; strip those, keep nested lists out of scope.
+                        /* v8 ignore next -- li.textContent is always a string, so the trailing ?? '' is unreachable */
                         const text = isTaskList
                             ? (li.querySelector('div')?.textContent?.trim() ?? li.textContent?.trim() ?? '')
                             : inlineMarkdown(li).trim();
@@ -143,9 +145,11 @@ function blockToMarkdown(node: Element, listDepth = 0): string {
             const rows = Array.from(node.querySelectorAll('tr'));
             if (rows.length === 0) return '\n\n';
             const cellsOf = (row: Element) =>
-                Array.from(row.children).map((cell) =>
-                    (cell.textContent?.trim() ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|')
-                );
+                Array.from(row.children).map((cell) => {
+                    /* v8 ignore next -- DOM textContent is always a string, so the ?? '' is unreachable */
+                    const raw = cell.textContent?.trim() ?? '';
+                    return raw.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+                });
             const header = cellsOf(rows[0]);
             const body = rows.slice(1).map(cellsOf);
             const lines = [
@@ -156,6 +160,7 @@ function blockToMarkdown(node: Element, listDepth = 0): string {
             return lines.join('\n') + '\n\n';
         }
         default:
+            /* v8 ignore next -- DOM textContent is always a string, so the ?? '' is unreachable */
             return `${node.textContent?.trim() ?? ''}\n\n`;
     }
 }
@@ -198,7 +203,9 @@ function ptToHalfPoints(pt: string): number | undefined {
 
 function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): TextRun[] {
     if (el.nodeType === Node.TEXT_NODE) {
+        /* v8 ignore next -- a text node's value is always a string, so the ?? '' never fires */
         const text = el.textContent ?? '';
+        /* v8 ignore next -- empty text nodes are never produced by HTML parsing */
         if (!text) return [];
         return [
             new TextRun({

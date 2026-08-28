@@ -39,6 +39,8 @@ export function stripHtmlTags(text: string): string {
     let result = '';
     const walk = (node: ChildNode) => {
         if (node.nodeType === Node.TEXT_NODE) {
+            // DOMParser text nodes always carry textContent, so the '' fallback is unreachable — kept defensive.
+            /* v8 ignore next 1 */
             result += node.textContent ?? '';
             return;
         }

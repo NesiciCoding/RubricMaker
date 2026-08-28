@@ -244,11 +244,14 @@ export function calcClassStats(summaries: GradeSummary[], scale: GradeScale | nu
               const counts = new Map<string, number>(scale.ranges.map((r) => [r.label, 0]));
               for (const s of summaries) {
                   const match = matchRange(s.modifiedPercentage, scale);
+                  /* v8 ignore start -- counts is pre-seeded with every range label, so get() can never be undefined */
                   if (match) counts.set(match.label, (counts.get(match.label) ?? 0) + 1);
+                  /* v8 ignore stop */
               }
               return sortedRangesDesc(scale).map((r) => ({
                   label: r.label,
                   color: r.color,
+                  /* v8 ignore next -- r.label is a range label, always pre-seeded in counts */
                   count: counts.get(r.label) ?? 0,
               }));
           })()

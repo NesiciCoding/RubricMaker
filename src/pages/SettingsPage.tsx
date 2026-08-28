@@ -199,6 +199,7 @@ export default function SettingsPage() {
 
     async function confirmPinAndSwitch(targetRole: UserRole | null = pendingRole) {
         const stored = settings.adminPin;
+        /* v8 ignore next -- only reachable when adminPin is set and pendingRole is non-null */
         if (!stored || !targetRole) return;
         const ok = await verifyPin(pinInput, stored);
         if (ok) {
@@ -224,6 +225,7 @@ export default function SettingsPage() {
             return;
         }
         if (pinSetupMode === 'changing') {
+            /* v8 ignore next -- the Change button only renders when adminPin is set */
             const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
             if (!ok) {
                 setPinSetupError('Current password is incorrect.');
@@ -236,6 +238,7 @@ export default function SettingsPage() {
     }
 
     async function handleRemovePin() {
+        /* v8 ignore next -- the Remove button only renders when adminPin is set */
         const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
         if (!ok) {
             setPinSetupError('Current password is incorrect.');
@@ -300,6 +303,7 @@ export default function SettingsPage() {
     }
 
     async function confirmImportBackup() {
+        /* v8 ignore next -- the confirm button only renders inside the preview modal */
         if (!backupPreview) return;
         try {
             const ok = await importBackup(backupPreview.json);
@@ -324,6 +328,7 @@ export default function SettingsPage() {
     }
 
     function confirmDeleteScale() {
+        /* v8 ignore next -- the delete button only renders inside the modal */
         if (!deleteScaleId) return;
         deleteGradeScale(deleteScaleId);
         setDeleteScaleId(null);
@@ -331,6 +336,7 @@ export default function SettingsPage() {
     }
 
     function confirmDeleteMasteryTarget() {
+        /* v8 ignore next -- the delete button only renders inside the modal */
         if (!deleteMasteryTargetId) return;
         deleteStandardMasteryTarget(deleteMasteryTargetId);
         setDeleteMasteryTargetId(null);
@@ -338,18 +344,21 @@ export default function SettingsPage() {
 
     function updateRange(scaleId: string, idx: number, patch: Partial<GradeRange>) {
         const scale = gradeScales.find((g) => g.id === scaleId);
+        /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
         updateGradeScale({ ...scale, ranges: scale.ranges.map((r, i) => (i === idx ? { ...r, ...patch } : r)) });
     }
 
     function addRange(scaleId: string) {
         const scale = gradeScales.find((g) => g.id === scaleId);
+        /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
         updateGradeScale({ ...scale, ranges: [...scale.ranges, { min: 0, max: 0, label: 'New', color: '#6b7280' }] });
     }
 
     function removeRange(scaleId: string, idx: number) {
         const scale = gradeScales.find((g) => g.id === scaleId);
+        /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
         updateGradeScale({ ...scale, ranges: scale.ranges.filter((_, i) => i !== idx) });
     }
@@ -363,6 +372,7 @@ export default function SettingsPage() {
     // ─── Tab navigation helper ───────────────────────────────────────────────────
 
     function handleTabClick(tab: Tab) {
+        /* v8 ignore next -- the Teaching tab only renders when isUserPlus */
         if (tab === 'teaching' && !isUserPlus) return; // student can't reach Teaching
         setActiveTab(tab);
     }
