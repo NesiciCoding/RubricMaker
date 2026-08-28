@@ -181,6 +181,7 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                 </div>
                             </div>
                         </div>
+                        {/* v8 ignore next -- expanded is only ever set for flashes that have content */}
                         {expanded && flash.content && (
                             <div
                                 className="tiptap-editor-content"

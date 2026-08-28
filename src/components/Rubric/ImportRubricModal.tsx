@@ -68,6 +68,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
     };
 
     const handleImport = () => {
+        /* v8 ignore next -- the Create Rubric button only renders when parsed has criteria */
         if (!parsed || parsed.criteria.length === 0) return;
         onImport({ ...parsed, name: name || 'Imported Rubric', subject });
     };

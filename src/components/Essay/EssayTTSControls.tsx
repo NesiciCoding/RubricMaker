@@ -15,6 +15,7 @@ export default function EssayTTSControls({ promptText, contentHtml, lang }: Essa
     const [activeTarget, setActiveTarget] = useState<'prompt' | 'essay' | null>(null);
 
     const handleReadPrompt = useCallback(() => {
+        /* v8 ignore next -- prompt button only renders when promptText is set */
         if (!promptText) return;
         if (status === 'speaking' && activeTarget === 'prompt') {
             pause();

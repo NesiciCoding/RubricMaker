@@ -1,8 +1,33 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import LearningGoalChart from '../LearningGoalChart';
+import LearningGoalChart, { barColor } from '../LearningGoalChart';
 import type { LearningGoalAggregate } from '../../../utils/learningGoalsAggregator';
+
+// Tooltips only render on real pointer hover, which jsdom can't produce — invoke
+// the formatters directly so the component's own formatting code is exercised.
+vi.mock('recharts', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('recharts')>();
+    return {
+        ...mod,
+        ResponsiveContainer: ({ children }: { children: React.ReactElement<{ width?: number; height?: number }> }) =>
+            React.cloneElement(children, { width: 600, height: 400 }),
+        Tooltip: ({
+            formatter,
+            labelFormatter,
+        }: {
+            formatter?: (v: unknown, n: unknown, item?: unknown) => unknown;
+            labelFormatter?: (label: unknown, payload?: unknown[]) => unknown;
+        }) => (
+            <div data-testid="tooltip">
+                {formatter ? String(formatter(80, 'pct', { payload: { label: 'L', earned: 8, max: 10 } })) : ''}
+                {formatter ? String(formatter(undefined, 'pct', { payload: { label: 'L' } })) : ''}
+                {labelFormatter ? String(labelFormatter('L', [{ payload: { date: '2024-01-02' } }])) : ''}
+                {labelFormatter ? String(labelFormatter('L', [])) : ''}
+            </div>
+        ),
+    };
+});
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -126,5 +151,65 @@ describe('LearningGoalChart', () => {
         const select = screen.getByRole('combobox');
         fireEvent.change(select, { target: { value: 'g2' } });
         expect((select as HTMLSelectElement).value).toBe('g2');
+    });
+
+    it('formats the percentage tooltip with the series label', () => {
+        render(<LearningGoalChart goals={[makeGoal('g1')]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('80%');
+        expect(out).toContain('statistics.lg_series_percentage');
+    });
+
+    it('formats the points tooltip with earned over max', () => {
+        render(<LearningGoalChart goals={[makeGoal('g1')]} />);
+        fireEvent.click(screen.getByText('Pts'));
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('8 / 10');
+        expect(out).toContain('statistics.lg_series_points');
+        // value fallback when payload.earned is missing (earned ?? value, value is undefined here)
+        expect(out).toContain('undefined / ?');
+    });
+
+    it('formats the tooltip label with the graded date when present', () => {
+        render(<LearningGoalChart goals={[makeGoal('g1')]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('L ·');
+        expect(out).toContain('L');
+    });
+
+    it('colors bars green/yellow/red against the target and accent when no target', () => {
+        expect(barColor(90, 80)).toBe('var(--green)'); // at/above target
+        expect(barColor(70, 80)).toBe('var(--yellow)'); // ≥ 80% of target
+        expect(barColor(50, 80)).toBe('var(--red)'); // well below target
+        expect(barColor(30, undefined)).toBe('var(--accent)'); // no target configured
+    });
+
+    it('falls back to a numbered label when a history entry has no rubric name', () => {
+        const goal: LearningGoalAggregate = {
+            ...makeGoal('g1'),
+            history: [{ ...makeGoal('g1').history[0], rubricName: '' }],
+        };
+        render(<LearningGoalChart goals={[goal]} />);
+        expect(screen.getAllByText('#1').length).toBeGreaterThan(0);
+    });
+
+    it('renders a reference line at the target only in percentage mode with a target', () => {
+        const goal: LearningGoalAggregate = { ...makeGoal('g1'), targetPercentage: 80 };
+        const { container, rerender } = render(<LearningGoalChart goals={[goal]} />);
+        expect(container.querySelector('.recharts-reference-line')).toBeTruthy();
+        rerender(<LearningGoalChart goals={[goal]} />);
+        fireEvent.click(screen.getByText('Pts'));
+        expect(container.querySelector('.recharts-reference-line')).toBeNull();
+    });
+
+    it('does not render a reference line when the goal has no target', () => {
+        const { container } = render(<LearningGoalChart goals={[makeGoal('g1')]} />);
+        expect(container.querySelector('.recharts-reference-line')).toBeNull();
+    });
+
+    it('shows the mastery target suffix next to the status', () => {
+        const goal: LearningGoalAggregate = { ...makeGoal('g1'), targetPercentage: 80, status: 'ahead' };
+        render(<LearningGoalChart goals={[goal]} />);
+        expect(screen.getByText(/settings\.mastery_target_percentage_label/)).toBeTruthy();
     });
 });

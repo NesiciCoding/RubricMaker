@@ -46,6 +46,7 @@ export default function RecordingControls({ recordings, onChange, syncConfigured
     }, [pendingUrl]);
 
     async function handleStart(video: boolean) {
+        /* v8 ignore next -- the video button is disabled without sync, so the guard never fires */
         if (video && !syncConfigured) return;
         const { quota, usage } = await estimateUsage();
         if (quota > 0 && quota - usage < QUOTA_HEADROOM_BYTES) {

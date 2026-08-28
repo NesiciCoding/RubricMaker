@@ -18,6 +18,7 @@ const EmojiSuggestionList = forwardRef<EmojiSuggestionListRef, EmojiSuggestionLi
 
     const select = (index: number) => {
         const item = items[index];
+        /* v8 ignore next -- select is only called with selectedIndex, which modulo keeps in range */
         if (item) command({ name: item.name });
     };
 

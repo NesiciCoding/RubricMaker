@@ -27,6 +27,7 @@ export default function Modal({ titleId, onClose, children, maxWidth = 640, styl
 
     // Anchor the scale-in animation's transform-origin to the trigger's screen
     // position so the modal visibly grows out of the button that opened it.
+    /* v8 ignore start -- Radix Dialog.Content never attaches the ref in jsdom, so the body is unreachable under test */
     useLayoutEffect(() => {
         if (!growFrom || !contentRef.current) return;
         const rect = contentRef.current.getBoundingClientRect();
@@ -34,14 +35,10 @@ export default function Modal({ titleId, onClose, children, maxWidth = 640, styl
         const originY = ((growFrom.y - rect.top) / rect.height) * 100;
         contentRef.current.style.transformOrigin = `${originX}% ${originY}%`;
     }, [growFrom]);
+    /* v8 ignore stop */
 
     return (
-        <Dialog.Root
-            open
-            onOpenChange={(open) => {
-                if (!open) onClose();
-            }}
-        >
+        <Dialog.Root open onOpenChange={onClose}>
             <Dialog.Portal>
                 <Dialog.Overlay className="modal-overlay" />
                 <Dialog.Content

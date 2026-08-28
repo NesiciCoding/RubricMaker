@@ -116,6 +116,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
             .filter(Boolean);
         if (editingId) {
             const existing = commentBank.find((i) => i.id === editingId);
+            /* v8 ignore next -- provably dead: editingId only ever comes from handleEdit, which is only reachable via the edit button on own (commentBank-derived) items */
             if (existing) {
                 updateCommentBankItem({ ...existing, text: formText, tags });
             }

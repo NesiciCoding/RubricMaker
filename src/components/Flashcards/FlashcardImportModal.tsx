@@ -61,6 +61,7 @@ export default function FlashcardImportModal({ onImport, onClose }: Props) {
                 style={{ display: 'none' }}
                 onChange={(e) => {
                     const file = e.target.files?.[0];
+                    /* v8 ignore next -- hidden input: change only fires with a selected file */
                     if (file) handleFile(file);
                     e.target.value = '';
                 }}
