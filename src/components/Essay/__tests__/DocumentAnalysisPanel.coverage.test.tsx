@@ -170,6 +170,8 @@ function setDefaultMocks() {
         estimatedLevel: 'B1',
         levelCounts: { A1: 5, A2: 3, B1: 4, B2: 0, C1: 0, C2: 0 },
         highlightWords: [{ word: 'essay', level: 'B1' }],
+        offListPercent: 0,
+        academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
     });
     mocks.profileGrammar.mockReturnValue({
         estimatedLevel: 'B2',
@@ -533,6 +535,8 @@ describe('DocumentAnalysisPanel coverage', () => {
             estimatedLevel: 'A1',
             levelCounts: zeroCounts,
             highlightWords: [],
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         mocks.profileGrammar.mockReturnValue({ estimatedLevel: 'A1', detectedStructures: [] });
         renderPanel({

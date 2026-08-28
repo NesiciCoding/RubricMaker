@@ -23,10 +23,10 @@ VocabKitchen has two engines. They integrate very differently against this
 repo's hard constraints (`CLAUDE.md`: **no AI, no paid deps, offline-capable,
 deterministic, client-side**):
 
-| VocabKitchen engine | Runtime | Verdict for this slice |
-| --- | --- | --- |
-| **Vocabulary profiler** (`vocab_profile.py`) | Python **stdlib only** — the engine is really just the `WordLists/CEFR/levels.json` data (64,166 words → `{level, pos}`) + AWL/NAWL `.txt` lists | **IN.** The value is data, not code. It ports to the browser as a bundled JSON asset; our existing TS profiler becomes a thin scorer over it. |
-| **Grammar profiler** (`grammar_profile.py`) | Requires **spaCy + `en_core_web_sm`** (a ~12 MB ML model) | **OUT (this slice).** Cannot run in the browser; only reachable via a server-side edge function, which breaks offline-capable/deterministic-client and is a separate, larger decision. Our existing regex/`compromise` grammar profiler (`grammarChecker.ts`) stays as-is. |
+| VocabKitchen engine                          | Runtime                                                                                                                                          | Verdict for this slice                                                                                                                                                                                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vocabulary profiler** (`vocab_profile.py`) | Python **stdlib only** — the engine is really just the `WordLists/CEFR/levels.json` data (64,166 words → `{level, pos}`) + AWL/NAWL `.txt` lists | **IN.** The value is data, not code. It ports to the browser as a bundled JSON asset; our existing TS profiler becomes a thin scorer over it.                                                                                                                              |
+| **Grammar profiler** (`grammar_profile.py`)  | Requires **spaCy + `en_core_web_sm`** (a ~12 MB ML model)                                                                                        | **OUT (this slice).** Cannot run in the browser; only reachable via a server-side edge function, which breaks offline-capable/deterministic-client and is a separate, larger decision. Our existing regex/`compromise` grammar profiler (`grammarChecker.ts`) stays as-is. |
 
 So this plan upgrades **only the vocabulary half**. It also intentionally does
 **not** build the full "Vocabulary Insights hub" tab shell or the cross-deck
@@ -103,10 +103,23 @@ Net effect: the 271 KB-gz index loads only when a teacher actually runs an
 analysis, and never on the dashboard, export, or app boot. This is the same
 on-demand pattern the repo already uses for every heavy asset.
 
-**Alternative considered (rejected):** keep `profileText` sync and eager-import
+**Alternative considered:** keep `profileText` sync and eager-import
 the index. Simpler diff, but permanently adds 271 KB-gz to the grading/essay and
-dashboard chunks and contradicts the documented precompute philosophy. Rejected
-on bundle grounds.
+dashboard chunks.
+
+**As implemented (PR-1):** the sync + static-import approach was taken for PR-1
+to keep the change self-contained and every existing caller green with zero
+async ripple. The index ships as `src/data/cefrLevels.ts` — a `ReadonlyMap`
+(prototype-safe: a plain object would return `Object.prototype` functions for
+words like `toString`), statically imported by `cefrVocabularyProfiler`. Because
+that module is only reached through the already code-split
+`VocabularyDashboardPage` and `DocumentAnalysisPanel` routes, the ~271 KB-gz
+lands only in those on-demand chunks, never in the entry bundle. The
+lazy-load-via-`await import()` + **persist-distributions-on-the-record**
+optimization (so the dashboard/export need no vocab data at all) is deferred to
+**PR-2**, where the `DocumentAnalysisResult` fields and the aggregator rewrite
+land together. Confirm against the bundle-analysis CI job which of the two is
+warranted.
 
 ---
 
@@ -115,11 +128,11 @@ on bundle grounds.
 Vendor the generated VocabKitchen artifacts (we do **not** run Python at build
 time — same posture as the already-vendored `cefrjVocabulary.ts`):
 
-| New file | Source (VocabKitchen) | Shape | Approx size |
-| --- | --- | --- | --- |
-| `src/data/cefrLevels.json` | `WordLists/CEFR/levels.json` (`.words`) | `{ [word]: { level: CefrLevel; pos: string } }` | 3.5 MB raw / 271 KB gz |
-| `src/data/academicWordLists.json` | `WordLists/AWL/awl.txt` + `WordLists/NAWL/nawl.txt` | `{ awl: string[]; nawl: string[] }` | ~55 KB |
-| `docs/VOCAB_WORDLISTS_PROVENANCE.md` | `WORDLISTS.md` | provenance + licence + source commit SHA | — |
+| New file                             | Source (VocabKitchen)                               | Shape                                           | Approx size            |
+| ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- | ---------------------- |
+| `src/data/cefrLevels.json`           | `WordLists/CEFR/levels.json` (`.words`)             | `{ [word]: { level: CefrLevel; pos: string } }` | 3.5 MB raw / 271 KB gz |
+| `src/data/academicWordLists.json`    | `WordLists/AWL/awl.txt` + `WordLists/NAWL/nawl.txt` | `{ awl: string[]; nawl: string[] }`             | ~55 KB                 |
+| `docs/VOCAB_WORDLISTS_PROVENANCE.md` | `WORDLISTS.md`                                      | provenance + licence + source commit SHA        | —                      |
 
 - **Conversion:** a one-off `scripts/build-cefr-index.mjs` (Node, dev-only, not
   in the app bundle) that reads the three VocabKitchen files and emits the two
@@ -145,12 +158,12 @@ Extend the CEFR profiling types (keep every existing field for back-compat):
 export interface CefrWordHit {
     word: string;
     level: CefrLevel;
-    pos?: string;            // NEW — from the index, used by the deck seed
+    pos?: string; // NEW — from the index, used by the deck seed
 }
 
 export interface AcademicCoverage {
-    awlPercent: number;      // % of content words on the AWL
-    nawlPercent: number;     // % on the NAWL
+    awlPercent: number; // % of content words on the AWL
+    nawlPercent: number; // % on the NAWL
     academicWords: string[]; // capped, de-duplicated, for display/seed
 }
 
@@ -158,14 +171,14 @@ export interface CefrVocabProfile {
     levelCounts: Record<CefrLevel, number>;
     highlightWords: CefrWordHit[];
     estimatedLevel: CefrLevel;
-    offListPercent: number;      // NEW
-    academic: AcademicCoverage;  // NEW
+    offListPercent: number; // NEW
+    academic: AcademicCoverage; // NEW
 }
 
 // text_report.py --target-level port
 export interface TargetLevelVerdict {
     targetLevel: CefrLevel;
-    coveragePercent: number;        // share of content words at/below target
+    coveragePercent: number; // share of content words at/below target
     aboveTargetWords: CefrWordHit[]; // capped
     verdict: 'suitable' | 'slightly_above' | 'too_hard';
 }
@@ -189,6 +202,7 @@ back-compat; lists capped to keep the synced payload small):
 ## 5. Code changes — file by file
 
 ### 5.1 `src/utils/cefrVocabularyProfiler.ts` (rewrite core)
+
 - Replace the two static dict imports + `MERGED_VOCABULARY` with a lazily
   imported index singleton: `async ensureVocabularyIndex()`.
 - **Drop `normalise()` stemming** — the index is pre-inflected and expects exact
@@ -202,16 +216,19 @@ back-compat; lists capped to keep the synced payload small):
   behaviour so downstream UI/thresholds are stable.
 
 ### 5.2 `src/utils/academicWordList.ts` (new)
+
 - Loads `academicWordLists.json` (via the same lazy singleton), exposes
   `classifyAcademic(word)` → `'awl' | 'nawl' | null` and
   `academicCoverage(tokens)` → `AcademicCoverage`. Pure, unit-tested.
 
 ### 5.3 `src/utils/textLevelVerdict.ts` (new)
+
 - Port of `text_report.py --target-level`: `computeTargetVerdict(profile,
-  target)` → `TargetLevelVerdict` (deterministic; coverage %, above-target
+target)` → `TargetLevelVerdict` (deterministic; coverage %, above-target
   words from `highlightWords`, thresholded verdict). No AI, no network.
 
 ### 5.4 `src/utils/vocabProfileAggregator.ts`
+
 - `getLevelCounts` reads `result.vocabLevelCounts` when present; **remove the
   `profileText` import and the module-level `profileCache`** (no more
   re-profiling on the dashboard). Aggregate academic/off-list across results.
@@ -219,6 +236,7 @@ back-compat; lists capped to keep the synced payload small):
   `profileText`; add an optional `academic` column to the CSV.
 
 ### 5.5 `src/components/Essay/DocumentAnalysisPanel.tsx`
+
 - `handleAnalyse`: `await ensureVocabularyIndex()`, compute the full profile,
   and store `vocabLevelCounts` / `vocabOffListPercent` / `vocabHighlightWords` /
   `academicCoverage` on the new `DocumentAnalysisResult` (alongside the existing
@@ -230,6 +248,7 @@ back-compat; lists capped to keep the synced payload small):
   (`textLevelVerdict`). Extend the attribution footer to cite AWL/NAWL.
 
 ### 5.6 `src/pages/VocabularyDashboardPage.tsx`
+
 - Add an **off-list %** and **academic coverage** column to the per-student
   drill-down table (read from the aggregated persisted data).
 - Add a **class target-level selector** that runs the verdict over the class's
@@ -243,13 +262,13 @@ back-compat; lists capped to keep the synced payload small):
 
 ## 6. What can be dropped (the user's explicit ask)
 
-| Dropped | Why it's safe | Replacement |
-| --- | --- | --- |
-| `src/data/openCefrVocabulary.ts` (~3.7k words) | Imported **only** by `cefrVocabularyProfiler.ts` (verified). Its own header calls the bands "APPROXIMATE" (frequency-heuristic). | Fully subsumed by the validated 64k index. |
-| `src/data/cefrjVocabulary.ts` (~8.6k words) | Imported **only** by the profiler + its own test. The index already **includes** the CEFR-J profile (gap-fill) plus the MIT core, so cefrj is a strict subset. | Subsumed by the index; CEFR-J **attribution is retained** in the panel + provenance doc. |
-| `src/data/cefrjVocabulary.test.ts` | Tests data being removed. | Replaced by `cefrLevels.test.ts` index-integrity test (§7). |
-| `normalise()` stemming in the profiler | Index is pre-inflected; stemming now *causes* false matches rather than fixing misses. | Exact surface-form matching. |
-| `profileCache` + `profileText` calls in the aggregator | Distribution is now persisted on the record; re-profiling is dead weight. | Read persisted `vocabLevelCounts`. |
+| Dropped                                                | Why it's safe                                                                                                                                                  | Replacement                                                                              |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `src/data/openCefrVocabulary.ts` (~3.7k words)         | Imported **only** by `cefrVocabularyProfiler.ts` (verified). Its own header calls the bands "APPROXIMATE" (frequency-heuristic).                               | Fully subsumed by the validated 64k index.                                               |
+| `src/data/cefrjVocabulary.ts` (~8.6k words)            | Imported **only** by the profiler + its own test. The index already **includes** the CEFR-J profile (gap-fill) plus the MIT core, so cefrj is a strict subset. | Subsumed by the index; CEFR-J **attribution is retained** in the panel + provenance doc. |
+| `src/data/cefrjVocabulary.test.ts`                     | Tests data being removed.                                                                                                                                      | Replaced by `cefrLevels.test.ts` index-integrity test (§7).                              |
+| `normalise()` stemming in the profiler                 | Index is pre-inflected; stemming now _causes_ false matches rather than fixing misses.                                                                         | Exact surface-form matching.                                                             |
+| `profileCache` + `profileText` calls in the aggregator | Distribution is now persisted on the record; re-profiling is dead weight.                                                                                      | Read persisted `vocabLevelCounts`.                                                       |
 
 **Net:** ~12.3k lines / ~235 KB of hand-maintained, partly-approximate TS
 **source** removed, replaced by one reproducible, validated, larger index that

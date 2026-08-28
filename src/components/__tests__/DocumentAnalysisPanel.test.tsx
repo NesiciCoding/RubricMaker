@@ -31,6 +31,8 @@ vi.mock('../../utils/cefrVocabularyProfiler', () => ({
         levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
         highlightWords: [],
         estimatedLevel: 'A1' as const,
+        offListPercent: 0,
+        academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
     })),
 }));
 
@@ -133,6 +135,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [],
             estimatedLevel: 'A1',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
     });
 
@@ -386,6 +390,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [],
             estimatedLevel: 'A1',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         render(<DocumentAnalysisPanel {...baseProps} existingResult={existingResult} />);
         expect(screen.getByText(/No vocabulary matched the CEFR-J wordlist\./i)).toBeInTheDocument();
@@ -396,6 +402,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 2, A2: 3, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [{ word: 'eloquent', level: 'B2' }],
             estimatedLevel: 'A2',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         mockProfileGrammar.mockReturnValue({
             detectedStructures: [

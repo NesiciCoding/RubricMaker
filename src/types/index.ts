@@ -333,6 +333,16 @@ export interface CefrWordHit {
     level: CefrLevel;
 }
 
+/** Share of content words that are on an academic word list. */
+export interface AcademicCoverage {
+    /** % of matched content words on the Academic Word List (Coxhead) */
+    awlPercent: number;
+    /** % of matched content words on the New Academic Word List */
+    nawlPercent: number;
+    /** Distinct academic words observed (capped), for display and deck seeding */
+    academicWords: string[];
+}
+
 export interface CefrVocabProfile {
     /** Word count bucketed by CEFR level */
     levelCounts: Record<CefrLevel, number>;
@@ -340,6 +350,21 @@ export interface CefrVocabProfile {
     highlightWords: CefrWordHit[];
     /** Highest level with ≥5% of content-word share */
     estimatedLevel: CefrLevel;
+    /** % of content words not found in the CEFR index (proper nouns, typos, rare/technical) */
+    offListPercent: number;
+    /** Academic Word List coverage over the content words */
+    academic: AcademicCoverage;
+}
+
+/** Result of grading a text against a target CEFR level (see textLevelVerdict). */
+export interface TargetLevelVerdict {
+    targetLevel: CefrLevel;
+    /** % of content words at or below the target level */
+    coveragePercent: number;
+    /** Distinct words above the target level (capped) */
+    aboveTargetWords: CefrWordHit[];
+    /** One-line suitability verdict for a class at the target level */
+    verdict: 'suitable' | 'slightly_above' | 'too_hard';
 }
 
 export interface CefrGrammarHit {

@@ -10,7 +10,7 @@ import type {
     VocabLevelStat,
 } from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { profileText } from './cefrVocabularyProfiler';
+import { profileText, estimateLevelFromCounts } from './cefrVocabularyProfiler';
 
 const LEVEL_ORDER: CefrLevel[] = CEFR_LEVELS;
 
@@ -35,22 +35,6 @@ function addCounts(target: Record<CefrLevel, number>, source: Record<CefrLevel, 
     for (const level of LEVEL_ORDER) {
         target[level] += source[level];
     }
-}
-
-/**
- * Estimate the CEFR level for a level-count distribution: the highest level
- * whose matched-word share is at least 5% of all matches. Mirrors
- * `profileText`'s `estimatedLevel` heuristic for aggregated counts.
- */
-function estimateLevel(levelCounts: Record<CefrLevel, number>): CefrLevel {
-    const total = LEVEL_ORDER.reduce((sum, level) => sum + levelCounts[level], 0);
-    if (total === 0) return 'A1';
-    for (const level of [...LEVEL_ORDER].reverse()) {
-        if (levelCounts[level] / total >= 0.05) return level;
-    }
-    // Unreachable: with six CEFR levels the largest share is always ≥ 1/6 > 5%.
-    /* v8 ignore next 1 */
-    return 'A1';
 }
 
 function buildLevelStats(levelCounts: Record<CefrLevel, number>, total: number): VocabLevelStat[] {
@@ -84,7 +68,7 @@ export function getStudentVocabProfile(
         levelCounts,
         levelStats: buildLevelStats(levelCounts, totalWords),
         totalWords,
-        estimatedLevel: estimateLevel(levelCounts),
+        estimatedLevel: estimateLevelFromCounts(levelCounts),
         analysisCount: studentResults.length,
     };
 }
@@ -114,7 +98,7 @@ export function getClassVocabProfile(
         levelCounts,
         levelStats: buildLevelStats(levelCounts, totalWords),
         totalWords,
-        estimatedLevel: estimateLevel(levelCounts),
+        estimatedLevel: estimateLevelFromCounts(levelCounts),
         studentProfiles,
     };
 }
