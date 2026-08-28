@@ -26,7 +26,7 @@ of three strategies:
 | `submit-test` Elo self-calibration                                              | `tests.data.questions[*].eloRating`                               | **Atomic**                                                                                            | `update_test_question_elo()` RPC — `supabase/migrations/064_atomic_test_question_elo.sql`, called from `supabase/functions/submit-test/index.ts` |
 | `next-placement-question` run state                                             | `placement_sessions` (level trace, pending question, asked items) | **CAS**                                                                                               | `casUpdate()` guards on `pending->>questionId` — `supabase/functions/next-placement-question/index.ts`                                           |
 | `next-placement-question` item Elo write-back                                   | `question_bank_items.data.…eloRating`                             | **Intentional LWW** (per small row, gated behind the CAS landing)                                     | `applyEloWriteBack()` — same file                                                                                                                |
-| `next-placement-question` rate-limit counter                                    | `placement_sessions.rate_window_*`                                | **Intentional LWW** (best-effort counter)                                                             | same file                                                                                                                                        |
+| `next-placement-question` rate-limit counter                                    | `placement_sessions.rate_window_*`                                | **Intentional LWW** (coarse abuse throttle, not a security boundary — see note)                       | same file                                                                                                                                        |
 | Client entity sync (rubrics, grades, tests, classes, students, comment bank, …) | each entity's row / `data` blob                                   | **Intentional LWW by `updatedAt`**, with in-flight pending-queue edits protected from a stale hydrate | `src/utils/syncMerge.ts` (`mergeCollection` / `mergeStoreData`), driven by `StorageSync`                                                         |
 
 ### Details & rationale
@@ -64,6 +64,24 @@ one small field. Item ratings are an internal self-calibration refinement, not
 authoritative data, so losing one delta is acceptable; the write is best-effort
 and never fails the request. It is deferred until the CAS above lands so a
 rejected duplicate can't double-apply the delta.
+
+**`next-placement-question` rate-limit counter (intentional LWW, bounded).** The
+per-session throttle reads `rate_window_count`, checks it against
+`RATE_WINDOW_MAX_CALLS`, then writes the incremented value back unconditionally —
+a read-modify-write that is deliberately _not_ made atomic. Under concurrency this
+is a known, bounded weakness: several requests can read the same count, all pass
+the check, and briefly push the effective call count past the window limit before
+`429`s begin. That is acceptable because this counter is a coarse abuse throttle,
+not a security boundary — the real guards on this endpoint are Supabase auth, the
+per-student session-ownership check, and the CAS on the run state above (which
+already serializes the meaningful per-answer work). A raced or failed counter
+write only makes the next window check slightly stale, never corrupts run state,
+and never fails the request. Hardening it to a true atomic increment (a single
+conditional `UPDATE`/RPC that checks and increments under the row lock) is
+possible and would tighten the bound, but is intentionally out of scope here: it
+changes a deliberately soft throttle's runtime behavior rather than fixing a
+data-loss bug. If the throttle ever needs to be a hard limit, move this row to
+**Atomic**.
 
 **Client entity sync (intentional LWW by `updatedAt`).** The offline-capable
 sync layer resolves per-record conflicts last-write-wins by `updatedAt`, with

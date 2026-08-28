@@ -16,6 +16,21 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 const rpcSql = readFileSync(path.join(repoRoot, 'supabase/migrations/064_atomic_test_question_elo.sql'), 'utf8');
 const staircaseSrc = readFileSync(path.join(repoRoot, 'src/utils/placementStaircase.ts'), 'utf8');
 
+/** The body of the named `export function`, brace-balanced, so assertions can't match a stray comment elsewhere. */
+function functionBody(src: string, signature: string): string {
+    const start = src.indexOf(signature);
+    expect(start, `${signature} not found`).toBeGreaterThan(-1);
+    const open = src.indexOf('{', start);
+    let depth = 0;
+    for (let i = open; i < src.length; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) return src.slice(start, i + 1);
+    }
+    throw new Error(`unbalanced braces after ${signature}`);
+}
+
+const eloExpectedScoreFn = functionBody(staircaseSrc, 'export function eloExpectedScore');
+
 describe('atomic Elo RPC parity with placementStaircase', () => {
     it('uses the same K factor as ELO_K_FACTOR', () => {
         expect(ELO_K_FACTOR).toBe(24);
@@ -28,9 +43,11 @@ describe('atomic Elo RPC parity with placementStaircase', () => {
     });
 
     it('uses the same expected-score divisor (400) as eloExpectedScore', () => {
-        // 400 is the Elo scale divisor, inline in both eloExpectedScore() and the RPC.
-        expect(staircaseSrc).toMatch(/\/\s*400\b/);
-        expect(rpcSql).toMatch(/\/\s*400(\.0)?\b/);
+        // 400 is the Elo scale divisor. Scope each match to the expected-score expression
+        // itself — eloExpectedScore's body, and the RPC's power(10::numeric, … / 400.0) term —
+        // so a stray /400 in a comment or unrelated expression can't satisfy the test.
+        expect(eloExpectedScoreFn).toMatch(/10 \*\* \(\(itemRating - opponentRating\) \/ 400\)/);
+        expect(rpcSql).toMatch(/power\(\s*10::numeric,[\s\S]*?\/\s*400\.0/);
     });
 
     it('applies the delta as rating - K*(actual - expected), matching updateItemElo', () => {
