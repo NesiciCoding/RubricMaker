@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { profileText } from './cefrVocabularyProfiler';
+import { profileText, buildPersistedVocabProfile, vocabProfileView } from './cefrVocabularyProfiler';
 
 describe('profileText', () => {
     it('returns A1 estimated level for very basic text', () => {
@@ -143,5 +143,52 @@ describe('profileText', () => {
         const result = profileText('');
         expect(result.offListPercent).toBe(0);
         expect(result.academic).toEqual({ awlPercent: 0, nawlPercent: 0, academicWords: [] });
+    });
+});
+
+describe('buildPersistedVocabProfile / vocabProfileView', () => {
+    it('captures raw additive counts for a text', () => {
+        // analysis B1 + AWL, cat A1, zxqywv off-list → 3 content tokens
+        const p = buildPersistedVocabProfile('analysis cat zxqywv');
+        expect(p.contentTokenCount).toBe(3);
+        expect(p.levelCounts.A1).toBe(1);
+        expect(p.levelCounts.B1).toBe(1);
+        expect(p.offListCount).toBe(1);
+        expect(p.awlCount).toBe(1);
+        expect(p.academicWords).toContain('analysis');
+    });
+
+    it('round-trips: profileText === vocabProfileView(buildPersistedVocabProfile(text))', () => {
+        const text = 'The unprecedented magnitude of the catastrophic phenomenon was extraordinary.';
+        expect(profileText(text)).toEqual(vocabProfileView(buildPersistedVocabProfile(text)));
+    });
+
+    it('derives percentages from stored counts', () => {
+        const view = vocabProfileView({
+            levelCounts: { A1: 1, A2: 0, B1: 1, B2: 0, C1: 0, C2: 0 },
+            contentTokenCount: 4,
+            offListCount: 2,
+            awlCount: 1,
+            nawlCount: 0,
+            highlightWords: [{ word: 'analysis', level: 'B1' }],
+            academicWords: ['analysis'],
+        });
+        expect(view.offListPercent).toBeCloseTo(50, 5);
+        expect(view.academic.awlPercent).toBeCloseTo(25, 5);
+        expect(view.highlightWords).toEqual([{ word: 'analysis', level: 'B1' }]);
+    });
+
+    it('handles a zero-token stored profile without dividing by zero', () => {
+        const view = vocabProfileView({
+            levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+            contentTokenCount: 0,
+            offListCount: 0,
+            awlCount: 0,
+            nawlCount: 0,
+            highlightWords: [],
+            academicWords: [],
+        });
+        expect(view.offListPercent).toBe(0);
+        expect(view.academic).toEqual({ awlPercent: 0, nawlPercent: 0, academicWords: [] });
     });
 });

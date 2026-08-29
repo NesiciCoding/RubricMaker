@@ -25,7 +25,7 @@ import type {
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
-import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { profileText, buildPersistedVocabProfile, estimateLevelFromCounts } from '../../utils/cefrVocabularyProfiler';
 import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualification';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
@@ -167,6 +167,7 @@ export default function DocumentAnalysisPanel({
             const { errors: grammarErrors, source: grammarCheckerUsed, textWasTruncated } = await checkGrammar(text);
 
             handleProgress(95, 'Saving…');
+            const vocabProfile = buildPersistedVocabProfile(text);
             const newResult: DocumentAnalysisResult = {
                 id: nanoid(),
                 studentId,
@@ -178,7 +179,8 @@ export default function DocumentAnalysisPanel({
                 grammarErrors,
                 grammarCheckerUsed,
                 grammarTextTruncated: textWasTruncated,
-                vocabEstimatedLevel: profileText(text).estimatedLevel,
+                vocabProfile,
+                vocabEstimatedLevel: estimateLevelFromCounts(vocabProfile.levelCounts),
                 grammarEstimatedLevel: profileGrammar(text).estimatedLevel,
             };
 

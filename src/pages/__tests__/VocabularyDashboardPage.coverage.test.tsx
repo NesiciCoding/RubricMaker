@@ -107,6 +107,9 @@ const classProfiles: ClassVocabProfile[] = [
         levelStats: [],
         totalWords: 10,
         estimatedLevel: 'B1',
+        offListPercent: 0,
+        awlPercent: 0,
+        nawlPercent: 0,
         studentProfiles: [
             {
                 studentId: 's1',
@@ -116,6 +119,9 @@ const classProfiles: ClassVocabProfile[] = [
                 totalWords: 5,
                 estimatedLevel: 'B1',
                 analysisCount: 2,
+                offListPercent: 0,
+                awlPercent: 0,
+                nawlPercent: 0,
             },
             {
                 studentId: 's2',
@@ -125,6 +131,9 @@ const classProfiles: ClassVocabProfile[] = [
                 totalWords: 5,
                 estimatedLevel: 'A2',
                 analysisCount: 1,
+                offListPercent: 0,
+                awlPercent: 0,
+                nawlPercent: 0,
             },
         ],
     },

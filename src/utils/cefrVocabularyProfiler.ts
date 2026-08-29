@@ -1,6 +1,8 @@
 import { CEFR_WORD_LEVELS } from '../data/cefrLevels';
-import { academicCoverage } from './academicWordList';
-import type { CefrLevel, CefrVocabProfile, CefrWordHit } from '../types';
+import { academicCounts } from './academicWordList';
+import type { CefrLevel, CefrVocabProfile, CefrWordHit, PersistedVocabProfile } from '../types';
+
+const HIGHLIGHT_CAP = 30;
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -167,44 +169,62 @@ export function estimateLevelFromCounts(levelCounts: Record<CefrLevel, number>):
 }
 
 /**
- * Profile CEFR vocabulary in the provided text.
- *
- * Matches each content word against the bundled CEFR index by exact lowercased
- * surface form and reports the level distribution, an estimated level, notable
- * words, the share of off-list words, and Academic Word List coverage.
- *
- * @param text - The input text to analyze.
- * @returns A {@link CefrVocabProfile}:
- *  - `levelCounts`: matched content-word occurrences per CEFR level,
- *  - `estimatedLevel`: see {@link estimateLevelFromCounts} (defaults to `A1`),
- *  - `highlightWords`: up to 30 unique words at or above the estimated level (excluding `A1`),
- *  - `offListPercent`: share of content words not in the CEFR index,
- *  - `academic`: AWL/NAWL coverage over the content words.
+ * Notable words at or above the estimated level (excluding A1), highest level
+ * first, capped. Shared by the persisted-profile builder.
  */
-export function profileText(text: string): CefrVocabProfile {
-    const { tokens, levelCounts, wordLevels, offListCount } = scanText(text);
-
-    const estimatedLevel = estimateLevelFromCounts(levelCounts);
+function highlightsFromWordLevels(wordLevels: Map<string, CefrLevel>, estimatedLevel: CefrLevel): CefrWordHit[] {
     const estimatedIdx = LEVEL_ORDER.indexOf(estimatedLevel);
-    const highlightCandidates = new Map<string, CefrLevel>();
-    for (const [word, level] of wordLevels) {
-        if (LEVEL_ORDER.indexOf(level) >= estimatedIdx && level !== 'A1') {
-            highlightCandidates.set(word, level);
-        }
-    }
-
-    const highlightWords: CefrWordHit[] = [...highlightCandidates.entries()]
+    return [...wordLevels.entries()]
+        .filter(([, level]) => LEVEL_ORDER.indexOf(level) >= estimatedIdx && level !== 'A1')
         .sort(([, a], [, b]) => LEVEL_ORDER.indexOf(b) - LEVEL_ORDER.indexOf(a))
-        .slice(0, 30)
+        .slice(0, HIGHLIGHT_CAP)
         .map(([word, level]) => ({ word, level }));
+}
 
-    const offListPercent = tokens.length > 0 ? (offListCount / tokens.length) * 100 : 0;
+/**
+ * Build the persistable vocabulary distribution for a text: raw, additive
+ * counts (level counts, off-list, academic) plus capped highlight and academic
+ * word lists. Stored on a DocumentAnalysisResult so the dashboard, CSV export
+ * and re-opened panel read it back instead of re-profiling.
+ */
+export function buildPersistedVocabProfile(text: string): PersistedVocabProfile {
+    const { tokens, levelCounts, wordLevels, offListCount } = scanText(text);
+    const estimatedLevel = estimateLevelFromCounts(levelCounts);
+    const { awl, nawl, academicWords } = academicCounts(tokens);
+    return {
+        levelCounts,
+        contentTokenCount: tokens.length,
+        offListCount,
+        awlCount: awl,
+        nawlCount: nawl,
+        highlightWords: highlightsFromWordLevels(wordLevels, estimatedLevel),
+        academicWords,
+    };
+}
 
+/**
+ * Present a {@link PersistedVocabProfile} as a {@link CefrVocabProfile} (deriving
+ * the estimated level and off-list/academic percentages), so a stored profile
+ * renders identically to a freshly computed one.
+ */
+export function vocabProfileView(profile: PersistedVocabProfile): CefrVocabProfile {
+    const { levelCounts, contentTokenCount, offListCount, awlCount, nawlCount, highlightWords, academicWords } =
+        profile;
+    const pct = (n: number) => (contentTokenCount > 0 ? (n / contentTokenCount) * 100 : 0);
     return {
         levelCounts,
         highlightWords,
-        estimatedLevel,
-        offListPercent,
-        academic: academicCoverage(tokens),
+        estimatedLevel: estimateLevelFromCounts(levelCounts),
+        offListPercent: pct(offListCount),
+        academic: { awlPercent: pct(awlCount), nawlPercent: pct(nawlCount), academicWords },
     };
+}
+
+/**
+ * Profile CEFR vocabulary in the provided text: level distribution, estimated
+ * level, notable words, off-list share, and Academic Word List coverage. A thin
+ * view over {@link buildPersistedVocabProfile}.
+ */
+export function profileText(text: string): CefrVocabProfile {
+    return vocabProfileView(buildPersistedVocabProfile(text));
 }

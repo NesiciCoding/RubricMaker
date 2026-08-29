@@ -356,6 +356,28 @@ export interface CefrVocabProfile {
     academic: AcademicCoverage;
 }
 
+/**
+ * The vocabulary distribution persisted on a DocumentAnalysisResult so the
+ * dashboard/export/panel can read it back without re-profiling. Uses raw,
+ * additive counts (not percentages) so profiles sum cleanly across texts.
+ */
+export interface PersistedVocabProfile {
+    /** Matched-word occurrences per CEFR level */
+    levelCounts: Record<CefrLevel, number>;
+    /** Total content tokens — the denominator for off-list/academic shares */
+    contentTokenCount: number;
+    /** Content tokens not in the CEFR index */
+    offListCount: number;
+    /** AWL-word occurrences */
+    awlCount: number;
+    /** NAWL-word occurrences */
+    nawlCount: number;
+    /** Notable words at/above the estimated level (capped 30) */
+    highlightWords: CefrWordHit[];
+    /** Distinct academic words observed (capped 40), for display and deck seeding */
+    academicWords: string[];
+}
+
 /** Result of grading a text against a target CEFR level (see textLevelVerdict). */
 export interface TargetLevelVerdict {
     targetLevel: CefrLevel;
@@ -403,6 +425,11 @@ export interface StudentVocabProfile {
     totalWords: number;
     estimatedLevel: CefrLevel;
     analysisCount: number;
+    /** % of content words not in the CEFR index across this student's analyses */
+    offListPercent: number;
+    /** % of content words on the AWL / NAWL across this student's analyses */
+    awlPercent: number;
+    nawlPercent: number;
 }
 
 export interface ClassVocabProfile {
@@ -413,6 +440,11 @@ export interface ClassVocabProfile {
     totalWords: number;
     estimatedLevel: CefrLevel;
     studentProfiles: StudentVocabProfile[];
+    /** % of content words not in the CEFR index across the class's analyses */
+    offListPercent: number;
+    /** % of content words on the AWL / NAWL across the class's analyses */
+    awlPercent: number;
+    nawlPercent: number;
 }
 
 export interface VocabExportRow {
@@ -471,6 +503,11 @@ export interface DocumentAnalysisResult {
      * analysed before this field existed — the aggregator simply omits the estimate badge for those. */
     vocabEstimatedLevel?: CefrLevel;
     grammarEstimatedLevel?: CefrLevel;
+    /** Full vocabulary distribution, computed once at analysis time so the dashboard,
+     * CSV export and re-opened panel read it back instead of re-profiling the text.
+     * Absent on records analysed before this field existed — consumers fall back to
+     * profiling `extractedText` on the fly for those. */
+    vocabProfile?: PersistedVocabProfile;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
 }

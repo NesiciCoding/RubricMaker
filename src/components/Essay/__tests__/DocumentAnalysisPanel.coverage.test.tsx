@@ -22,6 +22,16 @@ const mocks = vi.hoisted(() => ({
     analyseVocabulary: vi.fn(),
     checkGrammar: vi.fn(),
     profileText: vi.fn(),
+    buildPersistedVocabProfile: vi.fn(() => ({
+        levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+        contentTokenCount: 0,
+        offListCount: 0,
+        awlCount: 0,
+        nawlCount: 0,
+        highlightWords: [],
+        academicWords: [],
+    })),
+    estimateLevelFromCounts: vi.fn(() => 'A1'),
     profileGrammar: vi.fn(),
     evaluateGrammar: vi.fn(),
     buildGrammarComment: vi.fn(),
@@ -39,7 +49,11 @@ vi.mock('../../../utils/grammarChecker', () => ({
     profileGrammar: mocks.profileGrammar,
     LT_ATTRIBUTION_URL: 'https://languagetool.org',
 }));
-vi.mock('../../../utils/cefrVocabularyProfiler', () => ({ profileText: mocks.profileText }));
+vi.mock('../../../utils/cefrVocabularyProfiler', () => ({
+    profileText: mocks.profileText,
+    buildPersistedVocabProfile: mocks.buildPersistedVocabProfile,
+    estimateLevelFromCounts: mocks.estimateLevelFromCounts,
+}));
 vi.mock('../../../utils/grammarQualification', () => ({
     evaluateGrammar: mocks.evaluateGrammar,
     buildGrammarComment: mocks.buildGrammarComment,

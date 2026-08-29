@@ -34,6 +34,16 @@ vi.mock('../../utils/cefrVocabularyProfiler', () => ({
         offListPercent: 0,
         academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
     })),
+    buildPersistedVocabProfile: vi.fn(() => ({
+        levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+        contentTokenCount: 5,
+        offListCount: 0,
+        awlCount: 0,
+        nawlCount: 0,
+        highlightWords: [],
+        academicWords: [],
+    })),
+    estimateLevelFromCounts: vi.fn(() => 'A1' as const),
 }));
 
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
