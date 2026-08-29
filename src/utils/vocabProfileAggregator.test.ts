@@ -301,4 +301,17 @@ describe('persisted vocabProfile', () => {
         const rows = collectVocabExportRows([], results);
         expect(rows.map((r) => r.word)).toContain('analysis');
     });
+
+    it('prefers the rubric definition over an analysis highlight for the same word', () => {
+        const rubric = makeRubric({
+            vocabularyItems: [
+                { id: 'v1', phrase: 'Analysis', category: 'vocabulary', cefrLevel: 'C1', definition: 'a study' },
+            ],
+        });
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: 'x', vocabProfile: persisted })];
+        const rows = collectVocabExportRows([rubric], results);
+        const analysisRows = rows.filter((r) => r.word.toLowerCase() === 'analysis');
+        expect(analysisRows).toHaveLength(1);
+        expect(analysisRows[0].source).toBe('rubric');
+    });
 });
