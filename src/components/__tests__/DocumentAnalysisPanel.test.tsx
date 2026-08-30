@@ -59,12 +59,14 @@ import { extractText, UnsupportedFormatError } from '../../utils/textExtraction'
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar } from '../../utils/grammarChecker';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { computeTargetVerdict } from '../../utils/textLevelVerdict';
 
 const mockExtractText = vi.mocked(extractText);
 const mockAnalyseVocabulary = vi.mocked(analyseVocabulary);
 const mockCheckGrammar = vi.mocked(checkGrammar);
 const mockProfileGrammar = vi.mocked(profileGrammar);
 const mockProfileText = vi.mocked(profileText);
+const mockVerdict = vi.mocked(computeTargetVerdict);
 
 const mockAttachment: Attachment = {
     id: 'att1',
@@ -439,6 +441,35 @@ describe('DocumentAnalysisPanel', () => {
         const structureLabels = screen.getAllByText(/Past perfect|Conditional/).map((el) => el.textContent);
         expect(structureLabels[0]).toBe('Conditional');
         expect(structureLabels[1]).toBe('Past perfect');
+    });
+
+    it('shows academic vocabulary, off-list share, and the above-target verdict', () => {
+        mockProfileText.mockReturnValue({
+            levelCounts: { A1: 2, A2: 1, B1: 1, B2: 0, C1: 1, C2: 0 },
+            highlightWords: [{ word: 'paradigm', level: 'C1' }],
+            estimatedLevel: 'B1',
+            offListPercent: 20,
+            academic: { awlPercent: 30, nawlPercent: 10, academicWords: ['analysis', 'research'] },
+        });
+        mockVerdict.mockReturnValue({
+            targetLevel: 'B1',
+            coveragePercent: 40,
+            aboveTargetWords: [{ word: 'paradigm', level: 'C1' }],
+            verdict: 'too_hard',
+        });
+        render(<DocumentAnalysisPanel {...baseProps} existingResult={existingResult} />);
+
+        expect(screen.getByText('Off-list')).toBeInTheDocument();
+        expect(screen.getByText('Academic vocabulary')).toBeInTheDocument();
+        expect(screen.getByText('analysis')).toBeInTheDocument();
+        expect(screen.getByText('research')).toBeInTheDocument();
+        expect(screen.getByText('Above level — pre-teach:')).toBeInTheDocument();
+        expect(screen.getByText('analysis.verdict_too_hard')).toBeInTheDocument();
+
+        // changing the target level re-grades via the verdict helper
+        mockVerdict.mockClear();
+        fireEvent.change(screen.getByLabelText('Class CEFR level'), { target: { value: 'A1' } });
+        expect(mockVerdict).toHaveBeenCalledWith(existingResult.extractedText, 'A1');
     });
 
     it('shows a "no grammar detected" message when no structures were found', () => {

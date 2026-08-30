@@ -57,6 +57,7 @@ const mocks = vi.hoisted(() => ({
     getAllClassVocabProfiles: vi.fn(),
     collectVocabExportRows: vi.fn(),
     saveAs: vi.fn(),
+    addFlashcardDeck: vi.fn((d: { name: string }) => ({ ...d, id: 'deck1', createdAt: '2024-01-01T00:00:00Z' })),
 }));
 
 vi.mock('../../context/AppContext', () => {
@@ -68,6 +69,7 @@ vi.mock('../../context/AppContext', () => {
         settings: mockSettings,
         analysisResults: mockAnalysisResults,
         updateSettings: vi.fn(),
+        addFlashcardDeck: mocks.addFlashcardDeck,
     });
     return {
         useRoster: () => makeAppContextMock(),
@@ -197,5 +199,61 @@ describe('VocabularyDashboardPage coverage', () => {
         const [blob, filename] = mocks.saveAs.mock.calls[0];
         expect(blob).toBeInstanceOf(Blob);
         expect(filename).toBe('vocabProfile.csv_filename_B1.csv');
+    });
+
+    it('seeds a flashcard deck from the export word list', async () => {
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderWithRouter(<VocabularyDashboardPage />);
+
+        fireEvent.change(screen.getByLabelText('vocabProfile.label_export_band'), { target: { value: 'B1' } });
+        fireEvent.click(screen.getByRole('button', { name: /seed_deck/ }));
+        expect(mocks.collectVocabExportRows).toHaveBeenLastCalledWith([mockRubric], mockAnalysisResults, 'B1');
+        expect(mocks.addFlashcardDeck).toHaveBeenCalledTimes(1);
+        const deck = mocks.addFlashcardDeck.mock.calls[0][0] as unknown as {
+            deckKind: string;
+            cards: { front: string }[];
+        };
+        expect(deck.deckKind).toBe('vocabulary');
+        expect(deck.cards.map((c) => c.front)).toEqual(['phenomenon']);
+    });
+
+    it('does not seed a deck when there are no words for the band', async () => {
+        mocks.collectVocabExportRows.mockReturnValue([]);
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderWithRouter(<VocabularyDashboardPage />);
+
+        fireEvent.click(screen.getByRole('button', { name: /seed_deck/ }));
+        expect(mocks.addFlashcardDeck).not.toHaveBeenCalled();
+    });
+
+    it('shows the target-level reading verdict and re-grades when the level changes', async () => {
+        mocks.getAllClassVocabProfiles.mockReturnValue([
+            {
+                ...classProfiles[0],
+                levelCounts: { A1: 6, A2: 0, B1: 3, B2: 0, C1: 1, C2: 0 },
+                totalWords: 10,
+            },
+        ]);
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderWithRouter(<VocabularyDashboardPage />);
+
+        expect(screen.getByText('vocabProfile.target_level_label')).toBeInTheDocument();
+        // 9 of 10 recognised words are at/below B1 → 90% → suitable
+        expect(screen.getByText('analysis.verdict_suitable')).toBeInTheDocument();
+
+        // A2 target: only 6 of 10 known → 60% → too hard
+        fireEvent.change(screen.getByLabelText('vocabProfile.target_level_label'), { target: { value: 'A2' } });
+        expect(screen.getByText('analysis.verdict_too_hard')).toBeInTheDocument();
+    });
+
+    it('reports a slightly-above verdict at ~80% coverage', async () => {
+        // 4 of 5 recognised words at/below B1 → 80% → slightly above
+        mocks.getAllClassVocabProfiles.mockReturnValue([
+            { ...classProfiles[0], levelCounts: { A1: 4, A2: 0, B1: 0, B2: 0, C1: 1, C2: 0 }, totalWords: 5 },
+        ]);
+        const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
+        renderWithRouter(<VocabularyDashboardPage />);
+
+        expect(screen.getByText('analysis.verdict_slightly_above')).toBeInTheDocument();
     });
 });
