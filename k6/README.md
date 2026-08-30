@@ -53,6 +53,28 @@ SEED_ASSIGNMENTS=200 npm run loadtest     # a bigger, less cache-hot read pool
 scripts/loadtest.sh load -- --out json=run.json   # pass any flag through to k6
 ```
 
+### Which tier: `TARGET`
+
+`TARGET` picks which backend tier to exercise:
+
+| `TARGET` | Hits                                   | Use when |
+| -------- | -------------------------------------- | -------- |
+| `both` (default) | `get-test-assignment` edge fn **and** the PostgREST read | target has an edge runtime (Supabase Cloud / official self-hosted stack) |
+| `edge`   | just the edge function                 | isolating edge-function behaviour |
+| `rest`   | just the PostgREST / Postgres read     | target has **no** edge runtime |
+
+**Important:** this repo's own `docker-compose.yml` runs **no edge functions**
+(they live on Supabase Cloud or the official self-hosted stack behind Kong). Point
+`TARGET=rest` at a bare-compose target, or the edge calls 404. Details in
+[`docs/LOAD_TESTING_STAGING.md`](../docs/LOAD_TESTING_STAGING.md).
+
+### Cleanup
+
+Seeded rows (`id` prefix `loadtest-`) are left behind on purpose (a run can add
+more). Remove them with `scripts/loadtest-cleanup.sh` (deletes the tests +
+assignments via the service key; prints how to delete the seeded auth users). On
+a throwaway VM, reverting a snapshot is simpler.
+
 Steady profiles (`smoke`/`load`/`soak`) enforce **thresholds** that make the run
 pass/fail: error rate < 1%, response-shape checks > 99%, and generous p95 bounds.
 `stress`/`spike` deliberately overload the target, so they report numbers without
@@ -86,10 +108,13 @@ concurrent stay under my p95 bound?", "at what VU count does *my box* fall over?
 — and treat absolute throughput as a floor, not the production ceiling.
 
 To answer "can a real school of 100–200 students test simultaneously?", point the
-**same script** at a dedicated **staging Supabase project** (export `SUPABASE_URL`
-+ its anon/service keys, then `npm run loadtest:stress` with a high `VUS`). The
+**same script** at a **staging VM that mirrors a self-hosted deployment** (or a
+staging Supabase project): export `SUPABASE_URL` + its anon/service keys, run k6
+from a *separate* machine, then `npm run loadtest:stress` with a high `VUS`. The
 generator and the server are then fully separated and the target is real infra.
-Provisioning that staging project is the remaining step for true capacity testing.
+[`docs/LOAD_TESTING_STAGING.md`](../docs/LOAD_TESTING_STAGING.md) is the full
+guide — VM bring-up, the "k6 stays outside the VM" rule, and a VU→spec sizing
+table to find the server size each school needs.
 
 ## In CI
 

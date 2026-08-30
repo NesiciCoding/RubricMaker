@@ -84,7 +84,29 @@ else
     echo "[loadtest] target: ${SUPABASE_URL} (local stack)"
 fi
 
-echo "[loadtest] profile: ${PROFILE}  (VUS=${VUS:-profile default}  DURATION=${DURATION:-profile default})"
+# Safety: hitting a non-localhost target seeds real rows via the service_role
+# key and generates real load. Require an explicit confirmation so a production
+# URL can't be run by reflex. LOADTEST_YES=1 bypasses (for automation/CI).
+case "$SUPABASE_URL" in
+    http://127.0.0.1* | http://localhost* | http://0.0.0.0*) ;;
+    *)
+        if [ "${LOADTEST_YES:-}" != "1" ]; then
+            echo "⚠  Target is NOT localhost:  ${SUPABASE_URL}" >&2
+            echo "   This seeds a real user + tests + assignments via the service_role key" >&2
+            echo "   and generates real concurrent load. NEVER run this against production." >&2
+            if [ -t 0 ]; then
+                printf "   Type 'yes' to continue: " >&2
+                read -r REPLY
+                [ "$REPLY" = "yes" ] || { echo "Aborted." >&2; exit 1; }
+            else
+                echo "   Non-interactive shell — set LOADTEST_YES=1 to proceed." >&2
+                exit 1
+            fi
+        fi
+        ;;
+esac
+
+echo "[loadtest] profile: ${PROFILE}  target-tier: ${TARGET:-both}  (VUS=${VUS:-profile default}  DURATION=${DURATION:-profile default})"
 echo "[loadtest] seeding: ${SEED_TESTS:-5} tests, ${SEED_ASSIGNMENTS:-40} assignments"
 echo
 

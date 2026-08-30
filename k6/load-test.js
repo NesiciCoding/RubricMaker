@@ -23,10 +23,17 @@
 //   SUPABASE_ANON_KEY      anon / publishable key           (required)
 //   SUPABASE_SERVICE_KEY   service_role / secret key        (required, seeding)
 //   PROFILE                smoke | load | stress | spike | soak   (default load)
+//   TARGET                 both | edge | rest    (default both)
 //   VUS                    override the profile's peak virtual users
 //   DURATION               override the profile's hold time (e.g. 90s, 5m)
 //   SEED_TESTS             tests to seed          (default 5)
 //   SEED_ASSIGNMENTS       assignments to seed    (default 40 — ~a class+)
+//
+// TARGET note: the get-test-assignment edge function only exists where an edge
+// runtime is deployed (Supabase Cloud, or the official self-hosted stack with a
+// functions container behind Kong). This repo's own docker-compose.yml has NO
+// edge runtime — point TARGET=rest at that to load-test only the PostgREST/DB
+// tier. See k6/README.md and docs/LOAD_TESTING_STAGING.md.
 
 import http from 'k6/http';
 import { check, sleep, fail } from 'k6';
@@ -37,6 +44,9 @@ const ANON_KEY = __ENV.SUPABASE_ANON_KEY || '';
 const SERVICE_KEY = __ENV.SUPABASE_SERVICE_KEY || '';
 
 const PROFILE = (__ENV.PROFILE || 'load').toLowerCase();
+const TARGET = (__ENV.TARGET || 'both').toLowerCase();
+const DO_EDGE = TARGET === 'both' || TARGET === 'edge';
+const DO_REST = TARGET === 'both' || TARGET === 'rest';
 const SEED_TESTS = Math.max(1, Number(__ENV.SEED_TESTS || 5));
 const SEED_ASSIGNMENTS = Math.max(1, Number(__ENV.SEED_ASSIGNMENTS || 40));
 
@@ -124,16 +134,20 @@ const scenario = (PROFILES[PROFILE] || PROFILES.load)();
 // would just report the expected breakage — omit them and read the numbers.
 const steady = PROFILE === 'smoke' || PROFILE === 'load' || PROFILE === 'soak';
 
+function buildThresholds() {
+    if (!steady) return {};
+    const t = {
+        http_req_failed: ['rate<0.01'],
+        checks: ['rate>0.99'],
+    };
+    if (DO_EDGE) t.edge_get_test_assignment = ['p(95)<1500'];
+    if (DO_REST) t.rest_tests_read = ['p(95)<1000'];
+    return t;
+}
+
 export const options = {
     scenarios: { student_load: scenario },
-    thresholds: steady
-        ? {
-              http_req_failed: ['rate<0.01'],
-              checks: ['rate>0.99'],
-              edge_get_test_assignment: ['p(95)<1500'],
-              rest_tests_read: ['p(95)<1000'],
-          }
-        : {},
+    thresholds: buildThresholds(),
 };
 
 function required(name, value) {
@@ -247,41 +261,44 @@ export default function (data) {
         Authorization: `Bearer ${data.accessToken}`,
     };
 
-    const assignmentId = data.assignmentIds[Math.floor(Math.random() * data.assignmentIds.length)];
+    if (DO_EDGE) {
+        const assignmentId = data.assignmentIds[Math.floor(Math.random() * data.assignmentIds.length)];
+        const edge = http.post(
+            `${SUPABASE_URL}/functions/v1/get-test-assignment`,
+            JSON.stringify({ assignmentId }),
+            { headers: authHeaders, tags: { name: 'get-test-assignment' } }
+        );
+        edgeLatency.add(edge.timings.duration);
+        check(edge, {
+            'edge 200': (r) => r.status === 200,
+            'edge returns testId': (r) => {
+                try {
+                    return typeof r.json('testId') === 'string';
+                } catch {
+                    return false;
+                }
+            },
+            'edge strips answers': (r) => !/expectedAnswers/.test(r.body || ''),
+        });
+    }
 
-    const edge = http.post(
-        `${SUPABASE_URL}/functions/v1/get-test-assignment`,
-        JSON.stringify({ assignmentId }),
-        { headers: authHeaders, tags: { name: 'get-test-assignment' } }
-    );
-    edgeLatency.add(edge.timings.duration);
-    check(edge, {
-        'edge 200': (r) => r.status === 200,
-        'edge returns testId': (r) => {
-            try {
-                return typeof r.json('testId') === 'string';
-            } catch {
-                return false;
-            }
-        },
-        'edge strips answers': (r) => !/expectedAnswers/.test(r.body || ''),
-    });
-
-    const rest = http.get(
-        `${SUPABASE_URL}/rest/v1/tests?owner_id=eq.${data.ownerId}&select=id`,
-        { headers: authHeaders, tags: { name: 'tests-read' } }
-    );
-    restLatency.add(rest.timings.duration);
-    check(rest, {
-        'rest 200': (r) => r.status === 200,
-        'rest returns seeded tests': (r) => {
-            try {
-                return Array.isArray(r.json()) && r.json().length >= 1;
-            } catch {
-                return false;
-            }
-        },
-    });
+    if (DO_REST) {
+        const rest = http.get(
+            `${SUPABASE_URL}/rest/v1/tests?owner_id=eq.${data.ownerId}&select=id`,
+            { headers: authHeaders, tags: { name: 'tests-read' } }
+        );
+        restLatency.add(rest.timings.duration);
+        check(rest, {
+            'rest 200': (r) => r.status === 200,
+            'rest returns seeded tests': (r) => {
+                try {
+                    return Array.isArray(r.json()) && r.json().length >= 1;
+                } catch {
+                    return false;
+                }
+            },
+        });
+    }
 
     sleep(0.3);
 }
