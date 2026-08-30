@@ -83,6 +83,7 @@ jobs:
       - name: Run k6 load test
         run: k6 run --summary-export=k6-summary.json k6/load-test.js
         env:
+          PROFILE: load
           VUS: ${{ github.event.inputs.vus || '50' }}
           DURATION: ${{ github.event.inputs.duration || '60s' }}
 

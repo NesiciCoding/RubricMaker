@@ -173,9 +173,10 @@ npm run e2e          # Playwright end-to-end tests
 npm run db:start     # Start local Supabase stack
 npm run db:reset     # Reset and re-apply all migrations
 
-# Backend load testing (k6) — regression smoke against a local Supabase stack.
-# Runs weekly + on demand in CI (.github/workflows/load-test.yml). See k6/README.md.
-k6 run k6/load-test.js
+# Backend load testing (k6) against a local Supabase stack (needs `npm run db:start`).
+# Reads Supabase keys automatically; profiles: smoke | load | stress | spike | soak.
+npm run loadtest              # default 'load' profile (~50 VUs)
+npm run loadtest:stress       # climb VUs to find the breaking point
 ```
 
 New to the codebase? See the [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) and [Architecture](https://github.com/NesiciCoding/RubricMaker/wiki/Architecture) wiki pages.
