@@ -46,6 +46,15 @@ vi.mock('../../utils/cefrVocabularyProfiler', () => ({
     estimateLevelFromCounts: vi.fn(() => 'A1' as const),
 }));
 
+vi.mock('../../utils/textLevelVerdict', () => ({
+    computeTargetVerdict: vi.fn(() => ({
+        targetLevel: 'B1' as const,
+        coveragePercent: 100,
+        aboveTargetWords: [],
+        verdict: 'suitable' as const,
+    })),
+}));
+
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar } from '../../utils/grammarChecker';

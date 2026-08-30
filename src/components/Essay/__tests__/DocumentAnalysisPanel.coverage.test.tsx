@@ -54,6 +54,14 @@ vi.mock('../../../utils/cefrVocabularyProfiler', () => ({
     buildPersistedVocabProfile: mocks.buildPersistedVocabProfile,
     estimateLevelFromCounts: mocks.estimateLevelFromCounts,
 }));
+vi.mock('../../../utils/textLevelVerdict', () => ({
+    computeTargetVerdict: vi.fn(() => ({
+        targetLevel: 'B1',
+        coveragePercent: 100,
+        aboveTargetWords: [],
+        verdict: 'suitable',
+    })),
+}));
 vi.mock('../../../utils/grammarQualification', () => ({
     evaluateGrammar: mocks.evaluateGrammar,
     buildGrammarComment: mocks.buildGrammarComment,
@@ -284,7 +292,8 @@ describe('DocumentAnalysisPanel coverage', () => {
         expect(screen.getByText('Notable words:')).toBeInTheDocument();
         expect(screen.getByText('Grammar structures')).toBeInTheDocument();
         expect(screen.getByText('Conditional')).toBeInTheDocument();
-        expect(screen.getByText('Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).')).toBeInTheDocument();
+        expect(screen.getByText(/Vocabulary levels based on CEFR-J/)).toBeInTheDocument();
+        expect(screen.getByText(/Academic vocabulary from the AWL/)).toBeInTheDocument();
 
         // grammar qualification
         expect(screen.getByText('Task completion')).toBeInTheDocument();

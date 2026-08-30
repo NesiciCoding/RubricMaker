@@ -1464,6 +1464,22 @@ function AnalyticsTab() {
                 </p>
             </FeatureSection>
 
+            <FeatureSection icon={BookOpen} title={t('docs.an_vocab_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.an_vocab_body_prefix')} <strong>{t('docs.an_vocab_nav')}</strong>{' '}
+                    {t('docs.an_vocab_body_suffix')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.an_vocab_item_distribution'),
+                        t('docs.an_vocab_item_academic'),
+                        t('docs.an_vocab_item_verdict'),
+                        t('docs.an_vocab_item_seed'),
+                    ]}
+                />
+                <InfoBox color="#8b5cf6">{t('docs.an_vocab_info')}</InfoBox>
+            </FeatureSection>
+
             <FeatureSection icon={BarChart3} title={t('docs.an_stats_title')} color="#3b82f6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.an_stats_intro_prefix')} <strong>{t('docs.an_stats_nav')}</strong>{' '}
