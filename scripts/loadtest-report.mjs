@@ -13,7 +13,7 @@
 // append a row, so it accumulates into the sizing table docs/LOAD_TESTING_STAGING.md
 // describes.
 
-import { readFileSync, existsSync, appendFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, openSync, fstatSync, writeSync, closeSync } from 'node:fs';
 
 const [, , summaryPath, outPath] = process.argv;
 
@@ -21,16 +21,12 @@ if (!summaryPath) {
     console.error('usage: node scripts/loadtest-report.mjs <summary.json> [out.md]');
     process.exit(1);
 }
-if (!existsSync(summaryPath)) {
-    console.error(`error: summary file not found: ${summaryPath}`);
-    process.exit(1);
-}
-
 let summary;
 try {
     summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
 } catch (err) {
-    console.error(`error: could not parse ${summaryPath}: ${err.message}`);
+    const reason = err.code === 'ENOENT' ? 'not found' : `could not be parsed: ${err.message}`;
+    console.error(`error: summary file ${summaryPath} ${reason}`);
     process.exit(1);
 }
 
@@ -85,11 +81,15 @@ const rowLine = `| ${COLUMNS.map(([, k]) => row[k]).join(' | ')} |`;
 console.log(rowLine);
 
 if (outPath) {
-    if (!existsSync(outPath)) {
-        writeFileSync(outPath, `${headerLine}\n${dividerLine}\n${rowLine}\n`);
-        console.error(`[report] created ${outPath}`);
-    } else {
-        appendFileSync(outPath, `${rowLine}\n`);
-        console.error(`[report] appended row to ${outPath}`);
+    // Open once and decide header-vs-append from the fd's size, so there is no
+    // check-then-write race on the path (CodeQL js/file-system-race). Mode 'a'
+    // creates the file if missing and positions writes at the end.
+    const fd = openSync(outPath, 'a');
+    try {
+        const isNew = fstatSync(fd).size === 0;
+        writeSync(fd, isNew ? `${headerLine}\n${dividerLine}\n${rowLine}\n` : `${rowLine}\n`);
+        console.error(isNew ? `[report] created ${outPath}` : `[report] appended row to ${outPath}`);
+    } finally {
+        closeSync(fd);
     }
 }
