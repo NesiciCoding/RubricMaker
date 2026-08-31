@@ -19,7 +19,13 @@
 #   DURATION=10m scripts/loadtest.sh soak     # sustained 30 VUs for 10 minutes
 #   scripts/loadtest.sh load -- --out json=run.json   # pass flags through to k6
 #
-# Env knobs (all optional): VUS, DURATION, SEED_TESTS, SEED_ASSIGNMENTS.
+# Env knobs (all optional): VUS, DURATION, TARGET, SEED_TESTS, SEED_ASSIGNMENTS.
+#   REPORT=<file.md>   append one result row to a Markdown sizing table
+#   LABEL="4vCPU/8GB"  annotate that row (e.g. the VM spec under test)
+#
+# Example:
+#   REPORT=k6/results.md LABEL="4vCPU/8GB VM" VUS=150 npm run loadtest:stress
+#
 # See k6/README.md for the full picture and how to read the numbers.
 
 set -euo pipefail
@@ -50,7 +56,17 @@ fi
 # ── Resolve target credentials ────────────────────────────────────────────────
 # If the caller already supplied a full target (remote/staging), trust it and
 # skip the local lookup. Otherwise pull local keys from `supabase status`.
-if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ] && [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+# A remote target must be fully specified. If ANY of the three target vars is
+# set but not all, refuse: otherwise local discovery would keep the supplied
+# (possibly remote) SUPABASE_URL while pulling the LOCAL service key from
+# `supabase status` and send that local key to the remote target during seeding.
+if [ -n "${SUPABASE_URL:-}" ] || [ -n "${SUPABASE_ANON_KEY:-}" ] || [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+    if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ] || [ -z "${SUPABASE_SERVICE_KEY:-}" ]; then
+        echo "error: a target set via environment needs all three of SUPABASE_URL," >&2
+        echo "       SUPABASE_ANON_KEY and SUPABASE_SERVICE_KEY. Set all three for a" >&2
+        echo "       remote/staging target, or none to auto-discover the local stack." >&2
+        exit 1
+    fi
     echo "[loadtest] target: ${SUPABASE_URL} (from environment)"
 else
     if ! command -v supabase >/dev/null 2>&1; then
@@ -112,8 +128,32 @@ echo
 
 # Guard the empty-array expansion: on macOS's bash 3.2, "${arr[@]}" on an empty
 # array under `set -u` errors with "unbound variable".
-if [ ${#K6_EXTRA[@]} -gt 0 ]; then
-    exec k6 run "${K6_EXTRA[@]}" "$SCRIPT"
+K6_ARGS=()
+[ ${#K6_EXTRA[@]} -gt 0 ] && K6_ARGS+=("${K6_EXTRA[@]}")
+
+# REPORT=<file.md>: export a k6 summary, then append one row to the results table
+# via scripts/loadtest-report.mjs (annotated with PROFILE/TARGET/LABEL). We can't
+# exec in this path since the parser runs after k6; preserve k6's exit code.
+if [ -n "${REPORT:-}" ]; then
+    if ! command -v node >/dev/null 2>&1; then
+        echo "error: REPORT is set but node is not installed (needed to parse the summary)." >&2
+        exit 1
+    fi
+    SUMMARY_JSON="$(mktemp)"
+    K6_ARGS+=(--summary-export "$SUMMARY_JSON")
+    set +e
+    k6 run "${K6_ARGS[@]}" "$SCRIPT"
+    RC=$?
+    set -e
+    if [ -s "$SUMMARY_JSON" ]; then
+        node "$HERE/scripts/loadtest-report.mjs" "$SUMMARY_JSON" "$REPORT" || true
+    fi
+    rm -f "$SUMMARY_JSON"
+    exit "$RC"
+fi
+
+if [ ${#K6_ARGS[@]} -gt 0 ]; then
+    exec k6 run "${K6_ARGS[@]}" "$SCRIPT"
 else
     exec k6 run "$SCRIPT"
 fi

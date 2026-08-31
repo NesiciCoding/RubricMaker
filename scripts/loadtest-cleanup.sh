@@ -13,7 +13,16 @@
 set -euo pipefail
 
 # ── Resolve target + service key (mirrors scripts/loadtest.sh) ────────────────
-if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+# A remote target must be fully specified — otherwise local discovery would keep
+# the supplied remote URL but pull the LOCAL service key and DELETE against the
+# remote target with it. Require both, or neither (auto-discover local).
+if [ -n "${SUPABASE_URL:-}" ] || [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+    if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_KEY:-}" ]; then
+        echo "error: a target set via environment needs both SUPABASE_URL and" >&2
+        echo "       SUPABASE_SERVICE_KEY. Set both for a remote target, or neither" >&2
+        echo "       to auto-discover the local stack." >&2
+        exit 1
+    fi
     echo "[cleanup] target: ${SUPABASE_URL} (from environment)"
 else
     if ! command -v supabase >/dev/null 2>&1; then

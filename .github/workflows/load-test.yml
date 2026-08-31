@@ -87,6 +87,20 @@ jobs:
           VUS: ${{ github.event.inputs.vus || '50' }}
           DURATION: ${{ github.event.inputs.duration || '60s' }}
 
+      # Render the run's headline metrics into the job summary (node is
+      # preinstalled on the runner). Runs even if thresholds failed the step above.
+      - name: Summarize result
+        if: always()
+        env:
+          PROFILE: load
+          TARGET: both
+          LABEL: CI local stack
+        run: |
+          if [ -f k6-summary.json ]; then
+            node scripts/loadtest-report.mjs k6-summary.json load-test-row.md >/dev/null || true
+            { echo "### Load test result"; echo; cat load-test-row.md; } >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop --no-backup

@@ -53,6 +53,21 @@ SEED_ASSIGNMENTS=200 npm run loadtest     # a bigger, less cache-hot read pool
 scripts/loadtest.sh load -- --out json=run.json   # pass any flag through to k6
 ```
 
+### Recording results to a table
+
+Set `REPORT=<file.md>` to append one Markdown row per run — peak VUs, iters/s,
+error rate, and the p95s — to a results table (created with a header on first
+use). `LABEL` annotates the row (e.g. the VM spec under test):
+
+```bash
+REPORT=k6/results.md LABEL="4vCPU/8GB VM" VUS=150 npm run loadtest:stress
+```
+
+This is what fills in the sizing table in
+[`docs/LOAD_TESTING_STAGING.md`](../docs/LOAD_TESTING_STAGING.md) as you test each
+VM size. (Under the hood it runs the parser `scripts/loadtest-report.mjs` on k6's
+exported summary; you can also run that directly on any `--summary-export` JSON.)
+
 ### Which tier: `TARGET`
 
 `TARGET` picks which backend tier to exercise:

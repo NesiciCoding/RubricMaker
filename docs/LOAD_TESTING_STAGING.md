@@ -125,7 +125,13 @@ Watch **both sides** during a run:
 
 Re-provision the VM at each spec, run `stress`, and record where p95 crosses an
 acceptable bound (e.g. keep the `get-test-assignment` p95 under ~1 s) or errors
-begin:
+begin. Pass `REPORT=<file.md> LABEL="<spec>"` on each run to have the harness
+append a row automatically (see [`k6/README.md`](../k6/README.md) → Recording
+results):
+
+```bash
+REPORT=k6/results.md LABEL="4vCPU/8GB VM" VUS=200 npm run loadtest:stress
+```
 
 | VM spec (vCPU / RAM) | Healthy up to (concurrent) | First breaks at | Notes (what saturated: CPU / DB conns / …) |
 | -------------------- | -------------------------- | --------------- | ------------------------------------------ |

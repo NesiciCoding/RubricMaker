@@ -127,7 +127,10 @@ function ramp(peak, hold, up, down) {
     };
 }
 
-const scenario = (PROFILES[PROFILE] || PROFILES.load)();
+if (!Object.prototype.hasOwnProperty.call(PROFILES, PROFILE)) {
+    fail(`Unknown PROFILE "${PROFILE}". Use smoke, load, stress, spike, or soak.`);
+}
+const scenario = PROFILES[PROFILE]();
 
 // Latency thresholds are gross-regression guards for the steady-state profiles.
 // stress/spike deliberately overload the target, so pass/fail thresholds there
@@ -278,7 +281,7 @@ export default function (data) {
                     return false;
                 }
             },
-            'edge strips answers': (r) => !/expectedAnswers/.test(r.body || ''),
+            'edge strips answers': (r) => !/(expectedAnswers|isCorrect)/.test(r.body || ''),
         });
     }
 

@@ -22,6 +22,11 @@ blob-report/
 # Vitest JUnit output (consumed by the auto-quarantine detector)
 unit-results/
 
+# k6 load-test run artifacts (see k6/README.md)
+k6-summary.json
+load-test-row.md
+k6/results.md
+
 # Python
 __pycache__/
 *.pyc
