@@ -1099,6 +1099,12 @@ export interface GeneratorConfig {
     maxCefrLevel: CefrLevel;
     /** Empty/undefined = no skill filter, pulls from all CEFR skills present in the bank. */
     skills?: CefrSkill[];
+    /**
+     * Empty/undefined = no tag filter. When set, an item must carry at least one of these tags
+     * (case-insensitive ANY match) in addition to satisfying the skill filter above. Lets a teacher
+     * scope a run to a topic/theme (e.g. 'business', 'travel') rather than only a CEFR skill.
+     */
+    tags?: string[];
     minQuestions: number;
     maxQuestions: number;
     /** QuestionBankItem id (question or section) the run starts from, instead of the configured range's midpoint level. */
@@ -1112,7 +1118,7 @@ export interface QuestionBankItem {
     kind?: 'question' | 'section';
     /** Structured CEFR level facet on every bank item, for reliable generator/browsing filters (in addition to the free-text tags below). */
     cefrLevel?: CefrLevel;
-    /** Structured CEFR skill facet, mirrors Test.cefrSkill — lets the live placement generator filter the bank by skill (roadmap 27.1). Only meaningful when kind is absent/'question'; a 'section' bundle's per-question skill isn't tracked separately. */
+    /** Structured CEFR skill facet, mirrors Test.cefrSkill — lets the live placement generator filter the bank by skill (roadmap 27.1). Set on both a standalone question and a 'section' bundle (a reading passage's skill is 'reading', a listening clip's is 'listening'); a bundle's skill applies to the passage as a whole rather than being tracked per nested question. */
     cefrSkill?: CefrSkill;
     /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). Present when kind is absent/'question'. */
     question?: Omit<TestQuestion, 'sectionId'>;

@@ -72,6 +72,7 @@ interface RawQuestionBankJson {
         tags?: string[];
         kind?: string;
         cefrLevel?: string;
+        cefrSkill?: string;
         /** Present when kind is absent/'question'. */
         question?: RawQuestion;
         /** Present when kind === 'section'. */
@@ -233,6 +234,13 @@ function parseCefrLevel(raw: string | undefined, label: string, warnings: Import
     return undefined;
 }
 
+function parseCefrSkill(raw: string | undefined, label: string, warnings: ImportWarning[]): CefrSkill | undefined {
+    if (!raw) return undefined;
+    if (CEFR_SKILLS.includes(raw as CefrSkill)) return raw as CefrSkill;
+    warnings.push({ key: 'questionBank.import_warn_unknown_cefr_skill', params: { item: label, skill: raw } });
+    return undefined;
+}
+
 export function parseQuestionBankJson(text: string): QuestionBankImportResult {
     const warnings: ImportWarning[] = [];
     let data: RawQuestionBankJson;
@@ -274,6 +282,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
         }
         const tags = Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [];
         const cefrLevel = parseCefrLevel(raw.cefrLevel as string | undefined, label, warnings);
+        const cefrSkill = parseCefrSkill(raw.cefrSkill as string | undefined, label, warnings);
 
         if (raw.kind === 'section') {
             const section = raw.section;
@@ -295,6 +304,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
             parsed.push({
                 kind: 'section',
                 cefrLevel,
+                cefrSkill,
                 section: {
                     title: section.title,
                     content: section.content as string | undefined,
@@ -308,7 +318,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
 
         const question = parseQuestion(raw.question, label, warnings);
         if (!question) return;
-        parsed.push({ question, cefrLevel, tags });
+        parsed.push({ question, cefrLevel, cefrSkill, tags });
     });
 
     return { items: parsed, warnings };

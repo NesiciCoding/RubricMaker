@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import QuestionEditor from './QuestionEditor';
 import QuestionBankSectionEditor from './QuestionBankSectionEditor';
-import { CEFR_LEVELS } from '../../data/cefrDescriptors';
-import type { QuestionBankItem, CefrLevel, TestQuestion } from '../../types';
+import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../../data/cefrDescriptors';
+import type { QuestionBankItem, CefrLevel, CefrSkill, TestQuestion } from '../../types';
 
 interface Props {
     item: QuestionBankItem;
@@ -14,7 +14,8 @@ interface Props {
 }
 
 export default function QuestionBankItemEditorModal({ item, onSave, onClose }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const skillLang = i18n?.language?.startsWith('nl') ? 'nl' : 'en';
     const [local, setLocal] = useState<QuestionBankItem>(item);
     const [tagsInput, setTagsInput] = useState(item.tags.join(', '));
 
@@ -76,6 +77,23 @@ export default function QuestionBankItemEditorModal({ item, onSave, onClose }: P
                             {CEFR_LEVELS.map((lvl) => (
                                 <option key={lvl} value={lvl}>
                                     {lvl} – {t(`cefr.level_${lvl}`)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
+                        <label htmlFor="bank-edit-skill">{t('questionBank.cefr_skill_label')}</label>
+                        <select
+                            id="bank-edit-skill"
+                            value={local.cefrSkill ?? ''}
+                            onChange={(e) =>
+                                setLocal({ ...local, cefrSkill: (e.target.value as CefrSkill) || undefined })
+                            }
+                        >
+                            <option value="">{t('questionBank.cefr_skill_none')}</option>
+                            {CEFR_SKILLS.map((skill) => (
+                                <option key={skill} value={skill}>
+                                    {CEFR_SKILL_LABELS[skill][skillLang]}
                                 </option>
                             ))}
                         </select>

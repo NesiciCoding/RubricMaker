@@ -99,6 +99,7 @@ export default function TestBuilderPage() {
         existing?.generatorConfig?.maxCefrLevel ?? 'C2'
     );
     const [generatorSkills, setGeneratorSkills] = useState<CefrSkill[]>(existing?.generatorConfig?.skills ?? []);
+    const [generatorTags, setGeneratorTags] = useState<string[]>(existing?.generatorConfig?.tags ?? []);
     const [generatorMinQuestions, setGeneratorMinQuestions] = useState(existing?.generatorConfig?.minQuestions ?? 5);
     const [generatorMaxQuestions, setGeneratorMaxQuestions] = useState(existing?.generatorConfig?.maxQuestions ?? 12);
     const [generatorStarterBankItemId, setGeneratorStarterBankItemId] = useState<string | undefined>(
@@ -141,6 +142,7 @@ export default function TestBuilderPage() {
         generatorMinLevel,
         generatorMaxLevel,
         generatorSkills,
+        generatorTags,
         generatorMinQuestions,
         generatorMaxQuestions,
         generatorStarterBankItemId,
@@ -166,12 +168,15 @@ export default function TestBuilderPage() {
         const minIdx = CEFR_LEVELS.indexOf(generatorMinLevel);
         const maxIdx = CEFR_LEVELS.indexOf(generatorMaxLevel);
         if (minIdx < 0 || maxIdx < 0 || minIdx > maxIdx) return [];
+        const wantedTags = generatorTags.map((tag) => tag.toLowerCase());
         return CEFR_LEVELS.slice(minIdx, maxIdx + 1)
             .map((lvl) => {
                 const matching = questionBank.filter(
                     (item) =>
                         item.cefrLevel === lvl &&
-                        (generatorSkills.length === 0 || (item.cefrSkill && generatorSkills.includes(item.cefrSkill)))
+                        (generatorSkills.length === 0 ||
+                            (item.cefrSkill && generatorSkills.includes(item.cefrSkill))) &&
+                        (wantedTags.length === 0 || item.tags.some((tag) => wantedTags.includes(tag.toLowerCase())))
                 );
                 // Count actual pickable questions, not matching bank items — a 'section' bundle
                 // contributes each of its own auto-scorable questions, not just one.
@@ -185,7 +190,19 @@ export default function TestBuilderPage() {
                 return { level: lvl, count };
             })
             .filter((entry) => entry.count < MIN_QUESTIONS_PER_LEVEL);
-    }, [mode, placementEngine, generatorMinLevel, generatorMaxLevel, generatorSkills, questionBank]);
+    }, [mode, placementEngine, generatorMinLevel, generatorMaxLevel, generatorSkills, generatorTags, questionBank]);
+
+    // Distinct tags across the whole bank, for the generator's tag-filter chips.
+    const bankTags = React.useMemo(() => {
+        const seen = new Map<string, string>();
+        for (const item of questionBank) {
+            for (const tag of item.tags) {
+                const key = tag.toLowerCase();
+                if (!seen.has(key)) seen.set(key, tag);
+            }
+        }
+        return [...seen.values()].sort((a, b) => a.localeCompare(b));
+    }, [questionBank]);
 
     // Derived (not separate state) so reopening a saved generator test shows the starter item's
     // real title immediately, instead of its raw id until the teacher re-picks it.
@@ -392,6 +409,7 @@ export default function TestBuilderPage() {
                           minCefrLevel: generatorMinLevel,
                           maxCefrLevel: generatorMaxLevel,
                           skills: generatorSkills.length > 0 ? generatorSkills : undefined,
+                          tags: generatorTags.length > 0 ? generatorTags : undefined,
                           minQuestions: generatorMinQuestions,
                           maxQuestions: generatorMaxQuestions,
                           starterBankItemId: generatorStarterBankItemId,
@@ -817,6 +835,39 @@ export default function TestBuilderPage() {
                                     </label>
                                 ))}
                             </div>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 14 }}>
+                            <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
+                                {t('tests.generator_tags_label')}
+                            </span>
+                            {bankTags.length === 0 ? (
+                                <p className="text-muted text-sm" style={{ margin: 0 }}>
+                                    {t('tests.generator_tags_none')}
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {bankTags.map((tag) => {
+                                        const active = generatorTags.some((g) => g.toLowerCase() === tag.toLowerCase());
+                                        return (
+                                            <button
+                                                key={tag}
+                                                type="button"
+                                                className={`btn btn-sm ${active ? 'btn-primary' : 'btn-secondary'}`}
+                                                aria-pressed={active}
+                                                onClick={() =>
+                                                    setGeneratorTags((prev) =>
+                                                        active
+                                                            ? prev.filter((g) => g.toLowerCase() !== tag.toLowerCase())
+                                                            : [...prev, tag]
+                                                    )
+                                                }
+                                            >
+                                                {tag}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         {generatorLevelPoolWarnings.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
