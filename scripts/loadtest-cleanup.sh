@@ -44,6 +44,23 @@ else
     echo "[cleanup] target: ${SUPABASE_URL} (local stack)"
 fi
 
+# Transport security: the DELETEs below carry the service_role key in headers,
+# so refuse cleartext HTTP to anything but an exact loopback host. https:// ok.
+case "$SUPABASE_URL" in
+    https://*) ;;
+    http://127.0.0.1 | http://127.0.0.1:* | http://127.0.0.1/* \
+        | http://localhost | http://localhost:* | http://localhost/* \
+        | http://0.0.0.0 | http://0.0.0.0:* | http://0.0.0.0/* \
+        | 'http://[::1]' | 'http://[::1]:'* | 'http://[::1]/'*) ;;
+    http://*)
+        echo "error: refusing to send credentials over cleartext HTTP to a non-loopback" >&2
+        echo "       target: ${SUPABASE_URL}. Use https:// or a loopback tunnel." >&2
+        exit 1 ;;
+    *)
+        echo "error: unsupported target URL (expected http:// or https://): ${SUPABASE_URL}" >&2
+        exit 1 ;;
+esac
+
 del() {
     local table="$1" prefix="$2"
     # PostgREST treats `*` in a like filter as the SQL % wildcard.

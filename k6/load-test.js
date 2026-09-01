@@ -45,6 +45,9 @@ const SERVICE_KEY = __ENV.SUPABASE_SERVICE_KEY || '';
 
 const PROFILE = (__ENV.PROFILE || 'load').toLowerCase();
 const TARGET = (__ENV.TARGET || 'both').toLowerCase();
+if (!['both', 'edge', 'rest'].includes(TARGET)) {
+    fail(`Unknown TARGET "${TARGET}". Use both, edge, or rest.`);
+}
 const DO_EDGE = TARGET === 'both' || TARGET === 'edge';
 const DO_REST = TARGET === 'both' || TARGET === 'rest';
 const SEED_TESTS = Math.max(1, Number(__ENV.SEED_TESTS || 5));

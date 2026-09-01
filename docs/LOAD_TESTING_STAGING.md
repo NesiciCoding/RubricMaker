@@ -76,7 +76,7 @@ Expose the Supabase gateway to the machine running k6 (the port/URL that serves
 k6 box:
 
 ```bash
-curl -fsS "$SUPABASE_URL/rest/v1/" -H "apikey: $ANON_KEY" >/dev/null && echo reachable
+curl -fsS "$SUPABASE_URL/rest/v1/" -H "apikey: $SUPABASE_ANON_KEY" >/dev/null && echo reachable
 ```
 
 ### 3. Load a realistic data volume (optional but recommended)
@@ -96,10 +96,14 @@ after each run instead.
 
 ## Run
 
-From the k6 machine (not the VM):
+From the k6 machine (not the VM). Seeding sends the `service_role` key in request
+headers, so the target **must use HTTPS** — the runner refuses a non-loopback
+`http://` URL. Give the VM a TLS endpoint (its Caddy already does this), or reach
+it over an SSH tunnel and point at the loopback end (e.g.
+`ssh -L 54321:localhost:8000 vm` then `SUPABASE_URL=http://127.0.0.1:54321`).
 
 ```bash
-export SUPABASE_URL=https://staging.yourdomain.tld      # or http://<vm-ip>:<port>
+export SUPABASE_URL=https://staging.yourdomain.tld      # HTTPS required (or a loopback tunnel)
 export SUPABASE_ANON_KEY=<anon key from the VM's .env>
 export SUPABASE_SERVICE_KEY=<service_role key from the VM's .env>
 

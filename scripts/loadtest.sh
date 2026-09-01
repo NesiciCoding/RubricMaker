@@ -100,11 +100,33 @@ else
     echo "[loadtest] target: ${SUPABASE_URL} (local stack)"
 fi
 
+# Transport security: seeding sends the service_role key in request headers, so
+# refuse cleartext HTTP to anything but an exact loopback host (e.g. a tunnel
+# endpoint). https:// is always allowed. Runs regardless of LOADTEST_YES.
+case "$SUPABASE_URL" in
+    https://*) ;;
+    http://127.0.0.1 | http://127.0.0.1:* | http://127.0.0.1/* \
+        | http://localhost | http://localhost:* | http://localhost/* \
+        | http://0.0.0.0 | http://0.0.0.0:* | http://0.0.0.0/* \
+        | 'http://[::1]' | 'http://[::1]:'* | 'http://[::1]/'*) ;;
+    http://*)
+        echo "error: refusing to send credentials over cleartext HTTP to a non-loopback" >&2
+        echo "       target: ${SUPABASE_URL}" >&2
+        echo "       Use https://, or an SSH tunnel and point at http://127.0.0.1:<port>." >&2
+        exit 1 ;;
+    *)
+        echo "error: unsupported target URL (expected http:// or https://): ${SUPABASE_URL}" >&2
+        exit 1 ;;
+esac
+
 # Safety: hitting a non-localhost target seeds real rows via the service_role
 # key and generates real load. Require an explicit confirmation so a production
 # URL can't be run by reflex. LOADTEST_YES=1 bypasses (for automation/CI).
 case "$SUPABASE_URL" in
-    http://127.0.0.1* | http://localhost* | http://0.0.0.0*) ;;
+    http://127.0.0.1 | http://127.0.0.1:* | http://127.0.0.1/* \
+        | http://localhost | http://localhost:* | http://localhost/* \
+        | http://0.0.0.0 | http://0.0.0.0:* | http://0.0.0.0/* \
+        | 'http://[::1]' | 'http://[::1]:'* | 'http://[::1]/'*) ;;
     *)
         if [ "${LOADTEST_YES:-}" != "1" ]; then
             echo "⚠  Target is NOT localhost:  ${SUPABASE_URL}" >&2
@@ -144,12 +166,17 @@ if [ -n "${REPORT:-}" ]; then
     set +e
     k6 run "${K6_ARGS[@]}" "$SCRIPT"
     RC=$?
-    set -e
+    REPORT_RC=0
     if [ -s "$SUMMARY_JSON" ]; then
-        node "$HERE/scripts/loadtest-report.mjs" "$SUMMARY_JSON" "$REPORT" || true
+        node "$HERE/scripts/loadtest-report.mjs" "$SUMMARY_JSON" "$REPORT"
+        REPORT_RC=$?
     fi
+    set -e
     rm -f "$SUMMARY_JSON"
-    exit "$RC"
+    # A k6 failure (e.g. a threshold breach) takes priority; otherwise surface a
+    # report-writing failure so a requested-but-unwritten report doesn't look OK.
+    [ "$RC" -ne 0 ] && exit "$RC"
+    exit "$REPORT_RC"
 fi
 
 if [ ${#K6_ARGS[@]} -gt 0 ]; then
