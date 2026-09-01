@@ -1,0 +1,114 @@
+name: Load Test
+
+# Phase-1 load testing — a REGRESSION SMOKE, not a capacity test. It runs ~50
+# k6 virtual users against a local Supabase stack co-located on the runner, to
+# catch a change that makes the hot student-facing paths error out or grossly
+# slower. It is deliberately OFF the per-PR path (a co-located stack's p95 is
+# noisy and must not block unrelated PRs) and runs on a weekly schedule plus
+# on demand. Capacity questions ("can a whole school test at once?") need a
+# dedicated staging project — see k6/README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      vus:
+        description: 'Concurrent virtual users'
+        required: false
+        default: '50'
+      duration:
+        description: 'Hold duration at peak VUs (e.g. 60s, 2m)'
+        required: false
+        default: '60s'
+  schedule:
+    # Weekly, Mondays 05:00 UTC — an hour after the weekly full-verify CI run.
+    - cron: '0 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  load-test:
+    name: k6 Load Test (local Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: 2.104.0
+
+      - name: Install k6
+        run: |
+          K6_VERSION=v0.54.0
+          curl -fsSL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" \
+            | sudo tar -xz --strip-components=1 -C /usr/local/bin "k6-${K6_VERSION}-linux-amd64/k6"
+          k6 version
+
+      # Cold-starting the local stack pulls several images from ghcr.io on a
+      # fresh runner; give it the same headroom as the e2e-supabase job.
+      - name: Start local Supabase stack
+        run: supabase start
+        timeout-minutes: 10
+
+      - name: Export Supabase credentials
+        run: |
+          STATUS=$(supabase status)
+          # Supabase CLI v2 uses sb_publishable_* / sb_secret_* keys in a table.
+          # Older CLI versions used "anon key:" / "service_role key:" with JWTs.
+          ANON_KEY=$(echo "$STATUS" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+')
+          SVC_KEY=$(echo "$STATUS" | grep -oE 'sb_secret_[A-Za-z0-9_-]+')
+          if [ -z "$ANON_KEY" ]; then
+            ANON_KEY=$(echo "$STATUS" | awk '/anon key:/{print $NF}')
+          fi
+          if [ -z "$SVC_KEY" ]; then
+            SVC_KEY=$(echo "$STATUS" | awk '/service_role key:/{print $NF}')
+          fi
+          if [ -z "$ANON_KEY" ] || [ -z "$SVC_KEY" ]; then
+            echo "::error::Failed to extract Supabase credentials from supabase status"
+            echo "$STATUS"
+            exit 1
+          fi
+          echo "SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_KEY=$SVC_KEY" >> $GITHUB_ENV
+
+      - name: Run k6 load test
+        run: k6 run --summary-export=k6-summary.json k6/load-test.js
+        env:
+          PROFILE: load
+          VUS: ${{ github.event.inputs.vus || '50' }}
+          DURATION: ${{ github.event.inputs.duration || '60s' }}
+
+      # Render the run's headline metrics into the job summary (node is
+      # preinstalled on the runner). Runs even if thresholds failed the step above.
+      - name: Summarize result
+        if: always()
+        env:
+          PROFILE: load
+          TARGET: both
+          LABEL: CI local stack
+        run: |
+          if [ -f k6-summary.json ]; then
+            node scripts/loadtest-report.mjs k6-summary.json load-test-row.md >/dev/null || true
+            { echo "### Load test result"; echo; cat load-test-row.md; } >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: supabase stop --no-backup
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          retention-days: 14
