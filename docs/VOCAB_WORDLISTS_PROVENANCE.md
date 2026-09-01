@@ -20,7 +20,7 @@ node scripts/build-cefr-index.mjs /path/to/vocabkitchen-cli
 Then run `npm run format` on the two generated files and record the VocabKitchen
 source commit SHA below.
 
-- **VocabKitchen source commit:** `<record the commit SHA the lists were built from>`
+- **VocabKitchen source commit:** `ef8218b2781d3c2bcdf80d99548a9db23f580e53`
 - **Generated:** `src/data/cefrLevels.ts`, `src/data/academicWordLists.ts`
 
 ## Sources & licences

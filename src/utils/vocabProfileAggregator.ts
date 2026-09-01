@@ -51,6 +51,13 @@ function addCounts(target: Record<CefrLevel, number>, source: Record<CefrLevel, 
     }
 }
 
+/** Sum the CEFR level distributions of several profiles into one pooled distribution. */
+export function poolLevelCounts(profiles: { levelCounts: Record<CefrLevel, number> }[]): Record<CefrLevel, number> {
+    const pooled = emptyLevelCounts();
+    for (const profile of profiles) addCounts(pooled, profile.levelCounts);
+    return pooled;
+}
+
 function aggregateResults(results: DocumentAnalysisResult[]): VocabAggregate {
     const agg: VocabAggregate = {
         levelCounts: emptyLevelCounts(),

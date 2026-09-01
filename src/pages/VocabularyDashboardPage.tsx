@@ -10,7 +10,7 @@ import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistri
 import { useAssessment, useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { getAllClassVocabProfiles, collectVocabExportRows } from '../utils/vocabProfileAggregator';
+import { getAllClassVocabProfiles, collectVocabExportRows, poolLevelCounts } from '../utils/vocabProfileAggregator';
 import { computeTargetVerdictFromCounts } from '../utils/textLevelVerdict';
 import { nanoid } from '../utils/nanoid';
 import type { CefrLevel } from '../types';
@@ -66,13 +66,7 @@ export default function VocabularyDashboardPage() {
         return profile?.studentProfiles ?? [];
     }, [classProfiles, selectedClassId]);
 
-    const pooledLevelCounts = useMemo(() => {
-        const acc: Record<CefrLevel, number> = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 };
-        for (const p of visibleClassProfiles) {
-            for (const lvl of CEFR_LEVELS) acc[lvl] += p.levelCounts[lvl];
-        }
-        return acc;
-    }, [visibleClassProfiles]);
+    const pooledLevelCounts = useMemo(() => poolLevelCounts(visibleClassProfiles), [visibleClassProfiles]);
 
     const pooledTotal = useMemo(
         () => CEFR_LEVELS.reduce((sum, lvl) => sum + pooledLevelCounts[lvl], 0),
@@ -166,9 +160,9 @@ export default function VocabularyDashboardPage() {
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={handleSeedDeck}
-                        title={t('vocabProfile.seed_deck_hint', 'Create a flashcard deck from these words')}
+                        title={t('vocabProfile.seed_deck_hint')}
                     >
-                        <Layers size={14} /> {t('vocabProfile.seed_deck', 'Seed flashcard deck')}
+                        <Layers size={14} /> {t('vocabProfile.seed_deck')}
                     </button>
                 </div>
 
@@ -196,13 +190,13 @@ export default function VocabularyDashboardPage() {
                             }}
                         >
                             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                                {t('vocabProfile.target_level_label', 'Reading level for a class at')}
+                                {t('vocabProfile.target_level_label')}
                             </span>
                             <select
-                                aria-label={t('vocabProfile.target_level_label', 'Reading level for a class at')}
+                                aria-label={t('vocabProfile.target_level_label')}
                                 value={targetLevel}
                                 onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
-                                style={{ padding: '2px 6px', fontSize: '0.8rem' }}
+                                style={{ padding: '2px 6px', fontSize: '1rem' }}
                             >
                                 {CEFR_LEVELS.map((lvl) => (
                                     <option key={lvl} value={lvl}>
@@ -225,10 +219,7 @@ export default function VocabularyDashboardPage() {
                                 {t(`analysis.verdict_${verdict.verdict}`)}
                             </span>
                             <span className="text-xs text-muted">
-                                {t('vocabProfile.coverage_known', {
-                                    pct: verdict.coveragePercent.toFixed(0),
-                                    defaultValue: '~{{pct}}% of recognised words already known',
-                                })}
+                                {t('vocabProfile.coverage_known', { pct: verdict.coveragePercent.toFixed(0) })}
                             </span>
                         </div>
                     )}
@@ -283,7 +274,7 @@ export default function VocabularyDashboardPage() {
                                                     color: 'var(--text-muted)',
                                                 }}
                                             >
-                                                {t('vocabProfile.table_header_off_list', 'Off-list %')}
+                                                {t('vocabProfile.table_header_off_list')}
                                             </th>
                                             <th
                                                 style={{
@@ -292,7 +283,7 @@ export default function VocabularyDashboardPage() {
                                                     color: 'var(--text-muted)',
                                                 }}
                                             >
-                                                {t('vocabProfile.table_header_academic', 'Academic %')}
+                                                {t('vocabProfile.table_header_academic')}
                                             </th>
                                             <th
                                                 style={{

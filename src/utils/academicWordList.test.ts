@@ -21,7 +21,6 @@ describe('academicCoverage', () => {
 
     it('reports the academic share and distinct academic words', () => {
         const result = academicCoverage(['analysis', 'research', 'cat', 'mat']);
-        // 2 of 4 tokens are AWL words
         expect(result.awlPercent).toBeCloseTo(50, 5);
         expect(result.academicWords).toEqual(expect.arrayContaining(['analysis', 'research']));
         expect(result.academicWords).not.toContain('cat');

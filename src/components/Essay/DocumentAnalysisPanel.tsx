@@ -1064,7 +1064,6 @@ function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile
                         )}
                     </div>
 
-                    {/* Off-list share + academic vocabulary */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                         <div>
                             <span className="text-xs text-muted">{t('analysis.off_list', 'Off-list')}</span>
@@ -1150,7 +1149,6 @@ function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile
                         )}
                     </div>
 
-                    {/* Right for my class? — target-level verdict */}
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
@@ -1164,7 +1162,7 @@ function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile
                                 aria-label={t('analysis.target_level_select', 'Class CEFR level')}
                                 value={targetLevel}
                                 onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
-                                style={{ padding: '2px 6px', fontSize: '0.8rem' }}
+                                style={{ padding: '2px 6px', fontSize: '1rem' }}
                             >
                                 {LEVEL_ORDER.map((lvl) => (
                                     <option key={lvl} value={lvl}>
@@ -1190,7 +1188,7 @@ function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile
                         <p className="text-xs text-muted" style={{ margin: '6px 0 0' }}>
                             {t(
                                 'analysis.coverage_known',
-                                'A {{level}} class already knows ~{{pct}}% of the recognised words.',
+                                'At a {{level}} target, ~{{pct}}% of the recognised words are at or below that level.',
                                 {
                                     level: targetLevel,
                                     pct: verdict.coveragePercent.toFixed(0),

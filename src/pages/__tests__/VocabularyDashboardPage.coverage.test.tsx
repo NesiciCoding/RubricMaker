@@ -88,6 +88,11 @@ vi.mock('../../context/AppContext', () => {
 vi.mock('../../utils/vocabProfileAggregator', () => ({
     getAllClassVocabProfiles: mocks.getAllClassVocabProfiles,
     collectVocabExportRows: mocks.collectVocabExportRows,
+    poolLevelCounts: (profiles: { levelCounts: Record<CefrLevel, number> }[]) => {
+        const acc: Record<CefrLevel, number> = { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 };
+        for (const p of profiles) for (const lvl of Object.keys(acc) as CefrLevel[]) acc[lvl] += p.levelCounts[lvl];
+        return acc;
+    },
 }));
 
 vi.mock('file-saver', () => ({ saveAs: mocks.saveAs }));

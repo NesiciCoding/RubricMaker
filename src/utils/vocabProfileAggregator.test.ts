@@ -6,6 +6,7 @@ import {
     getClassVocabProfile,
     getAllClassVocabProfiles,
     collectVocabExportRows,
+    poolLevelCounts,
 } from './vocabProfileAggregator';
 
 const ADVANCED_TEXT =
@@ -270,8 +271,8 @@ describe('persisted vocabProfile', () => {
     it('derives off-list and academic shares from the stored counts', () => {
         const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: 'x', vocabProfile: persisted })];
         const profile = getStudentVocabProfile(studentA, results);
-        expect(profile.offListPercent).toBeCloseTo(40, 5); // 2 / 5
-        expect(profile.awlPercent).toBeCloseTo(20, 5); // 1 / 5
+        expect(profile.offListPercent).toBeCloseTo(40, 5);
+        expect(profile.awlPercent).toBeCloseTo(20, 5);
         expect(profile.nawlPercent).toBe(0);
     });
 
@@ -313,5 +314,19 @@ describe('persisted vocabProfile', () => {
         const analysisRows = rows.filter((r) => r.word.toLowerCase() === 'analysis');
         expect(analysisRows).toHaveLength(1);
         expect(analysisRows[0].source).toBe('rubric');
+    });
+});
+
+describe('poolLevelCounts', () => {
+    it('sums the level distributions of several profiles', () => {
+        const pooled = poolLevelCounts([
+            { levelCounts: { A1: 1, A2: 0, B1: 2, B2: 0, C1: 0, C2: 0 } },
+            { levelCounts: { A1: 3, A2: 1, B1: 0, B2: 0, C1: 1, C2: 0 } },
+        ]);
+        expect(pooled).toEqual({ A1: 4, A2: 1, B1: 2, B2: 0, C1: 1, C2: 0 });
+    });
+
+    it('returns a zeroed distribution for no profiles', () => {
+        expect(poolLevelCounts([])).toEqual({ A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 });
     });
 });

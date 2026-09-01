@@ -466,7 +466,6 @@ describe('DocumentAnalysisPanel', () => {
         expect(screen.getByText('Above level — pre-teach:')).toBeInTheDocument();
         expect(screen.getByText('analysis.verdict_too_hard')).toBeInTheDocument();
 
-        // changing the target level re-grades via the verdict helper
         mockVerdict.mockClear();
         fireEvent.change(screen.getByLabelText('Class CEFR level'), { target: { value: 'A1' } });
         expect(mockVerdict).toHaveBeenCalledWith(existingResult.extractedText, 'A1');

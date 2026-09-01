@@ -128,16 +128,19 @@ warranted.
 Vendor the generated VocabKitchen artifacts (we do **not** run Python at build
 time — same posture as the already-vendored `cefrjVocabulary.ts`):
 
-| New file                             | Source (VocabKitchen)                               | Shape                                           | Approx size            |
-| ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- | ---------------------- |
-| `src/data/cefrLevels.json`           | `WordLists/CEFR/levels.json` (`.words`)             | `{ [word]: { level: CefrLevel; pos: string } }` | 3.5 MB raw / 271 KB gz |
-| `src/data/academicWordLists.json`    | `WordLists/AWL/awl.txt` + `WordLists/NAWL/nawl.txt` | `{ awl: string[]; nawl: string[] }`             | ~55 KB                 |
-| `docs/VOCAB_WORDLISTS_PROVENANCE.md` | `WORDLISTS.md`                                      | provenance + licence + source commit SHA        | —                      |
+| New file                             | Source (VocabKitchen)                               | Shape (as shipped)                                                              | Approx size             |
+| ------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------- |
+| `src/data/cefrLevels.ts`             | `WordLists/CEFR/levels.json` (`.words`, level only) | `export const CEFR_WORD_LEVELS: ReadonlyMap<string, CefrLevel>` (static import) | 1.4 MB src / ~271 KB gz |
+| `src/data/academicWordLists.ts`      | `WordLists/AWL/awl.txt` + `WordLists/NAWL/nawl.txt` | `export const AWL_WORDS`, `NAWL_WORDS: readonly string[]` (static import)       | ~90 KB src              |
+| `docs/VOCAB_WORDLISTS_PROVENANCE.md` | `WORDLISTS.md`                                      | provenance + licence + source commit SHA                                        | —                       |
 
 - **Conversion:** a one-off `scripts/build-cefr-index.mjs` (Node, dev-only, not
   in the app bundle) that reads the three VocabKitchen files and emits the two
-  JSON assets, so the vendoring is reproducible and re-runnable when VocabKitchen
-  updates. Record the source repo commit SHA in the provenance doc.
+  generated **TypeScript** modules (a `ReadonlyMap` for the CEFR index — prototype-safe
+  vs. a plain object — and `readonly string[]` academic lists, both statically
+  imported), so the vendoring is reproducible and re-runnable when VocabKitchen
+  updates. Record the source repo commit SHA in the provenance doc. _(POS is
+  dropped from the shipped CEFR index — level-only — for this slice; see §5.1.)_
 - **Licensing (all permit bundling with attribution — same posture as today's
   CEFR-J data):** CEFR core = MIT (Words-CEFR-Dataset); CEFR gap-fill = CEFR-J /
   Octanove (free commercial **with citation**); AWL = Coxhead (research/education
