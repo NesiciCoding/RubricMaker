@@ -6,6 +6,7 @@ import {
     getClassVocabProfile,
     getAllClassVocabProfiles,
     collectVocabExportRows,
+    poolLevelCounts,
 } from './vocabProfileAggregator';
 
 const ADVANCED_TEXT =
@@ -243,5 +244,89 @@ describe('collectVocabExportRows', () => {
         });
         const rows = collectVocabExportRows([rubric], []);
         expect(rows.map((r) => r.level)).toEqual(['A1', 'C1']);
+    });
+});
+
+describe('persisted vocabProfile', () => {
+    const persisted = {
+        levelCounts: { A1: 2, A2: 0, B1: 1, B2: 0, C1: 0, C2: 0 },
+        contentTokenCount: 5,
+        offListCount: 2,
+        awlCount: 1,
+        nawlCount: 0,
+        highlightWords: [{ word: 'analysis', level: 'B1' as const }],
+        academicWords: ['analysis'],
+    };
+
+    it('reads a stored vocabProfile instead of re-profiling the text', () => {
+        // extractedText would profile very differently — the stored counts must win.
+        const results = [
+            makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT, vocabProfile: persisted }),
+        ];
+        const profile = getStudentVocabProfile(studentA, results);
+        expect(profile.levelCounts).toEqual(persisted.levelCounts);
+        expect(profile.totalWords).toBe(3);
+    });
+
+    it('derives off-list and academic shares from the stored counts', () => {
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: 'x', vocabProfile: persisted })];
+        const profile = getStudentVocabProfile(studentA, results);
+        expect(profile.offListPercent).toBeCloseTo(40, 5);
+        expect(profile.awlPercent).toBeCloseTo(20, 5);
+        expect(profile.nawlPercent).toBe(0);
+    });
+
+    it('sums stored counts across a class for the class-level shares', () => {
+        const results = [
+            makeAnalysis({ id: 'a1', studentId: 's1', extractedText: 'x', vocabProfile: persisted }),
+            makeAnalysis({ id: 'a2', studentId: 's2', extractedText: 'y', vocabProfile: persisted }),
+        ];
+        const classProfile = getClassVocabProfile(classA, [studentA, studentB], results);
+        // Two identical profiles → same shares, doubled counts.
+        expect(classProfile.offListPercent).toBeCloseTo(40, 5);
+        expect(classProfile.levelCounts.A1).toBe(4);
+        expect(classProfile.studentProfiles).toHaveLength(2);
+    });
+
+    it('backfills off-list/academic shares for records without a stored profile', () => {
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT })];
+        const profile = getStudentVocabProfile(studentA, results);
+        expect(profile.offListPercent).toBeGreaterThanOrEqual(0);
+        expect(profile.awlPercent).toBeGreaterThan(0); // the advanced text has academic vocabulary
+    });
+
+    it('exports the stored highlight words without re-profiling', () => {
+        const results = [
+            makeAnalysis({ id: 'a1', studentId: 's1', extractedText: ADVANCED_TEXT, vocabProfile: persisted }),
+        ];
+        const rows = collectVocabExportRows([], results);
+        expect(rows.map((r) => r.word)).toContain('analysis');
+    });
+
+    it('prefers the rubric definition over an analysis highlight for the same word', () => {
+        const rubric = makeRubric({
+            vocabularyItems: [
+                { id: 'v1', phrase: 'Analysis', category: 'vocabulary', cefrLevel: 'C1', definition: 'a study' },
+            ],
+        });
+        const results = [makeAnalysis({ id: 'a1', studentId: 's1', extractedText: 'x', vocabProfile: persisted })];
+        const rows = collectVocabExportRows([rubric], results);
+        const analysisRows = rows.filter((r) => r.word.toLowerCase() === 'analysis');
+        expect(analysisRows).toHaveLength(1);
+        expect(analysisRows[0].source).toBe('rubric');
+    });
+});
+
+describe('poolLevelCounts', () => {
+    it('sums the level distributions of several profiles', () => {
+        const pooled = poolLevelCounts([
+            { levelCounts: { A1: 1, A2: 0, B1: 2, B2: 0, C1: 0, C2: 0 } },
+            { levelCounts: { A1: 3, A2: 1, B1: 0, B2: 0, C1: 1, C2: 0 } },
+        ]);
+        expect(pooled).toEqual({ A1: 4, A2: 1, B1: 2, B2: 0, C1: 1, C2: 0 });
+    });
+
+    it('returns a zeroed distribution for no profiles', () => {
+        expect(poolLevelCounts([])).toEqual({ A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 });
     });
 });

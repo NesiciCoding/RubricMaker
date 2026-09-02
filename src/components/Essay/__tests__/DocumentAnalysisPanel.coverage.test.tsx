@@ -22,6 +22,16 @@ const mocks = vi.hoisted(() => ({
     analyseVocabulary: vi.fn(),
     checkGrammar: vi.fn(),
     profileText: vi.fn(),
+    buildPersistedVocabProfile: vi.fn(() => ({
+        levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+        contentTokenCount: 0,
+        offListCount: 0,
+        awlCount: 0,
+        nawlCount: 0,
+        highlightWords: [],
+        academicWords: [],
+    })),
+    estimateLevelFromCounts: vi.fn(() => 'A1'),
     profileGrammar: vi.fn(),
     evaluateGrammar: vi.fn(),
     buildGrammarComment: vi.fn(),
@@ -39,7 +49,19 @@ vi.mock('../../../utils/grammarChecker', () => ({
     profileGrammar: mocks.profileGrammar,
     LT_ATTRIBUTION_URL: 'https://languagetool.org',
 }));
-vi.mock('../../../utils/cefrVocabularyProfiler', () => ({ profileText: mocks.profileText }));
+vi.mock('../../../utils/cefrVocabularyProfiler', () => ({
+    profileText: mocks.profileText,
+    buildPersistedVocabProfile: mocks.buildPersistedVocabProfile,
+    estimateLevelFromCounts: mocks.estimateLevelFromCounts,
+}));
+vi.mock('../../../utils/textLevelVerdict', () => ({
+    computeTargetVerdict: vi.fn(() => ({
+        targetLevel: 'B1',
+        coveragePercent: 100,
+        aboveTargetWords: [],
+        verdict: 'suitable',
+    })),
+}));
 vi.mock('../../../utils/grammarQualification', () => ({
     evaluateGrammar: mocks.evaluateGrammar,
     buildGrammarComment: mocks.buildGrammarComment,
@@ -170,6 +192,8 @@ function setDefaultMocks() {
         estimatedLevel: 'B1',
         levelCounts: { A1: 5, A2: 3, B1: 4, B2: 0, C1: 0, C2: 0 },
         highlightWords: [{ word: 'essay', level: 'B1' }],
+        offListPercent: 0,
+        academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
     });
     mocks.profileGrammar.mockReturnValue({
         estimatedLevel: 'B2',
@@ -268,7 +292,8 @@ describe('DocumentAnalysisPanel coverage', () => {
         expect(screen.getByText('Notable words:')).toBeInTheDocument();
         expect(screen.getByText('Grammar structures')).toBeInTheDocument();
         expect(screen.getByText('Conditional')).toBeInTheDocument();
-        expect(screen.getByText('Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).')).toBeInTheDocument();
+        expect(screen.getByText(/Vocabulary levels based on CEFR-J/)).toBeInTheDocument();
+        expect(screen.getByText(/Academic vocabulary from the AWL/)).toBeInTheDocument();
 
         // grammar qualification
         expect(screen.getByText('Task completion')).toBeInTheDocument();
@@ -533,6 +558,8 @@ describe('DocumentAnalysisPanel coverage', () => {
             estimatedLevel: 'A1',
             levelCounts: zeroCounts,
             highlightWords: [],
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         mocks.profileGrammar.mockReturnValue({ estimatedLevel: 'A1', detectedStructures: [] });
         renderPanel({

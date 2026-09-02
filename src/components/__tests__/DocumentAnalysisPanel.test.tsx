@@ -31,6 +31,27 @@ vi.mock('../../utils/cefrVocabularyProfiler', () => ({
         levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
         highlightWords: [],
         estimatedLevel: 'A1' as const,
+        offListPercent: 0,
+        academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
+    })),
+    buildPersistedVocabProfile: vi.fn(() => ({
+        levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+        contentTokenCount: 5,
+        offListCount: 0,
+        awlCount: 0,
+        nawlCount: 0,
+        highlightWords: [],
+        academicWords: [],
+    })),
+    estimateLevelFromCounts: vi.fn(() => 'A1' as const),
+}));
+
+vi.mock('../../utils/textLevelVerdict', () => ({
+    computeTargetVerdict: vi.fn(() => ({
+        targetLevel: 'B1' as const,
+        coveragePercent: 100,
+        aboveTargetWords: [],
+        verdict: 'suitable' as const,
     })),
 }));
 
@@ -38,12 +59,14 @@ import { extractText, UnsupportedFormatError } from '../../utils/textExtraction'
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar } from '../../utils/grammarChecker';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { computeTargetVerdict } from '../../utils/textLevelVerdict';
 
 const mockExtractText = vi.mocked(extractText);
 const mockAnalyseVocabulary = vi.mocked(analyseVocabulary);
 const mockCheckGrammar = vi.mocked(checkGrammar);
 const mockProfileGrammar = vi.mocked(profileGrammar);
 const mockProfileText = vi.mocked(profileText);
+const mockVerdict = vi.mocked(computeTargetVerdict);
 
 const mockAttachment: Attachment = {
     id: 'att1',
@@ -133,6 +156,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 5, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [],
             estimatedLevel: 'A1',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
     });
 
@@ -386,6 +411,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [],
             estimatedLevel: 'A1',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         render(<DocumentAnalysisPanel {...baseProps} existingResult={existingResult} />);
         expect(screen.getByText(/No vocabulary matched the CEFR-J wordlist\./i)).toBeInTheDocument();
@@ -396,6 +423,8 @@ describe('DocumentAnalysisPanel', () => {
             levelCounts: { A1: 2, A2: 3, B1: 0, B2: 0, C1: 0, C2: 0 },
             highlightWords: [{ word: 'eloquent', level: 'B2' }],
             estimatedLevel: 'A2',
+            offListPercent: 0,
+            academic: { awlPercent: 0, nawlPercent: 0, academicWords: [] },
         });
         mockProfileGrammar.mockReturnValue({
             detectedStructures: [
@@ -412,6 +441,34 @@ describe('DocumentAnalysisPanel', () => {
         const structureLabels = screen.getAllByText(/Past perfect|Conditional/).map((el) => el.textContent);
         expect(structureLabels[0]).toBe('Conditional');
         expect(structureLabels[1]).toBe('Past perfect');
+    });
+
+    it('shows academic vocabulary, off-list share, and the above-target verdict', () => {
+        mockProfileText.mockReturnValue({
+            levelCounts: { A1: 2, A2: 1, B1: 1, B2: 0, C1: 1, C2: 0 },
+            highlightWords: [{ word: 'paradigm', level: 'C1' }],
+            estimatedLevel: 'B1',
+            offListPercent: 20,
+            academic: { awlPercent: 30, nawlPercent: 10, academicWords: ['analysis', 'research'] },
+        });
+        mockVerdict.mockReturnValue({
+            targetLevel: 'B1',
+            coveragePercent: 40,
+            aboveTargetWords: [{ word: 'paradigm', level: 'C1' }],
+            verdict: 'too_hard',
+        });
+        render(<DocumentAnalysisPanel {...baseProps} existingResult={existingResult} />);
+
+        expect(screen.getByText('Off-list')).toBeInTheDocument();
+        expect(screen.getByText('Academic vocabulary')).toBeInTheDocument();
+        expect(screen.getByText('analysis')).toBeInTheDocument();
+        expect(screen.getByText('research')).toBeInTheDocument();
+        expect(screen.getByText('Above level — pre-teach:')).toBeInTheDocument();
+        expect(screen.getByText('analysis.verdict_too_hard')).toBeInTheDocument();
+
+        mockVerdict.mockClear();
+        fireEvent.change(screen.getByLabelText('Class CEFR level'), { target: { value: 'A1' } });
+        expect(mockVerdict).toHaveBeenCalledWith(existingResult.extractedText, 'A1');
     });
 
     it('shows a "no grammar detected" message when no structures were found', () => {

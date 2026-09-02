@@ -67,7 +67,7 @@ const TEACHER_FEATURES = [
     {
         icon: Languages,
         title: 'Vocabulary & Grammar',
-        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) from their analysed work, auto-check linked grammar in scanned essays, and export word lists by level.',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a reading suits your class’s level, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
         color: '#f59e0b',
     },
     {

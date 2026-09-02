@@ -1,15 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Download, BookOpen, Users, Gauge, Map } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Download, BookOpen, Users, Gauge, Map, Layers } from 'lucide-react';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistributionChart';
-import { useAssessment, useAuthoring, useClasses, useStudents } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
-import { getAllClassVocabProfiles, collectVocabExportRows } from '../utils/vocabProfileAggregator';
+import { getAllClassVocabProfiles, collectVocabExportRows, poolLevelCounts } from '../utils/vocabProfileAggregator';
+import { computeTargetVerdictFromCounts } from '../utils/textLevelVerdict';
+import { nanoid } from '../utils/nanoid';
 import type { CefrLevel } from '../types';
 
 export default function VocabularyDashboardPage() {
@@ -18,11 +21,15 @@ export default function VocabularyDashboardPage() {
 
     const { rubrics } = useAuthoring();
     const { analysisResults } = useAssessment();
+    const { addFlashcardDeck } = useFlashcards();
 
     const { t } = useTranslation();
+    const { showToast } = useToast();
+    const navigate = useNavigate();
 
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [exportBand, setExportBand] = useState<'all' | CefrLevel>('all');
+    const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
 
     const classProfiles = useMemo(
         () => getAllClassVocabProfiles(classes, students, analysisResults),
@@ -59,6 +66,18 @@ export default function VocabularyDashboardPage() {
         return profile?.studentProfiles ?? [];
     }, [classProfiles, selectedClassId]);
 
+    const pooledLevelCounts = useMemo(() => poolLevelCounts(visibleClassProfiles), [visibleClassProfiles]);
+
+    const pooledTotal = useMemo(
+        () => CEFR_LEVELS.reduce((sum, lvl) => sum + pooledLevelCounts[lvl], 0),
+        [pooledLevelCounts]
+    );
+
+    const verdict = useMemo(
+        () => computeTargetVerdictFromCounts(pooledLevelCounts, targetLevel),
+        [pooledLevelCounts, targetLevel]
+    );
+
     function handleExportCsv() {
         const band = exportBand === 'all' ? undefined : exportBand;
         const rows = collectVocabExportRows(rubrics, analysisResults, band);
@@ -72,6 +91,23 @@ export default function VocabularyDashboardPage() {
         const suffix = band ?? t('vocabProfile.csv_band_all');
         const filename = `${t('vocabProfile.csv_filename')}_${suffix}.csv`;
         saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
+    }
+
+    function handleSeedDeck() {
+        const band = exportBand === 'all' ? undefined : exportBand;
+        const rows = collectVocabExportRows(rubrics, analysisResults, band);
+        if (rows.length === 0) {
+            showToast(t('vocabProfile.seed_deck_empty'), 'info');
+            return;
+        }
+        const bandLabel = band ?? t('vocabProfile.csv_band_all');
+        const deck = addFlashcardDeck({
+            name: t('vocabProfile.seed_deck_name', { band: bandLabel }),
+            deckKind: 'vocabulary',
+            cards: rows.map((r) => ({ id: nanoid(), front: r.word, back: r.definition, cefrLevel: r.level })),
+        });
+        showToast(t('vocabProfile.seed_deck_created', { name: deck.name, count: rows.length }), 'success');
+        navigate(`/flashcards/${deck.id}`);
     }
 
     return (
@@ -120,6 +156,14 @@ export default function VocabularyDashboardPage() {
                     <button className="btn btn-secondary btn-sm" onClick={handleExportCsv}>
                         <Download size={14} /> {t('vocabProfile.export_csv')}
                     </button>
+
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleSeedDeck}
+                        title={t('vocabProfile.seed_deck_hint')}
+                    >
+                        <Layers size={14} /> {t('vocabProfile.seed_deck')}
+                    </button>
                 </div>
 
                 <div className="card" style={{ marginBottom: 20 }}>
@@ -132,6 +176,53 @@ export default function VocabularyDashboardPage() {
                         </h3>
                     </div>
                     <VocabCefrDistributionChart entries={classChartEntries} />
+
+                    {pooledTotal > 0 && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                flexWrap: 'wrap',
+                                marginTop: 14,
+                                paddingTop: 12,
+                                borderTop: '1px solid var(--border)',
+                            }}
+                        >
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                {t('vocabProfile.target_level_label')}
+                            </span>
+                            <select
+                                aria-label={t('vocabProfile.target_level_label')}
+                                value={targetLevel}
+                                onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
+                                style={{ padding: '2px 6px', fontSize: '1rem' }}
+                            >
+                                {CEFR_LEVELS.map((lvl) => (
+                                    <option key={lvl} value={lvl}>
+                                        {lvl}
+                                    </option>
+                                ))}
+                            </select>
+                            <span
+                                style={{
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    color:
+                                        verdict.verdict === 'suitable'
+                                            ? 'var(--green)'
+                                            : verdict.verdict === 'slightly_above'
+                                              ? 'var(--yellow)'
+                                              : 'var(--red)',
+                                }}
+                            >
+                                {t(`analysis.verdict_${verdict.verdict}`)}
+                            </span>
+                            <span className="text-xs text-muted">
+                                {t('vocabProfile.coverage_known', { pct: verdict.coveragePercent.toFixed(0) })}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {selectedClassId !== 'all' && (
@@ -183,6 +274,24 @@ export default function VocabularyDashboardPage() {
                                                     color: 'var(--text-muted)',
                                                 }}
                                             >
+                                                {t('vocabProfile.table_header_off_list')}
+                                            </th>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
+                                                {t('vocabProfile.table_header_academic')}
+                                            </th>
+                                            <th
+                                                style={{
+                                                    padding: '8px 10px',
+                                                    textAlign: 'center',
+                                                    color: 'var(--text-muted)',
+                                                }}
+                                            >
                                                 {t('vocabProfile.table_header_analyses')}
                                             </th>
                                             <th
@@ -205,6 +314,12 @@ export default function VocabularyDashboardPage() {
                                                 </td>
                                                 <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                                     {sp.totalWords}
+                                                </td>
+                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                    {sp.offListPercent.toFixed(0)}%
+                                                </td>
+                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                    {(sp.awlPercent + sp.nawlPercent).toFixed(0)}%
                                                 </td>
                                                 <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                                     {sp.analysisCount}

@@ -333,6 +333,16 @@ export interface CefrWordHit {
     level: CefrLevel;
 }
 
+/** Share of content words that are on an academic word list. */
+export interface AcademicCoverage {
+    /** % of matched content words on the Academic Word List (Coxhead) */
+    awlPercent: number;
+    /** % of matched content words on the New Academic Word List */
+    nawlPercent: number;
+    /** Distinct academic words observed (capped), for display and deck seeding */
+    academicWords: string[];
+}
+
 export interface CefrVocabProfile {
     /** Word count bucketed by CEFR level */
     levelCounts: Record<CefrLevel, number>;
@@ -340,6 +350,43 @@ export interface CefrVocabProfile {
     highlightWords: CefrWordHit[];
     /** Highest level with ≥5% of content-word share */
     estimatedLevel: CefrLevel;
+    /** % of content words not found in the CEFR index (proper nouns, typos, rare/technical) */
+    offListPercent: number;
+    /** Academic Word List coverage over the content words */
+    academic: AcademicCoverage;
+}
+
+/**
+ * The vocabulary distribution persisted on a DocumentAnalysisResult so the
+ * dashboard/export/panel can read it back without re-profiling. Uses raw,
+ * additive counts (not percentages) so profiles sum cleanly across texts.
+ */
+export interface PersistedVocabProfile {
+    /** Matched-word occurrences per CEFR level */
+    levelCounts: Record<CefrLevel, number>;
+    /** Total content tokens — the denominator for off-list/academic shares */
+    contentTokenCount: number;
+    /** Content tokens not in the CEFR index */
+    offListCount: number;
+    /** AWL-word occurrences */
+    awlCount: number;
+    /** NAWL-word occurrences */
+    nawlCount: number;
+    /** Notable words at/above the estimated level (capped 30) */
+    highlightWords: CefrWordHit[];
+    /** Distinct academic words observed (capped 40), for display and deck seeding */
+    academicWords: string[];
+}
+
+/** Result of grading a text against a target CEFR level (see textLevelVerdict). */
+export interface TargetLevelVerdict {
+    targetLevel: CefrLevel;
+    /** % of content words at or below the target level */
+    coveragePercent: number;
+    /** Distinct words above the target level (capped) */
+    aboveTargetWords: CefrWordHit[];
+    /** One-line suitability verdict for a class at the target level */
+    verdict: 'suitable' | 'slightly_above' | 'too_hard';
 }
 
 export interface CefrGrammarHit {
@@ -378,6 +425,11 @@ export interface StudentVocabProfile {
     totalWords: number;
     estimatedLevel: CefrLevel;
     analysisCount: number;
+    /** % of content words not in the CEFR index across this student's analyses */
+    offListPercent: number;
+    /** % of content words on the AWL / NAWL across this student's analyses */
+    awlPercent: number;
+    nawlPercent: number;
 }
 
 export interface ClassVocabProfile {
@@ -388,6 +440,11 @@ export interface ClassVocabProfile {
     totalWords: number;
     estimatedLevel: CefrLevel;
     studentProfiles: StudentVocabProfile[];
+    /** % of content words not in the CEFR index across the class's analyses */
+    offListPercent: number;
+    /** % of content words on the AWL / NAWL across the class's analyses */
+    awlPercent: number;
+    nawlPercent: number;
 }
 
 export interface VocabExportRow {
@@ -446,6 +503,11 @@ export interface DocumentAnalysisResult {
      * analysed before this field existed — the aggregator simply omits the estimate badge for those. */
     vocabEstimatedLevel?: CefrLevel;
     grammarEstimatedLevel?: CefrLevel;
+    /** Full vocabulary distribution, computed once at analysis time so the dashboard,
+     * CSV export and re-opened panel read it back instead of re-profiling the text.
+     * Absent on records analysed before this field existed — consumers fall back to
+     * profiling `extractedText` on the fly for those. */
+    vocabProfile?: PersistedVocabProfile;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
 }

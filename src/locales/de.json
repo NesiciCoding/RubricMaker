@@ -2102,7 +2102,20 @@
         "manual_check": "manuelle Prüfung",
         "not_found": "nicht gefunden",
         "add_to_bank": "Zur Bank hinzufügen",
-        "added_to_bank": "Hinzugefügt"
+        "added_to_bank": "Hinzugefügt",
+        "off_list": "Nicht gelistet",
+        "off_list_desc": "Nicht auf der GER-Liste (Namen, selten/fachlich)",
+        "academic_vocab": "Akademischer Wortschatz",
+        "awl_label": "AWL",
+        "nawl_label": "NAWL",
+        "target_level": "Passend für meine Klasse?",
+        "target_level_select": "GER-Niveau der Klasse",
+        "coverage_known": "Bei einem {{level}}-Ziel liegen ~{{pct}} % der erkannten Wörter auf oder unter diesem Niveau.",
+        "verdict_suitable": "Passend",
+        "verdict_slightly_above": "Etwas zu hoch",
+        "verdict_too_hard": "Zu schwer",
+        "above_target": "Über dem Niveau — vorentlasten:",
+        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL."
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
@@ -2984,7 +2997,16 @@
         "es_focus_title": "Fokusmodus für Lernende",
         "es_focus_item_essay": "Die Aufsatzseite ist eine ablenkungsfreie Schreibansicht: eine Schließen-Schaltfläche und ein Live-Badge „Entwurf gespeichert“ in der Kopfzeile sowie eine Seitenleiste mit der Aufgabenstellung, den Wort-/Zeitvorgaben und einem Schreibtipp. Entwürfe werden lokal automatisch gespeichert und bei der Rückkehr wiederhergestellt.",
         "es_focus_item_test": "Beim Bearbeiten eines Tests ist die fixierte Fragenleiste eine farbcodierte Palette – beantwortet, unbeantwortet, markiert und ungesehen, mit einer Legende – und jede Frage hat einen Schalter „zur Überprüfung markieren“. Adaptive Staircase-/Generator-Läufe ohne festen Fragensatz zeigen keine Palette.",
-        "ce_flashcards_item_student_decks": "Lernende können in ihrem Portal im Bereich „Meine Karteikarten“ eigene Decks erstellen – standardmäßig privat und in keiner Lehrkraft-Deckliste sichtbar. Ein Tippen auf „Mit meiner Lehrkraft teilen“ zeigt das Deck schreibgeschützt in der Bibliothek der Lehrkraft (mit „Von einer/einem Lernenden“ gekennzeichnet); die/der Lernende bleibt Eigentümer und kann die Freigabe jederzeit aufheben."
+        "ce_flashcards_item_student_decks": "Lernende können in ihrem Portal im Bereich „Meine Karteikarten“ eigene Decks erstellen – standardmäßig privat und in keiner Lehrkraft-Deckliste sichtbar. Ein Tippen auf „Mit meiner Lehrkraft teilen“ zeigt das Deck schreibgeschützt in der Bibliothek der Lehrkraft (mit „Von einer/einem Lernenden“ gekennzeichnet); die/der Lernende bleibt Eigentümer und kann die Freigabe jederzeit aufheben.",
+        "an_vocab_body_prefix": "Die Seite",
+        "an_vocab_nav": "Wortschatzprofil",
+        "an_vocab_body_suffix": "profiliert den GER-Wortschatz der analysierten Dokumente Ihrer Lernenden — pro Klasse und pro Lernendem — mit einem validierten Index aus 64.000 Wörtern (keine KI). Öffnen Sie ein Dokument im Analysebereich für dasselbe Profil zu einem einzelnen Text.",
+        "an_vocab_item_distribution": "GER-Niveauverteilung (A1–C2) mit geschätztem Niveau und einem Nicht-gelistet-Anteil (Eigennamen, seltene oder fachliche Wörter).",
+        "an_vocab_item_academic": "Abdeckung des akademischen Wortschatzes anhand der Academic Word List (AWL) und NAWL.",
+        "an_vocab_item_verdict": "Ein Urteil „Passend für meine Klasse?“: Wählen Sie ein GER-Zielniveau und sehen Sie den Abdeckungswert, was über dem Niveau liegt, und ob der Text passend, etwas zu hoch oder zu schwer ist.",
+        "an_vocab_item_seed": "Exportieren Sie Wortlisten nach GER-Stufe oder erstellen Sie daraus mit einem Klick ein Karteikartenset.",
+        "an_vocab_analytics_title": "Leseniveau und akademischer Wortschatz",
+        "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3052,7 +3074,16 @@
         "csv_column_definition": "Definition",
         "csv_column_source": "Quelle",
         "csv_source_rubric": "Rubrik-Wortschatz",
-        "csv_source_analysis": "Dokumentanalyse"
+        "csv_source_analysis": "Dokumentanalyse",
+        "table_header_off_list": "Nicht gelistet %",
+        "table_header_academic": "Akademisch %",
+        "target_level_label": "Leseniveau der Klasse",
+        "coverage_known": "~{{pct}} % der erkannten Wörter liegen auf oder unter dem Zielniveau",
+        "seed_deck": "Karteikarten erstellen",
+        "seed_deck_hint": "Aus diesen Wörtern ein Kartenset erstellen",
+        "seed_deck_name": "Vorentlastung: {{band}}",
+        "seed_deck_empty": "Keine Wörter für ein Set auf dieser Stufe.",
+        "seed_deck_created": "Set „{{name}}“ mit {{count}} Wörtern erstellt."
     },
     "csv": {
         "summary_created": "erstellt",
