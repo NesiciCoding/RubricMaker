@@ -1509,7 +1509,8 @@
             "speaking_interaction": "Sprechen (Int.)",
             "speaking_interaction_short": "Spr↔",
             "listening": "Hören",
-            "listening_short": "Hören"
+            "listening_short": "Hören",
+            "grammar": "Grammatik"
         },
         "view_class": "Klassenansicht",
         "view_student": "Schülerdetails",

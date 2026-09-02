@@ -6,7 +6,7 @@ import { useAuthoring } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { CEFR_LEVELS, QUESTION_BANK_SKILLS, QUESTION_BANK_SKILL_LABELS } from '../../data/cefrDescriptors';
+import { CEFR_LEVELS, QUESTION_BANK_SKILLS } from '../../data/cefrDescriptors';
 import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { exportQuestionBankJson } from '../../utils/questionBankImport';
@@ -61,8 +61,7 @@ function itemSearchText(item: QuestionBankItem): string {
 }
 
 export default function QuestionBankManager({ onSelect }: QuestionBankManagerProps) {
-    const { t, i18n } = useTranslation();
-    const skillLang = i18n?.language?.startsWith('nl') ? 'nl' : 'en';
+    const { t } = useTranslation();
     const {
         questionBank,
         addQuestionBankItems,
@@ -317,7 +316,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                         <option value="">{t('questionBank.cefr_skill_none')}</option>
                         {QUESTION_BANK_SKILLS.map((skill) => (
                             <option key={skill} value={skill}>
-                                {QUESTION_BANK_SKILL_LABELS[skill][skillLang]}
+                                {t(`cefr.skills.${skill}`)}
                             </option>
                         ))}
                     </select>
@@ -425,7 +424,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                             <option value="">{t('questionBank.cefr_skill_none')}</option>
                             {QUESTION_BANK_SKILLS.map((skill) => (
                                 <option key={skill} value={skill}>
-                                    {QUESTION_BANK_SKILL_LABELS[skill][skillLang]}
+                                    {t(`cefr.skills.${skill}`)}
                                 </option>
                             ))}
                         </select>

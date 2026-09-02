@@ -1509,7 +1509,8 @@
             "speaking_interaction": "Spreken (Int.)",
             "speaking_interaction_short": "Spr↔",
             "listening": "Luisteren",
-            "listening_short": "Luister"
+            "listening_short": "Luister",
+            "grammar": "Grammatica"
         },
         "view_class": "Klasoverzicht",
         "view_student": "Leerlingdetails",

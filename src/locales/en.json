@@ -1509,7 +1509,8 @@
             "speaking_interaction": "Speaking (Int.)",
             "speaking_interaction_short": "Spk↔",
             "listening": "Listening",
-            "listening_short": "Listen"
+            "listening_short": "Listen",
+            "grammar": "Grammar"
         },
         "view_class": "Class View",
         "view_student": "Student Detail",

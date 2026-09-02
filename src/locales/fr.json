@@ -1509,7 +1509,8 @@
             "speaking_interaction": "Parler (Int.)",
             "speaking_interaction_short": "Parl↔",
             "listening": "Écoute",
-            "listening_short": "Écoute"
+            "listening_short": "Écoute",
+            "grammar": "Grammaire"
         },
         "view_class": "Vue de classe",
         "view_student": "Détails de l'élève",
