@@ -2107,7 +2107,20 @@
         "manual_check": "handmatig controleren",
         "not_found": "niet gevonden",
         "add_to_bank": "Voeg toe aan bank",
-        "added_to_bank": "Toegevoegd"
+        "added_to_bank": "Toegevoegd",
+        "off_list": "Buiten lijst",
+        "off_list_desc": "Niet op de ERK-lijst (namen, zeldzaam/technisch)",
+        "academic_vocab": "Academische woordenschat",
+        "awl_label": "AWL",
+        "nawl_label": "NAWL",
+        "target_level": "Geschikt voor mijn klas?",
+        "target_level_select": "ERK-niveau klas",
+        "coverage_known": "Bij een {{level}}-doel valt ~{{pct}}% van de herkende woorden op of onder dat niveau.",
+        "verdict_suitable": "Op niveau",
+        "verdict_slightly_above": "Iets boven niveau",
+        "verdict_too_hard": "Te moeilijk",
+        "above_target": "Boven niveau — voorbespreken:",
+        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL."
     },
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
@@ -2898,7 +2911,7 @@
         "an_vocab_intro_prefix": "Ga naar Woordenschat in de zijbalk (",
         "an_vocab_intro_suffix": "). Dit dashboard verzamelt ERK-woordenschatniveaus (A1–C2) die zijn gedetecteerd in de geanalyseerde documenten van leerlingen.",
         "an_vocab_item_chart": "Gestapelde staafdiagram per klas van de woordenschatniveauverdeling, met een klaskiezer.",
-        "an_vocab_item_drilldown": "Detailweergave per leerling met het geschatte woordenschatniveau en geprofileerde woordenaantal van elke leerling.",
+        "an_vocab_item_drilldown": "Detailweergave per leerling met het geschatte woordenschatniveau en het aantal geprofileerde woorden van elke leerling.",
         "an_vocab_item_csv": "CSV-export van woordenschatwoorden — filter op een enkele ERK-band (A1–C2) of exporteer alle niveaus — met woord, niveau, definitie en bronkolommen.",
         "an_vocab_info": "Dit dashboard is alleen-lezen en is volledig afgeleid van bestaande documentanalyseresultaten (zie Bijlagen → Analyseren) en rubriekwoordenlijsten — analyseer eerst inzendingen van leerlingen om het te vullen.",
         "da_management_title": "Gegevensbeheer",
@@ -2989,7 +3002,16 @@
         "es_focus_title": "Focusmodus voor leerlingen",
         "es_focus_item_essay": "De essaypagina is een afleidingsvrije schrijfweergave: een sluitknop en een live \"concept opgeslagen\"-badge in de kop, plus een zijbalk met de opdracht, het woord-/tijddoel en een schrijftip. Concepten worden lokaal automatisch opgeslagen en hersteld bij terugkeer.",
         "es_focus_item_test": "Bij het maken van een toets is de vaste vragenbalk een kleurgecodeerd overzicht — beantwoord, onbeantwoord, gemarkeerd en nog niet bekeken, met een legenda — en elke vraag heeft een \"markeren voor herziening\"-schakelaar. Adaptieve staircase-/generatorruns, die geen vaste vragenset hebben, tonen geen overzicht.",
-        "ce_flashcards_item_student_decks": "Leerlingen kunnen hun eigen sets maken in het gedeelte \"Mijn flashcards\" van hun portaal — standaard privé en verborgen voor elke docentenlijst. Met één tik op \"Delen met mijn docent\" verschijnt de set alleen-lezen in de bibliotheek van de docent (met het label \"Van een leerling\"); de leerling blijft eigenaar en kan het delen op elk moment stoppen."
+        "ce_flashcards_item_student_decks": "Leerlingen kunnen hun eigen sets maken in het gedeelte \"Mijn flashcards\" van hun portaal — standaard privé en verborgen voor elke docentenlijst. Met één tik op \"Delen met mijn docent\" verschijnt de set alleen-lezen in de bibliotheek van de docent (met het label \"Van een leerling\"); de leerling blijft eigenaar en kan het delen op elk moment stoppen.",
+        "an_vocab_body_prefix": "De",
+        "an_vocab_nav": "Woordenschatprofiel",
+        "an_vocab_body_suffix": "toont de ERK-woordenschat van de geanalyseerde documenten van je leerlingen — per klas en per leerling — op basis van een gevalideerde index van 64k woorden (geen AI). Open een document in het analysepaneel voor hetzelfde profiel op één tekst.",
+        "an_vocab_item_distribution": "ERK-niveauverdeling (A1–C2) met een geschat niveau en een buiten-lijst-aandeel (eigennamen, zeldzame of technische woorden).",
+        "an_vocab_item_academic": "Dekking van academische woordenschat op basis van de Academic Word List (AWL) en NAWL.",
+        "an_vocab_item_verdict": "Een oordeel \"geschikt voor mijn klas?\": kies een ERK-doelniveau en zie het dekkingscijfer, wat boven het niveau uitkomt en of de tekst op niveau, iets erboven of te moeilijk is.",
+        "an_vocab_item_seed": "Exporteer woordenlijsten per ERK-band, of maak er met één klik een woordenset van.",
+        "an_vocab_analytics_title": "Leesniveau en academische woordenschat",
+        "an_vocab_analytics_info": "Woordenschatniveaus komen uit de CEFR-J- en open ERK-woordenlijsten; academische dekking wordt gemeten tegen de AWL (Coxhead) en NAWL. Alle matching is regelgebaseerd en offline — controleer de resultaten voordat je erop vertrouwt."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3057,7 +3079,16 @@
         "csv_column_definition": "Definitie",
         "csv_column_source": "Bron",
         "csv_source_rubric": "Rubriekwoordenschat",
-        "csv_source_analysis": "Documentanalyse"
+        "csv_source_analysis": "Documentanalyse",
+        "table_header_off_list": "Buiten lijst %",
+        "table_header_academic": "Academisch %",
+        "target_level_label": "Leesniveau voor een klas op",
+        "coverage_known": "~{{pct}}% van de herkende woorden valt op of onder het doelniveau",
+        "seed_deck": "Woordenset aanmaken",
+        "seed_deck_hint": "Maak een woordenset van deze woorden",
+        "seed_deck_name": "Voorbespreken: {{band}}",
+        "seed_deck_empty": "Geen woorden om een set mee te maken op dit niveau.",
+        "seed_deck_created": "Set \"{{name}}\" aangemaakt met {{count}} woorden."
     },
     "csv": {
         "summary_created": "aangemaakt",

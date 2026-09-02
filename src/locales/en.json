@@ -2107,7 +2107,20 @@
         "manual_check": "manual check",
         "not_found": "not found",
         "add_to_bank": "Add to bank",
-        "added_to_bank": "Added"
+        "added_to_bank": "Added",
+        "off_list": "Off-list",
+        "off_list_desc": "Not on the CEFR list (names, rare/technical)",
+        "academic_vocab": "Academic vocabulary",
+        "awl_label": "AWL",
+        "nawl_label": "NAWL",
+        "target_level": "Right for my class?",
+        "target_level_select": "Class CEFR level",
+        "coverage_known": "At a {{level}} target, ~{{pct}}% of the recognised words are at or below that level.",
+        "verdict_suitable": "On level",
+        "verdict_slightly_above": "Slightly above level",
+        "verdict_too_hard": "Too hard",
+        "above_target": "Above level — pre-teach:",
+        "awl_nawl_attribution": "Academic vocabulary from the AWL (Coxhead) and NAWL."
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} overdue)",
@@ -2987,7 +3000,16 @@
         "es_focus_title": "Student focus mode",
         "es_focus_item_essay": "The essay page is a distraction-free writing view: an exit control and a live \"draft saved\" badge in the header, plus a sidebar carrying the prompt, the word/time targets, and a writing tip. Drafts autosave locally and restore on return.",
         "es_focus_item_test": "When taking a test, the sticky question timeline is a colour-coded palette — answered, unanswered, flagged, and unseen, with a legend — and each question has a \"flag for review\" toggle. Adaptive staircase/generator runs, which have no fixed question set, show no palette.",
-        "ce_flashcards_item_student_decks": "Students can create their own decks from the \"My flashcards\" section of their portal — private to them by default and hidden from every teacher deck list. A one-tap \"Share with my teacher\" surfaces the deck read-only in the teacher's library (badged \"From a student\"); the student stays its owner and can unshare at any time."
+        "ce_flashcards_item_student_decks": "Students can create their own decks from the \"My flashcards\" section of their portal — private to them by default and hidden from every teacher deck list. A one-tap \"Share with my teacher\" surfaces the deck read-only in the teacher's library (badged \"From a student\"); the student stays its owner and can unshare at any time.",
+        "an_vocab_body_prefix": "The",
+        "an_vocab_nav": "Vocabulary Profile",
+        "an_vocab_body_suffix": "page profiles the CEFR vocabulary of your students' analysed documents — per class and per student — using a validated 64k-word index (no AI). Open a document in the analysis panel for the same profile on a single text.",
+        "an_vocab_item_distribution": "CEFR level distribution (A1–C2) with an estimated level and an off-list share (proper nouns, rare or technical words).",
+        "an_vocab_item_academic": "Academic-vocabulary coverage against the Academic Word List (AWL) and NAWL.",
+        "an_vocab_item_verdict": "A \"right for my class?\" verdict: pick a target CEFR level and see the coverage figure, what exceeds the level, and whether the text is on level, slightly above, or too hard.",
+        "an_vocab_item_seed": "Export word lists by CEFR band, or seed a flashcard deck from them in one click.",
+        "an_vocab_analytics_title": "Reading level & academic vocabulary",
+        "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3055,7 +3077,16 @@
         "csv_column_definition": "Definition",
         "csv_column_source": "Source",
         "csv_source_rubric": "Rubric vocabulary",
-        "csv_source_analysis": "Document analysis"
+        "csv_source_analysis": "Document analysis",
+        "table_header_off_list": "Off-list %",
+        "table_header_academic": "Academic %",
+        "target_level_label": "Reading level for a class at",
+        "coverage_known": "~{{pct}}% of recognised words are at or below the target level",
+        "seed_deck": "Seed flashcard deck",
+        "seed_deck_hint": "Create a flashcard deck from these words",
+        "seed_deck_name": "Pre-teaching: {{band}}",
+        "seed_deck_empty": "No words to seed a deck at this band.",
+        "seed_deck_created": "Created deck \"{{name}}\" with {{count}} words."
     },
     "csv": {
         "summary_created": "created",

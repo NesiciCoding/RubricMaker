@@ -172,6 +172,11 @@ npm run e2e          # Playwright end-to-end tests
 # Supabase local dev (optional)
 npm run db:start     # Start local Supabase stack
 npm run db:reset     # Reset and re-apply all migrations
+
+# Backend load testing (k6) against a local Supabase stack (needs `npm run db:start`).
+# Reads Supabase keys automatically; profiles: smoke | load | stress | spike | soak.
+npm run loadtest              # default 'load' profile (~50 VUs)
+npm run loadtest:stress       # climb VUs to find the breaking point
 ```
 
 New to the codebase? See the [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) and [Architecture](https://github.com/NesiciCoding/RubricMaker/wiki/Architecture) wiki pages.
@@ -292,6 +297,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 - **Teacher email digest (optional, `pg_cron`-driven):** the `scheduled-digest` edge function emails opted-in teachers nightly about pending moderation disputes, overdue grading, or unread student messages (same three sources as the in-app Notification Center). It needs a functions runtime plus one-time per-deployment settings (`app.settings.project_url` / `app.settings.service_role_key` via `ALTER DATABASE …`) before it can send anything — see [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md) for the full `pg_cron`/`pg_net` setup.
 - **Stress-test logging (optional):** set `VITE_STRESS_TEST_LOGGING=true` in `.env` (requires migrations `035_client_logs.sql` and `072_client_logs_observability.sql`, included with `db:reset`/`docker-compose db_migrate`) to log user actions, sync results, JS errors, pageviews and Web Vitals (LCP/FCP/FID/CLS + page load) to a `client_logs` table — never free-text content. Unset and rebuild after the stress-test window.
 - **Observability (optional, for pilot/stress-test windows):** a standalone Loki + Promtail + Grafana stack (`docker-compose -f docker-compose.observability.yml --env-file .env.observability up -d`, Grafana on `http://localhost:3001`) filters web-server and container logs, and can query `client_logs` **and the whole Supabase schema** via a Postgres datasource. Set `GRAFANA_ADMIN_PASSWORD` to a strong value in `.env.observability` — the stack refuses to start without it (no default credentials). See [Observability on a HestiaCP subdomain](docs/OBSERVABILITY_HESTIACP.md) and [Grafana dashboards](docs/OBSERVABILITY_DASHBOARDS.md) for remote HTTPS access and what each dashboard shows.
+- **Backend load testing (optional):** the k6 harness (`npm run loadtest`, see [`k6/README.md`](k6/README.md)) drives configurable virtual-user load at the Supabase backend. Run it against a local stack for regression smoke, or against a VM sized to a school's server to find its concurrency ceiling — [docs/LOAD_TESTING_STAGING.md](docs/LOAD_TESTING_STAGING.md) covers the staging-VM workflow and per-school sizing.
 
 ---
 
@@ -357,6 +363,10 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/utils/gradeCalc.ts`                | Score aggregation and weighted scoring engine                                                                                                                                                                  |
 | `src/utils/cefrStudentAggregator.ts`    | CEFR level computation across assessments                                                                                                                                                                      |
+| `src/utils/cefrVocabularyProfiler.ts`   | CEFR vocabulary profiler over a validated 64k-word index (`src/data/cefrLevels.ts`): level distribution, estimated level, off-list share, academic coverage; builds/reads the persisted per-document profile   |
+| `src/utils/academicWordList.ts`         | Academic Word List (AWL) + NAWL membership and coverage over a token list                                                                                                                                      |
+| `src/utils/textLevelVerdict.ts`         | Target-level "right for my class?" verdict: coverage %, above-target words, and a suitable/slightly-above/too-hard label, from a text or an aggregated distribution                                            |
+| `src/utils/vocabProfileAggregator.ts`   | Per-student and per-class CEFR vocabulary aggregation (level distribution, off-list and AWL/NAWL shares) and the vocabulary-list CSV export                                                                    |
 | `src/utils/placementRouting.ts`         | Section-routing engine for staged placement tests (threshold scoring, next-section resolution, cycle detection)                                                                                                |
 | `src/utils/placementResult.ts`          | Deterministic provisional CEFR estimate from a completed placement test's section path                                                                                                                         |
 | `src/utils/placementStaircase.ts`       | Staircase (adaptive-ladder) placement engine: level progression, next-question resolution, and item-level Elo self-calibration/rating bands per CEFR level                                                     |

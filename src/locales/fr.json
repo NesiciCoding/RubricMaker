@@ -2107,7 +2107,20 @@
         "manual_check": "vérification manuelle",
         "not_found": "non trouvé",
         "add_to_bank": "Ajouter à la banque",
-        "added_to_bank": "Ajouté"
+        "added_to_bank": "Ajouté",
+        "off_list": "Hors liste",
+        "off_list_desc": "Absents de la liste CECR (noms propres, rares/techniques)",
+        "academic_vocab": "Vocabulaire académique",
+        "awl_label": "AWL",
+        "nawl_label": "NAWL",
+        "target_level": "Adapté à ma classe ?",
+        "target_level_select": "Niveau CECR de la classe",
+        "coverage_known": "Pour un objectif {{level}}, ~{{pct}} % des mots reconnus sont au niveau {{level}} ou en dessous.",
+        "verdict_suitable": "Au niveau",
+        "verdict_slightly_above": "Légèrement au-dessus",
+        "verdict_too_hard": "Trop difficile",
+        "above_target": "Au-dessus du niveau — à pré-enseigner :",
+        "awl_nawl_attribution": "Vocabulaire académique issu de l'AWL (Coxhead) et de la NAWL."
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} en retard)",
@@ -2989,7 +3002,16 @@
         "es_focus_title": "Mode focus élève",
         "es_focus_item_essay": "La page de rédaction est un espace d'écriture sans distraction : un bouton de sortie et un badge « brouillon enregistré » en temps réel dans l'en-tête, plus une barre latérale reprenant la consigne, les objectifs de mots/temps et un conseil d'écriture. Les brouillons sont enregistrés automatiquement en local et restaurés au retour.",
         "es_focus_item_test": "Pendant un test, la barre de questions fixe est une palette à code couleur — répondue, sans réponse, marquée et non vue, avec une légende — et chaque question dispose d'un bouton « marquer pour révision ». Les tests adaptatifs (staircase/générateur), sans jeu de questions fixe, n'affichent aucune palette.",
-        "ce_flashcards_item_student_decks": "Les élèves peuvent créer leurs propres paquets depuis la section « Mes cartes » de leur portail — privés par défaut et masqués dans toutes les listes de l'enseignant. Un « Partager avec mon enseignant » en un geste affiche le paquet en lecture seule dans la bibliothèque de l'enseignant (badge « D'un élève ») ; l'élève en reste propriétaire et peut arrêter le partage à tout moment."
+        "ce_flashcards_item_student_decks": "Les élèves peuvent créer leurs propres paquets depuis la section « Mes cartes » de leur portail — privés par défaut et masqués dans toutes les listes de l'enseignant. Un « Partager avec mon enseignant » en un geste affiche le paquet en lecture seule dans la bibliothèque de l'enseignant (badge « D'un élève ») ; l'élève en reste propriétaire et peut arrêter le partage à tout moment.",
+        "an_vocab_body_prefix": "La page",
+        "an_vocab_nav": "Profil de vocabulaire",
+        "an_vocab_body_suffix": "profile le vocabulaire CECR des documents analysés de vos élèves — par classe et par élève — à l'aide d'un index validé de 64 000 mots (sans IA). Ouvrez un document dans le panneau d'analyse pour le même profil sur un seul texte.",
+        "an_vocab_item_distribution": "Répartition des niveaux CECR (A1–C2) avec un niveau estimé et une part hors liste (noms propres, mots rares ou techniques).",
+        "an_vocab_item_academic": "Couverture du vocabulaire académique selon l'Academic Word List (AWL) et la NAWL.",
+        "an_vocab_item_verdict": "Un verdict « adapté à ma classe ? » : choisissez un niveau CECR cible et voyez le taux de couverture, ce qui dépasse le niveau, et si le texte est au niveau, légèrement au-dessus ou trop difficile.",
+        "an_vocab_item_seed": "Exportez des listes de mots par niveau CECR, ou créez-en un jeu de cartes en un clic.",
+        "an_vocab_analytics_title": "Niveau de lecture et vocabulaire académique",
+        "an_vocab_analytics_info": "Les niveaux de vocabulaire proviennent des listes CEFR-J et CECR ouvertes ; la couverture académique est mesurée par rapport à l'AWL (Coxhead) et à la NAWL. Toute la correspondance est basée sur des règles et hors ligne — vérifiez les résultats avant de vous y fier."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3057,7 +3079,16 @@
         "csv_column_definition": "Définition",
         "csv_column_source": "Source",
         "csv_source_rubric": "Vocabulaire de la grille",
-        "csv_source_analysis": "Analyse de document"
+        "csv_source_analysis": "Analyse de document",
+        "table_header_off_list": "Hors liste %",
+        "table_header_academic": "Académique %",
+        "target_level_label": "Niveau de lecture pour une classe de",
+        "coverage_known": "~{{pct}} % des mots reconnus sont au niveau cible ou en dessous",
+        "seed_deck": "Créer un jeu de cartes",
+        "seed_deck_hint": "Créer un jeu de cartes à partir de ces mots",
+        "seed_deck_name": "Pré-enseignement : {{band}}",
+        "seed_deck_empty": "Aucun mot pour créer un jeu à ce niveau.",
+        "seed_deck_created": "Jeu « {{name}} » créé avec {{count}} mots."
     },
     "csv": {
         "summary_created": "créé(s)",

@@ -25,7 +25,8 @@ import type {
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
-import { profileText } from '../../utils/cefrVocabularyProfiler';
+import { profileText, buildPersistedVocabProfile, estimateLevelFromCounts } from '../../utils/cefrVocabularyProfiler';
+import { computeTargetVerdict } from '../../utils/textLevelVerdict';
 import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualification';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
@@ -167,6 +168,7 @@ export default function DocumentAnalysisPanel({
             const { errors: grammarErrors, source: grammarCheckerUsed, textWasTruncated } = await checkGrammar(text);
 
             handleProgress(95, 'Saving…');
+            const vocabProfile = buildPersistedVocabProfile(text);
             const newResult: DocumentAnalysisResult = {
                 id: nanoid(),
                 studentId,
@@ -178,7 +180,8 @@ export default function DocumentAnalysisPanel({
                 grammarErrors,
                 grammarCheckerUsed,
                 grammarTextTruncated: textWasTruncated,
-                vocabEstimatedLevel: profileText(text).estimatedLevel,
+                vocabProfile,
+                vocabEstimatedLevel: estimateLevelFromCounts(vocabProfile.levelCounts),
                 grammarEstimatedLevel: profileGrammar(text).estimatedLevel,
             };
 
@@ -716,7 +719,9 @@ export default function DocumentAnalysisPanel({
                             </div>
 
                             {/* CEFR Text Profile */}
-                            {cefrProfile && <CefrProfilePanel profile={cefrProfile} />}
+                            {cefrProfile && extractedText && (
+                                <CefrProfilePanel profile={cefrProfile} extractedText={extractedText} />
+                            )}
 
                             {/* Grammar qualification (linked grammar standards) */}
                             {grammarQual.length > 0 && (
@@ -922,12 +927,15 @@ function CefrLevelBadge({ level }: { level: CefrLevel }) {
  * @param profile - CEFR text profile containing vocabulary and grammar profiling data used to render distributions, highlights, and estimated levels.
  * @returns A React element rendering the CEFR profile panel.
  */
-function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
+function CefrProfilePanel({ profile, extractedText }: { profile: CefrTextProfile; extractedText: string }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(true);
+    const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
 
     const { vocabulary, grammar } = profile;
     const total = Object.values(vocabulary.levelCounts).reduce((s, c) => s + c, 0);
+    const verdict = useMemo(() => computeTargetVerdict(extractedText, targetLevel), [extractedText, targetLevel]);
+    const academicPercent = vocabulary.academic.awlPercent + vocabulary.academic.nawlPercent;
 
     return (
         <div>
@@ -1056,6 +1064,47 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                         )}
                     </div>
 
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                        <div>
+                            <span className="text-xs text-muted">{t('analysis.off_list', 'Off-list')}</span>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>
+                                {vocabulary.offListPercent.toFixed(0)}%
+                            </div>
+                            <span className="text-xs text-muted" style={{ fontSize: '0.68rem' }}>
+                                {t('analysis.off_list_desc', 'Not on the CEFR list (names, rare/technical)')}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-xs text-muted">
+                                {t('analysis.academic_vocab', 'Academic vocabulary')}
+                            </span>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{academicPercent.toFixed(0)}%</div>
+                            <span className="text-xs text-muted" style={{ fontSize: '0.68rem' }}>
+                                {t('analysis.awl_label', 'AWL')} {vocabulary.academic.awlPercent.toFixed(0)}% ·{' '}
+                                {t('analysis.nawl_label', 'NAWL')} {vocabulary.academic.nawlPercent.toFixed(0)}%
+                            </span>
+                        </div>
+                    </div>
+                    {vocabulary.academic.academicWords.length > 0 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {vocabulary.academic.academicWords.map((word) => (
+                                <span
+                                    key={word}
+                                    style={{
+                                        fontSize: '0.78rem',
+                                        padding: '2px 7px',
+                                        borderRadius: 4,
+                                        background: 'var(--bg)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text)',
+                                    }}
+                                >
+                                    {word}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Grammar structures */}
                     <div>
                         <div
@@ -1100,8 +1149,82 @@ function CefrProfilePanel({ profile }: { profile: CefrTextProfile }) {
                         )}
                     </div>
 
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                {t('analysis.target_level', 'Right for my class?')}
+                            </span>
+                            <label htmlFor="cefr-target-level" className="text-xs text-muted">
+                                {t('analysis.target_level_select', 'Class CEFR level')}
+                            </label>
+                            <select
+                                id="cefr-target-level"
+                                aria-label={t('analysis.target_level_select', 'Class CEFR level')}
+                                value={targetLevel}
+                                onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
+                                style={{ padding: '2px 6px', fontSize: '1rem' }}
+                            >
+                                {LEVEL_ORDER.map((lvl) => (
+                                    <option key={lvl} value={lvl}>
+                                        {lvl}
+                                    </option>
+                                ))}
+                            </select>
+                            <span
+                                style={{
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    color:
+                                        verdict.verdict === 'suitable'
+                                            ? 'var(--green)'
+                                            : verdict.verdict === 'slightly_above'
+                                              ? 'var(--yellow)'
+                                              : 'var(--red)',
+                                }}
+                            >
+                                {t(`analysis.verdict_${verdict.verdict}`)}
+                            </span>
+                        </div>
+                        <p className="text-xs text-muted" style={{ margin: '6px 0 0' }}>
+                            {t(
+                                'analysis.coverage_known',
+                                'At a {{level}} target, ~{{pct}}% of the recognised words are at or below that level.',
+                                {
+                                    level: targetLevel,
+                                    pct: verdict.coveragePercent.toFixed(0),
+                                }
+                            )}
+                        </p>
+                        {verdict.aboveTargetWords.length > 0 && (
+                            <div style={{ marginTop: 8 }}>
+                                <p className="text-xs text-muted" style={{ marginBottom: 6 }}>
+                                    {t('analysis.above_target', 'Above level — pre-teach:')}
+                                </p>
+                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {verdict.aboveTargetWords.map(({ word, level }) => (
+                                        <span
+                                            key={word}
+                                            title={level}
+                                            style={{
+                                                fontSize: '0.78rem',
+                                                padding: '2px 7px',
+                                                borderRadius: 4,
+                                                background: CEFR_LEVEL_COLORS[level] + '18',
+                                                border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
+                                                color: 'var(--text)',
+                                            }}
+                                        >
+                                            {word}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <p className="text-xs text-muted" style={{ marginTop: 4 }}>
-                        {t('analysis.cefrj_attribution', 'Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).')}
+                        {t('analysis.cefrj_attribution', 'Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).')}{' '}
+                        {t('analysis.awl_nawl_attribution', 'Academic vocabulary from the AWL (Coxhead) and NAWL.')}
                     </p>
                 </div>
             )}

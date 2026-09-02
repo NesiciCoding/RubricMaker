@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { profileText } from './cefrVocabularyProfiler';
+import { profileText, buildPersistedVocabProfile, vocabProfileView } from './cefrVocabularyProfiler';
 
 describe('profileText', () => {
     it('returns A1 estimated level for very basic text', () => {
@@ -94,35 +94,101 @@ describe('profileText', () => {
         expect(lower.estimatedLevel).toBe(upper.estimatedLevel);
     });
 
-    describe('merged open vocabulary', () => {
-        it('recognizes words present only in the open supplementary list', () => {
+    describe('CEFR index lookup', () => {
+        it('assigns each recognised word its index level', () => {
+            expect(profileText('cat').levelCounts.A1).toBe(1);
+            expect(profileText('abandon').levelCounts.B1).toBe(1);
             expect(profileText('paradigm').levelCounts.C1).toBe(1);
-            expect(profileText('selfie').levelCounts.A2).toBe(1);
+            expect(profileText('embody').levelCounts.C2).toBe(1);
         });
 
-        it('takes the lowest level when CEFR-J is lower than the open list', () => {
-            const result = profileText('inevitable');
-            expect(result.levelCounts.B1).toBe(1);
-            expect(result.levelCounts.C2).toBe(0);
+        it('counts off-list words (proper nouns, typos) towards offListPercent, not a level', () => {
+            const result = profileText('zxqywv brrrmph flooble');
+            const matched = Object.values(result.levelCounts).reduce((s, c) => s + c, 0);
+            expect(matched).toBe(0);
+            expect(result.offListPercent).toBe(100);
         });
 
-        it('takes the lowest level when the open list is lower than CEFR-J', () => {
-            const result = profileText('embody');
-            expect(result.levelCounts.C1).toBe(1);
-            expect(result.levelCounts.C2).toBe(0);
+        it('mixes on- and off-list words into a fractional offListPercent', () => {
+            // "abandon" (B1) is recognised; "zxqywv" is off-list → 1 of 2 content words off-list
+            const result = profileText('abandon zxqywv');
+            expect(result.offListPercent).toBeCloseTo(50, 5);
         });
 
-        it('keeps CEFR-J levels for words absent from the open list', () => {
-            const result = profileText('abandon');
-            expect(result.levelCounts.B1).toBe(1);
+        it('does not treat Object.prototype keys as matches (Map-backed index)', () => {
+            // "toString" is not a dictionary word — a plain-object index would return a function
+            expect(profileText('toString').offListPercent).toBe(100);
+            // "constructor" is a real B1 word and must still be recognised
+            expect(profileText('constructor').levelCounts.B1).toBe(1);
         });
+    });
 
-        it('counts open-list words towards estimatedLevel and highlightWords', () => {
-            const result = profileText(
-                'paradigm heuristic dichotomy nuance caveat salient mitigate extrapolate corroborate elucidate'
+    describe('academic coverage', () => {
+        it('reports AWL/NAWL share of the content words', () => {
+            const result = profileText('analysis research assessment');
+            expect(result.academic.awlPercent).toBeGreaterThan(0);
+            expect(result.academic.academicWords).toEqual(
+                expect.arrayContaining(['analysis', 'research', 'assessment'])
             );
-            expect(['C1', 'C2']).toContain(result.estimatedLevel);
-            expect(result.highlightWords.some(({ word }) => word === 'paradigm')).toBe(true);
         });
+
+        it('reports zero academic coverage for a non-academic sentence', () => {
+            const result = profileText('the cat sat on the mat');
+            expect(result.academic.awlPercent).toBe(0);
+            expect(result.academic.nawlPercent).toBe(0);
+        });
+    });
+
+    it('exposes offListPercent and academic on empty text without dividing by zero', () => {
+        const result = profileText('');
+        expect(result.offListPercent).toBe(0);
+        expect(result.academic).toEqual({ awlPercent: 0, nawlPercent: 0, academicWords: [] });
+    });
+});
+
+describe('buildPersistedVocabProfile / vocabProfileView', () => {
+    it('captures raw additive counts for a text', () => {
+        // analysis B1 + AWL, cat A1, zxqywv off-list → 3 content tokens
+        const p = buildPersistedVocabProfile('analysis cat zxqywv');
+        expect(p.contentTokenCount).toBe(3);
+        expect(p.levelCounts.A1).toBe(1);
+        expect(p.levelCounts.B1).toBe(1);
+        expect(p.offListCount).toBe(1);
+        expect(p.awlCount).toBe(1);
+        expect(p.academicWords).toContain('analysis');
+    });
+
+    it('round-trips: profileText === vocabProfileView(buildPersistedVocabProfile(text))', () => {
+        const text = 'The unprecedented magnitude of the catastrophic phenomenon was extraordinary.';
+        expect(profileText(text)).toEqual(vocabProfileView(buildPersistedVocabProfile(text)));
+    });
+
+    it('derives percentages from stored counts', () => {
+        const view = vocabProfileView({
+            levelCounts: { A1: 1, A2: 0, B1: 1, B2: 0, C1: 0, C2: 0 },
+            contentTokenCount: 4,
+            offListCount: 2,
+            awlCount: 1,
+            nawlCount: 0,
+            highlightWords: [{ word: 'analysis', level: 'B1' }],
+            academicWords: ['analysis'],
+        });
+        expect(view.offListPercent).toBeCloseTo(50, 5);
+        expect(view.academic.awlPercent).toBeCloseTo(25, 5);
+        expect(view.highlightWords).toEqual([{ word: 'analysis', level: 'B1' }]);
+    });
+
+    it('handles a zero-token stored profile without dividing by zero', () => {
+        const view = vocabProfileView({
+            levelCounts: { A1: 0, A2: 0, B1: 0, B2: 0, C1: 0, C2: 0 },
+            contentTokenCount: 0,
+            offListCount: 0,
+            awlCount: 0,
+            nawlCount: 0,
+            highlightWords: [],
+            academicWords: [],
+        });
+        expect(view.offListPercent).toBe(0);
+        expect(view.academic).toEqual({ awlPercent: 0, nawlPercent: 0, academicWords: [] });
     });
 });

@@ -2107,7 +2107,20 @@
         "manual_check": "verificación manual",
         "not_found": "no encontrado",
         "add_to_bank": "Añadir al banco",
-        "added_to_bank": "Añadido"
+        "added_to_bank": "Añadido",
+        "off_list": "Fuera de lista",
+        "off_list_desc": "Fuera de la lista MCER (nombres propios, raros/técnicos)",
+        "academic_vocab": "Vocabulario académico",
+        "awl_label": "AWL",
+        "nawl_label": "NAWL",
+        "target_level": "¿Adecuado para mi clase?",
+        "target_level_select": "Nivel MCER de la clase",
+        "coverage_known": "Con un objetivo {{level}}, ~{{pct}} % de las palabras reconocidas están en ese nivel o por debajo.",
+        "verdict_suitable": "En nivel",
+        "verdict_slightly_above": "Algo por encima",
+        "verdict_too_hard": "Demasiado difícil",
+        "above_target": "Por encima del nivel — pre-enseñar:",
+        "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL."
     },
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
@@ -2989,7 +3002,16 @@
         "es_focus_title": "Modo de concentración del estudiante",
         "es_focus_item_essay": "La página de redacción es una vista de escritura sin distracciones: un control de salida y una insignia en vivo de \"borrador guardado\" en la cabecera, además de una barra lateral con la consigna, los objetivos de palabras/tiempo y un consejo de escritura. Los borradores se guardan automáticamente en local y se restauran al volver.",
         "es_focus_item_test": "Al hacer un examen, la barra de preguntas fija es una paleta con código de colores —respondida, sin responder, marcada y no vista, con una leyenda— y cada pregunta tiene un conmutador para \"marcar para revisión\". Los exámenes adaptativos (staircase/generador), que no tienen un conjunto fijo de preguntas, no muestran paleta.",
-        "ce_flashcards_item_student_decks": "Los estudiantes pueden crear sus propios mazos desde la sección \"Mis tarjetas\" de su portal: privados por defecto y ocultos en toda lista de mazos del profesor. Un toque en \"Compartir con mi profesor\" muestra el mazo en modo solo lectura en la biblioteca del profesor (con la etiqueta \"De un estudiante\"); el estudiante sigue siendo su propietario y puede dejar de compartirlo cuando quiera."
+        "ce_flashcards_item_student_decks": "Los estudiantes pueden crear sus propios mazos desde la sección \"Mis tarjetas\" de su portal: privados por defecto y ocultos en toda lista de mazos del profesor. Un toque en \"Compartir con mi profesor\" muestra el mazo en modo solo lectura en la biblioteca del profesor (con la etiqueta \"De un estudiante\"); el estudiante sigue siendo su propietario y puede dejar de compartirlo cuando quiera.",
+        "an_vocab_body_prefix": "La página",
+        "an_vocab_nav": "Perfil de vocabulario",
+        "an_vocab_body_suffix": "perfila el vocabulario MCER de los documentos analizados de tus estudiantes — por clase y por estudiante — con un índice validado de 64k palabras (sin IA). Abre un documento en el panel de análisis para el mismo perfil sobre un solo texto.",
+        "an_vocab_item_distribution": "Distribución de niveles MCER (A1–C2) con un nivel estimado y una proporción fuera de lista (nombres propios, palabras raras o técnicas).",
+        "an_vocab_item_academic": "Cobertura de vocabulario académico según la Academic Word List (AWL) y la NAWL.",
+        "an_vocab_item_verdict": "Un veredicto «¿adecuado para mi clase?»: elige un nivel MCER objetivo y ve la cobertura, qué supera el nivel y si el texto está en nivel, algo por encima o demasiado difícil.",
+        "an_vocab_item_seed": "Exporta listas de palabras por nivel MCER, o crea un mazo de tarjetas a partir de ellas con un clic.",
+        "an_vocab_analytics_title": "Nivel de lectura y vocabulario académico",
+        "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3057,7 +3079,16 @@
         "csv_column_definition": "Definición",
         "csv_column_source": "Fuente",
         "csv_source_rubric": "Vocabulario de la rúbrica",
-        "csv_source_analysis": "Análisis de documento"
+        "csv_source_analysis": "Análisis de documento",
+        "table_header_off_list": "Fuera de lista %",
+        "table_header_academic": "Académico %",
+        "target_level_label": "Nivel de lectura para una clase de",
+        "coverage_known": "~{{pct}} % de las palabras reconocidas están en el nivel objetivo o por debajo",
+        "seed_deck": "Crear mazo de tarjetas",
+        "seed_deck_hint": "Crear un mazo con estas palabras",
+        "seed_deck_name": "Pre-enseñanza: {{band}}",
+        "seed_deck_empty": "No hay palabras para crear un mazo en este nivel.",
+        "seed_deck_created": "Mazo «{{name}}» creado con {{count}} palabras."
     },
     "csv": {
         "summary_created": "creado(s)",
