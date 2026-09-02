@@ -1351,7 +1351,7 @@
         "section_bundle_meta": "{{count}} question(s) in this passage",
         "section_bundle_title": "Section: {{title}}",
         "cefr_level_label": "CEFR level",
-        "cefr_skill_label": "CEFR skill",
+        "cefr_skill_label": "Skill",
         "cefr_skill_none": "Any skill",
         "save_section_to_bank": "Save this passage + questions to bank",
         "edit_button": "Edit",

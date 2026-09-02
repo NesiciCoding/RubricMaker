@@ -1351,7 +1351,7 @@
         "section_bundle_meta": "{{count}} pregunta(s) en este pasaje",
         "section_bundle_title": "Sección: {{title}}",
         "cefr_level_label": "Nivel MCER",
-        "cefr_skill_label": "Destreza MCER",
+        "cefr_skill_label": "Destreza",
         "cefr_skill_none": "Cualquier destreza",
         "save_section_to_bank": "Guardar este pasaje + preguntas en el banco",
         "edit_button": "Editar",

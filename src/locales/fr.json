@@ -1351,7 +1351,7 @@
         "section_bundle_meta": "{{count}} question(s) dans ce passage",
         "section_bundle_title": "Section : {{title}}",
         "cefr_level_label": "Niveau CECRL",
-        "cefr_skill_label": "Compétence CECR",
+        "cefr_skill_label": "Compétence",
         "cefr_skill_none": "N'importe quelle compétence",
         "save_section_to_bank": "Enregistrer ce passage + questions dans la banque",
         "edit_button": "Modifier",

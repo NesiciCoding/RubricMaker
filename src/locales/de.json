@@ -1351,7 +1351,7 @@
         "section_bundle_meta": "{{count}} Frage(n) in dieser Passage",
         "section_bundle_title": "Abschnitt: {{title}}",
         "cefr_level_label": "GER-Niveau",
-        "cefr_skill_label": "CEFR-Fertigkeit",
+        "cefr_skill_label": "Fertigkeit",
         "cefr_skill_none": "Beliebige Fertigkeit",
         "save_section_to_bank": "Diese Passage + Fragen in der Fragenbank speichern",
         "edit_button": "Bearbeiten",
