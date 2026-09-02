@@ -417,6 +417,12 @@ describe('parseQuestionBankJson', () => {
         expect(ok.items[0].cefrSkill).toBe('listening');
         expect(ok.warnings).toEqual([]);
 
+        const grammar = parseQuestionBankJson(
+            JSON.stringify({ items: [{ cefrSkill: 'grammar', question: { prompt: 'Hi', type: 'open' } }] })
+        );
+        expect(grammar.items[0].cefrSkill).toBe('grammar');
+        expect(grammar.warnings).toEqual([]);
+
         const bad = parseQuestionBankJson(
             JSON.stringify({ items: [{ cefrSkill: 'telepathy', question: { prompt: 'Hi', type: 'open' } }] })
         );

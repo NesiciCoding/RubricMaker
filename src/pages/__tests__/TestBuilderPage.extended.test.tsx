@@ -909,6 +909,18 @@ describe('TestBuilderPage extended', () => {
         expect(screen.getAllByText(/tests.generator_pool_warning/).length).toBeGreaterThan(0);
     });
 
+    it('offers grammar as a generator skill and saves it into the config', () => {
+        mockQuestionBank = [{ ...questionItem, id: 'grammar-item', cefrLevel: 'A1', cefrSkill: 'grammar' }];
+        renderBuilder();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Grammar Gen' } });
+        fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'placement' } });
+        fireEvent.change(screen.getByLabelText('tests.placement_engine_label'), { target: { value: 'generator' } });
+        fireEvent.click(screen.getByLabelText('Grammar'));
+        fireEvent.click(screen.getByText('common.save'));
+        const payload = mockAddTest.mock.calls[0][0];
+        expect(payload.generatorConfig?.skills).toEqual(['grammar']);
+    });
+
     it('saves the generator tag filter chosen from the bank tags', () => {
         mockQuestionBank = [
             { ...questionItem, id: 'travel-item', cefrLevel: 'A1', tags: ['travel'] },

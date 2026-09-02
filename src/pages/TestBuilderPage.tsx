@@ -29,8 +29,22 @@ import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
-import type { Test, TestQuestion, TestSection, CefrLevel, CefrSkill, QuestionBankItem } from '../types';
-import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
+import type {
+    Test,
+    TestQuestion,
+    TestSection,
+    CefrLevel,
+    CefrSkill,
+    QuestionBankSkill,
+    QuestionBankItem,
+} from '../types';
+import {
+    CEFR_LEVELS,
+    CEFR_SKILLS,
+    CEFR_SKILL_LABELS,
+    QUESTION_BANK_SKILLS,
+    QUESTION_BANK_SKILL_LABELS,
+} from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
 
@@ -98,7 +112,9 @@ export default function TestBuilderPage() {
     const [generatorMaxLevel, setGeneratorMaxLevel] = useState<CefrLevel>(
         existing?.generatorConfig?.maxCefrLevel ?? 'C2'
     );
-    const [generatorSkills, setGeneratorSkills] = useState<CefrSkill[]>(existing?.generatorConfig?.skills ?? []);
+    const [generatorSkills, setGeneratorSkills] = useState<QuestionBankSkill[]>(
+        existing?.generatorConfig?.skills ?? []
+    );
     const [generatorTags, setGeneratorTags] = useState<string[]>(existing?.generatorConfig?.tags ?? []);
     const [generatorMinQuestions, setGeneratorMinQuestions] = useState(existing?.generatorConfig?.minQuestions ?? 5);
     const [generatorMaxQuestions, setGeneratorMaxQuestions] = useState(existing?.generatorConfig?.maxQuestions ?? 12);
@@ -815,7 +831,7 @@ export default function TestBuilderPage() {
                                 {t('tests.generator_skills_label')}
                             </span>
                             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                {CEFR_SKILLS.map((skill) => (
+                                {QUESTION_BANK_SKILLS.map((skill) => (
                                     <label
                                         key={skill}
                                         style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.875rem' }}
@@ -831,7 +847,11 @@ export default function TestBuilderPage() {
                                                 )
                                             }
                                         />
-                                        {CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}
+                                        {
+                                            QUESTION_BANK_SKILL_LABELS[skill][
+                                                i18n.language.startsWith('nl') ? 'nl' : 'en'
+                                            ]
+                                        }
                                     </label>
                                 ))}
                             </div>

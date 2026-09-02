@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import QuestionEditor from './QuestionEditor';
 import QuestionBankSectionEditor from './QuestionBankSectionEditor';
-import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS } from '../../data/cefrDescriptors';
-import type { QuestionBankItem, CefrLevel, CefrSkill, TestQuestion } from '../../types';
+import { CEFR_LEVELS, QUESTION_BANK_SKILLS, QUESTION_BANK_SKILL_LABELS } from '../../data/cefrDescriptors';
+import type { QuestionBankItem, CefrLevel, QuestionBankSkill, TestQuestion } from '../../types';
 
 interface Props {
     item: QuestionBankItem;
@@ -87,13 +87,13 @@ export default function QuestionBankItemEditorModal({ item, onSave, onClose }: P
                             id="bank-edit-skill"
                             value={local.cefrSkill ?? ''}
                             onChange={(e) =>
-                                setLocal({ ...local, cefrSkill: (e.target.value as CefrSkill) || undefined })
+                                setLocal({ ...local, cefrSkill: (e.target.value as QuestionBankSkill) || undefined })
                             }
                         >
                             <option value="">{t('questionBank.cefr_skill_none')}</option>
-                            {CEFR_SKILLS.map((skill) => (
+                            {QUESTION_BANK_SKILLS.map((skill) => (
                                 <option key={skill} value={skill}>
-                                    {CEFR_SKILL_LABELS[skill][skillLang]}
+                                    {QUESTION_BANK_SKILL_LABELS[skill][skillLang]}
                                 </option>
                             ))}
                         </select>

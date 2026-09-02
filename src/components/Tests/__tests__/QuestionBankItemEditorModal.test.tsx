@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import QuestionBankItemEditorModal from '../QuestionBankItemEditorModal';
 import type { QuestionBankItem } from '../../../types';
@@ -86,6 +86,16 @@ describe('QuestionBankItemEditorModal', () => {
         fireEvent.change(screen.getByLabelText('questionBank.cefr_skill_label'), { target: { value: 'reading' } });
         fireEvent.click(screen.getByText('common.save'));
         expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ id: 'q2', cefrSkill: 'reading' }));
+    });
+
+    it('offers grammar as a skill option and saves it on a question-kind item', () => {
+        const onSave = vi.fn();
+        render(<QuestionBankItemEditorModal item={questionItem} onSave={onSave} onClose={vi.fn()} />);
+        const skillSelect = screen.getByLabelText('questionBank.cefr_skill_label');
+        expect(within(skillSelect).getByRole('option', { name: 'Grammar' })).toBeInTheDocument();
+        fireEvent.change(skillSelect, { target: { value: 'grammar' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ id: 'q1', cefrSkill: 'grammar' }));
     });
 
     it('clears the CEFR skill when the any-skill option is selected', () => {

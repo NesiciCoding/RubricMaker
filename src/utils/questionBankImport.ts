@@ -5,13 +5,14 @@
  * through a flat CSV the way flashcards/rubrics do.
  */
 
-import { CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { CEFR_LEVELS, CEFR_SKILLS, QUESTION_BANK_SKILLS } from '../data/cefrDescriptors';
 import type {
     CefrLevel,
     CefrSkill,
     LinkedCefrDescriptor,
     LinkedStandard,
     QuestionBankItem,
+    QuestionBankSkill,
     TestQuestion,
     TestQuestionType,
 } from '../types';
@@ -234,9 +235,13 @@ function parseCefrLevel(raw: string | undefined, label: string, warnings: Import
     return undefined;
 }
 
-function parseCefrSkill(raw: string | undefined, label: string, warnings: ImportWarning[]): CefrSkill | undefined {
+function parseCefrSkill(
+    raw: string | undefined,
+    label: string,
+    warnings: ImportWarning[]
+): QuestionBankSkill | undefined {
     if (!raw) return undefined;
-    if (CEFR_SKILLS.includes(raw as CefrSkill)) return raw as CefrSkill;
+    if (QUESTION_BANK_SKILLS.includes(raw as QuestionBankSkill)) return raw as QuestionBankSkill;
     warnings.push({ key: 'questionBank.import_warn_unknown_cefr_skill', params: { item: label, skill: raw } });
     return undefined;
 }
