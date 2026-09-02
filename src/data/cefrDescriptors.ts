@@ -1,4 +1,4 @@
-import type { CefrDescriptor, CefrLevel, CefrSkill } from '../types';
+import type { CefrDescriptor, CefrLevel, CefrSkill, QuestionBankSkill } from '../types';
 
 /**
  * CEFR Can-Do descriptors based on the Common European Framework of Reference
@@ -729,6 +729,19 @@ export const CEFR_SKILL_LABELS: Record<CefrSkill, { en: string; nl: string }> = 
     speaking_production: { en: 'Speaking (Production)', nl: 'Spreken (productie)' },
     speaking_interaction: { en: 'Speaking (Interaction)', nl: 'Spreken (gesprekken)' },
     listening: { en: 'Listening', nl: 'Luisteren' },
+};
+
+/**
+ * Skill options for question-bank categorization and the placement generator's skill filter — the
+ * five CEFR skills plus 'grammar'. Distinct from CEFR_SKILLS (the proficiency dimension), which
+ * must stay grammar-free so the CEFR descriptor/self-assessment/analytics surfaces are unaffected.
+ */
+export const QUESTION_BANK_SKILLS: QuestionBankSkill[] = [...CEFR_SKILLS, 'grammar'];
+
+/** Display labels for QUESTION_BANK_SKILLS — reuses CEFR_SKILL_LABELS and adds the grammar label. */
+export const QUESTION_BANK_SKILL_LABELS: Record<QuestionBankSkill, { en: string; nl: string }> = {
+    ...CEFR_SKILL_LABELS,
+    grammar: { en: 'Grammar', nl: 'Grammatica' },
 };
 
 /** Short global descriptor per CEFR level */

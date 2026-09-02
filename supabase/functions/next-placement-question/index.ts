@@ -404,8 +404,16 @@ interface BankItem {
     kind?: 'question' | 'section';
     cefrLevel?: string;
     cefrSkill?: string;
+    tags?: string[];
     question?: MinimalQuestion;
     section?: { title: string; content?: string; audioUrl?: string; questions: MinimalQuestion[] };
+}
+
+/** True when the item carries at least one of the config's tags (case-insensitive), or no tag filter is set. */
+function matchesTagFilter(item: BankItem, tags: string[] | undefined): boolean {
+    if (!tags?.length) return true;
+    const wanted = new Set(tags.map((t) => t.toLowerCase()));
+    return (item.tags ?? []).some((t) => wanted.has(t.toLowerCase()));
 }
 
 /** The nested/standalone question a bank item's pick represents, for a given kind + index. */
@@ -504,6 +512,7 @@ serve(async (req) => {
             minCefrLevel: string;
             maxCefrLevel: string;
             skills?: string[];
+            tags?: string[];
             minQuestions: number;
             maxQuestions: number;
             starterBankItemId?: string;
@@ -602,6 +611,7 @@ serve(async (req) => {
         const pool = (candidates ?? [])
             .map((row) => ({ id: row.id as string, ...(row.data as Omit<BankItem, 'id'>) }) as BankItem)
             .filter((item) => !cfg.skills?.length || (item.cefrSkill && cfg.skills.includes(item.cefrSkill)))
+            .filter((item) => matchesTagFilter(item, cfg.tags))
             .filter((item) => !askedItemIds.includes(item.id))
             // A section bundle is served in full, so every nested question must be auto-scorable —
             // one 'open' question among them would always score 0, needing manual points.

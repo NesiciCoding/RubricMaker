@@ -5,13 +5,14 @@
  * through a flat CSV the way flashcards/rubrics do.
  */
 
-import { CEFR_LEVELS, CEFR_SKILLS } from '../data/cefrDescriptors';
+import { CEFR_LEVELS, CEFR_SKILLS, QUESTION_BANK_SKILLS } from '../data/cefrDescriptors';
 import type {
     CefrLevel,
     CefrSkill,
     LinkedCefrDescriptor,
     LinkedStandard,
     QuestionBankItem,
+    QuestionBankSkill,
     TestQuestion,
     TestQuestionType,
 } from '../types';
@@ -72,6 +73,7 @@ interface RawQuestionBankJson {
         tags?: string[];
         kind?: string;
         cefrLevel?: string;
+        cefrSkill?: string;
         /** Present when kind is absent/'question'. */
         question?: RawQuestion;
         /** Present when kind === 'section'. */
@@ -233,6 +235,17 @@ function parseCefrLevel(raw: string | undefined, label: string, warnings: Import
     return undefined;
 }
 
+function parseCefrSkill(
+    raw: string | undefined,
+    label: string,
+    warnings: ImportWarning[]
+): QuestionBankSkill | undefined {
+    if (!raw) return undefined;
+    if (QUESTION_BANK_SKILLS.includes(raw as QuestionBankSkill)) return raw as QuestionBankSkill;
+    warnings.push({ key: 'questionBank.import_warn_unknown_cefr_skill', params: { item: label, skill: raw } });
+    return undefined;
+}
+
 export function parseQuestionBankJson(text: string): QuestionBankImportResult {
     const warnings: ImportWarning[] = [];
     let data: RawQuestionBankJson;
@@ -274,6 +287,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
         }
         const tags = Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [];
         const cefrLevel = parseCefrLevel(raw.cefrLevel as string | undefined, label, warnings);
+        const cefrSkill = parseCefrSkill(raw.cefrSkill as string | undefined, label, warnings);
 
         if (raw.kind === 'section') {
             const section = raw.section;
@@ -295,6 +309,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
             parsed.push({
                 kind: 'section',
                 cefrLevel,
+                cefrSkill,
                 section: {
                     title: section.title,
                     content: section.content as string | undefined,
@@ -308,7 +323,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
 
         const question = parseQuestion(raw.question, label, warnings);
         if (!question) return;
-        parsed.push({ question, cefrLevel, tags });
+        parsed.push({ question, cefrLevel, cefrSkill, tags });
     });
 
     return { items: parsed, warnings };

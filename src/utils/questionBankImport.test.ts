@@ -330,6 +330,7 @@ describe('parseQuestionBankJson', () => {
                     {
                         kind: 'section',
                         cefrLevel: 'A1',
+                        cefrSkill: 'reading',
                         tags: ['reading', 'text-1'],
                         section: {
                             title: 'Tekst 1 — Chat profiles',
@@ -359,6 +360,7 @@ describe('parseQuestionBankJson', () => {
         const item = result.items[0];
         expect(item.kind).toBe('section');
         expect(item.cefrLevel).toBe('A1');
+        expect(item.cefrSkill).toBe('reading');
         expect(item.question).toBeUndefined();
         expect(item.section?.title).toBe('Tekst 1 — Chat profiles');
         expect(item.section?.content).toBe('<p>Five teen chat profiles...</p>');
@@ -406,6 +408,28 @@ describe('parseQuestionBankJson', () => {
         expect(result.items[0].cefrLevel).toBeUndefined();
         expect(result.warnings[0].key).toBe('questionBank.import_warn_unknown_cefr_level');
         expect(result.warnings[0].params).toEqual({ item: 'Item 1', level: 'Z9' });
+    });
+
+    it('parses a valid cefrSkill and warns on an unrecognized one, without dropping the item', () => {
+        const ok = parseQuestionBankJson(
+            JSON.stringify({ items: [{ cefrSkill: 'listening', question: { prompt: 'Hi', type: 'open' } }] })
+        );
+        expect(ok.items[0].cefrSkill).toBe('listening');
+        expect(ok.warnings).toEqual([]);
+
+        const grammar = parseQuestionBankJson(
+            JSON.stringify({ items: [{ cefrSkill: 'grammar', question: { prompt: 'Hi', type: 'open' } }] })
+        );
+        expect(grammar.items[0].cefrSkill).toBe('grammar');
+        expect(grammar.warnings).toEqual([]);
+
+        const bad = parseQuestionBankJson(
+            JSON.stringify({ items: [{ cefrSkill: 'telepathy', question: { prompt: 'Hi', type: 'open' } }] })
+        );
+        expect(bad.items).toHaveLength(1);
+        expect(bad.items[0].cefrSkill).toBeUndefined();
+        expect(bad.warnings[0].key).toBe('questionBank.import_warn_unknown_cefr_skill');
+        expect(bad.warnings[0].params).toEqual({ item: 'Item 1', skill: 'telepathy' });
     });
 
     it('caps the number of processed items and warns about the truncation', () => {

@@ -39,6 +39,16 @@ export interface CefrSubLevelRange {
 
 export type CefrSkill = 'reading' | 'writing' | 'speaking_production' | 'speaking_interaction' | 'listening';
 
+/**
+ * Skill facet used to categorize and filter question-bank items for the placement generator.
+ * Extends the five CEFR proficiency skills with 'grammar' — grammar is not a CEFR proficiency
+ * skill (it has no Can-Do descriptors and never appears in the CEFR self-assessment/descriptor/
+ * analytics surfaces, which stay keyed on CefrSkill), but it is a first-class question-bank
+ * category a teacher can author, tag, and place by, so it is selectable alongside the skills in
+ * the bank editor and the generator's skill filter.
+ */
+export type QuestionBankSkill = CefrSkill | 'grammar';
+
 export interface CefrDescriptor {
     id: string;
     level: CefrLevel;
@@ -1159,8 +1169,14 @@ export interface Test {
 export interface GeneratorConfig {
     minCefrLevel: CefrLevel;
     maxCefrLevel: CefrLevel;
-    /** Empty/undefined = no skill filter, pulls from all CEFR skills present in the bank. */
-    skills?: CefrSkill[];
+    /** Empty/undefined = no skill filter, pulls from all skills present in the bank. Includes 'grammar' (see QuestionBankSkill), which is a bank category rather than a CEFR proficiency skill. */
+    skills?: QuestionBankSkill[];
+    /**
+     * Empty/undefined = no tag filter. When set, an item must carry at least one of these tags
+     * (case-insensitive ANY match) in addition to satisfying the skill filter above. Lets a teacher
+     * scope a run to a topic/theme (e.g. 'business', 'travel') rather than only a CEFR skill.
+     */
+    tags?: string[];
     minQuestions: number;
     maxQuestions: number;
     /** QuestionBankItem id (question or section) the run starts from, instead of the configured range's midpoint level. */
@@ -1174,8 +1190,8 @@ export interface QuestionBankItem {
     kind?: 'question' | 'section';
     /** Structured CEFR level facet on every bank item, for reliable generator/browsing filters (in addition to the free-text tags below). */
     cefrLevel?: CefrLevel;
-    /** Structured CEFR skill facet, mirrors Test.cefrSkill — lets the live placement generator filter the bank by skill (roadmap 27.1). Only meaningful when kind is absent/'question'; a 'section' bundle's per-question skill isn't tracked separately. */
-    cefrSkill?: CefrSkill;
+    /** Structured skill facet — lets the live placement generator filter the bank by skill (roadmap 27.1). Set on both a standalone question and a 'section' bundle (a reading passage's skill is 'reading', a listening clip's is 'listening'); a bundle's skill applies to the passage as a whole rather than being tracked per nested question. Accepts 'grammar' (see QuestionBankSkill) in addition to the five CEFR skills; the field name is kept for back-compat with stored data. */
+    cefrSkill?: QuestionBankSkill;
     /** The question verbatim, minus its test-local sectionId (bank items aren't tied to a section). Present when kind is absent/'question'. */
     question?: Omit<TestQuestion, 'sectionId'>;
     /** A passage/stimulus bundled with its questions as one reusable unit. Present when kind === 'section'. */
