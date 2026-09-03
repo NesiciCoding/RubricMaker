@@ -559,4 +559,18 @@ describe('TestListPage', () => {
         await loadPage();
         expect(screen.getByTitle('tests.action_assign')).toBeDisabled();
     });
+
+    it('enables assign for a generator placement test even though its question pool is empty', async () => {
+        (mockUseApp as Record<string, unknown>).tests = [
+            {
+                ...mockTest,
+                questions: [],
+                mode: 'placement',
+                placementEngine: 'generator',
+                generatorConfig: { minCefrLevel: 'A1', maxCefrLevel: 'C2', minQuestions: 5, maxQuestions: 12 },
+            },
+        ];
+        await loadPage();
+        expect(screen.getByTitle('tests.action_assign')).toBeEnabled();
+    });
 });
