@@ -8,6 +8,7 @@ import type {
     GradeScale,
     LinkedStandard,
     QuestionBankItem,
+    QuestionBankSkill,
     Rubric,
     RubricVersion,
     TestQuestion,
@@ -180,7 +181,12 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
     const deleteQuestionBankItems = (ids: string[]) => dispatch({ type: 'DELETE_QUESTION_BANK_ITEMS', ids });
     const bulkUpdateQuestionBankItems = (
         ids: string[],
-        patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null }
+        patch: {
+            addTags?: string[];
+            removeTags?: string[];
+            cefrLevel?: CefrLevel | null;
+            cefrSkill?: QuestionBankSkill | null;
+        }
     ) => dispatch({ type: 'BULK_UPDATE_QUESTION_BANK_ITEMS', ids, patch });
     const addExportTemplate = (t: Omit<ExportTemplate, 'id' | 'addedAt'>): ExportTemplate => {
         const template: ExportTemplate = { ...t, id: nanoid(), addedAt: new Date().toISOString() };

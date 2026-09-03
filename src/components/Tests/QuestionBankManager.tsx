@@ -6,14 +6,15 @@ import { useAuthoring } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { CEFR_LEVELS } from '../../data/cefrDescriptors';
+import { CEFR_LEVELS, QUESTION_BANK_SKILLS } from '../../data/cefrDescriptors';
 import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
 import { exportQuestionBankJson } from '../../utils/questionBankImport';
 import { QUESTION_TYPES } from './QuestionEditor';
-import type { QuestionBankItem, CefrLevel, TestQuestion, TestQuestionType } from '../../types';
+import type { QuestionBankItem, CefrLevel, QuestionBankSkill, TestQuestion, TestQuestionType } from '../../types';
 import QuestionBankImportModal from './QuestionBankImportModal';
 import QuestionBankItemEditorModal from './QuestionBankItemEditorModal';
+import TagFilterChips from './TagFilterChips';
 
 interface QuestionBankManagerProps {
     /** When set, items render as pick targets (insert-from-bank) instead of a plain manager list. */
@@ -77,12 +78,14 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
     const [selectedCefr, setSelectedCefr] = useState<Set<string>>(new Set());
     const [kindFilter, setKindFilter] = useState<'all' | 'question' | 'section'>('all');
     const [typeFilter, setTypeFilter] = useState<TestQuestionType | ''>('');
+    const [skillFilter, setSkillFilter] = useState<QuestionBankSkill | ''>('');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [editingItem, setEditingItem] = useState<QuestionBankItem | null>(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [bulkTagInput, setBulkTagInput] = useState('');
     const [bulkCefrValue, setBulkCefrValue] = useState<CefrLevel | ''>('');
+    const [bulkSkillValue, setBulkSkillValue] = useState<QuestionBankSkill | ''>('');
 
     const manager = !onSelect;
 
@@ -118,10 +121,11 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                 const matchesCefr = selectedCefr.size === 0 || selectedCefr.has(item.cefrLevel ?? '');
                 const matchesKind = kindFilter === 'all' || itemKind(item) === kindFilter;
                 const matchesType = !typeFilter || itemMatchesType(item, typeFilter);
-                return matchesSearch && matchesTags && matchesCefr && matchesKind && matchesType;
+                const matchesSkill = !skillFilter || item.cefrSkill === skillFilter;
+                return matchesSearch && matchesTags && matchesCefr && matchesKind && matchesType && matchesSkill;
             })
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }, [questionBank, searchTerm, selectedTags, selectedCefr, kindFilter, typeFilter, searchIndex]);
+    }, [questionBank, searchTerm, selectedTags, selectedCefr, kindFilter, typeFilter, skillFilter, searchIndex]);
 
     const filterSignature = [
         searchTerm,
@@ -129,6 +133,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         Array.from(selectedCefr).sort().join(','),
         kindFilter,
         typeFilter,
+        skillFilter,
     ].join('|');
 
     useEffect(() => {
@@ -226,6 +231,10 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
         bulkUpdateQuestionBankItems(Array.from(selectedIds), { cefrLevel: bulkCefrValue || null });
     }
 
+    function handleBulkApplySkill() {
+        bulkUpdateQuestionBankItems(Array.from(selectedIds), { cefrSkill: bulkSkillValue || null });
+    }
+
     function handleExport() {
         const json = exportQuestionBankJson(questionBank);
         const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
@@ -298,23 +307,27 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                             </option>
                         ))}
                     </select>
+                    <select
+                        aria-label={t('questionBank.cefr_skill_label')}
+                        value={skillFilter}
+                        onChange={(e) => setSkillFilter(e.target.value as QuestionBankSkill | '')}
+                        style={{ fontSize: '0.8rem' }}
+                    >
+                        <option value="">{t('questionBank.cefr_skill_none')}</option>
+                        {QUESTION_BANK_SKILLS.map((skill) => (
+                            <option key={skill} value={skill}>
+                                {t(`cefr.skills.${skill}`)}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 {allTags.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {allTags.map((tag) => (
-                            <button
-                                key={tag}
-                                type="button"
-                                className={`btn btn-xs ${selectedTags.has(tag) ? 'btn-primary' : 'btn-secondary'}`}
-                                onClick={() => toggleTagFilter(tag)}
-                                aria-pressed={selectedTags.has(tag)}
-                                style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
-                            >
-                                {tag}
-                            </button>
-                        ))}
-                    </div>
+                    <TagFilterChips
+                        tags={allTags}
+                        isSelected={(tag) => selectedTags.has(tag)}
+                        onToggle={toggleTagFilter}
+                    />
                 )}
 
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -401,6 +414,22 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                         </select>
                         <button type="button" className="btn btn-secondary btn-xs" onClick={handleBulkApplyCefr}>
                             {t('questionBank.bulk_cefr_apply_button')}
+                        </button>
+                        <select
+                            aria-label={t('questionBank.bulk_set_skill_label')}
+                            value={bulkSkillValue}
+                            onChange={(e) => setBulkSkillValue(e.target.value as QuestionBankSkill | '')}
+                            style={{ fontSize: '0.75rem' }}
+                        >
+                            <option value="">{t('questionBank.cefr_skill_none')}</option>
+                            {QUESTION_BANK_SKILLS.map((skill) => (
+                                <option key={skill} value={skill}>
+                                    {t(`cefr.skills.${skill}`)}
+                                </option>
+                            ))}
+                        </select>
+                        <button type="button" className="btn btn-secondary btn-xs" onClick={handleBulkApplySkill}>
+                            {t('questionBank.bulk_set_skill_label')}
                         </button>
                         <button
                             type="button"

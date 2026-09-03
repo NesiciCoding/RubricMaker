@@ -23,6 +23,7 @@ import type {
     NotificationDismissal,
     NotificationDismissalType,
     QuestionBankItem,
+    QuestionBankSkill,
     Rubric,
     RubricVersion,
     SelfAssessment,
@@ -176,7 +177,12 @@ export type Action =
     | {
           type: 'BULK_UPDATE_QUESTION_BANK_ITEMS';
           ids: string[];
-          patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null };
+          patch: {
+              addTags?: string[];
+              removeTags?: string[];
+              cefrLevel?: CefrLevel | null;
+              cefrSkill?: QuestionBankSkill | null;
+          };
       }
     | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
     | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
@@ -831,7 +837,7 @@ export function reducer(state: StoreData, action: Action): StoreData {
         case 'BULK_UPDATE_QUESTION_BANK_ITEMS': {
             const idSet = new Set(action.ids);
             const now = new Date().toISOString();
-            const { addTags, removeTags, cefrLevel } = action.patch;
+            const { addTags, removeTags, cefrLevel, cefrSkill } = action.patch;
             const next = state.questionBank.map((i) => {
                 if (!idSet.has(i.id)) return i;
                 let tags = i.tags;
@@ -841,6 +847,7 @@ export function reducer(state: StoreData, action: Action): StoreData {
                     ...i,
                     tags,
                     cefrLevel: cefrLevel === null ? undefined : (cefrLevel ?? i.cefrLevel),
+                    cefrSkill: cefrSkill === null ? undefined : (cefrSkill ?? i.cefrSkill),
                     updatedAt: now,
                 };
             });
@@ -928,7 +935,12 @@ export interface AppContextValue extends StoreData {
     deleteQuestionBankItems: (ids: string[]) => void;
     bulkUpdateQuestionBankItems: (
         ids: string[],
-        patch: { addTags?: string[]; removeTags?: string[]; cefrLevel?: CefrLevel | null }
+        patch: {
+            addTags?: string[];
+            removeTags?: string[];
+            cefrLevel?: CefrLevel | null;
+            cefrSkill?: QuestionBankSkill | null;
+        }
     ) => void;
     addDocumentComment: (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>) => DocumentComment;
     resolveDocumentComment: (id: string, resolved: boolean) => void;

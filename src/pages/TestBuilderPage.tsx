@@ -28,6 +28,7 @@ import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
+import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
 import type {
     Test,
@@ -865,28 +866,19 @@ export default function TestBuilderPage() {
                                     {t('tests.generator_tags_none')}
                                 </p>
                             ) : (
-                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                    {bankTags.map((tag) => {
-                                        const active = generatorTags.some((g) => g.toLowerCase() === tag.toLowerCase());
-                                        return (
-                                            <button
-                                                key={tag}
-                                                type="button"
-                                                className={`btn btn-sm ${active ? 'btn-primary' : 'btn-secondary'}`}
-                                                aria-pressed={active}
-                                                onClick={() =>
-                                                    setGeneratorTags((prev) =>
-                                                        active
-                                                            ? prev.filter((g) => g.toLowerCase() !== tag.toLowerCase())
-                                                            : [...prev, tag]
-                                                    )
-                                                }
-                                            >
-                                                {tag}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                <TagFilterChips
+                                    tags={bankTags}
+                                    isSelected={(tag) =>
+                                        generatorTags.some((g) => g.toLowerCase() === tag.toLowerCase())
+                                    }
+                                    onToggle={(tag) =>
+                                        setGeneratorTags((prev) =>
+                                            prev.some((g) => g.toLowerCase() === tag.toLowerCase())
+                                                ? prev.filter((g) => g.toLowerCase() !== tag.toLowerCase())
+                                                : [...prev, tag]
+                                        )
+                                    }
+                                />
                             )}
                         </div>
                         {generatorLevelPoolWarnings.length > 0 && (
