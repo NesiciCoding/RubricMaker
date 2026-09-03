@@ -571,6 +571,10 @@ describe('TestListPage', () => {
             },
         ];
         await loadPage();
+        // Card view (default) exercises the grid-view assign condition.
+        expect(screen.getByTitle('tests.action_assign')).toBeEnabled();
+        // List view exercises the separate table-view assign condition.
+        fireEvent.click(screen.getByText('common.view_list'));
         expect(screen.getByTitle('tests.action_assign')).toBeEnabled();
     });
 });
