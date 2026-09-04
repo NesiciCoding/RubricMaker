@@ -33,6 +33,7 @@ import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
+import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
@@ -269,7 +270,7 @@ export default function TestListPage() {
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('tests.action_assign')}
                                                         aria-label={t('tests.action_assign')}
-                                                        disabled={test.questions.length === 0}
+                                                        disabled={test.questions.length === 0 && !isGeneratorTest(test)}
                                                         onClick={() => setAssigningTestId(test.id)}
                                                     >
                                                         <Send size={14} />
@@ -518,7 +519,10 @@ export default function TestListPage() {
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.action_assign')}
                                                                     aria-label={t('tests.action_assign')}
-                                                                    disabled={test.questions.length === 0}
+                                                                    disabled={
+                                                                        test.questions.length === 0 &&
+                                                                        !isGeneratorTest(test)
+                                                                    }
                                                                     onClick={() => setAssigningTestId(test.id)}
                                                                 >
                                                                     <Send size={14} />
