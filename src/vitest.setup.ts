@@ -1,5 +1,5 @@
 /// <reference types="vitest/globals" />
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 
 // Recharts' ResponsiveContainer uses ResizeObserver which doesn't exist in jsdom
 global.ResizeObserver = class ResizeObserver {
