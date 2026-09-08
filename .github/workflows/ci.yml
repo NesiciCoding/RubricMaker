@@ -519,7 +519,7 @@ jobs:
 
       - name: Deploy via rsync
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
           switches: -avz --delete
           path: dist/
@@ -531,7 +531,7 @@ jobs:
 
       - name: Upload .htaccess
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
           switches: -avz
           path: deploy/.htaccess
@@ -592,7 +592,7 @@ jobs:
 
       - name: Deploy via rsync
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
           switches: -avz --delete
           path: dist/
@@ -604,7 +604,7 @@ jobs:
 
       - name: Upload .htaccess
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@4d419d1dc46d4a8a2b6ceab2f951f0f93b2da8f5 # v9.0.0
+        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
           switches: -avz
           path: deploy/.htaccess
