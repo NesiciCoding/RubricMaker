@@ -244,7 +244,9 @@ describe('AttachmentViewer', () => {
 
     it('clears the docx preview container when rendering the original view succeeds', async () => {
         const origFetch = globalThis.fetch;
-        globalThis.fetch = vi.fn().mockResolvedValue(new Blob(['fake docx bytes']));
+        globalThis.fetch = vi
+            .fn()
+            .mockResolvedValue({ blob: () => Promise.resolve(new Blob(['fake docx bytes'])) } as unknown as Response);
         render(
             <AttachmentViewer
                 attachment={makeAttachment(
