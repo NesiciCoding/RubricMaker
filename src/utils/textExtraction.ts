@@ -1,5 +1,8 @@
 import DOMPurify from 'dompurify';
 import type { Attachment } from '../types';
+import { type PSM } from 'tesseract.js';
+import { resolveOcrLanguages } from './ocrLanguage';
+import { Oem, type CaptureHint, psmForCaptureHint } from './ocrConfig';
 
 export class UnsupportedFormatError extends Error {
     constructor(mimeType: string) {
@@ -69,15 +72,99 @@ function extractFromHtml(dataUrl: string): string {
     return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
-async function extractFromImage(dataUrl: string): Promise<string> {
+/** One recognised word with its confidence in [0, 1] and pixel bounding box. */
+export interface OcrWord {
+    text: string;
+    confidence: number;
+    bbox?: { x0: number; y0: number; x1: number; y1: number };
+}
+
+/** Rich OCR result: the full text, mean per-word confidence in [0, 1], and per-word data. */
+export interface OcrResult {
+    text: string;
+    confidence: number;
+    words: OcrWord[];
+}
+
+export interface RecognizeImageOptions {
+    /** UI locale(s) or tesseract code(s); resolved via `resolveOcrLanguages`. Defaults to English. */
+    langs?: string | string[];
+    /** What's being scanned; selects the page-segmentation mode. */
+    captureHint?: CaptureHint;
+    /** Explicit PSM override; wins over `captureHint` when set. */
+    psm?: number;
+}
+
+/** Tesseract reports confidence 0–100; the app models it in [0, 1]. */
+function toUnitConfidence(value: number | undefined): number {
+    if (typeof value !== 'number' || Number.isNaN(value)) return 0;
+    return Math.min(1, Math.max(0, value / 100));
+}
+
+interface RawWord {
+    text?: string;
+    confidence?: number;
+    bbox?: { x0: number; y0: number; x1: number; y1: number };
+}
+
+interface RecognizeData {
+    text?: string;
+    confidence?: number;
+    words?: RawWord[];
+    blocks?: { paragraphs?: { lines?: { words?: RawWord[] }[] }[] }[] | null;
+}
+
+/** Collect per-word data from either the flat `words` shape or the nested `blocks` tree. */
+function collectWords(data: RecognizeData): OcrWord[] {
+    const raw: RawWord[] = [];
+    if (Array.isArray(data.words) && data.words.length > 0) {
+        raw.push(...data.words);
+    } else if (Array.isArray(data.blocks)) {
+        for (const block of data.blocks) {
+            for (const paragraph of block.paragraphs ?? []) {
+                for (const line of paragraph.lines ?? []) {
+                    for (const word of line.words ?? []) raw.push(word);
+                }
+            }
+        }
+    }
+    return raw.map((w) => ({
+        text: w.text ?? '',
+        confidence: toUnitConfidence(w.confidence),
+        bbox: w.bbox,
+    }));
+}
+
+/**
+ * OCR an image data URL into text plus per-word confidence, keeping a human in the loop:
+ * the confidence lets the review UI flag low-confidence spans. Uses the LSTM engine and a
+ * capture-driven page-segmentation mode. `tesseract.js` is imported lazily so its WASM
+ * payload stays out of routes that never OCR.
+ */
+export async function recognizeImage(dataUrl: string, opts: RecognizeImageOptions = {}): Promise<OcrResult> {
+    const langs = resolveOcrLanguages(opts.langs);
+    const psm = opts.psm ?? psmForCaptureHint(opts.captureHint);
     const { createWorker } = await import('tesseract.js');
-    const worker = await createWorker('eng');
+    const worker = await createWorker(langs, Oem.LSTM_ONLY);
     try {
-        const { data } = await worker.recognize(dataUrl);
-        return data.text;
+        await worker.setParameters({ tessedit_pageseg_mode: psm as unknown as PSM });
+        const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
+        const words = collectWords(data);
+        const meanWordConfidence =
+            words.length > 0 ? words.reduce((sum, w) => sum + w.confidence, 0) / words.length : undefined;
+        return {
+            text: data.text ?? '',
+            confidence: meanWordConfidence ?? toUnitConfidence(data.confidence),
+            words,
+        };
     } finally {
         await worker.terminate();
     }
+}
+
+async function extractFromImage(dataUrl: string): Promise<string> {
+    const { text } = await recognizeImage(dataUrl);
+    return text;
 }
 
 export async function extractText(
