@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { putBlob, deleteBlob, listIds } from '../mediaStore';
+import { putBlob, getBlob, deleteBlob, listIds } from '../mediaStore';
 import {
     SCAN_ID_PREFIX,
     newScanId,
@@ -58,5 +58,18 @@ describe('scanStore blobs', () => {
         await putBlob('rec_abc', makeBlob('audio', 'audio/webm'), 'audio/webm');
 
         expect(await listScanIds()).toEqual([scanId]);
+    });
+
+    it('rejects a non-scan id in every CRUD wrapper so a recording blob is never touched', async () => {
+        await putBlob('rec_abc', makeBlob('audio', 'audio/webm'), 'audio/webm');
+
+        await expect(putScanBlob('rec_abc', makeBlob('img'), 'image/png')).rejects.toThrow(/scan id/);
+        await expect(getScanBlob('rec_abc')).rejects.toThrow(/scan id/);
+        await expect(deleteScanBlob('rec_abc')).rejects.toThrow(/scan id/);
+
+        // The recording is untouched by the rejected scan calls.
+        const rec = await getBlob('rec_abc');
+        expect(rec).not.toBeNull();
+        expect(rec!.mimeType).toBe('audio/webm');
     });
 });

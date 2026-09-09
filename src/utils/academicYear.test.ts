@@ -8,19 +8,21 @@ import {
 } from './academicYear';
 
 describe('getAcademicYear', () => {
+    // getAcademicYear reads local calendar components, so these boundary dates are
+    // built from local Y/M/D (not a UTC literal) to stay stable across time zones.
     it('places a date on or after the August cutover in the year that starts then', () => {
-        expect(getAcademicYear(new Date('2026-08-01T00:00:00Z'))).toBe('2026-2027');
-        expect(getAcademicYear(new Date('2026-12-31T00:00:00Z'))).toBe('2026-2027');
+        expect(getAcademicYear(new Date(2026, 7, 1))).toBe('2026-2027');
+        expect(getAcademicYear(new Date(2026, 11, 31))).toBe('2026-2027');
     });
 
     it('places a date before the cutover in the prior-starting year', () => {
-        expect(getAcademicYear(new Date('2026-07-31T00:00:00Z'))).toBe('2025-2026');
-        expect(getAcademicYear(new Date('2026-01-01T00:00:00Z'))).toBe('2025-2026');
+        expect(getAcademicYear(new Date(2026, 6, 31))).toBe('2025-2026');
+        expect(getAcademicYear(new Date(2026, 0, 1))).toBe('2025-2026');
     });
 
     it('honours a custom cutover month', () => {
-        expect(getAcademicYear(new Date('2026-09-01T00:00:00Z'), 9)).toBe('2026-2027');
-        expect(getAcademicYear(new Date('2026-08-31T00:00:00Z'), 9)).toBe('2025-2026');
+        expect(getAcademicYear(new Date(2026, 8, 1), 9)).toBe('2026-2027');
+        expect(getAcademicYear(new Date(2026, 7, 31), 9)).toBe('2025-2026');
     });
 });
 
