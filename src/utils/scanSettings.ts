@@ -6,7 +6,6 @@ export const DEFAULT_SCAN_OCR_SETTINGS: ScanOcrSettings = {
     defaultLang: 'eng',
 };
 
-/** Fully-defaulted scan settings, merging a (possibly absent) stored slice over the defaults. */
 export function resolveScanOcrSettings(stored?: Partial<ScanOcrSettings>): ScanOcrSettings {
     return { ...DEFAULT_SCAN_OCR_SETTINGS, ...stored };
 }
