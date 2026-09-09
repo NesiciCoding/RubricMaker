@@ -10,7 +10,8 @@
  * four-corner adjust fallback reuses the exact same `cropQuadrilateral` unwarp.
  */
 
-import { type RgbaImage, sampleBilinear } from './preprocessScan';
+import type { RgbaImage } from '../types';
+import { sampleBilinear } from './preprocessScan';
 
 export interface Point {
     x: number;
@@ -33,24 +34,25 @@ function lerpPoint(a: Point, b: Point, t: number): Point {
 }
 
 /**
- * Sort four arbitrary points into TL/TR/BR/BL. The top-left minimises x+y and the
- * bottom-right maximises it; the top-right maximises x−y and the bottom-left minimises it.
+ * Sort four arbitrary points into TL/TR/BR/BL. Ordering by angle around the centroid
+ * gives the correct clockwise cycle for any convex quadrilateral (an x+y/x−y extrema
+ * heuristic collapses on a ~45°-rotated quad, assigning one point to two corners); the
+ * cycle is then rotated so the point nearest the origin becomes the top-left.
  */
 export function orderCorners(points: Point[]): Corners {
     if (points.length !== 4) {
         throw new Error(`orderCorners expects exactly 4 points, got ${points.length}`);
     }
     let tl = points[0];
-    let br = points[0];
-    let tr = points[0];
-    let bl = points[0];
     for (const p of points) {
         if (p.x + p.y < tl.x + tl.y) tl = p;
-        if (p.x + p.y > br.x + br.y) br = p;
-        if (p.x - p.y > tr.x - tr.y) tr = p;
-        if (p.x - p.y < bl.x - bl.y) bl = p;
     }
-    return { topLeft: tl, topRight: tr, bottomRight: br, bottomLeft: bl };
+    const cx = points.reduce((s, p) => s + p.x, 0) / 4;
+    const cy = points.reduce((s, p) => s + p.y, 0) / 4;
+    const clockwise = [...points].sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
+    const start = clockwise.indexOf(tl);
+    const [topLeft, topRight, bottomRight, bottomLeft] = [0, 1, 2, 3].map((i) => clockwise[(start + i) % 4]);
+    return { topLeft, topRight, bottomRight, bottomLeft };
 }
 
 function outputSize(corners: Corners, width?: number, height?: number): { width: number; height: number } {

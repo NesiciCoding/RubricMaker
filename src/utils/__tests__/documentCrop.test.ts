@@ -30,6 +30,21 @@ describe('orderCorners', () => {
         expect(c.bottomLeft).toEqual(bl);
     });
 
+    it('assigns four distinct corners for a ~45°-rotated (diamond) quad', () => {
+        const c = orderCorners([
+            { x: 5, y: 0 },
+            { x: 10, y: 5 },
+            { x: 5, y: 10 },
+            { x: 0, y: 5 },
+        ]);
+        expect(c.topLeft).toEqual({ x: 5, y: 0 });
+        expect(c.topRight).toEqual({ x: 10, y: 5 });
+        expect(c.bottomRight).toEqual({ x: 5, y: 10 });
+        expect(c.bottomLeft).toEqual({ x: 0, y: 5 });
+        const distinct = new Set([c.topLeft, c.topRight, c.bottomRight, c.bottomLeft]);
+        expect(distinct.size).toBe(4);
+    });
+
     it('throws on the wrong number of points', () => {
         expect(() => orderCorners([{ x: 0, y: 0 }])).toThrow();
     });
@@ -62,6 +77,20 @@ describe('cropQuadrilateral', () => {
         const out = cropQuadrilateral(img, corners, { width: 20, height: 12 });
         expect(out.width).toBe(20);
         expect(out.height).toBe(12);
+    });
+
+    it('fills with the configured background when the quad falls outside the image', () => {
+        const img = makeImage(4, 4, () => 0); // all black
+        const corners: Corners = {
+            topLeft: { x: -10, y: -10 },
+            topRight: { x: -5, y: -10 },
+            bottomRight: { x: -5, y: -5 },
+            bottomLeft: { x: -10, y: -5 },
+        };
+        const out = cropQuadrilateral(img, corners, { width: 3, height: 3, background: 200 });
+        for (let i = 0; i < out.data.length; i += 4) {
+            expect(out.data[i]).toBe(200);
+        }
     });
 
     it('derives output size from corner distances when unspecified', () => {
