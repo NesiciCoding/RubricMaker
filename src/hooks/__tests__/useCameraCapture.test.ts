@@ -127,4 +127,52 @@ describe('useCameraCapture', () => {
         expect(track.stop).toHaveBeenCalled();
         expect(result.current.status).toBe('idle');
     });
+
+    it('start is idempotent while active and does not request the camera twice', async () => {
+        const { result } = renderHook(() => useCameraCapture());
+        await act(async () => {
+            await result.current.start();
+        });
+        await act(async () => {
+            expect(await result.current.start()).toBe(true);
+        });
+        expect(getUserMedia).toHaveBeenCalledTimes(1);
+    });
+
+    it('tears down a partially-acquired stream when play() rejects', async () => {
+        const { stream, track } = makeStream();
+        getUserMedia.mockResolvedValueOnce(stream);
+        const { result } = renderHook(() => useCameraCapture());
+        act(() => {
+            result.current.videoRef.current = {
+                videoWidth: 640,
+                videoHeight: 480,
+                play: vi.fn().mockRejectedValue(new Error('play failed')),
+            } as unknown as HTMLVideoElement;
+        });
+        let ok = true;
+        await act(async () => {
+            ok = await result.current.start();
+        });
+        expect(ok).toBe(false);
+        expect(result.current.status).toBe('error');
+        expect(track.stop).toHaveBeenCalled();
+    });
+
+    it('capture returns null when no 2d context is available', async () => {
+        const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+        const { result } = renderHook(() => useCameraCapture());
+        act(() => {
+            result.current.videoRef.current = {
+                videoWidth: 640,
+                videoHeight: 480,
+                play: vi.fn().mockResolvedValue(undefined),
+            } as unknown as HTMLVideoElement;
+        });
+        await act(async () => {
+            await result.current.start();
+        });
+        expect(await result.current.capture()).toBeNull();
+        getContextSpy.mockRestore();
+    });
 });

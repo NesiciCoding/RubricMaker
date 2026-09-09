@@ -72,6 +72,12 @@ describe('rasterizePdf', () => {
         expect(images[0].sourceName).toBe('scan.pdf');
         expect(images[0].mimeType).toBe('image/png');
     });
+
+    it('skips pages when no 2d context is available', async () => {
+        mockPdf(2);
+        getContextSpy.mockReturnValue(null);
+        expect(await rasterizePdf(pdfFile())).toEqual([]);
+    });
 });
 
 describe('importScanFiles', () => {
@@ -87,6 +93,13 @@ describe('importScanFiles', () => {
         mockPdf(2);
         const { images } = await importScanFiles([pdfFile()]);
         expect(images).toHaveLength(2);
+    });
+
+    it('reports a PDF that yields no pages', async () => {
+        mockPdf(0);
+        const { images, skipped } = await importScanFiles([pdfFile('empty.pdf')]);
+        expect(images).toEqual([]);
+        expect(skipped).toEqual([{ name: 'empty.pdf', reason: 'no-pages' }]);
     });
 
     it('skips unsupported files with a reason', async () => {
