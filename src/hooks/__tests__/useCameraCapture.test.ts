@@ -159,6 +159,72 @@ describe('useCameraCapture', () => {
         expect(track.stop).toHaveBeenCalled();
     });
 
+    it('serializes concurrent start calls into a single getUserMedia request', async () => {
+        const { result } = renderHook(() => useCameraCapture());
+        await act(async () => {
+            await Promise.all([result.current.start(), result.current.start()]);
+        });
+        expect(getUserMedia).toHaveBeenCalledTimes(1);
+        expect(result.current.status).toBe('active');
+    });
+
+    it('discards a stream that arrives after stop() and stays idle', async () => {
+        const { stream, track } = makeStream();
+        let resolveGum!: (s: MediaStream) => void;
+        getUserMedia.mockImplementationOnce(
+            () =>
+                new Promise<MediaStream>((res) => {
+                    resolveGum = res;
+                })
+        );
+        const { result } = renderHook(() => useCameraCapture());
+        let startPromise!: Promise<boolean>;
+        act(() => {
+            startPromise = result.current.start();
+        });
+        act(() => {
+            result.current.stop();
+        });
+        let ok = true;
+        await act(async () => {
+            resolveGum(stream);
+            ok = await startPromise;
+        });
+        expect(ok).toBe(false);
+        expect(track.stop).toHaveBeenCalled();
+        expect(result.current.status).toBe('idle');
+    });
+
+    it('reports the actual blob mime type when the browser falls back to png', async () => {
+        const getContextSpy = vi
+            .spyOn(HTMLCanvasElement.prototype, 'getContext')
+            .mockReturnValue({ drawImage: vi.fn() } as unknown as CanvasRenderingContext2D);
+        const toBlobSpy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+            this: HTMLCanvasElement,
+            cb: BlobCallback
+        ) {
+            cb(new Blob(['img'], { type: 'image/png' }));
+        });
+
+        const { result } = renderHook(() => useCameraCapture());
+        act(() => {
+            result.current.videoRef.current = {
+                videoWidth: 640,
+                videoHeight: 480,
+                play: vi.fn().mockResolvedValue(undefined),
+            } as unknown as HTMLVideoElement;
+        });
+        await act(async () => {
+            await result.current.start();
+        });
+
+        const out = await result.current.capture('image/webp');
+        expect(out!.mimeType).toBe('image/png');
+
+        getContextSpy.mockRestore();
+        toBlobSpy.mockRestore();
+    });
+
     it('capture returns null when no 2d context is available', async () => {
         const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
         const { result } = renderHook(() => useCameraCapture());

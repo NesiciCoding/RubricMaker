@@ -20,12 +20,14 @@ function pdfFile(name = 'scan.pdf'): File {
     return file;
 }
 
-function mockPdf(numPages: number) {
+function mockPdf(numPages: number, viewport = { width: 100, height: 200 }) {
     getPage.mockImplementation(async () => ({
-        getViewport: () => ({ width: 100, height: 200 }),
+        getViewport: () => viewport,
         render: () => ({ promise: Promise.resolve() }),
     }));
-    getDocument.mockReturnValue({ promise: Promise.resolve({ numPages, getPage }) });
+    const destroy = vi.fn().mockResolvedValue(undefined);
+    getDocument.mockReturnValue({ promise: Promise.resolve({ numPages, getPage }), destroy });
+    return { destroy };
 }
 
 let getContextSpy: ReturnType<typeof vi.spyOn>;
@@ -73,10 +75,38 @@ describe('rasterizePdf', () => {
         expect(images[0].mimeType).toBe('image/png');
     });
 
-    it('skips pages when no 2d context is available', async () => {
+    it('rejects when no 2d context is available', async () => {
         mockPdf(2);
         getContextSpy.mockReturnValue(null);
-        expect(await rasterizePdf(pdfFile())).toEqual([]);
+        await expect(rasterizePdf(pdfFile())).rejects.toThrow();
+    });
+
+    it('rejects a non-finite or non-positive scale', async () => {
+        mockPdf(1);
+        await expect(rasterizePdf(pdfFile(), { scale: 0 })).rejects.toThrow();
+        await expect(rasterizePdf(pdfFile(), { scale: Number.POSITIVE_INFINITY })).rejects.toThrow();
+    });
+
+    it('destroys the loading task after a successful render', async () => {
+        const { destroy } = mockPdf(2);
+        await rasterizePdf(pdfFile());
+        expect(destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('destroys the loading task even when loading rejects', async () => {
+        const destroy = vi.fn().mockResolvedValue(undefined);
+        getDocument.mockReturnValue({ promise: Promise.reject(new Error('bad pdf')), destroy });
+        await expect(rasterizePdf(pdfFile())).rejects.toThrow('bad pdf');
+        expect(destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses the blob mime type when it differs from the requested type', async () => {
+        mockPdf(1);
+        toBlobSpy.mockImplementation(function (this: HTMLCanvasElement, cb: BlobCallback) {
+            cb(new Blob(['page'], { type: 'image/png' }));
+        });
+        const images = await rasterizePdf(pdfFile(), { mimeType: 'image/webp' });
+        expect(images[0].mimeType).toBe('image/png');
     });
 });
 
@@ -109,10 +139,37 @@ describe('importScanFiles', () => {
     });
 
     it('reports a PDF whose render throws', async () => {
-        getDocument.mockReturnValue({ promise: Promise.reject(new Error('bad pdf')) });
+        getDocument.mockReturnValue({
+            promise: Promise.reject(new Error('bad pdf')),
+            destroy: vi.fn().mockResolvedValue(undefined),
+        });
         const { images, skipped } = await importScanFiles([pdfFile('broken.pdf')]);
         expect(images).toEqual([]);
         expect(skipped).toEqual([{ name: 'broken.pdf', reason: 'pdf-render-failed' }]);
+    });
+
+    it('reports pdf-render-failed when canvas serialization returns null', async () => {
+        mockPdf(1);
+        toBlobSpy.mockImplementation(function (this: HTMLCanvasElement, cb: BlobCallback) {
+            cb(null);
+        });
+        const { images, skipped } = await importScanFiles([pdfFile('nul.pdf')]);
+        expect(images).toEqual([]);
+        expect(skipped).toEqual([{ name: 'nul.pdf', reason: 'pdf-render-failed' }]);
+    });
+
+    it('reports pdf-render-failed for a PDF with too many pages', async () => {
+        mockPdf(10_000);
+        const { images, skipped } = await importScanFiles([pdfFile('huge.pdf')]);
+        expect(images).toEqual([]);
+        expect(skipped).toEqual([{ name: 'huge.pdf', reason: 'pdf-render-failed' }]);
+    });
+
+    it('reports pdf-render-failed when a page exceeds the pixel limit', async () => {
+        mockPdf(1, { width: 100_000, height: 100_000 });
+        const { images, skipped } = await importScanFiles([pdfFile('big.pdf')]);
+        expect(images).toEqual([]);
+        expect(skipped).toEqual([{ name: 'big.pdf', reason: 'pdf-render-failed' }]);
     });
 
     it('handles a mix of images, PDFs, and junk in one call', async () => {

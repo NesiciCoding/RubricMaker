@@ -35,36 +35,63 @@ export function useCameraCapture(): UseCameraCaptureReturn {
     const [error, setError] = useState<Error | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const startPromiseRef = useRef<Promise<boolean> | null>(null);
+    // Bumped by stop()/unmount so a getUserMedia request still in flight can tell it
+    // was superseded and release its stream instead of attaching it after teardown.
+    const genRef = useRef(0);
 
     const stop = useCallback(() => {
+        genRef.current += 1;
+        startPromiseRef.current = null;
         streamRef.current?.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
         if (videoRef.current) videoRef.current.srcObject = null;
         setStatus('idle');
     }, []);
 
-    const start = useCallback(async (opts: StartCameraOptions = {}) => {
-        if (streamRef.current) return true;
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: opts.facingMode ?? 'environment' },
-                audio: false,
-            });
-            streamRef.current = stream;
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play?.();
+    const start = useCallback((opts: StartCameraOptions = {}) => {
+        if (streamRef.current) return Promise.resolve(true);
+        if (startPromiseRef.current) return startPromiseRef.current;
+
+        const gen = genRef.current;
+        const run = (async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: opts.facingMode ?? 'environment' },
+                    audio: false,
+                });
+                if (gen !== genRef.current) {
+                    stream.getTracks().forEach((t) => t.stop());
+                    return false;
+                }
+                streamRef.current = stream;
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    await videoRef.current.play?.();
+                }
+                if (gen !== genRef.current) {
+                    stream.getTracks().forEach((t) => t.stop());
+                    streamRef.current = null;
+                    if (videoRef.current) videoRef.current.srcObject = null;
+                    return false;
+                }
+                setStatus('active');
+                setError(null);
+                return true;
+            } catch (e) {
+                if (gen === genRef.current) {
+                    streamRef.current?.getTracks().forEach((t) => t.stop());
+                    streamRef.current = null;
+                    setError(e instanceof Error ? e : new Error(String(e)));
+                    setStatus('error');
+                }
+                return false;
+            } finally {
+                if (gen === genRef.current) startPromiseRef.current = null;
             }
-            setStatus('active');
-            setError(null);
-            return true;
-        } catch (e) {
-            streamRef.current?.getTracks().forEach((t) => t.stop());
-            streamRef.current = null;
-            setError(e instanceof Error ? e : new Error(String(e)));
-            setStatus('error');
-            return false;
-        }
+        })();
+        startPromiseRef.current = run;
+        return run;
     }, []);
 
     const capture = useCallback((mimeType = 'image/png', quality?: number) => {
@@ -83,7 +110,11 @@ export function useCameraCapture(): UseCameraCaptureReturn {
         ctx.drawImage(video, 0, 0, width, height);
 
         return new Promise<CaptureResult | null>((resolve) => {
-            canvas.toBlob((blob) => resolve(blob ? { blob, mimeType, width, height } : null), mimeType, quality);
+            canvas.toBlob(
+                (blob) => resolve(blob ? { blob, mimeType: blob.type || mimeType, width, height } : null),
+                mimeType,
+                quality
+            );
         });
     }, []);
 
