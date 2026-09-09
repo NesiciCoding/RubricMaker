@@ -1,8 +1,10 @@
 /**
  * Pure, canvas-independent image preprocessing for scanned handwriting before OCR.
  * Tesseract accuracy hinges on a clean, level, high-contrast 1-bit image far more
- * than on the engine settings, so this chain — grayscale → contrast → threshold →
- * deskew → upscale — is the biggest quality lever in the scan pipeline.
+ * than on the engine settings, so this chain — grayscale → contrast → deskew → upscale →
+ * threshold — is the biggest quality lever in the scan pipeline. Thresholding runs last
+ * so the bilinear geometric steps can't reintroduce intermediate gray values: the output
+ * is a clean 1-bit image whenever `threshold` is enabled.
  *
  * Everything here operates on a plain {data,width,height} RGBA buffer (structurally
  * a DOM `ImageData`, so a real `ImageData` can be passed straight in) and returns a
@@ -11,11 +13,9 @@
  * without a browser or WASM.
  */
 
-export interface RgbaImage {
-    data: Uint8ClampedArray;
-    width: number;
-    height: number;
-}
+import type { RgbaImage } from '../types';
+
+export type { RgbaImage };
 
 export interface PreprocessOptions {
     grayscale?: boolean;
@@ -256,7 +256,11 @@ export function resize(img: RgbaImage, targetWidth: number, targetHeight: number
     const sy = img.height / h;
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
-            const [r, g, b, a] = sampleBilinear(img, (x + 0.5) * sx - 0.5, (y + 0.5) * sy - 0.5, 255);
+            // Clamp to source bounds so the edge row/column replicate edge pixels
+            // instead of sampling the background past width-1 / height-1.
+            const srcX = Math.min(Math.max((x + 0.5) * sx - 0.5, 0), img.width - 1);
+            const srcY = Math.min(Math.max((y + 0.5) * sy - 0.5, 0), img.height - 1);
+            const [r, g, b, a] = sampleBilinear(img, srcX, srcY, 255);
             const o = (y * w + x) * 4;
             out.data[o] = r;
             out.data[o + 1] = g;
@@ -281,8 +285,9 @@ export function preprocessScan(img: RgbaImage, opts: PreprocessOptions = {}): Rg
     let result = cloneImage(img);
     if (o.grayscale) result = toGrayscale(result);
     if (o.contrast) result = stretchContrast(result);
-    if (o.threshold) result = binarize(result);
+    // Geometric steps use bilinear interpolation, so threshold last to keep 1-bit output.
     if (o.deskew) result = deskew(result, o.maxSkewDegrees);
     if (o.upscaleMinDimension > 0) result = upscaleToMinDimension(result, o.upscaleMinDimension);
+    if (o.threshold) result = binarize(result);
     return result;
 }

@@ -173,4 +173,12 @@ describe('preprocessScan', () => {
         const distinct = new Set([...out.data.filter((_, i) => i % 4 === 0)]);
         for (const v of distinct) expect([0, 255]).toContain(v);
     });
+
+    it('stays 1-bit after the default deskew and upscale steps', () => {
+        // Threshold runs last, so bilinear deskew/upscale can't reintroduce gray values.
+        const img = makeImage(40, 40, (x, y) => gray((x + y) % 6 < 2 ? 30 : 220));
+        const out = preprocessScan(img, { upscaleMinDimension: 80 });
+        const distinct = new Set([...out.data.filter((_, i) => i % 4 === 0)]);
+        for (const v of distinct) expect([0, 255]).toContain(v);
+    });
 });
