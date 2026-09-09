@@ -240,6 +240,61 @@ export interface Attachment {
 }
 
 /**
+ * An academic year in `YYYY-YYYY` form (e.g. `'2026-2027'`), the span the retention
+ * policy purges by — distinct from `SchoolYear`, which is a Dutch grade level
+ * (groep-7, jaar-1..6). Derived in `src/utils/academicYear.ts`.
+ */
+export type AcademicYear = string;
+
+/**
+ * Metadata for a scanned image of student work (Phase 33). The image bytes live only
+ * in IndexedDB (scanStore) while offline and, when connected, in the `scans` Storage
+ * bucket referenced by `storagePath` — never inline on this record, matching
+ * SessionRecording. The recognised text is kept here; the image is subject to the
+ * discard-after-OCR default and the one-academic-year retention cap.
+ */
+export interface Scan {
+    id: string;
+    /** Grade record / student this scan belongs to, when captured during grading. */
+    studentId?: string;
+    /** Rubric or assignment the scan is filed under, when applicable. */
+    rubricId?: string;
+    /** Path in the `scans` bucket once uploaded; absent while local-only. */
+    storagePath?: string;
+    /** OCR transcription (teacher-editable before it's saved to a grade). */
+    ocrText: string;
+    /** Mean per-word OCR confidence in [0, 1], or undefined before recognition. */
+    ocrConfidence?: number;
+    /** Tesseract language(s) used, e.g. `'eng'` or `'eng+nld'`. */
+    lang?: string;
+    /** Academic year the scan was captured in; the retention sweep purges by this. */
+    schoolYear: AcademicYear;
+    createdAt: string; // ISO date string
+    /** True once the blob + metadata are pushed to Supabase (connected mode). */
+    synced?: boolean;
+}
+
+/**
+ * Per-user settings for the scan-and-OCR feature (Phase 33). Read through
+ * `resolveScanOcrSettings` (src/utils/scanSettings.ts) so every field has a safe
+ * default when the slice is absent.
+ */
+export interface ScanOcrSettings {
+    /**
+     * Keep the scanned image after its text is confirmed, instead of discarding it.
+     * Defaults to false (discard-after-OCR) — the privacy-preserving choice.
+     */
+    keepImage: boolean;
+    /** Default Tesseract language for recognition, e.g. `'eng'`. */
+    defaultLang: string;
+    /**
+     * Deferred (Phase 33.6): opt into server-side cloud handwriting OCR. Not wired in
+     * Phase 33 — the field exists so the setting can be added later without a reshape.
+     */
+    serverSide?: boolean;
+}
+
+/**
  * An inline anchored comment on a graded document (essay or DOCX attachment, both
  * rendered read-only through CommentableDocumentView). anchor positions are raw
  * ProseMirror ints captured at creation time — stable because the underlying
@@ -791,6 +846,8 @@ export interface AppSettings {
     digestUnreadMessagesEnabled?: boolean;
     /** Wider letter-spacing and increased line-height app-wide, for dyslexic readers. */
     dyslexiaFriendlyMode?: boolean;
+    /** Scan-and-OCR preferences (Phase 33); resolve with resolveScanOcrSettings for defaults. */
+    scanOcr?: ScanOcrSettings;
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';
