@@ -11,6 +11,9 @@ import type { OcrResult, OcrWord } from './textExtraction';
 /** Below this mean/word confidence (in [0, 1]) a span is flagged for the teacher to check. */
 export const DEFAULT_LOW_CONFIDENCE_THRESHOLD = 0.6;
 
+/** Confidence at/above which a word is shown as "high" — never below the low-confidence threshold. */
+export const HIGH_CONFIDENCE_BAND = 0.85;
+
 export interface AnnotatedWord extends OcrWord {
     /** Position in the result's word list, for jump-to-next navigation. */
     index: number;
@@ -20,14 +23,17 @@ export interface AnnotatedWord extends OcrWord {
 
 export type ConfidenceBand = 'high' | 'medium' | 'low';
 
-/** Coarse band for a summary badge: high ≥ 0.85, medium ≥ threshold, else low. */
+/**
+ * Coarse band for a summary badge. The "high" cutoff never drops below `threshold`, so a word
+ * `annotateWords` flags low-confidence can never also read "high" when a caller raises the
+ * threshold above the default high band.
+ */
 export function confidenceBand(confidence: number, threshold = DEFAULT_LOW_CONFIDENCE_THRESHOLD): ConfidenceBand {
-    if (confidence >= 0.85) return 'high';
+    if (confidence >= Math.max(HIGH_CONFIDENCE_BAND, threshold)) return 'high';
     if (confidence >= threshold) return 'medium';
     return 'low';
 }
 
-/** Annotate every recognised word with its index and a low-confidence flag. */
 export function annotateWords(result: OcrResult, threshold = DEFAULT_LOW_CONFIDENCE_THRESHOLD): AnnotatedWord[] {
     return result.words.map((word, index) => ({
         ...word,

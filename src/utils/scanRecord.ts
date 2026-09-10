@@ -26,7 +26,6 @@ export interface BuildScanRecordInput {
     createdAt?: string;
 }
 
-/** Assemble a local-only `Scan` (no `storagePath`, `synced: false`); bytes live in scanStore, not here. */
 export function buildScanRecord(input: BuildScanRecordInput): Scan {
     return {
         id: input.id,
@@ -57,7 +56,6 @@ export interface FinalizeScanReviewInput {
 
 export interface FinalizedScanReview {
     scan: Scan;
-    /** True when the image blob should be deleted now (discard-after-OCR default). */
     discardImage: boolean;
 }
 
