@@ -3018,7 +3018,9 @@
         "an_vocab_item_verdict": "Un verdict « adapté à ma classe ? » : choisissez un niveau CECR cible et voyez le taux de couverture, ce qui dépasse le niveau, et si le texte est au niveau, légèrement au-dessus ou trop difficile.",
         "an_vocab_item_seed": "Exportez des listes de mots par niveau CECR, ou créez-en un jeu de cartes en un clic.",
         "an_vocab_analytics_title": "Niveau de lecture et vocabulaire académique",
-        "an_vocab_analytics_info": "Les niveaux de vocabulaire proviennent des listes CEFR-J et CECR ouvertes ; la couverture académique est mesurée par rapport à l'AWL (Coxhead) et à la NAWL. Toute la correspondance est basée sur des règles et hors ligne — vérifiez les résultats avant de vous y fier."
+        "an_vocab_analytics_info": "Les niveaux de vocabulaire proviennent des listes CEFR-J et CECR ouvertes ; la couverture académique est mesurée par rapport à l'AWL (Coxhead) et à la NAWL. Toute la correspondance est basée sur des règles et hors ligne — vérifiez les résultats avant de vous y fier.",
+        "gr_scan_title": "Numériser un travail manuscrit",
+        "gr_scan_body": "Dans le panneau de retour d'un critère, choisissez « Numériser l'écriture » pour photographier une copie papier avec la caméra de votre appareil ou importer une photo ou un PDF numérisé. Le texte est reconnu sur votre appareil (rien n'est téléversé) ; vous le vérifiez et le corrigez — les mots les moins sûrs sont surlignés — puis il est inséré dans votre retour. Cet outil est réservé aux enseignants ; les élèves ne téléversent jamais de numérisations. L'image est supprimée après la reconnaissance, sauf si vous activez « conserver l'image » dans les Réglages ; les images conservées le sont au maximum une année scolaire."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3324,5 +3326,30 @@
         "from_student_badge": "D’un élève",
         "save_error": "Impossible d’enregistrer le paquet. Réessayez.",
         "load_error": "Impossible de charger vos paquets. Actualisez la page pour réessayer."
+    },
+    "scan": {
+        "button": "Numériser l'écriture",
+        "title": "Numériser un travail manuscrit",
+        "privacy_note": "La reconnaissance de texte s'exécute sur cet appareil — l'image n'est jamais téléversée. La reconnaissance est un premier jet ; vérifiez les mots surlignés avant d'insérer.",
+        "hint_label": "Que numérisez-vous ?",
+        "hint_auto": "Auto (mise en page mixte)",
+        "hint_single_column": "Une seule colonne de texte",
+        "hint_block": "Un bloc/paragraphe",
+        "hint_sparse": "Notes éparses",
+        "use_camera": "Utiliser la caméra",
+        "import_file": "Importer une photo ou un PDF",
+        "take_photo": "Prendre une photo",
+        "camera_error": "Impossible d'accéder à la caméra. Importez plutôt une photo.",
+        "no_image": "Ce fichier ne contenait aucune image numérisable.",
+        "recognising": "Reconnaissance du texte…",
+        "preview_alt": "Travail numérisé",
+        "confidence_label": "Confiance de reconnaissance",
+        "confidence_high": "Élevée",
+        "confidence_medium": "Moyenne",
+        "confidence_low": "Faible",
+        "review_label": "Vérifiez et corrigez le texte",
+        "check_words": "Mots les moins sûrs — à vérifier :",
+        "rescan": "Numériser à nouveau",
+        "insert": "Insérer dans le retour"
     }
 }

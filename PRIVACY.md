@@ -9,14 +9,16 @@
 RubricMaker runs entirely in the user's browser. There is no application server, no database, and no backend API owned by this project. All data is created, stored, and processed on the operator's own device. The application transmits no telemetry, no analytics, and no usage data to any external party.
 
 **Key architectural facts:**
+
 - Static SPA — served as HTML/CSS/JavaScript files from any web host or opened directly from disk.
 - All persistent state lives in the browser's `localStorage` on the operator's device.
 - No automatic cloud sync or remote backup.
 - No authentication system; access control is entirely at the OS/device level.
 
 **Role definitions used in this document:**
-- *Operator* — the person who runs the application (typically a teacher or institution).
-- *Data subject* — any person whose data is entered into the application (typically a student).
+
+- _Operator_ — the person who runs the application (typically a teacher or institution).
+- _Data subject_ — any person whose data is entered into the application (typically a student).
 
 ---
 
@@ -24,25 +26,28 @@ RubricMaker runs entirely in the user's browser. There is no application server,
 
 All data is stored exclusively in the browser's `localStorage` under the origin the application is served from. Nothing is uploaded automatically.
 
-| Data category | localStorage key | Description | Contains PII? |
-|---|---|---|---|
-| Rubric definitions | `rm_rubrics` | Criteria, levels, scoring rules, grade scale reference, format settings | No |
-| Students | `rm_students` | Student name and optional email address | **Yes** |
-| Classes | `rm_classes` | Class names and student membership lists | No |
-| Graded rubrics | `rm_student_rubrics` | Per-student scores, level selections, comments, grade modifiers | **Yes** (via student ID) |
-| File attachments | `rm_attachments` | Base64-encoded student assignment files (DOCX, PDF, images) | **Yes** |
-| Grade scales | `rm_grade_scales` | Custom grading scales (labels, colours, percentage ranges) | No |
-| Comment snippets | `rm_comment_snippets` | Reusable teacher feedback phrases | No |
-| Comment bank | `rm_comment_bank` | Categorised feedback library | No |
-| Application settings | `rm_settings` | UI preferences, default grade scale, optional API key | No (see §4) |
-| Favourite standards | `rm_favorite_standards` | Bookmarked curriculum standards | No |
-| Export templates | `rm_export_templates` | Custom DOCX export templates | No |
-| Peer reviews | `rm_peer_reviews` | Student-authored peer feedback | **Yes** (via student ID) |
-| Self-assessments | `rm_self_assessments` | Student self-ratings and free-text reflections | **Yes** (via student ID) |
-| Speaking sessions | `rm_speaking_sessions` | Oral assessment records | **Yes** (via student ID) |
-| UI state | `rm_sidebar_collapsed` | Whether the sidebar is open or closed | No |
+| Data category              | localStorage key                       | Description                                                                              | Contains PII?            |
+| -------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------ |
+| Rubric definitions         | `rm_rubrics`                           | Criteria, levels, scoring rules, grade scale reference, format settings                  | No                       |
+| Students                   | `rm_students`                          | Student name and optional email address                                                  | **Yes**                  |
+| Classes                    | `rm_classes`                           | Class names and student membership lists                                                 | No                       |
+| Graded rubrics             | `rm_student_rubrics`                   | Per-student scores, level selections, comments, grade modifiers                          | **Yes** (via student ID) |
+| File attachments           | `rm_attachments`                       | Base64-encoded student assignment files (DOCX, PDF, images)                              | **Yes**                  |
+| Grade scales               | `rm_grade_scales`                      | Custom grading scales (labels, colours, percentage ranges)                               | No                       |
+| Comment snippets           | `rm_comment_snippets`                  | Reusable teacher feedback phrases                                                        | No                       |
+| Comment bank               | `rm_comment_bank`                      | Categorised feedback library                                                             | No                       |
+| Application settings       | `rm_settings`                          | UI preferences, default grade scale, optional API key                                    | No (see §4)              |
+| Favourite standards        | `rm_favorite_standards`                | Bookmarked curriculum standards                                                          | No                       |
+| Export templates           | `rm_export_templates`                  | Custom DOCX export templates                                                             | No                       |
+| Peer reviews               | `rm_peer_reviews`                      | Student-authored peer feedback                                                           | **Yes** (via student ID) |
+| Self-assessments           | `rm_self_assessments`                  | Student self-ratings and free-text reflections                                           | **Yes** (via student ID) |
+| Speaking sessions          | `rm_speaking_sessions`                 | Oral assessment records                                                                  | **Yes** (via student ID) |
+| Scanned handwriting images | `rm_media` (IndexedDB), `scans` bucket | Photos/scans of handwritten student work, kept only when the teacher opts in (see below) | **Yes**                  |
+| UI state                   | `rm_sidebar_collapsed`                 | Whether the sidebar is open or closed                                                    | No                       |
 
 **Attachments note:** File attachments are stored as base64 strings directly in `localStorage`. Browser `localStorage` is typically limited to 5–10 MB per origin. Attachments approaching this limit may silently fail to save or may cause data loss for other keys. Consider this when deciding whether to store large files.
+
+**Handwriting scans note:** The scan-and-OCR feature (a teacher-only grading tool — students never upload scans) recognises text from a photo or scanned PDF entirely on the teacher's device using Tesseract.js; the image itself is **not uploaded for recognition**. Only the recognised, teacher-corrected text is inserted into feedback. The source image is **discarded immediately after recognition by default**; it is retained only if the teacher enables "keep image" in Settings. When retained, the image bytes live in the browser's `rm_media` IndexedDB store and, if a Supabase backend is connected, in the private `scans` storage bucket (owner-only access via row-level security). Retained scans are capped at **one academic year** and are purged after that by a local sweep and a server-side backstop.
 
 **Backup files:** The application can export all data to a JSON file written to the operator's local filesystem. This file is created on demand and is not uploaded anywhere. The operator is responsible for the security of this file.
 
@@ -78,6 +83,7 @@ The application includes an optional integration with the [Common Standards Proj
 The codebase contains scaffolding for a OneDrive/SharePoint sync feature using the Microsoft Authentication Library (MSAL) and Microsoft Graph API. **This feature is entirely disabled in the current release.** The MSAL provider is not mounted, no Microsoft login flow is triggered, and no data is transmitted to Microsoft.
 
 If this feature is re-enabled in a future release, it would:
+
 - Trigger an OAuth login via Microsoft identity platform.
 - Store MSAL token cache (access tokens, refresh tokens, account info) in `localStorage`.
 - Sync rubric and grading data to the signed-in user's OneDrive.
@@ -94,7 +100,7 @@ The speaking assessment feature uses the browser's built-in Web Speech API for a
 
 ### 5.1 Role of the operator
 
-Under the GDPR, the *data controller* is the natural person or organisation that determines the purposes and means of processing personal data. Because RubricMaker stores data only on the operator's device and the application author has no access to that data, **the operator is the data controller**. The application author is not a processor or controller in relation to student data.
+Under the GDPR, the _data controller_ is the natural person or organisation that determines the purposes and means of processing personal data. Because RubricMaker stores data only on the operator's device and the application author has no access to that data, **the operator is the data controller**. The application author is not a processor or controller in relation to student data.
 
 Institutions deploying RubricMaker for multiple staff members should establish their own data processing policies and data subject agreements as required by their jurisdiction.
 
@@ -113,6 +119,7 @@ Data subjects can request access to their data. Operators can use the applicatio
 ### 5.5 Right to erasure (Article 17)
 
 Student data can be deleted:
+
 - **Individually:** By deleting a student record within the application (also removes associated graded rubrics and assessments).
 - **Completely:** By clearing `localStorage` for the application origin via browser developer tools or privacy settings, or by using the restore feature to import a backup that excludes the relevant records.
 
@@ -127,6 +134,7 @@ No personal data is transferred outside the operator's device by the application
 ### 5.8 Privacy by design and default (Article 25)
 
 The architecture provides strong privacy-by-design properties:
+
 - No data leaves the device without a deliberate operator action (export).
 - No third-party analytics or tracking scripts are loaded.
 - The application functions fully offline after initial load.
@@ -136,6 +144,7 @@ The architecture provides strong privacy-by-design properties:
 ### 5.9 Security (Article 32)
 
 The application does not implement application-layer encryption for stored data. Security relies on the host OS and device:
+
 - OS-level full-disk encryption (FileVault, BitLocker, LUKS) protects data at rest.
 - OS user account separation prevents other local users from accessing the browser profile.
 - Browser profile passwords or separate browser profiles add an additional layer.
@@ -170,12 +179,13 @@ The following practices are recommended for any institution that deploys RubricM
 
 ## 7. Contact and Updates
 
-**Data Protection Officer (DPO) contact:** *(replace this placeholder with your institution's DPO name, email, and address)*
+**Data Protection Officer (DPO) contact:** _(replace this placeholder with your institution's DPO name, email, and address)_
 
 This document reflects the privacy characteristics of RubricMaker as a client-side-only application. It must be reviewed and updated when:
+
 - Server-side features are introduced (e.g. cloud sync, multi-user backend).
 - The Microsoft OneDrive/SharePoint integration is activated.
 - New external service integrations are added.
 - The application is deployed in a new jurisdiction with different regulatory requirements.
 
-*Last reviewed: May 2026*
+_Last reviewed: May 2026_

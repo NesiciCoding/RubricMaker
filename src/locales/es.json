@@ -3018,7 +3018,9 @@
         "an_vocab_item_verdict": "Un veredicto «¿adecuado para mi clase?»: elige un nivel MCER objetivo y ve la cobertura, qué supera el nivel y si el texto está en nivel, algo por encima o demasiado difícil.",
         "an_vocab_item_seed": "Exporta listas de palabras por nivel MCER, o crea un mazo de tarjetas a partir de ellas con un clic.",
         "an_vocab_analytics_title": "Nivel de lectura y vocabulario académico",
-        "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos."
+        "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos.",
+        "gr_scan_title": "Escanear trabajo manuscrito",
+        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se descarta tras el reconocimiento salvo que actives «conservar imagen» en Ajustes; las imágenes conservadas se guardan como máximo un curso escolar."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3324,5 +3326,30 @@
         "from_student_badge": "De un estudiante",
         "save_error": "No se pudo guardar el mazo. Inténtalo de nuevo.",
         "load_error": "No se pudieron cargar tus mazos. Actualiza la página para reintentar."
+    },
+    "scan": {
+        "button": "Escanear escritura",
+        "title": "Escanear trabajo manuscrito",
+        "privacy_note": "El reconocimiento de texto se ejecuta en este dispositivo: la imagen nunca se sube. El reconocimiento es un primer borrador; revisa las palabras resaltadas antes de insertar.",
+        "hint_label": "¿Qué estás escaneando?",
+        "hint_auto": "Automático (diseño mixto)",
+        "hint_single_column": "Una sola columna de texto",
+        "hint_block": "Un bloque/párrafo",
+        "hint_sparse": "Notas dispersas",
+        "use_camera": "Usar cámara",
+        "import_file": "Importar foto o PDF",
+        "take_photo": "Tomar foto",
+        "camera_error": "No se pudo acceder a la cámara. Importa una foto en su lugar.",
+        "no_image": "Ese archivo no tenía ninguna imagen escaneable.",
+        "recognising": "Reconociendo texto…",
+        "preview_alt": "Trabajo escaneado",
+        "confidence_label": "Confianza del reconocimiento",
+        "confidence_high": "Alta",
+        "confidence_medium": "Media",
+        "confidence_low": "Baja",
+        "review_label": "Revisa y corrige el texto",
+        "check_words": "Palabras menos fiables: revísalas:",
+        "rescan": "Escanear de nuevo",
+        "insert": "Insertar en la retroalimentación"
     }
 }

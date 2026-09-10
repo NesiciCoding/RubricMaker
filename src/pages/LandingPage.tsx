@@ -34,6 +34,7 @@ import {
     Newspaper,
     Route,
     Bell,
+    ScanLine,
 } from 'lucide-react';
 import { usePlatform } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
@@ -51,6 +52,12 @@ const TEACHER_FEATURES = [
         title: 'Smart Grading',
         desc: 'Grade quickly with a comment bank, voice dictation, keyboard shortcuts, anchored inline comments on submissions, audio feedback, and a card or grid view — plus side-by-side and group grading.',
         color: '#8b5cf6',
+    },
+    {
+        icon: ScanLine,
+        title: 'Scan handwritten work',
+        desc: 'Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — images are discarded after recognition by default.',
+        color: '#0ea5e9',
     },
     {
         icon: BarChart3,

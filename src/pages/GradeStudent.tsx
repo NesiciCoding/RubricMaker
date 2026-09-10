@@ -15,6 +15,7 @@ import {
     X,
     XCircle,
     ScanSearch,
+    ScanLine,
     PenLine,
     Upload,
     Printer,
@@ -30,6 +31,7 @@ import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import DocumentAnalysisPanel from '../components/Essay/DocumentAnalysisPanel';
+import ScanCaptureModal from '../components/Grading/ScanCaptureModal';
 import EssayAssignmentModal from '../components/Essay/EssayAssignmentModal';
 import EssayImportModal from '../components/Essay/EssayImportModal';
 import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
@@ -58,6 +60,7 @@ import { logAuditEvent } from '../services/database/AuditLogger';
 import { loadSupabaseConfig, storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
+import { resolveScanOcrSettings } from '../utils/scanSettings';
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -178,6 +181,7 @@ export default function GradeStudent() {
     const audioRecorder = useMediaRecorder();
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
+    const [scanForCrit, setScanForCrit] = useState<string | null>(null);
     const commentEditorRef = useRef<TiptapEditorHandle>(null);
     const [showAttachPanel, setShowAttachPanel] = useState(false);
     const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
@@ -1534,14 +1538,24 @@ export default function GradeStudent() {
                                                         placeholder={t('gradeStudent.comment_placeholder')}
                                                     />
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-secondary btn-sm"
-                                                    onClick={() => setShowCommentBankFor(c.id)}
-                                                    title={t('gradeStudent.comment_open_bank')}
-                                                >
-                                                    <BookOpen size={16} /> {t('gradeStudent.comment_open_bank')}
-                                                </button>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => setShowCommentBankFor(c.id)}
+                                                        title={t('gradeStudent.comment_open_bank')}
+                                                    >
+                                                        <BookOpen size={16} /> {t('gradeStudent.comment_open_bank')}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => setScanForCrit(c.id)}
+                                                        title={t('scan.button', 'Scan handwriting')}
+                                                    >
+                                                        <ScanLine size={16} /> {t('scan.button', 'Scan handwriting')}
+                                                    </button>
+                                                </div>
                                             </div>
                                             {/* Audio feedback */}
                                             <div
@@ -1797,6 +1811,22 @@ export default function GradeStudent() {
                     }}
                 />
             )}
+            {scanForCrit &&
+                (() => {
+                    const scanSettings = resolveScanOcrSettings(settings.scanOcr);
+                    return (
+                        <ScanCaptureModal
+                            defaultLang={scanSettings.defaultLang}
+                            keepImage={scanSettings.keepImage}
+                            onClose={() => setScanForCrit(null)}
+                            onInsert={(text) => {
+                                // Land the recognised text as a document node via the TipTap
+                                // insertContent API, matching the comment-bank insert path.
+                                if (commentEditorRef.current) commentEditorRef.current.insertContent(text);
+                            }}
+                        />
+                    );
+                })()}
 
             {showEssayAssignment && rubricId && studentId && rubric && student && (
                 <EssayAssignmentModal
