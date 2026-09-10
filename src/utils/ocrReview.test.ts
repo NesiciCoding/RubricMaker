@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { OcrResult } from './textExtraction';
+import type { OcrResult, OcrWord } from './textExtraction';
 import {
     confidenceBand,
     annotateWords,
@@ -8,7 +8,7 @@ import {
     DEFAULT_LOW_CONFIDENCE_THRESHOLD,
 } from './ocrReview';
 
-function result(words: { text: string; confidence: number }[]): OcrResult {
+function result(words: OcrWord[]): OcrResult {
     const confidence = words.length ? words.reduce((s, w) => s + w.confidence, 0) / words.length : 0;
     return { text: words.map((w) => w.text).join(' '), confidence, words };
 }
@@ -20,6 +20,14 @@ describe('confidenceBand', () => {
         expect(confidenceBand(0.7)).toBe('medium');
         expect(confidenceBand(DEFAULT_LOW_CONFIDENCE_THRESHOLD)).toBe('medium');
         expect(confidenceBand(0.59)).toBe('low');
+    });
+
+    it('keeps the high band at or above the threshold, so it never contradicts a low-confidence flag', () => {
+        // With a threshold above the default high band, a word annotateWords flags low-confidence
+        // must not simultaneously read "high".
+        expect(confidenceBand(0.9, 0.95)).not.toBe('high');
+        expect(annotateWords(result([{ text: 'x', confidence: 0.9 }]), 0.95)[0].lowConfidence).toBe(true);
+        expect(confidenceBand(0.95, 0.95)).toBe('high');
     });
 });
 
