@@ -4,8 +4,10 @@
  * with domain vocabulary (rubric terms, class names) as user words/patterns. These are
  * pure helpers so the config can be unit-tested without loading the WASM engine.
  *
- * The numeric OEM/PSM values mirror Tesseract's own stable enums, hard-coded here so this
- * module — and its callers' bundles — don't statically import `tesseract.js` (kept lazy).
+ * The OEM value mirrors Tesseract's stable enum; the page-segmentation mode is expressed
+ * as a Tesseract `PSM` enum *key* (resolved to the actual value inside `recognizeImage`,
+ * where the engine is loaded). Both are hard-coded here so this module — and its callers'
+ * bundles — don't statically import `tesseract.js` (kept lazy).
  */
 
 /** OCR Engine Mode. LSTM-only is the accurate neural engine; legacy is not shipped. */
@@ -13,26 +15,22 @@ export const Oem = {
     LSTM_ONLY: 1,
 } as const;
 
-/** Page Segmentation Mode (subset relevant to scanned schoolwork). */
-export const Psm = {
-    AUTO: 3,
-    SINGLE_COLUMN: 4,
-    SINGLE_BLOCK: 6,
-    SPARSE_TEXT: 11,
-} as const;
+/** A Tesseract `PSM` enum key (subset relevant to scanned schoolwork). */
+export type PsmMode = 'AUTO' | 'SINGLE_COLUMN' | 'SINGLE_BLOCK' | 'SPARSE_TEXT';
 
-/** What the teacher is scanning, captured as a hint that selects a PSM. */
+/** What the teacher is scanning, captured as a hint that selects a page-segmentation mode. */
 export type CaptureHint = 'auto' | 'single-column' | 'block' | 'sparse';
 
-const CAPTURE_HINT_TO_PSM: Record<CaptureHint, number> = {
-    auto: Psm.AUTO,
-    'single-column': Psm.SINGLE_COLUMN,
-    block: Psm.SINGLE_BLOCK,
-    sparse: Psm.SPARSE_TEXT,
+const CAPTURE_HINT_TO_PSM: Record<CaptureHint, PsmMode> = {
+    auto: 'AUTO',
+    'single-column': 'SINGLE_COLUMN',
+    block: 'SINGLE_BLOCK',
+    sparse: 'SPARSE_TEXT',
 };
 
-export function psmForCaptureHint(hint: CaptureHint = 'auto'): number {
-    return CAPTURE_HINT_TO_PSM[hint] ?? Psm.AUTO;
+/** Map a capture hint to the Tesseract PSM key `recognizeImage` resolves against the engine. */
+export function psmForCaptureHint(hint: CaptureHint = 'auto'): PsmMode {
+    return CAPTURE_HINT_TO_PSM[hint] ?? 'AUTO';
 }
 
 /**

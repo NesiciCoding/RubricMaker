@@ -8,8 +8,13 @@ const { recognize, setParameters, terminate, createWorkerSpy } = vi.hoisted(() =
     createWorkerSpy: vi.fn(),
 }));
 
-vi.mock('tesseract.js', () => ({ createWorker: createWorkerSpy }));
+vi.mock('tesseract.js', () => ({
+    createWorker: createWorkerSpy,
+    // Tesseract's PSM enum uses string values; mirror the ones the code resolves.
+    PSM: { AUTO: '3', SINGLE_COLUMN: '4', SINGLE_BLOCK: '6', SPARSE_TEXT: '11' },
+}));
 
+import { PSM } from 'tesseract.js';
 import { recognizeImage, extractText } from './textExtraction';
 
 beforeEach(() => {
@@ -47,14 +52,14 @@ describe('recognizeImage', () => {
         expect(createWorkerSpy).toHaveBeenCalledWith('eng+nld', 1);
     });
 
-    it('sets the page-segmentation mode from the capture hint', async () => {
+    it('sets the page-segmentation mode from the capture hint (string PSM value)', async () => {
         await recognizeImage(imageUrl, { captureHint: 'sparse' });
-        expect(setParameters).toHaveBeenCalledWith({ tessedit_pageseg_mode: 11 });
+        expect(setParameters).toHaveBeenCalledWith({ tessedit_pageseg_mode: '11' });
     });
 
     it('lets an explicit psm override the capture hint', async () => {
-        await recognizeImage(imageUrl, { captureHint: 'sparse', psm: 6 });
-        expect(setParameters).toHaveBeenCalledWith({ tessedit_pageseg_mode: 6 });
+        await recognizeImage(imageUrl, { captureHint: 'sparse', psm: PSM.SINGLE_BLOCK });
+        expect(setParameters).toHaveBeenCalledWith({ tessedit_pageseg_mode: '6' });
     });
 
     it('flattens the nested blocks tree when a flat words array is absent', async () => {
