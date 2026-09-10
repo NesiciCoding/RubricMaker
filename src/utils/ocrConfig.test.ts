@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Oem, Psm, psmForCaptureHint, buildUserWords, buildUserPatterns } from './ocrConfig';
+import { Oem, psmForCaptureHint, buildUserWords, buildUserPatterns } from './ocrConfig';
 
 describe('engine mode constants', () => {
     it('uses the LSTM-only OEM value', () => {
@@ -8,15 +8,15 @@ describe('engine mode constants', () => {
 });
 
 describe('psmForCaptureHint', () => {
-    it('maps each capture hint to its page-segmentation mode', () => {
-        expect(psmForCaptureHint('auto')).toBe(Psm.AUTO);
-        expect(psmForCaptureHint('single-column')).toBe(Psm.SINGLE_COLUMN);
-        expect(psmForCaptureHint('block')).toBe(Psm.SINGLE_BLOCK);
-        expect(psmForCaptureHint('sparse')).toBe(Psm.SPARSE_TEXT);
+    it('maps each capture hint to its Tesseract PSM key', () => {
+        expect(psmForCaptureHint('auto')).toBe('AUTO');
+        expect(psmForCaptureHint('single-column')).toBe('SINGLE_COLUMN');
+        expect(psmForCaptureHint('block')).toBe('SINGLE_BLOCK');
+        expect(psmForCaptureHint('sparse')).toBe('SPARSE_TEXT');
     });
 
     it('defaults to AUTO when no hint is given', () => {
-        expect(psmForCaptureHint()).toBe(Psm.AUTO);
+        expect(psmForCaptureHint()).toBe('AUTO');
     });
 });
 

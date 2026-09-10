@@ -91,8 +91,8 @@ export interface RecognizeImageOptions {
     langs?: string | string[];
     /** What's being scanned; selects the page-segmentation mode. */
     captureHint?: CaptureHint;
-    /** Explicit PSM override; wins over `captureHint` when set. */
-    psm?: number;
+    /** Explicit Tesseract PSM override; wins over `captureHint` when set. */
+    psm?: PSM;
 }
 
 /** Tesseract reports confidence 0–100; the app models it in [0, 1]. */
@@ -143,11 +143,11 @@ function collectWords(data: RecognizeData): OcrWord[] {
  */
 export async function recognizeImage(dataUrl: string, opts: RecognizeImageOptions = {}): Promise<OcrResult> {
     const langs = resolveOcrLanguages(opts.langs);
-    const psm = opts.psm ?? psmForCaptureHint(opts.captureHint);
-    const { createWorker } = await import('tesseract.js');
-    const worker = await createWorker(langs, Oem.LSTM_ONLY);
+    const tesseract = await import('tesseract.js');
+    const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
+    const worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
     try {
-        await worker.setParameters({ tessedit_pageseg_mode: psm as unknown as PSM });
+        await worker.setParameters({ tessedit_pageseg_mode: psm });
         const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
         const words = collectWords(data);
         const meanWordConfidence =
