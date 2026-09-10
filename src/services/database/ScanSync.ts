@@ -29,8 +29,11 @@ export class ScanSync {
         let storagePath = scan.storagePath;
         const record = await getScanBlob(scan.id);
         if (record) {
+            // A kept image that fails to upload must not be recorded as synced, or pushScans
+            // would skip it forever and the cloud copy would permanently lack the image.
             const path = await this.adapter.uploadScanFile(scan.id, record.blob, record.mimeType);
-            if (path) storagePath = path;
+            if (!path) throw new Error('Failed to upload scan image');
+            storagePath = path;
         }
         const result = await this.adapter.upsertScanMetadata(scan, storagePath);
         if (!result.success) throw new Error(result.error ?? 'Failed to upsert scan metadata');
