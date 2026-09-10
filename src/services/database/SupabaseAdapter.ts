@@ -1349,17 +1349,18 @@ export class SupabaseAdapter {
         return error ? null : (data?.signedUrl ?? null);
     }
 
-    /** Fetch scan ids belonging to a student, for cascading deletes. */
+    /**
+     * Fetch scan ids belonging to a student, for cascading deletes. Throws on a query
+     * failure rather than returning `[]`, so a transient error can't be mistaken for
+     * "no scans" and silently leave a deleted student's scans (and images) behind.
+     */
     async fetchScanIdsForStudent(studentId: string): Promise<string[]> {
         const { data, error } = await this.db()
             .from('scan_metadata')
             .select('id')
             .eq('student_id', studentId)
             .eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchScanIdsForStudent', error);
-            return [];
-        }
+        if (error) throw new Error(`fetchScanIdsForStudent: ${error.message}`);
         return (data ?? []).map((r) => r.id as string);
     }
 

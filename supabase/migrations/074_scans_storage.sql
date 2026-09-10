@@ -41,9 +41,12 @@ create policy "scans_storage_owner"
     and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
--- Returns scans whose created_at has passed the one-academic-year retention cap.
--- Called by the delete-old-scans edge function (Phase 33.6) so only the Storage
--- API, not raw SQL, is used to remove files from the scans bucket.
+-- Returns scans stamped with an academic year before the current one (the one-academic-year
+-- retention cap). This mirrors the client sweep (src/utils/scanRetention.ts → isBeyondRetention),
+-- comparing the `school_year` start year against the current academic year with an August cutover
+-- (ACADEMIC_YEAR_CUTOVER_MONTH = 8) — not a rolling created_at interval, which would purge on a
+-- different boundary than the local sweep. Called by the delete-old-scans edge function (Phase 33.6)
+-- so only the Storage API, not raw SQL, is used to remove files from the scans bucket.
 create or replace function public.get_overdue_scans(batch_size int default 100)
 returns table (id text, owner_id uuid, storage_path text)
 language sql
@@ -53,7 +56,10 @@ as $$
   select s.id, s.owner_id, s.storage_path
   from public.scan_metadata s
   where s.storage_path is not null
-    and s.created_at < now() - interval '1 year'
+    and left(s.school_year, 4)::int <
+        (case when extract(month from now()) >= 8
+              then extract(year from now())::int
+              else extract(year from now())::int - 1 end)
   limit batch_size;
 $$;
 

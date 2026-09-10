@@ -58,6 +58,16 @@ describe('ScanSync', () => {
         expect(result.synced).toBe(true);
     });
 
+    it('pushScan rejects (without upserting metadata) when a kept image fails to upload', async () => {
+        await putScanBlob('scan_1', new Blob(['x'], { type: 'image/png' }), 'image/png');
+        const adapter = makeAdapter();
+        adapter.uploadScanFile = vi.fn(async () => null);
+        const sync = new ScanSync(adapter);
+
+        await expect(sync.pushScan(scan)).rejects.toThrow('Failed to upload scan image');
+        expect(adapter.upsertScanMetadata).not.toHaveBeenCalled();
+    });
+
     it('pushScans skips scans already marked synced (including text-only, path-less ones)', async () => {
         const adapter = makeAdapter();
         const sync = new ScanSync(adapter);
