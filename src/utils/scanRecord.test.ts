@@ -58,7 +58,7 @@ describe('finalizeScanReview', () => {
     it('uses the edited text and carries confidence, discarding the image by default', () => {
         const settings: ScanOcrSettings = { keepImage: false, defaultLang: 'eng' };
         const { scan, discardImage } = finalizeScanReview({ ...base, settings });
-        expect(scan.ocrText).toBe('the cat'); // edited text wins over ocr.text ('teh cat')
+        expect(scan.ocrText).toBe('the cat');
         expect(scan.ocrConfidence).toBe(0.72);
         expect(scan.studentId).toBe('stu_9');
         expect(scan.synced).toBe(false);
