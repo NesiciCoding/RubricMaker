@@ -3016,7 +3016,9 @@
         "an_vocab_item_verdict": "A \"right for my class?\" verdict: pick a target CEFR level and see the coverage figure, what exceeds the level, and whether the text is on level, slightly above, or too hard.",
         "an_vocab_item_seed": "Export word lists by CEFR band, or seed a flashcard deck from them in one click.",
         "an_vocab_analytics_title": "Reading level & academic vocabulary",
-        "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them."
+        "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them.",
+        "gr_scan_title": "Scan handwritten work",
+        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3322,5 +3324,30 @@
         "from_student_badge": "From a student",
         "save_error": "Could not save the deck. Please try again.",
         "load_error": "Could not load your decks. Please refresh to try again."
+    },
+    "scan": {
+        "button": "Scan handwriting",
+        "title": "Scan handwritten work",
+        "privacy_note": "Text recognition runs on this device — the image is never uploaded. Recognition is a first draft; check the highlighted words before inserting.",
+        "hint_label": "What are you scanning?",
+        "hint_auto": "Auto (mixed layout)",
+        "hint_single_column": "A single column of text",
+        "hint_block": "One block/paragraph",
+        "hint_sparse": "Scattered notes",
+        "use_camera": "Use camera",
+        "import_file": "Import photo or PDF",
+        "take_photo": "Take photo",
+        "camera_error": "Could not access the camera. Import a photo instead.",
+        "no_image": "That file had no scannable image.",
+        "recognising": "Recognising text…",
+        "preview_alt": "Scanned work",
+        "confidence_label": "Recognition confidence",
+        "confidence_high": "High",
+        "confidence_medium": "Medium",
+        "confidence_low": "Low",
+        "review_label": "Review & correct the text",
+        "check_words": "Least confident words — check these:",
+        "rescan": "Scan again",
+        "insert": "Insert into feedback"
     }
 }

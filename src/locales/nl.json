@@ -3018,7 +3018,9 @@
         "an_vocab_item_verdict": "Een oordeel \"geschikt voor mijn klas?\": kies een ERK-doelniveau en zie het dekkingscijfer, wat boven het niveau uitkomt en of de tekst op niveau, iets erboven of te moeilijk is.",
         "an_vocab_item_seed": "Exporteer woordenlijsten per ERK-band, of maak er met één klik een woordenset van.",
         "an_vocab_analytics_title": "Leesniveau en academische woordenschat",
-        "an_vocab_analytics_info": "Woordenschatniveaus komen uit de CEFR-J- en open ERK-woordenlijsten; academische dekking wordt gemeten tegen de AWL (Coxhead) en NAWL. Alle matching is regelgebaseerd en offline — controleer de resultaten voordat je erop vertrouwt."
+        "an_vocab_analytics_info": "Woordenschatniveaus komen uit de CEFR-J- en open ERK-woordenlijsten; academische dekking wordt gemeten tegen de AWL (Coxhead) en NAWL. Alle matching is regelgebaseerd en offline — controleer de resultaten voordat je erop vertrouwt.",
+        "gr_scan_title": "Handgeschreven werk scannen",
+        "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3324,5 +3326,30 @@
         "from_student_badge": "Van een leerling",
         "save_error": "Kon de set niet opslaan. Probeer het opnieuw.",
         "load_error": "Kon je sets niet laden. Vernieuw de pagina om het opnieuw te proberen."
+    },
+    "scan": {
+        "button": "Handschrift scannen",
+        "title": "Handgeschreven werk scannen",
+        "privacy_note": "Tekstherkenning gebeurt op dit apparaat — de afbeelding wordt nooit geüpload. Herkenning is een eerste versie; controleer de gemarkeerde woorden voordat je invoegt.",
+        "hint_label": "Wat scan je?",
+        "hint_auto": "Automatisch (gemengde opmaak)",
+        "hint_single_column": "Eén tekstkolom",
+        "hint_block": "Eén blok/alinea",
+        "hint_sparse": "Verspreide notities",
+        "use_camera": "Camera gebruiken",
+        "import_file": "Foto of pdf importeren",
+        "take_photo": "Foto maken",
+        "camera_error": "Kan de camera niet gebruiken. Importeer in plaats daarvan een foto.",
+        "no_image": "Dat bestand had geen scanbare afbeelding.",
+        "recognising": "Tekst herkennen…",
+        "preview_alt": "Gescand werk",
+        "confidence_label": "Herkenningsbetrouwbaarheid",
+        "confidence_high": "Hoog",
+        "confidence_medium": "Gemiddeld",
+        "confidence_low": "Laag",
+        "review_label": "Controleer en corrigeer de tekst",
+        "check_words": "Minst betrouwbare woorden — controleer deze:",
+        "rescan": "Opnieuw scannen",
+        "insert": "In feedback invoegen"
     }
 }
