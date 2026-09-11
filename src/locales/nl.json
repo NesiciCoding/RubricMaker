@@ -3020,7 +3020,7 @@
         "an_vocab_analytics_title": "Leesniveau en academische woordenschat",
         "an_vocab_analytics_info": "Woordenschatniveaus komen uit de CEFR-J- en open ERK-woordenlijsten; academische dekking wordt gemeten tegen de AWL (Coxhead) en NAWL. Alle matching is regelgebaseerd en offline — controleer de resultaten voordat je erop vertrouwt.",
         "gr_scan_title": "Handgeschreven werk scannen",
-        "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt na herkenning verwijderd, tenzij je \"afbeelding bewaren\" in Instellingen inschakelt; bewaarde afbeeldingen worden maximaal één schooljaar bewaard."
+        "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

@@ -1551,9 +1551,9 @@ export default function GradeStudent() {
                                                         type="button"
                                                         className="btn btn-secondary btn-sm"
                                                         onClick={() => setScanForCrit(c.id)}
-                                                        title={t('scan.button', 'Scan handwriting')}
+                                                        title={t('scan.button')}
                                                     >
-                                                        <ScanLine size={16} /> {t('scan.button', 'Scan handwriting')}
+                                                        <ScanLine size={16} /> {t('scan.button')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1817,7 +1817,6 @@ export default function GradeStudent() {
                     return (
                         <ScanCaptureModal
                             defaultLang={scanSettings.defaultLang}
-                            keepImage={scanSettings.keepImage}
                             onClose={() => setScanForCrit(null)}
                             onInsert={(text) => {
                                 // Land the recognised text as a document node via the TipTap

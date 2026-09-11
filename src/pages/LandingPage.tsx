@@ -56,7 +56,7 @@ const TEACHER_FEATURES = [
     {
         icon: ScanLine,
         title: 'Scan handwritten work',
-        desc: 'Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — images are discarded after recognition by default.',
+        desc: 'Photograph or import a handwritten answer while grading; the text is recognised on your device, you correct it, and it drops into your feedback — the image is used only for recognition and isn’t stored.',
         color: '#0ea5e9',
     },
     {

@@ -3020,7 +3020,7 @@
         "an_vocab_analytics_title": "Nivel de lectura y vocabulario académico",
         "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos.",
         "gr_scan_title": "Escanear trabajo manuscrito",
-        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se descarta tras el reconocimiento salvo que actives «conservar imagen» en Ajustes; las imágenes conservadas se guardan como máximo un curso escolar."
+        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

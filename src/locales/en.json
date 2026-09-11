@@ -3018,7 +3018,7 @@
         "an_vocab_analytics_title": "Reading level & academic vocabulary",
         "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them.",
         "gr_scan_title": "Scan handwritten work",
-        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is discarded after recognition unless you turn on \"keep image\" in Settings, and kept images are held for at most one school year."
+        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored."
     },
     "studentProfile": {
         "tab_overview": "Overview",

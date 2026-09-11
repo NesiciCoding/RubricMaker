@@ -3020,7 +3020,7 @@
         "an_vocab_analytics_title": "Leseniveau und akademischer Wortschatz",
         "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen.",
         "gr_scan_title": "Handschriftliche Arbeit scannen",
-        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nach der Erkennung verworfen, sofern du nicht in den Einstellungen „Bild behalten“ aktivierst; behaltene Bilder werden höchstens ein Schuljahr aufbewahrt."
+        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
