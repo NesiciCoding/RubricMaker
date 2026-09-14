@@ -3018,7 +3018,9 @@
         "an_vocab_item_verdict": "Ein Urteil „Passend für meine Klasse?“: Wählen Sie ein GER-Zielniveau und sehen Sie den Abdeckungswert, was über dem Niveau liegt, und ob der Text passend, etwas zu hoch oder zu schwer ist.",
         "an_vocab_item_seed": "Exportieren Sie Wortlisten nach GER-Stufe oder erstellen Sie daraus mit einem Klick ein Karteikartenset.",
         "an_vocab_analytics_title": "Leseniveau und akademischer Wortschatz",
-        "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen."
+        "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen.",
+        "gr_scan_title": "Handschriftliche Arbeit scannen",
+        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3324,5 +3326,30 @@
         "from_student_badge": "Von einer/einem Lernenden",
         "save_error": "Deck konnte nicht gespeichert werden. Bitte erneut versuchen.",
         "load_error": "Ihre Decks konnten nicht geladen werden. Bitte die Seite neu laden."
+    },
+    "scan": {
+        "button": "Handschrift scannen",
+        "title": "Handschriftliche Arbeit scannen",
+        "privacy_note": "Die Texterkennung läuft auf diesem Gerät — das Bild wird nie hochgeladen. Die Erkennung ist ein erster Entwurf; prüfe die markierten Wörter vor dem Einfügen.",
+        "hint_label": "Was scannst du?",
+        "hint_auto": "Automatisch (gemischtes Layout)",
+        "hint_single_column": "Eine Textspalte",
+        "hint_block": "Ein Block/Absatz",
+        "hint_sparse": "Verstreute Notizen",
+        "use_camera": "Kamera verwenden",
+        "import_file": "Foto oder PDF importieren",
+        "take_photo": "Foto aufnehmen",
+        "camera_error": "Kein Zugriff auf die Kamera. Importiere stattdessen ein Foto.",
+        "no_image": "Diese Datei enthielt kein scanbares Bild.",
+        "recognising": "Text wird erkannt…",
+        "preview_alt": "Gescannte Arbeit",
+        "confidence_label": "Erkennungssicherheit",
+        "confidence_high": "Hoch",
+        "confidence_medium": "Mittel",
+        "confidence_low": "Niedrig",
+        "review_label": "Text prüfen und korrigieren",
+        "check_words": "Unsicherste Wörter — bitte prüfen:",
+        "rescan": "Erneut scannen",
+        "insert": "In Feedback einfügen"
     }
 }
