@@ -253,6 +253,17 @@ export type AcademicYear = string;
  * SessionRecording. The recognised text is kept here; the image is subject to the
  * discard-after-OCR default and the one-academic-year retention cap.
  */
+/**
+ * A raw RGBA image buffer — structurally compatible with the DOM `ImageData`, so a real
+ * `ImageData` satisfies it. Shared by the scan preprocessing and document-crop utilities
+ * (`src/utils/preprocessScan.ts`, `src/utils/documentCrop.ts`).
+ */
+export interface RgbaImage {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+}
+
 export interface Scan {
     id: string;
     /** Grade record / student this scan belongs to, when captured during grading. */
