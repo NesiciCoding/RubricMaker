@@ -40,6 +40,7 @@ import type {
     QuestionBankItem,
     DocumentComment,
     NotificationDismissal,
+    Scan,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import { nanoid } from '../../utils/nanoid';
@@ -1296,6 +1297,70 @@ export class SupabaseAdapter {
             console.error('fetchRecordingIdsForSession', error);
             return [];
         }
+        return (data ?? []).map((r) => r.id as string);
+    }
+
+    // ── Scans (scans bucket + scan_metadata, migration 074) ─────────────────────
+    // Handwriting scan images (Phase 33). Blobs live in the bucket; the Scan keeps
+    // only the returned storage_path so the jsonb document stays small. Path =
+    // {uid}/{scanId}. Metadata carries school_year so the retention sweep can purge
+    // scans older than one academic year.
+
+    async upsertScanMetadata(scan: Scan, storagePath?: string): Promise<SyncResult> {
+        const { error } = await this.db()
+            .from('scan_metadata')
+            .upsert(
+                {
+                    id: scan.id,
+                    owner_id: this.uid(),
+                    student_id: scan.studentId ?? null,
+                    storage_path: storagePath ?? null,
+                    school_year: scan.schoolYear,
+                    data: scan,
+                },
+                { onConflict: 'id' }
+            );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteScanMetadata(id: string): Promise<SyncResult> {
+        try {
+            await this.db()
+                .storage.from('scans')
+                .remove([`${this.uid()}/${id}`]);
+        } catch {
+            /* ignore storage error, still delete metadata */
+        }
+        const { error } = await this.db().from('scan_metadata').delete().eq('id', id).eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async uploadScanFile(id: string, blob: Blob, mimeType: string): Promise<string | null> {
+        const path = `${this.uid()}/${id}`;
+        const { error } = await this.db().storage.from('scans').upload(path, blob, {
+            contentType: mimeType,
+            upsert: true,
+        });
+        return error ? null : path;
+    }
+
+    async getScanSignedUrl(storagePath: string): Promise<string | null> {
+        const { data, error } = await this.db().storage.from('scans').createSignedUrl(storagePath, 3600);
+        return error ? null : (data?.signedUrl ?? null);
+    }
+
+    /**
+     * Fetch scan ids belonging to a student, for cascading deletes. Throws on a query
+     * failure rather than returning `[]`, so a transient error can't be mistaken for
+     * "no scans" and silently leave a deleted student's scans (and images) behind.
+     */
+    async fetchScanIdsForStudent(studentId: string): Promise<string[]> {
+        const { data, error } = await this.db()
+            .from('scan_metadata')
+            .select('id')
+            .eq('student_id', studentId)
+            .eq('owner_id', this.uid());
+        if (error) throw new Error(`fetchScanIdsForStudent: ${error.message}`);
         return (data ?? []).map((r) => r.id as string);
     }
 
