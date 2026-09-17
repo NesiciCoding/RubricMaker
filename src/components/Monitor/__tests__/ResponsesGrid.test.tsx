@@ -194,11 +194,11 @@ describe('ResponsesGrid', () => {
         expect(screen.getByRole('dialog').textContent).toContain('tests.monitor.grid.no_answer');
     });
 
-    it('closes the gallery via the backdrop', () => {
+    it('closes the gallery on Escape', () => {
         render(<ResponsesGrid test={test} rows={[alice]} />);
         fireEvent.click(screen.getByLabelText('Pick the number four'));
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('dialog'));
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 });

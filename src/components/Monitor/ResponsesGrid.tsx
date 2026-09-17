@@ -5,6 +5,7 @@ import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../ut
 import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
 import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
+import Modal from '../ui/Modal';
 import type { Test, TestAnswer, TestQuestion } from '../../types';
 
 export interface ResponsesGridStudentRow {
@@ -460,35 +461,13 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
             </div>
 
             {galleryQuestion && (
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={t('tests.monitor.grid.gallery_title', {
-                        index: test.questions.findIndex((q) => q.id === galleryQuestion.id) + 1,
-                    })}
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.4)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                    }}
-                    onClick={() => setGalleryQuestion(null)}
+                <Modal
+                    titleId="responses-gallery-title"
+                    onClose={() => setGalleryQuestion(null)}
+                    maxWidth={560}
+                    style={{ maxHeight: '80vh', overflowY: 'auto' }}
                 >
-                    <div
-                        style={{
-                            background: 'var(--bg-elevated)',
-                            borderRadius: 12,
-                            padding: 20,
-                            maxWidth: 560,
-                            width: '90%',
-                            maxHeight: '80vh',
-                            overflowY: 'auto',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
+                    <div>
                         <div
                             style={{
                                 display: 'flex',
@@ -499,6 +478,7 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                         >
                             <div>
                                 <div
+                                    id="responses-gallery-title"
                                     style={{
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
@@ -551,7 +531,7 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                             })}
                         </div>
                     </div>
-                </div>
+                </Modal>
             )}
         </>
     );
