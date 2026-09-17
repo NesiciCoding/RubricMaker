@@ -68,6 +68,7 @@ export default function ColumnSortModal({ rules, onApply, onClose }: ColumnSortM
                                 {t(i === 0 ? 'tests.monitor.grid.sort_by' : 'tests.monitor.grid.sort_then')}
                             </span>
                             <select
+                                aria-label={t(i === 0 ? 'tests.monitor.grid.sort_by' : 'tests.monitor.grid.sort_then')}
                                 value={rule.key}
                                 onChange={(e) =>
                                     setDraft((prev) =>

@@ -7,6 +7,9 @@ import type { CefrLevel, StaircaseStep } from '../../types';
 export interface LevelResponsesGridStudentRow {
     studentId: string;
     displayName: string;
+    /** Class identity for grouping — duplicate class names must not merge, so grouping keys on this, not the label. */
+    classId?: string;
+    /** Class name, shown as the group label. */
     className?: string;
     /** Adaptive trace — one step per question asked, each tagged with the CEFR level it probed. */
     levelPath: StaircaseStep[];
@@ -46,14 +49,16 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
     }, [rows]);
 
     const groups = useMemo(() => {
-        const byClass = new Map<string, LevelResponsesGridStudentRow[]>();
+        const byClass = new Map<string, { key: string; label: string; rows: LevelResponsesGridStudentRow[] }>();
         for (const row of rows) {
-            const key = row.className ?? '';
-            (byClass.get(key) ?? byClass.set(key, []).get(key)!).push(row);
+            const key = row.classId ?? '';
+            const group = byClass.get(key) ?? { key, label: row.className ?? '', rows: [] };
+            group.rows.push(row);
+            byClass.set(key, group);
         }
-        return Array.from(byClass.entries()).map(([label, groupRows]) => ({ label, rows: groupRows }));
+        return Array.from(byClass.values());
     }, [rows]);
-    const showGroupHeaders = groups.length > 1 || (groups.length === 1 && groups[0].label !== '');
+    const showGroupHeaders = groups.length > 1 || (groups.length === 1 && groups[0].key !== '');
 
     const th: React.CSSProperties = {
         padding: '6px 8px',
@@ -114,9 +119,9 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                 </thead>
                 <tbody>
                     {groups.map((group) => {
-                        const isCollapsed = collapsed.has(group.label);
+                        const isCollapsed = collapsed.has(group.key);
                         return (
-                            <React.Fragment key={group.label || '__ungrouped'}>
+                            <React.Fragment key={group.key || '__ungrouped'}>
                                 {showGroupHeaders && (
                                     <tr style={{ background: 'var(--bg-panel)' }}>
                                         <td
@@ -129,8 +134,8 @@ export default function LevelResponsesGrid({ rows }: LevelResponsesGridProps) {
                                                 onClick={() =>
                                                     setCollapsed((prev) => {
                                                         const next = new Set(prev);
-                                                        if (next.has(group.label)) next.delete(group.label);
-                                                        else next.add(group.label);
+                                                        if (next.has(group.key)) next.delete(group.key);
+                                                        else next.add(group.key);
                                                         return next;
                                                     })
                                                 }

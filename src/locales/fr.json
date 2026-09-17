@@ -828,7 +828,7 @@
                 "average": "Moyenne",
                 "no_class": "Aucune classe",
                 "estimated_level": "Niveau est.",
-                "level_accuracy": "{{correct}} sur {{attempted}} correct à ce niveau",
+                "level_accuracy": "Précision à ce niveau : {{correct}}/{{attempted}}",
                 "sort_button": "Trier les colonnes",
                 "sort_title": "Trier et regrouper les colonnes",
                 "sort_hint": "Ordonnez les colonnes de questions selon une ou plusieurs propriétés. Les règles s’appliquent de haut en bas.",
@@ -2704,7 +2704,7 @@
         "rb_live_monitor_button": "Surveiller",
         "rb_live_monitor_intro_suffix": "(depuis la page Tests pour un test, ou depuis la boîte de dialogue d'attribution pour une rédaction) pour ouvrir une vue en direct de la session. Cela nécessite que la synchronisation cloud soit activée — sans cela, la page explique que vous pouvez examiner les progrès après coup à partir des réponses ou du brouillon enregistrés de chaque élève.",
         "rb_live_monitor_item_presence": "Présence — un point coloré indique si chaque élève est actif, inactif ou déconnecté, selon la dernière connexion enregistrée de son navigateur.",
-        "rb_live_monitor_item_grid": "Grille de réponses (tests) — une matrice élèves-questions de barres colorées, regroupée par classe avec une moyenne par question et par élève. Chaque ligne est un élève, chaque colonne une question ; cliquez sur un en-tête de question pour ouvrir une galerie de toutes les réponses.",
+        "rb_live_monitor_item_grid": "Grille de réponses (tests) — une matrice élèves-questions de barres colorées, regroupée par classe avec une moyenne de classe par question et un total par élève. Chaque ligne est un élève, chaque colonne une question ; cliquez sur un en-tête de question pour ouvrir une galerie de toutes les réponses.",
         "rb_live_monitor_item_draft": "Aperçu de brouillon en direct (rédactions) — une carte par élève avec un nombre de mots en direct, un horodatage de dernière activité et un aperçu extensible de ce qu'il écrit actuellement.",
         "rb_live_monitor_item_hide_names": "Masquer les noms — basculer pour anonymiser la vue, utile lors du partage d'écran.",
         "rb_live_monitor_item_proctoring": "Signaux de surveillance — comptages des changements d'onglet, copier/coller/couper, niveau de batterie et statut Safe Exam Browser. Ce sont uniquement des signaux indicatifs : un élève déterminé peut les contourner, utilisez-les donc pour engager une conversation, pas comme preuve définitive.",
@@ -3072,7 +3072,7 @@
         "gr_scan_title": "Numériser un travail manuscrit",
         "gr_scan_body": "Dans le panneau de retour d'un critère, choisissez « Numériser l'écriture » pour photographier une copie papier avec la caméra de votre appareil ou importer une photo ou un PDF numérisé. Le texte est reconnu sur votre appareil (rien n'est téléversé) ; vous le vérifiez et le corrigez — les mots les moins sûrs sont surlignés — puis il est inséré dans votre retour. Cet outil est réservé aux enseignants ; les élèves ne téléversent jamais de numérisations. L'image sert uniquement à la reconnaissance et n'est pas conservée.",
         "rb_live_monitor_item_sort": "Trier et regrouper les colonnes — réordonnez les colonnes de questions par section, niveau CECR, type de question, grammaire/référentiel lié ou score cumulé de la classe, en combinant plusieurs règles.",
-        "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec le niveau estimé dans la colonne des totaux."
+        "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec leur niveau estimé dans une colonne dédiée avant les colonnes de niveau."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

@@ -204,17 +204,21 @@ describe('ResponsesGrid', () => {
         );
         expect(screen.getByText('tests.monitor.grid.totals')).toBeInTheDocument();
         expect(screen.getByText('tests.monitor.grid.average')).toBeInTheDocument();
-        // Both questions correct → 100% total, and the class average is also 100%.
-        expect(screen.getAllByText('100%').length).toBeGreaterThanOrEqual(2);
+        // The student's own total cell and the class-average row's total cell must each read 100%,
+        // not just the per-question averages.
+        const studentTotalCell = screen.getByText('Alice').closest('tr')!.querySelectorAll('td')[1];
+        expect(studentTotalCell).toHaveTextContent('100%');
+        const avgTotalCell = screen.getByText('tests.monitor.grid.average').closest('tr')!.querySelectorAll('td')[1];
+        expect(avgTotalCell).toHaveTextContent('100%');
     });
 
-    it('groups students under a collapsible class header and hides rows when collapsed', () => {
+    it('groups students by class id under a collapsible header and hides rows when collapsed', () => {
         render(
             <ResponsesGrid
                 test={mockTest}
                 rows={[
-                    { studentId: 's1', displayName: 'Alice', className: '2C', answers: [] },
-                    { studentId: 's2', displayName: 'Bob', className: '2C', answers: [] },
+                    { studentId: 's1', displayName: 'Alice', classId: 'c1', className: '2C', answers: [] },
+                    { studentId: 's2', displayName: 'Bob', classId: 'c1', className: '2C', answers: [] },
                 ]}
             />
         );
@@ -222,6 +226,24 @@ describe('ResponsesGrid', () => {
         expect(screen.getByText('Alice')).toBeInTheDocument();
         fireEvent.click(screen.getByText('2C'));
         expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    });
+
+    it('keeps two same-named classes separate by class id', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[
+                    { studentId: 's1', displayName: 'Alice', classId: 'c1', className: '2C', answers: [] },
+                    { studentId: 's2', displayName: 'Bob', classId: 'c2', className: '2C', answers: [] },
+                ]}
+            />
+        );
+        // Two distinct groups → two "2C" header buttons; collapsing one hides only its student.
+        const headers = screen.getAllByText('2C');
+        expect(headers.length).toBe(2);
+        fireEvent.click(headers[0]);
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+        expect(screen.getByText('Bob')).toBeInTheDocument();
     });
 
     it('greys out a question a placement student never routed to', () => {

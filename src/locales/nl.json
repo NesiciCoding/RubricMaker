@@ -2704,7 +2704,7 @@
         "rb_live_monitor_button": "Monitor",
         "rb_live_monitor_intro_suffix": "(vanaf de pagina Toetsen voor een toets, of vanaf het toewijzingsvenster voor een essay) om een live weergave van de sessie te openen. Dit vereist dat cloudsynchronisatie is ingeschakeld — zonder dit legt de pagina uit dat je de voortgang achteraf kunt bekijken via de opgeslagen antwoorden of het concept van elke leerling.",
         "rb_live_monitor_item_presence": "Aanwezigheid — een gekleurde stip toont of elke leerling actief, inactief of niet verbonden is, gebaseerd op hoe recent hun browser zich heeft gemeld.",
-        "rb_live_monitor_item_grid": "Antwoordraster (toetsen) — een matrix van leerlingen tegen vragen met gekleurde balken, gegroepeerd per klas met een gemiddelde per vraag en per leerling. Elke rij is een leerling, elke kolom een vraag; klik op een vraagkop voor een galerij met alle antwoorden erop.",
+        "rb_live_monitor_item_grid": "Antwoordraster (toetsen) — een matrix van leerlingen tegen vragen met gekleurde balken, gegroepeerd per klas met een klasgemiddelde per vraag en een totaal per leerling. Elke rij is een leerling, elke kolom een vraag; klik op een vraagkop voor een galerij met alle antwoorden erop.",
         "rb_live_monitor_item_draft": "Live conceptvoorvertoning (essays) — een kaart per leerling met een live woordentelling, tijdstempel van laatste activiteit en een uitklapbare voorvertoning van wat ze momenteel schrijven.",
         "rb_live_monitor_item_hide_names": "Namen verbergen — schakel om de weergave te anonimiseren, handig bij het delen van je scherm.",
         "rb_live_monitor_item_proctoring": "Surveillancesignalen — aantallen tabwissels, kopiëren/plakken/knippen, batterijniveau en status Safe Exam Browser. Dit zijn alleen indicatieve signalen: een vastberaden leerling kan ze omzeilen, gebruik ze dus om een gesprek aan te gaan, niet als definitief bewijs.",
@@ -3072,7 +3072,7 @@
         "gr_scan_title": "Handgeschreven werk scannen",
         "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard.",
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
-        "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in de totalenkolom."
+        "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

@@ -49,6 +49,7 @@ function emptyLiveState(studentId: string): StudentLiveState {
 interface MonitorStudent {
     studentId: string;
     name: string;
+    classId?: string;
     className?: string;
     persistedEvents: ProctorEvent[];
     persistedAnswers: TestAnswer[];
@@ -192,6 +193,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     return {
                         studentId,
                         name: student?.name ?? studentId,
+                        classId: student?.classId,
                         className: classes.find((c) => c.id === student?.classId)?.name,
                         persistedEvents: st?.events ?? [],
                         persistedAnswers: st?.answers ?? [],
@@ -346,6 +348,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             });
         }
     }
+
+    // Close the column-sort modal when the monitored test changes — the route reuses this
+    // page between tests, and a lingering modal could otherwise sit over the next test's grid.
+    useEffect(() => {
+        setSortModalOpen(false);
+    }, [params.testId]);
 
     // ── Re-render periodically so presence ages (active → idle → disconnected) ────
     const [tick, setTick] = useState(0);
@@ -537,7 +545,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
 
-                {sortModalOpen && (
+                {sortModalOpen && !isLevelGrid && (
                     <ColumnSortModal
                         rules={columnSortRules}
                         onApply={setColumnSortRules}
@@ -654,6 +662,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 rows={sortedRows.map((row, index) => ({
                                     studentId: row.studentId,
                                     displayName: displayName(row, index),
+                                    classId: row.classId,
                                     className: row.className,
                                     sectionPath: row.sectionPath,
                                     answers: row.mergedAnswers,
@@ -668,6 +677,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 rows={sortedRows.map((row, index) => ({
                                     studentId: row.studentId,
                                     displayName: displayName(row, index),
+                                    classId: row.classId,
                                     className: row.className,
                                     levelPath: row.levelPath,
                                     estimatedLevel: row.placementLevel,

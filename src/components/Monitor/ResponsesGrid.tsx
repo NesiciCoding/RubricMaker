@@ -12,7 +12,9 @@ export interface ResponsesGridStudentRow {
     displayName: string;
     /** Persisted answers (submitted/graded) merged with any live in-progress snapshot answers. */
     answers: TestAnswer[];
-    /** Class name, for the collapsible class grouping. Rows without one fall into an "unassigned" group. */
+    /** Class identity for grouping — duplicate class names must not merge, so grouping keys on this, not the label. */
+    classId?: string;
+    /** Class name, shown as the group label. Rows without a classId fall into an "unassigned" group. */
     className?: string;
     /** Sections this student actually routed through (mst placement) — cells outside it render as "not presented". */
     sectionPath?: string[];
@@ -245,16 +247,19 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
         return pct(earned, max);
     };
 
-    // Group rows by class; a single implicit group (no class names set) renders without a header band.
+    // Group rows by class identity (not the display name — duplicate names must stay separate);
+    // a single implicit group (no classId set) renders without a header band.
     const groups = useMemo(() => {
-        const byClass = new Map<string, ResponsesGridStudentRow[]>();
+        const byClass = new Map<string, { key: string; label: string; rows: ResponsesGridStudentRow[] }>();
         for (const row of rows) {
-            const key = row.className ?? '';
-            (byClass.get(key) ?? byClass.set(key, []).get(key)!).push(row);
+            const key = row.classId ?? '';
+            const group = byClass.get(key) ?? { key, label: row.className ?? '', rows: [] };
+            group.rows.push(row);
+            byClass.set(key, group);
         }
-        return Array.from(byClass.entries()).map(([label, groupRows]) => ({ label, rows: groupRows }));
+        return Array.from(byClass.values());
     }, [rows]);
-    const showGroupHeaders = groups.length > 1 || (groups.length === 1 && groups[0].label !== '');
+    const showGroupHeaders = groups.length > 1 || (groups.length === 1 && groups[0].key !== '');
 
     const overallAvg = useMemo(() => {
         const vals = rows.map(studentTotal).filter((v): v is number => v !== undefined);
@@ -379,10 +384,10 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                     </thead>
                     <tbody>
                         {groups.map((group) => {
-                            const isCollapsed = collapsed.has(group.label);
+                            const isCollapsed = collapsed.has(group.key);
                             const ga = showGroupHeaders ? groupAverages(group.rows) : null;
                             return (
-                                <React.Fragment key={group.label || '__ungrouped'}>
+                                <React.Fragment key={group.key || '__ungrouped'}>
                                     {showGroupHeaders && (
                                         <tr style={{ background: 'var(--bg-panel)' }}>
                                             <td
@@ -398,8 +403,8 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                                     onClick={() =>
                                                         setCollapsed((prev) => {
                                                             const next = new Set(prev);
-                                                            if (next.has(group.label)) next.delete(group.label);
-                                                            else next.add(group.label);
+                                                            if (next.has(group.key)) next.delete(group.key);
+                                                            else next.add(group.key);
                                                             return next;
                                                         })
                                                     }
@@ -418,9 +423,9 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                                     {group.label || t('tests.monitor.grid.no_class')}
                                                 </button>
                                             </td>
-                                            {renderAvgCell(ga!.total, `g-total-${group.label}`)}
+                                            {renderAvgCell(ga!.total, `g-total-${group.key}`)}
                                             {orderedColumns.map((col) =>
-                                                renderAvgCell(ga!.perQuestion.get(col.id), `g-${group.label}-${col.id}`)
+                                                renderAvgCell(ga!.perQuestion.get(col.id), `g-${group.key}-${col.id}`)
                                             )}
                                         </tr>
                                     )}
@@ -517,8 +522,9 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                         </div>
                         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {rows.map((row) => {
+                                const presented = isPresented(row, galleryQuestion);
                                 const answer = row.answers.find((a) => a.questionId === galleryQuestion.id);
-                                const text = answerDisplayText(galleryQuestion, answer, t);
+                                const text = presented ? answerDisplayText(galleryQuestion, answer, t) : '';
                                 return (
                                     <div
                                         key={row.studentId}
@@ -533,7 +539,12 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                                 color: text ? 'var(--text)' : 'var(--text-dim)',
                                             }}
                                         >
-                                            {text || t('tests.monitor.grid.no_answer')}
+                                            {text ||
+                                                t(
+                                                    presented
+                                                        ? 'tests.monitor.grid.no_answer'
+                                                        : 'tests.monitor.grid.state.absent'
+                                                )}
                                         </div>
                                     </div>
                                 );
