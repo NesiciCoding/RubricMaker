@@ -28,6 +28,7 @@ import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import GrammarItemSelect from '../CEFR/GrammarItemSelect';
 import HelpPopover from './HelpPopover';
+import AudioUrlStatus from './AudioUrlStatus';
 import { parseClozeGaps, parseHotTextFragments, type HotTextFragmentSegment } from '../../utils/clozeParse';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import type {
@@ -575,6 +576,7 @@ export default function QuestionEditor({
                     onChange={(e) => update({ audioUrl: e.target.value || undefined })}
                     placeholder={t('tests.question_audio_placeholder')}
                 />
+                <AudioUrlStatus url={question.audioUrl} />
                 {question.audioUrl && (
                     <audio
                         controls

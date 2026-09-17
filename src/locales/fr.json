@@ -627,6 +627,7 @@
             "feedback_placeholder": "Commentaire pour cette réponse…",
             "save_score": "Enregistrer la note",
             "placement_path_title": "Parcours de positionnement",
+            "placement_estimate": "Niveau estimé : {{level}}",
             "placement_path_step": "{{number}}.",
             "placement_overridden_label": "Ajusté par l'enseignant",
             "placement_overridden_tooltip": "L'enseignant a ajusté le niveau ({{direction}}) avant cette question.",
@@ -736,6 +737,8 @@
             "hint_hide": "Masquer l'indice",
             "cloze_gap_placeholder": "Votre réponse…",
             "cloze_dropdown_placeholder": "Sélectionner…",
+            "cloze_instruction": "Complétez les espaces.",
+            "cloze_dropdown_instruction": "Choisissez le mot correct pour chaque espace.",
             "hot_text_instruction": "Cliquez sur les fragments surlignés pour les sélectionner ou les désélectionner.",
             "matching_select_placeholder": "Sélectionner une correspondance…",
             "categorize_select_placeholder": "Sélectionner une catégorie…",
@@ -769,6 +772,9 @@
             "generator_elo_label": "Elo ~{{elo}}",
             "generator_level_pending": "En attente de la première réponse…",
             "generator_questions_asked_label": "Q{{count}}",
+            "generator_answers_title": "Questions posées",
+            "generator_answers_empty": "Aucune question répondue pour l'instant.",
+            "generator_answer_blank": "(pas de réponse)",
             "nudge_up_button": "Monter le niveau",
             "nudge_down_button": "Descendre le niveau",
             "nudge_override_toast": "Votre enseignant a ajusté votre niveau ({{direction}}) pour la question suivante.",
@@ -952,7 +958,11 @@
         "question_type_numeric": "Numérique",
         "numeric_expected_value_label": "Valeur attendue",
         "numeric_tolerance_label": "Marge (±)",
-        "section_audio_label": "Audio de la section"
+        "section_audio_label": "Audio de la section",
+        "audio_check_checking": "Vérification du lien audio…",
+        "audio_check_ok": "Le lien audio se lit correctement.",
+        "audio_check_error": "Ce lien audio n'a pas pu être lu. Utilisez un lien direct vers un fichier audio (.mp3/.m4a/.ogg), pas une page de partage (Google Drive, Dropbox, OneDrive).",
+        "audio_check_mixed": "Les liens non sécurisés (http://) sont bloqués sur une page sécurisée — utilisez un lien https://."
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -2237,6 +2247,7 @@
     },
     "tts": {
         "read_prompt": "Lire la consigne à voix haute",
+            "read_aloud": "Lire à voix haute",
         "read_prompt_short": "Lire la consigne",
         "play": "Lire la rédaction à voix haute",
         "pause": "Pause",

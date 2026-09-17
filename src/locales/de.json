@@ -627,6 +627,7 @@
             "feedback_placeholder": "Feedback zu dieser Antwort…",
             "save_score": "Bewertung speichern",
             "placement_path_title": "Einstufungspfad",
+            "placement_estimate": "Geschätztes Niveau: {{level}}",
             "placement_path_step": "{{number}}.",
             "placement_overridden_label": "Von Lehrkraft angepasst",
             "placement_overridden_tooltip": "Die Lehrkraft hat das Niveau ({{direction}}) vor dieser Frage angepasst.",
@@ -736,6 +737,8 @@
             "hint_hide": "Hinweis verbergen",
             "cloze_gap_placeholder": "Deine Antwort…",
             "cloze_dropdown_placeholder": "Auswählen…",
+            "cloze_instruction": "Fülle die Lücken aus.",
+            "cloze_dropdown_instruction": "Wähle das richtige Wort für jede Lücke.",
             "hot_text_instruction": "Klicke auf die hervorgehobenen Fragmente, um sie auszuwählen oder abzuwählen.",
             "matching_select_placeholder": "Übereinstimmung wählen…",
             "categorize_select_placeholder": "Kategorie wählen…",
@@ -769,6 +772,9 @@
             "generator_elo_label": "Elo ~{{elo}}",
             "generator_level_pending": "Warten auf erste Antwort…",
             "generator_questions_asked_label": "F{{count}}",
+            "generator_answers_title": "Gestellte Fragen",
+            "generator_answers_empty": "Noch keine Fragen beantwortet.",
+            "generator_answer_blank": "(keine Antwort)",
             "nudge_up_button": "Niveau anheben",
             "nudge_down_button": "Niveau senken",
             "nudge_override_toast": "Ihre Lehrkraft hat Ihr Niveau ({{direction}}) für die nächste Frage angepasst.",
@@ -952,7 +958,11 @@
         "question_type_numeric": "Numerisch",
         "numeric_expected_value_label": "Erwarteter Wert",
         "numeric_tolerance_label": "Toleranz (±)",
-        "section_audio_label": "Audio zum Abschnitt"
+        "section_audio_label": "Audio zum Abschnitt",
+        "audio_check_checking": "Audiolink wird geprüft…",
+        "audio_check_ok": "Audiolink wird korrekt abgespielt.",
+        "audio_check_error": "Dieser Audiolink konnte nicht abgespielt werden. Verwende einen direkten Link zu einer Audiodatei (.mp3/.m4a/.ogg), keine Freigabeseite (Google Drive, Dropbox, OneDrive).",
+        "audio_check_mixed": "Unsichere (http://) Links werden auf einer sicheren Seite blockiert — verwende einen https://-Link."
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -2237,6 +2247,7 @@
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",
+            "read_aloud": "Vorlesen",
         "read_prompt_short": "Prompt vorlesen",
         "play": "Aufsatz vorlesen",
         "pause": "Vorlesen pausieren",

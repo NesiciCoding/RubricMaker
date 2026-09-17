@@ -109,11 +109,40 @@ export function useLiveSessionTelemetry({
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
-    const pushEvent = useCallback((event: ProctorEvent) => {
-        eventsRef.current = [...eventsRef.current, event];
-        setEvents(eventsRef.current);
-        channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
-    }, []);
+    // Broadcasts that fired before the channel finished joining (or during a reconnect gap) are
+    // held here and flushed once it's joined — see wsSend / the subscribe handler below.
+    const pendingBroadcastsRef = useRef<{ event: string; payload: unknown }[]>([]);
+
+    // Push a broadcast over the live WebSocket. When the channel isn't joined, realtime-js's send()
+    // silently falls back to a REST POST and logs a deprecation warning ("send() is automatically
+    // falling back to REST API…"). Rather than take that path, a `buffer` broadcast (a discrete
+    // proctor event that must arrive — e.g. the once-at-mount seb_status, a tab switch) is queued
+    // and flushed on join; a non-buffered broadcast (an ephemeral heartbeat/snapshot that re-fires
+    // on its own interval) is simply dropped, since a stale REST-delivered copy adds nothing. The
+    // deliberate, must-arrive 'submitted' handoff still uses send() directly (via broadcast() below).
+    const wsSend = useCallback(
+        (event: string, payload: unknown, opts?: { buffer?: boolean }) => {
+            const ch = channelRef.current;
+            if (ch && (ch.state as string) === 'joined') {
+                ch.send({ type: 'broadcast', event, payload });
+                return;
+            }
+            if (opts?.buffer && hasDb) {
+                pendingBroadcastsRef.current.push({ event, payload });
+                if (pendingBroadcastsRef.current.length > 100) pendingBroadcastsRef.current.shift();
+            }
+        },
+        [hasDb]
+    );
+
+    const pushEvent = useCallback(
+        (event: ProctorEvent) => {
+            eventsRef.current = [...eventsRef.current, event];
+            setEvents(eventsRef.current);
+            wsSend('event', event, { buffer: true });
+        },
+        [wsSend]
+    );
 
     const broadcast = useCallback((event: string, payload?: unknown): Promise<'ok' | 'timed out' | 'error'> => {
         // send() is typed as a branded `string` in this realtime-js version; its runtime
@@ -150,6 +179,14 @@ export function useLiveSessionTelemetry({
         channel.subscribe((status) => {
             setIsBroadcasting(status === 'SUBSCRIBED');
             if (status !== 'SUBSCRIBED') return;
+            // Flush any broadcasts buffered before the channel joined (e.g. the once-at-mount
+            // seb_status, or a tab switch during the join window) — now that it's joined they go
+            // over the socket with no REST fallback.
+            const buffered = pendingBroadcastsRef.current;
+            pendingBroadcastsRef.current = [];
+            for (const b of buffered) {
+                channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
+            }
             // Announce the join immediately — and a few times over the next seconds:
             // the regular heartbeat only fires every ~20s, so without this the
             // teacher's monitor would keep showing the student as disconnected for
@@ -177,6 +214,7 @@ export function useLiveSessionTelemetry({
         channelRef.current = channel;
         return () => {
             channelRef.current = null;
+            pendingBroadcastsRef.current = [];
             void client.removeChannel(channel);
             setIsBroadcasting(false);
         };
@@ -298,15 +336,20 @@ export function useLiveSessionTelemetry({
     // ── throttled work-in-progress snapshots (ephemeral, broadcast only) ─────
     useEffect(() => {
         if (!enabled || !getSnapshot || !hasDb) return;
-        const interval = setInterval(() => {
+        const tick = () => {
             const snapshot = getSnapshot();
             if (!shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
                 lastSnapshotRef.current = snapshot;
-                channelRef.current?.send({ type: 'broadcast', event: 'snapshot', payload: snapshot });
+                wsSend('snapshot', snapshot);
             }
-        }, SNAPSHOT_INTERVAL_MS);
+        };
+        // Fire once right away (re-runs when isBroadcasting flips true, i.e. the channel just
+        // subscribed) so the teacher's first snapshot lands immediately instead of after a full
+        // SNAPSHOT_INTERVAL_MS — the initial-signal lag point 2 called out.
+        if (isBroadcasting) tick();
+        const interval = setInterval(tick, SNAPSHOT_INTERVAL_MS);
         return () => clearInterval(interval);
-    }, [enabled, getSnapshot, hasDb]);
+    }, [enabled, getSnapshot, hasDb, isBroadcasting, wsSend]);
 
     return { events, flush, isBroadcasting, broadcast };
 }

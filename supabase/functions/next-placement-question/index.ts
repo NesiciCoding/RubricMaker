@@ -298,7 +298,12 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
 // ── Staircase state (mirrors src/utils/placementStaircase.ts) ──────────────
 
 const STEP_UP_AFTER_CORRECT = 2;
-const CONVERGE_AFTER_REVERSALS = 2;
+// Generator-engine convergence only (the staircase engine keeps its own value=2 in
+// submit-test/index.ts + placementStaircase.ts). Higher = more questions before the run is allowed
+// to settle, so a short generator placement is less likely to stop at exactly minQuestions on an
+// early pair of reversals. Not shared with the staircase engine; the client's estimate replay reads
+// the recorded path's final level and ignores this threshold, so it can diverge safely.
+const CONVERGE_AFTER_REVERSALS = 3;
 const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const DEFAULT_ELO_RATING = 1200;
 const ELO_K_FACTOR = 24;
@@ -623,7 +628,26 @@ serve(async (req) => {
             });
         if (pool.length === 0) return null;
 
-        const shuffled = seededShuffle(pool, `${assignmentId}-${pickLevel}`);
+        // Skill rotation: cycle the pick across the skills the run should cover so a
+        // grammar-heavy bank can't crowd out reading/listening sections (which each carry a
+        // cefrSkill of 'reading'/'listening'). Nearest-ELO alone would keep drawing whatever
+        // skill has the most items near the level anchor — the "only single grammar questions"
+        // symptom. Rotate on askedItemIds.length (distinct items already fully asked) so the
+        // sequence is skill1, skill2, …, wrapping around. Use the configured skills when set,
+        // otherwise the distinct skills actually present in this level's pool (sorted for a
+        // deterministic order). If the target skill has nothing at this level, fall back to the
+        // whole pool rather than stalling the run.
+        const rotationSkills = cfg.skills?.length
+            ? cfg.skills
+            : [...new Set(pool.map((item) => item.cefrSkill).filter((s): s is string => !!s))].sort();
+        let candidatePool = pool;
+        if (rotationSkills.length > 1) {
+            const targetSkill = rotationSkills[askedItemIds.length % rotationSkills.length];
+            const skilled = pool.filter((item) => item.cefrSkill === targetSkill);
+            if (skilled.length > 0) candidatePool = skilled;
+        }
+
+        const shuffled = seededShuffle(candidatePool, `${assignmentId}-${pickLevel}`);
         const withRatings = shuffled.map((item) => ({ item, eloRating: bankItemEloRating(item) }));
         const picked = pickNearestEloItem(withRatings, LEVEL_TO_ELO[pickLevel]).item;
 
