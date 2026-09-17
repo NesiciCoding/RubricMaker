@@ -109,23 +109,37 @@ export function useLiveSessionTelemetry({
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
-    // Push an ephemeral broadcast (heartbeat/snapshot/event) only over the live WebSocket. When the
-    // channel isn't joined, realtime-js's send() silently falls back to a REST POST and logs a
-    // deprecation warning ("send() is automatically falling back to REST API…"); for a signal that
-    // only matters live there's nothing to gain from a REST-delivered stale copy, so we simply skip
-    // it. The deliberate, must-arrive 'submitted' handoff still uses send() (via broadcast() below).
-    const wsSend = useCallback((event: string, payload: unknown) => {
-        const ch = channelRef.current;
-        if (ch && (ch.state as string) === 'joined') {
-            ch.send({ type: 'broadcast', event, payload });
-        }
-    }, []);
+    // Broadcasts that fired before the channel finished joining (or during a reconnect gap) are
+    // held here and flushed once it's joined — see wsSend / the subscribe handler below.
+    const pendingBroadcastsRef = useRef<{ event: string; payload: unknown }[]>([]);
+
+    // Push a broadcast over the live WebSocket. When the channel isn't joined, realtime-js's send()
+    // silently falls back to a REST POST and logs a deprecation warning ("send() is automatically
+    // falling back to REST API…"). Rather than take that path, a `buffer` broadcast (a discrete
+    // proctor event that must arrive — e.g. the once-at-mount seb_status, a tab switch) is queued
+    // and flushed on join; a non-buffered broadcast (an ephemeral heartbeat/snapshot that re-fires
+    // on its own interval) is simply dropped, since a stale REST-delivered copy adds nothing. The
+    // deliberate, must-arrive 'submitted' handoff still uses send() directly (via broadcast() below).
+    const wsSend = useCallback(
+        (event: string, payload: unknown, opts?: { buffer?: boolean }) => {
+            const ch = channelRef.current;
+            if (ch && (ch.state as string) === 'joined') {
+                ch.send({ type: 'broadcast', event, payload });
+                return;
+            }
+            if (opts?.buffer && hasDb) {
+                pendingBroadcastsRef.current.push({ event, payload });
+                if (pendingBroadcastsRef.current.length > 100) pendingBroadcastsRef.current.shift();
+            }
+        },
+        [hasDb]
+    );
 
     const pushEvent = useCallback(
         (event: ProctorEvent) => {
             eventsRef.current = [...eventsRef.current, event];
             setEvents(eventsRef.current);
-            wsSend('event', event);
+            wsSend('event', event, { buffer: true });
         },
         [wsSend]
     );
@@ -165,6 +179,14 @@ export function useLiveSessionTelemetry({
         channel.subscribe((status) => {
             setIsBroadcasting(status === 'SUBSCRIBED');
             if (status !== 'SUBSCRIBED') return;
+            // Flush any broadcasts buffered before the channel joined (e.g. the once-at-mount
+            // seb_status, or a tab switch during the join window) — now that it's joined they go
+            // over the socket with no REST fallback.
+            const buffered = pendingBroadcastsRef.current;
+            pendingBroadcastsRef.current = [];
+            for (const b of buffered) {
+                channel.send({ type: 'broadcast', event: b.event, payload: b.payload });
+            }
             // Announce the join immediately — and a few times over the next seconds:
             // the regular heartbeat only fires every ~20s, so without this the
             // teacher's monitor would keep showing the student as disconnected for
@@ -192,6 +214,7 @@ export function useLiveSessionTelemetry({
         channelRef.current = channel;
         return () => {
             channelRef.current = null;
+            pendingBroadcastsRef.current = [];
             void client.removeChannel(channel);
             setIsBroadcasting(false);
         };
