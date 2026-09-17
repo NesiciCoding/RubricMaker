@@ -1015,7 +1015,10 @@ export default function StudentTestPage() {
                                         borderRadius: 10,
                                     }}
                                 >
-                                    <PassageReadAloud contentHtml={currentSection.content} lang={i18n?.language ?? 'en'} />
+                                    <PassageReadAloud
+                                        contentHtml={currentSection.content}
+                                        lang={i18n?.language ?? 'en'}
+                                    />
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
