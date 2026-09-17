@@ -814,11 +814,36 @@
             "grid": {
                 "student": "Student",
                 "question_short": "Q{{index}}",
+                "totals": "Totals",
+                "average": "Average",
+                "no_class": "No class",
+                "estimated_level": "Est. level",
+                "level_accuracy": "{{correct}} of {{attempted}} correct at this level",
                 "state": {
                     "correct": "Correct",
                     "incorrect": "Incorrect",
                     "ungraded": "Needs grading",
-                    "empty": "No answer"
+                    "empty": "No answer",
+                    "absent": "Not presented"
+                },
+                "sort_button": "Sort columns",
+                "sort_title": "Sort & group columns",
+                "sort_hint": "Order the question columns by one or more properties. Rules apply in order, top to bottom.",
+                "sort_none": "No sorting — questions stay in their original order.",
+                "sort_by": "Sort by",
+                "sort_then": "then by",
+                "sort_add": "Add rule",
+                "sort_reset": "Reset",
+                "sort_apply": "Apply",
+                "sort_remove": "Remove rule",
+                "sort_dir_asc": "Ascending",
+                "sort_dir_desc": "Descending",
+                "sort_key": {
+                    "section": "Section",
+                    "cefr": "CEFR level",
+                    "type": "Question type",
+                    "grammar": "Grammar / standard",
+                    "score": "Cumulative score"
                 },
                 "gallery_title": "Question {{index}} — all answers",
                 "no_answer": "No answer yet",
@@ -2358,7 +2383,7 @@
     },
     "tts": {
         "read_prompt": "Read assignment prompt aloud",
-            "read_aloud": "Read aloud",
+        "read_aloud": "Read aloud",
         "read_prompt_short": "Read prompt",
         "play": "Read essay aloud",
         "pause": "Pause reading",
@@ -2677,7 +2702,7 @@
         "rb_live_monitor_button": "Monitor",
         "rb_live_monitor_intro_suffix": "(from the Tests page for a test, or from the assignment dialog for an essay) to open a live view of the session. This requires cloud sync to be enabled — without it, the page explains that you can review progress after the fact from each student's saved answers or draft instead.",
         "rb_live_monitor_item_presence": "Presence — a coloured dot shows whether each student is active, idle, or disconnected, based on how recently their browser checked in.",
-        "rb_live_monitor_item_grid": "Response grid (tests) — a students-by-questions matrix, colour-coded as students answer. Click a question header to open a gallery of every answer to that question.",
+        "rb_live_monitor_item_grid": "Response grid (tests) — a students-by-questions matrix of coloured bars, grouped by class with a per-question and per-student average. Each row is a student, each column a question; click a question header to open a gallery of every answer to it.",
         "rb_live_monitor_item_draft": "Live draft preview (essays) — a card per student with a live word count, last-activity timestamp, and an expandable preview of what they are currently writing.",
         "rb_live_monitor_item_hide_names": "Hide names — toggle to anonymise the view, useful when sharing your screen.",
         "rb_live_monitor_item_proctoring": "Proctoring flags — counts of tab switches, copy/paste/cut, battery level, and Safe Exam Browser status. These are advisory signals only: a determined student can spoof them, so use them to prompt a conversation, not as definitive proof.",
@@ -3043,7 +3068,9 @@
         "an_vocab_analytics_title": "Reading level & academic vocabulary",
         "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them.",
         "gr_scan_title": "Scan handwritten work",
-        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored."
+        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored.",
+        "rb_live_monitor_item_sort": "Sort & group columns — reorder the question columns by section, CEFR level, question type, linked grammar/standard, or cumulative class score, combining several rules at once.",
+        "rb_live_monitor_item_placement": "Adaptive placement view — staircase and generator placement runs give every student different questions, so the grid aligns on CEFR level instead: a per-level accuracy bar per student, with their estimated level in the totals column."
     },
     "studentProfile": {
         "tab_overview": "Overview",

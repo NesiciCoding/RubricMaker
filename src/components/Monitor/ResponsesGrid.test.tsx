@@ -185,4 +185,64 @@ describe('ResponsesGrid', () => {
         fireEvent.click(dialog.querySelector('div')!);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
+
+    it('shows a totals column and a class-average row', () => {
+        render(
+            <ResponsesGrid
+                test={{ ...mockTest, questions: mockTest.questions.slice(0, 2) }}
+                rows={[
+                    {
+                        studentId: 's1',
+                        displayName: 'Alice',
+                        answers: [
+                            { questionId: 'q1', response: 'a' }, // correct
+                            { questionId: 'q2', response: '4' }, // correct
+                        ],
+                    },
+                ]}
+            />
+        );
+        expect(screen.getByText('tests.monitor.grid.totals')).toBeInTheDocument();
+        expect(screen.getByText('tests.monitor.grid.average')).toBeInTheDocument();
+        // Both questions correct → 100% total, and the class average is also 100%.
+        expect(screen.getAllByText('100%').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('groups students under a collapsible class header and hides rows when collapsed', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[
+                    { studentId: 's1', displayName: 'Alice', className: '2C', answers: [] },
+                    { studentId: 's2', displayName: 'Bob', className: '2C', answers: [] },
+                ]}
+            />
+        );
+        expect(screen.getByText('2C')).toBeInTheDocument();
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('2C'));
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    });
+
+    it('greys out a question a placement student never routed to', () => {
+        const routedTest: Test = {
+            ...mockTest,
+            sections: [
+                { id: 'secA', title: 'A' },
+                { id: 'secB', title: 'B' },
+            ],
+            questions: [
+                { id: 'q1', prompt: 'p1', type: 'open', points: 1, sectionId: 'secA' },
+                { id: 'q2', prompt: 'p2', type: 'open', points: 1, sectionId: 'secB' },
+            ],
+        };
+        render(
+            <ResponsesGrid
+                test={routedTest}
+                rows={[{ studentId: 's1', displayName: 'Alice', sectionPath: ['secA'], answers: [] }]}
+            />
+        );
+        // secB was never presented → one "absent" cell.
+        expect(screen.getByTitle('tests.monitor.grid.state.absent')).toBeInTheDocument();
+    });
 });
