@@ -389,12 +389,19 @@ export default function StudentTestPage() {
                 (sum, a) => sum + a.trim().split(/\s+/).filter(Boolean).length,
                 0
             ),
-            ...(isGenerator && generatorResult && !generatorResult.done
+            // askedPrompts must go out whenever this is a generator run, not only while a question
+            // is pending — otherwise the terminal (done) snapshot drops all prompts while `answers`
+            // still holds the responses, leaving the live monitor unable to pair answers with text.
+            ...(isGenerator
                 ? {
-                      generatorLevel: generatorResult.cefrLevel,
-                      generatorEloAnchor: generatorResult.eloAnchor,
-                      questionsAsked: generatorResult.questionsAsked,
                       askedPrompts,
+                      ...(generatorResult && !generatorResult.done
+                          ? {
+                                generatorLevel: generatorResult.cefrLevel,
+                                generatorEloAnchor: generatorResult.eloAnchor,
+                                questionsAsked: generatorResult.questionsAsked,
+                            }
+                          : {}),
                   }
                 : {}),
         }),
@@ -571,6 +578,11 @@ export default function StudentTestPage() {
         setSectionPath([]);
         setLevelPath([]);
         setAskedPrompts({});
+        // The init effect bails when generatorResult is set, so a generator retake must clear it (and
+        // its loading/error flags) or it would keep the previous run instead of drawing a fresh Q1.
+        setGeneratorResult(null);
+        setGeneratorLoading(false);
+        setGeneratorError('');
         setSubmitted(false);
         setSubmissionCode('');
         setSubmitError('');

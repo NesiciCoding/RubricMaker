@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Play, Pause, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTTS, htmlToPlainText } from '../../hooks/useTTS';
@@ -13,6 +14,10 @@ interface PassageReadAloudProps {
 export default function PassageReadAloud({ contentHtml, lang }: PassageReadAloudProps) {
     const { t } = useTranslation();
     const { status, charIndex, totalChars, speak, pause, resume, stop } = useTTS({ lang });
+
+    // Stop any in-flight speech when the passage identity changes (the generator reuses this same
+    // component instance as it advances passages) so it can't keep reading the previous passage.
+    useEffect(() => stop, [contentHtml, lang, stop]);
 
     if (status === 'unsupported') return null;
 
@@ -51,7 +56,7 @@ export default function PassageReadAloud({ contentHtml, lang }: PassageReadAloud
                 aria-pressed={isBusy}
             >
                 {status === 'speaking' ? <Pause size={13} aria-hidden="true" /> : <Play size={13} aria-hidden="true" />}
-                {t('tts.read_aloud')}
+                {status === 'paused' ? t('tts.resume') : status === 'speaking' ? t('tts.pause') : t('tts.read_aloud')}
             </button>
             {isBusy && (
                 <button
