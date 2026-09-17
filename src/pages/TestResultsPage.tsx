@@ -755,9 +755,10 @@ export default function TestResultsPage() {
                                                 id={`feedback-${question.id}`}
                                                 rows={2}
                                                 value={draft.feedback}
-                                                onChange={(e) =>
-                                                    updateDraft(question.id, answer, { feedback: e.target.value })
-                                                }
+                                                onChange={(e) => {
+                                                    updateDraft(question.id, answer, { feedback: e.target.value });
+                                                    setSavedCommentFor((cur) => (cur === question.id ? null : cur));
+                                                }}
                                                 placeholder={t('tests.results.feedback_placeholder')}
                                             />
                                             <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>

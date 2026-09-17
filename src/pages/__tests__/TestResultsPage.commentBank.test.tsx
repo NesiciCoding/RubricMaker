@@ -132,4 +132,16 @@ describe('TestResultsPage comment bank', () => {
 
         expect(mockAddItem).toHaveBeenCalledWith('Nice argument', []);
     });
+
+    it('clears the saved confirmation when the feedback is edited afterwards', () => {
+        renderPage();
+        const feedback = screen.getByLabelText('tests.results.feedback_label') as HTMLTextAreaElement;
+        fireEvent.change(feedback, { target: { value: 'A' } });
+        fireEvent.click(screen.getByText('tests.results.save_as_comment'));
+        expect(screen.getByText('tests.results.comment_saved')).toBeInTheDocument();
+
+        fireEvent.change(feedback, { target: { value: 'B' } });
+        expect(screen.queryByText('tests.results.comment_saved')).not.toBeInTheDocument();
+        expect(screen.getByText('tests.results.save_as_comment')).toBeInTheDocument();
+    });
 });
