@@ -2,29 +2,31 @@ import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
 import SlipSheet from '../ui/SlipSheet';
-import { encodeEssayAssignment, buildShareUrl } from '../../utils/shareCode';
-import type { EssayAssignment } from '../../types';
+import type { Student } from '../../types';
 
-interface ClassStudent {
-    id: string;
-    name: string;
-}
+type SlipStudent = Pick<Student, 'id' | 'name'>;
 
 interface Props {
-    baseAssignment: EssayAssignment;
-    students: ClassStudent[];
+    students: SlipStudent[];
+    testName: string;
+    durationMinutes?: number;
+    buildUrl: (studentId: string) => string;
     onClose: () => void;
 }
 
-function buildUrl(assignment: EssayAssignment, studentId: string): string {
-    const a: EssayAssignment = { ...assignment, studentId };
-    return buildShareUrl('essay', encodeEssayAssignment(a));
-}
-
-function SlipItem({ student, assignment }: { student: ClassStudent; assignment: EssayAssignment }) {
+function SlipItem({
+    student,
+    testName,
+    durationMinutes,
+    url,
+}: {
+    student: SlipStudent;
+    testName: string;
+    durationMinutes?: number;
+    url: string;
+}) {
     const { t } = useTranslation();
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const url = buildUrl(assignment, student.id);
 
     useEffect(() => {
         if (!canvasRef.current) return;
@@ -39,15 +41,10 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
                 <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', marginBottom: 4 }}>
                     {student.name}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{assignment.title}</div>
-                {assignment.timeLimitMinutes && (
+                <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{testName}</div>
+                {durationMinutes && (
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                        ⏱ {t('slip_sheet.minutes', { count: assignment.timeLimitMinutes })}
-                    </div>
-                )}
-                {(assignment.minWords || assignment.maxWords) && (
-                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                        {t('slip_sheet.words')}: {assignment.minWords ?? 0}–{assignment.maxWords ?? '∞'}
+                        ⏱ {t('slip_sheet.minutes', { count: durationMinutes })}
                     </div>
                 )}
                 <div
@@ -68,7 +65,7 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
     );
 }
 
-export default function EssaySlipSheet({ baseAssignment, students, onClose }: Props) {
+export default function TestSlipSheet({ students, testName, durationMinutes, buildUrl, onClose }: Props) {
     const { t } = useTranslation();
     const [columns, setColumns] = useState<2 | 4>(2);
 
@@ -80,7 +77,13 @@ export default function EssaySlipSheet({ baseAssignment, students, onClose }: Pr
             onClose={onClose}
         >
             {students.map((s) => (
-                <SlipItem key={s.id} student={s} assignment={baseAssignment} />
+                <SlipItem
+                    key={s.id}
+                    student={s}
+                    testName={testName}
+                    durationMinutes={durationMinutes}
+                    url={buildUrl(s.id)}
+                />
             ))}
         </SlipSheet>
     );

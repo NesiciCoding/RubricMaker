@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Copy, Download, Check, FileText, Database, AlertCircle, Radio, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { encodeEssayAssignment } from '../../utils/shareCode';
+import { encodeEssayAssignment, buildShareUrl } from '../../utils/shareCode';
 import { downloadSebConfig } from '../../utils/sebConfig';
 import { nanoid } from '../../utils/nanoid';
 import Modal from '../ui/Modal';
@@ -135,7 +135,7 @@ export default function EssayAssignmentModal({
         ]
     );
 
-    const essayUrl = `${window.location.origin}${window.location.pathname}#/essay/${encodeEssayAssignment(buildAssignment(studentId))}`;
+    const essayUrl = buildShareUrl('essay', encodeEssayAssignment(buildAssignment(studentId)));
 
     const handleCopyLink = useCallback(() => {
         navigator.clipboard.writeText(essayUrl).then(() => {

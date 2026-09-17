@@ -137,3 +137,9 @@ export function decodeTestSubmission(code: string): TestSubmissionPayload | null
         return null;
     }
 }
+
+// ── Share URL ─────────────────────────────────────────────────────────────────
+
+export function buildShareUrl(route: string, code: string): string {
+    return `${window.location.origin}${window.location.pathname}#/${route}/${code}`;
+}

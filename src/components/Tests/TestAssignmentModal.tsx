@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { X, Copy, Check, ClipboardCheck, Database, ExternalLink, AlertCircle } from 'lucide-react';
+import { X, Copy, Check, ClipboardCheck, Database, ExternalLink, AlertCircle, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
+import TestSlipSheet from './TestSlipSheet';
 import { useAssessment, useClasses, useSettings, useStudents } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
-import { encodeTestAssignment } from '../../utils/shareCode';
+import { encodeTestAssignment, buildShareUrl } from '../../utils/shareCode';
 import { nanoid } from '../../utils/nanoid';
 import { toLocalDatetimeInput } from '../../utils/dateInput';
 import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
@@ -37,6 +38,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
     const [saving, setSaving] = useState(false);
     const [saveErrorCount, setSaveErrorCount] = useState(0);
+    const [showSlips, setShowSlips] = useState(false);
 
     const savedKeyFor = useCallback((studentId: string) => `${studentId}::${expiresAt}`, [expiresAt]);
 
@@ -92,8 +94,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     );
 
     function buildUrl(studentId: string): string {
-        const code = encodeTestAssignment(buildAssignment(studentId));
-        return `${window.location.origin}${window.location.pathname}#/test/${code}`;
+        return buildShareUrl('test', encodeTestAssignment(buildAssignment(studentId)));
     }
 
     const handleSaveAllToDb = useCallback(async () => {
@@ -327,14 +328,30 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                         }}
                     >
                         <label style={{ marginBottom: 0 }}>{t('tests.assignment_links_label')}</label>
-                        {classStudents.length > 1 && (
-                            <button className="btn btn-secondary btn-sm" onClick={handleCopyAll}>
-                                {copiedAll ? <Check size={14} /> : <Copy size={14} />}
-                                {copiedAll
-                                    ? t('essay_assignment.copied')
-                                    : t('tests.copy_all_links', { count: classStudents.length })}
-                            </button>
-                        )}
+                        <div style={{ display: 'flex', gap: 6 }}>
+                            {classStudents.length > 0 && (
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => setShowSlips(true)}
+                                    disabled={embedDb && (saving || classSavedCount < classStudents.length)}
+                                    title={
+                                        embedDb && (saving || classSavedCount < classStudents.length)
+                                            ? t('tests.assignment_print_slips_wait')
+                                            : undefined
+                                    }
+                                >
+                                    <Printer size={14} /> {t('tests.assignment_print_slips')}
+                                </button>
+                            )}
+                            {classStudents.length > 1 && (
+                                <button className="btn btn-secondary btn-sm" onClick={handleCopyAll}>
+                                    {copiedAll ? <Check size={14} /> : <Copy size={14} />}
+                                    {copiedAll
+                                        ? t('essay_assignment.copied')
+                                        : t('tests.copy_all_links', { count: classStudents.length })}
+                                </button>
+                            )}
+                        </div>
                     </div>
                     {classStudents.length === 0 ? (
                         <p className="text-muted text-sm">{t('comparativeGrading.no_classes')}</p>
@@ -396,6 +413,16 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                     {t('common.close')}
                 </button>
             </div>
+
+            {showSlips && (
+                <TestSlipSheet
+                    students={classStudents}
+                    testName={test.name}
+                    durationMinutes={test.durationMinutes}
+                    buildUrl={buildUrl}
+                    onClose={() => setShowSlips(false)}
+                />
+            )}
         </Modal>
     );
 }

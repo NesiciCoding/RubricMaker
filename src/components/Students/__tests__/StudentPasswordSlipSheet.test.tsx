@@ -57,10 +57,10 @@ describe('StudentPasswordSlipSheet', () => {
         const grid = document.querySelector('.slip-sheet-grid') as HTMLElement;
         expect(grid.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
 
-        fireEvent.click(screen.getByRole('button', { name: '4 studentsPage.password_slip_columns' }));
+        fireEvent.click(screen.getByRole('button', { name: '4 slip_sheet.columns' }));
         expect(grid.style.gridTemplateColumns).toBe('repeat(4, 1fr)');
 
-        fireEvent.click(screen.getByRole('button', { name: '2 studentsPage.password_slip_columns' }));
+        fireEvent.click(screen.getByRole('button', { name: '2 slip_sheet.columns' }));
         expect(grid.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
     });
 

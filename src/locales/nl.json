@@ -151,6 +151,13 @@
         "next": "Volgende",
         "view_grid": "Raster"
     },
+    "slip_sheet": {
+        "class_slips_one": "Klasstroken — {{count}} leerling",
+        "class_slips_other": "Klasstroken — {{count}} leerlingen",
+        "columns": "kolommen",
+        "words": "Woorden",
+        "minutes": "{{count}} min"
+    },
     "sidebar": {
         "main_section": "Hoofdmenu",
         "quick_stats": "Snelle statistieken",
@@ -588,6 +595,8 @@
         "assignment_class_label": "Klas",
         "assignment_deadline_label": "Deadline",
         "assignment_links_label": "Links voor leerlingen",
+        "assignment_print_slips": "QR-stroken afdrukken",
+        "assignment_print_slips_wait": "Toewijzingen opslaan — beschikbaar zodra opgeslagen in de database",
         "assignment_link_for": "Toetslink voor {{name}}",
         "copy_all_links": "Alle links kopiëren ({{count}})",
         "dev_open_as_student": "Openen als leerling (alleen dev)",
@@ -2645,6 +2654,7 @@
         "rb_tests_hottext_body4": "kent punten toe per fragment in plaats van alles-of-niets.",
         "rb_tests_due_date_body": "Stel een inleverdatum in bij het maken van de toets om een badge 'te laat' te tonen in de toetsenlijst zodra de datum is verstreken, en om de verloopdatum van gedeelde links standaard op deze datum te zetten.",
         "rb_tests_passage_editor_body": "De editor voor lees-/luisterteksten ondersteunt een sleepgreep om blokken te herschikken, een inhoudsopgave-zijbalk voor lange teksten, en het slepen of plakken van een afbeelding om deze inline in te sluiten.",
+        "rb_tests_distribute_body": "Wijs een toets toe om hem uit te delen: kopieer een link per leerling, kopieer alle links tegelijk, of print een QR-strokenblad (2 of 4 kolommen) zodat elke leerling de QR-code voor zijn toets van het afgedrukte blad kan scannen.",
         "rb_tests_student_view_title": "Wat leerlingen zien",
         "rb_tests_student_view_item_seb": "Als de toets Safe Exam Browser vereist, zien leerlingen een blokkerend scherm totdat ze de link binnen SEB openen.",
         "rb_tests_student_view_item_timer": "Een afteltimer (indien ingesteld) toont de resterende tijd en dient de toets automatisch in zodra deze nul bereikt.",
