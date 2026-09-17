@@ -21,7 +21,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const { students } = useStudents();
     const { classes } = useClasses();
 
-    const { saveTestAssignment } = useAssessment();
+    const { saveTestAssignment, fetchTestAssignmentTeacherKeys } = useAssessment();
     const { settings } = useSettings();
 
     const dbStatus = useDbStatus();
@@ -50,18 +50,60 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     // One teacherKey per student — test_assignments rows are 1:1 with a single teacherKey
     // server-side (same constraint essay_assignments has), so a whole-class share batch
     // needs a distinct row id per student rather than the single shared key used for the
-    // offline/legacy link format. Keyed off the full `students` list (not the class-filtered
-    // one) so switching the class dropdown back and forth doesn't regenerate keys for
-    // students already saved under their original key — savedKeys tracks per-student save
-    // state, and a regenerated key for an already-saved student would silently un-sync the
-    // displayed link from what's actually persisted.
-    const teacherKeys = useMemo(() => {
+    // offline/legacy link format.
+    //
+    // Seeded with fresh nanoids, then reconciled (DB mode) against any test_assignments
+    // rows this test already has, so reopening the modal re-serves the SAME link and
+    // re-saves the SAME row. Without this, each reopen minted a new nanoid — handing out a
+    // different URL every time, piling up duplicate rows (saveTestAssignment upserts by id,
+    // not by (test_id, student_id)), and — for a placement-generator test — orphaning a
+    // student's in-progress placement_sessions run, which is keyed on the assignment id.
+    const [teacherKeys, setTeacherKeys] = useState<Record<string, string>>(() => {
         const map: Record<string, string> = {};
         students.forEach((s) => {
             map[s.id] = nanoid();
         });
         return map;
+    });
+
+    // Mint a nanoid for any student added after mount, without disturbing existing keys.
+    useEffect(() => {
+        setTeacherKeys((prev) => {
+            const next = { ...prev };
+            let changed = false;
+            students.forEach((s) => {
+                if (!next[s.id]) {
+                    next[s.id] = nanoid();
+                    changed = true;
+                }
+            });
+            return changed ? next : prev;
+        });
     }, [students]);
+
+    // Reuse persisted teacherKeys so a reopened modal hands out identical links. Gates the
+    // auto-save below (keysReconciled) so a fresh-nanoid save can't race ahead of this fetch
+    // and create a duplicate row before the existing key is known.
+    const [keysReconciled, setKeysReconciled] = useState(false);
+    useEffect(() => {
+        if (!dbStatus.isConnected) {
+            setKeysReconciled(true);
+            return;
+        }
+        let cancelled = false;
+        fetchTestAssignmentTeacherKeys(test.id)
+            .then((existing) => {
+                if (cancelled || Object.keys(existing).length === 0) return;
+                setTeacherKeys((prev) => ({ ...prev, ...existing }));
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (!cancelled) setKeysReconciled(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [test.id, dbStatus.isConnected, fetchTestAssignmentTeacherKeys]);
 
     // Saved-progress display must be scoped to the CURRENT class, not the lifetime total
     // across every class visited this session — savedKeys accumulates globally so the
@@ -139,11 +181,11 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     // expiresAt changes too — savedKeyFor makes that a "new" payload per student, so
     // editing the deadline after the first auto-save doesn't leave stale rows behind.
     useEffect(() => {
-        if (embedDb && !saving) {
+        if (embedDb && keysReconciled && !saving) {
             void handleSaveAllToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb, classId, expiresAt]);
+    }, [embedDb, classId, expiresAt, keysReconciled]);
 
     async function handleCopyOne(studentId: string) {
         try {

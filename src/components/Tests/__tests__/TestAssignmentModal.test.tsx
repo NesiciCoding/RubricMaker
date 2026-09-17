@@ -38,12 +38,14 @@ const mockTest: RmTest = {
 const classAStudents = mockStudents.filter((s) => s.classId === 'c1');
 
 const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
+const mockFetchTestAssignmentTeacherKeys = vi.fn().mockResolvedValue({});
 
 const makeAppContextMock = () => ({
     students: mockStudents,
     classes: [mockClass, mockClass2],
     settings: mockSettings,
     saveTestAssignment: mockSaveTestAssignment,
+    fetchTestAssignmentTeacherKeys: mockFetchTestAssignmentTeacherKeys,
 });
 vi.mock('../../../context/AppContext', () => ({
     useRoster: () => makeAppContextMock(),
@@ -156,5 +158,24 @@ describe('TestAssignmentModal', () => {
         const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
         const code = input.value.split('#/test/')[1];
         expect(code).toBe(firstVisitKey);
+    });
+
+    it('reuses a persisted teacherKey so a reopened modal hands out the SAME link', async () => {
+        mockDbStatus.isConnected = true;
+        mockFetchTestAssignmentTeacherKeys.mockResolvedValueOnce({ s1: 'persisted-key-s1' });
+        const { default: TestAssignmentModal } = await import('../TestAssignmentModal');
+        renderWithRouter(<TestAssignmentModal test={mockTest} onClose={vi.fn()} />);
+
+        // Displayed link for the student with a persisted row must be that exact key,
+        // not a freshly-minted nanoid.
+        await waitFor(() => {
+            const input = screen.getByLabelText('tests.assignment_link_for:{"name":"Alice"}') as HTMLInputElement;
+            expect(input.value.split('#/test/')[1]).toBe('persisted-key-s1');
+        });
+
+        // The auto-save must upsert that same row (same id), not create a duplicate.
+        await waitFor(() => expect(mockSaveTestAssignment).toHaveBeenCalledTimes(classAStudents.length));
+        const s1Save = mockSaveTestAssignment.mock.calls.find(([a]) => a.studentId === 's1')?.[0];
+        expect(s1Save?.teacherKey).toBe('persisted-key-s1');
     });
 });
