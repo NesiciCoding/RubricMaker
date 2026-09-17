@@ -41,7 +41,9 @@ function SlipItem({ student, assignment }: { student: ClassStudent; assignment: 
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{assignment.title}</div>
                 {assignment.timeLimitMinutes && (
-                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>⏱ {assignment.timeLimitMinutes} min</div>
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                        ⏱ {t('slip_sheet.minutes', { count: assignment.timeLimitMinutes })}
+                    </div>
                 )}
                 {(assignment.minWords || assignment.maxWords) && (
                     <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>

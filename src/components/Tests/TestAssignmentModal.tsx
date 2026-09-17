@@ -330,7 +330,16 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                         <label style={{ marginBottom: 0 }}>{t('tests.assignment_links_label')}</label>
                         <div style={{ display: 'flex', gap: 6 }}>
                             {classStudents.length > 0 && (
-                                <button className="btn btn-secondary btn-sm" onClick={() => setShowSlips(true)}>
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={() => setShowSlips(true)}
+                                    disabled={embedDb && (saving || classSavedCount < classStudents.length)}
+                                    title={
+                                        embedDb && (saving || classSavedCount < classStudents.length)
+                                            ? t('tests.assignment_print_slips_wait')
+                                            : undefined
+                                    }
+                                >
                                     <Printer size={14} /> {t('tests.assignment_print_slips')}
                                 </button>
                             )}

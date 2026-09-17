@@ -152,9 +152,11 @@
         "view_grid": "Grid"
     },
     "slip_sheet": {
-        "class_slips": "Class slips — {{count}} students",
+        "class_slips_one": "Class slips — {{count}} student",
+        "class_slips_other": "Class slips — {{count}} students",
         "columns": "columns",
-        "words": "Words"
+        "words": "Words",
+        "minutes": "{{count}} min"
     },
     "sidebar": {
         "main_section": "Main",
@@ -594,6 +596,7 @@
         "assignment_deadline_label": "Deadline",
         "assignment_links_label": "Student links",
         "assignment_print_slips": "Print QR slips",
+        "assignment_print_slips_wait": "Saving assignments — available once saved to the database",
         "assignment_link_for": "Test link for {{name}}",
         "copy_all_links": "Copy all links ({{count}})",
         "dev_open_as_student": "Open as student (dev only)",
@@ -2649,7 +2652,7 @@
         "rb_tests_hottext_body4": "awards points per fragment instead of all-or-nothing.",
         "rb_tests_due_date_body": "Set a due date in the test builder to show an overdue badge in the test list once it passes, and to default the expiry date when generating student share links.",
         "rb_tests_passage_editor_body": "The reading/listening passage editor supports a drag handle for reordering blocks, a table-of-contents sidebar for long passages, and dropping or pasting an image to embed it inline.",
-        "rb_tests_distribute_body": "Assign a test to hand it out: copy a per-student link, copy all links at once, or print a QR slip sheet (2 or 4 columns) so each student can scan their own test on paper.",
+        "rb_tests_distribute_body": "Assign a test to hand it out: copy a per-student link, copy all links at once, or print a QR slip sheet (2 or 4 columns) so each student can scan the QR code for their test from the printed sheet.",
         "rb_tests_student_view_title": "What students see",
         "rb_tests_student_view_item_seb": "If the test requires Safe Exam Browser, students see a blocking screen until they open the link inside SEB.",
         "rb_tests_student_view_item_timer": "A countdown timer (when set) shows time remaining and auto-submits the test when it reaches zero.",

@@ -152,9 +152,11 @@
         "view_grid": "Cuadrícula"
     },
     "slip_sheet": {
-        "class_slips": "Fichas de clase — {{count}} estudiantes",
+        "class_slips_one": "Fichas de clase — {{count}} estudiante",
+        "class_slips_other": "Fichas de clase — {{count}} estudiantes",
         "columns": "columnas",
-        "words": "Palabras"
+        "words": "Palabras",
+        "minutes": "{{count}} min"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -594,6 +596,7 @@
         "assignment_deadline_label": "Fecha límite",
         "assignment_links_label": "Enlaces de los estudiantes",
         "assignment_print_slips": "Imprimir fichas QR",
+        "assignment_print_slips_wait": "Guardando asignaciones — disponible una vez guardadas en la base de datos",
         "assignment_link_for": "Enlace de la prueba para {{name}}",
         "copy_all_links": "Copiar todos los enlaces ({{count}})",
         "dev_open_as_student": "Abrir como estudiante (solo dev)",
@@ -2651,7 +2654,7 @@
         "rb_tests_hottext_body4": "otorga puntos por fragmento en lugar de todo o nada.",
         "rb_tests_due_date_body": "Establece una fecha límite en el creador de pruebas para mostrar una insignia de \"vencida\" en la lista de pruebas una vez pasada la fecha, y para usarla como fecha de expiración predeterminada al generar enlaces para compartir con los alumnos.",
         "rb_tests_passage_editor_body": "El editor de textos de lectura/escucha admite un asa de arrastre para reordenar bloques, una barra lateral de tabla de contenidos para textos largos, y arrastrar o pegar una imagen para incrustarla en línea.",
-        "rb_tests_distribute_body": "Asigna una prueba para repartirla: copia un enlace por estudiante, copia todos los enlaces a la vez, o imprime una hoja de fichas QR (2 o 4 columnas) para que cada estudiante escanee su propia prueba en papel.",
+        "rb_tests_distribute_body": "Asigna una prueba para repartirla: copia un enlace por estudiante, copia todos los enlaces a la vez, o imprime una hoja de fichas QR (2 o 4 columnas) para que cada estudiante escanee el código QR de su prueba en la hoja impresa.",
         "rb_tests_student_view_title": "Lo que ven los alumnos",
         "rb_tests_student_view_item_seb": "Si la prueba requiere Safe Exam Browser, los alumnos ven una pantalla de bloqueo hasta que abren el enlace dentro de SEB.",
         "rb_tests_student_view_item_timer": "Un temporizador de cuenta atrás (si se establece) muestra el tiempo restante y entrega automáticamente la prueba cuando llega a cero.",

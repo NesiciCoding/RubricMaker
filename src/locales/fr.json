@@ -152,9 +152,11 @@
         "view_grid": "Grille"
     },
     "slip_sheet": {
-        "class_slips": "Fiches de classe — {{count}} élèves",
+        "class_slips_one": "Fiches de classe — {{count}} élève",
+        "class_slips_other": "Fiches de classe — {{count}} élèves",
         "columns": "colonnes",
-        "words": "Mots"
+        "words": "Mots",
+        "minutes": "{{count}} min"
     },
     "sidebar": {
         "main_section": "Principal",
@@ -594,6 +596,7 @@
         "assignment_deadline_label": "Date limite",
         "assignment_links_label": "Liens des élèves",
         "assignment_print_slips": "Imprimer les fiches QR",
+        "assignment_print_slips_wait": "Enregistrement des attributions — disponible une fois enregistrées dans la base de données",
         "assignment_link_for": "Lien du test pour {{name}}",
         "copy_all_links": "Copier tous les liens ({{count}})",
         "dev_open_as_student": "Ouvrir en tant qu'élève (dev uniquement)",
@@ -2651,7 +2654,7 @@
         "rb_tests_hottext_body4": "attribue des points par fragment au lieu de tout ou rien.",
         "rb_tests_due_date_body": "Définissez une date limite dans le générateur de tests pour afficher un badge « en retard » dans la liste des tests une fois la date dépassée, et pour préremplir la date d'expiration lors de la génération des liens de partage pour les élèves.",
         "rb_tests_passage_editor_body": "L'éditeur de texte de lecture/écoute prend en charge une poignée de déplacement pour réorganiser les blocs, une barre latérale de table des matières pour les textes longs, et le glisser-déposer ou le collage d'une image pour l'intégrer en ligne.",
-        "rb_tests_distribute_body": "Attribuez un test pour le distribuer : copiez un lien par élève, copiez tous les liens à la fois, ou imprimez une feuille de fiches QR (2 ou 4 colonnes) pour que chaque élève scanne son propre test sur papier.",
+        "rb_tests_distribute_body": "Attribuez un test pour le distribuer : copiez un lien par élève, copiez tous les liens à la fois, ou imprimez une feuille de fiches QR (2 ou 4 colonnes) pour que chaque élève scanne le code QR de son test sur la feuille imprimée.",
         "rb_tests_student_view_title": "Ce que voient les élèves",
         "rb_tests_student_view_item_seb": "Si le test exige Safe Exam Browser, les élèves voient un écran de blocage jusqu'à ce qu'ils ouvrent le lien dans SEB.",
         "rb_tests_student_view_item_timer": "Un minuteur (s'il est défini) affiche le temps restant et soumet automatiquement le test lorsqu'il atteint zéro.",

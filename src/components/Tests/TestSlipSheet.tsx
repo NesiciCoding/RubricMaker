@@ -2,14 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
 import SlipSheet from '../ui/SlipSheet';
+import type { Student } from '../../types';
 
-interface ClassStudent {
-    id: string;
-    name: string;
-}
+type SlipStudent = Pick<Student, 'id' | 'name'>;
 
 interface Props {
-    students: ClassStudent[];
+    students: SlipStudent[];
     testName: string;
     durationMinutes?: number;
     buildUrl: (studentId: string) => string;
@@ -22,11 +20,12 @@ function SlipItem({
     durationMinutes,
     url,
 }: {
-    student: ClassStudent;
+    student: SlipStudent;
     testName: string;
     durationMinutes?: number;
     url: string;
 }) {
+    const { t } = useTranslation();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -44,7 +43,9 @@ function SlipItem({
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: 4 }}>{testName}</div>
                 {durationMinutes && (
-                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>⏱ {durationMinutes} min</div>
+                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                        ⏱ {t('slip_sheet.minutes', { count: durationMinutes })}
+                    </div>
                 )}
                 <div
                     style={{

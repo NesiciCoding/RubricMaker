@@ -152,9 +152,11 @@
         "view_grid": "Raster"
     },
     "slip_sheet": {
-        "class_slips": "Klassenzettel — {{count}} Schüler",
+        "class_slips_one": "Klassenzettel — {{count}} Schüler",
+        "class_slips_other": "Klassenzettel — {{count}} Schüler",
         "columns": "Spalten",
-        "words": "Wörter"
+        "words": "Wörter",
+        "minutes": "{{count}} Min."
     },
     "sidebar": {
         "main_section": "Hauptmenü",
@@ -594,6 +596,7 @@
         "assignment_deadline_label": "Frist",
         "assignment_links_label": "Schülerlinks",
         "assignment_print_slips": "QR-Zettel drucken",
+        "assignment_print_slips_wait": "Zuweisungen werden gespeichert — verfügbar, sobald in der Datenbank gespeichert",
         "assignment_link_for": "Testlink für {{name}}",
         "copy_all_links": "Alle Links kopieren ({{count}})",
         "dev_open_as_student": "Als Schüler öffnen (nur Dev)",
@@ -2651,7 +2654,7 @@
         "rb_tests_hottext_body4": "vergibt Punkte pro Fragment statt Alles-oder-Nichts.",
         "rb_tests_due_date_body": "Legen Sie im Testeditor ein Fälligkeitsdatum fest, um in der Testliste ein „Überfällig“-Badge anzuzeigen, sobald das Datum verstrichen ist, und um das Ablaufdatum beim Erstellen von Schüler-Freigabelinks standardmäßig zu setzen.",
         "rb_tests_passage_editor_body": "Der Editor für Lese-/Hörtexte unterstützt einen Ziehgriff zum Umsortieren von Blöcken, eine Inhaltsverzeichnis-Seitenleiste für lange Texte sowie das Ziehen oder Einfügen eines Bildes zum Einbetten inline.",
-        "rb_tests_distribute_body": "Weisen Sie einen Test zu, um ihn auszugeben: Kopieren Sie einen Link pro Schüler, kopieren Sie alle Links auf einmal oder drucken Sie ein QR-Zettelblatt (2 oder 4 Spalten), damit jeder Schüler seinen eigenen Test auf Papier scannen kann.",
+        "rb_tests_distribute_body": "Weisen Sie einen Test zu, um ihn auszugeben: Kopieren Sie einen Link pro Schüler, kopieren Sie alle Links auf einmal oder drucken Sie ein QR-Zettelblatt (2 oder 4 Spalten), damit jeder Schüler den QR-Code für seinen Test vom ausgedruckten Blatt scannen kann.",
         "rb_tests_student_view_title": "Was Schüler sehen",
         "rb_tests_student_view_item_seb": "Wenn der Test Safe Exam Browser erfordert, sehen Schüler einen Sperrbildschirm, bis sie den Link innerhalb von SEB öffnen.",
         "rb_tests_student_view_item_timer": "Ein Countdown-Timer (falls eingestellt) zeigt die verbleibende Zeit an und reicht den Test automatisch ein, wenn er Null erreicht.",
