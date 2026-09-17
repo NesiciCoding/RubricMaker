@@ -1091,6 +1091,7 @@ function GradingTab() {
                         t('docs.gr_test_results_item_autoscore'),
                         t('docs.gr_test_results_item_open'),
                         t('docs.gr_test_results_item_grade'),
+                        t('docs.gr_test_results_item_comment_bank'),
                         t('docs.gr_test_results_item_standards'),
                         t('docs.gr_test_results_item_integrity'),
                         t('docs.gr_test_results_item_audio_response'),
