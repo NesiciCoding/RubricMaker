@@ -137,3 +137,10 @@ export function decodeTestSubmission(code: string): TestSubmissionPayload | null
         return null;
     }
 }
+
+// ── Share URL ─────────────────────────────────────────────────────────────────
+
+/** Hash-route share link for an encoded payload, e.g. buildShareUrl('essay', code). */
+export function buildShareUrl(route: string, code: string): string {
+    return `${window.location.origin}${window.location.pathname}#/${route}/${code}`;
+}
