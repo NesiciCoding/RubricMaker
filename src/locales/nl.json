@@ -615,6 +615,7 @@
             "feedback_placeholder": "Feedback voor dit antwoord…",
             "save_score": "Score opslaan",
             "placement_path_title": "Plaatsingstraject",
+            "placement_estimate": "Geschat niveau: {{level}}",
             "placement_path_step": "{{number}}.",
             "placement_overridden_label": "Door docent aangepast",
             "placement_overridden_tooltip": "De docent heeft het niveau aangepast ({{direction}}) vóór deze vraag.",
@@ -724,6 +725,8 @@
             "hint_hide": "Hint verbergen",
             "cloze_gap_placeholder": "Jouw antwoord…",
             "cloze_dropdown_placeholder": "Selecteer…",
+            "cloze_instruction": "Vul de open plekken in.",
+            "cloze_dropdown_instruction": "Kies het juiste woord voor elke open plek.",
             "hot_text_instruction": "Klik op de gemarkeerde fragmenten om ze te selecteren of deselecteren.",
             "matching_select_placeholder": "Selecteer een match…",
             "categorize_select_placeholder": "Selecteer een categorie…",
@@ -757,6 +760,9 @@
             "generator_elo_label": "Elo ~{{elo}}",
             "generator_level_pending": "Wachten op eerste antwoord…",
             "generator_questions_asked_label": "V{{count}}",
+            "generator_answers_title": "Gestelde vragen",
+            "generator_answers_empty": "Nog geen vragen beantwoord.",
+            "generator_answer_blank": "(geen antwoord)",
             "nudge_up_button": "Niveau omhoog",
             "nudge_down_button": "Niveau omlaag",
             "nudge_override_toast": "Je docent heeft je niveau aangepast ({{direction}}) voor de volgende vraag.",
@@ -940,7 +946,11 @@
         "question_type_numeric": "Numeriek",
         "numeric_expected_value_label": "Verwachte waarde",
         "numeric_tolerance_label": "Marge (±)",
-        "section_audio_label": "Audio bij sectie"
+        "section_audio_label": "Audio bij sectie",
+        "audio_check_checking": "Audiolink controleren…",
+        "audio_check_ok": "Audiolink speelt correct af.",
+        "audio_check_error": "Deze audiolink kon niet worden afgespeeld. Gebruik een directe link naar een audiobestand (eindigend op .mp3/.m4a/.ogg), geen deelpagina (Google Drive, Dropbox, OneDrive).",
+        "audio_check_mixed": "Onveilige (http://) links worden geblokkeerd op een beveiligde pagina — gebruik een https://-link."
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -2336,6 +2346,7 @@
     },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",
+            "read_aloud": "Voorlezen",
         "read_prompt_short": "Lees prompt",
         "play": "Lees essay voor",
         "pause": "Pauzeer voorlezen",

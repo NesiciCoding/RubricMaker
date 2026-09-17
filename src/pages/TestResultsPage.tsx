@@ -15,6 +15,7 @@ import {
 import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
 import { usesLevelPathEstimate, staircaseMaxPoints } from '../utils/placementStaircase';
+import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
@@ -302,6 +303,7 @@ export default function TestResultsPage() {
     // authored into test.questions — score/display against the submission's own snapshot of them.
     const scoredTest = test && studentTest ? withAskedQuestionSnapshots(test, studentTest) : test;
     const allQuestions = scoredTest?.questions ?? [];
+    const placementEstimate = test && studentTest ? estimatePlacement(test, studentTest) : null;
 
     const maxPoints = test
         ? staged && sectionPath
@@ -563,6 +565,12 @@ export default function TestResultsPage() {
                 {isStaircase && levelPath && (
                     <div className="card">
                         <h3 style={{ margin: '0 0 12px' }}>{t('tests.results.placement_path_title')}</h3>
+                        {placementEstimate && (
+                            <p style={{ margin: '0 0 12px', fontWeight: 600 }}>
+                                {t('tests.results.placement_estimate', { level: placementEstimate.level })}{' '}
+                                <span className="badge">{t('cefrOverview.placement_badge')}</span>
+                            </p>
+                        )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {levelPath.map((step, i) => {
                                 const q = allQuestions.find((qq) => qq.id === step.questionId);

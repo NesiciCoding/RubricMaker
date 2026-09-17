@@ -109,11 +109,26 @@ export function useLiveSessionTelemetry({
 
     const hasDb = !!(supabaseUrl && supabaseAnonKey);
 
-    const pushEvent = useCallback((event: ProctorEvent) => {
-        eventsRef.current = [...eventsRef.current, event];
-        setEvents(eventsRef.current);
-        channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
+    // Push an ephemeral broadcast (heartbeat/snapshot/event) only over the live WebSocket. When the
+    // channel isn't joined, realtime-js's send() silently falls back to a REST POST and logs a
+    // deprecation warning ("send() is automatically falling back to REST API…"); for a signal that
+    // only matters live there's nothing to gain from a REST-delivered stale copy, so we simply skip
+    // it. The deliberate, must-arrive 'submitted' handoff still uses send() (via broadcast() below).
+    const wsSend = useCallback((event: string, payload: unknown) => {
+        const ch = channelRef.current;
+        if (ch && (ch.state as string) === 'joined') {
+            ch.send({ type: 'broadcast', event, payload });
+        }
     }, []);
+
+    const pushEvent = useCallback(
+        (event: ProctorEvent) => {
+            eventsRef.current = [...eventsRef.current, event];
+            setEvents(eventsRef.current);
+            wsSend('event', event);
+        },
+        [wsSend]
+    );
 
     const broadcast = useCallback((event: string, payload?: unknown): Promise<'ok' | 'timed out' | 'error'> => {
         // send() is typed as a branded `string` in this realtime-js version; its runtime
@@ -298,15 +313,20 @@ export function useLiveSessionTelemetry({
     // ── throttled work-in-progress snapshots (ephemeral, broadcast only) ─────
     useEffect(() => {
         if (!enabled || !getSnapshot || !hasDb) return;
-        const interval = setInterval(() => {
+        const tick = () => {
             const snapshot = getSnapshot();
             if (!shallowEqualSnapshot(lastSnapshotRef.current, snapshot)) {
                 lastSnapshotRef.current = snapshot;
-                channelRef.current?.send({ type: 'broadcast', event: 'snapshot', payload: snapshot });
+                wsSend('snapshot', snapshot);
             }
-        }, SNAPSHOT_INTERVAL_MS);
+        };
+        // Fire once right away (re-runs when isBroadcasting flips true, i.e. the channel just
+        // subscribed) so the teacher's first snapshot lands immediately instead of after a full
+        // SNAPSHOT_INTERVAL_MS — the initial-signal lag point 2 called out.
+        if (isBroadcasting) tick();
+        const interval = setInterval(tick, SNAPSHOT_INTERVAL_MS);
         return () => clearInterval(interval);
-    }, [enabled, getSnapshot, hasDb]);
+    }, [enabled, getSnapshot, hasDb, isBroadcasting, wsSend]);
 
     return { events, flush, isBroadcasting, broadcast };
 }

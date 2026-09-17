@@ -4,6 +4,7 @@ import { Music, Plus, ChevronUp, ChevronDown } from 'lucide-react';
 import type { QuestionBankItem, TestQuestion } from '../../types';
 import EssayEditor from '../Editor/EssayEditor';
 import QuestionEditor from './QuestionEditor';
+import AudioUrlStatus from './AudioUrlStatus';
 import { newQuestion } from '../../utils/testQuestionClone';
 
 type BankSection = NonNullable<QuestionBankItem['section']>;
@@ -84,6 +85,7 @@ export default function QuestionBankSectionEditor({ section, onChange }: Props) 
                     onChange={(e) => patch({ audioUrl: e.target.value || undefined })}
                     placeholder={t('tests.question_audio_placeholder')}
                 />
+                <AudioUrlStatus url={section.audioUrl} />
                 {section.audioUrl && (
                     <audio
                         controls

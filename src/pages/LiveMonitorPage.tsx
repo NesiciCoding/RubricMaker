@@ -14,8 +14,9 @@ import ResponsesGrid from '../components/Monitor/ResponsesGrid';
 import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
+import { estimatePlacement } from '../utils/placementResult';
 import { stripCommentHtml } from '../utils/exportDataPrep';
-import type { ProctorEvent, TestAnswer, CefrLevel } from '../types';
+import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest } from '../types';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 
@@ -31,6 +32,7 @@ interface StudentLiveState {
         generatorLevel?: CefrLevel;
         generatorEloAnchor?: number;
         questionsAsked?: number;
+        askedPrompts?: Record<string, string>;
     } | null;
     lastUpdateAt: string | null;
     /** Set when the student broadcasts 'submitted' (or a persisted submission exists). */
@@ -46,11 +48,64 @@ interface MonitorStudent {
     name: string;
     persistedEvents: ProctorEvent[];
     persistedAnswers: TestAnswer[];
+    /** The submitted attempt, if any — used to replay a persisted placement estimate/answers after the live channel is gone. */
+    studentTest?: StudentTest;
     status?: 'submitted' | 'opened' | 'late';
 }
 
 export interface LiveMonitorPageProps {
     kind: 'test' | 'essay';
+}
+
+/** Best-effort readable rendering of a raw stored response (cloze/matching/etc. are JSON blobs). */
+function formatGeneratorResponse(response: string): string {
+    const trimmed = response.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            const values = Array.isArray(parsed) ? parsed : Object.values(parsed);
+            return values.map((v) => String(v)).join(', ');
+        } catch {
+            /* fall through to raw */
+        }
+    }
+    return trimmed;
+}
+
+/** Live/post-hoc answer list for a generator placement run, which has no authored test.questions for ResponsesGrid to render. */
+function GeneratorResponsesPanel({
+    displayName,
+    answers,
+}: {
+    displayName: string;
+    answers: { id: string; prompt: string; response: string }[];
+}) {
+    const { t } = useTranslation();
+    return (
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                {displayName} — {t('tests.monitor.generator_answers_title')}
+            </div>
+            {answers.length === 0 ? (
+                <div className="text-muted text-sm">{t('tests.monitor.generator_answers_empty')}</div>
+            ) : (
+                <ol style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 6 }}>
+                    {answers.map((a) => {
+                        const formatted = formatGeneratorResponse(a.response);
+                        return (
+                            <li key={a.id}>
+                                <div style={{ fontSize: 13 }}>{a.prompt}</div>
+                                <div style={{ fontSize: 13, color: formatted ? 'var(--text)' : 'var(--text-muted)' }}>
+                                    {formatted || t('tests.monitor.generator_answer_blank')}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ol>
+            )}
+        </div>
+    );
 }
 
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
@@ -183,6 +238,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         name: student?.name ?? studentId,
                         persistedEvents: st?.events ?? [],
                         persistedAnswers: st?.answers ?? [],
+                        studentTest: st,
                         status: isLate
                             ? 'late'
                             : submitted
@@ -364,12 +420,46 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                           ...snapshotAnswers,
                       ]
                     : row.persistedAnswers;
+            // Placement (staircase/generator) estimate that survives the live channel: once the
+            // student has submitted, the ephemeral snapshot is gone, so replay the level from the
+            // persisted attempt. Live snapshot wins while the run is in progress.
+            const placementLevel: CefrLevel | undefined =
+                kind === 'test' && test?.mode === 'placement'
+                    ? (live.snapshot?.generatorLevel ??
+                      (row.studentTest ? (estimatePlacement(test, row.studentTest)?.level ?? undefined) : undefined))
+                    : undefined;
+
+            // Generator answers keyed by prompt: live snapshot (askedPrompts) while running, then
+            // the submission's askedQuestionSnapshots after hand-in. A generator test has no
+            // authored test.questions, so ResponsesGrid can't render it — this is the only view of
+            // what was actually asked/answered for such a run.
+            const generatorAnswers =
+                kind === 'test' && test?.placementEngine === 'generator'
+                    ? (() => {
+                          const prompts: Record<string, string> = {
+                              ...(row.studentTest?.askedQuestionSnapshots ?? []).reduce(
+                                  (acc, q) => ({ ...acc, [q.id]: q.prompt }),
+                                  {} as Record<string, string>
+                              ),
+                              ...(live.snapshot?.askedPrompts ?? {}),
+                          };
+                          const responseById = new Map(mergedAnswers.map((a) => [a.questionId, a.response]));
+                          return Object.entries(prompts).map(([id, prompt]) => ({
+                              id,
+                              prompt,
+                              response: responseById.get(id) ?? '',
+                          }));
+                      })()
+                    : [];
+
             return {
                 ...row,
                 presence,
                 flags,
                 live,
                 mergedAnswers,
+                placementLevel,
+                generatorAnswers,
                 // Essays have no persisted student_tests row to derive a status from —
                 // the monitor learns about a hand-in via the student's 'submitted'
                 // broadcast or the essay_submissions check on mount.
@@ -528,7 +618,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                         </button>
                                         {kind === 'test' && test?.placementEngine === 'generator' && (
                                             <PlacementLevelPanel
-                                                level={row.live.snapshot?.generatorLevel}
+                                                level={row.placementLevel}
                                                 eloAnchor={row.live.snapshot?.generatorEloAnchor}
                                                 questionsAsked={row.live.snapshot?.questionsAsked}
                                                 disabled={
@@ -593,7 +683,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         </div>
 
                         {/* Kind-specific live view */}
-                        {kind === 'test' && test && (
+                        {kind === 'test' && test && test.placementEngine !== 'generator' && (
                             <ResponsesGrid
                                 test={test}
                                 rows={sortedRows.map((row, index) => ({
@@ -603,6 +693,17 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                                 }))}
                             />
                         )}
+
+                        {/* Generator placement runs have no authored test.questions — show the live/asked answers instead. */}
+                        {kind === 'test' &&
+                            test?.placementEngine === 'generator' &&
+                            sortedRows.map((row, index) => (
+                                <GeneratorResponsesPanel
+                                    key={row.studentId}
+                                    displayName={displayName(row, index)}
+                                    answers={row.generatorAnswers}
+                                />
+                            ))}
 
                         {kind === 'essay' &&
                             sortedRows.map((row, index) => (

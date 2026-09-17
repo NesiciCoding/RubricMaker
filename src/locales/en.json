@@ -615,6 +615,7 @@
             "feedback_placeholder": "Feedback for this answer…",
             "save_score": "Save score",
             "placement_path_title": "Placement path",
+            "placement_estimate": "Estimated level: {{level}}",
             "placement_path_step": "{{number}}.",
             "placement_overridden_label": "Teacher-adjusted",
             "placement_overridden_tooltip": "The teacher adjusted the level ({{direction}}) before this question.",
@@ -724,6 +725,8 @@
             "hint_hide": "Hide hint",
             "cloze_gap_placeholder": "Your answer…",
             "cloze_dropdown_placeholder": "Select…",
+            "cloze_instruction": "Fill in the gaps.",
+            "cloze_dropdown_instruction": "Choose the correct word for each gap.",
             "hot_text_instruction": "Click the highlighted fragments to select or deselect them.",
             "matching_select_placeholder": "Select a match…",
             "categorize_select_placeholder": "Select a category…",
@@ -758,6 +761,9 @@
             "generator_elo_label": "Elo ~{{elo}}",
             "generator_level_pending": "Waiting for first answer…",
             "generator_questions_asked_label": "Q{{count}}",
+            "generator_answers_title": "Questions asked",
+            "generator_answers_empty": "No questions answered yet.",
+            "generator_answer_blank": "(no answer)",
             "nudge_up_button": "Bump level up",
             "nudge_down_button": "Bump level down",
             "nudge_override_toast": "Your teacher adjusted your level ({{direction}}) for the next question.",
@@ -940,7 +946,11 @@
         "question_type_numeric": "Numeric",
         "numeric_expected_value_label": "Expected value",
         "numeric_tolerance_label": "Tolerance (±)",
-        "section_audio_label": "Section audio"
+        "section_audio_label": "Section audio",
+        "audio_check_checking": "Checking audio link…",
+        "audio_check_ok": "Audio link plays correctly.",
+        "audio_check_error": "This audio link could not be played. Use a direct link to an audio file (ending in .mp3/.m4a/.ogg), not a sharing page (Google Drive, Dropbox, OneDrive).",
+        "audio_check_mixed": "Insecure (http://) links are blocked on a secure page — use an https:// link."
     },
     "studentsPage": {
         "title": "Students & Classes",
@@ -2336,6 +2346,7 @@
     },
     "tts": {
         "read_prompt": "Read assignment prompt aloud",
+            "read_aloud": "Read aloud",
         "read_prompt_short": "Read prompt",
         "play": "Read essay aloud",
         "pause": "Pause reading",
