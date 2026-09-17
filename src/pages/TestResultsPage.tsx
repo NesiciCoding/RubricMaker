@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock, BookOpen, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
@@ -20,7 +20,8 @@ import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
-import type { TestAnswer, TestQuestion, ProctorEventType } from '../types';
+import CommentBankModal from '../components/Comments/CommentBankModal';
+import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem } from '../types';
 
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;
@@ -285,7 +286,7 @@ export default function TestResultsPage() {
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // resolve from a results route.
     const students = React.useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const { saveStudentTest } = useStoreActions();
+    const { saveStudentTest, recordCommentBankUsage, addCommentBankItem } = useStoreActions();
 
     const test = tests.find((tst) => tst.id === testId);
     const studentTest = studentTests.find((st) => st.id === studentTestId && st.testId === testId);
@@ -293,6 +294,8 @@ export default function TestResultsPage() {
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
     const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
+    const [commentBankFor, setCommentBankFor] = useState<string | null>(null);
+    const [savedCommentFor, setSavedCommentFor] = useState<string | null>(null);
 
     const sectionPath = studentTest?.sectionPath;
     const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
@@ -423,6 +426,25 @@ export default function TestResultsPage() {
         patch: Partial<{ pointsEarned: string; feedback: string }>
     ) {
         setDrafts((prev) => ({ ...prev, [questionId]: { ...getDraft(questionId, answer), ...patch } }));
+    }
+
+    function handleSaveAsComment(questionId: string, feedback: string) {
+        const text = feedback.trim();
+        if (!text) return;
+        addCommentBankItem(text, []);
+        setSavedCommentFor(questionId);
+        setTimeout(() => setSavedCommentFor((cur) => (cur === questionId ? null : cur)), 2500);
+    }
+
+    function handleInsertComment(item: CommentBankItem) {
+        const questionId = commentBankFor;
+        if (!questionId) return;
+        const answer = effectiveAnswers.find((ea) => ea.question.id === questionId)?.answer;
+        const current = getDraft(questionId, answer).feedback;
+        const next = current ? `${current}\n${item.text}` : item.text;
+        updateDraft(questionId, answer, { feedback: next });
+        recordCommentBankUsage(item.id);
+        setCommentBankFor(null);
     }
 
     function handleSaveManualScore(question: TestQuestion) {
@@ -738,6 +760,29 @@ export default function TestResultsPage() {
                                                 }
                                                 placeholder={t('tests.results.feedback_placeholder')}
                                             />
+                                            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={() => setCommentBankFor(question.id)}
+                                                >
+                                                    <BookOpen size={13} /> {t('tests.results.insert_comment')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    disabled={!draft.feedback.trim()}
+                                                    onClick={() => handleSaveAsComment(question.id, draft.feedback)}
+                                                >
+                                                    {savedCommentFor === question.id ? (
+                                                        <>
+                                                            <Check size={13} /> {t('tests.results.comment_saved')}
+                                                        </>
+                                                    ) : (
+                                                        t('tests.results.save_as_comment')
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
                                         <button
                                             className="btn btn-primary btn-sm"
@@ -813,6 +858,9 @@ export default function TestResultsPage() {
                     </div>
                 )}
             </div>
+            {commentBankFor && (
+                <CommentBankModal onClose={() => setCommentBankFor(null)} onSelect={handleInsertComment} />
+            )}
         </>
     );
 }
