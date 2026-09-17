@@ -98,6 +98,12 @@ export function useLiveSessionTelemetry({
     const lastTabSwitchAtRef = useRef(0);
     const lastSnapshotRef = useRef<LiveSessionSnapshot | null>(null);
     const channelRef = useRef<ReturnType<SupabaseClient['channel']> | null>(null);
+    // True only while the channel is actually joined (can push over the socket). Guards the
+    // best-effort live-event broadcast below so it doesn't trip realtime-js's "send() is
+    // falling back to REST API" console warning on every pre-join proctor event — those
+    // events are buffered in eventsRef and flushed at submit anyway, so a websocket-only
+    // broadcast that's skipped before join loses nothing.
+    const joinedRef = useRef(false);
     // Mirrors `events` so flush() can read the latest log synchronously —
     // setState updaters are not guaranteed to run before flush() returns.
     const eventsRef = useRef<ProctorEvent[]>([]);
@@ -112,7 +118,7 @@ export function useLiveSessionTelemetry({
     const pushEvent = useCallback((event: ProctorEvent) => {
         eventsRef.current = [...eventsRef.current, event];
         setEvents(eventsRef.current);
-        channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
+        if (joinedRef.current) channelRef.current?.send({ type: 'broadcast', event: 'event', payload: event });
     }, []);
 
     const broadcast = useCallback((event: string, payload?: unknown): Promise<'ok' | 'timed out' | 'error'> => {
@@ -148,6 +154,7 @@ export function useLiveSessionTelemetry({
             onNudgeRef.current?.((payload as { message: string }).message);
         });
         channel.subscribe((status) => {
+            joinedRef.current = status === 'SUBSCRIBED';
             setIsBroadcasting(status === 'SUBSCRIBED');
             if (status !== 'SUBSCRIBED') return;
             // Announce the join immediately — and a few times over the next seconds:
@@ -176,6 +183,7 @@ export function useLiveSessionTelemetry({
         });
         channelRef.current = channel;
         return () => {
+            joinedRef.current = false;
             channelRef.current = null;
             void client.removeChannel(channel);
             setIsBroadcasting(false);

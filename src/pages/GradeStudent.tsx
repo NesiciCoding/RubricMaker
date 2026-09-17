@@ -1836,6 +1836,16 @@ export default function GradeStudent() {
                     classStudents={classStudents}
                     onClose={() => setShowEssayAssignment(false)}
                     onSaveAssignment={handleSaveEssayAssignment}
+                    // Reuse this student's own persisted teacherKey so reopening the modal
+                    // re-serves the SAME link (and upserts the SAME essay_assignments row)
+                    // instead of minting a fresh nanoid. Only the student's OWN row — never
+                    // the single-group fallback in matchedEssayAssignmentForRubric, whose
+                    // teacherKey belongs to a different assignment.
+                    teacherKey={
+                        matchedEssayAssignmentForRubric?.studentId === studentId
+                            ? matchedEssayAssignmentForRubric.teacherKey
+                            : undefined
+                    }
                     // Reuse the prompt/instructions already authored for this rubric on the Essay
                     // Builder page — without this, the modal here starts blank (only a saved
                     // template pre-fills it), so a teacher assigning from the grading page silently

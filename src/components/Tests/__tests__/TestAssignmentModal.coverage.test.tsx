@@ -36,6 +36,7 @@ const mockTest: RmTest = {
 };
 
 const mockSaveTestAssignment = vi.fn().mockResolvedValue({ success: true });
+const mockFetchTestAssignmentTeacherKeys = vi.fn().mockResolvedValue({});
 
 // Mutated per test — the module-level mock reads the same object.
 const mockState = {
@@ -43,6 +44,7 @@ const mockState = {
     classes: [mockClassA, mockClassB],
     settings: { ...baseSettings, activeClassId: 'c1' },
     saveTestAssignment: mockSaveTestAssignment,
+    fetchTestAssignmentTeacherKeys: mockFetchTestAssignmentTeacherKeys,
 };
 
 vi.mock('../../../context/AppContext', () => ({
