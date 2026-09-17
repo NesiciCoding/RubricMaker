@@ -26,6 +26,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
+import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
@@ -1420,6 +1421,7 @@ export default function TestBuilderPage() {
                                                                 }
                                                                 placeholder={t('tests.question_audio_placeholder')}
                                                             />
+                                                            <AudioUrlStatus url={section.audioUrl} />
                                                             {section.audioUrl && (
                                                                 <audio
                                                                     controls

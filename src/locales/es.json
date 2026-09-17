@@ -627,6 +627,7 @@
             "feedback_placeholder": "Comentarios para esta respuesta…",
             "save_score": "Guardar puntuación",
             "placement_path_title": "Ruta de colocación",
+            "placement_estimate": "Nivel estimado: {{level}}",
             "placement_path_step": "{{number}}.",
             "placement_overridden_label": "Ajustado por el profesor",
             "placement_overridden_tooltip": "El profesor ajustó el nivel ({{direction}}) antes de esta pregunta.",
@@ -736,6 +737,8 @@
             "hint_hide": "Ocultar pista",
             "cloze_gap_placeholder": "Tu respuesta…",
             "cloze_dropdown_placeholder": "Seleccionar…",
+            "cloze_instruction": "Completa los espacios.",
+            "cloze_dropdown_instruction": "Elige la palabra correcta para cada espacio.",
             "hot_text_instruction": "Haz clic en los fragmentos resaltados para seleccionarlos o deseleccionarlos.",
             "matching_select_placeholder": "Seleccionar una correspondencia…",
             "categorize_select_placeholder": "Seleccionar una categoría…",
@@ -769,6 +772,9 @@
             "generator_elo_label": "Elo ~{{elo}}",
             "generator_level_pending": "Esperando la primera respuesta…",
             "generator_questions_asked_label": "P{{count}}",
+            "generator_answers_title": "Preguntas realizadas",
+            "generator_answers_empty": "Aún no se han respondido preguntas.",
+            "generator_answer_blank": "(sin respuesta)",
             "nudge_up_button": "Subir nivel",
             "nudge_down_button": "Bajar nivel",
             "nudge_override_toast": "Tu profesor ajustó tu nivel ({{direction}}) para la siguiente pregunta.",
@@ -952,7 +958,11 @@
         "question_type_numeric": "Numérico",
         "numeric_expected_value_label": "Valor esperado",
         "numeric_tolerance_label": "Tolerancia (±)",
-        "section_audio_label": "Audio de la sección"
+        "section_audio_label": "Audio de la sección",
+        "audio_check_checking": "Comprobando el enlace de audio…",
+        "audio_check_ok": "El enlace de audio se reproduce correctamente.",
+        "audio_check_error": "No se pudo reproducir este enlace de audio. Usa un enlace directo a un archivo de audio (.mp3/.m4a/.ogg), no una página para compartir (Google Drive, Dropbox, OneDrive).",
+        "audio_check_mixed": "Los enlaces no seguros (http://) se bloquean en una página segura: usa un enlace https://."
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -2348,6 +2358,7 @@
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
+            "read_aloud": "Leer en voz alta",
         "read_prompt_short": "Leer instrucción",
         "play": "Leer ensayo en voz alta",
         "pause": "Pausar lectura",

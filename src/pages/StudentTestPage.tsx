@@ -21,6 +21,7 @@ import { loadTestDraft, saveTestDraft, clearTestDraft, clearTestTimer } from '..
 import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
+import PassageReadAloud from '../components/Tests/PassageReadAloud';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
@@ -110,7 +111,7 @@ function isShortCode(code: string): boolean {
 }
 
 export default function StudentTestPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { code } = useParams<{ code: string }>();
 
     const assignment = useMemo<TestAssignmentPayload | null>(() => {
@@ -216,6 +217,10 @@ export default function StudentTestPage() {
     const [generatorResult, setGeneratorResult] = useState<NextPlacementQuestionResult | null>(null);
     const [generatorLoading, setGeneratorLoading] = useState(false);
     const [generatorError, setGeneratorError] = useState('');
+    // Prompts of the generator questions asked so far, keyed by question id — the run only ever
+    // holds the *current* question (generatorResult), so without accumulating them the teacher's
+    // live monitor has responses (the answers map) but no question text to show them against.
+    const [askedPrompts, setAskedPrompts] = useState<Record<string, string>>({});
     const [submitted, setSubmitted] = useState(false);
     const [submissionCode, setSubmissionCode] = useState('');
     const [copied, setCopied] = useState(false);
@@ -335,6 +340,10 @@ export default function StudentTestPage() {
                 return;
             }
             setGeneratorResult(outcome.data);
+            if (!outcome.data.done) {
+                const q = outcome.data.question;
+                setAskedPrompts((prev) => (prev[q.id] ? prev : { ...prev, [q.id]: q.prompt }));
+            }
         },
         [assignment, adapter, t]
     );
@@ -380,15 +389,23 @@ export default function StudentTestPage() {
                 (sum, a) => sum + a.trim().split(/\s+/).filter(Boolean).length,
                 0
             ),
-            ...(isGenerator && generatorResult && !generatorResult.done
+            // askedPrompts must go out whenever this is a generator run, not only while a question
+            // is pending — otherwise the terminal (done) snapshot drops all prompts while `answers`
+            // still holds the responses, leaving the live monitor unable to pair answers with text.
+            ...(isGenerator
                 ? {
-                      generatorLevel: generatorResult.cefrLevel,
-                      generatorEloAnchor: generatorResult.eloAnchor,
-                      questionsAsked: generatorResult.questionsAsked,
+                      askedPrompts,
+                      ...(generatorResult && !generatorResult.done
+                          ? {
+                                generatorLevel: generatorResult.cefrLevel,
+                                generatorEloAnchor: generatorResult.eloAnchor,
+                                questionsAsked: generatorResult.questionsAsked,
+                            }
+                          : {}),
                   }
                 : {}),
         }),
-        [answers, isGenerator, generatorResult]
+        [answers, isGenerator, generatorResult, askedPrompts]
     );
 
     const { showToast } = useContext(ToastContext);
@@ -560,6 +577,12 @@ export default function StudentTestPage() {
         setSeenIndices(new Set([0]));
         setSectionPath([]);
         setLevelPath([]);
+        setAskedPrompts({});
+        // The init effect bails when generatorResult is set, so a generator retake must clear it (and
+        // its loading/error flags) or it would keep the previous run instead of drawing a fresh Q1.
+        setGeneratorResult(null);
+        setGeneratorLoading(false);
+        setGeneratorError('');
         setSubmitted(false);
         setSubmissionCode('');
         setSubmitError('');
@@ -1004,6 +1027,10 @@ export default function StudentTestPage() {
                                         borderRadius: 10,
                                     }}
                                 >
+                                    <PassageReadAloud
+                                        contentHtml={currentSection.content}
+                                        lang={i18n?.language ?? 'en'}
+                                    />
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
