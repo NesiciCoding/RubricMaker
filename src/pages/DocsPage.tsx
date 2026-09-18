@@ -913,6 +913,8 @@ function RubricsTab() {
                     items={[
                         t('docs.rb_live_monitor_item_presence'),
                         t('docs.rb_live_monitor_item_grid'),
+                        t('docs.rb_live_monitor_item_sort'),
+                        t('docs.rb_live_monitor_item_placement'),
                         t('docs.rb_live_monitor_item_draft'),
                         t('docs.rb_live_monitor_item_hide_names'),
                         t('docs.rb_live_monitor_item_proctoring'),

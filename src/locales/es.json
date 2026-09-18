@@ -818,11 +818,36 @@
                     "correct": "Correcto",
                     "incorrect": "Incorrecto",
                     "ungraded": "Por calificar",
-                    "empty": "Sin respuesta"
+                    "empty": "Sin respuesta",
+                    "absent": "No presentada"
                 },
                 "gallery_title": "Pregunta {{index}} — todas las respuestas",
                 "no_answer": "Aún sin respuesta",
-                "audio_recorded": "Audio grabado ({{seconds}}s)"
+                "audio_recorded": "Audio grabado ({{seconds}}s)",
+                "totals": "Totales",
+                "average": "Media",
+                "no_class": "Sin clase",
+                "estimated_level": "Nivel est.",
+                "level_accuracy": "{{correct}} de {{attempted}} correctas en este nivel",
+                "sort_button": "Ordenar columnas",
+                "sort_title": "Ordenar y agrupar columnas",
+                "sort_hint": "Ordena las columnas de preguntas por una o más propiedades. Las reglas se aplican de arriba abajo.",
+                "sort_none": "Sin orden — las preguntas se mantienen en su orden original.",
+                "sort_by": "Ordenar por",
+                "sort_then": "luego por",
+                "sort_add": "Añadir regla",
+                "sort_reset": "Restablecer",
+                "sort_apply": "Aplicar",
+                "sort_remove": "Eliminar regla",
+                "sort_dir_asc": "Ascendente",
+                "sort_dir_desc": "Descendente",
+                "sort_key": {
+                    "section": "Sección",
+                    "cefr": "Nivel MCER",
+                    "type": "Tipo de pregunta",
+                    "grammar": "Gramática / estándar",
+                    "score": "Puntuación acumulada"
+                }
             },
             "draft": {
                 "word_count": "{{count}} palabras",
@@ -2358,7 +2383,7 @@
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
-            "read_aloud": "Leer en voz alta",
+        "read_aloud": "Leer en voz alta",
         "read_prompt_short": "Leer instrucción",
         "play": "Leer ensayo en voz alta",
         "pause": "Pausar lectura",
@@ -2679,7 +2704,7 @@
         "rb_live_monitor_button": "Supervisar",
         "rb_live_monitor_intro_suffix": "(desde la página Pruebas para una prueba, o desde el diálogo de asignación para una redacción) para abrir una vista en vivo de la sesión. Esto requiere que la sincronización en la nube esté habilitada — sin ella, la página explica que puedes revisar el progreso posteriormente a partir de las respuestas guardadas o el borrador de cada alumno.",
         "rb_live_monitor_item_presence": "Presencia — un punto de color muestra si cada alumno está activo, inactivo o desconectado, según cuán recientemente se conectó su navegador.",
-        "rb_live_monitor_item_grid": "Cuadrícula de respuestas (pruebas) — una matriz de alumnos por preguntas, codificada por colores mientras los alumnos responden. Haz clic en el encabezado de una pregunta para abrir una galería de todas las respuestas a esa pregunta.",
+        "rb_live_monitor_item_grid": "Cuadrícula de respuestas (pruebas) — una matriz de alumnos por preguntas con barras de color, agrupada por clase con una media de clase por pregunta y un total por alumno. Cada fila es un alumno, cada columna una pregunta; pulsa un encabezado de pregunta para abrir una galería con todas las respuestas.",
         "rb_live_monitor_item_draft": "Vista previa de borrador en vivo (redacciones) — una tarjeta por alumno con recuento de palabras en vivo, marca de tiempo de última actividad y una vista previa expandible de lo que están escribiendo actualmente.",
         "rb_live_monitor_item_hide_names": "Ocultar nombres — activar para anonimizar la vista, útil al compartir tu pantalla.",
         "rb_live_monitor_item_proctoring": "Señales de supervisión — recuentos de cambios de pestaña, copiar/pegar/cortar, nivel de batería y estado de Safe Exam Browser. Estas son solo señales orientativas: un alumno decidido puede falsearlas, así que úsalas para iniciar una conversación, no como prueba definitiva.",
@@ -3045,7 +3070,9 @@
         "an_vocab_analytics_title": "Nivel de lectura y vocabulario académico",
         "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos.",
         "gr_scan_title": "Escanear trabajo manuscrito",
-        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena."
+        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena.",
+        "rb_live_monitor_item_sort": "Ordenar y agrupar columnas — reordena las columnas de preguntas por sección, nivel MCER, tipo de pregunta, gramática/estándar vinculado o puntuación acumulada de la clase, combinando varias reglas.",
+        "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

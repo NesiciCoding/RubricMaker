@@ -818,11 +818,36 @@
                     "correct": "Richtig",
                     "incorrect": "Falsch",
                     "ungraded": "Noch zu bewerten",
-                    "empty": "Keine Antwort"
+                    "empty": "Keine Antwort",
+                    "absent": "Nicht vorgelegt"
                 },
                 "gallery_title": "Frage {{index}} — alle Antworten",
                 "no_answer": "Noch keine Antwort",
-                "audio_recorded": "Audio aufgenommen ({{seconds}}s)"
+                "audio_recorded": "Audio aufgenommen ({{seconds}}s)",
+                "totals": "Gesamt",
+                "average": "Durchschnitt",
+                "no_class": "Keine Klasse",
+                "estimated_level": "Gesch. Niveau",
+                "level_accuracy": "{{correct}} von {{attempted}} richtig auf diesem Niveau",
+                "sort_button": "Spalten sortieren",
+                "sort_title": "Spalten sortieren und gruppieren",
+                "sort_hint": "Ordnen Sie die Fragespalten nach einer oder mehreren Eigenschaften. Regeln gelten von oben nach unten.",
+                "sort_none": "Keine Sortierung — Fragen bleiben in der ursprünglichen Reihenfolge.",
+                "sort_by": "Sortieren nach",
+                "sort_then": "dann nach",
+                "sort_add": "Regel hinzufügen",
+                "sort_reset": "Zurücksetzen",
+                "sort_apply": "Anwenden",
+                "sort_remove": "Regel entfernen",
+                "sort_dir_asc": "Aufsteigend",
+                "sort_dir_desc": "Absteigend",
+                "sort_key": {
+                    "section": "Abschnitt",
+                    "cefr": "GER-Niveau",
+                    "type": "Fragetyp",
+                    "grammar": "Grammatik / Standard",
+                    "score": "Kumulative Punktzahl"
+                }
             },
             "draft": {
                 "word_count": "{{count}} Wörter",
@@ -2247,7 +2272,7 @@
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",
-            "read_aloud": "Vorlesen",
+        "read_aloud": "Vorlesen",
         "read_prompt_short": "Prompt vorlesen",
         "play": "Aufsatz vorlesen",
         "pause": "Vorlesen pausieren",
@@ -2679,7 +2704,7 @@
         "rb_live_monitor_button": "Monitor",
         "rb_live_monitor_intro_suffix": "(von der Testseite für einen Test oder vom Zuweisungsdialog für einen Aufsatz), um eine Live-Ansicht der Sitzung zu öffnen. Dies erfordert eine aktivierte Cloud-Synchronisierung — ohne sie erklärt die Seite, dass du den Fortschritt stattdessen nachträglich aus den gespeicherten Antworten oder dem Entwurf jedes Schülers überprüfen kannst.",
         "rb_live_monitor_item_presence": "Anwesenheit — ein farbiger Punkt zeigt an, ob jeder Schüler aktiv, inaktiv oder getrennt ist, basierend darauf, wie kürzlich sich sein Browser gemeldet hat.",
-        "rb_live_monitor_item_grid": "Antwortraster (Tests) — eine Schüler-mal-Fragen-Matrix, farbcodiert während Schüler antworten. Klicke auf eine Fragenüberschrift, um eine Galerie aller Antworten auf diese Frage zu öffnen.",
+        "rb_live_monitor_item_grid": "Antwortraster (Tests) — eine Matrix aus Schülern und Fragen mit farbigen Balken, nach Klasse gruppiert, mit einem Klassendurchschnitt je Frage und einer Gesamtsumme je Schüler. Jede Zeile ist ein Schüler, jede Spalte eine Frage; klicken Sie auf eine Fragenüberschrift für eine Galerie aller Antworten.",
         "rb_live_monitor_item_draft": "Live-Entwurfsvorschau (Aufsätze) — eine Karte pro Schüler mit Live-Wortanzahl, Zeitstempel der letzten Aktivität und einer ausklappbaren Vorschau dessen, was sie gerade schreiben.",
         "rb_live_monitor_item_hide_names": "Namen ausblenden — Umschalter, um die Ansicht zu anonymisieren, nützlich beim Teilen deines Bildschirms.",
         "rb_live_monitor_item_proctoring": "Aufsichtssignale — Anzahl der Tabwechsel, Kopieren/Einfügen/Ausschneiden, Akkustand und Safe-Exam-Browser-Status. Dies sind nur Hinweissignale: Ein entschlossener Schüler kann sie fälschen, also nutze sie, um ein Gespräch anzustoßen, nicht als endgültigen Beweis.",
@@ -3045,7 +3070,9 @@
         "an_vocab_analytics_title": "Leseniveau und akademischer Wortschatz",
         "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen.",
         "gr_scan_title": "Handschriftliche Arbeit scannen",
-        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert."
+        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert.",
+        "rb_live_monitor_item_sort": "Spalten sortieren und gruppieren — ordnen Sie die Fragespalten nach Abschnitt, GER-Niveau, Fragetyp, verknüpfter Grammatik/Standard oder kumulativer Klassenpunktzahl, auch mehrere Regeln kombiniert.",
+        "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

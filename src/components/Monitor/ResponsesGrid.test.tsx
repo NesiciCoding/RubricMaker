@@ -185,4 +185,86 @@ describe('ResponsesGrid', () => {
         fireEvent.click(dialog.querySelector('div')!);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
+
+    it('shows a totals column and a class-average row', () => {
+        render(
+            <ResponsesGrid
+                test={{ ...mockTest, questions: mockTest.questions.slice(0, 2) }}
+                rows={[
+                    {
+                        studentId: 's1',
+                        displayName: 'Alice',
+                        answers: [
+                            { questionId: 'q1', response: 'a' }, // correct
+                            { questionId: 'q2', response: '4' }, // correct
+                        ],
+                    },
+                ]}
+            />
+        );
+        expect(screen.getByText('tests.monitor.grid.totals')).toBeInTheDocument();
+        expect(screen.getByText('tests.monitor.grid.average')).toBeInTheDocument();
+        // The student's own total cell and the class-average row's total cell must each read 100%,
+        // not just the per-question averages.
+        const studentTotalCell = screen.getByText('Alice').closest('tr')!.querySelectorAll('td')[1];
+        expect(studentTotalCell).toHaveTextContent('100%');
+        const avgTotalCell = screen.getByText('tests.monitor.grid.average').closest('tr')!.querySelectorAll('td')[1];
+        expect(avgTotalCell).toHaveTextContent('100%');
+    });
+
+    it('groups students by class id under a collapsible header and hides rows when collapsed', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[
+                    { studentId: 's1', displayName: 'Alice', classId: 'c1', className: '2C', answers: [] },
+                    { studentId: 's2', displayName: 'Bob', classId: 'c1', className: '2C', answers: [] },
+                ]}
+            />
+        );
+        expect(screen.getByText('2C')).toBeInTheDocument();
+        expect(screen.getByText('Alice')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('2C'));
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    });
+
+    it('keeps two same-named classes separate by class id', () => {
+        render(
+            <ResponsesGrid
+                test={mockTest}
+                rows={[
+                    { studentId: 's1', displayName: 'Alice', classId: 'c1', className: '2C', answers: [] },
+                    { studentId: 's2', displayName: 'Bob', classId: 'c2', className: '2C', answers: [] },
+                ]}
+            />
+        );
+        // Two distinct groups → two "2C" header buttons; collapsing one hides only its student.
+        const headers = screen.getAllByText('2C');
+        expect(headers.length).toBe(2);
+        fireEvent.click(headers[0]);
+        expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+        expect(screen.getByText('Bob')).toBeInTheDocument();
+    });
+
+    it('greys out a question a placement student never routed to', () => {
+        const routedTest: Test = {
+            ...mockTest,
+            sections: [
+                { id: 'secA', title: 'A' },
+                { id: 'secB', title: 'B' },
+            ],
+            questions: [
+                { id: 'q1', prompt: 'p1', type: 'open', points: 1, sectionId: 'secA' },
+                { id: 'q2', prompt: 'p2', type: 'open', points: 1, sectionId: 'secB' },
+            ],
+        };
+        render(
+            <ResponsesGrid
+                test={routedTest}
+                rows={[{ studentId: 's1', displayName: 'Alice', sectionPath: ['secA'], answers: [] }]}
+            />
+        );
+        // secB was never presented → one "absent" cell.
+        expect(screen.getByTitle('tests.monitor.grid.state.absent')).toBeInTheDocument();
+    });
 });

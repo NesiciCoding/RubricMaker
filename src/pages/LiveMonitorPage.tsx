@@ -1,22 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
-import { Eye, EyeOff, AlertTriangle, Database, Send } from 'lucide-react';
+import { Eye, EyeOff, AlertTriangle, Database, Send, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
-import { useAssessment, useEssays, useStudents } from '../context/AppContext';
+import { useAssessment, useEssays, useStudents, useClasses } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../services/database';
 import PresenceBadge from '../components/Monitor/PresenceBadge';
 import ResponsesGrid from '../components/Monitor/ResponsesGrid';
+import LevelResponsesGrid from '../components/Monitor/LevelResponsesGrid';
+import ColumnSortModal from '../components/Monitor/ColumnSortModal';
 import LiveDraftPanel from '../components/Monitor/LiveDraftPanel';
 import PlacementLevelPanel from '../components/Monitor/PlacementLevelPanel';
 import { derivePresence, summarizeProctorFlags, mergeProctorEvents } from '../utils/proctorAggregator';
 import { estimatePlacement } from '../utils/placementResult';
 import { stripCommentHtml } from '../utils/exportDataPrep';
-import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest } from '../types';
+import type { ColumnSortRule } from '../utils/responseGridOrder';
+import type { ProctorEvent, TestAnswer, CefrLevel, StudentTest, StaircaseStep } from '../types';
 
 const TAB_SWITCH_WARNING_THRESHOLD = 3;
 
@@ -46,6 +49,8 @@ function emptyLiveState(studentId: string): StudentLiveState {
 interface MonitorStudent {
     studentId: string;
     name: string;
+    classId?: string;
+    className?: string;
     persistedEvents: ProctorEvent[];
     persistedAnswers: TestAnswer[];
     /** The submitted attempt, if any — used to replay a persisted placement estimate/answers after the live channel is gone. */
@@ -57,61 +62,11 @@ export interface LiveMonitorPageProps {
     kind: 'test' | 'essay';
 }
 
-/** Best-effort readable rendering of a raw stored response (cloze/matching/etc. are JSON blobs). */
-function formatGeneratorResponse(response: string): string {
-    const trimmed = response.trim();
-    if (!trimmed) return '';
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            const values = Array.isArray(parsed) ? parsed : Object.values(parsed);
-            return values.map((v) => String(v)).join(', ');
-        } catch {
-            /* fall through to raw */
-        }
-    }
-    return trimmed;
-}
-
-/** Live/post-hoc answer list for a generator placement run, which has no authored test.questions for ResponsesGrid to render. */
-function GeneratorResponsesPanel({
-    displayName,
-    answers,
-}: {
-    displayName: string;
-    answers: { id: string; prompt: string; response: string }[];
-}) {
-    const { t } = useTranslation();
-    return (
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                {displayName} — {t('tests.monitor.generator_answers_title')}
-            </div>
-            {answers.length === 0 ? (
-                <div className="text-muted text-sm">{t('tests.monitor.generator_answers_empty')}</div>
-            ) : (
-                <ol style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 6 }}>
-                    {answers.map((a) => {
-                        const formatted = formatGeneratorResponse(a.response);
-                        return (
-                            <li key={a.id}>
-                                <div style={{ fontSize: 13 }}>{a.prompt}</div>
-                                <div style={{ fontSize: 13, color: formatted ? 'var(--text)' : 'var(--text-muted)' }}>
-                                    {formatted || t('tests.monitor.generator_answer_blank')}
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ol>
-            )}
-        </div>
-    );
-}
-
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
     const params = useParams<{ testId?: string; assignmentId?: string }>();
     const { students } = useStudents();
+    const { classes } = useClasses();
 
     const { tests, studentTests, fetchTestAssignmentTeacherKeys, setPlacementOverride } = useAssessment();
 
@@ -121,6 +76,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     const [hideNames, setHideNames] = useState(false);
     const [sortMode, setSortMode] = useState<SortMode>('active');
+    const [columnSortRules, setColumnSortRules] = useState<ColumnSortRule[]>([{ key: 'original', dir: 'asc' }]);
+    const [sortModalOpen, setSortModalOpen] = useState(false);
     const [liveStates, setLiveStates] = useState<Record<string, StudentLiveState>>({});
     const [essayAssignment, setEssayAssignment] = useState<{
         rubricId: string;
@@ -236,6 +193,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     return {
                         studentId,
                         name: student?.name ?? studentId,
+                        classId: student?.classId,
+                        className: classes.find((c) => c.id === student?.classId)?.name,
                         persistedEvents: st?.events ?? [],
                         persistedAnswers: st?.answers ?? [],
                         studentTest: st,
@@ -263,7 +222,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 persistedAnswers: [],
             },
         ];
-    }, [kind, test, students, studentTests, essayAssignment, testTeacherKeys]);
+    }, [kind, test, students, classes, studentTests, essayAssignment, testTeacherKeys]);
 
     // ── Per-student assignmentKey derivation ──────────────────────────────────────
     // Essays: the route param IS the persisted teacherKey (essay_assignments.id), so
@@ -390,6 +349,12 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
         }
     }
 
+    // Close the column-sort modal when the monitored test changes — the route reuses this
+    // page between tests, and a lingering modal could otherwise sit over the next test's grid.
+    useEffect(() => {
+        setSortModalOpen(false);
+    }, [params.testId]);
+
     // ── Re-render periodically so presence ages (active → idle → disconnected) ────
     const [tick, setTick] = useState(0);
     useEffect(() => {
@@ -429,28 +394,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                       (row.studentTest ? (estimatePlacement(test, row.studentTest)?.level ?? undefined) : undefined))
                     : undefined;
 
-            // Generator answers keyed by prompt: live snapshot (askedPrompts) while running, then
-            // the submission's askedQuestionSnapshots after hand-in. A generator test has no
-            // authored test.questions, so ResponsesGrid can't render it — this is the only view of
-            // what was actually asked/answered for such a run.
-            const generatorAnswers =
-                kind === 'test' && test?.placementEngine === 'generator'
-                    ? (() => {
-                          const prompts: Record<string, string> = {
-                              ...(row.studentTest?.askedQuestionSnapshots ?? []).reduce(
-                                  (acc, q) => ({ ...acc, [q.id]: q.prompt }),
-                                  {} as Record<string, string>
-                              ),
-                              ...(live.snapshot?.askedPrompts ?? {}),
-                          };
-                          const responseById = new Map(mergedAnswers.map((a) => [a.questionId, a.response]));
-                          return Object.entries(prompts).map(([id, prompt]) => ({
-                              id,
-                              prompt,
-                              response: responseById.get(id) ?? '',
-                          }));
-                      })()
-                    : [];
+            // Adaptive trace for the level grid (staircase/generator): the submitted attempt's
+            // per-question ladder. Live-in-progress runs have no full client-side trace, so their
+            // bars stay empty until hand-in while the estimated-level column still tracks them.
+            const levelPath: StaircaseStep[] = kind === 'test' ? (row.studentTest?.levelPath ?? []) : [];
 
             return {
                 ...row,
@@ -459,7 +406,8 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 live,
                 mergedAnswers,
                 placementLevel,
-                generatorAnswers,
+                levelPath,
+                sectionPath: kind === 'test' ? row.studentTest?.sectionPath : undefined,
                 // Essays have no persisted student_tests row to derive a status from —
                 // the monitor learns about a hand-in via the student's 'submitted'
                 // broadcast or the essay_submissions check on mount.
@@ -485,6 +433,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 return copy.sort((a, b) => presenceRank[a.presence] - presenceRank[b.presence]);
         }
     }, [rows, sortMode]);
+
+    const isLevelGrid =
+        kind === 'test' &&
+        test?.mode === 'placement' &&
+        (test.placementEngine === 'staircase' || test.placementEngine === 'generator');
 
     const displayName = (row: { studentId: string; name: string }, index: number) =>
         hideNames ? t('tests.monitor.anonymous_student', { index: index + 1 }) : row.name;
@@ -578,8 +531,27 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         {hideNames ? <Eye size={14} /> : <EyeOff size={14} />}
                         {hideNames ? t('tests.monitor.show_names') : t('tests.monitor.hideNames')}
                     </button>
+                    {kind === 'test' && !isLevelGrid && (
+                        <button className="btn btn-secondary btn-sm" onClick={() => setSortModalOpen(true)}>
+                            <SlidersHorizontal size={14} />
+                            {t('tests.monitor.grid.sort_button')}
+                            {columnSortRules.some((r) => r.key !== 'original') && (
+                                <span className="badge badge-blue" style={{ marginLeft: 4 }}>
+                                    {columnSortRules.filter((r) => r.key !== 'original').length}
+                                </span>
+                            )}
+                        </button>
+                    )}
                     <HelpPopover title={t('help.proctoring_title')}>{t('help.proctoring_body')}</HelpPopover>
                 </div>
+
+                {sortModalOpen && !isLevelGrid && (
+                    <ColumnSortModal
+                        rules={columnSortRules}
+                        onApply={setColumnSortRules}
+                        onClose={() => setSortModalOpen(false)}
+                    />
+                )}
 
                 {sortedRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>
@@ -683,27 +655,35 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                         </div>
 
                         {/* Kind-specific live view */}
-                        {kind === 'test' && test && test.placementEngine !== 'generator' && (
+                        {kind === 'test' && test && !isLevelGrid && (
                             <ResponsesGrid
                                 test={test}
+                                sortRules={columnSortRules}
                                 rows={sortedRows.map((row, index) => ({
                                     studentId: row.studentId,
                                     displayName: displayName(row, index),
+                                    classId: row.classId,
+                                    className: row.className,
+                                    sectionPath: row.sectionPath,
                                     answers: row.mergedAnswers,
                                 }))}
                             />
                         )}
 
-                        {/* Generator placement runs have no authored test.questions — show the live/asked answers instead. */}
-                        {kind === 'test' &&
-                            test?.placementEngine === 'generator' &&
-                            sortedRows.map((row, index) => (
-                                <GeneratorResponsesPanel
-                                    key={row.studentId}
-                                    displayName={displayName(row, index)}
-                                    answers={row.generatorAnswers}
-                                />
-                            ))}
+                        {/* Adaptive placement (staircase/generator): every student sees different
+                            questions, so align on CEFR level rather than question identity. */}
+                        {kind === 'test' && isLevelGrid && (
+                            <LevelResponsesGrid
+                                rows={sortedRows.map((row, index) => ({
+                                    studentId: row.studentId,
+                                    displayName: displayName(row, index),
+                                    classId: row.classId,
+                                    className: row.className,
+                                    levelPath: row.levelPath,
+                                    estimatedLevel: row.placementLevel,
+                                }))}
+                            />
+                        )}
 
                         {kind === 'essay' &&
                             sortedRows.map((row, index) => (
