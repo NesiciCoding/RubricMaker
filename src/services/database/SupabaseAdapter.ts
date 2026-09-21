@@ -41,8 +41,11 @@ import type {
     DocumentComment,
     NotificationDismissal,
     Scan,
+    StaircaseStep,
+    TestQuestion,
 } from '../../types';
 import type { DatabaseConfig, DbUser, SyncResult } from './types';
+import type { ConvergedPlacementSession } from '../../utils/placementRecovery';
 import { nanoid } from '../../utils/nanoid';
 
 export class SupabaseAdapter {
@@ -1418,6 +1421,51 @@ export class SupabaseAdapter {
     async deleteStudentTest(id: string): Promise<SyncResult> {
         const { error } = await this.db().from('student_tests').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    /**
+     * Converged generator placement runs (owner-readable via RLS) — used to recover a run whose
+     * hand-in never landed (see utils/placementRecovery). test_id/student_id are embedded from the
+     * owning test_assignments row since placement_sessions only stores the assignment_id.
+     */
+    async fetchConvergedPlacementSessions(): Promise<ConvergedPlacementSession[]> {
+        const { data, error } = await this.db()
+            .from('placement_sessions')
+            .select(
+                'assignment_id, level_path, asked_questions, start_level, created_at, updated_at, test_assignments(test_id, student_id)'
+            )
+            .eq('owner_id', this.uid())
+            .eq('status', 'converged');
+        if (error || !data) {
+            if (error) console.error('fetchConvergedPlacementSessions', error);
+            return [];
+        }
+        type Row = {
+            assignment_id: string;
+            level_path: StaircaseStep[];
+            asked_questions: TestQuestion[];
+            start_level: CefrLevel;
+            created_at: string;
+            updated_at: string;
+            test_assignments:
+                { test_id: string; student_id: string } | { test_id: string; student_id: string }[] | null;
+        };
+        return (data as unknown as Row[]).flatMap((r) => {
+            const asg = Array.isArray(r.test_assignments) ? r.test_assignments[0] : r.test_assignments;
+            if (!asg) return [];
+            return [
+                {
+                    assignmentId: r.assignment_id,
+                    testId: asg.test_id,
+                    studentId: asg.student_id,
+                    levelPath: r.level_path ?? [],
+                    askedQuestions: r.asked_questions ?? [],
+                    startLevel: r.start_level,
+                    createdAt: r.created_at,
+                    updatedAt: r.updated_at,
+                },
+            ];
+        });
     }
 
     // ── Test assignments (teacher side) ─────────────────────────────────────────

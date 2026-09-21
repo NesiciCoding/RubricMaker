@@ -1062,6 +1062,8 @@ export interface AppContextValue extends StoreData {
     fetchTestAssignmentTeacherKeys: (testId: string) => Promise<Record<string, string>>;
     /** One-shot teacher level nudge for a generator-engine placement run in progress (roadmap 27.2). */
     setPlacementOverride: (assignmentId: string, direction: 'up' | 'down') => Promise<void>;
+    /** Materialise submitted student_tests rows from converged generator placement runs whose hand-in never landed; returns how many were recovered. */
+    recoverPlacementResults: () => Promise<number>;
     // Messages (student portal side)
     fetchMyMessages: () => Promise<Awaited<ReturnType<StorageSyncInstance['fetchMyMessages']>>>;
     sendMessageAsStudent: (m: Message) => Promise<SyncResult>;

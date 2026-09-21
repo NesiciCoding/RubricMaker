@@ -35,6 +35,7 @@ import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
 import { autoScoreResponse } from '../utils/testCalc';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
+import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -111,7 +112,7 @@ function isShortCode(code: string): boolean {
 }
 
 export default function StudentTestPage() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
 
     const assignment = useMemo<TestAssignmentPayload | null>(() => {
@@ -419,6 +420,61 @@ export default function StudentTestPage() {
         onNudge: (message) => showToast(message, 'info'),
     });
 
+    // Retry any queued hand-ins for this project (a prior failed submit, from this attempt or an
+    // earlier page load). success — or a 409 "already submitted", which means a prior retry
+    // landed — clears the item; a still-failing item stays queued for the next trigger.
+    const retryTimersRef = useRef<number[]>([]);
+    const flushOutbox = useCallback(async () => {
+        if (!adapter || !assignment?.supabaseUrl) return;
+        if (pendingSubmissions(assignment.supabaseUrl).length === 0) return;
+        // A reload's flush can fire before the content effect has signed the student back in;
+        // submit-test needs the same anonymous identity, so re-establish it first.
+        await adapter.ensureSession();
+        for (const item of pendingSubmissions(assignment.supabaseUrl)) {
+            const res = await adapter.submitTest(
+                item.assignmentId,
+                item.id,
+                item.answers,
+                item.startedAt,
+                item.submittedAt,
+                item.events,
+                item.sectionPath,
+                item.levelPath
+            );
+            if (res.success || isAlreadySubmitted(res.error)) {
+                removeSubmission(item.id);
+                if (item.assignmentId === assignment.teacherKey) {
+                    setSubmitError('');
+                    setSubmitted(true);
+                    logEvent('action', 'test_submitted_retry', { answerCount: item.answers.length });
+                    telemetry.broadcast('submitted', {
+                        submittedAt: item.submittedAt,
+                        answerCount: item.answers.length,
+                    });
+                }
+            }
+        }
+    }, [adapter, assignment, telemetry]);
+
+    const scheduleOutboxRetries = useCallback(() => {
+        for (const delay of [3000, 8000, 20000, 45000]) {
+            retryTimersRef.current.push(window.setTimeout(() => void flushOutbox(), delay));
+        }
+    }, [flushOutbox]);
+
+    // Flush on mount (covers a reload after a failed hand-in) and whenever connectivity returns.
+    useEffect(() => {
+        if (!hasDb || !adapter) return;
+        void flushOutbox();
+        const onOnline = () => void flushOutbox();
+        window.addEventListener('online', onOnline);
+        const timers = retryTimersRef.current;
+        return () => {
+            window.removeEventListener('online', onOnline);
+            timers.forEach((id) => window.clearTimeout(id));
+        };
+    }, [hasDb, adapter, flushOutbox]);
+
     const handleSubmit = useCallback(async () => {
         /* v8 ignore next -- the UI only exposes submit once assignment+test are present */
         if (!assignment || !test) return;
@@ -517,8 +573,25 @@ export default function StudentTestPage() {
             );
             setSubmitting(false);
             if (!result.success) {
+                // Don't strand the hand-in: queue it (reusing studentTestId so a retry can't
+                // create a second row) and retry automatically in the background. The paste-code
+                // fallback below still shows as a manual backup.
+                enqueueSubmission({
+                    id: studentTestId,
+                    assignmentId: assignment.teacherKey,
+                    supabaseUrl: assignment.supabaseUrl!,
+                    supabaseAnonKey: assignment.supabaseAnonKey!,
+                    answers: testAnswers,
+                    startedAt: startedAtRef.current,
+                    submittedAt,
+                    events: submissionPayload.events,
+                    sectionPath: submissionPayload.sectionPath,
+                    levelPath: submissionPayload.levelPath,
+                    queuedAt: new Date().toISOString(),
+                });
                 setSubmitError(t('tests.taking.submit_error_db'));
                 logEvent('error', 'test_submit_error', { testId: effectiveTestId }, 'error');
+                scheduleOutboxRetries();
             } else {
                 logEvent('action', 'test_submitted', {
                     testId: effectiveTestId,
@@ -565,6 +638,7 @@ export default function StudentTestPage() {
         staircaseQuestion,
         isGenerator,
         generatorResult,
+        scheduleOutboxRetries,
     ]);
 
     const handleRetake = useCallback(() => {
@@ -1029,7 +1103,7 @@ export default function StudentTestPage() {
                                 >
                                     <PassageReadAloud
                                         contentHtml={currentSection.content}
-                                        lang={i18n?.language ?? 'en'}
+                                        lang={test?.contentLanguage ?? 'en'}
                                     />
                                     <RichContent html={currentSection.content} />
                                 </div>

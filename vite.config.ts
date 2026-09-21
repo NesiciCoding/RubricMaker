@@ -50,6 +50,13 @@ export default defineConfig({
                 // below caches whichever ones actually get requested, so offline use of a language
                 // still works once it's been opened at least once.
                 globIgnores: ['**/stats.html', '**/assets/{nl,fr,de,es}-*.js'],
+                // Serve the precached app shell for any navigation whose network fetch fails —
+                // so a brief origin/container outage mid-session (see the reverse-proxy 502s in
+                // the ops logs) can't drop an already-installed student onto an error page or
+                // fail a lazy route/chunk load. Supabase API paths are never navigations, but
+                // deny them explicitly so the fallback can never shadow a data request.
+                navigateFallback: 'index.html',
+                navigateFallbackDenylist: [/\/(rest|auth|realtime|storage|functions)\/v\d+\//],
                 // Never let the service worker cache Supabase requests — a cached
                 // response could make a failed sync request look like it succeeded.
                 // Path-only (no host) so this matches both hosted (*.supabase.co)

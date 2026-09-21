@@ -15,6 +15,7 @@ import type {
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
+import { unrecoveredSessions, buildRecoveredStudentTest } from '../../utils/placementRecovery';
 
 export type AssessmentValue = Pick<
     AppContextValue,
@@ -49,6 +50,7 @@ export type AssessmentValue = Pick<
     | 'fetchAssignedTestContent'
     | 'fetchTestAssignmentTeacherKeys'
     | 'setPlacementOverride'
+    | 'recoverPlacementResults'
 >;
 
 const AssessmentContext = createContext<AssessmentValue | null>(null);
@@ -78,10 +80,11 @@ export type AssessmentActions = Pick<
     | 'fetchAssignedTestContent'
     | 'fetchTestAssignmentTeacherKeys'
     | 'setPlacementOverride'
+    | 'recoverPlacementResults'
 >;
 
 export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions {
-    const { dispatch } = ctx;
+    const { dispatch, getState } = ctx;
     const addDocumentComment = (c: Omit<DocumentComment, 'id' | 'createdAt' | 'resolved'>): DocumentComment => {
         const comment: DocumentComment = {
             ...c,
@@ -149,6 +152,13 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         (await loadDb()).storageSync.fetchTestAssignmentTeacherKeys(testId);
     const setPlacementOverride = async (assignmentId: string, direction: 'up' | 'down') =>
         (await loadDb()).storageSync.setPlacementOverride(assignmentId, direction);
+    const recoverPlacementResults = async (): Promise<number> => {
+        const { storageSync } = await loadDb();
+        const sessions = await storageSync.fetchConvergedPlacementSessions();
+        const rows = unrecoveredSessions(sessions, getState().studentTests).map(buildRecoveredStudentTest);
+        rows.forEach((st) => dispatch({ type: 'SAVE_STUDENT_TEST', payload: st }));
+        return rows.length;
+    };
     return {
         addDocumentComment,
         resolveDocumentComment,
@@ -173,6 +183,7 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         fetchAssignedTestContent,
         fetchTestAssignmentTeacherKeys,
         setPlacementOverride,
+        recoverPlacementResults,
     };
 }
 

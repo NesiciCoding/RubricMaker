@@ -29,6 +29,7 @@ import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
+import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
 import type { Test, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
@@ -637,20 +638,32 @@ export default function TestListPage() {
                                                                             );
                                                                         })}
                                                                 </div>
-                                                                <ClassAverageAdjuster
-                                                                    test={test}
-                                                                    studentTests={studentTests.filter(
-                                                                        (st) => st.testId === test.id
-                                                                    )}
-                                                                    students={students}
-                                                                    onSaveStudentTest={saveStudentTest}
-                                                                />
-                                                                <ItemAnalysisPanel
-                                                                    test={test}
-                                                                    studentTests={studentTests.filter(
-                                                                        (st) => st.testId === test.id
-                                                                    )}
-                                                                />
+                                                                {test.mode === 'placement' ? (
+                                                                    <PlacementAnalysisPanel
+                                                                        test={test}
+                                                                        studentTests={studentTests.filter(
+                                                                            (st) => st.testId === test.id
+                                                                        )}
+                                                                        students={students}
+                                                                    />
+                                                                ) : (
+                                                                    <>
+                                                                        <ClassAverageAdjuster
+                                                                            test={test}
+                                                                            studentTests={studentTests.filter(
+                                                                                (st) => st.testId === test.id
+                                                                            )}
+                                                                            students={students}
+                                                                            onSaveStudentTest={saveStudentTest}
+                                                                        />
+                                                                        <ItemAnalysisPanel
+                                                                            test={test}
+                                                                            studentTests={studentTests.filter(
+                                                                                (st) => st.testId === test.id
+                                                                            )}
+                                                                        />
+                                                                    </>
+                                                                )}
 
                                                                 <div
                                                                     style={{

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
@@ -12,6 +12,9 @@ import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPa
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
 import { useStoreSelector } from '../context/useStore';
+import { useAssessment } from '../context/AppContext';
+import { useToast } from '../hooks/useToast';
+import { useDbStatus } from '../hooks/useDbStatus';
 import type { StoreData } from '../store/storage';
 import { getCefrStudentOverview } from '../utils/cefrStudentAggregator';
 import CefrTrackYearBand from '../components/CEFR/CefrTrackYearBand';
@@ -61,6 +64,25 @@ export default function StudentCefrOverviewPage() {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
+
+    const { recoverPlacementResults } = useAssessment();
+    const { showToast } = useToast();
+    const dbStatus = useDbStatus();
+    const [recovering, setRecovering] = useState(false);
+    async function handleRecoverPlacement() {
+        setRecovering(true);
+        try {
+            const count = await recoverPlacementResults();
+            showToast(
+                count > 0 ? t('cefr.placement_recovered', { count }) : t('cefr.placement_recover_none'),
+                count > 0 ? 'success' : 'info'
+            );
+        } catch {
+            showToast(t('cefr.placement_recover_error'), 'error');
+        } finally {
+            setRecovering(false);
+        }
+    }
 
     const student = students.find((s) => s.id === id);
     const cls = classes.find((c) => c.id === student?.classId);
@@ -300,6 +322,25 @@ export default function StudentCefrOverviewPage() {
                         placement={overview.placement}
                         showCambridgeLabel={settings.showCambridgeLabels}
                     />
+                )}
+
+                {/* Recover a placement run whose hand-in never landed (converged only in the DB). */}
+                {dbStatus.isConnected && !overview?.placement && (
+                    <div style={{ marginBottom: 24 }}>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleRecoverPlacement}
+                            disabled={recovering}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <RefreshCw
+                                size={14}
+                                style={recovering ? { animation: 'spin 1s linear infinite' } : undefined}
+                            />
+                            {t('cefr.placement_recover')}
+                        </button>
+                    </div>
                 )}
 
                 {/* CEFR Can-Do Grid */}
