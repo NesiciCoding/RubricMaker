@@ -43,6 +43,15 @@ describe('testSubmitOutbox', () => {
         expect(isAlreadySubmitted(undefined)).toBe(false);
     });
 
+    it('discards null and malformed persisted entries', () => {
+        localStorage.setItem(
+            'rm_test_submit_outbox',
+            JSON.stringify([null, { supabaseUrl: 'https://a.example' }, base])
+        );
+        const valid = pendingSubmissions('https://a.example');
+        expect(valid.map((s) => s.id)).toEqual(['sub-1']);
+    });
+
     it('keeps a queued hand-in in memory when localStorage.setItem throws', () => {
         const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
             throw new Error('QuotaExceeded');

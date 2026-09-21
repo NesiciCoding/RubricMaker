@@ -29,12 +29,29 @@ export interface OutboxSubmission {
     queuedAt: string;
 }
 
+// A persisted queue can be corrupt (a truncated write, a hand-edited value): guard every entry
+// before use so `[null]` or a half-written object can't throw in pendingSubmissions/flushOutbox
+// and stall the retry loop.
+function isValidSubmission(value: unknown): value is OutboxSubmission {
+    if (!value || typeof value !== 'object') return false;
+    const s = value as Record<string, unknown>;
+    return (
+        typeof s.id === 'string' &&
+        typeof s.assignmentId === 'string' &&
+        typeof s.supabaseUrl === 'string' &&
+        typeof s.supabaseAnonKey === 'string' &&
+        typeof s.startedAt === 'string' &&
+        typeof s.submittedAt === 'string' &&
+        Array.isArray(s.answers)
+    );
+}
+
 function readAll(): OutboxSubmission[] {
     let stored: OutboxSubmission[];
     try {
         const raw = localStorage.getItem(KEY);
         const parsed = raw ? JSON.parse(raw) : [];
-        stored = Array.isArray(parsed) ? (parsed as OutboxSubmission[]) : [];
+        stored = Array.isArray(parsed) ? parsed.filter(isValidSubmission) : [];
     } catch {
         stored = [];
     }
