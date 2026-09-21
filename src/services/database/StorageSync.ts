@@ -519,6 +519,10 @@ class StorageSyncService {
         return this.adapter.setPlacementOverride(assignmentId, direction);
     }
 
+    async fetchConvergedPlacementSessions() {
+        return this.adapter.fetchConvergedPlacementSessions();
+    }
+
     async fetchMyMessages() {
         return this.adapter.fetchMyMessages();
     }

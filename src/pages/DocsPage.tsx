@@ -1098,6 +1098,7 @@ function GradingTab() {
                         t('docs.gr_test_results_item_integrity'),
                         t('docs.gr_test_results_item_audio_response'),
                         t('docs.gr_test_results_item_export_summary'),
+                        t('docs.gr_test_results_item_placement_analysis'),
                     ]}
                 />
 
@@ -1181,6 +1182,7 @@ function GradingTab() {
                         t('docs.gr_placement_item_elo'),
                         t('docs.gr_placement_item_generator'),
                         t('docs.gr_placement_item_generator_live'),
+                        t('docs.gr_placement_item_recover'),
                     ]}
                 />
 

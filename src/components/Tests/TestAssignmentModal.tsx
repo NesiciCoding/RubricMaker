@@ -7,7 +7,7 @@ import { useAssessment, useClasses, useSettings, useStudents } from '../../conte
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { encodeTestAssignment, buildShareUrl } from '../../utils/shareCode';
-import { nanoid } from '../../utils/nanoid';
+import { loginCode } from '../../utils/nanoid';
 import { toLocalDatetimeInput } from '../../utils/dateInput';
 import type { Test, TestAssignmentPayload, TestAssignment } from '../../types';
 
@@ -61,19 +61,19 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
     const [teacherKeys, setTeacherKeys] = useState<Record<string, string>>(() => {
         const map: Record<string, string> = {};
         students.forEach((s) => {
-            map[s.id] = nanoid();
+            map[s.id] = loginCode();
         });
         return map;
     });
 
-    // Mint a nanoid for any student added after mount, without disturbing existing keys.
+    // Mint a login code for any student added after mount, without disturbing existing keys.
     useEffect(() => {
         setTeacherKeys((prev) => {
             const next = { ...prev };
             let changed = false;
             students.forEach((s) => {
                 if (!next[s.id]) {
-                    next[s.id] = nanoid();
+                    next[s.id] = loginCode();
                     changed = true;
                 }
             });
@@ -118,7 +118,7 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                 testId: test.id,
                 studentId,
                 /* v8 ignore next -- provably dead: teacherKeys is built from the full students list, and buildUrl only ever receives classStudents ids */
-                teacherKey: teacherKeys[studentId] ?? nanoid(),
+                teacherKey: teacherKeys[studentId] ?? loginCode(),
                 requireSEB: test.requireSEB,
                 durationMinutes: test.durationMinutes,
                 createdAt: new Date().toISOString(),
@@ -206,6 +206,21 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
         } catch {
             setCopiedAll(false);
         }
+    }
+
+    // The slip sheet portals to document.body, which the Radix Dialog behind it marks
+    // pointer-events:none while open — so it would render but be unclickable. Show it in place
+    // of the modal (not nested inside it) so nothing traps its buttons; closing it returns here.
+    if (showSlips) {
+        return (
+            <TestSlipSheet
+                students={classStudents}
+                testName={test.name}
+                durationMinutes={test.durationMinutes}
+                buildUrl={buildUrl}
+                onClose={() => setShowSlips(false)}
+            />
+        );
     }
 
     return (
@@ -455,16 +470,6 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                     {t('common.close')}
                 </button>
             </div>
-
-            {showSlips && (
-                <TestSlipSheet
-                    students={classStudents}
-                    testName={test.name}
-                    durationMinutes={test.durationMinutes}
-                    buildUrl={buildUrl}
-                    onClose={() => setShowSlips(false)}
-                />
-            )}
         </Modal>
     );
 }

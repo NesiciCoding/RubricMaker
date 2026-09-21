@@ -1231,6 +1231,8 @@ export interface Test {
     cefrSkill?: CefrSkill;
     /** Which Phase 16 practice category a practice-mode test belongs to — grammar isn't itself a CefrSkill, so this is separate from cefrSkill above. */
     contentArea?: 'listening' | 'reading' | 'grammar';
+    /** BCP-47 base code ('en', 'fr', …) of the language the test content is written in — drives read-aloud voice selection. Defaults to English; must NOT fall back to the student's UI language (which is Dutch for most, and would read English passages with a Dutch voice). */
+    contentLanguage?: string;
 }
 
 /** Config for the live/adaptive placement generator (roadmap 27.1) — teacher-set bounds the engine picks questions within, rather than a pre-authored section/pool structure. */
