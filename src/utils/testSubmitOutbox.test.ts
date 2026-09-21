@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
     enqueueSubmission,
     removeSubmission,
@@ -41,5 +41,16 @@ describe('testSubmitOutbox', () => {
         expect(isAlreadySubmitted('You have already submitted this assignment')).toBe(true);
         expect(isAlreadySubmitted('Network error: TypeError')).toBe(false);
         expect(isAlreadySubmitted(undefined)).toBe(false);
+    });
+
+    it('keeps a queued hand-in in memory when localStorage.setItem throws', () => {
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceeded');
+        });
+        enqueueSubmission(base);
+        expect(pendingSubmissions(base.supabaseUrl).map((s) => s.id)).toEqual(['sub-1']);
+        spy.mockRestore();
+        removeSubmission('sub-1'); // persists now, clearing the in-memory mirror
+        expect(pendingSubmissions(base.supabaseUrl)).toEqual([]);
     });
 });

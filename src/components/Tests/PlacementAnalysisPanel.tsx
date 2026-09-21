@@ -115,7 +115,7 @@ export default function PlacementAnalysisPanel({ test, studentTests, students }:
 
             {/* Per-item difficulty */}
             <div className="card">
-                <h3 style={{ margin: '0 0 8px' }}>
+                <h3 id="placement-item-table-title" style={{ margin: '0 0 8px' }}>
                     <BarChart2 size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                     {t('tests.results.placement_item_title')}
                     <HelpPopover title={t('tests.results.placement_item_title')}>
@@ -126,7 +126,10 @@ export default function PlacementAnalysisPanel({ test, studentTests, students }:
                     <p className="text-muted text-sm">{t('tests.results.placement_item_none')}</p>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <table
+                            aria-labelledby="placement-item-table-title"
+                            style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}
+                        >
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                     <th style={{ textAlign: 'left', padding: '6px 8px' }}>

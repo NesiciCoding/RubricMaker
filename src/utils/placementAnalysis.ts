@@ -145,7 +145,11 @@ export function placementSummaryRows(
 }
 
 function csvCell(value: string): string {
-    return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+    // Neutralise spreadsheet formula injection: a leading =, +, -, @, tab or CR makes
+    // Excel/Sheets evaluate the cell (a student name is external input). Prefix with an
+    // apostrophe, then apply the normal quote-escaping.
+    const guarded = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+    return /[",\n]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded;
 }
 
 export function placementSummaryCsv(rows: PlacementSummaryRow[], header: string[]): string {

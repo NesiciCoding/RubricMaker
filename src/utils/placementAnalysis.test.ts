@@ -69,4 +69,12 @@ describe('placementAnalysis', () => {
         expect(csv.split('\n')).toHaveLength(3);
         expect(csv.split('\n')[0]).toBe('Student,Level,Questions,Assessed');
     });
+
+    it('neutralises CSV formula injection in a student name', () => {
+        const csv = placementSummaryCsv(
+            [{ studentName: '=cmd()|calc', level: 'B1', questionsAsked: 1, assessedAt: 'x' }],
+            ['Student', 'Level', 'Questions', 'Assessed']
+        );
+        expect(csv.split('\n')[1].startsWith("'=cmd()")).toBe(true);
+    });
 });

@@ -10,6 +10,11 @@ import type { TestAnswer, ProctorEvent, StaircaseStep } from '../types';
 
 const KEY = 'rm_test_submit_outbox';
 
+// Holds the queue when a localStorage write fails (e.g. a large audio-response payload
+// exhausts quota) so the in-page retry path still sees the hand-in this session. Cleared
+// once a write persists. Not durable across reloads — that's what the localStorage copy is for.
+let memoryMirror: OutboxSubmission[] | null = null;
+
 export interface OutboxSubmission {
     id: string;
     assignmentId: string;
@@ -25,21 +30,29 @@ export interface OutboxSubmission {
 }
 
 function readAll(): OutboxSubmission[] {
+    let stored: OutboxSubmission[];
     try {
         const raw = localStorage.getItem(KEY);
         const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? (parsed as OutboxSubmission[]) : [];
+        stored = Array.isArray(parsed) ? (parsed as OutboxSubmission[]) : [];
     } catch {
-        return [];
+        stored = [];
     }
+    if (!memoryMirror) return stored;
+    // A write didn't persist; the mirror is the authoritative queue for this session.
+    const byId = new Map(stored.map((s) => [s.id, s]));
+    for (const s of memoryMirror) byId.set(s.id, s);
+    return [...byId.values()];
 }
 
 function writeAll(items: OutboxSubmission[]): void {
     try {
         if (items.length === 0) localStorage.removeItem(KEY);
         else localStorage.setItem(KEY, JSON.stringify(items));
+        memoryMirror = null;
     } catch {
-        /* storage full/unavailable — the in-page retry still covers the current attempt */
+        // Storage full/unavailable — keep the queue in memory so the current page can still retry.
+        memoryMirror = items;
     }
 }
 
