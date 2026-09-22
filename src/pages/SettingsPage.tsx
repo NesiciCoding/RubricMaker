@@ -217,23 +217,23 @@ export default function SettingsPage() {
 
     async function handleSaveNewPin() {
         if (!newPin) {
-            setPinSetupError('Password cannot be empty.');
+            setPinSetupError(t('settings.admin_err_empty'));
             return;
         }
         if (newPin !== confirmPin) {
-            setPinSetupError('Passwords do not match.');
+            setPinSetupError(t('settings.admin_err_mismatch'));
             return;
         }
         if (pinSetupMode === 'changing') {
             /* v8 ignore next -- the Change button only renders when adminPin is set */
             const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
             if (!ok) {
-                setPinSetupError('Current password is incorrect.');
+                setPinSetupError(t('settings.admin_err_current'));
                 return;
             }
         }
         updateSettings({ adminPin: await hashPin(newPin) });
-        showToast('Admin password saved', 'success');
+        showToast(t('settings.admin_password_saved'), 'success');
         resetPinSetup();
     }
 
@@ -241,11 +241,11 @@ export default function SettingsPage() {
         /* v8 ignore next -- the Remove button only renders when adminPin is set */
         const ok = await verifyPin(currentPinVerify, settings.adminPin ?? '');
         if (!ok) {
-            setPinSetupError('Current password is incorrect.');
+            setPinSetupError(t('settings.admin_err_current'));
             return;
         }
         updateSettings({ adminPin: undefined });
-        showToast('Admin password removed', 'info');
+        showToast(t('settings.admin_password_removed'), 'info');
         resetPinSetup();
     }
 
@@ -436,7 +436,7 @@ export default function SettingsPage() {
                                 ) : (
                                     <GraduationCap size={20} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
                                 )}
-                                <h3 style={{ margin: 0 }}>Role &amp; Access</h3>
+                                <h3 style={{ margin: 0 }}>{t('settings.role_access')}</h3>
                                 <span className={`role-badge ${ROLE_META[role].badgeClass}`} style={{ marginLeft: 4 }}>
                                     {ROLE_META[role].icon} {t(ROLE_META[role].labelKey)}
                                 </span>
@@ -1499,10 +1499,9 @@ export default function SettingsPage() {
                             <div className="card">
                                 <div className="admin-locked-card">
                                     <Lock size={40} style={{ color: 'var(--text-dim)' }} aria-hidden="true" />
-                                    <h3 style={{ margin: 0 }}>Administrator access required</h3>
+                                    <h3 style={{ margin: 0 }}>{t('settings.admin_access_required')}</h3>
                                     <p className="text-muted text-sm" style={{ maxWidth: 400 }}>
-                                        These settings control database connections, API integrations, and system-level
-                                        configuration. They are restricted to the Administrator role.
+                                        {t('settings.admin_access_desc')}
                                     </p>
                                     {settings.adminPin ? (
                                         <div
@@ -1515,7 +1514,9 @@ export default function SettingsPage() {
                                             }}
                                         >
                                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label htmlFor="admin-unlock-pin">Admin password</label>
+                                                <label htmlFor="admin-unlock-pin">
+                                                    {t('settings.admin_password_label')}
+                                                </label>
                                                 <div style={{ display: 'flex', gap: 8 }}>
                                                     <input
                                                         id="admin-unlock-pin"
@@ -1538,7 +1539,11 @@ export default function SettingsPage() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         onClick={() => setShowPin((p) => !p)}
-                                                        aria-label={showPin ? 'Hide password' : 'Show password'}
+                                                        aria-label={
+                                                            showPin
+                                                                ? t('settings.admin_hide_password')
+                                                                : t('settings.admin_show_password')
+                                                        }
                                                     >
                                                         {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
                                                     </button>
@@ -1548,7 +1553,7 @@ export default function SettingsPage() {
                                                         className="text-xs"
                                                         style={{ color: 'var(--red)', marginTop: 4 }}
                                                     >
-                                                        Incorrect password
+                                                        {t('settings.admin_incorrect_password')}
                                                     </div>
                                                 )}
                                             </div>
@@ -1556,12 +1561,12 @@ export default function SettingsPage() {
                                                 className="btn btn-primary"
                                                 onClick={() => void confirmPinAndSwitch('admin')}
                                             >
-                                                <Shield size={15} aria-hidden="true" /> Switch to Administrator
+                                                <Shield size={15} aria-hidden="true" /> {t('settings.admin_switch_to')}
                                             </button>
                                         </div>
                                     ) : (
                                         <button className="btn btn-primary" onClick={() => applyRoleSwitch('admin')}>
-                                            <Shield size={15} aria-hidden="true" /> Switch to Administrator
+                                            <Shield size={15} aria-hidden="true" /> {t('settings.admin_switch_to')}
                                         </button>
                                     )}
                                 </div>
@@ -1638,14 +1643,12 @@ export default function SettingsPage() {
                                 {/* Dev-only: seed demo data for design/UX review — never shown in production builds */}
                                 {import.meta.env.DEV && (
                                     <div className="card" style={{ marginBottom: 24 }}>
-                                        <h3 style={{ marginBottom: 16 }}>Dev: sample data</h3>
+                                        <h3 style={{ marginBottom: 16 }}>{t('settings.dev_sample_title')}</h3>
                                         <button className="btn btn-secondary" onClick={handleLoadSampleData}>
-                                            <Sparkles size={16} aria-hidden="true" /> Load sample data
+                                            <Sparkles size={16} aria-hidden="true" /> {t('settings.dev_sample_load')}
                                         </button>
                                         <p className="text-muted text-sm" style={{ marginTop: 12 }}>
-                                            Populates classes, students, CEFR-tagged rubrics with grades, tests, essays,
-                                            and comment-bank entries for design review. Overwrites current data — only
-                                            available in dev builds.
+                                            {t('settings.dev_sample_desc')}
                                         </p>
                                     </div>
                                 )}
@@ -1658,16 +1661,16 @@ export default function SettingsPage() {
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                         <Lock size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                                         <div>
-                                            <h3 style={{ margin: 0 }}>Admin Password</h3>
+                                            <h3 style={{ margin: 0 }}>{t('settings.admin_password_heading')}</h3>
                                             <p className="text-muted text-xs" style={{ marginTop: 2 }}>
                                                 {settings.adminPin
-                                                    ? 'A password is set. Required to switch back to Administrator role.'
-                                                    : 'No password set — anyone can switch to Administrator.'}
+                                                    ? t('settings.admin_pw_set_desc')
+                                                    : t('settings.admin_pw_none_desc')}
                                             </p>
                                         </div>
                                         {settings.adminPin && (
                                             <span className="badge badge-green" style={{ marginLeft: 'auto' }}>
-                                                Protected
+                                                {t('settings.admin_protected')}
                                             </span>
                                         )}
                                     </div>
@@ -1682,7 +1685,8 @@ export default function SettingsPage() {
                                                         setPinSetupError('');
                                                     }}
                                                 >
-                                                    <Lock size={14} aria-hidden="true" /> Set admin password
+                                                    <Lock size={14} aria-hidden="true" />{' '}
+                                                    {t('settings.admin_set_password')}
                                                 </button>
                                             ) : (
                                                 <>
@@ -1693,7 +1697,8 @@ export default function SettingsPage() {
                                                             setPinSetupError('');
                                                         }}
                                                     >
-                                                        <Save size={14} aria-hidden="true" /> Change password
+                                                        <Save size={14} aria-hidden="true" />{' '}
+                                                        {t('settings.admin_change_password')}
                                                     </button>
                                                     <button
                                                         className="btn btn-ghost btn-sm"
@@ -1703,7 +1708,8 @@ export default function SettingsPage() {
                                                             setPinSetupError('');
                                                         }}
                                                     >
-                                                        <Trash2 size={14} aria-hidden="true" /> Remove password
+                                                        <Trash2 size={14} aria-hidden="true" />{' '}
+                                                        {t('settings.admin_remove_password')}
                                                     </button>
                                                 </>
                                             )}
@@ -1714,15 +1720,17 @@ export default function SettingsPage() {
                                         >
                                             <h4 style={{ margin: 0, fontSize: '0.9rem' }}>
                                                 {pinSetupMode === 'setting'
-                                                    ? 'Set admin password'
+                                                    ? t('settings.admin_set_password_title')
                                                     : pinSetupMode === 'changing'
-                                                      ? 'Change admin password'
-                                                      : 'Remove admin password'}
+                                                      ? t('settings.admin_change_password_title')
+                                                      : t('settings.admin_remove_password_title')}
                                             </h4>
 
                                             {(pinSetupMode === 'changing' || pinSetupMode === 'removing') && (
                                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                                    <label htmlFor="admin-current-pin">Current password</label>
+                                                    <label htmlFor="admin-current-pin">
+                                                        {t('settings.admin_current_password')}
+                                                    </label>
                                                     <input
                                                         id="admin-current-pin"
                                                         type="password"
@@ -1740,7 +1748,9 @@ export default function SettingsPage() {
                                             {pinSetupMode !== 'removing' && (
                                                 <>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label htmlFor="admin-new-pin">New password</label>
+                                                        <label htmlFor="admin-new-pin">
+                                                            {t('settings.admin_new_password')}
+                                                        </label>
                                                         <div style={{ display: 'flex', gap: 8 }}>
                                                             <input
                                                                 id="admin-new-pin"
@@ -1758,7 +1768,9 @@ export default function SettingsPage() {
                                                                 className="btn btn-ghost btn-icon btn-sm"
                                                                 onClick={() => setShowNewPin((p) => !p)}
                                                                 aria-label={
-                                                                    showNewPin ? 'Hide password' : 'Show password'
+                                                                    showNewPin
+                                                                        ? t('settings.admin_hide_password')
+                                                                        : t('settings.admin_show_password')
                                                                 }
                                                             >
                                                                 {showNewPin ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -1766,7 +1778,9 @@ export default function SettingsPage() {
                                                         </div>
                                                     </div>
                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                        <label htmlFor="admin-confirm-pin">Confirm password</label>
+                                                        <label htmlFor="admin-confirm-pin">
+                                                            {t('settings.admin_confirm_password')}
+                                                        </label>
                                                         <input
                                                             id="admin-confirm-pin"
                                                             type="password"
@@ -1797,24 +1811,23 @@ export default function SettingsPage() {
                                                     }}
                                                     aria-hidden="true"
                                                 />
-                                                This is UI access control for normal use, not cryptographic security.
-                                                The password is stored locally in your browser.
+                                                {t('settings.admin_pw_disclaimer')}
                                             </p>
 
                                             <div style={{ display: 'flex', gap: 8 }}>
                                                 <button className="btn btn-ghost btn-sm" onClick={resetPinSetup}>
-                                                    Cancel
+                                                    {t('common.cancel')}
                                                 </button>
                                                 {pinSetupMode === 'removing' ? (
                                                     <button className="btn btn-danger btn-sm" onClick={handleRemovePin}>
-                                                        Remove password
+                                                        {t('settings.admin_remove_password')}
                                                     </button>
                                                 ) : (
                                                     <button
                                                         className="btn btn-primary btn-sm"
                                                         onClick={handleSaveNewPin}
                                                     >
-                                                        Save password
+                                                        {t('settings.admin_save_password')}
                                                     </button>
                                                 )}
                                             </div>
@@ -1826,7 +1839,7 @@ export default function SettingsPage() {
                                 <div className="card">
                                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                                         <User size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                                        <h3 style={{ margin: 0 }}>Role Reference</h3>
+                                        <h3 style={{ margin: 0 }}>{t('settings.role_reference')}</h3>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                         {(['admin', 'teacher', 'student'] as UserRole[]).map((r) => (
@@ -2140,7 +2153,7 @@ export default function SettingsPage() {
                             Enter the admin password to switch to the Administrator role.
                         </p>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="pin-dialog-input">Admin password</label>
+                            <label htmlFor="pin-dialog-input">{t('settings.admin_password_label')}</label>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <input
                                     id="pin-dialog-input"
@@ -2161,7 +2174,9 @@ export default function SettingsPage() {
                                 <button
                                     className="btn btn-ghost btn-icon btn-sm"
                                     onClick={() => setShowPin((p) => !p)}
-                                    aria-label={showPin ? 'Hide password' : 'Show password'}
+                                    aria-label={
+                                        showPin ? t('settings.admin_hide_password') : t('settings.admin_show_password')
+                                    }
                                 >
                                     {showPin ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
