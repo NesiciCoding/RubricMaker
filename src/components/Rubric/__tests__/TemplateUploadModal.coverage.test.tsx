@@ -13,14 +13,24 @@ vi.mock('../../../utils/fileToDataUrl', () => ({ fileToDataUrl: mockFileToDataUr
 vi.mock('../../../utils/docxTemplateExport', () => ({ parseTemplateHeaders: mockParseTemplateHeaders }));
 vi.mock('../../../utils/docxStyleTemplate', () => ({ parseStyleTemplate: mockParseStyleTemplate }));
 
+import enJson from '../../../locales/en.json';
+const trGet = (path: string): string | undefined =>
+    path.split('.').reduce<unknown>((o, k) => (o == null ? undefined : (o as Record<string, unknown>)[k]), enJson) as
+        string | undefined;
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, opts?: string | Record<string, unknown>) => {
-            if (typeof opts === 'string') return opts;
-            if (opts && typeof opts === 'object') return `${key}:${JSON.stringify(opts)}`;
-            return key;
+        t: (key: string, opts?: Record<string, unknown>) => {
+            let k = key;
+            if (opts && typeof opts.count === 'number') {
+                const p = opts.count === 1 ? `${key}_one` : `${key}_other`;
+                if (trGet(p) != null) k = p;
+            }
+            let out = trGet(k);
+            if (out == null) return key;
+            if (opts) for (const [kk, vv] of Object.entries(opts)) out = out.replaceAll(`{{${kk}}}`, String(vv));
+            return out;
         },
-        i18n: { language: 'en' },
+        i18n: { language: 'en', changeLanguage: vi.fn() },
     }),
     Trans: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -55,9 +65,13 @@ describe('TemplateUploadModal coverage', () => {
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
         // Table kind is default → the Trans intro shows its children.
         expect(screen.getByText(/Upload a blank/)).toBeInTheDocument();
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
-        expect(screen.getByText('settings.template_intro_style')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('settings.template_kind_table'));
+        fireEvent.click(screen.getByText('Essay / report style'));
+        expect(
+            screen.getByText(
+                'Upload a blank .docx document \u2014 the app will read its heading and body font, then use those when exporting essays and period reports to Word.'
+            )
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Rubric table'));
         expect(screen.getByText(/Upload a blank/)).toBeInTheDocument();
     });
 
@@ -117,17 +131,17 @@ describe('TemplateUploadModal coverage', () => {
         // Drop zone + kind toggle are back, and the drop zone click opens the file input.
         expect(dropZone()).toBeInTheDocument();
         fireEvent.click(dropZone());
-        expect(screen.getByText('settings.template_kind_table')).toBeInTheDocument();
+        expect(screen.getByText('Rubric table')).toBeInTheDocument();
     });
 
     it('parses a style template with fonts and saves it', async () => {
         mockParseStyleTemplate.mockResolvedValue({ headingFont: 'Arial', bodyFont: 'Georgia' });
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
 
-        expect(await screen.findByText('settings.template_style_parsed')).toBeInTheDocument();
-        expect(screen.getByText(/heading.*Arial.*body.*Georgia/)).toBeInTheDocument();
+        expect(await screen.findByText('Style parsed')).toBeInTheDocument();
+        expect(screen.getByText(/Heading.*Arial.*Body.*Georgia/)).toBeInTheDocument();
         expect(screen.getByDisplayValue('template')).toBeInTheDocument();
 
         fireEvent.click(screen.getByText('Save Template'));
@@ -145,19 +159,19 @@ describe('TemplateUploadModal coverage', () => {
     it('reports when a style template has no detected fonts', async () => {
         mockParseStyleTemplate.mockResolvedValue({});
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
-        const parsed = await screen.findByText('settings.template_style_parsed');
-        expect(parsed.parentElement!.textContent).toContain('settings.template_style_none_detected');
+        const parsed = await screen.findByText('Style parsed');
+        expect(parsed.parentElement!.textContent).toContain('No custom font detected \u2014 defaults will be used.');
     });
 
     it('falls back to the file name and default fonts in style summaries', async () => {
         // bodyFont set, headingFont unset → the summary shows the default heading font.
         mockParseStyleTemplate.mockResolvedValue({ bodyFont: 'Georgia' });
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
-        await screen.findByText('settings.template_style_parsed');
+        await screen.findByText('Style parsed');
 
         // The style name input is editable; clearing it makes the save fall back to the file name.
         const styleName = document.getElementById('style-template-name') as HTMLInputElement;
@@ -171,9 +185,9 @@ describe('TemplateUploadModal coverage', () => {
     it('switches files back after a style parse', async () => {
         mockParseStyleTemplate.mockResolvedValue({ headingFont: 'Arial' });
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
-        fireEvent.click(await screen.findByText('settings.template_use_different_file'));
+        fireEvent.click(await screen.findByText('\u2190 Use a different file'));
         expect(dropZone()).toBeInTheDocument();
     });
 
@@ -193,11 +207,11 @@ describe('TemplateUploadModal coverage', () => {
         mockFileToDataUrl.mockReturnValue(new Promise<string>((res) => (resolveData = res)));
         mockParseStyleTemplate.mockResolvedValue({ headingFont: 'Arial' });
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
-        expect(screen.getByText('settings.template_extracting_style')).toBeInTheDocument();
+        expect(screen.getByText('Extracting template style\u2026')).toBeInTheDocument();
         await act(async () => resolveData('data:application/octet-stream;base64,AA=='));
-        expect(await screen.findByText('settings.template_style_parsed')).toBeInTheDocument();
+        expect(await screen.findByText('Style parsed')).toBeInTheDocument();
     });
 
     it('surfaces parse errors, including non-Error rejections', async () => {
@@ -209,7 +223,7 @@ describe('TemplateUploadModal coverage', () => {
 
         mockParseStyleTemplate.mockRejectedValue('raw failure');
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByText('settings.template_kind_style'));
+        fireEvent.click(screen.getByText('Essay / report style'));
         fireEvent.change(fileInput(), { target: { files: [tableFile] } });
         expect(await screen.findByText('Failed to parse template: Unknown error')).toBeInTheDocument();
     });
@@ -236,7 +250,7 @@ describe('TemplateUploadModal coverage', () => {
 
     it('closes via the modal header button and the cancel button', () => {
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByLabelText('common.close'));
+        fireEvent.click(screen.getByLabelText('Close'));
         expect(mockOnClose).toHaveBeenCalledTimes(1);
         fireEvent.click(screen.getByText('Cancel'));
         expect(mockOnClose).toHaveBeenCalledTimes(2);

@@ -68,7 +68,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
             const sets = await fetchStandardSets(apiKey, j.id);
             setStandardSets(sets);
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Unknown error');
+            setError(e instanceof Error ? e.message : t('common.unknown_error'));
         }
         setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
             const detail = await fetchStandardSetDetail(apiKey, s.id);
             setStandards(flattenStandards(detail.standards));
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Unknown error');
+            setError(e instanceof Error ? e.message : t('common.unknown_error'));
         }
         setLoading(false);
     }
@@ -211,9 +211,9 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
 
     // Breadcrumb step title
     const steps: { key: Step; label: string }[] = [
-        { key: 'jurisdiction', label: selectedJurisdiction?.title ?? 'Jurisdiction' },
-        { key: 'set', label: selectedSet?.title ?? 'Standard Set' },
-        { key: 'standard', label: 'Pick Standard' },
+        { key: 'jurisdiction', label: selectedJurisdiction?.title ?? t('standardsPicker.bc_jurisdiction') },
+        { key: 'set', label: selectedSet?.title ?? t('standardsPicker.bc_set') },
+        { key: 'standard', label: t('standardsPicker.bc_standard') },
     ];
 
     return (
@@ -227,7 +227,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <BookOpen size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                        <h3 id="standards-picker-title">Link Standard</h3>
+                        <h3 id="standards-picker-title">{t('standardsPicker.title')}</h3>
                     </div>
                     {/* View Toggles */}
                     <div
@@ -247,7 +247,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                             }}
                             style={{ fontSize: '0.8rem', padding: '4px 12px' }}
                         >
-                            Browse
+                            {t('standardsPicker.browse')}
                         </button>
                         <button
                             className={`btn btn-sm ${view === 'favorites' ? 'btn-white shadow-sm' : 'btn-ghost'}`}
@@ -268,7 +268,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                 fill={view === 'favorites' ? 'var(--yellow)' : 'none'}
                                 color={view === 'favorites' ? 'var(--yellow)' : 'currentColor'}
                             />
-                            Favorites ({favoriteStandards.length})
+                            {t('standardsPicker.favorites', { count: favoriteStandards.length })}
                         </button>
                     </div>
                 </div>
@@ -339,12 +339,12 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         type="text"
                         placeholder={
                             view === 'favorites'
-                                ? 'Search favorites...'
+                                ? t('standardsPicker.search_favorites')
                                 : step === 'jurisdiction'
-                                  ? 'Search jurisdictions...'
+                                  ? t('standardsPicker.search_jurisdictions')
                                   : step === 'set'
-                                    ? 'Search standard sets...'
-                                    : 'Search standards...'
+                                    ? t('standardsPicker.search_sets')
+                                    : t('standardsPicker.search_standards')
                         }
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -367,8 +367,8 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                     <option value="default">
                         {view === 'browse' && step !== 'standard' ? 'Default Order' : 'Hierarchical'}
                     </option>
-                    <option value="alpha-asc">Alphabetical (A-Z)</option>
-                    <option value="alpha-desc">Alphabetical (Z-A)</option>
+                    <option value="alpha-asc">{t('standardsPicker.sort_asc')}</option>
+                    <option value="alpha-desc">{t('standardsPicker.sort_desc')}</option>
                 </select>
             </div>
 
@@ -388,7 +388,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         >
                             <AlertCircle size={16} style={{ color: 'var(--red)', marginTop: 1, flexShrink: 0 }} />
                             <div className="text-sm">
-                                <strong>API Error:</strong> {error}
+                                <strong>{t('standardsPicker.api_error')}</strong> {error}
                                 {error.includes('403') || error.includes('401') ? (
                                     <div style={{ marginTop: 4 }}>
                                         Check your API key in Settings, and make sure your origin is added to the{' '}
@@ -420,15 +420,15 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         {favoriteStandards.length === 0 && (
                             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                                 <Star size={32} style={{ marginBottom: 12, opacity: 0.3 }} />
-                                <p>No favorites yet.</p>
+                                <p>{t('standardsPicker.no_favorites')}</p>
                                 <p className="text-sm" style={{ marginTop: 8 }}>
-                                    Star standards in the Browse tab to save them here.
+                                    {t('standardsPicker.no_favorites_hint')}
                                 </p>
                             </div>
                         )}
                         {displayFavorites.length === 0 && favoriteStandards.length > 0 && (
                             <div className="text-muted text-sm" style={{ padding: 20, textAlign: 'center' }}>
-                                No favorites match your search.
+                                {t('standardsPicker.no_favorites_match')}
                             </div>
                         )}
                         {displayFavorites.map((std) => (
@@ -576,7 +576,11 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 onClick={(e) => toggleFav(std, e)}
-                                                title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                                                title={
+                                                    isFav
+                                                        ? t('standardsPicker.remove_fav')
+                                                        : t('standardsPicker.add_fav')
+                                                }
                                                 style={{
                                                     flexShrink: 0,
                                                     marginTop: 2,
@@ -629,7 +633,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                                 })}
                                 {displayStandards.length === 0 && !loading && (
                                     <div className="text-muted text-sm" style={{ padding: 20, textAlign: 'center' }}>
-                                        No standards match your search.
+                                        {t('standardsPicker.no_standards_match')}
                                     </div>
                                 )}
                             </div>

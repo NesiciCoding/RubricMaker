@@ -5,8 +5,24 @@ import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import type { CspJurisdiction, CspStandardSet, CspStandard } from '../../services/standardsApi';
 import type { LinkedStandard } from '../../types';
 
+import enJson from '../../locales/en.json';
+const trGet = (path: string): string | undefined =>
+    path.split('.').reduce<unknown>((o, k) => (o == null ? undefined : (o as Record<string, unknown>)[k]), enJson) as
+        string | undefined;
 vi.mock('react-i18next', () => ({
-    useTranslation: () => ({ t: (key: string, fallback?: string) => fallback ?? key }),
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => {
+            let k = key;
+            if (opts && typeof opts.count === 'number') {
+                const p = opts.count === 1 ? `${key}_one` : `${key}_other`;
+                if (trGet(p) != null) k = p;
+            }
+            let out = trGet(k);
+            if (out == null) return key;
+            if (opts) for (const [kk, vv] of Object.entries(opts)) out = out.replaceAll(`{{${kk}}}`, String(vv));
+            return out;
+        },
+    }),
 }));
 
 const mockAddFavorite = vi.fn();
@@ -251,7 +267,7 @@ describe('StandardsPickerModal', () => {
         const onClose = vi.fn();
         render(<StandardsPickerModal {...baseProps} onClose={onClose} />);
         await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
-        fireEvent.click(screen.getByLabelText('common.close'));
+        fireEvent.click(screen.getByLabelText('Close'));
         expect(onClose).toHaveBeenCalled();
     });
 

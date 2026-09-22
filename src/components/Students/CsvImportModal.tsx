@@ -54,12 +54,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
             complete: (results) => {
                 const data = results.data;
                 if (data.length === 0) {
-                    setError('The CSV file is empty.');
+                    setError(t('csv.err_empty'));
                     return;
                 }
                 const detectedHeaders = Object.keys(/* v8 ignore next 1 */ data[0] || {}).map((k) => k.trim());
                 if (detectedHeaders.length === 0) {
-                    setError('Could not detect any columns in the CSV file.');
+                    setError(t('csv.err_no_columns'));
                     return;
                 }
 
@@ -134,7 +134,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 setMapping(autoMap);
             },
             error: (err) => {
-                setError(`Failed to parse CSV: ${err.message}`);
+                setError(t('csv.err_parse', { message: err.message }));
             },
         });
     }, [file]);
@@ -155,7 +155,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 className:
                     mapping.className && row[mapping.className]
                         ? row[mapping.className].trim()
-                        : 'Active Class (Default)',
+                        : t('csv.active_class_default'),
             };
         });
     };
@@ -241,7 +241,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         <Modal titleId="csv-import-title" onClose={onClose} maxWidth={640}>
             <div className="modal-header">
                 <h3 id="csv-import-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Upload size={18} aria-hidden="true" /> Map CSV Columns
+                    <Upload size={18} aria-hidden="true" /> {t('csv.map_title')}
                 </h3>
                 <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
@@ -267,7 +267,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     </div>
                 ) : headers.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)' }}>
-                        Parsing file...
+                        {t('csv.parsing')}
                     </div>
                 ) : (
                     <>
@@ -296,12 +296,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             }}
                         >
                             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-                                Match your CSV columns to the student fields. You must map <strong>Full Name</strong> OR
-                                both <strong>First Name</strong> and <strong>Last Name</strong>.
+                                {t('csv.map_intro')}
                             </div>
                             <div className="grid-2" style={{ gap: 14 }}>
                                 <div className="form-group">
-                                    <label>Full Name</label>
+                                    <label>{t('csv.full_name')}</label>
                                     <select
                                         value={mapping.fullName}
                                         onChange={(e) =>
@@ -313,7 +312,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                             })
                                         }
                                     >
-                                        <option value="">-- Ignore --</option>
+                                        <option value="">{t('csv.opt_ignore')}</option>
                                         {headers.map((h) => (
                                             <option key={h} value={h}>
                                                 {h}
@@ -322,12 +321,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Email (optional)</label>
+                                    <label>{t('csv.email_optional')}</label>
                                     <select
                                         value={mapping.email}
                                         onChange={(e) => setMapping({ ...mapping, email: e.target.value })}
                                     >
-                                        <option value="">-- Ignore --</option>
+                                        <option value="">{t('csv.opt_ignore')}</option>
                                         {headers.map((h) => (
                                             <option key={h} value={h}>
                                                 {h}
@@ -336,13 +335,15 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>First Name {mapping.fullName && '(inactive)'}</label>
+                                    <label>
+                                        {t('csv.first_name')} {mapping.fullName && t('csv.inactive')}
+                                    </label>
                                     <select
                                         value={mapping.firstName}
                                         disabled={!!mapping.fullName}
                                         onChange={(e) => setMapping({ ...mapping, firstName: e.target.value })}
                                     >
-                                        <option value="">-- Ignore --</option>
+                                        <option value="">{t('csv.opt_ignore')}</option>
                                         {headers.map((h) => (
                                             <option key={h} value={h}>
                                                 {h}
@@ -351,13 +352,15 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Last Name {mapping.fullName && '(inactive)'}</label>
+                                    <label>
+                                        {t('csv.last_name')} {mapping.fullName && t('csv.inactive')}
+                                    </label>
                                     <select
                                         value={mapping.lastName}
                                         disabled={!!mapping.fullName}
                                         onChange={(e) => setMapping({ ...mapping, lastName: e.target.value })}
                                     >
-                                        <option value="">-- Ignore --</option>
+                                        <option value="">{t('csv.opt_ignore')}</option>
                                         {headers.map((h) => (
                                             <option key={h} value={h}>
                                                 {h}
@@ -366,12 +369,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                     </select>
                                 </div>
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Class Name (optional)</label>
+                                    <label>{t('csv.class_name_optional')}</label>
                                     <select
                                         value={mapping.className}
                                         onChange={(e) => setMapping({ ...mapping, className: e.target.value })}
                                     >
-                                        <option value="">-- Import to currently selected class --</option>
+                                        <option value="">{t('csv.opt_import_selected')}</option>
                                         {headers.map((h) => (
                                             <option key={h} value={h}>
                                                 {h}
@@ -379,8 +382,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                         ))}
                                     </select>
                                     <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                        If mapped, students will be sorted into these classes. New classes will be
-                                        created automatically.
+                                        {t('csv.class_hint')}
                                     </div>
                                 </div>
                             </div>
@@ -397,21 +399,21 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                         gap: 6,
                                     }}
                                 >
-                                    <Table size={14} /> Data Preview (First 3 rows)
+                                    <Table size={14} /> {t('csv.preview_title')}
                                 </h4>
                                 <table className="data-table" style={{ fontSize: '0.8rem' }}>
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Class</th>
+                                            <th>{t('csv.col_name')}</th>
+                                            <th>{t('csv.col_email')}</th>
+                                            <th>{t('csv.col_class')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {previewRows.map((row, i) => (
                                             <tr key={i}>
                                                 <td style={{ fontWeight: 500 }}>
-                                                    {row.name || <span className="text-muted">Empty</span>}
+                                                    {row.name || <span className="text-muted">{t('csv.empty')}</span>}
                                                 </td>
                                                 <td>{row.email || '—'}</td>
                                                 <td>{row.className}</td>

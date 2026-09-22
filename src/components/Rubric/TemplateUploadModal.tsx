@@ -45,7 +45,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
     const handleFile = useCallback(
         async (file: File) => {
             if (!file.name.endsWith('.docx')) {
-                setError('Please upload a .docx (Word) file.');
+                setError(t('settings.template_err_filetype'));
                 return;
             }
             setError(null);
@@ -72,8 +72,8 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                 /* v8 ignore next -- provably dead: the name input only renders after a parse and resets with it, so name is always empty here */
                 if (!name) setName(file.name.replace(/\.[^.]+$/, ''));
             } catch (err) {
-                const message = err instanceof Error ? err.message : 'Unknown error';
-                setError(`Failed to parse template: ${message}`);
+                const message = err instanceof Error ? err.message : t('common.unknown_error');
+                setError(t('settings.template_err_parse', { message }));
             } finally {
                 setParsing(false);
             }
@@ -123,7 +123,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
         <Modal titleId="template-upload-title" onClose={onClose} maxWidth={560}>
             <div className="modal-header">
                 <h3 id="template-upload-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <FileText size={18} aria-hidden="true" /> Upload Export Template
+                    <FileText size={18} aria-hidden="true" /> {t('settings.template_upload_title')}
                 </h3>
                 <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
@@ -192,10 +192,8 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         }}
                     >
                         <Upload size={32} style={{ color: 'var(--text-dim)', marginBottom: 8 }} />
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                            Drop .docx template here or click to browse
-                        </div>
-                        <div className="text-muted text-sm">Only .docx files are supported</div>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>{t('settings.template_dropzone')}</div>
+                        <div className="text-muted text-sm">{t('settings.template_only_docx')}</div>
                         <input
                             ref={inputRef}
                             type="file"
@@ -223,7 +221,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         <Loader size={24} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
                         <span>
                             {kind === 'table'
-                                ? 'Extracting template headers…'
+                                ? t('settings.template_extracting_table')
                                 : t('settings.template_extracting_style')}
                         </span>
                     </div>
@@ -315,8 +313,9 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                         >
                             <CheckCircle size={15} style={{ color: 'var(--green, #22c55e)', flexShrink: 0 }} />
                             <span style={{ fontSize: '0.875rem' }}>
-                                <strong>Template parsed</strong> — {parsed.levelHeaders.length} level
-                                {parsed.levelHeaders.length !== 1 ? 's' : ''} detected.
+                                <strong>{t('settings.template_table_parsed')}</strong>
+                                {' — '}
+                                {t('settings.template_table_summary', { count: parsed.levelHeaders.length })}
                             </span>
                         </div>
 
@@ -330,7 +329,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                                         fontWeight: 600,
                                     }}
                                 >
-                                    Detected level headers:
+                                    {t('settings.template_detected_headers')}
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                     {parsed.levelHeaders.map((h, i) => (
@@ -366,18 +365,17 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                                 }}
                             >
                                 <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-                                No level headers detected. The template will still be saved, but level labels from the
-                                rubric will be used when exporting.
+                                {t('settings.template_no_headers')}
                             </div>
                         )}
 
                         <div className="form-group" style={{ marginBottom: 8 }}>
-                            <label>Template Name</label>
+                            <label>{t('settings.template_name_label')}</label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. School Rubric Template"
+                                placeholder={t('settings.template_name_table_placeholder')}
                             />
                         </div>
 
@@ -389,18 +387,18 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                                 setName('');
                             }}
                         >
-                            ← Use a different file
+                            {t('settings.template_use_different_file')}
                         </button>
                     </>
                 )}
             </div>
             <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={onClose}>
-                    Cancel
+                    {t('common.cancel')}
                 </button>
                 {parsed && (
                     <button className="btn btn-primary" onClick={handleSave}>
-                        <CheckCircle size={14} /> Save Template
+                        <CheckCircle size={14} /> {t('settings.template_save')}
                     </button>
                 )}
             </div>

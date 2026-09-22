@@ -26,7 +26,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
     const handleFile = useCallback(async (file: File) => {
         const ext = file.name.split('.').pop()?.toLowerCase();
         if (ext !== 'docx' && ext !== 'pdf' && ext !== 'json') {
-            setError('Please upload a .docx, .pdf, or .json file.');
+            setError(t('importRubric.err_filetype'));
             return;
         }
         setError(null);
@@ -47,8 +47,8 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
             setSubject(result.subject || '');
             setStage('preview');
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Unknown error';
-            setError(`Failed to parse file: ${message}`);
+            const message = err instanceof Error ? err.message : t('importRubric.err_unknown');
+            setError(t('importRubric.err_parse', { message }));
             setStage('upload');
         }
     }, []);
@@ -90,7 +90,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
         <Modal titleId="import-rubric-title" onClose={onClose} maxWidth={680} style={{ width: '95vw' }}>
             <div className="modal-header">
                 <h3 id="import-rubric-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Upload size={18} aria-hidden="true" /> Import Rubric
+                    <Upload size={18} aria-hidden="true" /> {t('importRubric.title')}
                 </h3>
                 <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
@@ -122,7 +122,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                     fontWeight: stage === s ? 600 : 400,
                                 }}
                             >
-                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                                {t(`importRubric.stage_${s}`)}
                             </span>
                             {i < 2 && <ChevronRight size={12} />}
                         </React.Fragment>
@@ -152,8 +152,8 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                             }}
                         >
                             <FileText size={36} style={{ color: 'var(--text-dim)', marginBottom: 10 }} />
-                            <div style={{ fontWeight: 600, marginBottom: 6 }}>Drop a file here or click to browse</div>
-                            <div className="text-muted text-sm">Accepts .docx (Word), .pdf, and .json files</div>
+                            <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('importRubric.dropzone')}</div>
+                            <div className="text-muted text-sm">{t('importRubric.accepts')}</div>
                             <input
                                 ref={inputRef}
                                 type="file"
@@ -191,17 +191,11 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                 marginTop: 8,
                             }}
                         >
-                            <strong style={{ color: 'var(--text)' }}>Tips for best results:</strong>
+                            <strong style={{ color: 'var(--text)' }}>{t('importRubric.tips_title')}</strong>
                             <ul style={{ paddingLeft: 18, marginTop: 6, lineHeight: 1.8 }}>
-                                <li>
-                                    The rubric should be formatted as a <strong>table</strong> (rows = criteria, columns
-                                    = levels)
-                                </li>
-                                <li>
-                                    The first row should contain level names (e.g. "Excellent", "Good", "Adequate",
-                                    "Poor")
-                                </li>
-                                <li>The first column should contain criterion names</li>
+                                <li>{t('importRubric.tip_table')}</li>
+                                <li>{t('importRubric.tip_levels')}</li>
+                                <li>{t('importRubric.tip_criteria')}</li>
                             </ul>
                         </div>
                     </>
@@ -219,8 +213,8 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         }}
                     >
                         <Loader size={32} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
-                        <div style={{ fontWeight: 500 }}>Parsing file…</div>
-                        <div className="text-muted text-sm">Detecting table structure and extracting rubric data</div>
+                        <div style={{ fontWeight: 500 }}>{t('importRubric.parsing')}</div>
+                        <div className="text-muted text-sm">{t('importRubric.parsing_sub')}</div>
                     </div>
                 )}
 
@@ -244,10 +238,22 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         >
                             {confidenceIcon[parsed.confidence]}
                             <span>
-                                <strong>Detection quality: {parsed.confidence}</strong> — {parsed.criteria.length}{' '}
-                                {parsed.criteria.length === 1 ? 'criterion' : 'criteria'},{' '}
-                                {parsed.criteria[0]?.levels.length ?? 0} levels detected.
-                                {parsed.confidence !== 'high' && ' You can edit all fields after importing.'}
+                                <strong>
+                                    {t('importRubric.detection_quality', {
+                                        confidence: t(`importRubric.confidence_${parsed.confidence}`),
+                                    })}
+                                </strong>
+                                {' — '}
+                                {t('importRubric.detection_counts', {
+                                    count: parsed.criteria.length,
+                                    unit: t(
+                                        parsed.criteria.length === 1
+                                            ? 'importRubric.criterion'
+                                            : 'importRubric.criteria'
+                                    ),
+                                    levels: parsed.criteria[0]?.levels.length ?? 0,
+                                })}
+                                {parsed.confidence !== 'high' && ` ${t('importRubric.can_edit')}`}
                             </span>
                         </div>
 
@@ -275,21 +281,21 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         {/* Name / subject */}
                         <div className="grid-2" style={{ gap: 12, marginBottom: 16 }}>
                             <div className="form-group">
-                                <label>Rubric Name</label>
+                                <label>{t('importRubric.name_label')}</label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g. Essay Rubric"
+                                    placeholder={t('importRubric.name_placeholder')}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>Subject (optional)</label>
+                                <label>{t('importRubric.subject_label')}</label>
                                 <input
                                     type="text"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    placeholder="e.g. English"
+                                    placeholder={t('importRubric.subject_placeholder')}
                                 />
                             </div>
                         </div>
@@ -309,7 +315,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                     <thead>
                                         <tr style={{ background: 'var(--bg-nav)' }}>
                                             <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: '0.8rem' }}>
-                                                Criterion
+                                                {t('importRubric.col_criterion')}
                                             </th>
                                             {parsed.criteria[0]?.levels.map((l: RubricLevel) => (
                                                 <th key={l.id} style={{ padding: '8px 12px', fontSize: '0.8rem' }}>
@@ -354,9 +360,9 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         ) : (
                             <div className="empty-state" style={{ padding: '24px 0' }}>
                                 <AlertTriangle size={28} />
-                                <p>No rubric structure detected. Try a different file.</p>
+                                <p>{t('importRubric.none_detected')}</p>
                                 <button className="btn btn-secondary btn-sm" onClick={() => setStage('upload')}>
-                                    Try Another File
+                                    {t('importRubric.try_another')}
                                 </button>
                             </div>
                         )}
@@ -367,15 +373,15 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
             <div className="modal-footer">
                 {stage === 'preview' && (
                     <button className="btn btn-ghost btn-sm" onClick={() => setStage('upload')}>
-                        ← Try Another File
+                        ← {t('importRubric.try_another')}
                     </button>
                 )}
                 <button className="btn btn-secondary" onClick={onClose}>
-                    Cancel
+                    {t('common.cancel')}
                 </button>
                 {stage === 'preview' && parsed && parsed.criteria.length > 0 && (
                     <button className="btn btn-primary" onClick={handleImport}>
-                        <CheckCircle size={15} /> Create Rubric
+                        <CheckCircle size={15} /> {t('importRubric.create')}
                     </button>
                 )}
             </div>
