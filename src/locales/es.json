@@ -1962,7 +1962,8 @@
         "comment_delete": "Eliminar",
         "comment_author_you": "Tú",
         "comment_author_teacher": "Profesor",
-        "comments_empty": "Aún no hay comentarios. Selecciona texto en el documento de arriba para añadir uno."
+        "comments_empty": "Aún no hay comentarios. Selecciona texto en el documento de arriba para añadir uno.",
+        "loading_preview": "Cargando vista previa…"
     },
     "exportPage": {
         "rubric_section_title": "Exportación de Rúbrica",
@@ -3492,5 +3493,15 @@
         "landing_student_sub": "Ver comentarios y entregar trabajo",
         "delete_submission": "Eliminar entrega",
         "paste_submission_code": "Pega aquí el código de entrega del alumno…"
+    },
+    "notFound": {
+        "heading": "404 — Página no encontrada",
+        "body": "La página que buscas no existe o se ha movido.",
+        "go_dashboard": "Ir al panel"
+    },
+    "errors": {
+        "boundary_title": "Algo salió mal",
+        "boundary_body": "Se produjo un error inesperado. Tus datos están a salvo: recarga la página para continuar.",
+        "reload": "Recargar página"
     }
 }

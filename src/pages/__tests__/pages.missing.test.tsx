@@ -299,18 +299,18 @@ describe('NotFoundPage', () => {
     it('shows a 404 heading', async () => {
         const { default: NotFoundPage } = await import('../NotFoundPage');
         renderPage(<NotFoundPage />);
-        expect(screen.getByText(/404/)).toBeInTheDocument();
+        expect(screen.getByText('notFound.heading')).toBeInTheDocument();
     });
 
     it('shows a link to the dashboard', async () => {
         const { default: NotFoundPage } = await import('../NotFoundPage');
         renderPage(<NotFoundPage />);
-        expect(screen.getByRole('link', { name: /go to dashboard/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'notFound.go_dashboard' })).toBeInTheDocument();
     });
 
     it('renders the page title in the topbar', async () => {
         const { default: NotFoundPage } = await import('../NotFoundPage');
         renderPage(<NotFoundPage />);
-        expect(screen.getByText('Page not found')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.page_not_found')).toBeInTheDocument();
     });
 });

@@ -1962,7 +1962,8 @@
         "comment_delete": "Supprimer",
         "comment_author_you": "Vous",
         "comment_author_teacher": "Enseignant",
-        "comments_empty": "Aucun commentaire pour l'instant. Sélectionnez du texte dans le document ci-dessus pour en ajouter un."
+        "comments_empty": "Aucun commentaire pour l'instant. Sélectionnez du texte dans le document ci-dessus pour en ajouter un.",
+        "loading_preview": "Chargement de l'aperçu…"
     },
     "exportPage": {
         "rubric_section_title": "Export de rubrique",
@@ -3492,5 +3493,15 @@
         "landing_student_sub": "Consulter les retours et rendre son travail",
         "delete_submission": "Supprimer la soumission",
         "paste_submission_code": "Collez ici le code de soumission de l'élève…"
+    },
+    "notFound": {
+        "heading": "404 — Page introuvable",
+        "body": "La page que vous recherchez n'existe pas ou a été déplacée.",
+        "go_dashboard": "Aller au tableau de bord"
+    },
+    "errors": {
+        "boundary_title": "Une erreur est survenue",
+        "boundary_body": "Une erreur inattendue est survenue. Vos données sont en sécurité — rechargez la page pour continuer.",
+        "reload": "Recharger la page"
     }
 }

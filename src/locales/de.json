@@ -1962,7 +1962,8 @@
         "comment_delete": "Löschen",
         "comment_author_you": "Du",
         "comment_author_teacher": "Lehrkraft",
-        "comments_empty": "Noch keine Kommentare. Wähle Text im Dokument oben aus, um einen hinzuzufügen."
+        "comments_empty": "Noch keine Kommentare. Wähle Text im Dokument oben aus, um einen hinzuzufügen.",
+        "loading_preview": "Vorschau wird geladen…"
     },
     "exportPage": {
         "rubric_section_title": "Rubrik-Export",
@@ -3492,5 +3493,15 @@
         "landing_student_sub": "Feedback ansehen und Arbeit einreichen",
         "delete_submission": "Einreichung löschen",
         "paste_submission_code": "Fügen Sie hier den Einreichungscode des Schülers ein…"
+    },
+    "notFound": {
+        "heading": "404 — Seite nicht gefunden",
+        "body": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+        "go_dashboard": "Zum Dashboard"
+    },
+    "errors": {
+        "boundary_title": "Etwas ist schiefgelaufen",
+        "boundary_body": "Ein unerwarteter Fehler ist aufgetreten. Ihre Daten sind sicher — laden Sie die Seite neu, um fortzufahren.",
+        "reload": "Seite neu laden"
     }
 }
