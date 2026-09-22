@@ -90,7 +90,7 @@ function UsersTab() {
         if (result.success) {
             setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
         } else {
-            showToast(result.error ?? 'Error', 'error');
+            showToast(result.error ?? t('common.unknown_error'), 'error');
         }
         setSaving(null);
     }
@@ -537,7 +537,7 @@ function DatabaseTab() {
             <div className="card" style={{ borderLeft: '4px solid var(--accent)' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
                     <Database size={20} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-                    <h3 style={{ margin: 0 }}>Database (Supabase)</h3>
+                    <h3 style={{ margin: 0 }}>{t('admin.db_title')}</h3>
                     <HelpPopover title={t('help.lww_title')}>{t('help.lww_body')}</HelpPopover>
                     <span
                         style={{
@@ -551,12 +551,12 @@ function DatabaseTab() {
                         {dbStatus.isConnected ? (
                             <>
                                 <Wifi size={14} style={{ color: 'var(--green)' }} aria-hidden="true" />
-                                <span style={{ color: 'var(--green)' }}>Connected</span>
+                                <span style={{ color: 'var(--green)' }}>{t('admin.connected')}</span>
                             </>
                         ) : (
                             <>
                                 <WifiOff size={14} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />
-                                <span style={{ color: 'var(--text-muted)' }}>Not connected</span>
+                                <span style={{ color: 'var(--text-muted)' }}>{t('admin.not_connected')}</span>
                             </>
                         )}
                     </span>
@@ -577,12 +577,12 @@ function DatabaseTab() {
                         >
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                 {dbStatus.lastSyncAt
-                                    ? `Last synced: ${new Date(dbStatus.lastSyncAt).toLocaleString()}`
-                                    : 'Not yet synced this session'}
+                                    ? t('admin.last_synced', { date: new Date(dbStatus.lastSyncAt).toLocaleString() })
+                                    : t('admin.not_synced')}
                             </div>
                             {dbStatus.userId && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Your user ID:</span>
+                                    <span style={{ color: 'var(--text-muted)' }}>{t('admin.your_user_id')}</span>
                                     <code
                                         style={{
                                             background: 'var(--bg)',
@@ -618,7 +618,9 @@ function DatabaseTab() {
 
                         {/* Display name */}
                         <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>Display name</div>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>
+                                {t('admin.display_name')}
+                            </div>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <input
                                     type="text"
@@ -637,12 +639,15 @@ function DatabaseTab() {
                                         });
                                         setSavingDisplayName(false);
                                         showToast(
-                                            result.success ? 'Display name saved' : `Error: ${result.error}`,
+                                            result.success
+                                                ? t('admin.display_name_saved')
+                                                : t('admin.error_generic', { error: result.error }),
                                             result.success ? 'success' : 'error'
                                         );
                                     }}
                                 >
-                                    <Save size={13} aria-hidden="true" /> {savingDisplayName ? 'Saving…' : 'Save'}
+                                    <Save size={13} aria-hidden="true" />{' '}
+                                    {savingDisplayName ? t('admin.saving') : t('common.save')}
                                 </button>
                             </div>
                         </div>
@@ -651,7 +656,7 @@ function DatabaseTab() {
                         {!dbStatus.currentUser?.email && (
                             <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
                                 <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8 }}>
-                                    Sign in with email (to enable sharing)
+                                    {t('admin.signin_email_title')}
                                 </div>
                                 {!otpSent ? (
                                     <div style={{ display: 'flex', gap: 8 }}>
@@ -669,11 +674,11 @@ function DatabaseTab() {
                                                 if (error) showToast(error, 'error');
                                                 else {
                                                     setOtpSent(true);
-                                                    showToast('Check your email for a login code', 'success');
+                                                    showToast(t('admin.check_email'), 'success');
                                                 }
                                             }}
                                         >
-                                            <LogIn size={14} aria-hidden="true" /> Send code
+                                            <LogIn size={14} aria-hidden="true" /> {t('admin.send_code')}
                                         </button>
                                     </div>
                                 ) : (
@@ -700,11 +705,11 @@ function DatabaseTab() {
                                                 else {
                                                     setOtpSent(false);
                                                     setDbOtp('');
-                                                    showToast('Signed in successfully', 'success');
+                                                    showToast(t('admin.signed_in'), 'success');
                                                 }
                                             }}
                                         >
-                                            <Check size={14} aria-hidden="true" /> Verify
+                                            <Check size={14} aria-hidden="true" /> {t('admin.verify')}
                                         </button>
                                     </div>
                                 )}
@@ -722,27 +727,26 @@ function DatabaseTab() {
                                         const result = await pushAllToDatabase();
                                         showToast(
                                             result.success
-                                                ? 'All local data pushed to database'
-                                                : `Push failed: ${result.error}`,
+                                                ? t('admin.pushed_ok')
+                                                : t('admin.push_failed', { error: result.error }),
                                             result.success ? 'success' : 'error'
                                         );
                                     } catch (err) {
                                         console.error('Push to database failed:', err);
-                                        showToast('Push failed unexpectedly', 'error');
+                                        showToast(t('admin.push_failed_unexpected'), 'error');
                                     } finally {
                                         setDbSyncing(false);
                                     }
                                 }}
                             >
                                 <Upload size={15} aria-hidden="true" />{' '}
-                                {dbSyncing ? 'Pushing…' : 'Push local → database'}
+                                {dbSyncing ? t('admin.pushing') : t('admin.push_local')}
                             </button>
                             <button
                                 className="btn btn-secondary"
                                 disabled={dbSyncing}
                                 onClick={async () => {
-                                    if (!confirm('This will overwrite your local data with the database. Continue?'))
-                                        return;
+                                    if (!confirm(t('admin.pull_confirm'))) return;
                                     setDbSyncing(true);
                                     try {
                                         await pullFromDatabase();
@@ -751,17 +755,17 @@ function DatabaseTab() {
                                     }
                                 }}
                             >
-                                <Download size={15} aria-hidden="true" /> Pull database → local
+                                <Download size={15} aria-hidden="true" /> {t('admin.pull_local')}
                             </button>
                             <button
                                 className="btn btn-ghost"
                                 style={{ marginLeft: 'auto' }}
                                 onClick={async () => {
                                     await signOutFromDatabase();
-                                    showToast('Signed out from database', 'info');
+                                    showToast(t('admin.signed_out'), 'info');
                                 }}
                             >
-                                <LogOut size={14} aria-hidden="true" /> Sign out
+                                <LogOut size={14} aria-hidden="true" /> {t('admin.sign_out')}
                             </button>
                         </div>
 
@@ -1178,12 +1182,12 @@ function DatabaseTab() {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                         <p className="text-muted text-sm" style={{ margin: 0 }}>
-                            Sign in to sync your data across devices and share with colleagues.
+                            {t('admin.signin_prompt')}
                         </p>
                         <LoginButtons
                             supabaseReady={supabaseReady}
                             onNeedConfig={() => setShowAdvancedConnect(true)}
-                            onEmailSuccess={() => showToast('Signed in — reconnect to sync', 'success')}
+                            onEmailSuccess={() => showToast(t('admin.signed_in_reconnect'), 'success')}
                         />
                         <div>
                             <button
@@ -1201,12 +1205,13 @@ function DatabaseTab() {
                                 onClick={() => setShowAdvancedConnect((o) => !o)}
                             >
                                 {showAdvancedConnect ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                                Self-hosted / advanced (manual connection)
+                                {t('admin.selfhost_toggle')}
                             </button>
                             {showAdvancedConnect && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
                                     <p className="text-muted text-sm" style={{ margin: 0 }}>
-                                        Run <code>supabase start</code> locally or use a custom project at{' '}
+                                        {t('admin.selfhost_run')} <code>supabase start</code>{' '}
+                                        {t('admin.selfhost_or_custom')}{' '}
                                         <a
                                             href="https://supabase.com"
                                             target="_blank"
@@ -1218,7 +1223,7 @@ function DatabaseTab() {
                                         .
                                     </p>
                                     <div className="form-group">
-                                        <label>Supabase URL</label>
+                                        <label>{t('admin.supabase_url')}</label>
                                         <input
                                             type="text"
                                             value={dbUrl}
@@ -1227,7 +1232,7 @@ function DatabaseTab() {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Anon key</label>
+                                        <label>{t('admin.anon_key')}</label>
                                         <input
                                             type="password"
                                             value={dbKey}
@@ -1250,17 +1255,17 @@ function DatabaseTab() {
                                                 if (ok) {
                                                     setSupabaseReady(true);
                                                     setShowAdvancedConnect(false);
-                                                    showToast('Supabase configured — sign in above', 'success');
-                                                } else showToast('Connection failed — check URL and key', 'error');
+                                                    showToast(t('admin.configured'), 'success');
+                                                } else showToast(t('admin.connect_failed'), 'error');
                                             }}
                                         >
                                             {dbConnecting ? (
                                                 <>
-                                                    <RefreshCw size={13} className="spin" /> Connecting…
+                                                    <RefreshCw size={13} className="spin" /> {t('admin.connecting')}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Database size={13} /> Set Supabase instance
+                                                    <Database size={13} /> {t('admin.set_instance')}
                                                 </>
                                             )}
                                         </button>
@@ -1275,20 +1280,18 @@ function DatabaseTab() {
                                                 });
                                                 setDbConnecting(false);
                                                 showToast(
-                                                    ok
-                                                        ? 'Connected to database'
-                                                        : 'Connection failed — check URL and key',
+                                                    ok ? t('admin.connected_ok') : t('admin.connect_failed'),
                                                     ok ? 'success' : 'error'
                                                 );
                                             }}
                                         >
                                             {dbConnecting ? (
                                                 <>
-                                                    <RefreshCw size={13} className="spin" /> Connecting…
+                                                    <RefreshCw size={13} className="spin" /> {t('admin.connecting')}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Database size={13} /> Connect &amp; Sync (anonymous)
+                                                    <Database size={13} /> {t('admin.connect_sync_anon')}
                                                 </>
                                             )}
                                         </button>
