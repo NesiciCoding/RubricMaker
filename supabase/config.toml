@@ -51,6 +51,6 @@ enable_confirmations = false
 # admin_email = "rubricmaker@school.nl"
 # sender_name = "RubricMaker"
 
-[[auth.mfa.totp]]
+[auth.mfa.totp]
 enroll_enabled = false
 verify_enabled = false

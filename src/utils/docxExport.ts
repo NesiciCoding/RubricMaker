@@ -25,7 +25,7 @@ import type {
     TestStrengthBucket,
 } from '../types';
 import { calcGradeSummary, orderedLevels } from './gradeCalc';
-import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
+import { calcQuestionBreakdowns, calcSkillBreakdowns, effectiveTestQuestions } from './testSummaryAggregator';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 
 // Re-exported for existing call sites that import stripHtmlTags from here.
@@ -516,7 +516,7 @@ function buildTestSummaryChildren(
 ) {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
-    const questionsById = new Map(test.questions.map((q) => [q.id, q]));
+    const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
 
     const headerRow = (labels: string[]) =>
         new TableRow({

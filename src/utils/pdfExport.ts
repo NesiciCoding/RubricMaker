@@ -1,6 +1,6 @@
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
-import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
+import { calcQuestionBreakdowns, calcSkillBreakdowns, effectiveTestQuestions } from './testSummaryAggregator';
 import { formatPointsRange, stripCommentHtml } from './exportDataPrep';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
@@ -384,7 +384,7 @@ function buildTestSummaryHTML(
 ): string {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
-    const questionsById = new Map(test.questions.map((q) => [q.id, q]));
+    const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
 
     const questionRows = questions
         .map((qb, i) => {
