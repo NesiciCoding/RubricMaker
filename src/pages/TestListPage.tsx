@@ -98,22 +98,26 @@ export default function TestListPage() {
     const [showGenerateModal, setShowGenerateModal] = useState(false);
 
     async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
-        const { buildTestStudentSummary } = await import('../utils/testAnswerText');
+        const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
         const { effectiveTestQuestions } = await import('../utils/testSummaryAggregator');
         const { saveAs } = await import('file-saver');
         const { sanitizeFilename } = await import('../utils/exportDataPrep');
 
+        // Scope the question set to the exported attempt so adaptive questions from other attempts
+        // don't appear as blank rows.
         const summaryFor = (studentTest: StudentTest) =>
             buildTestStudentSummary(
                 test,
                 studentTest,
                 students.find((s) => s.id === studentTest.studentId),
-                effectiveTestQuestions(studentTest.studentId, studentTests, test),
+                effectiveTestQuestions(studentTest.studentId, [studentTest], test),
                 settings.cefrAchieveThreshold
             );
 
         if (exportScope === 'single') {
-            const studentTest = relevantStudentTests.filter((st) => st.studentId === exportStudentId).at(-1);
+            const studentTest = pickLatestAttempt(
+                relevantStudentTests.filter((st) => st.studentId === exportStudentId)
+            );
             if (!studentTest) return;
             const student = students.find((s) => s.id === exportStudentId);
             saveAs(
@@ -123,8 +127,17 @@ export default function TestListPage() {
             logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: 1 });
             return;
         }
+        const attemptsByStudent = new Map<string, StudentTest[]>();
+        for (const st of relevantStudentTests) {
+            const arr = attemptsByStudent.get(st.studentId);
+            if (arr) arr.push(st);
+            else attemptsByStudent.set(st.studentId, [st]);
+        }
         const latestByStudent = new Map<string, StudentTest>();
-        for (const st of relevantStudentTests) latestByStudent.set(st.studentId, st);
+        for (const [studentId, attempts] of attemptsByStudent) {
+            const latest = pickLatestAttempt(attempts);
+            if (latest) latestByStudent.set(studentId, latest);
+        }
         const text = [...latestByStudent.values()].map(summaryFor).join('\n\n' + '═'.repeat(40) + '\n\n');
         saveAs(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${sanitizeFilename(test.name)}_summaries.txt`);
         logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: latestByStudent.size });

@@ -6,6 +6,7 @@ import {
     buildTestStudentSummary,
     buildAnswerRows,
     describeTestMeta,
+    pickLatestAttempt,
 } from './testAnswerText';
 import type { Student, StudentTest, Test, TestQuestion } from '../types';
 
@@ -53,6 +54,31 @@ describe('formatGivenAnswer / formatCorrectAnswer', () => {
     it('open-ended has no correct answer', () => {
         expect(formatCorrectAnswer({ id: 'q', prompt: '', type: 'open', points: 5 })).toBe('');
     });
+
+    it('true-false with an unset correctBoolean matches the scorer (true is correct)', () => {
+        expect(formatCorrectAnswer({ id: 'q', prompt: '', type: 'true-false', points: 1 })).toBe('True');
+        expect(formatCorrectAnswer({ id: 'q', prompt: '', type: 'true-false', points: 1, correctBoolean: false })).toBe(
+            'False'
+        );
+    });
+});
+
+describe('pickLatestAttempt', () => {
+    const at = (id: string, attemptNumber: number): StudentTest => ({
+        id,
+        testId: 't1',
+        studentId: 's1',
+        answers: [],
+        status: 'graded',
+        startedAt: '2024-01-01T00:00:00.000Z',
+        attemptNumber,
+    });
+    it('returns null for an empty list', () => {
+        expect(pickLatestAttempt([])).toBeNull();
+    });
+    it('picks the highest attemptNumber regardless of array order', () => {
+        expect(pickLatestAttempt([at('a', 2), at('b', 1), at('c', 3)])?.id).toBe('c');
+    });
 });
 
 const baseTest: Test = {
@@ -83,6 +109,20 @@ describe('describeTestCefr', () => {
 
     it('returns null when the test carries no CEFR data', () => {
         expect(describeTestCefr(baseTest, null)).toBeNull();
+    });
+
+    it('includes class-wide adjustment points in the achievement calculation', () => {
+        const test: Test = { ...baseTest, cefrTargetLevel: 'B1' };
+        const st: StudentTest = {
+            id: 'st1',
+            testId: 't1',
+            studentId: 's1',
+            answers: [{ questionId: 'q1', response: 'o1' }], // 0/1 raw → 0%
+            adjustmentPoints: 1, // +1 → 1/1 → 100%
+            status: 'graded',
+            startedAt: '2024-01-02T00:00:00.000Z',
+        };
+        expect(describeTestCefr(test, st)).toContain('achieved');
     });
 
     it('honours a configurable achieve threshold', () => {

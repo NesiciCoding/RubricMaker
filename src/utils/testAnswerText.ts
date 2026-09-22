@@ -6,6 +6,23 @@ import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTes
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
 import { summarizeProctorFlags } from './proctorAggregator';
 
+/**
+ * Canonical "which submission represents this student" selector, shared by every export format:
+ * highest attemptNumber, then latest submittedAt/startedAt — never array position, which isn't
+ * guaranteed to be attempt order after import or sync. Returns null for an empty list.
+ */
+export function pickLatestAttempt(attempts: StudentTest[]): StudentTest | null {
+    if (attempts.length === 0) return null;
+    return attempts.reduce((latest, candidate) => {
+        const latestAttempt = latest.attemptNumber ?? 1;
+        const candidateAttempt = candidate.attemptNumber ?? 1;
+        if (candidateAttempt !== latestAttempt) return candidateAttempt > latestAttempt ? candidate : latest;
+        const latestTime = Date.parse(latest.submittedAt ?? latest.startedAt);
+        const candidateTime = Date.parse(candidate.submittedAt ?? candidate.startedAt);
+        return candidateTime > latestTime ? candidate : latest;
+    });
+}
+
 function parseJson<T>(raw: string, fallback: T): T {
     try {
         return JSON.parse(raw) as T;
@@ -88,7 +105,8 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .map((o) => o.text)
                 .join(', ');
         case 'true-false':
-            return question.correctBoolean ? 'True' : 'False';
+            // Match autoScoreResponse: an unset correctBoolean scores `true` as correct.
+            return (question.correctBoolean ?? true) ? 'True' : 'False';
         case 'short-answer': {
             const accepted = question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : []);
             return accepted.join(' / ');
@@ -146,7 +164,8 @@ export function describeTestCefr(
     if (!studentTest) return `${target}${skill} (target)`;
     const maxPoints = calcTestMaxPoints(test);
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
-    const pct = calcTestPercentage(rawPoints, maxPoints);
+    const adjustedPoints = rawPoints + (studentTest.adjustmentPoints ?? 0);
+    const pct = calcTestPercentage(adjustedPoints, maxPoints);
     const achieved = pct >= achieveThreshold;
     return `${target}${skill} target — ${achieved ? 'achieved' : 'not yet'} (${pct.toFixed(0)}%, threshold ${achieveThreshold}%)`;
 }

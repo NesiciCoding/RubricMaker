@@ -37,6 +37,7 @@ import {
     describePlacementPath,
     describeTestCefr,
     describeTestMeta,
+    pickLatestAttempt,
     type AnswerStatus,
 } from './testAnswerText';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
@@ -530,13 +531,14 @@ function buildTestSummaryChildren(
 ) {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
-    const effectiveQuestions = effectiveTestQuestions(studentId, studentTests, test);
-    const questionsById = new Map(effectiveQuestions.map((q) => [q.id, q]));
+    const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
 
     const studentTest =
         studentId !== null
-            ? (studentTests.filter((st) => st.testId === test.id && st.studentId === studentId).at(-1) ?? null)
+            ? pickLatestAttempt(studentTests.filter((st) => st.testId === test.id && st.studentId === studentId))
             : null;
+    // Scope the answer breakdown to just the exported attempt (see pdfExport for rationale).
+    const answerQuestions = studentTest ? effectiveTestQuestions(studentId, [studentTest], test) : [];
     const cefr = describeTestCefr(test, studentTest, achieveThreshold);
 
     const headerRow = (labels: string[]) =>
@@ -674,7 +676,7 @@ function buildTestSummaryChildren(
             blank: '9ca3af',
             na: '6b7280',
         };
-        const answerRows = buildAnswerRows(test, studentTest, effectiveQuestions).map((row, i) => {
+        const answerRows = buildAnswerRows(test, studentTest, answerQuestions).map((row, i) => {
             const color = statusColor[row.status];
             const mark = ANSWER_STATUS_MARK[row.status];
             return new TableRow({

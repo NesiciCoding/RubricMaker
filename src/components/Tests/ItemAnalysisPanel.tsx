@@ -44,7 +44,9 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
     const analysis = calcTestItemAnalysis(studentTests, test);
     const chartData = analysis.map((row, index) => ({
         label: `Q${index + 1}`,
-        pValue: row.pValue ?? 0,
+        // Keep the raw (nullable) p-value for tooltip/color; a null renders no bar rather than a
+        // misleading zero-height "hard" bar.
+        pValue: row.pValue,
     }));
 
     return (
@@ -70,8 +72,8 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
                             borderRadius: 8,
                         }}
                         formatter={(value: unknown) => {
-                            const v = typeof value === 'number' ? value : 0;
-                            return [v.toFixed(2), t('tests.results.item_analysis_pvalue')];
+                            const label = typeof value === 'number' ? value.toFixed(2) : '—';
+                            return [label, t('tests.results.item_analysis_pvalue')];
                         }}
                     />
                     <Bar dataKey="pValue" radius={[4, 4, 0, 0]}>

@@ -12,6 +12,7 @@ import {
     describePlacementPath,
     describeTestCefr,
     describeTestMeta,
+    pickLatestAttempt,
 } from './testAnswerText';
 import { formatPointsRange, stripCommentHtml, escapeHtml } from './exportDataPrep';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
@@ -397,13 +398,15 @@ function buildTestSummaryHTML(
 ): string {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
-    const effectiveQuestions = effectiveTestQuestions(studentId, studentTests, test);
-    const questionsById = new Map(effectiveQuestions.map((q) => [q.id, q]));
+    const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
 
     const studentTest =
         studentId !== null
-            ? (studentTests.filter((st) => st.testId === test.id && st.studentId === studentId).at(-1) ?? null)
+            ? pickLatestAttempt(studentTests.filter((st) => st.testId === test.id && st.studentId === studentId))
             : null;
+    // Scope the answer breakdown to just the exported attempt so adaptive questions from other
+    // attempts don't leak in as blank rows.
+    const answerQuestions = studentTest ? effectiveTestQuestions(studentId, [studentTest], test) : [];
     const cefr = describeTestCefr(test, studentTest, achieveThreshold);
     const metaLines = studentTest ? describeTestMeta(studentTest) : [];
     const placementPath = studentTest ? describePlacementPath(test, studentTest) : [];
@@ -416,7 +419,7 @@ function buildTestSummaryHTML(
         na: '#6b7280',
     };
     const answerRows = studentTest
-        ? buildAnswerRows(test, studentTest, effectiveQuestions)
+        ? buildAnswerRows(test, studentTest, answerQuestions)
               .map((row, i) => {
                   const color = STATUS_COLOR[row.status];
                   const mark = ANSWER_STATUS_MARK[row.status];
