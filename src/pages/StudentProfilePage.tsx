@@ -297,7 +297,7 @@ export default function StudentProfilePage() {
                     }
                 />
                 <div className="page-content fade-in">
-                    <div className="empty-state">Student not found</div>
+                    <div className="empty-state">{t('studentProfile.not_found')}</div>
                 </div>
             </>
         );
@@ -1184,16 +1184,16 @@ export default function StudentProfilePage() {
                             })()}
 
                             <div className="card">
-                                <h3 style={{ marginBottom: 14 }}>Rubric History</h3>
+                                <h3 style={{ marginBottom: 14 }}>{t('studentProfile.history_title')}</h3>
                                 <table className="data-table">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
-                                            <th>Rubric</th>
-                                            <th>Score</th>
-                                            <th>Grade</th>
-                                            <th>Comment</th>
-                                            <th>Action</th>
+                                            <th>{t('studentProfile.col_date')}</th>
+                                            <th>{t('studentProfile.col_rubric')}</th>
+                                            <th>{t('studentProfile.col_score')}</th>
+                                            <th>{t('studentProfile.col_grade')}</th>
+                                            <th>{t('studentProfile.col_comment')}</th>
+                                            <th>{t('studentProfile.col_action')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>

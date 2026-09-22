@@ -3188,7 +3188,15 @@
         "portfolio_kind_grade": "Rubric Grade",
         "no_grades_yet": "No graded rubrics yet for this student.",
         "past_classes": "Past classes",
-        "unknown_class": "Unknown class"
+        "unknown_class": "Unknown class",
+        "not_found": "Student not found",
+        "history_title": "Rubric History",
+        "col_date": "Date",
+        "col_rubric": "Rubric",
+        "col_score": "Score",
+        "col_grade": "Grade",
+        "col_comment": "Comment",
+        "col_action": "Action"
     },
     "standards": {
         "remove_favorite": "Remove favorite standard",

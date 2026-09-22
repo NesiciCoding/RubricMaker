@@ -3190,7 +3190,15 @@
         "portfolio_kind_grade": "Note de rubrique",
         "no_grades_yet": "Aucune rubrique notée pour cet élève.",
         "past_classes": "Classes précédentes",
-        "unknown_class": "Classe inconnue"
+        "unknown_class": "Classe inconnue",
+        "not_found": "Élève introuvable",
+        "history_title": "Historique des grilles",
+        "col_date": "Date",
+        "col_rubric": "Grille",
+        "col_score": "Score",
+        "col_grade": "Note",
+        "col_comment": "Commentaire",
+        "col_action": "Action"
     },
     "standards": {
         "remove_favorite": "Retirer le standard favori",

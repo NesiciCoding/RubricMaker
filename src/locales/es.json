@@ -3190,7 +3190,15 @@
         "portfolio_kind_grade": "Calificación de rúbrica",
         "no_grades_yet": "Aún no hay rúbricas calificadas para este estudiante.",
         "past_classes": "Clases anteriores",
-        "unknown_class": "Clase desconocida"
+        "unknown_class": "Clase desconocida",
+        "not_found": "Alumno no encontrado",
+        "history_title": "Historial de rúbricas",
+        "col_date": "Fecha",
+        "col_rubric": "Rúbrica",
+        "col_score": "Puntuación",
+        "col_grade": "Calificación",
+        "col_comment": "Comentario",
+        "col_action": "Acción"
     },
     "standards": {
         "remove_favorite": "Quitar estándar favorito",

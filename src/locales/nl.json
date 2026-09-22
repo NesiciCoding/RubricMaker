@@ -3190,7 +3190,15 @@
         "portfolio_kind_grade": "Rubricbeoordeling",
         "no_grades_yet": "Nog geen beoordeelde rubrieken voor deze leerling.",
         "past_classes": "Eerdere klassen",
-        "unknown_class": "Onbekende klas"
+        "unknown_class": "Onbekende klas",
+        "not_found": "Leerling niet gevonden",
+        "history_title": "Rubricgeschiedenis",
+        "col_date": "Datum",
+        "col_rubric": "Rubric",
+        "col_score": "Score",
+        "col_grade": "Cijfer",
+        "col_comment": "Opmerking",
+        "col_action": "Actie"
     },
     "standards": {
         "remove_favorite": "Favoriete standaard verwijderen",
