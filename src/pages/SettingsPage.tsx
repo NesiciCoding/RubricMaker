@@ -384,7 +384,7 @@ export default function SettingsPage() {
             <Topbar title={t('settings.title')} />
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
                 {/* Tab bar */}
-                <nav className="settings-tabs" aria-label="Settings sections" role="tablist">
+                <nav className="settings-tabs" aria-label={t('a11y.settings_sections')} role="tablist">
                     <button
                         role="tab"
                         className={`settings-tab${activeTab === 'general' ? ' active' : ''}`}
@@ -1530,7 +1530,7 @@ export default function SettingsPage() {
                                                                 void confirmPinAndSwitch('admin');
                                                             }
                                                         }}
-                                                        placeholder="Enter admin password"
+                                                        placeholder={t('tooltips.enter_admin_password')}
                                                         aria-invalid={pinError ? 'true' : undefined}
                                                         style={{ flex: 1 }}
                                                         autoFocus
@@ -2046,7 +2046,7 @@ export default function SettingsPage() {
                         <button
                             className="btn btn-ghost btn-icon btn-sm"
                             onClick={() => setDeleteScaleId(null)}
-                            aria-label="Close"
+                            aria-label={t('common.close')}
                         >
                             ✕
                         </button>
@@ -2082,7 +2082,7 @@ export default function SettingsPage() {
                             type="button"
                             className="btn btn-ghost btn-icon btn-sm"
                             onClick={() => setDeleteMasteryTargetId(null)}
-                            aria-label="Close"
+                            aria-label={t('common.close')}
                         >
                             ✕
                         </button>
@@ -2130,7 +2130,7 @@ export default function SettingsPage() {
                                 setPinInput('');
                                 setPinError(false);
                             }}
-                            aria-label="Close"
+                            aria-label={t('common.close')}
                         >
                             ✕
                         </button>

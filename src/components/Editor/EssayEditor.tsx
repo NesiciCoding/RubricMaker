@@ -251,14 +251,14 @@ export default function EssayEditor({
                     {/* ── History ── */}
                     <ToolbarBtn
                         onClick={() => editor.chain().focus().undo().run()}
-                        title="Undo (Ctrl+Z)"
+                        title={`${t('editor.undo')} (Ctrl+Z)`}
                         disabled={!editor.can().undo()}
                     >
                         <Undo2 size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         onClick={() => editor.chain().focus().redo().run()}
-                        title="Redo (Ctrl+Y)"
+                        title={`${t('editor.redo')} (Ctrl+Y)`}
                         disabled={!editor.can().redo()}
                     >
                         <Redo2 size={15} />
@@ -288,7 +288,7 @@ export default function EssayEditor({
                                     .run();
                         }}
                         style={selectStyle}
-                        title="Paragraph style"
+                        title={t('editor.paragraph_style')}
                     >
                         <option value="p">Paragraph</option>
                         <option value="h1">Heading 1</option>
@@ -305,7 +305,7 @@ export default function EssayEditor({
                             else editor.chain().focus().setFontFamily(v).run();
                         }}
                         style={{ ...selectStyle, maxWidth: 140 }}
-                        title="Font family"
+                        title={t('editor.font_family')}
                     >
                         {FONT_FAMILIES.map((f) => (
                             <option key={f.value} value={f.value}>
@@ -323,7 +323,7 @@ export default function EssayEditor({
                             else editor.chain().focus().setFontSize(`${v}pt`).run();
                         }}
                         style={{ ...selectStyle, width: 60 }}
-                        title="Font size"
+                        title={t('editor.font_size')}
                     >
                         <option value="">Size</option>
                         {FONT_SIZES.filter((s) => s !== '').map((s) => (
@@ -339,42 +339,42 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={editor.isActive('bold')}
                         onClick={() => editor.chain().focus().toggleBold().run()}
-                        title="Bold (Ctrl+B)"
+                        title={`${t('editor.bold')} (Ctrl+B)`}
                     >
                         <Bold size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('italic')}
                         onClick={() => editor.chain().focus().toggleItalic().run()}
-                        title="Italic (Ctrl+I)"
+                        title={`${t('editor.italic')} (Ctrl+I)`}
                     >
                         <Italic size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('underline')}
                         onClick={() => editor.chain().focus().toggleUnderline().run()}
-                        title="Underline (Ctrl+U)"
+                        title={`${t('editor.underline')} (Ctrl+U)`}
                     >
                         <UnderlineIcon size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('strike')}
                         onClick={() => editor.chain().focus().toggleStrike().run()}
-                        title="Strikethrough"
+                        title={t('editor.strikethrough')}
                     >
                         <Strikethrough size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('superscript')}
                         onClick={() => editor.chain().focus().toggleSuperscript().run()}
-                        title="Superscript"
+                        title={t('editor.superscript')}
                     >
                         <SuperscriptIcon size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('subscript')}
                         onClick={() => editor.chain().focus().toggleSubscript().run()}
-                        title="Subscript"
+                        title={t('editor.subscript')}
                     >
                         <SubscriptIcon size={15} />
                     </ToolbarBtn>
@@ -382,7 +382,10 @@ export default function EssayEditor({
                     <Divider />
 
                     {/* ── Colour + highlight ── */}
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }} title="Text colour">
+                    <div
+                        style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                        title={t('editor.text_colour')}
+                    >
                         <button
                             type="button"
                             onClick={() => colorInputRef.current?.click()}
@@ -399,7 +402,7 @@ export default function EssayEditor({
                                 color: 'var(--text)',
                                 flexShrink: 0,
                             }}
-                            title="Text colour"
+                            title={t('editor.text_colour')}
                         >
                             <span style={{ fontSize: 12, fontWeight: 700, lineHeight: 1, fontFamily: 'serif' }}>A</span>
                             <span
@@ -417,12 +420,12 @@ export default function EssayEditor({
                             defaultValue="#000000"
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
-                            title="Text colour"
+                            title={t('editor.text_colour')}
                         />
                     </div>
                     <div
                         style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
-                        title="Highlight colour"
+                        title={t('editor.highlight_colour')}
                     >
                         <button
                             type="button"
@@ -444,7 +447,7 @@ export default function EssayEditor({
                                 color: 'var(--text)',
                                 flexShrink: 0,
                             }}
-                            title="Highlight"
+                            title={t('editor.highlight')}
                         >
                             <Highlighter size={15} />
                         </button>
@@ -454,12 +457,12 @@ export default function EssayEditor({
                             defaultValue="#fde68a"
                             style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
                             onChange={(e) => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
-                            title="Highlight colour"
+                            title={t('editor.highlight_colour')}
                         />
                     </div>
                     <ToolbarBtn
                         onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
-                        title="Clear formatting"
+                        title={t('editor.clear_formatting')}
                     >
                         <RemoveFormatting size={15} />
                     </ToolbarBtn>
@@ -475,7 +478,7 @@ export default function EssayEditor({
                             else editor.chain().focus().setLineHeight(v).run();
                         }}
                         style={{ ...selectStyle, width: 100 }}
-                        title="Line height"
+                        title={t('editor.line_height')}
                     >
                         {LINE_HEIGHTS.map((lh) => (
                             <option key={lh.value} value={lh.value}>
@@ -488,28 +491,28 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={editor.isActive({ textAlign: 'left' })}
                         onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                        title="Align left"
+                        title={t('editor.align_left')}
                     >
                         <AlignLeft size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive({ textAlign: 'center' })}
                         onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                        title="Align centre"
+                        title={t('editor.align_centre')}
                     >
                         <AlignCenter size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive({ textAlign: 'right' })}
                         onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                        title="Align right"
+                        title={t('editor.align_right')}
                     >
                         <AlignRight size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive({ textAlign: 'justify' })}
                         onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-                        title="Justify"
+                        title={t('editor.justify')}
                     >
                         <AlignJustify size={15} />
                     </ToolbarBtn>
@@ -520,21 +523,21 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={editor.isActive('bulletList')}
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
-                        title="Bullet list"
+                        title={t('editor.bullet_list')}
                     >
                         <List size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('orderedList')}
                         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                        title="Numbered list"
+                        title={t('editor.ordered_list')}
                     >
                         <ListOrdered size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         active={editor.isActive('taskList')}
                         onClick={() => editor.chain().focus().toggleTaskList().run()}
-                        title="Checklist"
+                        title={t('editor.checklist')}
                     >
                         <ListChecks size={15} />
                     </ToolbarBtn>
@@ -545,13 +548,13 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={editor.isActive('blockquote')}
                         onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                        title="Blockquote"
+                        title={t('editor.blockquote')}
                     >
                         <Quote size={15} />
                     </ToolbarBtn>
                     <ToolbarBtn
                         onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                        title="Horizontal line"
+                        title={t('editor.horizontal_line')}
                     >
                         <Minus size={15} />
                     </ToolbarBtn>
@@ -562,18 +565,21 @@ export default function EssayEditor({
                     <ToolbarBtn
                         active={editor.isActive('link')}
                         onClick={handleInsertLink}
-                        title="Insert / edit link (Ctrl+K)"
+                        title={`${t('editor.link')} (Ctrl+K)`}
                     >
                         <Link2 size={15} />
                     </ToolbarBtn>
                     {editor.isActive('link') && (
-                        <ToolbarBtn onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link">
+                        <ToolbarBtn
+                            onClick={() => editor.chain().focus().unsetLink().run()}
+                            title={t('editor.remove_link')}
+                        >
                             <Unlink size={15} />
                         </ToolbarBtn>
                     )}
 
                     {/* ── Table ── */}
-                    <ToolbarBtn onClick={handleInsertTable} title="Insert table (3×3)">
+                    <ToolbarBtn onClick={handleInsertTable} title={t('editor.insert_table')}>
                         <TableIcon size={15} />
                     </ToolbarBtn>
 
@@ -586,7 +592,7 @@ export default function EssayEditor({
                             setShowInvisibles((v) => !v);
                             editor.commands.toggleInvisibleCharacters();
                         }}
-                        title="Show formatting marks"
+                        title={t('editor.show_formatting_marks')}
                     >
                         <span style={{ fontSize: 14, lineHeight: 1, fontFamily: 'serif', fontWeight: 400 }}>¶</span>
                     </ToolbarBtn>

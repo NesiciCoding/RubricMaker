@@ -125,7 +125,7 @@ export default function TemplateUploadModal({ onClose, onSave }: Props) {
                 <h3 id="template-upload-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <FileText size={18} aria-hidden="true" /> Upload Export Template
                 </h3>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>

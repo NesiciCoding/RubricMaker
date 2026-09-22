@@ -149,7 +149,11 @@
         "export_csv": "Export CSV",
         "prev": "Previous",
         "next": "Next",
-        "view_grid": "Grid"
+        "view_grid": "Grid",
+        "download": "Download",
+        "preview": "Preview",
+        "refresh": "Refresh",
+        "password": "Password"
     },
     "slip_sheet": {
         "class_slips_one": "Class slips — {{count}} student",
@@ -2466,7 +2470,36 @@
         "switchToPageView": "Switch to A4 page view",
         "tableOfContents": "Table of contents",
         "untitledHeading": "Untitled heading",
-        "dragToReorder": "Drag to reorder"
+        "dragToReorder": "Drag to reorder",
+        "undo": "Undo",
+        "redo": "Redo",
+        "paragraph_style": "Paragraph style",
+        "font_family": "Font family",
+        "font_size": "Font size",
+        "bold": "Bold",
+        "italic": "Italic",
+        "underline": "Underline",
+        "strikethrough": "Strikethrough",
+        "superscript": "Superscript",
+        "subscript": "Subscript",
+        "text_colour": "Text colour",
+        "highlight": "Highlight",
+        "highlight_colour": "Highlight colour",
+        "clear_formatting": "Clear formatting",
+        "line_height": "Line height",
+        "align_left": "Align left",
+        "align_centre": "Align centre",
+        "align_right": "Align right",
+        "justify": "Justify",
+        "bullet_list": "Bullet list",
+        "ordered_list": "Numbered list",
+        "checklist": "Checklist",
+        "blockquote": "Blockquote",
+        "horizontal_line": "Horizontal line",
+        "link": "Insert / edit link",
+        "remove_link": "Remove link",
+        "insert_table": "Insert table (3×3)",
+        "show_formatting_marks": "Show formatting marks"
     },
     "docs": {
         "section_title": "Documentation",
@@ -3190,7 +3223,12 @@
         "sync_confirm_action": "Import & sync"
     },
     "a11y": {
-        "skip_to_content": "Skip to main content"
+        "skip_to_content": "Skip to main content",
+        "open_nav": "Open navigation menu",
+        "close_nav": "Close navigation menu",
+        "loading": "Loading",
+        "settings_sections": "Settings sections",
+        "cefr_level": "CEFR level"
     },
     "help": {
         "score_modifier_title": "Score Modifiers",
@@ -3425,5 +3463,32 @@
         "check_words": "Least confident words — check these:",
         "rescan": "Scan again",
         "insert": "Insert into feedback"
+    },
+    "tooltips": {
+        "copy_user_id": "Copy user ID",
+        "admin_name_placeholder": "Your name (visible to colleagues)",
+        "clear_template": "Clear template",
+        "new_page_per_student": "Adds to blank page so each student starts on a new physical sheet",
+        "export_word_results": "Export graded results as a Word document",
+        "copy_feedback_link": "Copy student feedback link",
+        "open_as_student": "Open as student (dev only)",
+        "copy_share_code": "Copy share code (for other teachers)",
+        "share_preview": "Share preview with students (copy link)",
+        "paste_share_code": "Paste share code here…",
+        "enter_admin_password": "Enter admin password",
+        "student_profile": "Student Profile",
+        "self_peer_review": "Self/Peer Review",
+        "edit_grade": "Edit Grade",
+        "page_not_found": "Page not found",
+        "privacy_title": "Privacy & AVG/GDPR",
+        "cefrj_estimate": "CEFR-J text profile estimate (vocabulary / grammar)",
+        "landing_tryout_title": "Try-out / Offline",
+        "landing_tryout_sub": "Work locally, no account needed",
+        "landing_teacher_title": "Teacher Login",
+        "landing_teacher_sub": "Sync across devices, share with colleagues",
+        "landing_student_title": "Student Login",
+        "landing_student_sub": "View feedback and submit work",
+        "delete_submission": "Delete submission",
+        "paste_submission_code": "Paste the student's submission code here…"
     }
 }

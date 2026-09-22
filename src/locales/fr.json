@@ -149,7 +149,11 @@
         "export_csv": "Exporter CSV",
         "prev": "Précédent",
         "next": "Suivant",
-        "view_grid": "Grille"
+        "view_grid": "Grille",
+        "download": "Télécharger",
+        "preview": "Aperçu",
+        "refresh": "Actualiser",
+        "password": "Mot de passe"
     },
     "slip_sheet": {
         "class_slips_one": "Fiches de classe — {{count}} élève",
@@ -2466,7 +2470,36 @@
         "switchToPageView": "Vue page A4",
         "tableOfContents": "Table des matières",
         "untitledHeading": "Titre sans nom",
-        "dragToReorder": "Glisser pour réorganiser"
+        "dragToReorder": "Glisser pour réorganiser",
+        "undo": "Annuler",
+        "redo": "Rétablir",
+        "paragraph_style": "Style de paragraphe",
+        "font_family": "Police",
+        "font_size": "Taille de police",
+        "bold": "Gras",
+        "italic": "Italique",
+        "underline": "Souligné",
+        "strikethrough": "Barré",
+        "superscript": "Exposant",
+        "subscript": "Indice",
+        "text_colour": "Couleur du texte",
+        "highlight": "Surligner",
+        "highlight_colour": "Couleur de surlignage",
+        "clear_formatting": "Effacer la mise en forme",
+        "line_height": "Interligne",
+        "align_left": "Aligner à gauche",
+        "align_centre": "Centrer",
+        "align_right": "Aligner à droite",
+        "justify": "Justifier",
+        "bullet_list": "Liste à puces",
+        "ordered_list": "Liste numérotée",
+        "checklist": "Liste de contrôle",
+        "blockquote": "Citation",
+        "horizontal_line": "Ligne horizontale",
+        "link": "Insérer / modifier le lien",
+        "remove_link": "Supprimer le lien",
+        "insert_table": "Insérer un tableau (3×3)",
+        "show_formatting_marks": "Afficher les marques de mise en forme"
     },
     "docs": {
         "section_title": "Documentation",
@@ -3192,7 +3225,12 @@
         "sync_confirm_action": "Importer et synchroniser"
     },
     "a11y": {
-        "skip_to_content": "Aller au contenu principal"
+        "skip_to_content": "Aller au contenu principal",
+        "open_nav": "Ouvrir le menu de navigation",
+        "close_nav": "Fermer le menu de navigation",
+        "loading": "Chargement",
+        "settings_sections": "Sections des paramètres",
+        "cefr_level": "Niveau CECRL"
     },
     "help": {
         "score_modifier_title": "Modificateurs de note",
@@ -3427,5 +3465,32 @@
         "check_words": "Mots les moins sûrs — à vérifier :",
         "rescan": "Numériser à nouveau",
         "insert": "Insérer dans le retour"
+    },
+    "tooltips": {
+        "copy_user_id": "Copier l'ID utilisateur",
+        "admin_name_placeholder": "Votre nom (visible par les collègues)",
+        "clear_template": "Effacer le modèle",
+        "new_page_per_student": "Ajoute une page vierge pour que chaque élève commence sur une nouvelle feuille",
+        "export_word_results": "Exporter les résultats notés en document Word",
+        "copy_feedback_link": "Copier le lien de retour de l'élève",
+        "open_as_student": "Ouvrir en tant qu'élève (dev uniquement)",
+        "copy_share_code": "Copier le code de partage (pour d'autres enseignants)",
+        "share_preview": "Partager l'aperçu avec les élèves (copier le lien)",
+        "paste_share_code": "Collez le code de partage ici…",
+        "enter_admin_password": "Saisir le mot de passe administrateur",
+        "student_profile": "Profil de l'élève",
+        "self_peer_review": "Auto-évaluation / évaluation par les pairs",
+        "edit_grade": "Modifier la note",
+        "page_not_found": "Page introuvable",
+        "privacy_title": "Confidentialité et RGPD",
+        "cefrj_estimate": "Estimation du profil de texte CEFR-J (vocabulaire / grammaire)",
+        "landing_tryout_title": "Essai / Hors ligne",
+        "landing_tryout_sub": "Travaillez en local, sans compte",
+        "landing_teacher_title": "Connexion enseignant",
+        "landing_teacher_sub": "Synchronisez entre appareils, partagez avec des collègues",
+        "landing_student_title": "Connexion élève",
+        "landing_student_sub": "Consulter les retours et rendre son travail",
+        "delete_submission": "Supprimer la soumission",
+        "paste_submission_code": "Collez ici le code de soumission de l'élève…"
     }
 }

@@ -137,7 +137,7 @@ describe('AttachmentsPage', () => {
         (mockAppValue as Record<string, unknown>).attachments = [mockAttachment];
         const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
         renderPage();
-        fireEvent.click(screen.getByTitle('Download'));
+        fireEvent.click(screen.getByTitle('common.download'));
         expect(clickSpy).toHaveBeenCalled();
         clickSpy.mockRestore();
     });

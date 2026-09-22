@@ -838,7 +838,7 @@ describe('RubricList deep coverage', () => {
         const codeBtn = screen.getAllByRole('button').find((b) => b.textContent?.match(/import.*code/i));
         if (codeBtn) {
             fireEvent.click(codeBtn);
-            expect(screen.getByPlaceholderText(/Paste share code here/i)).toBeInTheDocument();
+            expect(screen.getByPlaceholderText('tooltips.paste_share_code')).toBeInTheDocument();
         }
     });
 

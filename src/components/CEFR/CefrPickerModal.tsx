@@ -142,7 +142,7 @@ export default function CefrPickerModal({
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('framework.picker_subtitle')}</div>
                     </div>
                 </div>
-                <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>

@@ -201,7 +201,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                                 marginTop: 2,
                                                 flexWrap: 'wrap',
                                             }}
-                                            title="CEFR-J text profile estimate (vocabulary / grammar)"
+                                            title={t('tooltips.cefrj_estimate')}
                                         >
                                             {cell.textVocabEstimate && (
                                                 <span
@@ -319,7 +319,7 @@ export default function CefrOverviewGrid({ cells, targetLevel, lang }: Props) {
                                             <button
                                                 className="btn btn-ghost btn-sm btn-icon"
                                                 onClick={() => setExpandedKey(null)}
-                                                aria-label="Close"
+                                                aria-label={t('common.close')}
                                             >
                                                 <X size={14} />
                                             </button>

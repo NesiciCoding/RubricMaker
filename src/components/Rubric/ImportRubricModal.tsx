@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, FileText, AlertTriangle, CheckCircle, X, Loader, ChevronRight } from 'lucide-react';
 import type { ParsedRubric } from '../../utils/rubricImport';
 import Modal from '../ui/Modal';
@@ -13,6 +14,7 @@ interface Props {
 type Stage = 'upload' | 'parsing' | 'preview';
 
 export default function ImportRubricModal({ onClose, onImport }: Props) {
+    const { t } = useTranslation();
     const [stage, setStage] = useState<Stage>('upload');
     const [parsed, setParsed] = useState<ParsedRubric | null>(null);
     const [name, setName] = useState('');
@@ -90,7 +92,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                 <h3 id="import-rubric-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Upload size={18} aria-hidden="true" /> Import Rubric
                 </h3>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>

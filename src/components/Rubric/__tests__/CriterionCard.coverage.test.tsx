@@ -443,7 +443,7 @@ describe('CriterionCard coverage', () => {
         expect(cb.onUpdateLevel).toHaveBeenCalledWith('c1', 'l1', { description: 'Shows mastery' });
 
         // CEFR level select (one per level — use the first).
-        const levelCefrSelect = screen.getAllByLabelText('CEFR level')[0];
+        const levelCefrSelect = screen.getAllByLabelText('a11y.cefr_level')[0];
         fireEvent.change(levelCefrSelect, { target: { value: 'B1' } });
         expect(cb.onUpdateLevel).toHaveBeenCalledWith('c1', 'l1', { cefrLevel: 'B1' });
         fireEvent.change(levelCefrSelect, { target: { value: '' } });

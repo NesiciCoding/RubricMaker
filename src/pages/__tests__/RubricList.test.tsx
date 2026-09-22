@@ -207,13 +207,13 @@ describe('RubricList', () => {
 
     it('copies the share code to clipboard', async () => {
         renderPage();
-        fireEvent.click(screen.getByTitle('Copy share code (for other teachers)'));
+        fireEvent.click(screen.getByTitle('tooltips.copy_share_code'));
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
     });
 
     it('copies the preview link to clipboard', () => {
         renderPage();
-        fireEvent.click(screen.getByTitle('Share preview with students (copy link)'));
+        fireEvent.click(screen.getByTitle('tooltips.share_preview'));
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
     });
 
@@ -236,7 +236,7 @@ describe('RubricList', () => {
     it('opens the code import modal and closes it', () => {
         renderPage();
         fireEvent.click(screen.getByText('Import from code'));
-        expect(screen.getByPlaceholderText('Paste share code here…')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('tooltips.paste_share_code')).toBeInTheDocument();
         // Close via aria-label — the code import close button is the only one rendered here.
         fireEvent.click(screen.getByLabelText('common.close'));
         expect(screen.queryByPlaceholderText('Paste share code here…')).not.toBeInTheDocument();

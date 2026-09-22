@@ -216,7 +216,7 @@ describe('ImportRubricModal coverage', () => {
         r1.unmount();
 
         const r2 = render(<ImportRubricModal onClose={onClose} onImport={vi.fn()} />);
-        fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+        fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
         expect(onClose).toHaveBeenCalledTimes(2);
         r2.unmount();
 

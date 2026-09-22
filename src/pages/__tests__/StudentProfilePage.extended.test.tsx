@@ -530,7 +530,7 @@ describe('StudentProfilePage extended coverage', () => {
         fireEvent.click(screen.getAllByText('selfAssess.view_full')[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/self-assess/s1');
         // Peer-review button on the first history row.
-        fireEvent.click(screen.getAllByTitle('Self/Peer Review')[0]);
+        fireEvent.click(screen.getAllByTitle('tooltips.self_peer_review')[0]);
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r3/peer-review/s1');
         // New-session button toggles the shared rubric picker.
         fireEvent.click(findButtonByText('speaking.new_session'));

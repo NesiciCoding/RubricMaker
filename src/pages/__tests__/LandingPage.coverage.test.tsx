@@ -37,9 +37,9 @@ describe('LandingPage coverage', () => {
 
     it('renders the landing page and enters local mode', () => {
         render(<PageComp />);
-        expect(screen.getByText('Try-out / Offline')).toBeInTheDocument();
-        expect(screen.getByText('Teacher Login')).toBeInTheDocument();
-        expect(screen.getByText('Student Login')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_tryout_title')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_teacher_title')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_student_title')).toBeInTheDocument();
         expect(screen.getByText("What's included")).toBeInTheDocument();
         expect(screen.getByText('For teachers')).toBeInTheDocument();
         expect(screen.getByText('For students')).toBeInTheDocument();

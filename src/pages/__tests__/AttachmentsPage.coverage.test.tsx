@@ -213,7 +213,7 @@ describe('AttachmentsPage coverage', () => {
         // The unlinked attachment renders the em-dash fallbacks in both columns.
         expect(screen.getAllByText('—').length).toBe(2);
         // Image attachments get a preview anchor.
-        expect(screen.getByTitle('Preview')).toHaveAttribute('href', 'data:application/pdf;base64,abc');
+        expect(screen.getByTitle('common.preview')).toHaveAttribute('href', 'data:application/pdf;base64,abc');
     });
 
     it('deletes after confirmation and keeps the attachment on cancel', async () => {

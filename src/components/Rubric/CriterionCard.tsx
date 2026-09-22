@@ -938,7 +938,7 @@ export default memo(function CriterionCard({
                                                                             CEFR level
                                                                         </div>
                                                                         <select
-                                                                            aria-label="CEFR level"
+                                                                            aria-label={t('a11y.cefr_level')}
                                                                             value={level.cefrLevel ?? ''}
                                                                             onChange={(e) =>
                                                                                 onUpdateLevel(criterion.id, level.id, {

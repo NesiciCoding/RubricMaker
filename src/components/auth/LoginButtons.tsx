@@ -386,7 +386,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                             setError('');
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleStudentPasswordLogin()}
-                        placeholder="Password"
+                        placeholder={t('common.password')}
                         style={{
                             padding: '9px 12px',
                             borderRadius: 7,

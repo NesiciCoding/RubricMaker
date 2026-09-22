@@ -53,7 +53,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
             <button
                 className="btn btn-ghost btn-icon topbar-menu-btn"
                 onClick={openMobileMenu}
-                aria-label="Open navigation menu"
+                aria-label={t('a11y.open_nav')}
             >
                 <Menu size={20} aria-hidden="true" />
             </button>

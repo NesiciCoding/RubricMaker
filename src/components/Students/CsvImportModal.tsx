@@ -243,7 +243,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 <h3 id="csv-import-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Upload size={18} aria-hidden="true" /> Map CSV Columns
                 </h3>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>

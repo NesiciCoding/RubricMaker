@@ -167,19 +167,19 @@ describe('LandingPage', () => {
     it('shows the Teacher Login card', async () => {
         const { default: LandingPage } = await import('../LandingPage');
         renderPage(<LandingPage />);
-        expect(screen.getByText('Teacher Login')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_teacher_title')).toBeInTheDocument();
     });
 
     it('shows the Try-out / Offline card', async () => {
         const { default: LandingPage } = await import('../LandingPage');
         renderPage(<LandingPage />);
-        expect(screen.getByText('Try-out / Offline')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_tryout_title')).toBeInTheDocument();
     });
 
     it('shows the Student Login card', async () => {
         const { default: LandingPage } = await import('../LandingPage');
         renderPage(<LandingPage />);
-        expect(screen.getByText('Student Login')).toBeInTheDocument();
+        expect(screen.getByText('tooltips.landing_student_title')).toBeInTheDocument();
     });
 
     it('clicking "Continue without account" calls enterLocalMode', async () => {
