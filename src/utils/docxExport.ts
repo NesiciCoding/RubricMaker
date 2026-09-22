@@ -14,6 +14,7 @@ import {
     type IRunOptions,
 } from 'docx';
 import { saveAs } from 'file-saver';
+import i18n from 'i18next';
 import type {
     Rubric,
     RubricCriterion,
@@ -529,6 +530,7 @@ function buildTestSummaryChildren(
     student?: Student,
     achieveThreshold?: number
 ) {
+    const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
@@ -595,7 +597,7 @@ function buildTestSummaryChildren(
 
     const questionTable = new Table({
         rows: [
-            headerRow(['Question', 'Accuracy', 'Submissions']),
+            headerRow([tx('question'), tx('accuracy'), tx('submissions')]),
             ...questions.map((qb, i) =>
                 breakdownRow(
                     `Q${i + 1}. ${stripHtmlTags(questionsById.get(qb.questionId)?.prompt ?? '')}`,
@@ -612,8 +614,8 @@ function buildTestSummaryChildren(
         new Paragraph({ text: test.name, heading: HeadingLevel.HEADING_1, spacing: { after: 120 } }),
         new Paragraph({
             children: [
-                new TextRun({ text: 'Student: ', bold: true }),
-                new TextRun(student ? student.name : 'Whole class'),
+                new TextRun({ text: `${tx('student')}: `, bold: true }),
+                new TextRun(student ? student.name : tx('whole_class')),
             ],
             spacing: { after: cefr ? 60 : 240 },
         }),
@@ -622,7 +624,7 @@ function buildTestSummaryChildren(
     if (cefr) {
         children.push(
             new Paragraph({
-                children: [new TextRun({ text: 'CEFR: ', bold: true }), new TextRun(cefr)],
+                children: [new TextRun({ text: `${tx('cefr')}: `, bold: true }), new TextRun(cefr)],
                 spacing: { after: 60 },
             })
         );
@@ -639,7 +641,7 @@ function buildTestSummaryChildren(
             children.push(
                 new Paragraph({
                     children: [
-                        new TextRun({ text: 'Placement path: ', bold: true }),
+                        new TextRun({ text: `${tx('placement_path')}: `, bold: true }),
                         new TextRun(
                             placementPath
                                 .map((s) => `${s.title}: ${s.level ?? '—'} (${s.scorePct.toFixed(0)}%)`)
@@ -655,7 +657,7 @@ function buildTestSummaryChildren(
     if (studentTest) {
         const answerHeader = new TableRow({
             tableHeader: true,
-            children: ['Question', 'Given', 'Correct', 'Pts'].map(
+            children: [tx('question'), tx('given'), tx('correct'), tx('pts_header')].map(
                 (label, i) =>
                     new TableCell({
                         children: [
@@ -715,14 +717,14 @@ function buildTestSummaryChildren(
             });
         });
         children.push(
-            new Paragraph({ text: 'Answers', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+            new Paragraph({ text: tx('answers'), heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
             new Table({ rows: [answerHeader, ...answerRows], width: { size: 100, type: WidthType.PERCENTAGE } })
         );
     }
 
     children.push(
         new Paragraph({
-            text: 'Per-question accuracy',
+            text: tx('per_question_accuracy'),
             heading: HeadingLevel.HEADING_2,
             spacing: { before: 240, after: 120 },
         }),
@@ -732,13 +734,13 @@ function buildTestSummaryChildren(
     if (skills.length > 0) {
         children.push(
             new Paragraph({
-                text: 'Strong / weak points by standard or descriptor',
+                text: tx('strong_weak'),
                 heading: HeadingLevel.HEADING_2,
                 spacing: { before: 240, after: 120 },
             }),
             new Table({
                 rows: [
-                    headerRow(['Standard / descriptor', 'Accuracy', 'Submissions']),
+                    headerRow([tx('standard_descriptor'), tx('accuracy'), tx('submissions')]),
                     ...skills.map((sb) => breakdownRow(sb.label, sb.accuracyPct, sb.bucket, sb.sampleSize)),
                 ],
                 width: { size: 100, type: WidthType.PERCENTAGE },
@@ -760,7 +762,7 @@ function buildTestSummaryChildren(
             });
         const itemHeader = new TableRow({
             tableHeader: true,
-            children: ['Question', 'Difficulty (p)', 'Discrimination', 'Top distractor'].map(
+            children: [tx('question'), tx('difficulty_p'), tx('discrimination'), tx('top_distractor')].map(
                 (label, i) =>
                     new TableCell({
                         children: [
@@ -791,7 +793,7 @@ function buildTestSummaryChildren(
         });
         children.push(
             new Paragraph({
-                text: 'Item analysis (difficulty p, discrimination, top distractor)',
+                text: tx('item_analysis'),
                 heading: HeadingLevel.HEADING_2,
                 spacing: { before: 240, after: 120 },
             }),

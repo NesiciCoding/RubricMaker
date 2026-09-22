@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { buildTestResultsCsv } from './testExportPresets';
+import { initTestI18n } from '../test-utils/initI18n';
 import type { Student, StudentTest, Test } from '../types';
+
+beforeAll(async () => {
+    await initTestI18n();
+});
 
 const test: Test = {
     id: 'test1',
