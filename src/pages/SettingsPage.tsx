@@ -719,6 +719,30 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             </label>
+                            <div className="form-group" style={{ marginTop: 16 }}>
+                                <label htmlFor="setting-cefr-threshold">
+                                    {t('settings.cefr_achieve_threshold_label')}
+                                </label>
+                                <input
+                                    id="setting-cefr-threshold"
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    value={settings.cefrAchieveThreshold ?? 70}
+                                    onChange={(e) =>
+                                        updateSettings({
+                                            cefrAchieveThreshold: Math.min(
+                                                100,
+                                                Math.max(1, parseInt(e.target.value) || 70)
+                                            ),
+                                        })
+                                    }
+                                    style={{ maxWidth: 120 }}
+                                />
+                                <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                    {t('settings.cefr_achieve_threshold_help')}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Dyslexia-friendly reading mode */}

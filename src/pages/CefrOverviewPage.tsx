@@ -12,7 +12,7 @@ import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
 import CefrProgressChart from '../components/Statistics/CefrProgressChart';
 import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePanel';
-import { useAssessment, useAuthoring, useClasses, useGrading, useStudents } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import {
     getCefrStudentOverview,
     highestLevelForSkill,
@@ -31,6 +31,7 @@ export default function CefrOverviewPage() {
 
     const { rubrics } = useAuthoring();
     const { selfAssessments, analysisResults, tests, studentTests } = useAssessment();
+    const { settings } = useSettings();
 
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
@@ -88,12 +89,23 @@ export default function CefrOverviewPage() {
                         sCls?.year,
                         getEffectiveVoTrack(s, sCls),
                         tests,
-                        studentTests
+                        studentTests,
+                        settings.cefrAchieveThreshold
                     ),
                     cls: sCls,
                 };
             }),
-        [filteredStudents, studentRubrics, rubrics, selfAssessments, analysisResults, classes, tests, studentTests]
+        [
+            filteredStudents,
+            studentRubrics,
+            rubrics,
+            selfAssessments,
+            analysisResults,
+            classes,
+            tests,
+            studentTests,
+            settings.cefrAchieveThreshold,
+        ]
     );
 
     const student = students.find((s) => s.id === selectedStudentId);
@@ -113,7 +125,8 @@ export default function CefrOverviewPage() {
                       cls?.year,
                       effectiveTrack,
                       tests,
-                      studentTests
+                      studentTests,
+                      settings.cefrAchieveThreshold
                   )
                 : null,
         [
@@ -126,6 +139,7 @@ export default function CefrOverviewPage() {
             effectiveTrack,
             tests,
             studentTests,
+            settings.cefrAchieveThreshold,
         ]
     );
 

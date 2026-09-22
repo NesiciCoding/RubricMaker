@@ -54,3 +54,8 @@ export function stripHtmlTags(text: string): string {
 
 /** Plain-text rendering of a comment that may contain pasted or TipTap-authored HTML. */
 export const stripCommentHtml = stripHtmlTags;
+
+/** Escape untrusted text for safe interpolation into export HTML (e.g. student free-text answers). */
+export function escapeHtml(text: string): string {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

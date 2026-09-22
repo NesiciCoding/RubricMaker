@@ -1,7 +1,19 @@
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
-import { calcQuestionBreakdowns, calcSkillBreakdowns, effectiveTestQuestions } from './testSummaryAggregator';
-import { formatPointsRange, stripCommentHtml } from './exportDataPrep';
+import {
+    calcQuestionBreakdowns,
+    calcSkillBreakdowns,
+    calcTestItemAnalysis,
+    effectiveTestQuestions,
+} from './testSummaryAggregator';
+import {
+    ANSWER_STATUS_MARK,
+    buildAnswerRows,
+    describePlacementPath,
+    describeTestCefr,
+    describeTestMeta,
+} from './testAnswerText';
+import { formatPointsRange, stripCommentHtml, escapeHtml } from './exportDataPrep';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
 
@@ -380,11 +392,62 @@ function buildTestSummaryHTML(
     studentId: string | null,
     studentTests: StudentTest[],
     test: Test,
-    student?: Student
+    student?: Student,
+    achieveThreshold?: number
 ): string {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
-    const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
+    const effectiveQuestions = effectiveTestQuestions(studentId, studentTests, test);
+    const questionsById = new Map(effectiveQuestions.map((q) => [q.id, q]));
+
+    const studentTest =
+        studentId !== null
+            ? (studentTests.filter((st) => st.testId === test.id && st.studentId === studentId).at(-1) ?? null)
+            : null;
+    const cefr = describeTestCefr(test, studentTest, achieveThreshold);
+    const metaLines = studentTest ? describeTestMeta(studentTest) : [];
+    const placementPath = studentTest ? describePlacementPath(test, studentTest) : [];
+
+    const STATUS_COLOR: Record<string, string> = {
+        correct: '#059669',
+        partial: '#d97706',
+        wrong: '#dc2626',
+        blank: '#9ca3af',
+        na: '#6b7280',
+    };
+    const answerRows = studentTest
+        ? buildAnswerRows(test, studentTest, effectiveQuestions)
+              .map((row, i) => {
+                  const color = STATUS_COLOR[row.status];
+                  const mark = ANSWER_STATUS_MARK[row.status];
+                  return `<tr style="page-break-inside: avoid;">
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px;width:40%"><span style="color:${color};font-weight:700">${mark}</span> Q${i + 1}. ${escapeHtml(row.prompt)}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px;width:27%">${escapeHtml(row.given)}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px;width:27%;color:#059669">${escapeHtml(row.correct) || '—'}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px;text-align:center;width:6%;color:${color};font-weight:700">${row.pointsEarned}/${row.points}</td>
+      </tr>`;
+              })
+              .join('')
+        : '';
+
+    const itemAnalysis = studentId === null ? calcTestItemAnalysis(studentTests, test) : [];
+    const itemRows = itemAnalysis
+        .map((row, i) => {
+            const disc =
+                row.discrimination === null
+                    ? '—'
+                    : `${row.discrimination >= 0 ? '+' : ''}${row.discrimination.toFixed(2)}`;
+            const distractor = row.topDistractor
+                ? `${escapeHtml(row.topDistractor.text)} (${row.topDistractor.count})`
+                : '—';
+            return `<tr style="page-break-inside: avoid;">
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px">Q${i + 1}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${row.pValue === null ? '—' : row.pValue.toFixed(2)}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${disc}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px">${distractor}</td>
+      </tr>`;
+        })
+        .join('');
 
     const questionRows = questions
         .map((qb, i) => {
@@ -413,8 +476,34 @@ function buildTestSummaryHTML(
   <div class="print-page" style="page-break-after: always; font-family: system-ui, sans-serif; color: #1e293b; background: #fff;">
       <div style="margin-bottom:18px">
         <h1 style="margin:0;font-size:20px">${test.name}</h1>
-        <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${student ? student.name : 'Whole class'}</div>
+        <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${student ? escapeHtml(student.name) : 'Whole class'}</div>
+        ${cefr ? `<div style="margin-top:4px;font-size:14px"><strong>CEFR:</strong> ${escapeHtml(cefr)}</div>` : ''}
+        ${metaLines.map((line) => `<div style="margin-top:4px;font-size:13px;color:#475569">${escapeHtml(line)}</div>`).join('')}
+        ${
+            placementPath.length > 0
+                ? `<div style="margin-top:6px;font-size:13px"><strong>Placement path:</strong> ${placementPath
+                      .map((s) => `${escapeHtml(s.title)}: ${s.level ?? '—'} (${s.scorePct.toFixed(0)}%)`)
+                      .join(' → ')}</div>`
+                : ''
+        }
       </div>
+
+      ${
+          answerRows
+              ? `<h2 style="font-size:14px;margin:18px 0 8px">Answers</h2>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f1f5f9">
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Question</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Given</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Correct</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Pts</th>
+          </tr>
+        </thead>
+        <tbody>${answerRows}</tbody>
+      </table>`
+              : ''
+      }
 
       <h2 style="font-size:14px;margin:18px 0 8px">Per-question accuracy</h2>
       <table style="width:100%;border-collapse:collapse;">
@@ -445,6 +534,24 @@ function buildTestSummaryHTML(
               : ''
       }
 
+      ${
+          itemRows
+              ? `
+      <h2 style="font-size:14px;margin:18px 0 8px">Item analysis (difficulty p, discrimination, top distractor)</h2>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f1f5f9">
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Question</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Difficulty (p)</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Discrimination</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Top distractor</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>`
+              : ''
+      }
+
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
         Generated by Rubric Maker · ${new Date().toLocaleDateString()}
       </div>
@@ -456,9 +563,10 @@ export async function exportTestSummaryPdf(
     studentTests: StudentTest[],
     test: Test,
     student?: Student,
-    styleTemplate?: DocxStyleTemplateOverrides
+    styleTemplate?: DocxStyleTemplateOverrides,
+    achieveThreshold?: number
 ): Promise<void> {
-    const htmlStr = buildTestSummaryHTML(studentId, studentTests, test, student);
+    const htmlStr = buildTestSummaryHTML(studentId, studentTests, test, student, achieveThreshold);
     await printHtml(htmlStr, 'portrait', undefined, styleTemplate);
 }
 
@@ -466,10 +574,11 @@ export async function exportBatchTestSummaryPdf(
     entries: { studentId: string; student: Student }[],
     studentTests: StudentTest[],
     test: Test,
-    styleTemplate?: DocxStyleTemplateOverrides
+    styleTemplate?: DocxStyleTemplateOverrides,
+    achieveThreshold?: number
 ): Promise<void> {
     const htmlParts = entries.map(({ studentId, student }) =>
-        buildTestSummaryHTML(studentId, studentTests, test, student)
+        buildTestSummaryHTML(studentId, studentTests, test, student, achieveThreshold)
     );
     await printHtml(htmlParts.join(''), 'portrait', undefined, styleTemplate);
 }

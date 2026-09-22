@@ -1096,6 +1096,15 @@ describe('getCefrStudentOverview — assessment-mode test scores', () => {
         expect(cell?.state).toBe('achieved'); // 80% >= default 70% threshold
     });
 
+    it('honours a configurable achieve threshold for test cells', () => {
+        const test = makeTest({ questions: [{ id: 'q1', prompt: 'Q', type: 'open', points: 10 }] });
+        const st = makeStudentTest({ rawTotalPoints: 8 }); // 80%
+        const strict = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st], 90);
+        expect(strict.cellMap.get('listening__B1')?.state).not.toBe('achieved'); // 80% < 90%
+        const lenient = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st], 50);
+        expect(lenient.cellMap.get('listening__B1')?.state).toBe('achieved'); // 80% >= 50%
+    });
+
     it('ignores tests with no cefrTargetLevel/cefrSkill set', () => {
         const test = makeTest({ cefrTargetLevel: undefined, cefrSkill: undefined });
         const st = makeStudentTest();

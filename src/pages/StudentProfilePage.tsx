@@ -169,10 +169,21 @@ export default function StudentProfilePage() {
                       cls?.year,
                       effectiveTrack,
                       tests,
-                      studentTests
+                      studentTests,
+                      settings.cefrAchieveThreshold
                   )
                 : undefined,
-        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack, tests, studentTests]
+        [
+            student,
+            studentRubrics,
+            rubrics,
+            selfAssessments,
+            cls?.year,
+            effectiveTrack,
+            tests,
+            studentTests,
+            settings.cefrAchieveThreshold,
+        ]
     );
     const trackYearProgress = cefrSummary?.trackYearProgress;
     const placementEstimate = cefrSummary?.placement;

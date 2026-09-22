@@ -839,6 +839,8 @@ export interface AppSettings {
     schoolId?: string;
     /** Show Cambridge English exam labels (e.g. "B2 First") alongside CEFR level badges */
     showCambridgeLabels?: boolean;
+    /** Minimum score percentage a graded test must reach to count as meeting its CEFR target level in summary exports (default 70). */
+    cefrAchieveThreshold?: number;
     /** Display name of the user's school (populated on login). */
     schoolName?: string;
     /** UI font family for the app chrome. */

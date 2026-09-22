@@ -276,7 +276,8 @@ export function getCefrStudentOverview(
     schoolYear?: SchoolYear,
     voTrack?: VoTrack,
     tests: Test[] = [],
-    studentTests: StudentTest[] = []
+    studentTests: StudentTest[] = [],
+    cefrAchieveThreshold: number = 70
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
@@ -495,7 +496,7 @@ export function getCefrStudentOverview(
             });
         }
         const acc = cellAccMap.get(key)!;
-        const threshold = 70;
+        const threshold = cefrAchieveThreshold;
         acc.scores.push(scorePct);
         acc.thresholds.push(threshold);
         acc.evidence.push({

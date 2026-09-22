@@ -102,6 +102,14 @@ describe('buildTestResultsCsv', () => {
         expect(lines).toHaveLength(3); // header + 2 students
     });
 
+    it('adds a CEFR column only when the test carries a CEFR target', () => {
+        expect(buildTestResultsCsv(test, studentTests, students).split('\n')[0]).not.toContain('CEFR');
+        const cefrTest: Test = { ...test, cefrTargetLevel: 'B1', cefrSkill: 'reading' };
+        const csv = buildTestResultsCsv(cefrTest, studentTests, students, 50);
+        expect(csv.split('\n')[0]).toContain('CEFR');
+        expect(csv).toContain('B1');
+    });
+
     it('has student, score, per-question, and per-skill columns', () => {
         const csv = buildTestResultsCsv(test, studentTests, students);
         const header = csv.trim().split('\n')[0];

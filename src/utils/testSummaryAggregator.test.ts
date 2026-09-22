@@ -375,7 +375,13 @@ describe('calcTestItemAnalysis', () => {
 
     it('returns sampleSize 0, null discrimination, and no distractor for a question nobody answered', () => {
         const [row] = calcTestItemAnalysis([], test);
-        expect(row).toEqual({ questionId: 'q1', sampleSize: 0, discrimination: null, topDistractor: null });
+        expect(row).toEqual({
+            questionId: 'q1',
+            sampleSize: 0,
+            pValue: null,
+            discrimination: null,
+            topDistractor: null,
+        });
     });
 
     it('returns null discrimination when the class is too small to split reliably', () => {
@@ -383,6 +389,8 @@ describe('calcTestItemAnalysis', () => {
         const [row] = calcTestItemAnalysis(studentTests, test);
         expect(row.discrimination).toBeNull();
         expect(row.sampleSize).toBe(2);
+        // one of two students correct on q1 (4/4 vs 0/4) → p-value 0.5
+        expect(row.pValue).toBeCloseTo(0.5);
     });
 
     it('computes a positive discrimination index when high scorers get the item right more often', () => {

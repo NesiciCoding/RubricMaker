@@ -2,6 +2,7 @@ import Papa from 'papaparse';
 import type { Student, StudentTest, Test } from '../types';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
+import { describeTestCefr } from './testAnswerText';
 
 /** Mirrors the rawPoints + adjustmentPoints → percentage formula TestResultsPage.tsx uses for a student's displayed score. */
 function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: number): number {
@@ -32,8 +33,14 @@ function latestAttempt(attempts: StudentTest[]): StudentTest {
  * student with multiple practice attempts (Test.allowMultipleAttempts) still gets exactly one
  * row, scored from their latest attempt.
  */
-export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], students: Student[]): string {
+export function buildTestResultsCsv(
+    test: Test,
+    studentTests: StudentTest[],
+    students: Student[],
+    achieveThreshold?: number
+): string {
     const maxPoints = calcTestMaxPoints(test);
+    const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
     const relevant = studentTests.filter((st) => st.testId === test.id);
 
     const attemptsByStudent = new Map<string, StudentTest[]>();
@@ -57,6 +64,10 @@ export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], stu
             'Student Number': student?.studentNumber ?? '',
             'Score %': studentPercentage(test, studentTest, maxPoints).toFixed(1),
         };
+
+        if (hasCefr) {
+            row['CEFR'] = describeTestCefr(test, studentTest, achieveThreshold) ?? '';
+        }
 
         test.questions.forEach((question, index) => {
             const breakdown = questionBreakdowns.find((b) => b.questionId === question.id);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import HelpPopover from './HelpPopover';
 import { calcTestItemAnalysis } from '../../utils/testSummaryAggregator';
 import type { Test, StudentTest } from '../../types';
@@ -14,6 +15,14 @@ export function discriminationColor(value: number | null): string {
     if (value === null) return 'var(--text-muted)';
     if (value < 0.1) return 'var(--red)';
     if (value < 0.3) return 'var(--yellow)';
+    return 'var(--green)';
+}
+
+/** p-value (difficulty): low = hard, high = easy; the extremes are the ones worth a second look. */
+export function pValueColor(value: number | null): string {
+    if (value === null) return 'var(--text-muted)';
+    if (value < 0.3 || value > 0.9) return 'var(--red)';
+    if (value < 0.5) return 'var(--yellow)';
     return 'var(--green)';
 }
 
@@ -33,6 +42,10 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
     }
 
     const analysis = calcTestItemAnalysis(studentTests, test);
+    const chartData = analysis.map((row, index) => ({
+        label: `Q${index + 1}`,
+        pValue: row.pValue ?? 0,
+    }));
 
     return (
         <div className="card">
@@ -43,12 +56,40 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
                     {t('tests.results.item_analysis_help')}
                 </HelpPopover>
             </h3>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 4px' }}>
+                {t('tests.results.item_analysis_pvalue_chart_title')}
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+                    <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                    <YAxis domain={[0, 1]} tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                    <Tooltip
+                        contentStyle={{
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                        }}
+                        formatter={(value: unknown) => {
+                            const v = typeof value === 'number' ? value : 0;
+                            return [v.toFixed(2), t('tests.results.item_analysis_pvalue')];
+                        }}
+                    />
+                    <Bar dataKey="pValue" radius={[4, 4, 0, 0]}>
+                        {chartData.map((row, i) => (
+                            <Cell key={i} fill={pValueColor(row.pValue)} fillOpacity={0.8} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+            <div style={{ overflowX: 'auto', marginTop: 12 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
                             <th style={{ textAlign: 'left', padding: '6px 8px' }}>
                                 {t('tests.results.item_analysis_question')}
+                            </th>
+                            <th style={{ textAlign: 'right', padding: '6px 8px' }}>
+                                {t('tests.results.item_analysis_pvalue')}
                             </th>
                             <th style={{ textAlign: 'right', padding: '6px 8px' }}>
                                 {t('tests.results.item_analysis_discrimination')}
@@ -63,6 +104,16 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
                             <tr key={row.questionId} style={{ borderBottom: '1px solid var(--border)' }}>
                                 <td style={{ padding: '6px 8px' }}>
                                     {t('tests.question_number', { number: index + 1 })}
+                                </td>
+                                <td
+                                    style={{
+                                        textAlign: 'right',
+                                        padding: '6px 8px',
+                                        fontWeight: 700,
+                                        color: pValueColor(row.pValue),
+                                    }}
+                                >
+                                    {row.pValue === null ? '—' : row.pValue.toFixed(2)}
                                 </td>
                                 <td
                                     style={{
