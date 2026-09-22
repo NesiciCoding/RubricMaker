@@ -28,6 +28,28 @@ function relevantStudentTests(studentId: string | null, studentTests: StudentTes
     return studentId === null ? sameTest : sameTest.filter((st) => st.studentId === studentId);
 }
 
+/**
+ * The question set to score against. Normally a test's own authored questions, but a generator-engine
+ * placement run (roadmap 27.1) pulls questions live from the bank per student and never stores them on
+ * the test — `test.questions` is empty, and each asked item lives only on the submission's
+ * `askedQuestionSnapshots`. In that case, fall back to the union of every asked snapshot across the
+ * relevant submissions so per-question/skill breakdowns and the summary export aren't blank.
+ */
+export function effectiveTestQuestions(
+    studentId: string | null,
+    studentTests: StudentTest[],
+    test: Test
+): TestQuestion[] {
+    if (test.questions.length > 0) return test.questions;
+    const byId = new Map<string, TestQuestion>();
+    for (const st of relevantStudentTests(studentId, studentTests, test)) {
+        for (const q of st.askedQuestionSnapshots ?? []) {
+            if (!byId.has(q.id)) byId.set(q.id, q);
+        }
+    }
+    return [...byId.values()];
+}
+
 function latestAnswerByQuestion(studentTest: StudentTest): Map<string, TestAnswer> {
     const byQuestion = new Map<string, TestAnswer>();
     for (const answer of studentTest.answers) {
@@ -50,7 +72,7 @@ export function calcQuestionBreakdowns(
     const relevant = relevantStudentTests(studentId, studentTests, test);
     const answersByStudent = relevant.map(latestAnswerByQuestion);
 
-    return test.questions.map((question) => {
+    return effectiveTestQuestions(studentId, studentTests, test).map((question) => {
         const samples: number[] = [];
         for (const byQuestion of answersByStudent) {
             const answer = byQuestion.get(question.id);
@@ -74,10 +96,10 @@ interface SkillGroup {
     questionIds: string[];
 }
 
-function skillGroupsForTest(test: Test): SkillGroup[] {
+function skillGroupsForTest(questions: TestQuestion[]): SkillGroup[] {
     const groups = new Map<string, SkillGroup>();
 
-    for (const question of test.questions) {
+    for (const question of questions) {
         const standards = question.linkedStandards ?? [];
         const descriptors = question.linkedCefrDescriptors ?? [];
 
@@ -114,9 +136,10 @@ export function calcSkillBreakdowns(
 ): TestSkillBreakdown[] {
     const relevant = relevantStudentTests(studentId, studentTests, test);
     const answersByStudent = relevant.map(latestAnswerByQuestion);
-    const questionsById = new Map(test.questions.map((q) => [q.id, q]));
+    const questions = effectiveTestQuestions(studentId, studentTests, test);
+    const questionsById = new Map(questions.map((q) => [q.id, q]));
 
-    return skillGroupsForTest(test).map((group) => {
+    return skillGroupsForTest(questions).map((group) => {
         const samples: number[] = [];
         for (const questionId of group.questionIds) {
             const question = questionsById.get(questionId);

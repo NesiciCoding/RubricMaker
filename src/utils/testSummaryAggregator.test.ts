@@ -511,3 +511,67 @@ describe('calcTestItemAnalysis', () => {
         expect(zero.topDistractor).toBeNull();
     });
 });
+
+describe('generator-placement fallback (empty test.questions)', () => {
+    // A generator-engine placement run stores its live-pulled questions only on the
+    // submission's askedQuestionSnapshots — test.questions is empty. The aggregators must
+    // fall back to those snapshots so the summary export isn't blank.
+    const genQ = (id: string, correct: string): TestQuestion => ({
+        id,
+        prompt: `Generated ${id}`,
+        type: 'multiple-choice',
+        points: 1,
+        options: [
+            { id: 'right', text: 'Right', isCorrect: true },
+            { id: 'wrong', text: 'Wrong', isCorrect: false },
+        ],
+        linkedCefrDescriptors: [
+            {
+                descriptorId: `d-${id}`,
+                descriptionEn: `Descriptor ${id}`,
+                descriptionNl: `Descriptor ${id}`,
+                skill: 'reading',
+                level: 'B1',
+            },
+        ],
+        expectedAnswer: correct,
+    });
+
+    const placementTest = makeTest({ mode: 'placement', placementEngine: 'generator', questions: [] });
+
+    it('builds per-question breakdowns from askedQuestionSnapshots', () => {
+        const studentTests = [
+            makeStudentTest({
+                studentId: 's1',
+                answers: [
+                    { questionId: 'g1', response: 'right' },
+                    { questionId: 'g2', response: 'wrong' },
+                ],
+                askedQuestionSnapshots: [genQ('g1', 'right'), genQ('g2', 'right')],
+            }),
+        ];
+        const breakdowns = calcQuestionBreakdowns('s1', studentTests, placementTest);
+        expect(breakdowns.map((b) => b.questionId).sort()).toEqual(['g1', 'g2']);
+        expect(breakdowns.find((b) => b.questionId === 'g1')?.accuracyPct).toBe(100);
+        expect(breakdowns.find((b) => b.questionId === 'g2')?.accuracyPct).toBe(0);
+    });
+
+    it('rolls skills up by linked descriptor from the snapshots', () => {
+        const studentTests = [
+            makeStudentTest({
+                studentId: 's1',
+                answers: [{ questionId: 'g1', response: 'right' }],
+                askedQuestionSnapshots: [genQ('g1', 'right')],
+            }),
+        ];
+        const skills = calcSkillBreakdowns('s1', studentTests, placementTest);
+        expect(skills.find((s) => s.groupId === 'd-g1')?.accuracyPct).toBe(100);
+    });
+
+    it('leaves an authored test untouched (no snapshot fallback)', () => {
+        const test = makeTest();
+        const studentTests = [makeStudentTest({ answers: [{ questionId: 'q-mc', response: 'b' }] })];
+        const breakdowns = calcQuestionBreakdowns('s1', studentTests, test);
+        expect(breakdowns.map((b) => b.questionId)).toEqual(['q-mc', 'q-sa', 'q-open']);
+    });
+});
