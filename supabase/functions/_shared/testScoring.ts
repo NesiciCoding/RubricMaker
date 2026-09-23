@@ -92,12 +92,27 @@ export function parseHotTextFragments(passage: string): HotTextSegment[] {
 
 // ── Auto-scoring ────────────────────────────────────────────────────────────
 
-function parseJson<T>(response: string, fallback: T): T {
-    if (!response) return fallback;
+// Responses are student-controlled, so valid JSON of the wrong shape ("5", "null", {"0": 5})
+// must score as unanswered rather than throw inside a scorer.
+function parseJsonArray(response: string): unknown[] {
+    if (!response) return [];
     try {
-        return JSON.parse(response) as T;
+        const value: unknown = JSON.parse(response);
+        return Array.isArray(value) ? value : [];
     } catch {
-        return fallback;
+        return [];
+    }
+}
+
+function parseJsonRecord(response: string): Record<string, unknown> {
+    if (!response) return {};
+    try {
+        const value: unknown = JSON.parse(response);
+        return value !== null && typeof value === 'object' && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : {};
+    } catch {
+        return {};
     }
 }
 
@@ -141,11 +156,12 @@ export function scoreNumeric(question: ScorableQuestion, response: string): numb
 /** Auto-score for a multiple-response (checkbox) question, supporting partial credit. */
 export function scoreMultipleResponse(question: ScorableQuestion, response: string): number {
     const options = question.options ?? [];
-    const selectedSet = new Set(parseJson<string[]>(response, []));
+    const selectedSet = new Set(parseJsonArray(response));
     const correctSet = new Set(options.filter((o) => o.isCorrect).map((o) => o.id));
 
     if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
+        const exact =
+            selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id as string));
         return exact ? question.points : 0;
     }
 
@@ -164,10 +180,11 @@ export function scoreCloze(question: ScorableQuestion, response: string): number
     const gaps = parseClozeGaps(question.prompt);
     if (gaps.length === 0) return 0;
 
-    const answers = parseJson<Record<string, string>>(response, {});
+    const answers = parseJsonRecord(response);
     const isDropdown = question.type === 'cloze-dropdown';
     const correctCount = gaps.filter((gap) => {
-        const studentAnswer = (answers[gap.index] ?? '').trim();
+        const raw = answers[gap.index];
+        const studentAnswer = typeof raw === 'string' ? raw.trim() : '';
         if (!studentAnswer) return false;
         if (isDropdown) return studentAnswer === gap.alternatives[0];
         return gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
@@ -180,7 +197,7 @@ export function scoreCloze(question: ScorableQuestion, response: string): number
 export function scoreMatching(question: ScorableQuestion, response: string): number {
     const pairs = question.matchingPairs ?? [];
     if (pairs.length === 0) return 0;
-    const answers = parseJson<Record<string, string>>(response, {});
+    const answers = parseJsonRecord(response);
     const correctCount = pairs.filter((pair) => answers[pair.id] === pair.id).length;
     return partialOrAll(question, correctCount, pairs.length);
 }
@@ -189,7 +206,7 @@ export function scoreMatching(question: ScorableQuestion, response: string): num
 export function scoreOrdering(question: ScorableQuestion, response: string): number {
     const items = question.orderItems ?? [];
     if (items.length === 0) return 0;
-    const order = parseJson<string[]>(response, []);
+    const order = parseJsonArray(response);
     const correctCount = items.filter((item, i) => order[i] === item.id).length;
     return partialOrAll(question, correctCount, items.length);
 }
@@ -198,7 +215,7 @@ export function scoreOrdering(question: ScorableQuestion, response: string): num
 export function scoreCategorize(question: ScorableQuestion, response: string): number {
     const items = question.categorizeItems ?? [];
     if (items.length === 0) return 0;
-    const answers = parseJson<Record<string, string>>(response, {});
+    const answers = parseJsonRecord(response);
     const correctCount = items.filter((item) => answers[item.id] === item.categoryId).length;
     return partialOrAll(question, correctCount, items.length);
 }
@@ -208,11 +225,12 @@ export function scoreHotText(question: ScorableQuestion, response: string): numb
     const fragments = parseHotTextFragments(question.hotTextPassage ?? '').filter((s) => s.type === 'fragment');
     if (fragments.length === 0) return 0;
 
-    const selectedSet = new Set(parseJson<number[]>(response, []));
+    const selectedSet = new Set(parseJsonArray(response));
     const correctSet = new Set(question.hotTextCorrectIndices ?? []);
 
     if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i));
+        const exact =
+            selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i as number));
         return exact ? question.points : 0;
     }
 

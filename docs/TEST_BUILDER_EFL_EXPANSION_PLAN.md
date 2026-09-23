@@ -25,20 +25,18 @@ passages (`PassageReadAloud`).
 
 ### Cost of a new question type (touchpoints)
 
-Adding a type is not cheap — it touches ~11 places, three of which duplicate
-scoring logic:
+Adding a type is not cheap — it touches about ten places:
 
-| Area               | File(s)                                                                                                                 |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Type + data fields | `src/types/index.ts`                                                                                                    |
-| Authoring          | `src/components/Tests/QuestionEditor.tsx` (`QUESTION_TYPES`, `changeType`, editor block)                                |
-| Student rendering  | `src/pages/StudentTestPage.tsx`                                                                                         |
-| Review / grading   | `src/pages/TestResultsPage.tsx`, `src/components/Monitor/ResponsesGrid.tsx`                                             |
-| Scoring (client)   | `src/utils/testCalc.ts`                                                                                                 |
-| Scoring (server)   | `supabase/functions/submit-test/index.ts`, `supabase/functions/next-placement-question/index.ts` (hand-mirrored copies) |
-| Answer text/export | `src/utils/testAnswerText.ts`                                                                                           |
-| Bank import        | `src/utils/questionBankImport.ts`                                                                                       |
-| i18n + docs        | 5 locale files, `DocsPage.tsx`, README, possibly `LandingPage.tsx`                                                      |
+| Area               | File(s)                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| Type + data fields | `src/types/index.ts`                                                                                     |
+| Authoring          | `src/components/Tests/QuestionEditor.tsx` (`QUESTION_TYPES`, `changeType`, editor block)                 |
+| Student rendering  | `src/pages/StudentTestPage.tsx`                                                                          |
+| Review / grading   | `src/pages/TestResultsPage.tsx`, `src/components/Monitor/ResponsesGrid.tsx`                              |
+| Scoring            | `supabase/functions/_shared/testScoring.ts`, shared by the client and both scoring edge functions (§6.4) |
+| Answer text/export | `src/utils/testAnswerText.ts`                                                                            |
+| Bank import        | `src/utils/questionBankImport.ts`                                                                        |
+| i18n + docs        | 5 locale files, `DocsPage.tsx`, README, possibly `LandingPage.tsx`                                       |
 
 **Implication:** prefer _authoring aids that emit an existing type_ (zero schema,
 zero scorer changes) over new types wherever the student experience is the same.
@@ -140,7 +138,7 @@ question:
   by default and meant for reading/listening items where spelling isn't the
   construct being tested.
 
-Must live in one pure module mirrored into both edge functions (see §1 parity test).
+Implemented once in the shared `supabase/functions/_shared/testScoring.ts` (§6.4), with golden fixtures.
 
 ### A6. Listening controls
 
@@ -185,8 +183,8 @@ Notes:
   separate MC questions with repeated options.
 - **B2** covers two formats with one type: word tiles (A-levels) and sentence tiles
   (B2 gapped text). The student UI is drag-and-drop with a keyboard/click fallback.
-- **B5/B6** could ship as _modes of cloze/short-answer_ instead of new types if the
-  parity-test work in §1 hasn't landed yet — that avoids a server scorer change.
+- **B5/B6** could ship as _modes of cloze/short-answer_ instead of new types, which
+  keeps the change inside the existing cloze/short-answer scorers.
 - **B7** is the natural bridge between the test builder and the rubric side of the
   app; it also gives writing/speaking results to the CEFR aggregator with criterion
   granularity instead of a single number.
@@ -263,7 +261,7 @@ Notes:
 | Phase | Contents                                                                                                              | Why this order                                                                                                                 |
 | ----- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | 1     | A1 cloze generators (incl. C-test), A3 passage level check, A4 deck → questions, per-student TTS accommodation (§6.2) | Pure authoring aids; no schema or scorer change. The accommodation is small and unblocks dyslexic students in graded tests now |
-| 2     | Scoring parity test, A5 tolerant matching, A2 distractor suggestions                                                  | Makes scorer changes safe before new types                                                                                     |
+| 2     | A5 tolerant matching, A2 distractor suggestions                                                                       | Makes scorer changes safe before new types                                                                                     |
 | 3     | B1 matrix, B2 word-bank cloze                                                                                         | Largest authoring-time savings for Cambridge-style formats                                                                     |
 | 4     | A6 listening controls, B3 dictation, B9 audio options, A7 speaking prep                                               | Listening/speaking block sharing TTS + media plumbing                                                                          |
 | 5     | B4 error correction, B5 key word transformation, B6 word formation, B8 sentence builder                               | Exam-specific formats                                                                                                          |

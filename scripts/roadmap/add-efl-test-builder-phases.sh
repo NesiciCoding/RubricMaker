@@ -2,7 +2,8 @@
 # RubricMaker — add the EFL test-builder expansion phases to the Roadmap project board
 #
 # Creates one draft item per file in scripts/roadmap/efl-test-builder/ (in file
-# order), numbered after the highest "Phase N" already on the board.
+# order), numbered after the highest "Phase N" already on the board. Safe to re-run:
+# cards already on the board (matched by title) are skipped and keep their numbers.
 # Plan: docs/TEST_BUILDER_EFL_EXPANSION_PLAN.md
 #
 # Requires the GitHub CLI with the project scope:
@@ -49,11 +50,48 @@ if [ -z "$PROJECT" ]; then
 fi
 echo "Project: $OWNER #$PROJECT"
 
+# Fetched on its own (not inside the phase-number pipeline below) so a failing gh call stops the
+# script via `set -e` instead of silently restarting the numbering at Phase 1.
+EXISTING_TITLES=$(gh project item-list "$PROJECT" --owner "$OWNER" --limit 2000 --format json --jq '.items[].title')
+
+FILES=("$ITEMS_DIR"/*.md)
+
+card_suffix() {
+    head -1 "$1" | sed -e 's/^# Phase {N} — //'
+}
+
+# Phase number of the board item titled "Phase N — <suffix>", if one exists.
+existing_phase_for() {
+    local suffix="$1" title re='^Phase ([0-9]+) — (.*)$'
+    while IFS= read -r title; do
+        if [[ $title =~ $re ]] && [ "${BASH_REMATCH[2]}" = "$suffix" ]; then
+            echo "${BASH_REMATCH[1]}"
+            return
+        fi
+    done <<< "$EXISTING_TITLES"
+}
+
+# Resuming after a partial run: keep that run's numbering, derived from the first card it created.
 if [ -z "$START_PHASE" ]; then
-    HIGHEST=$(gh project item-list "$PROJECT" --owner "$OWNER" --limit 2000 --format json \
-        --jq '.items[].title' | grep -oiE 'phase[[:space:]]+[0-9]+' | grep -oE '[0-9]+' | sort -n | tail -1 || true)
-    START_PHASE=$(( ${HIGHEST:-0} + 1 ))
-    echo "Highest existing phase: ${HIGHEST:-none} → starting at Phase $START_PHASE"
+    for i in "${!FILES[@]}"; do
+        FOUND=$(existing_phase_for "$(card_suffix "${FILES[$i]}")")
+        if [ -n "$FOUND" ]; then
+            START_PHASE=$(( FOUND - i ))
+            echo "Some cards already exist → keeping their numbering, starting at Phase $START_PHASE"
+            break
+        fi
+    done
+fi
+
+if [ -z "$START_PHASE" ]; then
+    HIGHEST=$(printf '%s\n' "$EXISTING_TITLES" | awk '
+        match(tolower($0), /phase[ \t]+[0-9]+/) {
+            n = substr($0, RSTART, RLENGTH); gsub(/[^0-9]/, "", n)
+            if (n + 0 > max) max = n + 0
+        }
+        END { print max + 0 }')
+    START_PHASE=$(( HIGHEST + 1 ))
+    echo "Highest existing phase: $HIGHEST → starting at Phase $START_PHASE"
 fi
 
 PROJECT_ID=""
@@ -71,11 +109,15 @@ if [ -n "$STATUS" ] && [ "$DRY_RUN" = false ]; then
     fi
 fi
 
-PHASE=$START_PHASE
-for FILE in "$ITEMS_DIR"/*.md; do
+for i in "${!FILES[@]}"; do
+    FILE=${FILES[$i]}
+    PHASE=$(( START_PHASE + i ))
     TITLE=$(head -1 "$FILE" | sed -e 's/^# //' -e "s/{N}/$PHASE/")
     BODY=$(tail -n +3 "$FILE")
-    if [ "$DRY_RUN" = true ]; then
+    FOUND=$(existing_phase_for "$(card_suffix "$FILE")")
+    if [ -n "$FOUND" ]; then
+        echo "Already on the board as Phase $FOUND, skipping: $TITLE"
+    elif [ "$DRY_RUN" = true ]; then
         echo "[dry-run] $TITLE"
     else
         ITEM_ID=$(gh project item-create "$PROJECT" --owner "$OWNER" \
@@ -86,5 +128,4 @@ for FILE in "$ITEMS_DIR"/*.md; do
         fi
         echo "Created: $TITLE"
     fi
-    PHASE=$(( PHASE + 1 ))
 done

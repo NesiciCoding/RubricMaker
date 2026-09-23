@@ -397,12 +397,9 @@ serve(async (req) => {
                 return json({ error: 'Invalid submission' }, 400);
             }
         } else if (sectionPath || levelPath) {
-            // The scoring replay below parses each answer's `response` as JSON per question type
-            // (arrays for multiple-response/ordering/hot-text, objects for cloze/matching/categorize).
-            // A syntactically valid but wrongly-shaped response (e.g. an object where an array is
-            // expected) throws inside Set/array construction rather than JSON.parse itself, which
-            // the per-scorer try/catch around JSON.parse doesn't cover — treat any such failure as
-            // an invalid submission rather than letting it crash the request to an unhandled 500.
+            // The shared scorers treat a wrongly-shaped response as unanswered rather than
+            // throwing, so a malformed answer can only lower the replayed score. Any unexpected
+            // throw is still treated as an invalid submission rather than an unhandled 500.
             try {
                 if (sectionPath) {
                     const recomputed = recomputeSectionPath(test, sanitizedAnswers);
