@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { initTestI18n } from '../test-utils/initI18n';
 import {
     formatGivenAnswer,
     formatCorrectAnswer,
@@ -9,6 +10,10 @@ import {
     pickLatestAttempt,
 } from './testAnswerText';
 import type { Student, StudentTest, Test, TestQuestion } from '../types';
+
+beforeAll(async () => {
+    await initTestI18n();
+});
 
 const mc: TestQuestion = {
     id: 'q1',
@@ -193,7 +198,7 @@ describe('buildTestStudentSummary', () => {
         };
         const out = buildTestStudentSummary(baseTest, st, student, baseTest.questions);
         expect(out).toContain('Jane');
-        expect(out).toContain('Given:   go');
+        expect(out).toContain('Given: go');
         expect(out).toContain('Correct: goes');
         expect(out).toContain('0/1 pts');
     });

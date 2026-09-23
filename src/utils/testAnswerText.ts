@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
@@ -5,6 +6,9 @@ import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
 import { summarizeProctorFlags } from './proctorAggregator';
+
+/** Shorthand for the test-summary-export string namespace. */
+const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
 
 /**
  * Canonical "which submission represents this student" selector, shared by every export format:
@@ -31,10 +35,9 @@ function parseJson<T>(raw: string, fallback: T): T {
     }
 }
 
-const NO_RESPONSE = '(no response)';
-
 /** Plain-text rendering of a student's answer — mirrors formatStudentResponse() in TestResultsPage, minus colour. */
 export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | undefined): string {
+    const NO_RESPONSE = tx('no_response');
     const response = answer?.response;
     if (!response) return NO_RESPONSE;
 
@@ -89,7 +92,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             return picked.length > 0 ? picked.join(', ') : NO_RESPONSE;
         }
         case 'audio-response':
-            return parseAudioResponse(response) ? '(audio response)' : NO_RESPONSE;
+            return parseAudioResponse(response) ? tx('audio_response') : NO_RESPONSE;
         default:
             return stripHtmlTags(response).trim() || NO_RESPONSE;
     }
@@ -156,18 +159,18 @@ export function describeTestCefr(
     if (test.mode === 'placement') {
         if (!studentTest) return null;
         const estimate = estimatePlacement(test, studentTest);
-        return estimate ? `${estimate.level} (provisional placement estimate)` : null;
+        return estimate ? tx('placement_estimate', { level: estimate.level }) : null;
     }
     if (!test.cefrTargetLevel) return null;
     const skill = test.cefrSkill ? ` ${test.cefrSkill}` : '';
     const target: CefrLevel = test.cefrTargetLevel;
-    if (!studentTest) return `${target}${skill} (target)`;
+    if (!studentTest) return tx('cefr_target_only', { level: target, skill });
     const maxPoints = calcTestMaxPoints(test);
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
     const adjustedPoints = rawPoints + (studentTest.adjustmentPoints ?? 0);
     const pct = calcTestPercentage(adjustedPoints, maxPoints);
-    const achieved = pct >= achieveThreshold;
-    return `${target}${skill} target — ${achieved ? 'achieved' : 'not yet'} (${pct.toFixed(0)}%, threshold ${achieveThreshold}%)`;
+    const status = pct >= achieveThreshold ? tx('achieved') : tx('not_yet');
+    return tx('cefr_result', { level: target, skill, status, pct: pct.toFixed(0), threshold: achieveThreshold });
 }
 
 export type AnswerStatus = 'correct' | 'partial' | 'wrong' | 'blank' | 'na';
@@ -231,16 +234,16 @@ export function describeTestMeta(studentTest: StudentTest): string[] {
     const lines: string[] = [];
     if (studentTest.submittedAt) {
         const minutes = (Date.parse(studentTest.submittedAt) - Date.parse(studentTest.startedAt)) / 60_000;
-        if (minutes >= 0) lines.push(`Time on task: ${minutes.toFixed(0)} min`);
+        if (minutes >= 0) lines.push(tx('time_on_task', { minutes: minutes.toFixed(0) }));
     }
     const flags = summarizeProctorFlags(studentTest.events ?? []);
     const parts: string[] = [];
-    if (flags.tabSwitchCount > 0) parts.push(`${flags.tabSwitchCount} tab switch(es)`);
-    if (flags.pasteCount > 0) parts.push(`${flags.pasteCount} paste(s)`);
-    if (flags.copyCount > 0) parts.push(`${flags.copyCount} copy`);
-    if (flags.cutCount > 0) parts.push(`${flags.cutCount} cut`);
-    if (flags.sebActive) parts.push('Safe Exam Browser');
-    if (parts.length > 0) lines.push(`Proctor flags: ${parts.join(', ')}`);
+    if (flags.tabSwitchCount > 0) parts.push(tx('flag_tab_switches', { count: flags.tabSwitchCount }));
+    if (flags.pasteCount > 0) parts.push(tx('flag_pastes', { count: flags.pasteCount }));
+    if (flags.copyCount > 0) parts.push(tx('flag_copies', { count: flags.copyCount }));
+    if (flags.cutCount > 0) parts.push(tx('flag_cuts', { count: flags.cutCount }));
+    if (flags.sebActive) parts.push(tx('flag_seb'));
+    if (parts.length > 0) lines.push(tx('proctor_flags', { parts: parts.join(', ') }));
     return lines;
 }
 
@@ -255,23 +258,24 @@ export function buildTestStudentSummary(
     questions: TestQuestion[],
     achieveThreshold: number = DEFAULT_CEFR_ACHIEVE_THRESHOLD
 ): string {
-    const name = student?.name ?? 'Student';
+    const name = student?.name ?? tx('student');
     const maxPoints = calcTestMaxPoints(test);
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
     const adjustment = studentTest.adjustmentPoints ?? 0;
     const pct = calcTestPercentage(rawPoints + adjustment, maxPoints);
+    const pts = tx('pts');
 
     const lines: string[] = [name, '─'.repeat(name.length), ''];
-    lines.push(`Test: ${test.name}`);
-    if (maxPoints > 0) lines.push(`Score: ${pct.toFixed(1)}% — ${rawPoints + adjustment}/${maxPoints} pts`);
+    lines.push(`${tx('test')}: ${test.name}`);
+    if (maxPoints > 0) lines.push(`${tx('score')}: ${pct.toFixed(1)}% — ${rawPoints + adjustment}/${maxPoints} ${pts}`);
     const cefr = describeTestCefr(test, studentTest, achieveThreshold);
-    if (cefr) lines.push(`CEFR: ${cefr}`);
+    if (cefr) lines.push(`${tx('cefr')}: ${cefr}`);
     for (const line of describeTestMeta(studentTest)) lines.push(line);
 
     const path = describePlacementPath(test, studentTest);
     if (path.length > 0) {
         lines.push('');
-        lines.push('Placement path:');
+        lines.push(`${tx('placement_path')}:`);
         for (const step of path) {
             lines.push(`  ${step.title}: ${step.level ?? '—'} — ${step.scorePct.toFixed(0)}%`);
         }
@@ -280,10 +284,10 @@ export function buildTestStudentSummary(
 
     buildAnswerRows(test, studentTest, questions).forEach((row, i) => {
         const mark = ANSWER_STATUS_MARK[row.status];
-        lines.push(`${mark ? mark + ' ' : ''}Q${i + 1}. ${row.prompt} (${row.pointsEarned}/${row.points} pts)`);
-        lines.push(`  Given:   ${row.given}`);
-        if (row.correct) lines.push(`  Correct: ${row.correct}`);
-        if (row.feedback) lines.push(`  Feedback: ${stripHtmlTags(row.feedback)}`);
+        lines.push(`${mark ? mark + ' ' : ''}Q${i + 1}. ${row.prompt} (${row.pointsEarned}/${row.points} ${pts})`);
+        lines.push(`  ${tx('given')}: ${row.given}`);
+        if (row.correct) lines.push(`  ${tx('correct')}: ${row.correct}`);
+        if (row.feedback) lines.push(`  ${tx('feedback')}: ${stripHtmlTags(row.feedback)}`);
     });
 
     return lines.join('\n');

@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import {
@@ -396,6 +397,7 @@ function buildTestSummaryHTML(
     student?: Student,
     achieveThreshold?: number
 ): string {
+    const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.summary.${key}`, opts);
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
@@ -479,12 +481,12 @@ function buildTestSummaryHTML(
   <div class="print-page" style="page-break-after: always; font-family: system-ui, sans-serif; color: #1e293b; background: #fff;">
       <div style="margin-bottom:18px">
         <h1 style="margin:0;font-size:20px">${test.name}</h1>
-        <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${student ? escapeHtml(student.name) : 'Whole class'}</div>
-        ${cefr ? `<div style="margin-top:4px;font-size:14px"><strong>CEFR:</strong> ${escapeHtml(cefr)}</div>` : ''}
+        <div style="margin-top:8px;font-size:14px"><strong>${tx('student')}:</strong> ${student ? escapeHtml(student.name) : tx('whole_class')}</div>
+        ${cefr ? `<div style="margin-top:4px;font-size:14px"><strong>${tx('cefr')}:</strong> ${escapeHtml(cefr)}</div>` : ''}
         ${metaLines.map((line) => `<div style="margin-top:4px;font-size:13px;color:#475569">${escapeHtml(line)}</div>`).join('')}
         ${
             placementPath.length > 0
-                ? `<div style="margin-top:6px;font-size:13px"><strong>Placement path:</strong> ${placementPath
+                ? `<div style="margin-top:6px;font-size:13px"><strong>${tx('placement_path')}:</strong> ${placementPath
                       .map((s) => `${escapeHtml(s.title)}: ${s.level ?? '—'} (${s.scorePct.toFixed(0)}%)`)
                       .join(' → ')}</div>`
                 : ''
@@ -493,14 +495,14 @@ function buildTestSummaryHTML(
 
       ${
           answerRows
-              ? `<h2 style="font-size:14px;margin:18px 0 8px">Answers</h2>
+              ? `<h2 style="font-size:14px;margin:18px 0 8px">${tx('answers')}</h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f1f5f9">
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Question</th>
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Given</th>
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Correct</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Pts</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('question')}</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('given')}</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('correct')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('pts_header')}</th>
           </tr>
         </thead>
         <tbody>${answerRows}</tbody>
@@ -508,13 +510,13 @@ function buildTestSummaryHTML(
               : ''
       }
 
-      <h2 style="font-size:14px;margin:18px 0 8px">Per-question accuracy</h2>
+      <h2 style="font-size:14px;margin:18px 0 8px">${tx('per_question_accuracy')}</h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f1f5f9">
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Question</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Accuracy</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Submissions</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('question')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('accuracy')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('submissions')}</th>
           </tr>
         </thead>
         <tbody>${questionRows}</tbody>
@@ -523,13 +525,13 @@ function buildTestSummaryHTML(
       ${
           skills.length > 0
               ? `
-      <h2 style="font-size:14px;margin:18px 0 8px">Strong / weak points by standard or descriptor</h2>
+      <h2 style="font-size:14px;margin:18px 0 8px">${tx('strong_weak')}</h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f1f5f9">
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Standard / descriptor</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Accuracy</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Submissions</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('standard_descriptor')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('accuracy')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('submissions')}</th>
           </tr>
         </thead>
         <tbody>${skillRows}</tbody>
@@ -540,14 +542,14 @@ function buildTestSummaryHTML(
       ${
           itemRows
               ? `
-      <h2 style="font-size:14px;margin:18px 0 8px">Item analysis (difficulty p, discrimination, top distractor)</h2>
+      <h2 style="font-size:14px;margin:18px 0 8px">${tx('item_analysis')}</h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f1f5f9">
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Question</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Difficulty (p)</th>
-            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">Discrimination</th>
-            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">Top distractor</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('question')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('difficulty_p')}</th>
+            <th style="padding:8px 10px;text-align:center;font-size:12px;border:1px solid #d1d5db">${tx('discrimination')}</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;border:1px solid #d1d5db">${tx('top_distractor')}</th>
           </tr>
         </thead>
         <tbody>${itemRows}</tbody>
@@ -556,7 +558,7 @@ function buildTestSummaryHTML(
       }
 
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
-        Generated by Rubric Maker · ${new Date().toLocaleDateString()}
+        ${escapeHtml(tx('generated_by', { date: new Date().toLocaleDateString() }))}
       </div>
   </div>`;
 }
