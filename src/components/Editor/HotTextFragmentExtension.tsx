@@ -6,10 +6,13 @@ import { openPillPopover } from './pillPopover';
 // A raw `[[`/`]]` anywhere in the serialized passage — whether typed as plain text or inside a
 // fragment's own text — would be reparsed as a fragment boundary by parseHotTextFragments on the
 // next load, silently shifting every later fragment's index and corrupting which one is "correct".
-// Collapsing the doubled bracket to a single one keeps the text close to what was typed while
-// making it impossible to round-trip into a fake fragment marker.
+// Collapsing same-length runs (e.g. `[[[` -> `[`) isn't enough: a lone bracket left over from one
+// text node can still combine with a lone bracket from an *adjacent* node (each individually under
+// the threshold) to form a new `[[`/`]]` once concatenated during serialization — the collapsing
+// happens per-node, but the ambiguity is a property of the final joined string. Removing every `[`
+// and `]` outright is the only rule that's safe under concatenation, so it's the one used here.
 function stripBracketSyntax(text: string): string {
-    return text.replace(/\[\[/g, '[').replace(/\]\]/g, ']');
+    return text.replace(/[[\]]/g, '');
 }
 
 export interface HotTextFragmentOptions {

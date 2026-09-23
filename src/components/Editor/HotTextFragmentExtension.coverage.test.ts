@@ -3,6 +3,7 @@ import type { JSONContent } from '@tiptap/core';
 import { describe, it, expect } from 'vitest';
 import StarterKit from '@tiptap/starter-kit';
 import { HotTextFragment, passageToHotTextContent, hotTextContentToPassage } from './HotTextFragmentExtension';
+import { parseHotTextFragments } from '../../utils/clozeParse';
 
 const MINIMAL_KIT = StarterKit.configure({
     bold: false,
@@ -194,9 +195,20 @@ describe('HotTextFragmentExtension node view', () => {
         const editor = makeEditor(
             '<p>[[b]] <span data-hot-text-fragment data-text="a" data-correct="true"></span></p>'
         );
-        // Without stripping, reparsing "[b] [[a]]" would see 2 fragments and shift which one is correct;
-        // with stripping to a single bracket, only the real "a" fragment node round-trips.
-        expect(hotTextContentToPassage(editor)).toEqual({ passage: '[b] [[a]]', correctIndices: [0] });
+        // Without stripping, reparsing "[[b]] [[a]]" would see 2 fragments and shift which one is
+        // correct; with every bracket removed, only the real "a" fragment node round-trips.
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: 'b [[a]]', correctIndices: [0] });
+        editor.destroy();
+    });
+
+    it('strips a triple-bracket run rather than collapsing it to a residual pair, so it cannot still recombine into [[/]]', () => {
+        // A regex that only collapses runs of 2+ (e.g. "[[[" -> "[") would leave a single bracket
+        // that can combine with an *adjacent* text node's own leftover bracket during serialization —
+        // each individually under a "run of 2" threshold, but forming a real "[[" once concatenated.
+        const editor = makeEditor(
+            '<p>[[[b]]] <span data-hot-text-fragment data-text="a" data-correct="true"></span></p>'
+        );
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: 'b [[a]]', correctIndices: [0] });
         editor.destroy();
     });
 
@@ -208,7 +220,25 @@ describe('HotTextFragmentExtension node view', () => {
         const input = popover.querySelector('.hot-text-popover-input') as HTMLInputElement;
         input.value = 'a]]b[[c';
         (popover.querySelector('.hot-text-popover-save') as HTMLButtonElement).click();
-        expect(hotTextContentToPassage(editor)).toEqual({ passage: '[[a]b[c]]', correctIndices: [] });
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: '[[abc]]', correctIndices: [] });
+        editor.destroy();
+    });
+
+    it('drops a lone trailing bracket in fragment text rather than letting it leak into the delimiter', () => {
+        // "cat]" saved as-is would serialize to "[[cat]]]" — parseHotTextFragments' lazy match stops
+        // at the first "]]" (after "cat"), leaving a stray "]" as trailing plain text and silently
+        // losing information on reload. Stripping the bracket up front keeps the round trip exact.
+        const editor = makeEditor(passageToHotTextContent('[[old]]', []));
+        const pill = editor.view.dom.querySelector('.hot-text-fragment-pill') as HTMLElement;
+        pill.click();
+        const popover = getPopover();
+        const input = popover.querySelector('.hot-text-popover-input') as HTMLInputElement;
+        input.value = 'cat]';
+        (popover.querySelector('.hot-text-popover-save') as HTMLButtonElement).click();
+        const result = hotTextContentToPassage(editor);
+        expect(result).toEqual({ passage: '[[cat]]', correctIndices: [] });
+        // Reparsing must yield exactly one fragment with the saved text, and nothing else.
+        expect(parseHotTextFragments(result.passage)).toEqual([{ type: 'fragment', index: 0, text: 'cat' }]);
         editor.destroy();
     });
 
@@ -217,7 +247,7 @@ describe('HotTextFragmentExtension node view', () => {
         // "Say [[x]] please" as literal text: "[[x]]" (5 chars) sits at string index 4-9 → doc pos 5-10.
         editor.commands.setTextSelection({ from: 5, to: 10 });
         editor.commands.markSelectionAsFragment();
-        expect(hotTextContentToPassage(editor)).toEqual({ passage: 'Say [[[x]]] please', correctIndices: [] });
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: 'Say [[x]] please', correctIndices: [] });
         editor.destroy();
     });
 });
