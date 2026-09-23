@@ -208,7 +208,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                             ) : (
                                 <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
                                     <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
-                                    <div>Loading preview...</div>
+                                    <div>{t('attachments.loading_preview')}</div>
                                 </div>
                             )}
                         </div>
@@ -227,7 +227,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                             {loading && (
                                 <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
                                     <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
-                                    <div>Loading preview...</div>
+                                    <div>{t('attachments.loading_preview')}</div>
                                 </div>
                             )}
                             {error && (

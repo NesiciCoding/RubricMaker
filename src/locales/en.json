@@ -2006,7 +2006,8 @@
         "comment_delete": "Delete",
         "comment_author_you": "You",
         "comment_author_teacher": "Teacher",
-        "comments_empty": "No comments yet. Select text in the document above to add one."
+        "comments_empty": "No comments yet. Select text in the document above to add one.",
+        "loading_preview": "Loading preview…"
     },
     "exportPage": {
         "rubric_section_title": "Rubric Export",
@@ -3534,5 +3535,15 @@
         "landing_student_sub": "View feedback and submit work",
         "delete_submission": "Delete submission",
         "paste_submission_code": "Paste the student's submission code here…"
+    },
+    "notFound": {
+        "heading": "404 — Page not found",
+        "body": "The page you're looking for doesn't exist or has been moved.",
+        "go_dashboard": "Go to Dashboard"
+    },
+    "errors": {
+        "boundary_title": "Something went wrong",
+        "boundary_body": "An unexpected error occurred. Your data is safe — reload the page to continue.",
+        "reload": "Reload page"
     }
 }

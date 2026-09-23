@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { FileText } from 'lucide-react';
 import Modal from '../Modal';
 import HelpPopover from '../HelpPopover';
@@ -8,8 +8,21 @@ import { ConfirmDialog } from '../ConfirmDialog';
 import { EmptyState } from '../EmptyState';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Skeleton, SkeletonText, SkeletonCard, SkeletonRow } from '../Skeleton';
+import i18nInstance from 'i18next';
+import enLocale from '../../../locales/en.json';
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
+
+beforeAll(async () => {
+    if (!i18nInstance.isInitialized) {
+        await i18nInstance.init({
+            lng: 'en',
+            fallbackLng: 'en',
+            resources: { en: { translation: enLocale } },
+            interpolation: { escapeValue: false },
+        });
+    }
+});
 
 describe('Modal', () => {
     it('renders children', () => {

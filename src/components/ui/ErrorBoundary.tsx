@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import i18n from 'i18next';
 import { AlertTriangle } from 'lucide-react';
 import { logEvent } from '../../services/logging/clientLogger';
 
@@ -52,9 +53,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 }}
             >
                 <AlertTriangle size={40} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
-                <h2 style={{ fontSize: '1.2rem', color: 'var(--text)' }}>Something went wrong</h2>
+                <h2 style={{ fontSize: '1.2rem', color: 'var(--text)' }}>{i18n.t('errors.boundary_title')}</h2>
                 <p style={{ color: 'var(--text-muted)', maxWidth: '400px', fontSize: '0.9rem' }}>
-                    An unexpected error occurred. Your data is safe — reload the page to continue.
+                    {i18n.t('errors.boundary_body')}
                 </p>
                 {this.state.error && (
                     <pre
@@ -73,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     </pre>
                 )}
                 <button className="btn btn-primary" onClick={this.handleReload}>
-                    Reload page
+                    {i18n.t('errors.reload')}
                 </button>
             </div>
         );
