@@ -521,7 +521,12 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
-          switches: -avz --delete
+          # --chown forces the web-domain user on the receiving side: rsync -a would
+          # otherwise preserve the runner's uid/gid 1001 (→ `hestiamail` on the box),
+          # and that wrong ownership can trigger HestiaCP's domain-repair, which
+          # re-drops the default skeleton index.html into the docroot. Mirrors
+          # deploy-hestiacp.yml.
+          switches: -avz --delete --chown=rubricmaker:rubricmaker
           path: dist/
           # HestiaCP web root: /home/<user>/web/<domain>/public_html/
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
@@ -533,7 +538,7 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
-          switches: -avz
+          switches: -avz --chown=rubricmaker:rubricmaker
           path: deploy/.htaccess
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
           remote_host: ${{ secrets.VPS_HOST }}

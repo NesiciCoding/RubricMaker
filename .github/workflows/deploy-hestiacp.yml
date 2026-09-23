@@ -48,7 +48,14 @@ jobs:
       - name: Deploy via rsync
         uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
-          switches: -avz --delete
+          # rsync -a preserves the source's numeric owner/group. The GitHub runner's
+          # files are uid/gid 1001, which maps to `hestiamail` on the HestiaCP box, so
+          # without --chown the deployed files end up owned by the wrong user (not the
+          # `rubricmaker` web-domain user). That mismatch can trip HestiaCP's
+          # domain-repair/rebuild, which re-drops the default skeleton index.html into
+          # the docroot. --chown forces the correct owner on the receiving side (rsync
+          # runs as root here, so it's allowed).
+          switches: -avz --delete --chown=rubricmaker:rubricmaker
           path: dist/
           # HestiaCP web root: /home/<user>/web/<domain>/public_html/
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/
@@ -59,7 +66,8 @@ jobs:
       - name: Upload .htaccess
         uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
         with:
-          switches: -avz
+          # Same ownership fix as the dist/ rsync above.
+          switches: -avz --chown=rubricmaker:rubricmaker
           path: deploy/.htaccess
           remote_path: /home/rubricmaker/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
           remote_host: ${{ secrets.VPS_HOST }}
