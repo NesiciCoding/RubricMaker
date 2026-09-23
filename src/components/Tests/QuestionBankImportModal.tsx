@@ -3,6 +3,7 @@ import { AlertTriangle, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import { parseQuestionBankFile, type ImportWarning, type ParsedQuestionBankItem } from '../../utils/questionBankImport';
+import { plainQuestionPromptText } from '../../utils/clozeParse';
 
 interface Props {
     onImport: (items: ParsedQuestionBankItem[]) => void;
@@ -136,7 +137,10 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                                         ? t('questionBank.section_bundle_title', { title: item.section.title })
                                         : (() => {
                                               /* v8 ignore start -- the parser guarantees question.prompt for non-section items */
-                                              return item.question?.prompt || t('questionBank.untitled_prompt');
+                                              return (
+                                                  (item.question && plainQuestionPromptText(item.question)) ||
+                                                  t('questionBank.untitled_prompt')
+                                              );
                                               /* v8 ignore stop */
                                           })()}
                                 </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderClozeSegments } from './clozeParse';
+import { renderClozeSegments, plainQuestionPromptText } from './clozeParse';
 
 describe('renderClozeSegments', () => {
     it('returns a single text segment for plain text', () => {
@@ -34,5 +34,27 @@ describe('renderClozeSegments', () => {
         const result = renderClozeSegments('{{Yes}} or no');
         expect(result[0]).toEqual({ type: 'gap', gap: { index: 0, alternatives: ['Yes'] } });
         expect(result[1]).toEqual({ type: 'text', text: ' or no' });
+    });
+});
+
+describe('plainQuestionPromptText', () => {
+    it('flattens cloze gaps to their correct answer', () => {
+        expect(plainQuestionPromptText({ type: 'cloze', prompt: 'The {{cat|dog}} sat on the {{mat}}.' })).toBe(
+            'The cat sat on the mat.'
+        );
+    });
+
+    it('flattens cloze-dropdown gaps the same way as cloze', () => {
+        expect(plainQuestionPromptText({ type: 'cloze-dropdown', prompt: 'Pick {{correct|wrong}}.' })).toBe(
+            'Pick correct.'
+        );
+    });
+
+    it('leaves a hot-text prompt untouched — its [[...]] syntax lives in hotTextPassage, not prompt', () => {
+        expect(plainQuestionPromptText({ type: 'hot-text', prompt: 'Select the verbs' })).toBe('Select the verbs');
+    });
+
+    it('returns the prompt untouched for every other question type', () => {
+        expect(plainQuestionPromptText({ type: 'multiple-choice', prompt: '<p>Pick one</p>' })).toBe('<p>Pick one</p>');
     });
 });

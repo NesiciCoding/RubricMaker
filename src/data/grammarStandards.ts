@@ -1,6 +1,6 @@
 // CEFR levels follow the CEFR-J Grammar Profile conventions (see cefrjGrammar.ts).
 // `detectShorthand` links an item to a rule in grammarChecker.ts for auto-detection.
-import type { CefrLevel, GrammarCategory, GrammarItem } from '../types';
+import type { CefrLevel, GrammarCategory, GrammarItem, LinkedFrameworkDescriptor } from '../types';
 
 export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
     {
@@ -537,6 +537,27 @@ export function getGrammarItems(filters?: { level?: CefrLevel }): GrammarItem[] 
     const all = GRAMMAR_CATEGORIES.flatMap((c) => c.items);
     if (!filters?.level) return all;
     return all.filter((item) => item.level === filters.level);
+}
+
+/** Builds the CefrPickerModal grammar-tab shape for a GrammarItem.id, for migrating a legacy linkedGrammarItemId. */
+export function grammarItemToFrameworkDescriptor(id: string): LinkedFrameworkDescriptor | undefined {
+    for (const category of GRAMMAR_CATEGORIES) {
+        const item = category.items.find((i) => i.id === id);
+        if (item) {
+            return {
+                descriptorId: item.id,
+                framework: 'grammar',
+                categoryId: category.id,
+                categoryLabelEn: category.labelEn,
+                categoryLabelNl: category.labelNl,
+                categoryColor: category.color,
+                descriptionEn: item.labelEn,
+                descriptionNl: item.labelNl,
+                level: item.level,
+            };
+        }
+    }
+    return undefined;
 }
 
 export function getGrammarItemById(id: string): GrammarItem | undefined {

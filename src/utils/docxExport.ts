@@ -42,6 +42,7 @@ import {
     type AnswerStatus,
 } from './testAnswerText';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
+import { plainQuestionPromptText } from './clozeParse';
 
 // Re-exported for existing call sites that import stripHtmlTags from here.
 export { stripHtmlTags } from './exportDataPrep';
@@ -598,14 +599,11 @@ function buildTestSummaryChildren(
     const questionTable = new Table({
         rows: [
             headerRow([tx('question'), tx('accuracy'), tx('submissions')]),
-            ...questions.map((qb, i) =>
-                breakdownRow(
-                    `Q${i + 1}. ${stripHtmlTags(questionsById.get(qb.questionId)?.prompt ?? '')}`,
-                    qb.accuracyPct,
-                    qb.bucket,
-                    qb.sampleSize
-                )
-            ),
+            ...questions.map((qb, i) => {
+                const question = questionsById.get(qb.questionId);
+                const questionText = question ? stripHtmlTags(plainQuestionPromptText(question)) : '';
+                return breakdownRow(`Q${i + 1}. ${questionText}`, qb.accuracyPct, qb.bucket, qb.sampleSize);
+            }),
         ],
         width: { size: 100, type: WidthType.PERCENTAGE },
     });

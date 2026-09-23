@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
-import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
+import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
@@ -209,7 +209,7 @@ export function buildAnswerRows(test: Test, studentTest: StudentTest, questions:
         const answer = byId.get(q.id);
         const earned = answer?.pointsEarned ?? (answer ? autoScoreResponse(q, answer.response) : 0);
         return {
-            prompt: stripHtmlTags(q.prompt),
+            prompt: stripHtmlTags(plainQuestionPromptText(q)),
             given: formatGivenAnswer(q, answer),
             correct: formatCorrectAnswer(q),
             pointsEarned: earned,

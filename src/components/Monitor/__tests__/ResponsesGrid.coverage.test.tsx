@@ -237,7 +237,7 @@ describe('ResponsesGrid coverage', () => {
 
     it('shows the cloze answer text and no_answer for empty or malformed cloze responses', () => {
         render(<ResponsesGrid test={test} rows={[alice, bob, malformed]} />);
-        fireEvent.click(screen.getByLabelText('X {{a}} Y {{b}}'));
+        fireEvent.click(screen.getByLabelText('X a Y b'));
         const dialog = screen.getByRole('dialog');
         // Alice answered gap 0; the missing gap 1 is filtered out.
         expect(within(dialog).getByText('a')).toBeInTheDocument();

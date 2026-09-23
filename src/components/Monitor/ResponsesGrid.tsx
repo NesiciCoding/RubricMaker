@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
-import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
+import { parseClozeGaps, parseHotTextFragments, plainQuestionPromptText } from '../../utils/clozeParse';
 import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
@@ -365,8 +365,8 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                             type="button"
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setGalleryQuestion(q)}
-                                            title={q.prompt}
-                                            aria-label={q.prompt}
+                                            title={plainQuestionPromptText(q)}
+                                            aria-label={plainQuestionPromptText(q)}
                                         >
                                             {t('tests.monitor.grid.question_short', { index: col.originalIndex + 1 })}
                                         </button>
@@ -490,7 +490,9 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                         index: test.questions.findIndex((q) => q.id === galleryQuestion.id) + 1,
                                     })}
                                 </div>
-                                <p style={{ margin: '6px 0 0', color: 'var(--text)' }}>{galleryQuestion.prompt}</p>
+                                <p style={{ margin: '6px 0 0', color: 'var(--text)' }}>
+                                    {plainQuestionPromptText(galleryQuestion)}
+                                </p>
                             </div>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"

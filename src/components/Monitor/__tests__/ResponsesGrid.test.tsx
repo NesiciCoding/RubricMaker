@@ -168,7 +168,7 @@ describe('ResponsesGrid', () => {
     it('formats cloze, hot-text, true-false and audio answers in the gallery', () => {
         render(<ResponsesGrid test={test} rows={[alice]} />);
 
-        fireEvent.click(screen.getByLabelText('The {{capital}} of France is Paris'));
+        fireEvent.click(screen.getByLabelText('The capital of France is Paris'));
         expect(screen.getByRole('dialog').textContent).toContain('capital');
 
         fireEvent.click(screen.getByLabelText('common.close'));

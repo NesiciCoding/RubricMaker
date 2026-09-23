@@ -11,10 +11,12 @@ import {
     GripVertical,
     Image,
     Music,
+    Paperclip,
     Lightbulb,
     MessageCircle,
     ChevronUp,
     ChevronDown,
+    Settings2,
     BookmarkPlus,
     Gauge,
 } from 'lucide-react';
@@ -24,13 +26,14 @@ import { useToast } from '../../hooks/useToast';
 import { nanoid } from '../../utils/nanoid';
 import EssayEditor from '../Editor/EssayEditor';
 import ClozeGapEditor from './ClozeGapEditor';
+import HotTextEditor from './HotTextEditor';
 import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
-import GrammarItemSelect from '../CEFR/GrammarItemSelect';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
-import { parseClozeGaps, parseHotTextFragments, type HotTextFragmentSegment } from '../../utils/clozeParse';
+import { parseClozeGaps } from '../../utils/clozeParse';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
+import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
 import type {
     TestQuestion,
     TestQuestionType,
@@ -42,6 +45,7 @@ import type {
     TestSection,
     LinkedStandard,
     LinkedCefrDescriptor,
+    LinkedFrameworkDescriptor,
 } from '../../types';
 
 interface Props {
@@ -87,7 +91,7 @@ export default function QuestionEditor({
     showRemove = true,
     showSaveToBank = true,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { addQuestionBankItem } = useAuthoring();
     const { settings } = useSettings();
 
@@ -95,34 +99,81 @@ export default function QuestionEditor({
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
-    const hotTextPassageRef = React.useRef<HTMLTextAreaElement>(null);
+    const [attachOpen, setAttachOpen] = React.useState(() => !!(question.imageUrl || question.audioUrl));
+    const [advancedOpen, setAdvancedOpen] = React.useState(
+        () => !!(question.hint || question.explanation || question.eloRating)
+    );
 
     function update(patch: Partial<TestQuestion>) {
         onChange({ ...question, ...patch });
     }
 
+    // A question can only carry one grammar tag at a time (mastery/learning-path aggregation reads
+    // this single field) — keep it derived from frameworkDescriptors so the "Link CEFR / Framework"
+    // grammar tab stays the single place to set it (see addFrameworkDescriptor/removeFrameworkDescriptor).
+    function deriveLinkedGrammarItemId(frameworkDescriptors: LinkedFrameworkDescriptor[]): string | undefined {
+        return frameworkDescriptors.find((d) => d.framework === 'grammar')?.descriptorId;
+    }
+
+    function addFrameworkDescriptor(descriptor: LinkedFrameworkDescriptor) {
+        const frameworkDescriptors = [...(question.frameworkDescriptors ?? []), descriptor];
+        update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
+    }
+
+    function removeFrameworkDescriptor(descriptorId: string) {
+        /* v8 ignore next -- remove buttons only render when frameworkDescriptors is non-empty */
+        const frameworkDescriptors = (question.frameworkDescriptors ?? []).filter(
+            (d) => d.descriptorId !== descriptorId
+        );
+        update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
+    }
+
+    // One-time migration for questions tagged via the old standalone grammar dropdown (removed in
+    // favor of the "Link CEFR / Framework" grammar tab) — surfaces the existing tag as a linked chip.
+    React.useEffect(() => {
+        if (!question.linkedGrammarItemId) return;
+        const alreadyLinked = (question.frameworkDescriptors ?? []).some(
+            (d) => d.framework === 'grammar' && d.descriptorId === question.linkedGrammarItemId
+        );
+        if (alreadyLinked) return;
+        const descriptor = grammarItemToFrameworkDescriptor(question.linkedGrammarItemId);
+        /* v8 ignore next -- every persisted linkedGrammarItemId references a real GRAMMAR_CATEGORIES entry */
+        if (!descriptor) return;
+        update({ frameworkDescriptors: [...(question.frameworkDescriptors ?? []), descriptor] });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [question.id, question.linkedGrammarItemId]);
+
     function changeType(type: TestQuestionType) {
-        // The grammar picker only shows for these types (see the linkedGrammarItemId form-group
-        // below) — clear a stale link when switching to any other type, since
-        // getGrammarRecommendations() matches on this field with no type check of its own.
-        const linkedGrammarItemId = (
-            ['cloze', 'cloze-dropdown', 'hot-text', 'matching'] as TestQuestionType[]
-        ).includes(type)
-            ? question.linkedGrammarItemId
-            : undefined;
+        // Clear a stale grammar link (both the derived id and its frameworkDescriptors entry) when
+        // switching to a type the grammar tag doesn't apply to, since getGrammarRecommendations()-style
+        // matching has no type check of its own.
+        const keepsGrammarLink = (['cloze', 'cloze-dropdown', 'hot-text', 'matching'] as TestQuestionType[]).includes(
+            type
+        );
+        const linkedGrammarItemId = keepsGrammarLink ? question.linkedGrammarItemId : undefined;
+        const frameworkDescriptors = keepsGrammarLink
+            ? question.frameworkDescriptors
+            : (question.frameworkDescriptors ?? []).filter((d) => d.framework !== 'grammar');
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 options: question.options && question.options.length > 0 ? question.options : defaultOptions(),
             });
         } else if (type === 'true-false') {
-            update({ type, correctBoolean: question.correctBoolean ?? true, linkedGrammarItemId });
+            update({
+                type,
+                correctBoolean: question.correctBoolean ?? true,
+                linkedGrammarItemId,
+                frameworkDescriptors,
+            });
         } else if (type === 'matching') {
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 matchingPairs:
                     question.matchingPairs && question.matchingPairs.length > 0
                         ? question.matchingPairs
@@ -132,6 +183,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 orderItems:
                     question.orderItems && question.orderItems.length > 0 ? question.orderItems : defaultOrderItems(),
             });
@@ -141,6 +193,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 categories,
                 categorizeItems:
                     question.categorizeItems && question.categorizeItems.length > 0
@@ -151,6 +204,7 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 hotTextPassage: question.hotTextPassage ?? '',
                 hotTextCorrectIndices: question.hotTextCorrectIndices ?? [],
             });
@@ -158,41 +212,12 @@ export default function QuestionEditor({
             update({
                 type,
                 linkedGrammarItemId,
+                frameworkDescriptors,
                 maxRecordingSeconds: question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS,
             });
         } else {
-            update({ type, linkedGrammarItemId });
+            update({ type, linkedGrammarItemId, frameworkDescriptors });
         }
-    }
-
-    function wrapSelectionInPassage() {
-        const el = hotTextPassageRef.current;
-        const passage = question.hotTextPassage ?? '';
-        /* v8 ignore next 3 -- the insert button only renders next to the mounted hot-text textarea */
-        if (!el) {
-            update({ hotTextPassage: `${passage}[[word]]` });
-            return;
-        }
-        /* v8 ignore next -- selectionStart is always a number on a mounted textarea */
-        const start = el.selectionStart ?? passage.length;
-        /* v8 ignore next -- selectionEnd is always a number on a mounted textarea */
-        const end = el.selectionEnd ?? passage.length;
-        const selected = passage.slice(start, end) || 'word';
-        const next = passage.slice(0, start) + `[[${selected}]]` + passage.slice(end);
-        update({ hotTextPassage: next });
-        requestAnimationFrame(() => {
-            el.focus();
-            const cursor = start + selected.length + 4;
-            el.setSelectionRange(cursor, cursor);
-        });
-    }
-
-    function toggleHotTextCorrect(fragmentIndex: number) {
-        const current = question.hotTextCorrectIndices ?? [];
-        const next = current.includes(fragmentIndex)
-            ? current.filter((i) => i !== fragmentIndex)
-            : [...current, fragmentIndex];
-        update({ hotTextCorrectIndices: next });
     }
 
     function defaultOptions(): TestOption[] {
@@ -403,6 +428,12 @@ export default function QuestionEditor({
         });
     }
 
+    // Elo rating for staircase placement self-calibration (roadmap Phase 25.5) — only meaningful
+    // once the question's section has a CEFR level, since resolveNextStaircaseQuestion only ever
+    // compares an item's rating against its own level's Elo anchor.
+    const sectionLevel = sections.find((s) => s.id === question.sectionId)?.cefrLevel;
+    const eloRange = sectionLevel ? cefrEloRange(sectionLevel) : null;
+
     return (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
@@ -449,31 +480,6 @@ export default function QuestionEditor({
                 </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
-                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
-                    // Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
-                    // prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
-                    // clickable pills instead of hand-typed syntax, but the stored format and the
-                    // parse/scoring layer are unchanged.
-                    <ClozeGapEditor
-                        value={question.prompt}
-                        onChange={(prompt) => update({ prompt })}
-                        allowDropdown={question.type === 'cloze-dropdown'}
-                        insertGapLabel={t('tests.cloze_insert_gap')}
-                        insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
-                    />
-                ) : (
-                    <EssayEditor
-                        content={question.prompt}
-                        onChange={(html) => update({ prompt: html })}
-                        minHeight={80}
-                        allowPageMode={false}
-                        allowImageEmbedding
-                    />
-                )}
-            </div>
-
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
                     <label htmlFor={`question-type-${question.id}`}>{t('tests.question_type_label')}</label>
@@ -518,136 +524,30 @@ export default function QuestionEditor({
                 )}
             </div>
 
-            {/* Image */}
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <label
-                    htmlFor={`question-image-${question.id}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                    <Image size={14} /> {t('tests.question_image_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                        ({t('essay_assignment.optional')})
-                    </span>
-                </label>
-                <input
-                    id={`question-image-${question.id}`}
-                    type="url"
-                    value={question.imageUrl ?? ''}
-                    onChange={(e) => update({ imageUrl: e.target.value || undefined })}
-                    placeholder={t('tests.question_image_placeholder')}
-                />
-                {question.imageUrl && (
-                    <img
-                        src={question.imageUrl}
-                        alt={t('tests.question_image_preview_alt')}
-                        style={{
-                            marginTop: 8,
-                            maxWidth: '100%',
-                            maxHeight: 200,
-                            borderRadius: 6,
-                            objectFit: 'contain',
-                            border: '1px solid var(--border)',
-                        }}
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                        onLoad={(e) => {
-                            (e.target as HTMLImageElement).style.display = '';
-                        }}
+                <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
+                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
+                    // Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
+                    // prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
+                    // clickable pills instead of hand-typed syntax, but the stored format and the
+                    // parse/scoring layer are unchanged.
+                    <ClozeGapEditor
+                        value={question.prompt}
+                        onChange={(prompt) => update({ prompt })}
+                        allowDropdown={question.type === 'cloze-dropdown'}
+                        insertGapLabel={t('tests.cloze_insert_gap')}
+                        insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
+                    />
+                ) : (
+                    <EssayEditor
+                        content={question.prompt}
+                        onChange={(html) => update({ prompt: html })}
+                        minHeight={80}
+                        allowPageMode={false}
+                        allowImageEmbedding
                     />
                 )}
             </div>
-
-            {/* Audio */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <label
-                    htmlFor={`question-audio-${question.id}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                    <Music size={14} /> {t('tests.question_audio_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                        ({t('essay_assignment.optional')})
-                    </span>
-                </label>
-                <input
-                    id={`question-audio-${question.id}`}
-                    type="url"
-                    value={question.audioUrl ?? ''}
-                    onChange={(e) => update({ audioUrl: e.target.value || undefined })}
-                    placeholder={t('tests.question_audio_placeholder')}
-                />
-                <AudioUrlStatus url={question.audioUrl} />
-                {question.audioUrl && (
-                    <audio
-                        controls
-                        src={question.audioUrl}
-                        aria-label={t('tests.question_audio_preview_alt')}
-                        style={{ marginTop: 8, width: '100%' }}
-                    />
-                )}
-            </div>
-
-            {/* Hint */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <label
-                    htmlFor={`question-hint-${question.id}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                    <Lightbulb size={14} /> {t('tests.question_hint_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                        ({t('essay_assignment.optional')})
-                    </span>
-                </label>
-                <input
-                    id={`question-hint-${question.id}`}
-                    type="text"
-                    value={question.hint ?? ''}
-                    onChange={(e) => update({ hint: e.target.value || undefined })}
-                    placeholder={t('tests.question_hint_placeholder')}
-                />
-            </div>
-
-            {/* Practice-mode explanation */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <label
-                    htmlFor={`question-explanation-${question.id}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                    <MessageCircle size={14} /> {t('tests.question_explanation_label')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                        ({t('essay_assignment.optional')})
-                    </span>
-                </label>
-                <textarea
-                    id={`question-explanation-${question.id}`}
-                    value={question.explanation ?? ''}
-                    onChange={(e) => update({ explanation: e.target.value || undefined })}
-                    placeholder={t('tests.question_explanation_placeholder')}
-                    rows={2}
-                />
-                <p className="text-muted text-xs" style={{ marginTop: 4 }}>
-                    {t('tests.question_explanation_help')}
-                </p>
-            </div>
-
-            {(question.type === 'cloze' ||
-                question.type === 'cloze-dropdown' ||
-                question.type === 'hot-text' ||
-                question.type === 'matching') && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor={`question-grammar-${question.id}`}>
-                        {t('grammar.item_select_label')}{' '}
-                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                            ({t('essay_assignment.optional')})
-                        </span>
-                    </label>
-                    <GrammarItemSelect
-                        id={`question-grammar-${question.id}`}
-                        value={question.linkedGrammarItemId}
-                        onChange={(linkedGrammarItemId) => update({ linkedGrammarItemId })}
-                    />
-                </div>
-            )}
 
             {(question.type === 'multiple-choice' || question.type === 'multiple-response') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1069,67 +969,20 @@ export default function QuestionEditor({
 
             {question.type === 'hot-text' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <label htmlFor={`question-hottext-${question.id}`}>
+                    <label>
                         {t('tests.hot_text_passage_label')}{' '}
                         <HelpPopover title={t('tests.help.hot_text_teacher_title')}>
                             {t('tests.help.hot_text_teacher_body')}
                         </HelpPopover>
                     </label>
-                    <textarea
-                        ref={hotTextPassageRef}
-                        id={`question-hottext-${question.id}`}
-                        value={question.hotTextPassage ?? ''}
-                        onChange={(e) => update({ hotTextPassage: e.target.value })}
-                        rows={3}
-                        placeholder={t('tests.hot_text_passage_placeholder')}
-                        style={{ resize: 'vertical' }}
-                    />
-                    <div>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={wrapSelectionInPassage}>
-                            <Plus size={14} /> {t('tests.hot_text_insert_fragment')}
-                        </button>
-                    </div>
-                    {(() => {
-                        const fragments = parseHotTextFragments(question.hotTextPassage ?? '').filter(
-                            (s): s is HotTextFragmentSegment => s.type === 'fragment'
-                        );
-                        if (fragments.length === 0) {
-                            return (
-                                <p className="text-muted text-xs" style={{ margin: 0 }}>
-                                    {t('tests.hot_text_no_fragments')}
-                                </p>
-                            );
+                    <HotTextEditor
+                        passage={question.hotTextPassage ?? ''}
+                        correctIndices={question.hotTextCorrectIndices ?? []}
+                        onChange={(hotTextPassage, hotTextCorrectIndices) =>
+                            update({ hotTextPassage, hotTextCorrectIndices })
                         }
-                        const correctIndices = question.hotTextCorrectIndices ?? [];
-                        return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                <p className="text-muted text-xs" style={{ margin: 0 }}>
-                                    {t('tests.hot_text_fragments_help')}
-                                </p>
-                                {fragments.map((fragment) => (
-                                    <div key={fragment.index} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-icon btn-sm"
-                                            aria-label={t('tests.mark_correct_option')}
-                                            aria-pressed={correctIndices.includes(fragment.index)}
-                                            title={t('tests.mark_correct_option')}
-                                            onClick={() => toggleHotTextCorrect(fragment.index)}
-                                            style={{
-                                                color: correctIndices.includes(fragment.index)
-                                                    ? 'var(--green)'
-                                                    : 'var(--text-muted)',
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            <Check size={16} />
-                                        </button>
-                                        <span style={{ color: 'var(--text)' }}>{fragment.text || '—'}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        );
-                    })()}
+                        insertFragmentLabel={t('tests.hot_text_insert_fragment')}
+                    />
                     {renderPartialCreditToggle()}
                 </div>
             )}
@@ -1223,49 +1076,212 @@ export default function QuestionEditor({
                 </div>
             )}
 
-            {/* Elo rating for staircase placement self-calibration (roadmap Phase 25.5) — only
-                meaningful once the question's section has a CEFR level, since resolveNextStaircaseQuestion
-                only ever compares an item's rating against its own level's Elo anchor. */}
-            {(() => {
-                const sectionLevel = sections.find((s) => s.id === question.sectionId)?.cefrLevel;
-                if (!sectionLevel) {
-                    return (
-                        <p className="text-muted text-xs" style={{ margin: 0 }}>
-                            {t('tests.elo_rating_no_level')}
-                        </p>
-                    );
-                }
-                const range = cefrEloRange(sectionLevel);
-                return (
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label
-                            htmlFor={`question-elo-${question.id}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                        >
-                            <Gauge size={14} /> {t('tests.elo_rating_label')}{' '}
-                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                                ({t('essay_assignment.optional')})
-                            </span>{' '}
-                            <HelpPopover title={t('tests.elo_rating_label')}>{t('tests.elo_rating_help')}</HelpPopover>
-                        </label>
-                        <input
-                            id={`question-elo-${question.id}`}
-                            type="number"
-                            min={range.min}
-                            max={range.max}
-                            value={question.eloRating ?? ''}
-                            onChange={(e) =>
-                                update({ eloRating: e.target.value === '' ? undefined : Number(e.target.value) })
-                            }
-                            placeholder={String(LEVEL_TO_ELO[sectionLevel])}
-                            style={{ width: 140 }}
-                        />
-                        <p className="text-muted text-xs" style={{ marginTop: 4 }}>
-                            {t('tests.elo_rating_range_hint', { min: range.min, max: range.max })}
-                        </p>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        aria-expanded={attachOpen}
+                        onClick={() => setAttachOpen((v) => !v)}
+                    >
+                        <Paperclip size={14} /> {t('tests.attach_media')}
+                    </button>
+                    {question.imageUrl && (
+                        <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <Image size={12} /> {t('tests.question_image_label')}
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('tests.remove_attachment', { name: t('tests.question_image_label') })}
+                                style={{ padding: 0, color: 'inherit' }}
+                                onClick={() => update({ imageUrl: undefined })}
+                            >
+                                <X size={11} />
+                            </button>
+                        </span>
+                    )}
+                    {question.audioUrl && (
+                        <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <Music size={12} /> {t('tests.question_audio_label')}
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('tests.remove_attachment', { name: t('tests.question_audio_label') })}
+                                style={{ padding: 0, color: 'inherit' }}
+                                onClick={() => update({ audioUrl: undefined })}
+                            >
+                                <X size={11} />
+                            </button>
+                        </span>
+                    )}
+                </div>
+                {attachOpen && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12,
+                            marginTop: 8,
+                            padding: 10,
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                        }}
+                    >
+                        <div>
+                            <label
+                                htmlFor={`question-image-${question.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                            >
+                                <Image size={14} /> {t('tests.question_image_label')}
+                            </label>
+                            <input
+                                id={`question-image-${question.id}`}
+                                type="url"
+                                value={question.imageUrl ?? ''}
+                                onChange={(e) => update({ imageUrl: e.target.value || undefined })}
+                                placeholder={t('tests.question_image_placeholder')}
+                            />
+                            {question.imageUrl && (
+                                <img
+                                    src={question.imageUrl}
+                                    alt={t('tests.question_image_preview_alt')}
+                                    style={{
+                                        marginTop: 8,
+                                        maxWidth: '100%',
+                                        maxHeight: 200,
+                                        borderRadius: 6,
+                                        objectFit: 'contain',
+                                        border: '1px solid var(--border)',
+                                    }}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                    onLoad={(e) => {
+                                        (e.target as HTMLImageElement).style.display = '';
+                                    }}
+                                />
+                            )}
+                        </div>
+                        <div>
+                            <label
+                                htmlFor={`question-audio-${question.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                            >
+                                <Music size={14} /> {t('tests.question_audio_label')}
+                            </label>
+                            <input
+                                id={`question-audio-${question.id}`}
+                                type="url"
+                                value={question.audioUrl ?? ''}
+                                onChange={(e) => update({ audioUrl: e.target.value || undefined })}
+                                placeholder={t('tests.question_audio_placeholder')}
+                            />
+                            <AudioUrlStatus url={question.audioUrl} />
+                            {question.audioUrl && (
+                                <audio
+                                    controls
+                                    src={question.audioUrl}
+                                    aria-label={t('tests.question_audio_preview_alt')}
+                                    style={{ marginTop: 8, width: '100%' }}
+                                />
+                            )}
+                        </div>
                     </div>
-                );
-            })()}
+                )}
+            </div>
+
+            {/* Advanced/optional: hint, practice explanation, staircase Elo rating */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    aria-expanded={advancedOpen}
+                    onClick={() => setAdvancedOpen((v) => !v)}
+                >
+                    <Settings2 size={14} /> {t('tests.advanced_options')}
+                </button>
+                {advancedOpen && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12,
+                            marginTop: 8,
+                            padding: 10,
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                        }}
+                    >
+                        <div>
+                            <label
+                                htmlFor={`question-hint-${question.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                            >
+                                <Lightbulb size={14} /> {t('tests.question_hint_label')}
+                            </label>
+                            <input
+                                id={`question-hint-${question.id}`}
+                                type="text"
+                                value={question.hint ?? ''}
+                                onChange={(e) => update({ hint: e.target.value || undefined })}
+                                placeholder={t('tests.question_hint_placeholder')}
+                            />
+                        </div>
+                        <div>
+                            <label
+                                htmlFor={`question-explanation-${question.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                            >
+                                <MessageCircle size={14} /> {t('tests.question_explanation_label')}
+                            </label>
+                            <textarea
+                                id={`question-explanation-${question.id}`}
+                                value={question.explanation ?? ''}
+                                onChange={(e) => update({ explanation: e.target.value || undefined })}
+                                placeholder={t('tests.question_explanation_placeholder')}
+                                rows={2}
+                            />
+                            <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                {t('tests.question_explanation_help')}
+                            </p>
+                        </div>
+                        {sectionLevel && eloRange ? (
+                            <div>
+                                <label
+                                    htmlFor={`question-elo-${question.id}`}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                >
+                                    <Gauge size={14} /> {t('tests.elo_rating_label')}{' '}
+                                    <HelpPopover title={t('tests.elo_rating_label')}>
+                                        {t('tests.elo_rating_help')}
+                                    </HelpPopover>
+                                </label>
+                                <input
+                                    id={`question-elo-${question.id}`}
+                                    type="number"
+                                    min={eloRange.min}
+                                    max={eloRange.max}
+                                    value={question.eloRating ?? ''}
+                                    onChange={(e) =>
+                                        update({
+                                            eloRating: e.target.value === '' ? undefined : Number(e.target.value),
+                                        })
+                                    }
+                                    placeholder={String(LEVEL_TO_ELO[sectionLevel])}
+                                    style={{ width: 140 }}
+                                />
+                                <p className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                    {t('tests.elo_rating_range_hint', { min: eloRange.min, max: eloRange.max })}
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-muted text-xs" style={{ margin: 0 }}>
+                                {t('tests.elo_rating_no_level')}
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* Standards + CEFR linking */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1346,6 +1362,56 @@ export default function QuestionEditor({
                             </button>
                         </div>
                     ))}
+                    {(question.frameworkDescriptors ?? []).map((descriptor) => (
+                        <div
+                            key={descriptor.descriptorId}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                background: `color-mix(in srgb, ${descriptor.categoryColor} 8%, transparent)`,
+                                border: `1px solid color-mix(in srgb, ${descriptor.categoryColor} 25%, transparent)`,
+                                borderRadius: 8,
+                                padding: '6px 12px',
+                                fontSize: '0.8rem',
+                            }}
+                        >
+                            <span
+                                style={{
+                                    background: descriptor.categoryColor,
+                                    color: '#fff',
+                                    borderRadius: 4,
+                                    padding: '1px 5px',
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {i18n.language.startsWith('nl')
+                                    ? descriptor.categoryLabelNl
+                                    : descriptor.categoryLabelEn}
+                            </span>
+                            <span
+                                style={{
+                                    color: 'var(--text)',
+                                    maxWidth: 280,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {i18n.language.startsWith('nl') ? descriptor.descriptionNl : descriptor.descriptionEn}
+                            </span>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                aria-label={t('rubricBuilder.action_remove_descriptor')}
+                                style={{ color: 'var(--text-muted)', padding: 2 }}
+                                onClick={() => removeFrameworkDescriptor(descriptor.descriptorId)}
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    ))}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn btn-secondary btn-sm" onClick={() => setPickingStandard(true)}>
@@ -1398,9 +1464,9 @@ export default function QuestionEditor({
                     linkedDescriptors={question.linkedCefrDescriptors ?? []}
                     onAdd={addCefrDescriptor}
                     onRemove={removeCefrDescriptor}
-                    linkedFrameworkDescriptors={[]}
-                    onAddFramework={() => {}}
-                    onRemoveFramework={() => {}}
+                    linkedFrameworkDescriptors={question.frameworkDescriptors ?? []}
+                    onAddFramework={addFrameworkDescriptor}
+                    onRemoveFramework={removeFrameworkDescriptor}
                     onClose={() => setPickingCefr(false)}
                 />
             )}

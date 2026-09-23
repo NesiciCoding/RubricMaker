@@ -49,6 +49,7 @@ import {
 } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
+import { plainQuestionPromptText } from '../utils/clozeParse';
 
 /** Soft heuristic for a staircase level pool's builder warning — enough headroom for a couple of up/down moves without exhausting the pool. */
 const MIN_QUESTIONS_PER_LEVEL = 3;
@@ -231,7 +232,9 @@ export default function TestBuilderPage() {
     const generatorStarterLabel = generatorStarterItem
         ? generatorStarterItem.kind === 'section'
             ? (generatorStarterItem.section?.title ?? '')
-            : (generatorStarterItem.question?.prompt ?? '')
+            : generatorStarterItem.question
+              ? plainQuestionPromptText(generatorStarterItem.question)
+              : ''
         : '';
 
     // Group questions by section for rendering; normalize stale sectionIds to null
