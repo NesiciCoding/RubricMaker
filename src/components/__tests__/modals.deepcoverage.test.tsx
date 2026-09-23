@@ -8,6 +8,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ImportRubricModal from '../Rubric/ImportRubricModal';
 import TemplateUploadModal from '../Rubric/TemplateUploadModal';
 
+import enJson from '../../locales/en.json';
+const trGet = (path: string): string | undefined =>
+    path.split('.').reduce<unknown>((o, k) => (o == null ? undefined : (o as Record<string, unknown>)[k]), enJson) as
+        string | undefined;
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => {
+            let k = key;
+            if (opts && typeof opts.count === 'number') {
+                const p = opts.count === 1 ? `${key}_one` : `${key}_other`;
+                if (trGet(p) != null) k = p;
+            }
+            let out = trGet(k);
+            if (out == null) return key;
+            if (opts) for (const [kk, vv] of Object.entries(opts)) out = out.replaceAll(`{{${kk}}}`, String(vv));
+            return out;
+        },
+        i18n: { language: 'en', changeLanguage: vi.fn() },
+    }),
+    Trans: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 // ─── Shared mocks ─────────────────────────────────────────────────────────────
 
 const mockParseJson = vi.fn();

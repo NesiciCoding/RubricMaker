@@ -13,6 +13,28 @@ const CSV_TRANSLATIONS: Record<string, string> = {
     'csv.cancel': 'Cancel',
     'csv.detected_format_clever': 'Detected: Clever format',
     'csv.detected_format_oneroster': 'Detected: OneRoster format',
+    'csv.map_title': 'Map CSV Columns',
+    'csv.parsing': 'Parsing file...',
+    'csv.map_intro': 'Match your CSV columns to the student fields. Map Full Name, or both First Name and Last Name.',
+    'csv.full_name': 'Full Name',
+    'csv.email_optional': 'Email (optional)',
+    'csv.first_name': 'First Name',
+    'csv.last_name': 'Last Name',
+    'csv.inactive': '(inactive)',
+    'csv.class_name_optional': 'Class Name (optional)',
+    'csv.opt_ignore': '-- Ignore --',
+    'csv.opt_import_selected': '-- Import to currently selected class --',
+    'csv.class_hint':
+        'If mapped, students will be sorted into these classes. New classes will be created automatically.',
+    'csv.preview_title': 'Data Preview (First 3 rows)',
+    'csv.col_name': 'Name',
+    'csv.col_email': 'Email',
+    'csv.col_class': 'Class',
+    'csv.empty': 'Empty',
+    'csv.err_empty': 'The CSV file is empty.',
+    'csv.err_no_columns': 'Could not detect any columns in the CSV file.',
+    'csv.err_parse': 'Failed to parse CSV: {{message}}',
+    'csv.active_class_default': 'Active Class (Default)',
 };
 
 vi.mock('react-i18next', () => ({
@@ -21,7 +43,9 @@ vi.mock('react-i18next', () => ({
             if (key === 'csv.import_btn') {
                 return `Import ${opts?.count ?? 0} Student${(opts?.count ?? 0) !== 1 ? 's' : ''}`;
             }
-            return CSV_TRANSLATIONS[key] ?? key;
+            let out = CSV_TRANSLATIONS[key] ?? key;
+            if (opts) for (const [k, v] of Object.entries(opts)) out = out.replace(`{{${k}}}`, String(v));
+            return out;
         },
         i18n: { language: 'en', changeLanguage: vi.fn() },
     }),
