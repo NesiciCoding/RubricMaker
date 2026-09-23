@@ -19,6 +19,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
 import { sanitizeAnswers, isAssignmentExpired, attemptPolicyFor } from './validation.ts';
 
 const CORS = {
@@ -36,9 +37,10 @@ function json(body: unknown, status = 200) {
 // ── Placement path integrity ────────────────────────────────────────────────
 // sectionPath/levelPath drive the provisional CEFR estimate and (via
 // maxPointsForPath/staircaseMaxPoints on the client) the score shown on the results
-// page, so a forged path must be rejected. This replays real auto-scoring against the
-// submitted answers (mirroring src/utils/testCalc.ts, src/utils/clozeParse.ts,
-// src/utils/placementRouting.ts and src/utils/placementStaircase.ts) and requires an
+// page, so a forged path must be rejected. This replays real auto-scoring (shared with the
+// client via ../_shared/testScoring.ts) against the submitted answers, plus the routing and
+// staircase rules (mirroring src/utils/placementRouting.ts and
+// src/utils/placementStaircase.ts), and requires an
 // exact match with the client-claimed path — a structurally valid but score-inconsistent
 // trace (e.g. claiming the pass edge on a failing score, or a higher CEFR level than the
 // replay reaches) is rejected rather than merely a graph-impossible one.
@@ -47,38 +49,9 @@ const STEP_UP_AFTER_CORRECT = 2;
 const CONVERGE_AFTER_REVERSALS = 2;
 const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
-interface MinimalOption {
+interface MinimalQuestion extends ScorableQuestion {
     id: string;
-    isCorrect: boolean;
-}
-interface MinimalMatchingPair {
-    id: string;
-}
-interface MinimalOrderItem {
-    id: string;
-}
-interface MinimalCategorizeItem {
-    id: string;
-    categoryId: string;
-}
-interface MinimalQuestion {
-    id: string;
-    type: string;
-    points: number;
     sectionId?: string;
-    prompt: string;
-    options?: MinimalOption[];
-    matchingPairs?: MinimalMatchingPair[];
-    orderItems?: MinimalOrderItem[];
-    categorizeItems?: MinimalCategorizeItem[];
-    hotTextPassage?: string;
-    hotTextCorrectIndices?: number[];
-    expectedAnswer?: string;
-    expectedAnswers?: string[];
-    expectedNumericValue?: number;
-    numericTolerance?: number;
-    partialCredit?: boolean;
-    correctBoolean?: boolean;
     eloRating?: number;
 }
 interface MinimalSection {
@@ -98,200 +71,6 @@ interface MinimalAnswer {
 
 function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
-}
-
-// ── Cloze / hot-text gap parsing (mirrors src/utils/clozeParse.ts) ──────────
-
-function parseClozeGaps(prompt: string): { index: number; alternatives: string[] }[] {
-    const gaps: { index: number; alternatives: string[] }[] = [];
-    const pattern = /\{\{(.*?)\}\}/g;
-    let match: RegExpExecArray | null;
-    let index = 0;
-    while ((match = pattern.exec(prompt)) !== null) {
-        const alternatives = match[1]
-            .split('|')
-            .map((alt) => alt.trim())
-            .filter((alt) => alt.length > 0);
-        gaps.push({ index, alternatives });
-        index += 1;
-    }
-    return gaps;
-}
-
-function parseHotTextFragmentIndices(passage: string): number[] {
-    const fragmentCount = passage.match(/\[\[(.*?)\]\]/g)?.length ?? 0;
-    return Array.from({ length: fragmentCount }, (_, i) => i);
-}
-
-// ── Auto-scoring (mirrors src/utils/testCalc.ts) ────────────────────────────
-
-function scoreShortAnswerExact(question: MinimalQuestion, response: string): number {
-    const answers = question.expectedAnswers?.length
-        ? question.expectedAnswers
-        : question.expectedAnswer
-          ? [question.expectedAnswer]
-          : [];
-    if (answers.length === 0) return 0;
-    const trimmedResponse = response.trim().toLowerCase();
-    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
-}
-
-function scoreNumeric(question: MinimalQuestion, response: string): number {
-    if (question.expectedNumericValue === undefined) return 0;
-    const trimmed = response.trim();
-    if (trimmed === '') return 0;
-    const value = Number(trimmed);
-    if (Number.isNaN(value)) return 0;
-    const tolerance = question.numericTolerance ?? 0;
-    return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
-}
-
-function scoreMultipleResponse(question: MinimalQuestion, response: string): number {
-    const options = question.options ?? [];
-    let selected: string[];
-    try {
-        selected = response ? (JSON.parse(response) as string[]) : [];
-    } catch {
-        selected = [];
-    }
-    const selectedSet = new Set(selected);
-    const correctSet = new Set(options.filter((o) => o.isCorrect).map((o) => o.id));
-
-    if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
-        return exact ? question.points : 0;
-    }
-
-    if (options.length === 0) return 0;
-    const matches = options.filter((o) => selectedSet.has(o.id) === correctSet.has(o.id)).length;
-    return question.points * (matches / options.length);
-}
-
-function scoreCloze(question: MinimalQuestion, response: string): number {
-    const gaps = parseClozeGaps(question.prompt);
-    if (gaps.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const isDropdown = question.type === 'cloze-dropdown';
-    const correctCount = gaps.filter((gap) => {
-        const studentAnswer = (answers[gap.index] ?? '').trim();
-        if (!studentAnswer) return false;
-        if (isDropdown) return studentAnswer === gap.alternatives[0];
-        return gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
-    }).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === gaps.length ? question.points : 0;
-    }
-    return question.points * (correctCount / gaps.length);
-}
-
-function scoreMatching(question: MinimalQuestion, response: string): number {
-    const pairs = question.matchingPairs ?? [];
-    if (pairs.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const correctCount = pairs.filter((pair) => answers[pair.id] === pair.id).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === pairs.length ? question.points : 0;
-    }
-    return question.points * (correctCount / pairs.length);
-}
-
-function scoreOrdering(question: MinimalQuestion, response: string): number {
-    const items = question.orderItems ?? [];
-    if (items.length === 0) return 0;
-
-    let order: string[] = [];
-    try {
-        order = response ? (JSON.parse(response) as string[]) : [];
-    } catch {
-        order = [];
-    }
-
-    const correctCount = items.filter((item, i) => order[i] === item.id).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === items.length ? question.points : 0;
-    }
-    return question.points * (correctCount / items.length);
-}
-
-function scoreCategorize(question: MinimalQuestion, response: string): number {
-    const items = question.categorizeItems ?? [];
-    if (items.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const correctCount = items.filter((item) => answers[item.id] === item.categoryId).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === items.length ? question.points : 0;
-    }
-    return question.points * (correctCount / items.length);
-}
-
-function scoreHotText(question: MinimalQuestion, response: string): number {
-    const fragmentIndices = parseHotTextFragmentIndices(question.hotTextPassage ?? '');
-    if (fragmentIndices.length === 0) return 0;
-
-    let selected: number[];
-    try {
-        selected = response ? (JSON.parse(response) as number[]) : [];
-    } catch {
-        selected = [];
-    }
-
-    const selectedSet = new Set(selected);
-    const correctSet = new Set(question.hotTextCorrectIndices ?? []);
-
-    if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i));
-        return exact ? question.points : 0;
-    }
-
-    const matches = fragmentIndices.filter((i) => selectedSet.has(i) === correctSet.has(i)).length;
-    return question.points * (matches / fragmentIndices.length);
-}
-
-function isAutoScorable(question: MinimalQuestion): boolean {
-    return question.type !== 'open';
-}
-
-function autoScoreResponse(question: MinimalQuestion, response: string): number {
-    if (question.type === 'multiple-choice') {
-        const selected = question.options?.find((o) => o.id === response);
-        return selected?.isCorrect ? question.points : 0;
-    }
-    if (question.type === 'multiple-response') return scoreMultipleResponse(question, response);
-    if (question.type === 'true-false')
-        return response === String(question.correctBoolean ?? true) ? question.points : 0;
-    if (question.type === 'short-answer') return scoreShortAnswerExact(question, response);
-    if (question.type === 'numeric') return scoreNumeric(question, response);
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') return scoreCloze(question, response);
-    if (question.type === 'matching') return scoreMatching(question, response);
-    if (question.type === 'ordering') return scoreOrdering(question, response);
-    if (question.type === 'categorize') return scoreCategorize(question, response);
-    if (question.type === 'hot-text') return scoreHotText(question, response);
-    return 0; // open — needs manual points
 }
 
 // ── Multistage (MST) routing replay (mirrors src/utils/placementRouting.ts) ─

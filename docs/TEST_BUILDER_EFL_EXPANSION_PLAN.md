@@ -42,9 +42,8 @@ scoring logic:
 
 **Implication:** prefer _authoring aids that emit an existing type_ (zero schema,
 zero scorer changes) over new types wherever the student experience is the same.
-Before adding several new types, add a **scoring parity test** that runs the
-client scorer and both edge-function scorers over the same fixture set, so the
-three copies cannot drift.
+The three scorer copies have since been merged into one shared module (§6.4), so
+a new type's scorer is written once.
 
 ---
 
@@ -249,9 +248,13 @@ Notes:
    `profileGrammar` (regex + compromise) until a VocabKitchen-based grammar profiler
    replaces it. VocabKitchen's grammar engine needs spaCy, so that swap needs its own
    design (server-side edge function vs. a browser port).
-4. **Scoring architecture (still open).** Add a scoring parity test first, or (larger)
-   move the scorers into a shared module that both the client and the Deno
-   functions import.
+4. **Scoring architecture: one shared module.** Auto-scoring and cloze/hot-text
+   parsing live only in `supabase/functions/_shared/testScoring.ts`, imported by the
+   client and both scoring edge functions. Golden fixtures
+   (`src/__tests__/testScoringFixtures.test.ts`) pin the scores, a guard test blocks
+   re-introduced copies, and CI type-checks `_shared/` under Deno. New question types
+   add their scorer there once. Placement routing/staircase replay in `submit-test`
+   is still mirrored by hand.
 
 ---
 

@@ -1,6 +1,7 @@
 import type { Test, TestQuestion, TestAnswer } from '../types';
 import { autoScoreResponse } from './testCalc';
 import { clamp } from './clamp';
+import { isAutoScorable } from '../../supabase/functions/_shared/testScoring.ts';
 
 /** Shape needed by the routing helpers below — narrower than `Test` so builder-in-progress state (not yet a saved Test) can reuse them directly. */
 type SectionedTest = Pick<Test, 'questions' | 'sections'>;
@@ -13,10 +14,7 @@ export function entrySectionId(test: SectionedTest): string | null {
     return test.sections?.[0]?.id ?? null;
 }
 
-/** Open questions require manual grading and can't drive automatic routing. */
-export function isAutoScorable(question: TestQuestion): boolean {
-    return question.type !== 'open';
-}
+export { isAutoScorable } from '../../supabase/functions/_shared/testScoring.ts';
 
 /** Questions presented for a given section — the entry section also picks up any question left without a sectionId. */
 export function sectionQuestions(test: SectionedTest, sectionId: string): TestQuestion[] {
