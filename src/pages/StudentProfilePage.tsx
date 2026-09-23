@@ -302,7 +302,7 @@ export default function StudentProfilePage() {
         return (
             <>
                 <Topbar
-                    title="Student Profile"
+                    title={t('tooltips.student_profile')}
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/students')}>
                             <ArrowLeft size={14} /> Back
@@ -360,7 +360,7 @@ export default function StudentProfilePage() {
                 }}
             />
             <Topbar
-                title="Student Profile"
+                title={t('tooltips.student_profile')}
                 actions={
                     <>
                         <button className="btn btn-ghost btn-sm no-print" onClick={() => setTourRun(true)}>
@@ -1287,7 +1287,7 @@ export default function StudentProfilePage() {
                                                                     `/rubrics/${h.rubric.id}/peer-review/${student.id}`
                                                                 )
                                                             }
-                                                            title="Self/Peer Review"
+                                                            title={t('tooltips.self_peer_review')}
                                                         >
                                                             <User size={14} />
                                                         </button>
@@ -1296,7 +1296,7 @@ export default function StudentProfilePage() {
                                                             onClick={() =>
                                                                 navigate(`/rubrics/${h.rubric.id}/grade/${student.id}`)
                                                             }
-                                                            title="Edit Grade"
+                                                            title={t('tooltips.edit_grade')}
                                                         >
                                                             <FileText size={14} />
                                                         </button>

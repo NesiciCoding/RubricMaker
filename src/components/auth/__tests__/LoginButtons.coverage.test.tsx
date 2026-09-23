@@ -80,7 +80,7 @@ describe('LoginButtons coverage', () => {
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
         fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
-        const passwordInput = screen.getByPlaceholderText('Password');
+        const passwordInput = screen.getByPlaceholderText('common.password');
         const emailInput = screen.getByPlaceholderText(/your@email/i);
 
         // Empty email AND empty password → both validation branches.
@@ -103,7 +103,7 @@ describe('LoginButtons coverage', () => {
         render(<LoginButtons supabaseReady={false} onNeedConfig={onNeedConfig} />);
         fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
         fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
-        fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret' } });
+        fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
         expect(onNeedConfig).toHaveBeenCalled();
     });
@@ -116,7 +116,7 @@ describe('LoginButtons coverage', () => {
         render(<LoginButtons supabaseReady />);
         fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
         fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
-        fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'wrong' } });
+        fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'wrong' } });
         fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
         expect(await screen.findByText('Bad password')).toBeInTheDocument();
         expect(storageSync.adapter.signInWithPassword).toHaveBeenCalledWith('s@school.com', 'wrong');
@@ -129,8 +129,8 @@ describe('LoginButtons coverage', () => {
         render(<LoginButtons supabaseReady onEmailSuccess={onEmailSuccess} />);
         fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
         fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
-        fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret' } });
-        fireEvent.keyDown(screen.getByPlaceholderText('Password'), { key: 'Enter' });
+        fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
+        fireEvent.keyDown(screen.getByPlaceholderText('common.password'), { key: 'Enter' });
         await waitFor(() => expect(onEmailSuccess).toHaveBeenCalled());
         expect(screen.getByText(/Signed in/)).toBeInTheDocument();
     });
@@ -140,7 +140,7 @@ describe('LoginButtons coverage', () => {
         render(<LoginButtons supabaseReady />);
         fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
         fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
-        fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret' } });
+        fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
         expect(await screen.findByText('toast.sign_in_module_load_failed')).toBeInTheDocument();
     });
@@ -151,7 +151,7 @@ describe('LoginButtons coverage', () => {
         render(<LoginButtons supabaseReady />);
         const toggle = screen.getByRole('button', { name: /student login \(password\)/i });
         fireEvent.click(toggle);
-        expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('common.password')).toBeInTheDocument();
         fireEvent.click(toggle);
         expect(screen.queryByPlaceholderText('Password')).not.toBeInTheDocument();
     });

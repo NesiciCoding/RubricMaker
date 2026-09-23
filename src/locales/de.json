@@ -149,7 +149,11 @@
         "export_csv": "CSV exportieren",
         "prev": "Zurück",
         "next": "Weiter",
-        "view_grid": "Raster"
+        "view_grid": "Raster",
+        "download": "Herunterladen",
+        "preview": "Vorschau",
+        "refresh": "Aktualisieren",
+        "password": "Passwort"
     },
     "slip_sheet": {
         "class_slips_one": "Klassenzettel — {{count}} Schüler",
@@ -2510,7 +2514,36 @@
         "switchToPageView": "A4-Seitenansicht",
         "tableOfContents": "Inhaltsverzeichnis",
         "untitledHeading": "Unbenannte Überschrift",
-        "dragToReorder": "Ziehen zum Umsortieren"
+        "dragToReorder": "Ziehen zum Umsortieren",
+        "undo": "Rückgängig",
+        "redo": "Wiederholen",
+        "paragraph_style": "Absatzstil",
+        "font_family": "Schriftart",
+        "font_size": "Schriftgröße",
+        "bold": "Fett",
+        "italic": "Kursiv",
+        "underline": "Unterstrichen",
+        "strikethrough": "Durchgestrichen",
+        "superscript": "Hochgestellt",
+        "subscript": "Tiefgestellt",
+        "text_colour": "Textfarbe",
+        "highlight": "Hervorheben",
+        "highlight_colour": "Hervorhebungsfarbe",
+        "clear_formatting": "Formatierung entfernen",
+        "line_height": "Zeilenhöhe",
+        "align_left": "Linksbündig",
+        "align_centre": "Zentrieren",
+        "align_right": "Rechtsbündig",
+        "justify": "Blocksatz",
+        "bullet_list": "Aufzählung",
+        "ordered_list": "Nummerierte Liste",
+        "checklist": "Checkliste",
+        "blockquote": "Zitat",
+        "horizontal_line": "Horizontale Linie",
+        "link": "Link einfügen / bearbeiten",
+        "remove_link": "Link entfernen",
+        "insert_table": "Tabelle einfügen (3×3)",
+        "show_formatting_marks": "Formatierungszeichen anzeigen"
     },
     "docs": {
         "section_title": "Dokumentation",
@@ -3236,7 +3269,12 @@
         "sync_confirm_action": "Importieren & synchronisieren"
     },
     "a11y": {
-        "skip_to_content": "Zum Hauptinhalt springen"
+        "skip_to_content": "Zum Hauptinhalt springen",
+        "open_nav": "Navigationsmenü öffnen",
+        "close_nav": "Navigationsmenü schließen",
+        "loading": "Wird geladen",
+        "settings_sections": "Einstellungsbereiche",
+        "cefr_level": "GER-Niveau"
     },
     "help": {
         "score_modifier_title": "Notenanpassungen",
@@ -3471,5 +3509,32 @@
         "check_words": "Unsicherste Wörter — bitte prüfen:",
         "rescan": "Erneut scannen",
         "insert": "In Feedback einfügen"
+    },
+    "tooltips": {
+        "copy_user_id": "Benutzer-ID kopieren",
+        "admin_name_placeholder": "Ihr Name (für Kollegen sichtbar)",
+        "clear_template": "Vorlage entfernen",
+        "new_page_per_student": "Fügt eine leere Seite hinzu, damit jeder Schüler auf einem neuen Blatt beginnt",
+        "export_word_results": "Bewertete Ergebnisse als Word-Dokument exportieren",
+        "copy_feedback_link": "Feedback-Link des Schülers kopieren",
+        "open_as_student": "Als Schüler öffnen (nur Dev)",
+        "copy_share_code": "Freigabecode kopieren (für andere Lehrkräfte)",
+        "share_preview": "Vorschau mit Schülern teilen (Link kopieren)",
+        "paste_share_code": "Freigabecode hier einfügen…",
+        "enter_admin_password": "Admin-Passwort eingeben",
+        "student_profile": "Schülerprofil",
+        "self_peer_review": "Selbst-/Peer-Bewertung",
+        "edit_grade": "Note bearbeiten",
+        "page_not_found": "Seite nicht gefunden",
+        "privacy_title": "Datenschutz & DSGVO",
+        "cefrj_estimate": "CEFR-J-Textprofilschätzung (Wortschatz / Grammatik)",
+        "landing_tryout_title": "Ausprobieren / Offline",
+        "landing_tryout_sub": "Lokal arbeiten, kein Konto nötig",
+        "landing_teacher_title": "Lehrer-Login",
+        "landing_teacher_sub": "Über Geräte synchronisieren, mit Kollegen teilen",
+        "landing_student_title": "Schüler-Login",
+        "landing_student_sub": "Feedback ansehen und Arbeit einreichen",
+        "delete_submission": "Einreichung löschen",
+        "paste_submission_code": "Fügen Sie hier den Einreichungscode des Schülers ein…"
     }
 }

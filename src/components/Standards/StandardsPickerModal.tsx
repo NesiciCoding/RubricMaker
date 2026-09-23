@@ -272,7 +272,7 @@ export default function StandardsPickerModal({ apiKey, onSelect, onClose }: Prop
                         </button>
                     </div>
                 </div>
-                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close')}>
                     ✕
                 </button>
             </div>

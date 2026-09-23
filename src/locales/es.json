@@ -149,7 +149,11 @@
         "export_csv": "Exportar CSV",
         "prev": "Anterior",
         "next": "Siguiente",
-        "view_grid": "Cuadrícula"
+        "view_grid": "Cuadrícula",
+        "download": "Descargar",
+        "preview": "Vista previa",
+        "refresh": "Actualizar",
+        "password": "Contraseña"
     },
     "slip_sheet": {
         "class_slips_one": "Fichas de clase — {{count}} estudiante",
@@ -2510,7 +2514,36 @@
         "switchToPageView": "Vista página A4",
         "tableOfContents": "Tabla de contenidos",
         "untitledHeading": "Encabezado sin título",
-        "dragToReorder": "Arrastrar para reordenar"
+        "dragToReorder": "Arrastrar para reordenar",
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "paragraph_style": "Estilo de párrafo",
+        "font_family": "Fuente",
+        "font_size": "Tamaño de fuente",
+        "bold": "Negrita",
+        "italic": "Cursiva",
+        "underline": "Subrayado",
+        "strikethrough": "Tachado",
+        "superscript": "Superíndice",
+        "subscript": "Subíndice",
+        "text_colour": "Color de texto",
+        "highlight": "Resaltar",
+        "highlight_colour": "Color de resaltado",
+        "clear_formatting": "Borrar formato",
+        "line_height": "Interlineado",
+        "align_left": "Alinear a la izquierda",
+        "align_centre": "Centrar",
+        "align_right": "Alinear a la derecha",
+        "justify": "Justificar",
+        "bullet_list": "Lista con viñetas",
+        "ordered_list": "Lista numerada",
+        "checklist": "Lista de tareas",
+        "blockquote": "Cita",
+        "horizontal_line": "Línea horizontal",
+        "link": "Insertar / editar enlace",
+        "remove_link": "Quitar enlace",
+        "insert_table": "Insertar tabla (3×3)",
+        "show_formatting_marks": "Mostrar marcas de formato"
     },
     "docs": {
         "section_title": "Documentación",
@@ -3236,7 +3269,12 @@
         "sync_confirm_action": "Importar y sincronizar"
     },
     "a11y": {
-        "skip_to_content": "Saltar al contenido principal"
+        "skip_to_content": "Saltar al contenido principal",
+        "open_nav": "Abrir el menú de navegación",
+        "close_nav": "Cerrar el menú de navegación",
+        "loading": "Cargando",
+        "settings_sections": "Secciones de ajustes",
+        "cefr_level": "Nivel MCER"
     },
     "help": {
         "score_modifier_title": "Modificadores de nota",
@@ -3471,5 +3509,32 @@
         "check_words": "Palabras menos fiables: revísalas:",
         "rescan": "Escanear de nuevo",
         "insert": "Insertar en la retroalimentación"
+    },
+    "tooltips": {
+        "copy_user_id": "Copiar ID de usuario",
+        "admin_name_placeholder": "Tu nombre (visible para colegas)",
+        "clear_template": "Borrar plantilla",
+        "new_page_per_student": "Añade una página en blanco para que cada alumno empiece en una hoja nueva",
+        "export_word_results": "Exportar resultados calificados como documento de Word",
+        "copy_feedback_link": "Copiar enlace de comentarios del alumno",
+        "open_as_student": "Abrir como alumno (solo dev)",
+        "copy_share_code": "Copiar código para compartir (para otros docentes)",
+        "share_preview": "Compartir vista previa con alumnos (copiar enlace)",
+        "paste_share_code": "Pega aquí el código para compartir…",
+        "enter_admin_password": "Introduce la contraseña de administrador",
+        "student_profile": "Perfil del alumno",
+        "self_peer_review": "Autoevaluación/evaluación por pares",
+        "edit_grade": "Editar calificación",
+        "page_not_found": "Página no encontrada",
+        "privacy_title": "Privacidad y RGPD",
+        "cefrj_estimate": "Estimación de perfil de texto CEFR-J (vocabulario / gramática)",
+        "landing_tryout_title": "Prueba / Sin conexión",
+        "landing_tryout_sub": "Trabaja localmente, sin cuenta",
+        "landing_teacher_title": "Acceso docente",
+        "landing_teacher_sub": "Sincroniza entre dispositivos, comparte con colegas",
+        "landing_student_title": "Acceso alumno",
+        "landing_student_sub": "Ver comentarios y entregar trabajo",
+        "delete_submission": "Eliminar entrega",
+        "paste_submission_code": "Pega aquí el código de entrega del alumno…"
     }
 }

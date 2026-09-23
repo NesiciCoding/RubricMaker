@@ -198,7 +198,7 @@ export default function EssayImportModal({
                             Import essay — {studentName}
                         </h2>
                     </div>
-                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close">
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label={t('common.close')}>
                         <X size={16} />
                     </button>
                 </div>
@@ -284,7 +284,7 @@ export default function EssayImportModal({
                         Import essay — {studentName}
                     </h2>
                 </div>
-                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label="Close">
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose} aria-label={t('common.close')}>
                     <X size={16} />
                 </button>
             </div>
@@ -342,7 +342,7 @@ export default function EssayImportModal({
                             </p>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
-                                title="Refresh"
+                                title={t('common.refresh')}
                                 onClick={loadSubmissions}
                                 disabled={loadingDb}
                             >
@@ -472,7 +472,7 @@ export default function EssayImportModal({
                                             <button
                                                 className="btn btn-ghost btn-icon btn-sm"
                                                 style={{ color: 'var(--red)' }}
-                                                title="Delete submission"
+                                                title={t('tooltips.delete_submission')}
                                                 disabled={!!importingId || !!deletingId}
                                                 onClick={() => handleDelete(sub)}
                                             >
@@ -506,7 +506,7 @@ export default function EssayImportModal({
                                     setError('');
                                 }}
                                 rows={5}
-                                placeholder="Paste the student's submission code here…"
+                                placeholder={t('tooltips.paste_submission_code')}
                                 style={{ fontFamily: 'monospace', fontSize: '0.78rem', resize: 'vertical' }}
                             />
                         </div>

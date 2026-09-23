@@ -2,6 +2,7 @@ import React, { useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface TiptapEditorHandle {
     insertContent: (text: string) => void;
@@ -17,6 +18,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     { content, onChange, placeholder },
     ref
 ) {
+    const { t } = useTranslation();
     const editor = useEditor({
         extensions: [StarterKit],
         content: content,
@@ -51,7 +53,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     className={`toolbar-btn ${editor.isActive('bold') ? 'active' : ''}`}
-                    title="Bold"
+                    title={t('editor.bold')}
                     type="button"
                 >
                     <Bold size={14} />
@@ -59,7 +61,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                 <button
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     className={`toolbar-btn ${editor.isActive('italic') ? 'active' : ''}`}
-                    title="Italic"
+                    title={t('editor.italic')}
                     type="button"
                 >
                     <Italic size={14} />
@@ -68,7 +70,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                 <button
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                     className={`toolbar-btn ${editor.isActive('bulletList') ? 'active' : ''}`}
-                    title="Bullet List"
+                    title={t('editor.bullet_list')}
                     type="button"
                 >
                     <List size={14} />
@@ -76,7 +78,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                 <button
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     className={`toolbar-btn ${editor.isActive('orderedList') ? 'active' : ''}`}
-                    title="Ordered List"
+                    title={t('editor.ordered_list')}
                     type="button"
                 >
                     <ListOrdered size={14} />

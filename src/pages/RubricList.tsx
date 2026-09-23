@@ -584,7 +584,7 @@ export default function RubricList() {
                                                                 )}
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
-                                                                    title="Copy share code (for other teachers)"
+                                                                    title={t('tooltips.copy_share_code')}
                                                                     style={{
                                                                         color:
                                                                             copiedId === r.id
@@ -604,7 +604,7 @@ export default function RubricList() {
                                                                 </button>
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
-                                                                    title="Share preview with students (copy link)"
+                                                                    title={t('tooltips.share_preview')}
                                                                     style={{
                                                                         color:
                                                                             copiedId === 'preview-' + r.id
@@ -1189,7 +1189,7 @@ export default function RubricList() {
                                         setPastedCode(e.target.value);
                                         setCodeImportError(null);
                                     }}
-                                    placeholder="Paste share code here…"
+                                    placeholder={t('tooltips.paste_share_code')}
                                     style={{
                                         width: '100%',
                                         minHeight: 120,

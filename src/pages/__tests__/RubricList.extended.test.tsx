@@ -206,7 +206,7 @@ describe('RubricList extended', () => {
     it('imports a rubric from a valid share code and navigates to it', () => {
         renderPage();
         fireEvent.click(screen.getByText('Import from code'));
-        fireEvent.change(screen.getByPlaceholderText('Paste share code here…'), {
+        fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: encodeRubricShareCode(mockRubric) },
         });
         fireEvent.click(screen.getByText('Import rubric'));
@@ -220,7 +220,7 @@ describe('RubricList extended', () => {
     it('shows an error for an invalid share code', () => {
         renderPage();
         fireEvent.click(screen.getByText('Import from code'));
-        fireEvent.change(screen.getByPlaceholderText('Paste share code here…'), {
+        fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: 'not-a-valid-code' },
         });
         fireEvent.click(screen.getByText('Import rubric'));

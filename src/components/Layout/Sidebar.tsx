@@ -255,7 +255,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                         <button
                             className="btn btn-ghost btn-icon btn-sm sidebar-close-btn"
                             onClick={onMobileClose}
-                            aria-label="Close navigation menu"
+                            aria-label={t('a11y.close_nav')}
                         >
                             <X size={15} />
                         </button>

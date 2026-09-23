@@ -236,7 +236,7 @@ describe('TemplateUploadModal coverage', () => {
 
     it('closes via the modal header button and the cancel button', () => {
         render(<TemplateUploadModal onClose={mockOnClose} onSave={mockOnSave} />);
-        fireEvent.click(screen.getByLabelText('Close'));
+        fireEvent.click(screen.getByLabelText('common.close'));
         expect(mockOnClose).toHaveBeenCalledTimes(1);
         fireEvent.click(screen.getByText('Cancel'));
         expect(mockOnClose).toHaveBeenCalledTimes(2);

@@ -137,7 +137,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                     href={attachment.dataUrl}
                     download={attachment.name}
                     className="btn btn-ghost btn-icon btn-sm"
-                    title="Download"
+                    title={t('common.download')}
                 >
                     <Download size={14} />
                 </a>

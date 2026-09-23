@@ -251,7 +251,7 @@ describe('StandardsPickerModal', () => {
         const onClose = vi.fn();
         render(<StandardsPickerModal {...baseProps} onClose={onClose} />);
         await waitFor(() => expect(screen.getByText('California')).toBeInTheDocument());
-        fireEvent.click(screen.getByLabelText('Close'));
+        fireEvent.click(screen.getByLabelText('common.close'));
         expect(onClose).toHaveBeenCalled();
     });
 

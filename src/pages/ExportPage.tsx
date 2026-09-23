@@ -750,7 +750,7 @@ export default function ExportPage() {
                                 {activeTemplate && (
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
-                                        title="Clear template"
+                                        title={t('tooltips.clear_template')}
                                         onClick={() => updateSettings({ exportTemplateId: undefined })}
                                     >
                                         <X size={13} />
@@ -957,7 +957,7 @@ export default function ExportPage() {
                                                     cursor: 'pointer',
                                                     color: 'var(--text-muted)',
                                                 }}
-                                                title="Adds to blank page so each student starts on a new physical sheet"
+                                                title={t('tooltips.new_page_per_student')}
                                             >
                                                 <input
                                                     type="checkbox"
@@ -1000,7 +1000,7 @@ export default function ExportPage() {
                                             className="btn btn-secondary"
                                             disabled={selectedStudentIds.size === 0 || exporting}
                                             onClick={handleBatchDocxExport}
-                                            title="Export graded results as a Word document"
+                                            title={t('tooltips.export_word_results')}
                                         >
                                             {exporting ? <Loader size={15} className="spin" /> : <Download size={15} />}
                                             {t('exportPage.batch_docx_export', { count: selectedStudentIds.size })}
@@ -1198,7 +1198,7 @@ export default function ExportPage() {
                                                         </button>
                                                         <button
                                                             className="btn btn-ghost btn-sm"
-                                                            title="Copy student feedback link"
+                                                            title={t('tooltips.copy_feedback_link')}
                                                             onClick={async () => {
                                                                 const url = await buildFeedbackUrl(sr, student);
                                                                 // v8 ignore next 1 -- buildFeedbackUrl only returns null without a rubric, which can't render this row
@@ -1215,7 +1215,7 @@ export default function ExportPage() {
                                                         {import.meta.env.DEV && rubric && (
                                                             <button
                                                                 className="btn btn-ghost btn-icon btn-sm"
-                                                                title="Open as student (dev only)"
+                                                                title={t('tooltips.open_as_student')}
                                                                 onClick={async () => {
                                                                     const url = await buildFeedbackUrl(sr, student);
                                                                     // v8 ignore next 1 -- the dev-only button is gated on rubric, so url is always set

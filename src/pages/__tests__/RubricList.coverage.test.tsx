@@ -335,7 +335,7 @@ describe('RubricList coverage', () => {
             totalMaxPoints: undefined as never,
         };
         fireEvent.click(screen.getByText('Import from code'));
-        fireEvent.change(screen.getByPlaceholderText('Paste share code here…'), {
+        fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: encodeRubricShareCode(minimal) },
         });
         fireEvent.click(screen.getByText('Import rubric'));
@@ -426,17 +426,17 @@ describe('RubricList coverage', () => {
     it('resets the copied icons after the two-second timeout', () => {
         vi.useFakeTimers();
         renderPage();
-        const shareBtn = screen.getAllByTitle('Copy share code (for other teachers)')[0];
+        const shareBtn = screen.getAllByTitle('tooltips.copy_share_code')[0];
         fireEvent.click(shareBtn);
         expect(shareBtn.style.color).toContain('var(--green');
-        const previewBtn = screen.getAllByTitle('Share preview with students (copy link)')[0];
+        const previewBtn = screen.getAllByTitle('tooltips.share_preview')[0];
         fireEvent.click(previewBtn);
         expect(previewBtn.style.color).toContain('var(--green');
         act(() => {
             vi.advanceTimersByTime(2000);
         });
-        expect(screen.getAllByTitle('Copy share code (for other teachers)')[0].style.color).toBe('');
-        expect(screen.getAllByTitle('Share preview with students (copy link)')[0].style.color).toBe('');
+        expect(screen.getAllByTitle('tooltips.copy_share_code')[0].style.color).toBe('');
+        expect(screen.getAllByTitle('tooltips.share_preview')[0].style.color).toBe('');
         vi.useRealTimers();
     });
 

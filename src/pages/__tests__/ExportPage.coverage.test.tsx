@@ -361,12 +361,12 @@ describe('ExportPage coverage', () => {
         renderPage();
         openSection('exportPage.rubric_students_section_title');
         await act(async () => {
-            fireEvent.click(screen.getByTitle('Copy student feedback link'));
+            fireEvent.click(screen.getByTitle('tooltips.copy_feedback_link'));
         });
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
         expect(mockShowToast).toHaveBeenCalledWith('Feedback link copied to clipboard', 'success');
         await act(async () => {
-            fireEvent.click(screen.getByTitle('Open as student (dev only)'));
+            fireEvent.click(screen.getByTitle('tooltips.open_as_student'));
         });
         expect(window.open).toHaveBeenCalled();
     });
@@ -1014,7 +1014,7 @@ describe('ExportPage coverage', () => {
         const updateSettings = vi.fn();
         appOverrides = { updateSettings };
         renderPage();
-        fireEvent.click(screen.getByTitle('Clear template'));
+        fireEvent.click(screen.getByTitle('tooltips.clear_template'));
         expect(updateSettings).toHaveBeenCalledWith({ exportTemplateId: undefined });
     });
 });

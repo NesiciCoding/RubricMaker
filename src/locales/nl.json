@@ -149,7 +149,11 @@
         "export_csv": "Exporteer CSV",
         "prev": "Vorige",
         "next": "Volgende",
-        "view_grid": "Raster"
+        "view_grid": "Raster",
+        "download": "Downloaden",
+        "preview": "Voorbeeld",
+        "refresh": "Vernieuwen",
+        "password": "Wachtwoord"
     },
     "slip_sheet": {
         "class_slips_one": "Klasstroken — {{count}} leerling",
@@ -2510,7 +2514,36 @@
         "switchToPageView": "A4-paginaweergave",
         "tableOfContents": "Inhoudsopgave",
         "untitledHeading": "Naamloze kop",
-        "dragToReorder": "Sleep om te herschikken"
+        "dragToReorder": "Sleep om te herschikken",
+        "undo": "Ongedaan maken",
+        "redo": "Opnieuw",
+        "paragraph_style": "Alineastijl",
+        "font_family": "Lettertype",
+        "font_size": "Tekengrootte",
+        "bold": "Vet",
+        "italic": "Cursief",
+        "underline": "Onderstrepen",
+        "strikethrough": "Doorhalen",
+        "superscript": "Superscript",
+        "subscript": "Subscript",
+        "text_colour": "Tekstkleur",
+        "highlight": "Markeren",
+        "highlight_colour": "Markeerkleur",
+        "clear_formatting": "Opmaak wissen",
+        "line_height": "Regelafstand",
+        "align_left": "Links uitlijnen",
+        "align_centre": "Centreren",
+        "align_right": "Rechts uitlijnen",
+        "justify": "Uitvullen",
+        "bullet_list": "Opsommingslijst",
+        "ordered_list": "Genummerde lijst",
+        "checklist": "Checklist",
+        "blockquote": "Citaat",
+        "horizontal_line": "Horizontale lijn",
+        "link": "Link invoegen / bewerken",
+        "remove_link": "Link verwijderen",
+        "insert_table": "Tabel invoegen (3×3)",
+        "show_formatting_marks": "Opmaaktekens tonen"
     },
     "docs": {
         "section_title": "Documentatie",
@@ -3236,7 +3269,12 @@
         "sync_confirm_action": "Importeren & synchroniseren"
     },
     "a11y": {
-        "skip_to_content": "Naar hoofdinhoud springen"
+        "skip_to_content": "Naar hoofdinhoud springen",
+        "open_nav": "Navigatiemenu openen",
+        "close_nav": "Navigatiemenu sluiten",
+        "loading": "Laden",
+        "settings_sections": "Instellingensecties",
+        "cefr_level": "ERK-niveau"
     },
     "help": {
         "score_modifier_title": "Cijferaanpassingen",
@@ -3471,5 +3509,32 @@
         "check_words": "Minst betrouwbare woorden — controleer deze:",
         "rescan": "Opnieuw scannen",
         "insert": "In feedback invoegen"
+    },
+    "tooltips": {
+        "copy_user_id": "Gebruikers-ID kopiëren",
+        "admin_name_placeholder": "Je naam (zichtbaar voor collega's)",
+        "clear_template": "Sjabloon wissen",
+        "new_page_per_student": "Voegt een lege pagina toe zodat elke leerling op een nieuw vel begint",
+        "export_word_results": "Beoordeelde resultaten exporteren als Word-document",
+        "copy_feedback_link": "Feedbacklink voor leerling kopiëren",
+        "open_as_student": "Openen als leerling (alleen dev)",
+        "copy_share_code": "Deelcode kopiëren (voor andere docenten)",
+        "share_preview": "Voorbeeld delen met leerlingen (link kopiëren)",
+        "paste_share_code": "Plak hier de deelcode…",
+        "enter_admin_password": "Voer beheerderswachtwoord in",
+        "student_profile": "Leerlingprofiel",
+        "self_peer_review": "Zelf-/peerbeoordeling",
+        "edit_grade": "Cijfer bewerken",
+        "page_not_found": "Pagina niet gevonden",
+        "privacy_title": "Privacy & AVG/GDPR",
+        "cefrj_estimate": "CEFR-J tekstprofielschatting (woordenschat / grammatica)",
+        "landing_tryout_title": "Uitproberen / Offline",
+        "landing_tryout_sub": "Lokaal werken, geen account nodig",
+        "landing_teacher_title": "Docent-login",
+        "landing_teacher_sub": "Synchroniseer tussen apparaten, deel met collega's",
+        "landing_student_title": "Leerling-login",
+        "landing_student_sub": "Feedback bekijken en werk inleveren",
+        "delete_submission": "Inzending verwijderen",
+        "paste_submission_code": "Plak hier de inzendcode van de leerling…"
     }
 }

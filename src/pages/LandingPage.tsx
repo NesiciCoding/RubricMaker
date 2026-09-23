@@ -39,6 +39,7 @@ import {
 import { usePlatform } from '../context/AppContext';
 import { loadSupabaseConfig } from '../services/database/supabaseConfig';
 import LoginButtons from '../components/auth/LoginButtons';
+import { useTranslation } from 'react-i18next';
 
 const TEACHER_FEATURES = [
     {
@@ -227,6 +228,7 @@ const STUDENT_FEATURES = [
 ];
 
 export default function LandingPage() {
+    const { t } = useTranslation();
     const { enterLocalMode, connectForOAuth } = usePlatform();
 
     const savedConfig = loadSupabaseConfig();
@@ -382,8 +384,8 @@ export default function LandingPage() {
                 {/* Try-out / Offline */}
                 <LoginCard
                     icon={<Laptop size={22} style={{ color: '#475569' }} />}
-                    title="Try-out / Offline"
-                    subtitle="Work locally, no account needed"
+                    title={t('tooltips.landing_tryout_title')}
+                    subtitle={t('tooltips.landing_tryout_sub')}
                     accentColor="#475569"
                     accentBg="#f1f5f9"
                 >
@@ -399,8 +401,8 @@ export default function LandingPage() {
                 {/* Teacher Login — highlighted */}
                 <LoginCard
                     icon={<LogIn size={22} style={{ color: '#6366f1' }} />}
-                    title="Teacher Login"
-                    subtitle="Sync across devices, share with colleagues"
+                    title={t('tooltips.landing_teacher_title')}
+                    subtitle={t('tooltips.landing_teacher_sub')}
                     accentColor="#4f46e5"
                     accentBg="#eef2ff"
                     highlighted
@@ -422,8 +424,8 @@ export default function LandingPage() {
                 {/* Student */}
                 <LoginCard
                     icon={<GraduationCap size={22} style={{ color: '#0891b2' }} />}
-                    title="Student Login"
-                    subtitle="View feedback and submit work"
+                    title={t('tooltips.landing_student_title')}
+                    subtitle={t('tooltips.landing_student_sub')}
                     accentColor="#0891b2"
                     accentBg="#ecfeff"
                 >

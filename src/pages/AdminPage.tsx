@@ -599,7 +599,7 @@ function DatabaseTab() {
                                     </code>
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
-                                        title="Copy user ID"
+                                        title={t('tooltips.copy_user_id')}
                                         onClick={() => {
                                             navigator.clipboard.writeText(dbStatus.userId!);
                                             setUserIdCopied(true);
@@ -624,7 +624,7 @@ function DatabaseTab() {
                                     type="text"
                                     value={displayNameInput}
                                     onChange={(e) => setDisplayNameInput(e.target.value)}
-                                    placeholder="Your name (visible to colleagues)"
+                                    placeholder={t('tooltips.admin_name_placeholder')}
                                     style={{ flex: 1 }}
                                 />
                                 <button

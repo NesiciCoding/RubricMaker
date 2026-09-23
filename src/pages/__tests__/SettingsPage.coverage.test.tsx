@@ -572,7 +572,7 @@ describe('SettingsPage coverage', () => {
 
         it('closes the dialog via its close and cancel buttons', () => {
             openDialog();
-            fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+            fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
@@ -788,7 +788,7 @@ describe('SettingsPage coverage', () => {
             fireEvent.click(screen.getByText('Teaching'));
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[1]);
             const dialog = screen.getByRole('dialog');
-            fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+            fireEvent.click(within(dialog).getByRole('button', { name: 'common.close' }));
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[1]);
@@ -810,7 +810,7 @@ describe('SettingsPage coverage', () => {
             fireEvent.click(screen.getByText('Teaching'));
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[0]);
             const dialog = screen.getByRole('dialog');
-            fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+            fireEvent.click(within(dialog).getByRole('button', { name: 'common.close' }));
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[0]);

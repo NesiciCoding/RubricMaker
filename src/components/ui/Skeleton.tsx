@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface SkeletonProps {
     width?: string | number;
@@ -65,10 +66,11 @@ export function ChartSkeleton({ height = '260px' }: { height?: string }) {
 // the chunk resolves.
 
 function PageShell({ children }: { children: React.ReactNode }) {
+    const { t } = useTranslation();
     return (
         <div
             role="status"
-            aria-label="Loading"
+            aria-label={t('a11y.loading')}
             style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
         >
             <div className="topbar" aria-hidden="true">
