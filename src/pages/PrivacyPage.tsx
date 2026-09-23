@@ -126,18 +126,21 @@ export default function PrivacyPage() {
                         <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
                             <div style={{ fontWeight: 600, marginBottom: 4 }}>Lokale opslag (standaard)</div>
                             <p className="text-sm text-muted" style={{ margin: 0 }}>
-                                By default, all data is stored exclusively in the teacher's browser (localStorage). Data
-                                never leaves the device automatically. No server, no cloud, no third party.
+                                By default, all data is stored exclusively in the teacher's browser (localStorage) and
+                                is not sent to any Rubric Maker server. Two optional features are the exception:
+                                document analysis sends essay text to LanguageTool, and the vocabulary lookup sends
+                                individual words to the Free Dictionary API (see the Open-source attributions below).
+                                Aside from those, data never leaves the device automatically.
                             </p>
                         </div>
                         <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
                             <div style={{ fontWeight: 600, marginBottom: 4 }}>Database (Supabase) — optioneel</div>
                             <p className="text-sm text-muted" style={{ margin: 0 }}>
-                                When a Supabase connection is configured (Settings &gt; Database), data is also stored
-                                in a PostgreSQL database hosted by Supabase, Inc. For AVG compliance, schools should use
-                                the <strong>EU Frankfurt region (eu-central-1)</strong> when creating a Supabase
-                                project. Data does not leave the EU/EEA. Supabase is SOC 2 Type II certified and
-                                provides a Data Processing Addendum (DPA) at{' '}
+                                When a Supabase connection is configured (Admin &gt; Database), data is also stored in a
+                                PostgreSQL database hosted by Supabase, Inc. For AVG compliance, schools should create
+                                their Supabase project in an <strong>EU region such as Frankfurt (eu-central-1)</strong>
+                                ; when an EU region is selected, stored data stays within the EU/EEA. Supabase is SOC 2
+                                Type II certified and provides a Data Processing Addendum (DPA) at{' '}
                                 <a
                                     href="https://supabase.com/privacy"
                                     target="_blank"
@@ -196,7 +199,7 @@ export default function PrivacyPage() {
                         </li>
                         <li>
                             For full database erasure of a teacher's own account: go to{' '}
-                            <strong>Settings &gt; Database &gt; Delete all my database data</strong>.
+                            <strong>Admin &gt; Database &gt; Delete all my database data</strong>.
                         </li>
                     </ol>
                 </div>
@@ -216,11 +219,14 @@ export default function PrivacyPage() {
                 <div className="card" style={{ marginBottom: 20 }}>
                     <h3 style={{ marginBottom: 12 }}>8. Audiogegevens (spreekopdrachten)</h3>
                     <p className="text-sm" style={{ margin: 0 }}>
-                        The speaking session feature may record short audio clips per criterion. The browser's Web
-                        Speech API processes speech locally — no audio stream is sent to external servers by this
-                        application. Audio recordings stored within Rubric Maker are accessible only to the grading
-                        teacher. Schools should inform students that audio may be recorded and stored during speaking
-                        assessments.
+                        The speaking-session feature records short audio clips per criterion using the browser's
+                        built-in recorder (MediaRecorder). These recordings are stored within Rubric Maker — locally, or
+                        in the configured database — and are accessible only to the grading teacher; this feature does
+                        not send them to any third-party transcription service. Separately, the optional voice-grading
+                        feature (dictating grades by voice) uses the browser's Web Speech API (SpeechRecognition); in
+                        some browsers, including Google Chrome, the captured audio is sent to the browser vendor's
+                        servers for transcription. Schools should inform students that audio may be recorded and stored
+                        during speaking assessments.
                     </p>
                 </div>
 
@@ -303,7 +309,7 @@ export default function PrivacyPage() {
                 </div>
 
                 <p className="text-muted text-xs" style={{ textAlign: 'center', marginTop: 16 }}>
-                    Last updated: May 2026 · Rubric Maker is open-source software provided as-is. Compliance with
+                    Last updated: September 2026 · Rubric Maker is open-source software provided as-is. Compliance with
                     AVG/GDPR remains the responsibility of the deploying institution.
                 </p>
             </div>
