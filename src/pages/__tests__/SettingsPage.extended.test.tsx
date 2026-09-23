@@ -169,7 +169,7 @@ describe('SettingsPage extended', () => {
             renderPage();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
-            const input = screen.getByLabelText('Admin password');
+            const input = screen.getByLabelText('settings.admin_password_label');
             fireEvent.change(input, { target: { value: '1234' } });
             fireEvent.click(findButtonByText('Confirm'));
 
@@ -188,7 +188,7 @@ describe('SettingsPage extended', () => {
             renderPage();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
-            fireEvent.change(screen.getByLabelText('Admin password'), { target: { value: '0000' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_password_label'), { target: { value: '0000' } });
             fireEvent.click(findButtonByText('Confirm'));
 
             await waitFor(() => expect(screen.getByText('Incorrect password. Please try again.')).toBeInTheDocument());
@@ -202,7 +202,7 @@ describe('SettingsPage extended', () => {
             renderPage();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
-            fireEvent.change(screen.getByLabelText('Admin password'), { target: { value: '1234' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_password_label'), { target: { value: '1234' } });
             fireEvent.click(findButtonByText('Confirm'));
 
             await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ adminPin: 'hashed:1234' }));
@@ -215,9 +215,9 @@ describe('SettingsPage extended', () => {
             renderPage();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
-            const input = screen.getByLabelText('Admin password') as HTMLInputElement;
+            const input = screen.getByLabelText('settings.admin_password_label') as HTMLInputElement;
             expect(input.type).toBe('password');
-            fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+            fireEvent.click(screen.getByRole('button', { name: 'settings.admin_show_password' }));
             expect(input.type).toBe('text');
         });
     });
@@ -230,26 +230,26 @@ describe('SettingsPage extended', () => {
         it('sets a new admin password', async () => {
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Set admin password'));
-            fireEvent.change(screen.getByLabelText('New password'), { target: { value: '1234' } });
-            fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: '1234' } });
-            fireEvent.click(findButtonByText('Save password'));
+            fireEvent.click(findButtonByText('settings.admin_set_password'));
+            fireEvent.change(screen.getByLabelText('settings.admin_new_password'), { target: { value: '1234' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_confirm_password'), { target: { value: '1234' } });
+            fireEvent.click(findButtonByText('settings.admin_save_password'));
 
             await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ adminPin: 'hashed:1234' }));
-            expect(mockShowToast).toHaveBeenCalledWith('Admin password saved', 'success');
+            expect(mockShowToast).toHaveBeenCalledWith('settings.admin_password_saved', 'success');
         });
 
         it('rejects an empty or mismatched new password', async () => {
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Set admin password'));
-            fireEvent.click(findButtonByText('Save password'));
-            expect(screen.getByText('Password cannot be empty.')).toBeInTheDocument();
+            fireEvent.click(findButtonByText('settings.admin_set_password'));
+            fireEvent.click(findButtonByText('settings.admin_save_password'));
+            expect(screen.getByText('settings.admin_err_empty')).toBeInTheDocument();
 
-            fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'aaaa' } });
-            fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'bbbb' } });
-            fireEvent.click(findButtonByText('Save password'));
-            expect(screen.getByText('Passwords do not match.')).toBeInTheDocument();
+            fireEvent.change(screen.getByLabelText('settings.admin_new_password'), { target: { value: 'aaaa' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_confirm_password'), { target: { value: 'bbbb' } });
+            fireEvent.click(findButtonByText('settings.admin_save_password'));
+            expect(screen.getByText('settings.admin_err_mismatch')).toBeInTheDocument();
             expect(mockUpdateSettings).not.toHaveBeenCalledWith({ adminPin: expect.any(String) });
         });
 
@@ -257,11 +257,11 @@ describe('SettingsPage extended', () => {
             mockSettings.adminPin = 'rm-pin-v2:salt:hash';
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Change password'));
-            fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'old' } });
-            fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'new' } });
-            fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'new' } });
-            fireEvent.click(findButtonByText('Save password'));
+            fireEvent.click(findButtonByText('settings.admin_change_password'));
+            fireEvent.change(screen.getByLabelText('settings.admin_current_password'), { target: { value: 'old' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_new_password'), { target: { value: 'new' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_confirm_password'), { target: { value: 'new' } });
+            fireEvent.click(findButtonByText('settings.admin_save_password'));
 
             await waitFor(() => expect(mockVerifyPin).toHaveBeenCalledWith('old', 'rm-pin-v2:salt:hash'));
             expect(mockUpdateSettings).toHaveBeenCalledWith({ adminPin: 'hashed:new' });
@@ -272,13 +272,13 @@ describe('SettingsPage extended', () => {
             mockVerifyPin.mockResolvedValue(false);
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Change password'));
-            fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'wrong' } });
-            fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'new' } });
-            fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'new' } });
-            fireEvent.click(findButtonByText('Save password'));
+            fireEvent.click(findButtonByText('settings.admin_change_password'));
+            fireEvent.change(screen.getByLabelText('settings.admin_current_password'), { target: { value: 'wrong' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_new_password'), { target: { value: 'new' } });
+            fireEvent.change(screen.getByLabelText('settings.admin_confirm_password'), { target: { value: 'new' } });
+            fireEvent.click(findButtonByText('settings.admin_save_password'));
 
-            await waitFor(() => expect(screen.getByText('Current password is incorrect.')).toBeInTheDocument());
+            await waitFor(() => expect(screen.getByText('settings.admin_err_current')).toBeInTheDocument());
             expect(mockUpdateSettings).not.toHaveBeenCalledWith({ adminPin: 'hashed:new' });
         });
 
@@ -286,12 +286,12 @@ describe('SettingsPage extended', () => {
             mockSettings.adminPin = 'rm-pin-v2:salt:hash';
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Remove password'));
-            fireEvent.change(screen.getByLabelText('Current password'), { target: { value: '1234' } });
-            fireEvent.click(findButtonByText('Remove password'));
+            fireEvent.click(findButtonByText('settings.admin_remove_password'));
+            fireEvent.change(screen.getByLabelText('settings.admin_current_password'), { target: { value: '1234' } });
+            fireEvent.click(findButtonByText('settings.admin_remove_password'));
 
             await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ adminPin: undefined }));
-            expect(mockShowToast).toHaveBeenCalledWith('Admin password removed', 'info');
+            expect(mockShowToast).toHaveBeenCalledWith('settings.admin_password_removed', 'info');
         });
 
         it('rejects removing the password with the wrong current one', async () => {
@@ -299,11 +299,11 @@ describe('SettingsPage extended', () => {
             mockVerifyPin.mockResolvedValue(false);
             renderPage();
             goToAdminTab();
-            fireEvent.click(findButtonByText('Remove password'));
-            fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'wrong' } });
-            fireEvent.click(findButtonByText('Remove password'));
+            fireEvent.click(findButtonByText('settings.admin_remove_password'));
+            fireEvent.change(screen.getByLabelText('settings.admin_current_password'), { target: { value: 'wrong' } });
+            fireEvent.click(findButtonByText('settings.admin_remove_password'));
 
-            await waitFor(() => expect(screen.getByText('Current password is incorrect.')).toBeInTheDocument());
+            await waitFor(() => expect(screen.getByText('settings.admin_err_current')).toBeInTheDocument());
             expect(mockUpdateSettings).not.toHaveBeenCalledWith({ adminPin: undefined });
         });
     });

@@ -166,7 +166,7 @@ describe('StudentProfilePage', () => {
 
     it('shows the not-found state for an unknown student id', () => {
         renderAt('unknown-id');
-        expect(screen.getByText('Student not found')).toBeInTheDocument();
+        expect(screen.getByText('studentProfile.not_found')).toBeInTheDocument();
     });
 
     it('renders the student name and grade history', () => {

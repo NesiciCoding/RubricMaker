@@ -883,7 +883,7 @@ export default function RubricBuilder() {
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
-                                    <label>Rubric Name *</label>
+                                    <label>{t('rubricBuilder.name_label')}</label>
                                     <input
                                         type="text"
                                         value={name}
@@ -1700,22 +1700,28 @@ export default function RubricBuilder() {
                                 </p>
                                 <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: '0.9rem' }}>
                                     <li>
-                                        Register at{' '}
-                                        <a
-                                            href="https://commonstandardsproject.com"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{ color: 'var(--accent)' }}
-                                        >
-                                            commonstandardsproject.com
-                                        </a>
+                                        <Trans i18nKey="rubricBuilder.standards_step_register">
+                                            Register at{' '}
+                                            <a
+                                                href="https://commonstandardsproject.com"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ color: 'var(--accent)' }}
+                                            >
+                                                commonstandardsproject.com
+                                            </a>
+                                        </Trans>
                                     </li>
-                                    <li>Copy your API key from the developer dashboard</li>
+                                    <li>{t('rubricBuilder.standards_step_copy')}</li>
                                     <li>
-                                        Add your app URL to the <strong>CORS Allowed Origins</strong> list
+                                        <Trans i18nKey="rubricBuilder.standards_step_cors">
+                                            Add your app URL to the <strong>CORS Allowed Origins</strong> list
+                                        </Trans>
                                     </li>
                                     <li>
-                                        Paste the key in <strong>Settings → Standards Integration</strong>
+                                        <Trans i18nKey="rubricBuilder.standards_step_paste">
+                                            Paste the key in <strong>Settings → Standards Integration</strong>
+                                        </Trans>
                                     </li>
                                 </ol>
                             </div>
