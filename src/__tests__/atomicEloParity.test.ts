@@ -6,7 +6,7 @@ import { DEFAULT_ELO_RATING, ELO_K_FACTOR } from '../utils/placementStaircase';
 
 // The atomic per-question Elo update (issue #336, migration 064) re-implements the
 // Elo delta math in SQL so the read-modify-write happens under a single row lock.
-// That SQL duplicates the constants that otherwise live only in placementStaircase.ts.
+// That SQL duplicates the constants that otherwise live only in _shared/placementStaircase.ts.
 // Nothing but this test keeps the two in sync: if someone retunes ELO_K_FACTOR,
 // DEFAULT_ELO_RATING, or the /400 expected-score divisor in TS but not in the RPC,
 // submit-test's persisted ratings would silently drift from the app's own Elo math.
@@ -14,7 +14,7 @@ import { DEFAULT_ELO_RATING, ELO_K_FACTOR } from '../utils/placementStaircase';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const rpcSql = readFileSync(path.join(repoRoot, 'supabase/migrations/064_atomic_test_question_elo.sql'), 'utf8');
-const staircaseSrc = readFileSync(path.join(repoRoot, 'src/utils/placementStaircase.ts'), 'utf8');
+const staircaseSrc = readFileSync(path.join(repoRoot, 'supabase/functions/_shared/placementStaircase.ts'), 'utf8');
 
 /** The body of the named `export function`, brace-balanced, so assertions can't match a stray comment elsewhere. */
 function functionBody(src: string, signature: string): string {

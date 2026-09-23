@@ -261,6 +261,7 @@ Non-exhaustive — pointers to the modules most likely to matter across files. F
 | `src/utils/cefrStudentAggregator.ts`                                  | CEFR level computation across assessments                                                             |
 | `src/utils/syncMerge.ts` / `syncDiff.ts`                              | Cloud/local conflict resolution (last-write-wins) and collection diffing — see the Storage rule above |
 | `src/utils/placementRouting.ts` / `placementResult.ts`                | Placement-test section routing and provisional CEFR estimate                                          |
+| `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions       |
 | `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                     |
 | `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                       |
 | `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and mail-merge DOCX, PDF)                                                      |

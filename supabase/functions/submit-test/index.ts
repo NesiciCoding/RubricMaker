@@ -20,6 +20,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
+import { recomputeSectionPath, sectionPathsMatch } from '../_shared/placementRouting.ts';
+import {
+    DEFAULT_ELO_RATING,
+    LEVEL_TO_ELO,
+    MAX_QUESTIONS,
+    replayStaircaseLevels,
+} from '../_shared/placementStaircase.ts';
 import { sanitizeAnswers, isAssignmentExpired, attemptPolicyFor } from './validation.ts';
 
 const CORS = {
@@ -37,17 +44,11 @@ function json(body: unknown, status = 200) {
 // ── Placement path integrity ────────────────────────────────────────────────
 // sectionPath/levelPath drive the provisional CEFR estimate and (via
 // maxPointsForPath/staircaseMaxPoints on the client) the score shown on the results
-// page, so a forged path must be rejected. This replays real auto-scoring (shared with the
-// client via ../_shared/testScoring.ts) against the submitted answers, plus the routing and
-// staircase rules (mirroring src/utils/placementRouting.ts and
-// src/utils/placementStaircase.ts), and requires an
-// exact match with the client-claimed path — a structurally valid but score-inconsistent
+// page, so a forged path must be rejected. This replays real auto-scoring and the routing /
+// staircase rules against the submitted answers — all shared with the client via ../_shared/ —
+// and requires an exact match with the client-claimed path — a structurally valid but score-inconsistent
 // trace (e.g. claiming the pass edge on a failing score, or a higher CEFR level than the
 // replay reaches) is rejected rather than merely a graph-impossible one.
-const MAX_STAIRCASE_STEPS = 12;
-const STEP_UP_AFTER_CORRECT = 2;
-const CONVERGE_AFTER_REVERSALS = 2;
-const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
 interface MinimalQuestion extends ScorableQuestion {
     id: string;
@@ -69,140 +70,12 @@ interface MinimalAnswer {
     response: string;
 }
 
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
-
-// ── Multistage (MST) routing replay (mirrors src/utils/placementRouting.ts) ─
-
-function entrySectionId(test: MinimalTest): string | null {
-    return test.sections?.[0]?.id ?? null;
-}
-
-function sectionQuestions(test: MinimalTest, sectionId: string): MinimalQuestion[] {
-    const isEntry = entrySectionId(test) === sectionId;
-    return (test.questions ?? []).filter((q) => q.sectionId === sectionId || (isEntry && !q.sectionId));
-}
-
-function scoreSectionPct(
-    test: MinimalTest,
-    sectionId: string,
-    answersByQuestionId: Map<string, MinimalAnswer>
-): number {
-    const scorable = sectionQuestions(test, sectionId).filter(isAutoScorable);
-    const max = scorable.reduce((sum, q) => sum + q.points, 0);
-    if (max <= 0) return 0;
-    const raw = scorable.reduce((sum, q) => {
-        const answer = answersByQuestionId.get(q.id);
-        return sum + (answer ? autoScoreResponse(q, answer.response) : 0);
-    }, 0);
-    return clamp((raw / max) * 100, 0, 100);
-}
-
-function resolveNextSection(
-    test: MinimalTest,
-    sectionId: string,
-    answersByQuestionId: Map<string, MinimalAnswer>,
-    visited: string[]
-): string | null {
-    const section = (test.sections ?? []).find((s) => s.id === sectionId);
-    if (!section?.routing) return null;
-    const pct = scoreSectionPct(test, sectionId, answersByQuestionId);
-    const nextId = pct >= section.routing.thresholdPct ? section.routing.passSectionId : section.routing.failSectionId;
-    const nextExists = (test.sections ?? []).some((s) => s.id === nextId);
-    if (!nextExists || visited.includes(nextId)) return null;
-    return nextId;
-}
-
-/** Replays the routing walk from the entry section using the submitted answers; returns null if the test has no entry section. */
-function recomputeSectionPath(test: MinimalTest, answers: MinimalAnswer[]): string[] | null {
-    const entry = entrySectionId(test);
-    if (!entry) return null;
-    const answersByQuestionId = new Map(answers.map((a) => [a.questionId, a]));
-    const path = [entry];
-    // Bounded by section count — resolveNextSection's visited-list guard prevents cycles anyway.
-    const maxHops = (test.sections ?? []).length + 1;
-    while (path.length <= maxHops) {
-        const next = resolveNextSection(test, path[path.length - 1], answersByQuestionId, path);
-        if (!next) break;
-        path.push(next);
-    }
-    return path;
-}
-
-function sectionPathsMatch(a: string[], b: string[]): boolean {
-    return a.length === b.length && a.every((id, i) => id === b[i]);
-}
-
-// ── Staircase replay (mirrors src/utils/placementStaircase.ts) ─────────────
-
-function moveLevel(level: string, direction: 'up' | 'down'): string {
-    const idx = CEFR_LEVELS.indexOf(level);
-    const nextIdx = direction === 'up' ? idx + 1 : idx - 1;
-    return CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, Math.max(0, nextIdx))];
-}
-
-/**
- * Level assigned to each step, replayed purely from a corrected correct/incorrect sequence
- * — mirrors computeStaircaseState. resolveNextStaircaseQuestion checks convergence on the
- * *prefix before* every step it asks, including the last one recorded, so a legitimate
- * levelPath can never contain a step whose own preceding prefix was already converged.
- */
-function replayStaircaseLevels(correctFlags: boolean[]): { levelBeforeStep: string[]; askedAfterConverged: boolean } {
-    let level = 'A2';
-    let consecutiveCorrect = 0;
-    let reversalCount = 0;
-    let lastDirection: 'up' | 'down' | null = null;
-    let askedAfterConverged = false;
-    const levelBeforeStep: string[] = [];
-
-    for (let i = 0; i < correctFlags.length; i++) {
-        levelBeforeStep.push(level);
-        const converged = reversalCount >= CONVERGE_AFTER_REVERSALS || i >= MAX_STAIRCASE_STEPS;
-        if (converged) askedAfterConverged = true;
-
-        const correct = correctFlags[i];
-        const direction: 'up' | 'down' = correct ? 'up' : 'down';
-        if (correct) {
-            consecutiveCorrect++;
-            if (consecutiveCorrect < STEP_UP_AFTER_CORRECT) continue;
-        }
-        const moved = moveLevel(level, direction);
-        if (moved !== level) {
-            if (lastDirection !== null && lastDirection !== direction) reversalCount++;
-            lastDirection = direction;
-        }
-        level = moved;
-        consecutiveCorrect = 0;
-    }
-    return { levelBeforeStep, askedAfterConverged };
-}
-
-// ── Elo self-calibration (roadmap Phase 25.4, mirrors src/utils/placementStaircase.ts) ─────
-// Item-only ratings, no persisted per-student rating — each level's fixed anchor stands in for
-// the student. Runs only after the level path itself has been validated below, using the same
-// levelBeforeStep/correctFlags the replay already computed, so a forged path can't skew ratings.
-// The actual expected-score/rating-delta math (mirroring eloExpectedScore/updateItemElo in
-// src/utils/placementStaircase.ts) now lives in the update_test_question_elo RPC (migration
-// 064), which recomputes it from the row's current eloRating under lock — only the replay
-// inputs (opponent rating, correct flag) are computed here.
-
-const DEFAULT_ELO_RATING = 1200;
-const LEVEL_TO_ELO: Record<string, number> = {
-    A1: 600,
-    A2: 900,
-    B1: 1200,
-    B2: 1500,
-    C1: 1800,
-    C2: 2100,
-};
-
 /** Structural checks only (ids exist, no repeats, question/section/level agree) — score/level correctness is verified separately once the real answers are in scope. */
 function isStructurallyValidLevelPath(
     test: MinimalTest,
     levelPath: { sectionId: string; level: string; questionId: string; correct: boolean }[]
 ): boolean {
-    if (levelPath.length === 0 || levelPath.length > MAX_STAIRCASE_STEPS) return false;
+    if (levelPath.length === 0 || levelPath.length > MAX_QUESTIONS) return false;
 
     const questionsById = new Map((test.questions ?? []).map((q) => [q.id, q]));
     const seenQuestionIds = new Set<string>();
@@ -212,7 +85,7 @@ function isStructurallyValidLevelPath(
         seenQuestionIds.add(step.questionId);
 
         const question = questionsById.get(step.questionId);
-        if (!question || question.sectionId !== step.sectionId || question.type === 'open') return false;
+        if (!question || question.sectionId !== step.sectionId || !isAutoScorable(question)) return false;
 
         const section = (test.sections ?? []).find((s) => s.id === step.sectionId);
         if (!section || section.cefrLevel !== step.level) return false;
