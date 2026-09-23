@@ -1182,6 +1182,8 @@ export interface TestQuestion {
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];
+    /** IB Learner Profile, Bloom's Taxonomy, or grammar descriptors linked to this question (see CefrPickerModal) */
+    frameworkDescriptors?: LinkedFrameworkDescriptor[];
     /** Section this question belongs to */
     sectionId?: string;
     /** Image shown above the answer area — either a public URL or a data URI */

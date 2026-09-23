@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
-import { parseClozeGaps, parseHotTextFragments } from '../../utils/clozeParse';
+import { parseClozeGaps, parseHotTextFragments, plainQuestionPromptText } from '../../utils/clozeParse';
 import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
@@ -359,16 +359,20 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                             </th>
                             {orderedColumns.map((col) => {
                                 const q = questionsById.get(col.id)!;
+                                const shortLabel = t('tests.monitor.grid.question_short', {
+                                    index: col.originalIndex + 1,
+                                });
+                                const fullLabel = `${shortLabel}: ${plainQuestionPromptText(q)}`;
                                 return (
                                     <th key={col.id} style={{ ...th, textAlign: 'center', color: 'var(--accent)' }}>
                                         <button
                                             type="button"
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setGalleryQuestion(q)}
-                                            title={q.prompt}
-                                            aria-label={q.prompt}
+                                            title={fullLabel}
+                                            aria-label={fullLabel}
                                         >
-                                            {t('tests.monitor.grid.question_short', { index: col.originalIndex + 1 })}
+                                            {shortLabel}
                                         </button>
                                     </th>
                                 );
@@ -490,7 +494,9 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                                         index: test.questions.findIndex((q) => q.id === galleryQuestion.id) + 1,
                                     })}
                                 </div>
-                                <p style={{ margin: '6px 0 0', color: 'var(--text)' }}>{galleryQuestion.prompt}</p>
+                                <p style={{ margin: '6px 0 0', color: 'var(--text)' }}>
+                                    {plainQuestionPromptText(galleryQuestion)}
+                                </p>
                             </div>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"

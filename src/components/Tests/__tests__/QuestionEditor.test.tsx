@@ -61,6 +61,29 @@ vi.mock('../ClozeGapEditor', () => ({
     ),
 }));
 
+vi.mock('../HotTextEditor', () => ({
+    default: ({
+        passage,
+        correctIndices,
+        onChange,
+        insertFragmentLabel,
+    }: {
+        passage: string;
+        correctIndices: number[];
+        onChange: (passage: string, correctIndices: number[]) => void;
+        insertFragmentLabel: string;
+    }) => (
+        <div>
+            <span>{insertFragmentLabel}</span>
+            <textarea
+                aria-label="tests.hot_text_passage_label"
+                value={passage}
+                onChange={(e) => onChange(e.target.value, correctIndices)}
+            />
+        </div>
+    ),
+}));
+
 vi.mock('../../Standards/StandardsPickerModal', () => ({ default: () => null }));
 vi.mock('../../CEFR/CefrPickerModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
@@ -452,11 +475,11 @@ describe('QuestionEditor', () => {
         );
         expect(screen.getByText('tests.hot_text_passage_label')).toBeInTheDocument();
         expect(screen.getByText('tests.hot_text_insert_fragment')).toBeInTheDocument();
-        // no fragments yet
-        expect(screen.getByText('tests.hot_text_no_fragments')).toBeInTheDocument();
+        expect(screen.getByLabelText('tests.hot_text_passage_label')).toHaveValue('');
     });
 
-    it('renders hot-text fragments with mark-correct buttons', () => {
+    it('passes the hot-text passage and correct indices through to the editor and reports changes', () => {
+        const onChange = vi.fn();
         render(
             <QuestionEditor
                 question={makeQuestion({
@@ -467,12 +490,17 @@ describe('QuestionEditor', () => {
                 index={0}
                 total={1}
                 sections={sections}
-                onChange={vi.fn()}
+                onChange={onChange}
                 onRemove={vi.fn()}
             />
         );
-        expect(screen.getByText('this')).toBeInTheDocument();
-        expect(screen.getByText('tests.hot_text_fragments_help')).toBeInTheDocument();
+        expect(screen.getByLabelText('tests.hot_text_passage_label')).toHaveValue('Click [[this]] word');
+        fireEvent.change(screen.getByLabelText('tests.hot_text_passage_label'), {
+            target: { value: 'Click [[this]] [[word]]' },
+        });
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ hotTextPassage: 'Click [[this]] [[word]]', hotTextCorrectIndices: [0] })
+        );
     });
 
     it('renders cloze-dropdown with insert-dropdown-gap button', () => {

@@ -15,7 +15,8 @@ import {
     describeTestMeta,
     pickLatestAttempt,
 } from './testAnswerText';
-import { formatPointsRange, stripCommentHtml, escapeHtml } from './exportDataPrep';
+import { formatPointsRange, stripCommentHtml, stripHtmlTags, escapeHtml } from './exportDataPrep';
+import { plainQuestionPromptText } from './clozeParse';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
 
@@ -458,8 +459,9 @@ function buildTestSummaryHTML(
         .map((qb, i) => {
             const question = questionsById.get(qb.questionId);
             const color = BUCKET_COLOR[qb.bucket];
+            const questionText = question ? stripHtmlTags(plainQuestionPromptText(question)) : '';
             return `<tr style="page-break-inside: avoid;">
-        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;width:60%">Q${i + 1}. ${question?.prompt ?? ''}</td>
+        <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;width:60%">Q${i + 1}. ${escapeHtml(questionText)}</td>
         <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center;width:20%;color:${color};font-weight:700">${qb.accuracyPct.toFixed(0)}%</td>
         <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:11px;text-align:center;width:20%;color:#6b7280">${qb.sampleSize}</td>
       </tr>`;

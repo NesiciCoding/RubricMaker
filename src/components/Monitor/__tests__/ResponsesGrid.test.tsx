@@ -157,7 +157,7 @@ describe('ResponsesGrid', () => {
 
     it('opens the gallery and shows per-student answer text', () => {
         render(<ResponsesGrid test={test} rows={[alice, bob]} />);
-        fireEvent.click(screen.getByLabelText('Pick the number four'));
+        fireEvent.click(screen.getByLabelText(/Pick the number four/));
 
         const dialog = screen.getByRole('dialog');
         expect(dialog).toBeInTheDocument();
@@ -168,35 +168,35 @@ describe('ResponsesGrid', () => {
     it('formats cloze, hot-text, true-false and audio answers in the gallery', () => {
         render(<ResponsesGrid test={test} rows={[alice]} />);
 
-        fireEvent.click(screen.getByLabelText('The {{capital}} of France is Paris'));
+        fireEvent.click(screen.getByLabelText(/The capital of France is Paris/));
         expect(screen.getByRole('dialog').textContent).toContain('capital');
 
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Select fragments'));
+        fireEvent.click(screen.getByLabelText(/Select fragments/));
         // Alice selected fragment index 1 → "fox"
         expect(screen.getByRole('dialog').textContent).toContain('fox');
 
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('True or false?'));
+        fireEvent.click(screen.getByLabelText(/True or false\?/));
         expect(screen.getByRole('dialog').textContent).toContain('tests.true_false_true');
 
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Say your name'));
+        fireEvent.click(screen.getByLabelText(/Say your name/));
         expect(screen.getByRole('dialog').textContent).toContain('tests.monitor.grid.audio_recorded:{"seconds":12}');
     });
 
     it('shows no_answer for unanswered gallery cells', () => {
         render(<ResponsesGrid test={test} rows={[bob]} />);
-        fireEvent.click(screen.getByLabelText('Say your name'));
+        fireEvent.click(screen.getByLabelText(/Say your name/));
         expect(screen.getByRole('dialog').textContent).toContain('tests.monitor.grid.no_answer');
     });
 
     it('closes the gallery on Escape', () => {
         render(<ResponsesGrid test={test} rows={[alice]} />);
-        fireEvent.click(screen.getByLabelText('Pick the number four'));
+        fireEvent.click(screen.getByLabelText(/Pick the number four/));
         expect(screen.getByRole('dialog')).toBeInTheDocument();
         fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

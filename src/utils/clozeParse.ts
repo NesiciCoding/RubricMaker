@@ -1,3 +1,5 @@
+import type { TestQuestionType } from '../types';
+
 export interface ClozeGap {
     index: number;
     alternatives: string[];
@@ -90,4 +92,21 @@ export function renderClozeSegments(prompt: string): ClozeSegment[] {
         segments.push({ type: 'text', text: prompt.slice(lastIndex) });
     }
     return segments;
+}
+
+/**
+ * Flattens a cloze/cloze-dropdown prompt to plain, syntax-free text for previews/exports/summaries
+ * that aren't rendering the interactive gap-editing UI — a gap becomes its correct answer, so a
+ * reader sees "The cat sat" rather than "The {{cat|dog}} sat". Not applicable to hot-text: its
+ * [[...]] syntax lives in the separate `hotTextPassage` field, never in `prompt` itself. Every
+ * other question type's prompt is returned untouched (it may still be HTML — callers already strip
+ * that separately).
+ */
+export function plainQuestionPromptText(question: { type: TestQuestionType; prompt: string }): string {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+        return renderClozeSegments(question.prompt)
+            .map((segment) => (segment.type === 'gap' ? (segment.gap.alternatives[0] ?? '') : segment.text))
+            .join('');
+    }
+    return question.prompt;
 }

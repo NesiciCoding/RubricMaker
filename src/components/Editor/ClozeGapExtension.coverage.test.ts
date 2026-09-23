@@ -33,9 +33,14 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+function getPopover(): HTMLElement {
+    const popover = document.querySelector('.cloze-gap-popover') as HTMLElement | null;
+    expect(popover).not.toBeNull();
+    return popover!;
+}
+
 describe('ClozeGapExtension node view', () => {
-    it('renders the pill with a badge and edits alternatives through the prompt', () => {
-        vi.spyOn(window, 'prompt').mockReturnValue('new|alt2');
+    it('renders the pill with a badge and edits alternatives through the popover', () => {
         const editor = makeEditor(promptToClozeContent('Fill {{old|alt}} here.'));
         const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
         expect(pill).not.toBeNull();
@@ -44,27 +49,82 @@ describe('ClozeGapExtension node view', () => {
         expect(pill.title).toBe('old | alt');
 
         pill.click();
-        expect(window.prompt).toHaveBeenCalledWith('Alternatives (pipe-separated), first = correct answer:', 'old|alt');
+        const popover = getPopover();
+        expect(popover.querySelector('.cloze-gap-popover-label')?.textContent).toBe(
+            'Alternatives (pipe-separated), first = correct answer:'
+        );
+        const input = popover.querySelector('.cloze-gap-popover-input') as HTMLInputElement;
+        expect(input.value).toBe('old|alt');
+        input.value = 'new|alt2';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        (popover.querySelector('.cloze-gap-popover-save') as HTMLButtonElement).click();
+
         expect(clozeContentToPrompt(editor)).toBe('Fill {{new|alt2}} here.');
+        expect(document.querySelector('.cloze-gap-popover')).toBeNull();
         editor.destroy();
     });
 
-    it('keeps the gap untouched when the prompt is cancelled', () => {
-        vi.spyOn(window, 'prompt').mockReturnValue(null);
+    it('keeps the gap untouched when the popover is cancelled', () => {
         const editor = makeEditor(promptToClozeContent('Fill {{old}} here.'));
         const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
         pill.click();
+        const popover = getPopover();
+        (popover.querySelector('.cloze-gap-popover-actions button') as HTMLButtonElement).click();
         expect(clozeContentToPrompt(editor)).toBe('Fill {{old}} here.');
+        expect(document.querySelector('.cloze-gap-popover')).toBeNull();
         editor.destroy();
     });
 
     it('keeps the gap untouched when the alternatives are all blank', () => {
-        vi.spyOn(window, 'prompt').mockReturnValue('   |   ');
         const editor = makeEditor(promptToClozeContent('Fill {{old}} here.'));
         const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
         pill.click();
+        const popover = getPopover();
+        const input = popover.querySelector('.cloze-gap-popover-input') as HTMLInputElement;
+        input.value = '   |   ';
+        (popover.querySelector('.cloze-gap-popover-save') as HTMLButtonElement).click();
         expect(clozeContentToPrompt(editor)).toBe('Fill {{old}} here.');
         editor.destroy();
+    });
+
+    it('saves on Enter and cancels on Escape from the input', () => {
+        const editor = makeEditor(promptToClozeContent('Fill {{old}} here.'));
+        const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
+        pill.click();
+        let input = getPopover().querySelector('.cloze-gap-popover-input') as HTMLInputElement;
+        input.value = 'fresh';
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(clozeContentToPrompt(editor)).toBe('Fill {{fresh}} here.');
+        expect(document.querySelector('.cloze-gap-popover')).toBeNull();
+
+        pill.click();
+        input = getPopover().querySelector('.cloze-gap-popover-input') as HTMLInputElement;
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(document.querySelector('.cloze-gap-popover')).toBeNull();
+        expect(clozeContentToPrompt(editor)).toBe('Fill {{fresh}} here.');
+        editor.destroy();
+    });
+
+    it('closes the previous popover when opening a second gap, and on outside click', () => {
+        const editor = makeEditor(promptToClozeContent('Fill {{a}} and {{b}} here.'));
+        const pills = editor.view.dom.querySelectorAll('.cloze-gap-pill');
+        (pills[0] as HTMLElement).click();
+        expect(document.querySelectorAll('.cloze-gap-popover').length).toBe(1);
+        (pills[1] as HTMLElement).click();
+        expect(document.querySelectorAll('.cloze-gap-popover').length).toBe(1);
+
+        document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        expect(document.querySelectorAll('.cloze-gap-popover').length).toBe(0);
+        editor.destroy();
+    });
+
+    it('closes an open popover when the node view is destroyed', () => {
+        const editor = makeEditor(promptToClozeContent('Fill {{old}} here.'));
+        const pill = editor.view.dom.querySelector('.cloze-gap-pill') as HTMLElement;
+        pill.click();
+        expect(document.querySelector('.cloze-gap-popover')).not.toBeNull();
+        editor.destroy();
+        expect(document.querySelector('.cloze-gap-popover')).toBeNull();
     });
 
     it('renders a dash pill when the alternatives list is empty', () => {

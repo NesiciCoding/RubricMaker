@@ -2,7 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import QuestionEditor from '../QuestionEditor';
-import type { TestQuestion, TestSection, LinkedStandard, LinkedCefrDescriptor } from '../../../types';
+import type {
+    TestQuestion,
+    TestSection,
+    LinkedStandard,
+    LinkedCefrDescriptor,
+    LinkedFrameworkDescriptor,
+} from '../../../types';
 
 const { mockSettings, mockAddQuestionBankItem, mockShowToast } = vi.hoisted(() => ({
     mockSettings: {} as Record<string, unknown>,
@@ -102,7 +108,7 @@ vi.mock('../../CEFR/CefrPickerModal', () => ({
         onAdd: (d: LinkedCefrDescriptor) => void;
         onRemove: (descriptorId: string) => void;
         onClose: () => void;
-        onAddFramework: (d: LinkedCefrDescriptor) => void;
+        onAddFramework: (d: LinkedFrameworkDescriptor) => void;
         onRemoveFramework: (descriptorId: string) => void;
     }) => (
         <div data-testid="cefr-picker">
@@ -123,10 +129,14 @@ vi.mock('../../CEFR/CefrPickerModal', () => ({
                 onClick={() =>
                     onAddFramework({
                         descriptorId: 'fd1',
-                        level: 'B1',
-                        skill: 'writing',
+                        framework: 'grammar',
+                        categoryId: 'present-simple',
+                        categoryLabelEn: 'Present Simple',
+                        categoryLabelNl: 'Tegenwoordige tijd',
+                        categoryColor: '#3b82f6',
                         descriptionEn: 'Framework item',
                         descriptionNl: '',
+                        level: 'B1',
                     })
                 }
             >
@@ -135,6 +145,29 @@ vi.mock('../../CEFR/CefrPickerModal', () => ({
             <button onClick={() => onRemoveFramework('fd1')}>Remove framework</button>
             <button onClick={() => onRemove('d9')}>Remove CEFR</button>
             <button onClick={onClose}>Close CEFR</button>
+        </div>
+    ),
+}));
+
+vi.mock('../HotTextEditor', () => ({
+    default: ({
+        passage,
+        correctIndices,
+        onChange,
+        insertFragmentLabel,
+    }: {
+        passage: string;
+        correctIndices: number[];
+        onChange: (passage: string, correctIndices: number[]) => void;
+        insertFragmentLabel: string;
+    }) => (
+        <div>
+            <span>{insertFragmentLabel}</span>
+            <textarea
+                aria-label="tests.hot_text_passage_label"
+                value={passage}
+                onChange={(e) => onChange(e.target.value, correctIndices)}
+            />
         </div>
     ),
 }));
@@ -257,42 +290,13 @@ describe('QuestionEditor coverage', () => {
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ maxRecordingSeconds: 5 }));
     });
 
-    it('renders hot-text without fields, edits the passage, and inserts a fragment', () => {
-        const onChange = renderEditor(makeQuestion({ type: 'hot-text' }));
-        expect(screen.getByText('tests.hot_text_no_fragments')).toBeInTheDocument();
-        fireEvent.change(screen.getByLabelText(/tests\.hot_text_passage_label/), {
+    it('renders the hot-text passage editor and reports edits and partial-credit toggling', () => {
+        const onChange = renderEditor(makeQuestion({ type: 'hot-text', hotTextPassage: '[[first]] word' }));
+        expect(screen.getByText('tests.hot_text_insert_fragment')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('tests.hot_text_passage_label'), {
             target: { value: 'A [[word]] here' },
         });
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextPassage: 'A [[word]] here' }));
-        fireEvent.click(screen.getByText('tests.hot_text_insert_fragment'));
-        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextPassage: '[[word]]' }));
-    });
-
-    it('toggles a hot-text fragment when no correct indices are stored yet', () => {
-        const onChange = renderEditor(makeQuestion({ type: 'hot-text', hotTextPassage: '[[first]] word' }));
-        fireEvent.click(screen.getAllByLabelText('tests.mark_correct_option')[0]);
-        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextCorrectIndices: [0] }));
-    });
-
-    it('toggles an unmarked hot-text fragment and renders correct colors', () => {
-        const onChange = renderEditor(
-            makeQuestion({
-                type: 'hot-text',
-                hotTextPassage: '[[first]] [[second]]',
-                hotTextCorrectIndices: [0],
-            })
-        );
-        const toggles = screen.getAllByLabelText('tests.mark_correct_option');
-        expect(toggles).toHaveLength(2);
-        expect(toggles[0]).toHaveAttribute('aria-pressed', 'true');
-        expect(toggles[1]).toHaveAttribute('aria-pressed', 'false');
-        fireEvent.click(toggles[1]);
-        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextCorrectIndices: [0, 1] }));
-    });
-
-    it('renders a dash for empty hot-text fragments', () => {
-        renderEditor(makeQuestion({ type: 'hot-text', hotTextPassage: '[[]] word', hotTextCorrectIndices: [] }));
-        expect(screen.getAllByText('—').length).toBeGreaterThan(0);
     });
 
     it('adds and removes ordering items', () => {
@@ -477,7 +481,7 @@ describe('QuestionEditor coverage', () => {
         expect(screen.queryByText('tests.standards_api_key_required')).not.toBeInTheDocument();
     });
 
-    it('adds a CEFR descriptor through the picker and exercises the framework no-op callbacks', () => {
+    it('adds a CEFR descriptor through the picker', () => {
         const onChange = renderEditor();
         fireEvent.click(screen.getByText('tests.link_cefr'));
         expect(screen.getByTestId('cefr-picker')).toBeInTheDocument();
@@ -485,9 +489,112 @@ describe('QuestionEditor coverage', () => {
         expect(onChange).toHaveBeenCalledWith(
             expect.objectContaining({ linkedCefrDescriptors: [expect.objectContaining({ descriptorId: 'd9' })] })
         );
-        // The editor wires the framework callbacks as no-ops (linkedFrameworkDescriptors is always [])
+    });
+
+    it('adds and removes a framework descriptor through the picker, deriving linkedGrammarItemId for grammar links', () => {
+        let question = makeQuestion();
+        const onChange = vi.fn((next: TestQuestion) => {
+            question = next;
+        });
+        const { rerender } = render(
+            <QuestionEditor
+                question={question}
+                index={0}
+                total={1}
+                sections={noSections}
+                onChange={onChange}
+                onRemove={vi.fn()}
+            />
+        );
+        fireEvent.click(screen.getByText('tests.link_cefr'));
         fireEvent.click(screen.getByText('Add framework'));
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({
+                frameworkDescriptors: [expect.objectContaining({ descriptorId: 'fd1' })],
+                linkedGrammarItemId: 'fd1',
+            })
+        );
+
+        rerender(
+            <QuestionEditor
+                question={question}
+                index={0}
+                total={1}
+                sections={noSections}
+                onChange={onChange}
+                onRemove={vi.fn()}
+            />
+        );
         fireEvent.click(screen.getByText('Remove framework'));
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ frameworkDescriptors: [], linkedGrammarItemId: undefined })
+        );
+    });
+
+    it('renders a framework descriptor chip and removes it inline', () => {
+        const onChange = renderEditor(
+            makeQuestion({
+                frameworkDescriptors: [
+                    {
+                        descriptorId: 'fd1',
+                        framework: 'grammar',
+                        categoryId: 'present-simple',
+                        categoryLabelEn: 'Present Simple',
+                        categoryLabelNl: 'Tegenwoordige tijd',
+                        categoryColor: '#3b82f6',
+                        descriptionEn: 'Framework item',
+                        descriptionNl: '',
+                        level: 'B1',
+                    },
+                ],
+            })
+        );
+        expect(screen.getByText('Framework item')).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ frameworkDescriptors: [], linkedGrammarItemId: undefined })
+        );
+    });
+
+    it('derives a legacy linkedGrammarItemId into a displayed chip without writing on mount', () => {
+        const onChange = renderEditor(
+            makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })
+        );
+        // Merely viewing a legacy question must not call onChange — that would spuriously flag the
+        // test builder's unsaved-changes guard on a load that made no real edit.
+        expect(onChange).not.toHaveBeenCalled();
+        expect(screen.getByText('Irregular verbs')).toBeInTheDocument();
+    });
+
+    it('persists the migrated grammar chip once the user actually removes it', () => {
+        const onChange = renderEditor(
+            makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })
+        );
+        fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ frameworkDescriptors: [], linkedGrammarItemId: undefined })
+        );
+    });
+
+    it('toggles the attach-media and advanced-options panels open and closed', () => {
+        renderEditor();
+        expect(screen.queryByLabelText(/tests\.question_image_label/)).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.attach_media'));
+        expect(screen.getByLabelText(/tests\.question_image_label/)).toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.attach_media'));
+        expect(screen.queryByLabelText(/tests\.question_image_label/)).not.toBeInTheDocument();
+
+        expect(screen.queryByLabelText(/tests\.question_hint_label/)).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.advanced_options'));
+        expect(screen.getByLabelText(/tests\.question_hint_label/)).toBeInTheDocument();
+        fireEvent.click(screen.getByText('tests.advanced_options'));
+        expect(screen.queryByLabelText(/tests\.question_hint_label/)).not.toBeInTheDocument();
+    });
+
+    it('removes an attachment via its inline chip button', () => {
+        const onChange = renderEditor(makeQuestion({ imageUrl: 'https://img.example/x.png' }));
+        fireEvent.click(screen.getByLabelText('tests.remove_attachment'));
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ imageUrl: undefined }));
     });
 
     it('updates the prompt through the rich editor for non-cloze types', () => {
@@ -507,10 +614,14 @@ describe('QuestionEditor coverage', () => {
 
     it('expands, fills, and collapses option image fields', () => {
         const onChange = renderEditor();
+        fireEvent.click(screen.getByText('tests.attach_media'));
         fireEvent.click(screen.getAllByLabelText('tests.option_image_label')[0]);
         const urlInputs = document.querySelectorAll('input[type="url"]');
-        expect(urlInputs.length).toBe(3); // question image + question audio + expanded option image
-        fireEvent.change(urlInputs[2], { target: { value: 'https://img.example/opt.png' } });
+        expect(urlInputs.length).toBe(3); // expanded option image + question image + question audio
+        const optionImageInput = document.querySelector(
+            'input[type="url"][aria-label="tests.option_image_label"]'
+        ) as HTMLInputElement;
+        fireEvent.change(optionImageInput, { target: { value: 'https://img.example/opt.png' } });
         expect(onChange).toHaveBeenCalledWith(
             expect.objectContaining({
                 options: [
@@ -532,8 +643,11 @@ describe('QuestionEditor coverage', () => {
                 ],
             })
         );
-        const urlInputs = document.querySelectorAll('input[type="url"]');
-        fireEvent.change(urlInputs[2], { target: { value: '' } });
+        fireEvent.click(screen.getByText('tests.attach_media'));
+        const optionImageInput = document.querySelector(
+            'input[type="url"][aria-label="tests.option_image_label"]'
+        ) as HTMLInputElement;
+        fireEvent.change(optionImageInput, { target: { value: '' } });
         const cleared = onChange.mock.calls.at(-1)![0] as TestQuestion;
         expect(cleared.options![0].imageUrl).toBeUndefined();
     });

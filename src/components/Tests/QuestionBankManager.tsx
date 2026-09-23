@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { CEFR_LEVELS, QUESTION_BANK_SKILLS } from '../../data/cefrDescriptors';
 import { getGrammarItemById } from '../../data/grammarStandards';
 import { stripHtmlTags } from '../../utils/exportDataPrep';
+import { plainQuestionPromptText } from '../../utils/clozeParse';
 import { exportQuestionBankJson } from '../../utils/questionBankImport';
 import { QUESTION_TYPES } from './QuestionEditor';
 import type { QuestionBankItem, CefrLevel, QuestionBankSkill, TestQuestion, TestQuestionType } from '../../types';
@@ -502,7 +503,8 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                                     ? t('questionBank.section_bundle_title', {
                                                           title: item.section.title,
                                                       })
-                                                    : item.question?.prompt || t('questionBank.untitled_prompt')}
+                                                    : (item.question && plainQuestionPromptText(item.question)) ||
+                                                      t('questionBank.untitled_prompt')}
                                             </div>
                                         </div>
                                         {manager && (

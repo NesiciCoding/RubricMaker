@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Plus } from 'lucide-react';
-import { ClozeGap, promptToClozeContent, clozeContentToPrompt } from '../Editor/ClozeGapExtension';
+import { HotTextFragment, passageToHotTextContent, hotTextContentToPassage } from '../Editor/HotTextFragmentExtension';
 
 // Deliberately disables everything except doc/paragraph/text/history — the stored value must stay
-// a flat {{gap|alt}}-annotated string that clozeParse.ts can parse unchanged, so no bold/tables/
-// lists/headings here (unlike the full essay editor config in tiptapExtensions.ts).
-const CLOZE_STARTER_KIT = StarterKit.configure({
+// a flat [[word]]-annotated string that clozeParse.ts can parse unchanged, mirroring
+// ClozeGapEditor's CLOZE_STARTER_KIT restriction.
+const HOT_TEXT_STARTER_KIT = StarterKit.configure({
     bold: false,
     italic: false,
     strike: false,
@@ -30,32 +30,25 @@ const CLOZE_STARTER_KIT = StarterKit.configure({
 });
 
 interface Props {
-    value: string;
-    onChange: (prompt: string) => void;
-    allowDropdown: boolean;
-    insertGapLabel: string;
-    insertDropdownGapLabel: string;
+    passage: string;
+    correctIndices: number[];
+    onChange: (passage: string, correctIndices: number[]) => void;
+    insertFragmentLabel: string;
 }
 
 /**
- * Minimal rich editor for cloze/cloze-dropdown prompts: plain text plus clickable gap pills that
- * insert/edit {{alt1|alt2}} syntax without hand-typing it. Deliberately restricted to
- * Document/Paragraph/Text/ClozeGap — no bold/tables/etc — since the stored value must stay a flat
- * string that clozeParse.ts can parse unchanged.
+ * Minimal rich editor for hot-text passages: plain text plus clickable fragment pills that
+ * mark/edit [[word]] syntax without hand-typing it or wrapping raw textarea selections. Mirrors
+ * ClozeGapEditor's structure and pill/popover pattern (see HotTextFragmentExtension.tsx).
  */
-export default function ClozeGapEditor({
-    value,
-    onChange,
-    allowDropdown,
-    insertGapLabel,
-    insertDropdownGapLabel,
-}: Props) {
+export default function HotTextEditor({ passage, correctIndices, onChange, insertFragmentLabel }: Props) {
     const { t } = useTranslation();
     const extensions = useMemo(
         () => [
-            CLOZE_STARTER_KIT,
-            ClozeGap.configure({
-                editLabel: t('tests.cloze_gap_alternatives_label'),
+            HOT_TEXT_STARTER_KIT,
+            HotTextFragment.configure({
+                textLabel: t('tests.hot_text_fragment_text_label'),
+                correctLabel: t('tests.hot_text_fragment_correct_label'),
                 saveLabel: t('tests.cloze_gap_save'),
                 cancelLabel: t('tests.cloze_gap_cancel'),
             }),
@@ -65,18 +58,24 @@ export default function ClozeGapEditor({
     );
     const editor = useEditor({
         extensions,
-        content: promptToClozeContent(value),
-        onUpdate: ({ editor }) => onChange(clozeContentToPrompt(editor)),
-        editorProps: { attributes: { class: 'cloze-gap-editor-content' } },
+        content: passageToHotTextContent(passage, correctIndices),
+        onUpdate: ({ editor }) => {
+            const next = hotTextContentToPassage(editor);
+            onChange(next.passage, next.correctIndices);
+        },
+        editorProps: { attributes: { class: 'hot-text-editor-content' } },
     });
 
-    // Keep the editor in sync when the prompt changes from outside (e.g. switching question type).
+    // Keep the editor in sync when the passage/correctIndices change from outside (e.g. switching
+    // question type, or loading a different question).
     useEffect(() => {
         /* v8 ignore next -- useEditor initializes synchronously in this environment */
         if (!editor) return;
-        if (clozeContentToPrompt(editor) === value) return;
-        editor.commands.setContent(promptToClozeContent(value));
-    }, [editor, value]);
+        const current = hotTextContentToPassage(editor);
+        if (current.passage === passage && current.correctIndices.join(',') === correctIndices.join(',')) return;
+        editor.commands.setContent(passageToHotTextContent(passage, correctIndices));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor, passage, correctIndices.join(',')]);
 
     /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
@@ -97,43 +96,35 @@ export default function ClozeGapEditor({
                     type="button"
                     className="btn btn-secondary btn-sm"
                     // Prevents the contenteditable from blurring on click, which would otherwise
-                    // lose the caret position and make the gap insert at the wrong spot.
+                    // lose the selection and make the fragment wrap the wrong text.
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().insertClozeGap(['answer']).run()}
+                    onClick={() => editor.chain().focus().markSelectionAsFragment().run()}
                 >
-                    <Plus size={14} /> {insertGapLabel}
+                    <Plus size={14} /> {insertFragmentLabel}
                 </button>
-                {allowDropdown && (
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => editor.chain().focus().insertClozeGap(['correct', 'wrong1', 'wrong2']).run()}
-                    >
-                        <Plus size={14} /> {insertDropdownGapLabel}
-                    </button>
-                )}
             </div>
             <div style={{ padding: '8px 10px' }}>
                 <EditorContent editor={editor} />
             </div>
             <style>{`
-                .cloze-gap-editor-content { outline: none; min-height: 1.5em; line-height: 1.6; }
-                .cloze-gap-pill {
+                .hot-text-editor-content { outline: none; min-height: 1.5em; line-height: 1.6; }
+                .hot-text-fragment-pill {
                     display: inline-flex;
                     align-items: center;
-                    gap: 2px;
                     padding: 1px 8px;
                     margin: 0 1px;
                     border-radius: 999px;
-                    background: color-mix(in srgb, var(--accent) 16%, transparent);
-                    color: var(--accent);
+                    background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+                    color: var(--text);
                     font-weight: 600;
                     cursor: pointer;
                     user-select: none;
                 }
-                .cloze-gap-pill sup { font-size: 0.7em; opacity: 0.75; margin-left: 1px; }
-                .cloze-gap-popover {
+                .hot-text-fragment-pill.correct {
+                    background: color-mix(in srgb, var(--green) 18%, transparent);
+                    color: var(--green);
+                }
+                .hot-text-popover {
                     position: fixed;
                     z-index: 1000;
                     display: flex;
@@ -146,8 +137,8 @@ export default function ClozeGapEditor({
                     border-radius: 8px;
                     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
                 }
-                .cloze-gap-popover-label { font-size: 0.75rem; color: var(--text-muted); }
-                .cloze-gap-popover-input {
+                .hot-text-popover-label { font-size: 0.75rem; color: var(--text-muted); }
+                .hot-text-popover-input {
                     box-sizing: border-box;
                     width: 100%;
                     padding: 6px 8px;
@@ -157,8 +148,16 @@ export default function ClozeGapEditor({
                     border: 1px solid var(--border);
                     border-radius: 6px;
                 }
-                .cloze-gap-popover-actions { display: flex; justify-content: flex-end; gap: 6px; }
-                .cloze-gap-popover-actions button {
+                .hot-text-popover-checkbox-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 0.8rem;
+                    color: var(--text);
+                    cursor: pointer;
+                }
+                .hot-text-popover-actions { display: flex; justify-content: flex-end; gap: 6px; }
+                .hot-text-popover-actions button {
                     padding: 4px 10px;
                     font-size: 0.8rem;
                     color: var(--text);
@@ -167,7 +166,7 @@ export default function ClozeGapEditor({
                     border-radius: 6px;
                     cursor: pointer;
                 }
-                .cloze-gap-popover-save { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+                .hot-text-popover-save { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
             `}</style>
         </div>
     );

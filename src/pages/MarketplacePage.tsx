@@ -7,6 +7,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
+import { plainQuestionPromptText } from '../utils/clozeParse';
 import type {
     CefrLevel,
     MarketplaceListing,
@@ -27,7 +28,7 @@ function publishOptionLabel(
     if (kind === 'questionBankItem') {
         const item = entity as QuestionBankItem;
         if (item.kind === 'section' && item.section) return item.section.title;
-        return item.question?.prompt || '';
+        return (item.question && plainQuestionPromptText(item.question)) || '';
     }
     return (entity as Rubric | Test | FlashcardDeck).name;
 }

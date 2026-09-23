@@ -2,6 +2,7 @@ import type { Test, StudentTest, CefrLevel } from '../types';
 import { estimatePlacement } from './placementResult';
 import { autoScoreResponse } from './testCalc';
 import { sectionQuestions } from './placementRouting';
+import { plainQuestionPromptText } from './clozeParse';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 
 // Placement-test analytics — the class-level equivalents of the point-based ClassAverageAdjuster /
@@ -92,7 +93,7 @@ export function placementItemAnalysis(test: Test, studentTests: StudentTest[]): 
             const snapById = new Map((st.askedQuestionSnapshots ?? []).map((q) => [q.id, q]));
             for (const step of st.levelPath) {
                 const q = snapById.get(step.questionId) ?? testQById.get(step.questionId);
-                bump(step.questionId, q?.prompt ?? step.questionId, step.correct, step.level);
+                bump(step.questionId, q ? plainQuestionPromptText(q) : step.questionId, step.correct, step.level);
             }
         } else if (st.sectionPath?.length) {
             const responseById = new Map(st.answers.map((a) => [a.questionId, a.response]));
@@ -100,7 +101,12 @@ export function placementItemAnalysis(test: Test, studentTests: StudentTest[]): 
                 const section = (test.sections ?? []).find((s) => s.id === sectionId);
                 for (const q of sectionQuestions(test, sectionId)) {
                     const response = responseById.get(q.id) ?? '';
-                    bump(q.id, q.prompt, autoScoreResponse(q, response) >= q.points, section?.cefrLevel);
+                    bump(
+                        q.id,
+                        plainQuestionPromptText(q),
+                        autoScoreResponse(q, response) >= q.points,
+                        section?.cefrLevel
+                    );
                 }
             }
         }

@@ -171,7 +171,7 @@ describe('ResponsesGrid coverage', () => {
     it('marks wrong matching and ordering responses as incorrect and falls back to the raw mc response', () => {
         render(<ResponsesGrid test={test} rows={[wrong]} />);
         expect(screen.getAllByLabelText('tests.monitor.grid.state.incorrect')).toHaveLength(3);
-        fireEvent.click(screen.getByLabelText('Pick one'));
+        fireEvent.click(screen.getByLabelText(/Pick one/));
         expect(screen.getByRole('dialog').textContent).toContain('unknown-id');
     });
 
@@ -187,23 +187,23 @@ describe('ResponsesGrid coverage', () => {
     it('shows raw responses in the gallery for matching, categorize, ordering, and open questions', () => {
         render(<ResponsesGrid test={test} rows={[alice]} />);
 
-        fireEvent.click(screen.getByLabelText('Match the pairs'));
+        fireEvent.click(screen.getByLabelText(/Match the pairs/));
         expect(screen.getByRole('dialog').textContent).toContain('{"p1":"p1"}');
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Sort the items'));
+        fireEvent.click(screen.getByLabelText(/Sort the items/));
         expect(screen.getByRole('dialog').textContent).toContain('{"ci1":"c1"}');
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Order the steps'));
+        fireEvent.click(screen.getByLabelText(/Order the steps/));
         expect(screen.getByRole('dialog').textContent).toContain('["i1","i2"]');
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Write freely'));
+        fireEvent.click(screen.getByLabelText(/Write freely/));
         expect(screen.getByRole('dialog').textContent).toContain('My essay text');
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Select the quick word'));
+        fireEvent.click(screen.getByLabelText(/Select the quick word/));
         expect(screen.getByRole('dialog').textContent).toContain('quick');
     });
 
@@ -229,7 +229,7 @@ describe('ResponsesGrid coverage', () => {
             { studentId: 's3', displayName: 'Mal', answers: [{ questionId: 'm1', response: 'garbage' }] },
         ];
         render(<ResponsesGrid test={withMr} rows={rows} />);
-        fireEvent.click(screen.getByLabelText('Pick all'));
+        fireEvent.click(screen.getByLabelText(/Pick all/));
         const dialog = screen.getByRole('dialog');
         expect(within(dialog).getByText('Alpha, Beta')).toBeInTheDocument();
         expect(within(dialog).getAllByText('tests.monitor.grid.no_answer')).toHaveLength(2);
@@ -237,7 +237,7 @@ describe('ResponsesGrid coverage', () => {
 
     it('shows the cloze answer text and no_answer for empty or malformed cloze responses', () => {
         render(<ResponsesGrid test={test} rows={[alice, bob, malformed]} />);
-        fireEvent.click(screen.getByLabelText('X {{a}} Y {{b}}'));
+        fireEvent.click(screen.getByLabelText(/X a Y b/));
         const dialog = screen.getByRole('dialog');
         // Alice answered gap 0; the missing gap 1 is filtered out.
         expect(within(dialog).getByText('a')).toBeInTheDocument();
@@ -247,12 +247,26 @@ describe('ResponsesGrid coverage', () => {
     it('shows no_answer for hot-text without a passage and for plain audio responses', () => {
         render(<ResponsesGrid test={test} rows={[alice, malformed]} />);
 
-        fireEvent.click(screen.getByLabelText('Click the words'));
+        fireEvent.click(screen.getByLabelText(/Click the words/));
         // Alice selected an index but there is no passage; Mal's response is malformed → catch
         expect(screen.getAllByText('tests.monitor.grid.no_answer')).toHaveLength(2);
         fireEvent.click(screen.getByLabelText('common.close'));
 
-        fireEvent.click(screen.getByLabelText('Describe the picture'));
+        fireEvent.click(screen.getByLabelText(/Describe the picture/));
         expect(screen.getAllByText('tests.monitor.grid.no_answer')).toHaveLength(2);
+    });
+
+    it('keeps column labels distinguishable when two cloze prompts flatten to the same text', () => {
+        const clozeA: TestQuestion = { id: 'ca', prompt: 'Pick {{cat|dog}}', type: 'cloze', points: 1 };
+        const clozeB: TestQuestion = { id: 'cb', prompt: 'Pick {{cat|fox}}', type: 'cloze', points: 1 };
+        const withDupes: Test = { ...test, questions: [clozeA, clozeB] };
+        render(<ResponsesGrid test={withDupes} rows={[]} />);
+        // Both flatten to "Pick cat" — the accessible label must still include the question number.
+        expect(
+            screen.getByLabelText(/^tests\.monitor\.grid\.question_short:\{"index":1\}: Pick cat$/)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByLabelText(/^tests\.monitor\.grid\.question_short:\{"index":2\}: Pick cat$/)
+        ).toBeInTheDocument();
     });
 });

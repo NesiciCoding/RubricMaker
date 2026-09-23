@@ -1,10 +1,15 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { renderClozeSegments } from '../../utils/clozeParse';
+import { openPillPopover } from './pillPopover';
 
 export interface ClozeGapOptions {
-    /** Prompt shown by the click-to-edit window.prompt(); overridden per call site via commands. */
+    /** Label shown above the alternatives input in the click-to-edit popover. */
     editLabel: string;
+    /** Label for the popover's save button. */
+    saveLabel: string;
+    /** Label for the popover's cancel button. */
+    cancelLabel: string;
 }
 
 declare module '@tiptap/core' {
@@ -16,11 +21,11 @@ declare module '@tiptap/core' {
 }
 
 /**
- * An inline atom node representing one cloze gap. Renders as a clickable pill; clicking prompts
- * for a pipe-separated alternatives list (first = correct answer), matching the existing
- * {{correct|wrong1|wrong2}} grammar in clozeParse.ts. Kept deliberately plain (window.prompt, no
- * popover UI) — this node's only job is to let a gap be inserted/edited without hand-typing the
- * raw {{...}} syntax; the parse/scoring layer is untouched.
+ * An inline atom node representing one cloze gap. Renders as a clickable pill; clicking opens an
+ * in-app popover anchored to the pill with a pipe-separated alternatives list (first = correct
+ * answer), matching the existing {{correct|wrong1|wrong2}} grammar in clozeParse.ts. This node's
+ * only job is to let a gap be inserted/edited without hand-typing the raw {{...}} syntax; the
+ * parse/scoring layer is untouched.
  */
 export const ClozeGap = Node.create<ClozeGapOptions>({
     name: 'clozeGap',
@@ -29,7 +34,11 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     atom: true,
 
     addOptions() {
-        return { editLabel: 'Alternatives (pipe-separated), first = correct answer:' };
+        return {
+            editLabel: 'Alternatives (pipe-separated), first = correct answer:',
+            saveLabel: 'Save',
+            cancelLabel: 'Cancel',
+        };
     },
 
     addAttributes() {
@@ -62,7 +71,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     },
 
     addNodeView() {
-        const { editLabel } = this.options;
+        const { editLabel, saveLabel, cancelLabel } = this.options;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.className = 'cloze-gap-pill';
@@ -80,19 +89,24 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             };
             render();
 
-            pill.addEventListener('click', () => {
-                const current = (node.attrs.alternatives as string[]).join('|');
-                const next = window.prompt(editLabel, current);
-                if (next === null) return;
-                const alternatives = next
+            let closePopover: (() => void) | null = null;
+
+            function save(input: HTMLInputElement) {
+                const alternatives = input.value
                     .split('|')
                     .map((alt) => alt.trim())
                     .filter((alt) => alt.length > 0);
-                if (alternatives.length === 0) return;
+                if (alternatives.length === 0) {
+                    closePopover?.();
+                    return;
+                }
                 /* v8 ignore next -- provably dead: tiptap always provides getPos for node views */
                 const pos = typeof getPos === 'function' ? getPos() : undefined;
                 /* v8 ignore next -- provably dead: getPos is always a function */
-                if (pos === undefined) return;
+                if (pos === undefined) {
+                    closePopover?.();
+                    return;
+                }
                 editor
                     .chain()
                     .focus()
@@ -101,6 +115,47 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                         return true;
                     })
                     .run();
+                closePopover?.();
+            }
+
+            pill.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closePopover = openPillPopover(pill, 'cloze-gap-popover', (popover, close) => {
+                    const label = document.createElement('div');
+                    label.className = 'cloze-gap-popover-label';
+                    label.textContent = editLabel;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'cloze-gap-popover-input';
+                    input.value = (node.attrs.alternatives as string[]).join('|');
+                    input.addEventListener('keydown', (ke) => {
+                        if (ke.key === 'Enter') {
+                            ke.preventDefault();
+                            save(input);
+                        } else if (ke.key === 'Escape') {
+                            ke.preventDefault();
+                            close();
+                        }
+                    });
+
+                    const actions = document.createElement('div');
+                    actions.className = 'cloze-gap-popover-actions';
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.textContent = cancelLabel;
+                    cancelBtn.addEventListener('click', () => close());
+                    const saveBtn = document.createElement('button');
+                    saveBtn.type = 'button';
+                    saveBtn.className = 'cloze-gap-popover-save';
+                    saveBtn.textContent = saveLabel;
+                    saveBtn.addEventListener('click', () => save(input));
+                    actions.append(cancelBtn, saveBtn);
+
+                    popover.append(label, input, actions);
+                    input.focus();
+                    input.select();
+                });
             });
 
             return {
@@ -113,6 +168,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     render();
                     return true;
                 },
+                destroy: () => closePopover?.(),
             };
         };
     },

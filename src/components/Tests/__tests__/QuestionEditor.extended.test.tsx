@@ -66,6 +66,29 @@ vi.mock('../ClozeGapEditor', () => ({
     ),
 }));
 
+vi.mock('../HotTextEditor', () => ({
+    default: ({
+        passage,
+        correctIndices,
+        onChange,
+        insertFragmentLabel,
+    }: {
+        passage: string;
+        correctIndices: number[];
+        onChange: (passage: string, correctIndices: number[]) => void;
+        insertFragmentLabel: string;
+    }) => (
+        <div>
+            <span>{insertFragmentLabel}</span>
+            <textarea
+                aria-label="tests.hot_text_passage_label"
+                value={passage}
+                onChange={(e) => onChange(e.target.value, correctIndices)}
+            />
+        </div>
+    ),
+}));
+
 vi.mock('../../Standards/StandardsPickerModal', () => ({ default: () => null }));
 vi.mock('../../CEFR/CefrPickerModal', () => ({
     default: ({ onClose }: { onClose: () => void }) =>
@@ -378,36 +401,17 @@ describe('QuestionEditor extended', () => {
     });
 
     describe('hot-text', () => {
-        it('appends a fragment at the cursor when nothing is selected', () => {
+        it('renders the passage and reports edits through the editor', () => {
             const { onChange } = renderEditor(
-                makeQuestion({ type: 'hot-text', hotTextPassage: 'Text', hotTextCorrectIndices: [] })
+                makeQuestion({ type: 'hot-text', hotTextPassage: 'Click [[here]] now', hotTextCorrectIndices: [0] })
             );
-            const textarea = screen.getByLabelText(/tests\.hot_text_passage_label/) as HTMLTextAreaElement;
-            textarea.focus();
-            textarea.setSelectionRange(4, 4);
-            fireEvent.click(screen.getByText('tests.hot_text_insert_fragment'));
-            expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextPassage: 'Text[[word]]' }));
-        });
-
-        it('wraps the selected passage in fragment markers', () => {
-            const { onChange } = renderEditor(
-                makeQuestion({ type: 'hot-text', hotTextPassage: 'Click here now', hotTextCorrectIndices: [] })
+            expect(screen.getByLabelText('tests.hot_text_passage_label')).toHaveValue('Click [[here]] now');
+            fireEvent.change(screen.getByLabelText('tests.hot_text_passage_label'), {
+                target: { value: 'Click [[here]] [[now]]' },
+            });
+            expect(onChange).toHaveBeenCalledWith(
+                expect.objectContaining({ hotTextPassage: 'Click [[here]] [[now]]', hotTextCorrectIndices: [0] })
             );
-            const textarea = screen.getByLabelText(/tests\.hot_text_passage_label/) as HTMLTextAreaElement;
-            textarea.focus();
-            textarea.setSelectionRange(6, 10);
-            fireEvent.click(screen.getByText('tests.hot_text_insert_fragment'));
-            expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextPassage: 'Click [[here]] now' }));
-        });
-
-        it('toggles which fragments are marked correct', () => {
-            const { onChange } = renderEditor(
-                makeQuestion({ type: 'hot-text', hotTextPassage: '[[this]] word', hotTextCorrectIndices: [0] })
-            );
-            const toggle = screen.getByLabelText('tests.mark_correct_option');
-            expect(toggle).toHaveAttribute('aria-pressed', 'true');
-            fireEvent.click(toggle);
-            expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ hotTextCorrectIndices: [] }));
         });
     });
 
@@ -429,6 +433,7 @@ describe('QuestionEditor extended', () => {
             fireEvent.change(screen.getByLabelText('tests.question_points_label'), { target: { value: '5' } });
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ points: 5 }));
 
+            fireEvent.click(screen.getByText('tests.attach_media'));
             fireEvent.change(screen.getByLabelText(/tests\.question_image_label/), {
                 target: { value: 'https://img.example/x.png' },
             });
@@ -439,6 +444,7 @@ describe('QuestionEditor extended', () => {
             });
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ audioUrl: 'https://audio.example/x.mp3' }));
 
+            fireEvent.click(screen.getByText('tests.advanced_options'));
             fireEvent.change(screen.getByLabelText(/tests\.question_hint_label/), {
                 target: { value: 'A hint' },
             });
@@ -453,15 +459,6 @@ describe('QuestionEditor extended', () => {
                 target: { value: 's1' },
             });
             expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ sectionId: 's1' }));
-        });
-
-        it('updates the linked grammar item', () => {
-            const { onChange } = renderEditor(makeQuestion({ type: 'matching', linkedGrammarItemId: undefined }));
-            const select = screen.getByLabelText('grammar.item_select_label');
-            fireEvent.change(select, { target: { value: 'gr-past-simple-irregular' } });
-            expect(onChange).toHaveBeenCalledWith(
-                expect.objectContaining({ linkedGrammarItemId: 'gr-past-simple-irregular' })
-            );
         });
     });
 
@@ -498,6 +495,7 @@ describe('QuestionEditor extended', () => {
     describe('elo rating', () => {
         it('shows the no-level hint when the section has no CEFR level', () => {
             renderEditor();
+            fireEvent.click(screen.getByText('tests.advanced_options'));
             expect(screen.getByText('tests.elo_rating_no_level')).toBeInTheDocument();
         });
 
@@ -513,6 +511,7 @@ describe('QuestionEditor extended', () => {
                     onRemove={vi.fn()}
                 />
             );
+            fireEvent.click(screen.getByText('tests.advanced_options'));
             expect(screen.getByLabelText(/tests\.elo_rating_label/)).toBeInTheDocument();
         });
     });
