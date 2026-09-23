@@ -3,6 +3,15 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { parseHotTextFragments } from '../../utils/clozeParse';
 import { openPillPopover } from './pillPopover';
 
+// A raw `[[`/`]]` anywhere in the serialized passage — whether typed as plain text or inside a
+// fragment's own text — would be reparsed as a fragment boundary by parseHotTextFragments on the
+// next load, silently shifting every later fragment's index and corrupting which one is "correct".
+// Collapsing the doubled bracket to a single one keeps the text close to what was typed while
+// making it impossible to round-trip into a fake fragment marker.
+function stripBracketSyntax(text: string): string {
+    return text.replace(/\[\[/g, '[').replace(/\]\]/g, ']');
+}
+
 export interface HotTextFragmentOptions {
     /** Label shown above the text input in the click-to-edit popover. */
     textLabel: string;
@@ -74,7 +83,7 @@ export const HotTextFragment = Node.create<HotTextFragmentOptions>({
                 () =>
                 ({ state, chain }) => {
                     const { from, to } = state.selection;
-                    const text = state.doc.textBetween(from, to) || 'word';
+                    const text = stripBracketSyntax(state.doc.textBetween(from, to)) || 'word';
                     return chain()
                         .insertContentAt({ from, to }, { type: this.name, attrs: { text, correct: false } })
                         .run();
@@ -97,7 +106,7 @@ export const HotTextFragment = Node.create<HotTextFragmentOptions>({
             let closePopover: (() => void) | null = null;
 
             function save(input: HTMLInputElement, checkbox: HTMLInputElement) {
-                const text = input.value.trim();
+                const text = stripBracketSyntax(input.value.trim());
                 if (!text) {
                     closePopover?.();
                     return;
@@ -205,7 +214,7 @@ export function hotTextContentToPassage(editor: Editor): { passage: string; corr
     editor.state.doc.descendants((node) => {
         if (node.type.name === 'text') {
             /* v8 ignore next -- provably dead: tiptap text nodes always carry text */
-            passage += node.text ?? '';
+            passage += stripBracketSyntax(node.text ?? '');
         } else if (node.type.name === 'hotTextFragment') {
             passage += `[[${node.attrs.text as string}]]`;
             if (node.attrs.correct) correctIndices.push(fragmentIndex);

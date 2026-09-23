@@ -28,8 +28,10 @@ export function openPillPopover(
         if (activeClose === close) activeClose = null;
     }
 
-    build(popover, close);
+    // Attach before build() runs — build() focuses/selects an input it creates, which only works
+    // once that input is connected to the document.
     document.body.appendChild(popover);
+    build(popover, close);
 
     const rect = pill.getBoundingClientRect();
     popover.style.position = 'fixed';

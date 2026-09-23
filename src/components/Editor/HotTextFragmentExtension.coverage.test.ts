@@ -189,4 +189,35 @@ describe('HotTextFragmentExtension node view', () => {
         expect(pill.textContent).toBe('—');
         editor.destroy();
     });
+
+    it('strips [[/]] out of plain text typed alongside a fragment, so it cannot be reparsed as a fake fragment boundary', () => {
+        const editor = makeEditor(
+            '<p>[[b]] <span data-hot-text-fragment data-text="a" data-correct="true"></span></p>'
+        );
+        // Without stripping, reparsing "[b] [[a]]" would see 2 fragments and shift which one is correct;
+        // with stripping to a single bracket, only the real "a" fragment node round-trips.
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: '[b] [[a]]', correctIndices: [0] });
+        editor.destroy();
+    });
+
+    it('strips [[/]] typed into the popover text input before saving, so it cannot corrupt the fragment count', () => {
+        const editor = makeEditor(passageToHotTextContent('[[old]]', []));
+        const pill = editor.view.dom.querySelector('.hot-text-fragment-pill') as HTMLElement;
+        pill.click();
+        const popover = getPopover();
+        const input = popover.querySelector('.hot-text-popover-input') as HTMLInputElement;
+        input.value = 'a]]b[[c';
+        (popover.querySelector('.hot-text-popover-save') as HTMLButtonElement).click();
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: '[[a]b[c]]', correctIndices: [] });
+        editor.destroy();
+    });
+
+    it('strips [[/]] out of a selection wrapped via markSelectionAsFragment', () => {
+        const editor = makeEditor('<p>Say [[x]] please</p>');
+        // "Say [[x]] please" as literal text: "[[x]]" (5 chars) sits at string index 4-9 → doc pos 5-10.
+        editor.commands.setTextSelection({ from: 5, to: 10 });
+        editor.commands.markSelectionAsFragment();
+        expect(hotTextContentToPassage(editor)).toEqual({ passage: 'Say [[[x]]] please', correctIndices: [] });
+        editor.destroy();
+    });
 });

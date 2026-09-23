@@ -359,16 +359,20 @@ export default function ResponsesGrid({ test, rows, sortRules }: ResponsesGridPr
                             </th>
                             {orderedColumns.map((col) => {
                                 const q = questionsById.get(col.id)!;
+                                const shortLabel = t('tests.monitor.grid.question_short', {
+                                    index: col.originalIndex + 1,
+                                });
+                                const fullLabel = `${shortLabel}: ${plainQuestionPromptText(q)}`;
                                 return (
                                     <th key={col.id} style={{ ...th, textAlign: 'center', color: 'var(--accent)' }}>
                                         <button
                                             type="button"
                                             className="btn btn-ghost btn-sm"
                                             onClick={() => setGalleryQuestion(q)}
-                                            title={plainQuestionPromptText(q)}
-                                            aria-label={plainQuestionPromptText(q)}
+                                            title={fullLabel}
+                                            aria-label={fullLabel}
                                         >
-                                            {t('tests.monitor.grid.question_short', { index: col.originalIndex + 1 })}
+                                            {shortLabel}
                                         </button>
                                     </th>
                                 );

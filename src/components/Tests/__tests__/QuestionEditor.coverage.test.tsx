@@ -556,14 +556,23 @@ describe('QuestionEditor coverage', () => {
         );
     });
 
-    it('migrates a legacy linkedGrammarItemId into a frameworkDescriptors chip on mount', () => {
+    it('derives a legacy linkedGrammarItemId into a displayed chip without writing on mount', () => {
         const onChange = renderEditor(
             makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })
         );
+        // Merely viewing a legacy question must not call onChange — that would spuriously flag the
+        // test builder's unsaved-changes guard on a load that made no real edit.
+        expect(onChange).not.toHaveBeenCalled();
+        expect(screen.getByText('Irregular verbs')).toBeInTheDocument();
+    });
+
+    it('persists the migrated grammar chip once the user actually removes it', () => {
+        const onChange = renderEditor(
+            makeQuestion({ type: 'matching', linkedGrammarItemId: 'gr-past-simple-irregular' })
+        );
+        fireEvent.click(screen.getByLabelText('rubricBuilder.action_remove_descriptor'));
         expect(onChange).toHaveBeenCalledWith(
-            expect.objectContaining({
-                frameworkDescriptors: [expect.objectContaining({ descriptorId: 'gr-past-simple-irregular' })],
-            })
+            expect.objectContaining({ frameworkDescriptors: [], linkedGrammarItemId: undefined })
         );
     });
 

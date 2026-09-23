@@ -115,33 +115,40 @@ export default function QuestionEditor({
         return frameworkDescriptors.find((d) => d.framework === 'grammar')?.descriptorId;
     }
 
+    // Migration for questions tagged via the old standalone grammar dropdown (removed in favor of
+    // the "Link CEFR / Framework" grammar tab): surfaces the existing tag as a linked chip. This is
+    // a pure derived value, not a persisting effect — writing it back on mere mount/view would flag
+    // the test builder's unsaved-changes guard on a load that made no real edit. It gets persisted
+    // the next time the user makes an actual change here (add/remove/type-switch), since those all
+    // read from this value rather than the raw `question.frameworkDescriptors`.
+    const effectiveFrameworkDescriptors = React.useMemo(() => {
+        const frameworkDescriptors = question.frameworkDescriptors ?? [];
+        if (!question.linkedGrammarItemId) return frameworkDescriptors;
+        const alreadyLinked = frameworkDescriptors.some(
+            (d) => d.framework === 'grammar' && d.descriptorId === question.linkedGrammarItemId
+        );
+        if (alreadyLinked) return frameworkDescriptors;
+        const descriptor = grammarItemToFrameworkDescriptor(question.linkedGrammarItemId);
+        return descriptor ? [...frameworkDescriptors, descriptor] : frameworkDescriptors;
+    }, [question.frameworkDescriptors, question.linkedGrammarItemId]);
+
     function addFrameworkDescriptor(descriptor: LinkedFrameworkDescriptor) {
-        const frameworkDescriptors = [...(question.frameworkDescriptors ?? []), descriptor];
+        // Only one grammar tag can be active at a time (see deriveLinkedGrammarItemId above) — drop
+        // any existing grammar descriptor before adding a new one so it doesn't linger as an unused
+        // second chip. IB/Bloom's descriptors have no such limit and simply accumulate.
+        const kept =
+            descriptor.framework === 'grammar'
+                ? effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar')
+                : effectiveFrameworkDescriptors;
+        const frameworkDescriptors = [...kept, descriptor];
         update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
     }
 
     function removeFrameworkDescriptor(descriptorId: string) {
-        /* v8 ignore next -- remove buttons only render when frameworkDescriptors is non-empty */
-        const frameworkDescriptors = (question.frameworkDescriptors ?? []).filter(
-            (d) => d.descriptorId !== descriptorId
-        );
+        /* v8 ignore next -- remove buttons only render when effectiveFrameworkDescriptors is non-empty */
+        const frameworkDescriptors = effectiveFrameworkDescriptors.filter((d) => d.descriptorId !== descriptorId);
         update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
     }
-
-    // One-time migration for questions tagged via the old standalone grammar dropdown (removed in
-    // favor of the "Link CEFR / Framework" grammar tab) — surfaces the existing tag as a linked chip.
-    React.useEffect(() => {
-        if (!question.linkedGrammarItemId) return;
-        const alreadyLinked = (question.frameworkDescriptors ?? []).some(
-            (d) => d.framework === 'grammar' && d.descriptorId === question.linkedGrammarItemId
-        );
-        if (alreadyLinked) return;
-        const descriptor = grammarItemToFrameworkDescriptor(question.linkedGrammarItemId);
-        /* v8 ignore next -- every persisted linkedGrammarItemId references a real GRAMMAR_CATEGORIES entry */
-        if (!descriptor) return;
-        update({ frameworkDescriptors: [...(question.frameworkDescriptors ?? []), descriptor] });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [question.id, question.linkedGrammarItemId]);
 
     function changeType(type: TestQuestionType) {
         // Clear a stale grammar link (both the derived id and its frameworkDescriptors entry) when
@@ -152,8 +159,8 @@ export default function QuestionEditor({
         );
         const linkedGrammarItemId = keepsGrammarLink ? question.linkedGrammarItemId : undefined;
         const frameworkDescriptors = keepsGrammarLink
-            ? question.frameworkDescriptors
-            : (question.frameworkDescriptors ?? []).filter((d) => d.framework !== 'grammar');
+            ? effectiveFrameworkDescriptors
+            : effectiveFrameworkDescriptors.filter((d) => d.framework !== 'grammar');
 
         if (type === 'multiple-choice' || type === 'multiple-response') {
             update({
@@ -1362,7 +1369,7 @@ export default function QuestionEditor({
                             </button>
                         </div>
                     ))}
-                    {(question.frameworkDescriptors ?? []).map((descriptor) => (
+                    {effectiveFrameworkDescriptors.map((descriptor) => (
                         <div
                             key={descriptor.descriptorId}
                             style={{
@@ -1464,7 +1471,7 @@ export default function QuestionEditor({
                     linkedDescriptors={question.linkedCefrDescriptors ?? []}
                     onAdd={addCefrDescriptor}
                     onRemove={removeCefrDescriptor}
-                    linkedFrameworkDescriptors={question.frameworkDescriptors ?? []}
+                    linkedFrameworkDescriptors={effectiveFrameworkDescriptors}
                     onAddFramework={addFrameworkDescriptor}
                     onRemoveFramework={removeFrameworkDescriptor}
                     onClose={() => setPickingCefr(false)}
