@@ -176,6 +176,15 @@ const fixtures: Fixture[] = [
         expected: 0,
     },
 
+    // Valid JSON of the wrong shape scores as unanswered instead of throwing.
+    { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },
+    { name: 'hot-text object instead of array', question: hotText, response: '{}', expected: 2 },
+    { name: 'cloze null response', question: cloze, response: 'null', expected: 0 },
+    { name: 'cloze non-string gap value', question: cloze, response: '{"0":5,"1":"since"}', expected: 1 },
+    { name: 'matching null response', question: matching, response: 'null', expected: 0 },
+    { name: 'categorize array instead of object', question: categorize, response: '["noun"]', expected: 0 },
+    { name: 'ordering object instead of array', question: ordering, response: '{"0":"i1"}', expected: 0 },
+
     {
         name: 'open is never auto-scored',
         question: { type: 'open', points: 5, prompt: '' },

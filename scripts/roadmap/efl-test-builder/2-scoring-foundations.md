@@ -1,11 +1,10 @@
 # Phase {N} — EFL test builder: scoring foundations, tolerant matching & distractors
 
-Plan: `docs/TEST_BUILDER_EFL_EXPANSION_PLAN.md` (§1, §3 A2, A5, §6.4). Makes scorer changes safe before any new question type lands.
+Plan: `docs/TEST_BUILDER_EFL_EXPANSION_PLAN.md` (§1, §3 A2, A5, §6.4). Scoring already lives in one shared module, `supabase/functions/_shared/testScoring.ts`, used by the client and both edge functions (§6.4).
 
-### Scoring parity (§1, §6.4)
+### Scoring fixtures (§6.4)
 
-- [ ] Parity test running `src/utils/testCalc.ts`, `supabase/functions/submit-test` and `supabase/functions/next-placement-question` scorers over one shared fixture set
-- [ ] Decide: keep hand-mirrored scorers + parity test, or move to one shared module imported by client and Deno
+- [ ] Extend the golden fixtures in `src/__tests__/testScoringFixtures.test.ts` for every scoring change in this phase
 
 ### Tolerant answer matching (A5), opt-in per question
 
@@ -13,7 +12,7 @@ Plan: `docs/TEST_BUILDER_EFL_EXPANSION_PLAN.md` (§1, §3 A2, A5, §6.4). Makes 
 - [ ] Contraction equivalence (`don't` ≡ `do not`)
 - [ ] British/American spelling equivalence (static list)
 - [ ] "Minor spelling slips accepted" (Levenshtein ≤ 1, words ≥ 5 letters), off by default
-- [ ] Mirrored in both edge functions and covered by the parity test
+- [ ] Implemented in `supabase/functions/_shared/testScoring.ts` and covered by the golden fixtures
 
 ### Distractor suggestions (A2): suggested, never auto-inserted
 
