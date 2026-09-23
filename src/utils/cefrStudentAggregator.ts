@@ -87,7 +87,8 @@ export function aggregateCefrProgress(
         rubric: Pick<Rubric, 'cefrTargetLevel' | 'cefrSkill' | 'cefrAchieveThreshold'>;
         score: number;
         dateStr?: string;
-    }[]
+    }[],
+    defaultThreshold: number = 70
 ): CefrProgressEntry[] {
     const cefrHistory = history.filter((h) => h.rubric.cefrTargetLevel);
     const groups = new Map<
@@ -100,7 +101,7 @@ export function aggregateCefrProgress(
         const key = `${skill}__${level}`;
         if (!groups.has(key)) groups.set(key, { scores: [], thresholds: [], skill, level, lastDate: h.dateStr });
         groups.get(key)!.scores.push(h.score);
-        groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? 70);
+        groups.get(key)!.thresholds.push(h.rubric.cefrAchieveThreshold ?? defaultThreshold);
         groups.get(key)!.lastDate = h.dateStr;
     }
     return Array.from(groups.values())
@@ -276,7 +277,8 @@ export function getCefrStudentOverview(
     schoolYear?: SchoolYear,
     voTrack?: VoTrack,
     tests: Test[] = [],
-    studentTests: StudentTest[] = []
+    studentTests: StudentTest[] = [],
+    cefrAchieveThreshold: number = 70
 ): CefrStudentOverview {
     const cellAccMap = new Map<string, CellAccumulator>();
     const standardAccMap = new Map<string, StandardAccumulator>();
@@ -495,7 +497,7 @@ export function getCefrStudentOverview(
             });
         }
         const acc = cellAccMap.get(key)!;
-        const threshold = 70;
+        const threshold = cefrAchieveThreshold;
         acc.scores.push(scorePct);
         acc.thresholds.push(threshold);
         acc.evidence.push({

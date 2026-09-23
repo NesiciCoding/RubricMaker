@@ -2,26 +2,13 @@ import Papa from 'papaparse';
 import type { Student, StudentTest, Test } from '../types';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
+import { describeTestCefr, pickLatestAttempt } from './testAnswerText';
 
 /** Mirrors the rawPoints + adjustmentPoints → percentage formula TestResultsPage.tsx uses for a student's displayed score. */
 function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: number): number {
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
     const adjustmentPoints = studentTest.adjustmentPoints ?? 0;
     return calcTestPercentage(rawPoints + adjustmentPoints, maxPoints);
-}
-
-/** Picks the latest attempt (by attemptNumber, then by submission/start time) to represent a student with multiple practice attempts. */
-function latestAttempt(attempts: StudentTest[]): StudentTest {
-    return attempts.reduce((latest, candidate) => {
-        const latestAttemptNumber = latest.attemptNumber ?? 1;
-        const candidateAttemptNumber = candidate.attemptNumber ?? 1;
-        if (candidateAttemptNumber !== latestAttemptNumber) {
-            return candidateAttemptNumber > latestAttemptNumber ? candidate : latest;
-        }
-        const latestTime = Date.parse(latest.submittedAt ?? latest.startedAt);
-        const candidateTime = Date.parse(candidate.submittedAt ?? candidate.startedAt);
-        return candidateTime > latestTime ? candidate : latest;
-    });
 }
 
 /**
@@ -32,8 +19,14 @@ function latestAttempt(attempts: StudentTest[]): StudentTest {
  * student with multiple practice attempts (Test.allowMultipleAttempts) still gets exactly one
  * row, scored from their latest attempt.
  */
-export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], students: Student[]): string {
+export function buildTestResultsCsv(
+    test: Test,
+    studentTests: StudentTest[],
+    students: Student[],
+    achieveThreshold?: number
+): string {
     const maxPoints = calcTestMaxPoints(test);
+    const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
     const relevant = studentTests.filter((st) => st.testId === test.id);
 
     const attemptsByStudent = new Map<string, StudentTest[]>();
@@ -44,7 +37,8 @@ export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], stu
     }
 
     const rows = Array.from(attemptsByStudent.values()).map((attempts) => {
-        const studentTest = latestAttempt(attempts);
+        // attemptsByStudent groups only this test's submissions, so the list is always non-empty here.
+        const studentTest = pickLatestAttempt(attempts)!;
         const student = students.find((s) => s.id === studentTest.studentId);
         // Scope the breakdowns to just the canonical attempt's own answers — passing the full
         // studentTests array here would blend earlier attempts' answers into the accuracy
@@ -57,6 +51,10 @@ export function buildTestResultsCsv(test: Test, studentTests: StudentTest[], stu
             'Student Number': student?.studentNumber ?? '',
             'Score %': studentPercentage(test, studentTest, maxPoints).toFixed(1),
         };
+
+        if (hasCefr) {
+            row['CEFR'] = describeTestCefr(test, studentTest, achieveThreshold) ?? '';
+        }
 
         test.questions.forEach((question, index) => {
             const breakdown = questionBreakdowns.find((b) => b.questionId === question.id);

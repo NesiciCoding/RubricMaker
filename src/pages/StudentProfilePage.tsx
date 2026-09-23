@@ -169,21 +169,34 @@ export default function StudentProfilePage() {
                       cls?.year,
                       effectiveTrack,
                       tests,
-                      studentTests
+                      studentTests,
+                      settings.cefrAchieveThreshold
                   )
                 : undefined,
-        [student, studentRubrics, rubrics, selfAssessments, cls?.year, effectiveTrack, tests, studentTests]
+        [
+            student,
+            studentRubrics,
+            rubrics,
+            selfAssessments,
+            cls?.year,
+            effectiveTrack,
+            tests,
+            studentTests,
+            settings.cefrAchieveThreshold,
+        ]
     );
     const trackYearProgress = cefrSummary?.trackYearProgress;
     const placementEstimate = cefrSummary?.placement;
 
     // ── CEFR progress ──────────────────────────────────────────────────────────
-    // A student "achieves" a CEFR level when their average score meets the per-rubric threshold (default 70%).
+    // A student "achieves" a CEFR level when their average score meets the per-rubric threshold,
+    // falling back to the configured global achievement threshold (default 70%).
+    const cefrAchieveThreshold = settings.cefrAchieveThreshold ?? 70;
 
     const cefrProgress = useMemo(() => {
         if (!student) return [];
-        return aggregateCefrProgress(history);
-    }, [student, history]);
+        return aggregateCefrProgress(history, cefrAchieveThreshold);
+    }, [student, history, cefrAchieveThreshold]);
 
     const portfolioTimeline = useMemo(() => {
         if (!student) return [];
@@ -820,7 +833,7 @@ export default function StudentProfilePage() {
                                                 marginLeft: 4,
                                             }}
                                         >
-                                            {t('cefr.student_progress_subtitle', { threshold: 70 })}
+                                            {t('cefr.student_progress_subtitle', { threshold: cefrAchieveThreshold })}
                                         </span>
                                     </h3>
 

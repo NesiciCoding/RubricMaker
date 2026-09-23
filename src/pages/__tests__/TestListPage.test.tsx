@@ -274,7 +274,7 @@ describe('TestListPage', () => {
         fireEvent.click(screen.getByText('tests.export.export_csv'));
 
         await waitFor(() => expect(mockSaveAs).toHaveBeenCalledTimes(1));
-        expect(mockBuildTestResultsCsv).toHaveBeenCalledWith(mockTest, [mockStudentTest], [mockStudent]);
+        expect(mockBuildTestResultsCsv).toHaveBeenCalledWith(mockTest, [mockStudentTest], [mockStudent], undefined);
         expect(mockSaveAs.mock.calls[0][1]).toBe('Vocabulary_Quiz_results.csv');
         (mockUseApp as Record<string, unknown>).studentTests = [];
     });
@@ -314,7 +314,8 @@ describe('TestListPage', () => {
             [mockStudentTest],
             mockTest,
             mockStudent,
-            expect.objectContaining({ id: 'style1', headingFont: 'Georgia' })
+            expect.objectContaining({ id: 'style1', headingFont: 'Georgia' }),
+            undefined
         );
         (mockUseApp as Record<string, unknown>).studentTests = [];
         (mockUseApp as Record<string, unknown>).exportTemplates = [];
@@ -480,7 +481,13 @@ describe('TestListPage', () => {
         fireEvent.change(studentSelect, { target: { value: 's1' } });
         fireEvent.click(screen.getByText('tests.export.export_docx'));
         await waitFor(() => expect(mockExportTestSummaryDocx).toHaveBeenCalledTimes(1));
-        expect(mockExportTestSummaryDocx).toHaveBeenCalledWith('s1', [mockStudentTest], mockTest, mockStudent);
+        expect(mockExportTestSummaryDocx).toHaveBeenCalledWith(
+            's1',
+            [mockStudentTest],
+            mockTest,
+            mockStudent,
+            undefined
+        );
     });
 
     it('exports batch PDF and DOCX summaries', async () => {
@@ -499,6 +506,7 @@ describe('TestListPage', () => {
             [{ studentId: 's1', student: mockStudent }],
             [mockStudentTest],
             mockTest,
+            undefined,
             undefined
         );
         fireEvent.click(screen.getByText('tests.export.export_docx'));

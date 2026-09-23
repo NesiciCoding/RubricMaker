@@ -207,7 +207,8 @@ function studentDerivedKey(
     rubricsById: Map<string, Rubric>,
     testsById: Map<string, Test>,
     gradeScales: GradeScale[],
-    defaultGradeScaleId: string
+    defaultGradeScaleId: string,
+    cefrAchieveThreshold: number | undefined
 ): StudentDerivedKey {
     const key: StudentDerivedKey = [s, cls];
     for (const sr of srs) key.push(sr);
@@ -216,7 +217,7 @@ function studentDerivedKey(
     for (const st of sts) key.push(st);
     for (const id of [...new Set(srs.map((sr) => sr.rubricId))].sort()) key.push(rubricsById.get(id) ?? null);
     for (const id of [...new Set(sts.map((st) => st.testId))].sort()) key.push(testsById.get(id) ?? null);
-    key.push(gradeScales, defaultGradeScaleId);
+    key.push(gradeScales, defaultGradeScaleId, String(cefrAchieveThreshold));
     return key;
 }
 
@@ -238,7 +239,8 @@ function computeStudentDerived(
     rubrics: Rubric[],
     gradeScales: GradeScale[],
     defaultGradeScaleId: string,
-    tests: Test[]
+    tests: Test[],
+    cefrAchieveThreshold: number | undefined
 ): StudentDerivedValue {
     const gradedTimed = srs.filter((sr) => sr.gradedAt).sort((a, b) => a.gradedAt!.localeCompare(b.gradedAt!));
     const lastActive = gradedTimed.length ? gradedTimed[gradedTimed.length - 1].gradedAt! : null;
@@ -261,7 +263,8 @@ function computeStudentDerived(
         cls?.year,
         getEffectiveVoTrack(s, cls ?? undefined),
         tests,
-        sts
+        sts,
+        cefrAchieveThreshold
     );
     return { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive, pcts };
 }
@@ -540,7 +543,8 @@ export default function StudentsPage() {
                 rubricsById,
                 testsById,
                 gradeScales,
-                settings.defaultGradeScaleId
+                settings.defaultGradeScaleId,
+                settings.cefrAchieveThreshold
             );
             const cached = derivedByStudentCache.get(s.id);
             if (cached && sameStudentDerivedKey(cached.key, key)) {
@@ -558,7 +562,8 @@ export default function StudentsPage() {
                 rubrics,
                 gradeScales,
                 settings.defaultGradeScaleId,
-                tests
+                tests,
+                settings.cefrAchieveThreshold
             );
             nextCache.set(s.id, { key, value });
             map.set(s.id, value);
@@ -577,6 +582,7 @@ export default function StudentsPage() {
         studentTests,
         classes,
         settings.defaultGradeScaleId,
+        settings.cefrAchieveThreshold,
     ]);
 
     const classStudentsWithEmail = useMemo(

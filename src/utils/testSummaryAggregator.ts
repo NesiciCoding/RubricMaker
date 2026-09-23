@@ -239,6 +239,8 @@ export interface QuestionDistractor {
 export interface QuestionItemAnalysis {
     questionId: string;
     sampleSize: number;
+    /** Difficulty index (classical p-value): mean fraction of points earned on this item, 0..1. null when unanswered. */
+    pValue: number | null;
     /** Upper-27%/lower-27% accuracy gap on this question (-1 to 1); null when the class is too small to split reliably. */
     discrimination: number | null;
     /** The most commonly chosen wrong option, for multiple-choice/multiple-response questions with options. */
@@ -275,6 +277,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
 
     return test.questions.map((question) => {
         let sampleSize = 0;
+        let fractionSum = 0;
         let upperSum = 0;
         let upperCount = 0;
         let lowerSum = 0;
@@ -286,6 +289,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
             if (!answer) continue;
             sampleSize++;
             const fraction = question.points > 0 ? scoreAnswer(question, answer) / question.points : 0;
+            fractionSum += fraction;
             if (upperIds.has(studentId)) {
                 upperSum += fraction;
                 upperCount++;
@@ -319,6 +323,8 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
             }
         }
 
-        return { questionId: question.id, sampleSize, discrimination, topDistractor };
+        const pValue = sampleSize > 0 ? fractionSum / sampleSize : null;
+
+        return { questionId: question.id, sampleSize, pValue, discrimination, topDistractor };
     });
 }

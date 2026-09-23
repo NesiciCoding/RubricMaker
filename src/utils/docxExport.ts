@@ -25,7 +25,21 @@ import type {
     TestStrengthBucket,
 } from '../types';
 import { calcGradeSummary, orderedLevels } from './gradeCalc';
-import { calcQuestionBreakdowns, calcSkillBreakdowns, effectiveTestQuestions } from './testSummaryAggregator';
+import {
+    calcQuestionBreakdowns,
+    calcSkillBreakdowns,
+    calcTestItemAnalysis,
+    effectiveTestQuestions,
+} from './testSummaryAggregator';
+import {
+    ANSWER_STATUS_MARK,
+    buildAnswerRows,
+    describePlacementPath,
+    describeTestCefr,
+    describeTestMeta,
+    pickLatestAttempt,
+    type AnswerStatus,
+} from './testAnswerText';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 
 // Re-exported for existing call sites that import stripHtmlTags from here.
@@ -512,11 +526,20 @@ function buildTestSummaryChildren(
     studentId: string | null,
     studentTests: StudentTest[],
     test: Test,
-    student?: Student
+    student?: Student,
+    achieveThreshold?: number
 ) {
     const questions = calcQuestionBreakdowns(studentId, studentTests, test);
     const skills = calcSkillBreakdowns(studentId, studentTests, test);
     const questionsById = new Map(effectiveTestQuestions(studentId, studentTests, test).map((q) => [q.id, q]));
+
+    const studentTest =
+        studentId !== null
+            ? pickLatestAttempt(studentTests.filter((st) => st.testId === test.id && st.studentId === studentId))
+            : null;
+    // Scope the answer breakdown to just the exported attempt (see pdfExport for rationale).
+    const answerQuestions = studentTest ? effectiveTestQuestions(studentId, [studentTest], test) : [];
+    const cefr = describeTestCefr(test, studentTest, achieveThreshold);
 
     const headerRow = (labels: string[]) =>
         new TableRow({
@@ -592,11 +615,119 @@ function buildTestSummaryChildren(
                 new TextRun({ text: 'Student: ', bold: true }),
                 new TextRun(student ? student.name : 'Whole class'),
             ],
-            spacing: { after: 240 },
+            spacing: { after: cefr ? 60 : 240 },
         }),
-        new Paragraph({ text: 'Per-question accuracy', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
-        questionTable,
     ];
+
+    if (cefr) {
+        children.push(
+            new Paragraph({
+                children: [new TextRun({ text: 'CEFR: ', bold: true }), new TextRun(cefr)],
+                spacing: { after: 60 },
+            })
+        );
+    }
+
+    if (studentTest) {
+        for (const line of describeTestMeta(studentTest)) {
+            children.push(
+                new Paragraph({ children: [new TextRun({ text: line, color: '475569' })], spacing: { after: 60 } })
+            );
+        }
+        const placementPath = describePlacementPath(test, studentTest);
+        if (placementPath.length > 0) {
+            children.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: 'Placement path: ', bold: true }),
+                        new TextRun(
+                            placementPath
+                                .map((s) => `${s.title}: ${s.level ?? '—'} (${s.scorePct.toFixed(0)}%)`)
+                                .join(' → ')
+                        ),
+                    ],
+                    spacing: { after: 240 },
+                })
+            );
+        }
+    }
+
+    if (studentTest) {
+        const answerHeader = new TableRow({
+            tableHeader: true,
+            children: ['Question', 'Given', 'Correct', 'Pts'].map(
+                (label, i) =>
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
+                                alignment: i === 3 ? AlignmentType.CENTER : AlignmentType.LEFT,
+                            }),
+                        ],
+                        width: { size: [40, 27, 27, 6][i], type: WidthType.PERCENTAGE },
+                        shading: { fill: '1f2937' },
+                    })
+            ),
+        });
+        const statusColor: Record<AnswerStatus, string> = {
+            correct: '059669',
+            partial: 'd97706',
+            wrong: 'dc2626',
+            blank: '9ca3af',
+            na: '6b7280',
+        };
+        const answerRows = buildAnswerRows(test, studentTest, answerQuestions).map((row, i) => {
+            const color = statusColor[row.status];
+            const mark = ANSWER_STATUS_MARK[row.status];
+            return new TableRow({
+                children: [
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: mark ? `${mark} ` : '', bold: true, color }),
+                                    new TextRun(`Q${i + 1}. ${row.prompt}`),
+                                ],
+                            }),
+                        ],
+                        width: { size: 40, type: WidthType.PERCENTAGE },
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ children: [new TextRun(row.given)] })],
+                        width: { size: 27, type: WidthType.PERCENTAGE },
+                    }),
+                    new TableCell({
+                        children: [
+                            new Paragraph({ children: [new TextRun({ text: row.correct || '—', color: '059669' })] }),
+                        ],
+                        width: { size: 27, type: WidthType.PERCENTAGE },
+                    }),
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: `${row.pointsEarned}/${row.points}`, color })],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                        ],
+                        width: { size: 6, type: WidthType.PERCENTAGE },
+                    }),
+                ],
+            });
+        });
+        children.push(
+            new Paragraph({ text: 'Answers', heading: HeadingLevel.HEADING_2, spacing: { after: 120 } }),
+            new Table({ rows: [answerHeader, ...answerRows], width: { size: 100, type: WidthType.PERCENTAGE } })
+        );
+    }
+
+    children.push(
+        new Paragraph({
+            text: 'Per-question accuracy',
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 240, after: 120 },
+        }),
+        questionTable
+    );
 
     if (skills.length > 0) {
         children.push(
@@ -615,6 +746,59 @@ function buildTestSummaryChildren(
         );
     }
 
+    if (studentId === null) {
+        const itemAnalysis = calcTestItemAnalysis(studentTests, test);
+        const cell = (text: string, opts: { center?: boolean; width: number }) =>
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun(text)],
+                        alignment: opts.center ? AlignmentType.CENTER : AlignmentType.LEFT,
+                    }),
+                ],
+                width: { size: opts.width, type: WidthType.PERCENTAGE },
+            });
+        const itemHeader = new TableRow({
+            tableHeader: true,
+            children: ['Question', 'Difficulty (p)', 'Discrimination', 'Top distractor'].map(
+                (label, i) =>
+                    new TableCell({
+                        children: [
+                            new Paragraph({
+                                children: [new TextRun({ text: label, bold: true, color: 'FFFFFF' })],
+                                alignment: i === 0 || i === 3 ? AlignmentType.LEFT : AlignmentType.CENTER,
+                            }),
+                        ],
+                        width: { size: [16, 22, 22, 40][i], type: WidthType.PERCENTAGE },
+                        shading: { fill: '1f2937' },
+                    })
+            ),
+        });
+        const itemRows = itemAnalysis.map((row, i) => {
+            const disc =
+                row.discrimination === null
+                    ? '—'
+                    : `${row.discrimination >= 0 ? '+' : ''}${row.discrimination.toFixed(2)}`;
+            const distractor = row.topDistractor ? `${row.topDistractor.text} (${row.topDistractor.count})` : '—';
+            return new TableRow({
+                children: [
+                    cell(`Q${i + 1}`, { width: 16 }),
+                    cell(row.pValue === null ? '—' : row.pValue.toFixed(2), { center: true, width: 22 }),
+                    cell(disc, { center: true, width: 22 }),
+                    cell(distractor, { width: 40 }),
+                ],
+            });
+        });
+        children.push(
+            new Paragraph({
+                text: 'Item analysis (difficulty p, discrimination, top distractor)',
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 240, after: 120 },
+            }),
+            new Table({ rows: [itemHeader, ...itemRows], width: { size: 100, type: WidthType.PERCENTAGE } })
+        );
+    }
+
     return children;
 }
 
@@ -622,10 +806,11 @@ export async function exportTestSummaryDocx(
     studentId: string | null,
     studentTests: StudentTest[],
     test: Test,
-    student?: Student
+    student?: Student,
+    achieveThreshold?: number
 ): Promise<void> {
     const doc = new Document({
-        sections: [{ children: buildTestSummaryChildren(studentId, studentTests, test, student) }],
+        sections: [{ children: buildTestSummaryChildren(studentId, studentTests, test, student, achieveThreshold) }],
     });
     const blob = await Packer.toBlob(doc);
     const namePart = student ? student.name : 'class';
@@ -635,12 +820,13 @@ export async function exportTestSummaryDocx(
 export async function exportBatchTestSummaryDocx(
     entries: { studentId: string; student: Student }[],
     studentTests: StudentTest[],
-    test: Test
+    test: Test,
+    achieveThreshold?: number
 ): Promise<void> {
     const children: (Paragraph | Table)[] = [];
     entries.forEach(({ studentId, student }, idx) => {
         if (idx > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
-        children.push(...buildTestSummaryChildren(studentId, studentTests, test, student));
+        children.push(...buildTestSummaryChildren(studentId, studentTests, test, student, achieveThreshold));
     });
 
     const doc = new Document({ sections: [{ children }] });

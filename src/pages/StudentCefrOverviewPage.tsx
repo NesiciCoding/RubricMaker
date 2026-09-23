@@ -101,7 +101,8 @@ export default function StudentCefrOverviewPage() {
                       cls?.year,
                       effectiveTrack,
                       tests,
-                      studentTests
+                      studentTests,
+                      settings.cefrAchieveThreshold
                   )
                 : null,
         [
@@ -114,6 +115,7 @@ export default function StudentCefrOverviewPage() {
             effectiveTrack,
             tests,
             studentTests,
+            settings.cefrAchieveThreshold,
         ]
     );
 

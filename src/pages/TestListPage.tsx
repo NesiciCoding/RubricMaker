@@ -31,7 +31,7 @@ import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
-import type { Test, CohortFilter as CohortFilterValue } from '../types';
+import type { Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import { isGeneratorTest } from '../utils/placementGenerator';
@@ -97,21 +97,84 @@ export default function TestListPage() {
     const [exporting, setExporting] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-    async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx') {
+    async function handleExportTestSummaryText(test: Test, relevantStudentTests: StudentTest[]) {
+        const { buildTestStudentSummary, pickLatestAttempt } = await import('../utils/testAnswerText');
+        const { effectiveTestQuestions } = await import('../utils/testSummaryAggregator');
+        const { saveAs } = await import('file-saver');
+        const { sanitizeFilename } = await import('../utils/exportDataPrep');
+
+        // Scope the question set to the exported attempt so adaptive questions from other attempts
+        // don't appear as blank rows.
+        const summaryFor = (studentTest: StudentTest) =>
+            buildTestStudentSummary(
+                test,
+                studentTest,
+                students.find((s) => s.id === studentTest.studentId),
+                effectiveTestQuestions(studentTest.studentId, [studentTest], test),
+                settings.cefrAchieveThreshold
+            );
+
+        if (exportScope === 'single') {
+            const studentTest = pickLatestAttempt(
+                relevantStudentTests.filter((st) => st.studentId === exportStudentId)
+            );
+            if (!studentTest) return;
+            const student = students.find((s) => s.id === exportStudentId);
+            saveAs(
+                new Blob([summaryFor(studentTest)], { type: 'text/plain;charset=utf-8' }),
+                `${sanitizeFilename(test.name)}_${sanitizeFilename(student?.name ?? 'student')}_summary.txt`
+            );
+            logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: 1 });
+            return;
+        }
+        const attemptsByStudent = new Map<string, StudentTest[]>();
+        for (const st of relevantStudentTests) {
+            const arr = attemptsByStudent.get(st.studentId);
+            if (arr) arr.push(st);
+            else attemptsByStudent.set(st.studentId, [st]);
+        }
+        const latestByStudent = new Map<string, StudentTest>();
+        for (const [studentId, attempts] of attemptsByStudent) {
+            const latest = pickLatestAttempt(attempts);
+            if (latest) latestByStudent.set(studentId, latest);
+        }
+        const text = [...latestByStudent.values()].map(summaryFor).join('\n\n' + '═'.repeat(40) + '\n\n');
+        saveAs(new Blob([text], { type: 'text/plain;charset=utf-8' }), `${sanitizeFilename(test.name)}_summaries.txt`);
+        logAuditEvent('export', 'export_test_summary_text', 'test', test.id, { count: latestByStudent.size });
+    }
+
+    async function handleExportTestSummary(test: Test, format: 'pdf' | 'docx' | 'text') {
         const relevantStudentTests = studentTests.filter((st) => st.testId === test.id);
         // v8 ignore next: the results panel (and its export buttons) only render with submissions
         if (relevantStudentTests.length === 0) return;
         setExporting(true);
         try {
+            if (format === 'text') {
+                await handleExportTestSummaryText(test, relevantStudentTests);
+                return;
+            }
             if (exportScope === 'single') {
                 const student = students.find((s) => s.id === exportStudentId);
                 if (!student) return;
                 if (format === 'pdf') {
                     const { exportTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportTestSummaryPdf(exportStudentId, studentTests, test, student, activeStyleTemplate);
+                    await exportTestSummaryPdf(
+                        exportStudentId,
+                        studentTests,
+                        test,
+                        student,
+                        activeStyleTemplate,
+                        settings.cefrAchieveThreshold
+                    );
                 } else {
                     const { exportTestSummaryDocx } = await import('../utils/docxExport');
-                    await exportTestSummaryDocx(exportStudentId, studentTests, test, student);
+                    await exportTestSummaryDocx(
+                        exportStudentId,
+                        studentTests,
+                        test,
+                        student,
+                        settings.cefrAchieveThreshold
+                    );
                 }
                 logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: 1 });
             } else {
@@ -120,10 +183,16 @@ export default function TestListPage() {
                     .filter((e): e is { studentId: string; student: (typeof students)[number] } => !!e.student);
                 if (format === 'pdf') {
                     const { exportBatchTestSummaryPdf } = await import('../utils/pdfExport');
-                    await exportBatchTestSummaryPdf(entries, studentTests, test, activeStyleTemplate);
+                    await exportBatchTestSummaryPdf(
+                        entries,
+                        studentTests,
+                        test,
+                        activeStyleTemplate,
+                        settings.cefrAchieveThreshold
+                    );
                 } else {
                     const { exportBatchTestSummaryDocx } = await import('../utils/docxExport');
-                    await exportBatchTestSummaryDocx(entries, studentTests, test);
+                    await exportBatchTestSummaryDocx(entries, studentTests, test, settings.cefrAchieveThreshold);
                 }
                 logAuditEvent('export', `export_test_summary_${format}`, 'test', test.id, { count: entries.length });
             }
@@ -141,7 +210,7 @@ export default function TestListPage() {
         setExporting(true);
         try {
             const { buildTestResultsCsv } = await import('../utils/testExportPresets');
-            const csv = buildTestResultsCsv(test, studentTests, students);
+            const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold);
             const { saveAs } = await import('file-saver');
             const { sanitizeFilename } = await import('../utils/exportDataPrep');
             saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(test.name)}_results.csv`);
@@ -765,6 +834,21 @@ export default function TestListPage() {
                                                                         >
                                                                             <FileDown size={14} />{' '}
                                                                             {t('tests.export.export_docx')}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-secondary btn-sm"
+                                                                            disabled={
+                                                                                exporting ||
+                                                                                (exportScope === 'single' &&
+                                                                                    !exportStudentId)
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleExportTestSummary(test, 'text')
+                                                                            }
+                                                                        >
+                                                                            <FileDown size={14} />{' '}
+                                                                            {t('tests.export.export_text')}
                                                                         </button>
                                                                         {exportScope === 'batch' && (
                                                                             <button
