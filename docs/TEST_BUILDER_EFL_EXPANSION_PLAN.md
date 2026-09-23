@@ -57,7 +57,7 @@ three copies cannot drift.
 | **AWL / NAWL** academic lists                                 | `src/utils/academicWordList.ts`                                                          | Academic-vocab gap targeting (C1/EAP)                                                   |
 | **compromise** NLP (POS tags, verb conjugation, noun plurals) | `grammarChecker.ts`, `DocumentAnalysisPanel.tsx`                                         | POS-based gap generation, morphological distractors, inflection-tolerant matching       |
 | **Grammar profiler** (regex + compromise) & grammar standards | `grammarChecker.ts` `profileGrammar`, `data/grammarStandards.ts`, `data/cefrjGrammar.ts` | Finding grammar-structure targets in a passage; tagging questions                       |
-| **LanguageTool** (external, public API)                       | `grammarChecker.ts` `checkGrammar`                                                       | Teacher-side feedback on open writing only (online, rate-limited — never for scoring)   |
+| **LanguageTool** (external, public API)                       | `grammarChecker.ts` `checkGrammar`                                                       | **Being phased out** (§6.3) — not to be used by any new test feature                    |
 | **Free Dictionary API**                                       | `services/freeDictionaryApi.ts`                                                          | Definitions/phonetics for glossaries and vocab items when authoring                     |
 | **Web Speech synthesis (TTS)**                                | `hooks/useTTS.ts`, `PassageReadAloud.tsx`                                                | Listening stimuli without recording audio; dictation; minimal pairs                     |
 | **Web Speech recognition**                                    | `react-speech-recognition`, `hooks/useVoiceGrading.ts`                                   | Teacher voice grading today; possible read-aloud transcript aid (see §6 open decisions) |
@@ -149,8 +149,8 @@ Must live in one pure module mirrored into both edge functions (see §1 parity t
   exams) with a visible counter; enforced client-side, logged as a proctor event.
 - **TTS as the audio source** — mark a section's `content` (or a question field) as
   "spoken" so it is played through `useTTS` instead of requiring an uploaded file.
-  Useful for quick practice and dictation; see §6 for the fairness caveat in
-  assessments.
+  Useful for quick practice and dictation. For graded tests an uploaded clip is
+  recommended because voices differ per device (§6.2).
 - **Transcript reveal** in practice mode after submission (reuses `explanation`
   gating).
 
@@ -223,31 +223,45 @@ Notes:
 
 ---
 
-## 6. Open decisions (need a product call before building)
+## 6. Decisions
 
-1. **Speech recognition for read-aloud / pronunciation.** Browser ASR (Chrome) sends
-   audio to a cloud service and is non-deterministic. Using it to _score_ conflicts
-   with the no-auto-grading rule. Proposal: allowed only as a teacher-side
-   transcript aid next to the recording, never as points. Needs a privacy-page
-   update either way.
-2. **TTS in assessments.** Available voices differ per device/browser, so two
-   students may hear different accents and quality. Proposal: TTS allowed for
-   practice mode; assessment/placement tests warn and recommend an uploaded or
-   pre-rendered clip.
-3. **LanguageTool** is external and rate-limited — keep it out of anything
-   student-facing or score-affecting.
-4. **Scoring architecture.** Add a scoring parity test first, or (larger) move the
-   scorers into a shared module both the client and Deno functions import.
+1. **Speech recognition — transcript only where deterministic auto-grading is
+   impossible.** Anything that can be scored without AI (dictation, minimal pairs,
+   every closed type) is scored deterministically and never shows an ASR
+   transcript. A transcript is shown only on manually graded spoken responses
+   (`audio-response`, rubric-scored speaking tasks), as a teacher-side aid next to
+   the recording. It never produces or suggests points. Browser ASR sends audio to
+   a cloud service, so this needs a privacy-page update and should be a teacher
+   opt-in.
+2. **TTS is a per-student accommodation.** Read-aloud matters for dyslexic students,
+   including in graded tests, so it is not tied to practice mode. It becomes a
+   per-student setting in the student settings modal (Students page add/edit
+   modal), next to the existing app-wide `dyslexiaFriendlyMode` preference. When on,
+   that student gets read-aloud on passages, question prompts and options in every
+   test mode (practice, assessment and placement). When off, read-aloud is hidden
+   in graded tests. Teachers see which submissions used the accommodation on the
+   results page. This is separate from TTS used as a _listening stimulus_ (A6),
+   where teachers are still advised to upload a recorded clip for graded tests
+   because voices differ per device.
+3. **LanguageTool is being phased out** in favour of the in-house VocabKitchen-CLI
+   tooling (vocabulary side already ported in Phase 42). No new test-builder feature
+   may depend on LanguageTool. Grammar insights on open writing use the local
+   `profileGrammar` (regex + compromise) until a VocabKitchen-based grammar profiler
+   replaces it. VocabKitchen's grammar engine needs spaCy, so that swap needs its own
+   design (server-side edge function vs. a browser port).
+4. **Scoring architecture (still open).** Add a scoring parity test first, or (larger)
+   move the scorers into a shared module that both the client and the Deno
+   functions import.
 
 ---
 
 ## 7. Suggested sequencing
 
-| Phase | Contents                                                                                | Why this order                                             |
-| ----- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 1     | A1 cloze generators (incl. C-test), A3 passage level check, A4 deck → questions         | Pure authoring aids; no schema or scorer change            |
-| 2     | Scoring parity test, A5 tolerant matching, A2 distractor suggestions                    | Makes scorer changes safe before new types                 |
-| 3     | B1 matrix, B2 word-bank cloze                                                           | Largest authoring-time savings for Cambridge-style formats |
-| 4     | A6 listening controls, B3 dictation, B9 audio options, A7 speaking prep                 | Listening/speaking block sharing TTS + media plumbing      |
-| 5     | B4 error correction, B5 key word transformation, B6 word formation, B8 sentence builder | Exam-specific formats                                      |
-| 6     | B7 rubric-scored tasks, Tier C items                                                    | Cross-domain work; needs its own design pass               |
+| Phase | Contents                                                                                                              | Why this order                                                                                                                 |
+| ----- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | A1 cloze generators (incl. C-test), A3 passage level check, A4 deck → questions, per-student TTS accommodation (§6.2) | Pure authoring aids; no schema or scorer change. The accommodation is small and unblocks dyslexic students in graded tests now |
+| 2     | Scoring parity test, A5 tolerant matching, A2 distractor suggestions                                                  | Makes scorer changes safe before new types                                                                                     |
+| 3     | B1 matrix, B2 word-bank cloze                                                                                         | Largest authoring-time savings for Cambridge-style formats                                                                     |
+| 4     | A6 listening controls, B3 dictation, B9 audio options, A7 speaking prep                                               | Listening/speaking block sharing TTS + media plumbing                                                                          |
+| 5     | B4 error correction, B5 key word transformation, B6 word formation, B8 sentence builder                               | Exam-specific formats                                                                                                          |
+| 6     | B7 rubric-scored tasks, teacher-side ASR transcript on manually graded speaking (§6.1), Tier C items                  | Cross-domain work; needs its own design pass                                                                                   |
