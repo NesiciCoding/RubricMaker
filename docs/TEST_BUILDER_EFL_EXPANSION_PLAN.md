@@ -251,8 +251,8 @@ Notes:
    client and both scoring edge functions. Golden fixtures
    (`src/__tests__/testScoringFixtures.test.ts`) pin the scores, a guard test blocks
    re-introduced copies, and CI type-checks `_shared/` under Deno. New question types
-   add their scorer there once. Placement routing/staircase replay in `submit-test`
-   is still mirrored by hand.
+   add their scorer there once. Placement routing, the staircase/Elo ladder and the
+   seeded shuffle were moved into `_shared/` as well.
 
 ---
 

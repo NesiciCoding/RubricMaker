@@ -13,14 +13,25 @@
 // of drawing a new one), and with previousQuestionId + previousResponse on every
 // subsequent call to score the prior answer and advance.
 //
-// Auto-scoring is shared with the client and submit-test via ../_shared/testScoring.ts.
-// The staircase logic is still duplicated (as in submit-test) — keep LEVEL_TO_ELO etc. in
-// sync by hand with src/utils/placementStaircase.ts, the same known hazard already
-// accepted there since Phase 25.4.
+// Auto-scoring, the staircase ladder, Elo math and the seeded shuffle are all shared with the
+// client and submit-test via ../_shared/.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
+import {
+    DEFAULT_ELO_RATING,
+    LEVEL_TO_ELO,
+    cefrMidpoint,
+    clampCefrLevel,
+    computeStaircaseState,
+    moveCefrLevel,
+    pickNearestEloItem,
+    updateItemElo,
+    type CefrLevel,
+    type StaircaseStepInput,
+} from '../_shared/placementStaircase.ts';
+import { seededShuffle } from '../_shared/seededShuffle.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -73,119 +84,19 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
     } as MinimalQuestion;
 }
 
-// ── Staircase state (mirrors src/utils/placementStaircase.ts) ──────────────
-
-const STEP_UP_AFTER_CORRECT = 2;
-// Generator-engine convergence only (the staircase engine keeps its own value=2 in
-// submit-test/index.ts + placementStaircase.ts). Higher = more questions before the run is allowed
-// to settle, so a short generator placement is less likely to stop at exactly minQuestions on an
-// early pair of reversals. Not shared with the staircase engine; the client's estimate replay reads
-// the recorded path's final level and ignores this threshold, so it can diverge safely.
-const CONVERGE_AFTER_REVERSALS = 3;
-const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-const DEFAULT_ELO_RATING = 1200;
-const ELO_K_FACTOR = 24;
-const LEVEL_TO_ELO: Record<string, number> = {
-    A1: 600,
-    A2: 900,
-    B1: 1200,
-    B2: 1500,
-    C1: 1800,
-    C2: 2100,
-};
-
-function moveLevel(level: string, direction: 'up' | 'down', minLevel: string, maxLevel: string): string {
-    const idx = CEFR_LEVELS.indexOf(level);
-    const minIdx = CEFR_LEVELS.indexOf(minLevel);
-    const maxIdx = CEFR_LEVELS.indexOf(maxLevel);
-    const nextIdx = direction === 'up' ? idx + 1 : idx - 1;
-    return CEFR_LEVELS[Math.min(maxIdx, Math.max(minIdx, nextIdx))];
-}
-
-function cefrMidpoint(minLevel: string, maxLevel: string): string {
-    const minIdx = CEFR_LEVELS.indexOf(minLevel);
-    const maxIdx = CEFR_LEVELS.indexOf(maxLevel);
-    return CEFR_LEVELS[minIdx + Math.floor((maxIdx - minIdx) / 2)];
-}
-
-interface StaircaseStepLike {
-    correct: boolean;
-    overridden?: 'up' | 'down';
-}
-
-/** Mirrors src/utils/placementStaircase.ts's computeStaircaseState (with the 27.2 override extension). */
-function computeState(
-    steps: StaircaseStepLike[],
-    minLevel: string,
-    maxLevel: string,
-    startLevel: string
-): { level: string; reversalCount: number } {
-    let level = startLevel;
-    let consecutiveCorrect = 0;
-    let reversalCount = 0;
-    let lastDirection: 'up' | 'down' | null = null;
-
-    for (const step of steps) {
-        if (step.overridden) {
-            level = moveLevel(level, step.overridden, minLevel, maxLevel);
-            consecutiveCorrect = 0;
-        }
-        const direction: 'up' | 'down' = step.correct ? 'up' : 'down';
-        if (step.correct) {
-            consecutiveCorrect++;
-            if (consecutiveCorrect < STEP_UP_AFTER_CORRECT) continue;
-        }
-        const moved = moveLevel(level, direction, minLevel, maxLevel);
-        if (moved !== level) {
-            if (lastDirection !== null && lastDirection !== direction) reversalCount++;
-            lastDirection = direction;
-        }
-        level = moved;
-        consecutiveCorrect = 0;
-    }
-    return { level, reversalCount };
-}
-
-function eloExpectedScore(itemRating: number, opponentRating: number): number {
-    return 1 / (1 + 10 ** ((itemRating - opponentRating) / 400));
-}
-
-function updateItemElo(itemRating: number, opponentRating: number, correct: boolean): number {
-    const expected = eloExpectedScore(itemRating, opponentRating);
-    const actual = correct ? 1 : 0;
-    return itemRating - ELO_K_FACTOR * (actual - expected);
-}
-
-/** Deterministic Fisher-Yates shuffle seeded by a string — mirrors src/utils/seededShuffle.ts. */
-function seededShuffle<T>(items: T[], seed: string): T[] {
-    let h = 0;
-    for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-    const rand = () => {
-        h = (Math.imul(h, 1103515245) + 12345) | 0;
-        return ((h >>> 0) % 1_000_000) / 1_000_000;
-    };
-    const arr = [...items];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(rand() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-function pickNearestEloItem<T extends { eloRating?: number }>(items: T[], anchor: number): T {
-    return items.reduce((best, item) => {
-        const bestDistance = Math.abs((best.eloRating ?? DEFAULT_ELO_RATING) - anchor);
-        const itemDistance = Math.abs((item.eloRating ?? DEFAULT_ELO_RATING) - anchor);
-        return itemDistance < bestDistance ? item : best;
-    });
-}
+// Generator-engine convergence only (the staircase engine keeps CONVERGE_AFTER_REVERSALS = 2 in
+// ../_shared/placementStaircase.ts). Higher = more questions before the run is allowed to settle,
+// so a short generator placement is less likely to stop at exactly minQuestions on an early pair
+// of reversals. The client's estimate replay reads the recorded path's final level and ignores
+// this threshold, so it can diverge safely.
+const GENERATOR_CONVERGE_AFTER_REVERSALS = 3;
 
 // ── Question bank item shape ─────────────────────────────────────────────
 
 interface BankItem {
     id: string;
     kind?: 'question' | 'section';
-    cefrLevel?: string;
+    cefrLevel?: CefrLevel;
     cefrSkill?: string;
     tags?: string[];
     question?: MinimalQuestion;
@@ -216,7 +127,7 @@ interface PendingState {
     kind: 'question' | 'section';
     questionId: string;
     sectionQuestionIndex?: number;
-    level: string;
+    level: CefrLevel;
     overridden?: 'up' | 'down';
 }
 
@@ -292,8 +203,8 @@ serve(async (req) => {
         mode?: string;
         placementEngine?: string;
         generatorConfig?: {
-            minCefrLevel: string;
-            maxCefrLevel: string;
+            minCefrLevel: CefrLevel;
+            maxCefrLevel: CefrLevel;
             skills?: string[];
             tags?: string[];
             minQuestions: number;
@@ -375,7 +286,7 @@ serve(async (req) => {
      * only way to keep the run within maxQuestions is to never start one that wouldn't fit.
      */
     async function pickNewItem(
-        pickLevel: string,
+        pickLevel: CefrLevel,
         overridden: 'up' | 'down' | undefined,
         askedItemIds: string[],
         remainingBudget: number
@@ -457,10 +368,7 @@ serve(async (req) => {
             // wedging the run permanently. Fall back to the normal pool pick instead.
             starterItem = fetched && isValidBankItem(fetched) ? fetched : null;
             if (starterItem?.cefrLevel) {
-                const idx = CEFR_LEVELS.indexOf(starterItem.cefrLevel);
-                const minIdx = CEFR_LEVELS.indexOf(cfg.minCefrLevel);
-                const maxIdx = CEFR_LEVELS.indexOf(cfg.maxCefrLevel);
-                startLevel = CEFR_LEVELS[Math.min(maxIdx, Math.max(minIdx, idx))];
+                startLevel = clampCefrLevel(starterItem.cefrLevel, cfg.minCefrLevel, cfg.maxCefrLevel);
             }
         }
 
@@ -522,8 +430,8 @@ serve(async (req) => {
 
     const minLevel = cfg.minCefrLevel;
     const maxLevel = cfg.maxCefrLevel;
-    const startLevel = existing.start_level as string;
-    let levelPath: (StaircaseStepLike & { sectionId: string; questionId: string })[] = existing.level_path ?? [];
+    const startLevel = existing.start_level as CefrLevel;
+    let levelPath: (StaircaseStepInput & { sectionId: string; questionId: string })[] = existing.level_path ?? [];
     let askedQuestions: MinimalQuestion[] = existing.asked_questions ?? [];
     let askedItemIds: string[] = existing.asked_item_ids ?? [];
     const pending: PendingState | null = existing.pending ?? null;
@@ -531,7 +439,7 @@ serve(async (req) => {
     // ── Resume: no answer submitted, just re-serve the pending question idempotently ──
     if (!previousQuestionId) {
         if (existing.status !== 'in_progress' || !pending) {
-            const state = computeState(levelPath, minLevel, maxLevel, startLevel);
+            const state = computeStaircaseState(levelPath, { minLevel, maxLevel, startLevel });
             return json({ done: true, finalLevel: state.level, questionsAsked: levelPath.length });
         }
         const item = await fetchBankItem(pending.bankItemId);
@@ -635,10 +543,10 @@ serve(async (req) => {
     // Whole item (plain question, or the last nested question of a bundle) is now fully asked.
     askedItemIds = [...askedItemIds, item.id];
 
-    const state = computeState(levelPath, minLevel, maxLevel, startLevel);
+    const state = computeStaircaseState(levelPath, { minLevel, maxLevel, startLevel });
     const stop =
         levelPath.length >= cfg.maxQuestions ||
-        (levelPath.length >= cfg.minQuestions && state.reversalCount >= CONVERGE_AFTER_REVERSALS);
+        (levelPath.length >= cfg.minQuestions && state.reversalCount >= GENERATOR_CONVERGE_AFTER_REVERSALS);
 
     if (stop) {
         const swapped = await casUpdate({
@@ -657,7 +565,9 @@ serve(async (req) => {
     }
 
     const overrideDirection = (existing.override_direction as 'up' | 'down' | null) ?? undefined;
-    const pickLevel = overrideDirection ? moveLevel(state.level, overrideDirection, minLevel, maxLevel) : state.level;
+    const pickLevel = overrideDirection
+        ? moveCefrLevel(state.level, overrideDirection, minLevel, maxLevel)
+        : state.level;
     const picked = await pickNewItem(pickLevel, overrideDirection, askedItemIds, cfg.maxQuestions - levelPath.length);
 
     if (!picked) {
