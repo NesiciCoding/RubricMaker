@@ -32,6 +32,7 @@ import { encodeFeedbackCode } from '../utils/shareCode';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { ReportCardConfig, Student, StudentRubric } from '../types';
 import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
+import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -74,8 +75,10 @@ export default function ExportPage() {
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
     const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-        new Set(['rubric', 'rubricStudents', 'essays', 'period', 'reportCard'])
+        new Set(['rubric', 'rubricStudents', 'examBooklet', 'essays', 'period', 'reportCard'])
     );
+    const [selectedTestId, setSelectedTestId] = useState(tests[0]?.id ?? '');
+    const selectedTest = tests.find((tst) => tst.id === selectedTestId);
     const toggleSection = (key: string) =>
         setCollapsedSections((prev) => {
             const next = new Set(prev);
@@ -1231,6 +1234,72 @@ export default function ExportPage() {
                                         })}
                                     </tbody>
                                 </table>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="card" style={{ marginTop: 24 }} data-tour="export-exam-booklet">
+                    <button
+                        type="button"
+                        onClick={() => toggleSection('examBooklet')}
+                        aria-expanded={!collapsedSections.has('examBooklet')}
+                        aria-controls="export-section-examBooklet"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            marginBottom: collapsedSections.has('examBooklet') ? 0 : 16,
+                            width: '100%',
+                            textAlign: 'left',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                        }}
+                    >
+                        <ClipboardList size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />
+                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, flex: 1 }}>
+                            {t('tests.export.exam.section_title')}
+                        </h3>
+                        <ChevronDown
+                            size={16}
+                            style={{
+                                color: 'var(--text-muted)',
+                                transform: collapsedSections.has('examBooklet') ? 'none' : 'rotate(180deg)',
+                                transition: 'transform 0.2s',
+                            }}
+                        />
+                    </button>
+                    <div
+                        id="export-section-examBooklet"
+                        style={{ display: collapsedSections.has('examBooklet') ? 'none' : undefined }}
+                    >
+                        {tests.length === 0 ? (
+                            <div className="empty-state">
+                                <ClipboardList size={32} />
+                                <p>{t('tests.no_tests')}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="form-group" style={{ marginBottom: 12 }}>
+                                    <label>{t('exportPage.select_test')}</label>
+                                    <select value={selectedTestId} onChange={(e) => setSelectedTestId(e.target.value)}>
+                                        {tests.map((tst) => (
+                                            <option key={tst.id} value={tst.id}>
+                                                {tst.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {selectedTest && !collapsedSections.has('examBooklet') && (
+                                    <ExamBookletExportPanel
+                                        test={selectedTest}
+                                        students={students}
+                                        fontFamily={settings.defaultFormat.fontFamily}
+                                        styleTemplate={activeStyleTemplate}
+                                    />
+                                )}
                             </>
                         )}
                     </div>

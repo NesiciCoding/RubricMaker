@@ -31,6 +31,7 @@ import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
 import GenerateTestModal from '../components/Tests/GenerateTestModal';
+import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import type { Test, StudentTest, CohortFilter as CohortFilterValue } from '../types';
 import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
@@ -92,6 +93,7 @@ export default function TestListPage() {
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
+    const [examExportTestId, setExamExportTestId] = useState<string | null>(null);
     const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
     const [exportStudentId, setExportStudentId] = useState<string>('');
     const [exporting, setExporting] = useState(false);
@@ -643,8 +645,55 @@ export default function TestListPage() {
                                                                 >
                                                                     <Radio size={14} />
                                                                 </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.export.exam.section_title')}
+                                                                    aria-label={t('tests.export.exam.section_title')}
+                                                                    aria-expanded={examExportTestId === test.id}
+                                                                    aria-controls={`test-exam-export-${test.id}`}
+                                                                    style={{
+                                                                        color:
+                                                                            examExportTestId === test.id
+                                                                                ? 'var(--accent)'
+                                                                                : undefined,
+                                                                    }}
+                                                                    onClick={() =>
+                                                                        setExamExportTestId(
+                                                                            examExportTestId === test.id
+                                                                                ? null
+                                                                                : test.id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <FileDown size={14} />
+                                                                </button>
                                                             </div>
                                                         </div>
+
+                                                        {examExportTestId === test.id && (
+                                                            <div
+                                                                id={`test-exam-export-${test.id}`}
+                                                                style={{
+                                                                    marginTop: 14,
+                                                                    paddingTop: 14,
+                                                                    borderTop: '1px solid var(--border)',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: 8,
+                                                                }}
+                                                            >
+                                                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                                                    {t('tests.export.exam.section_title')}
+                                                                </div>
+                                                                <ExamBookletExportPanel
+                                                                    test={test}
+                                                                    students={students}
+                                                                    fontFamily={settings.defaultFormat.fontFamily}
+                                                                    styleTemplate={activeStyleTemplate}
+                                                                />
+                                                            </div>
+                                                        )}
 
                                                         {resultsTestId === test.id && (
                                                             <div

@@ -802,6 +802,44 @@
                 "discrimination": "Discriminación",
                 "top_distractor": "Distractor principal",
                 "generated_by": "Generado por Rubric Maker · {{date}}"
+            },
+            "exam": {
+                "section_title": "Cuadernillo de examen (estilo CITO)",
+                "description": "Exporte un cuadernillo de examen, hoja de respuestas, anexo y hoja de calificación listos para imprimir, con el estilo de un examen CITO neerlandés.",
+                "attachment_mode_label": "Anexo (textos de lectura)",
+                "attachment_inline": "Incluido junto a las preguntas",
+                "attachment_separate": "Documento aparte",
+                "hot_text_mirror_label": "Reflejar el texto seleccionable en preguntas de texto activo",
+                "hot_text_mirror_hint": "Numera cada fragmento seleccionable para que los alumnos puedan marcarlo en papel; de lo contrario, el cuadernillo solo cita el fragmento de texto correspondiente.",
+                "scan_markers_label": "Incluir marcas de escaneo en las hojas de respuestas",
+                "scan_markers_hint": "Añade marcas de registro en las esquinas y un código QR para un futuro flujo de escaneo y corrección. Desactivado por defecto para mantener el aspecto original de CITO.",
+                "students_label": "Alumnos",
+                "select_all": "Seleccionar todos",
+                "true": "Verdadero",
+                "false": "Falso",
+                "hot_text_instruction": "Escribe el número o los números del fragmento o fragmentos correctos en tu hoja de respuestas.",
+                "booklet_subtitle": "Cuadernillo de preguntas",
+                "attachment_subtitle": "Anexo",
+                "answer_sheet_title": "Hoja de respuestas",
+                "candidate_name": "Nombre del candidato",
+                "grading_sheet_subtitle": "Hoja de calificación",
+                "open_answer": "Pregunta abierta — calificar según los criterios de corrección",
+                "if_n_correct": "Si {{n}} correctas",
+                "max_score": "Puntuación máxima: {{points}}",
+                "export_pdf": "Exportar examen en PDF",
+                "export_docx": "Exportar examen en Word",
+                "deselect_all": "Deseleccionar todos",
+                "selected_count": "{{count}} de {{total}} seleccionados",
+                "question_count_line": "Este examen consta de {{count}} preguntas.",
+                "points_count_line": "En este examen se pueden obtener un máximo de {{points}} puntos.",
+                "duration_line": "Duración: {{minutes}} minutos.",
+                "question_col": "Pregunta",
+                "open_col": "Respuesta abierta",
+                "answer_col": "Respuesta",
+                "scores_col": "Puntos",
+                "max_score_short": "máx. {{points}}",
+                "categories_label": "Categorías",
+                "recorded_answer_note": "Respuesta grabada — no se necesita respuesta escrita."
             }
         },
         "taking": {
@@ -2133,7 +2171,8 @@
         "period_report_success": "Generados {{count}} informe(s).",
         "selected": "seleccionados",
         "report_card_success": "Generados {{count}} boletín(es).",
-        "rubric_students_section_title": "Alumnos"
+        "rubric_students_section_title": "Alumnos",
+        "select_test": "Seleccionar examen"
     },
     "reportCard": {
         "title": "Boletín",
@@ -3271,7 +3310,9 @@
         "gr_scan_title": "Escanear trabajo manuscrito",
         "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena.",
         "rb_live_monitor_item_sort": "Ordenar y agrupar columnas — reordena las columnas de preguntas por sección, nivel MCER, tipo de pregunta, gramática/estándar vinculado o puntuación acumulada de la clase, combinando varias reglas.",
-        "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel."
+        "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel.",
+        "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
+        "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

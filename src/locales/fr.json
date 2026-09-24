@@ -802,6 +802,44 @@
                 "discrimination": "Discrimination",
                 "top_distractor": "Distracteur principal",
                 "generated_by": "Généré par Rubric Maker · {{date}}"
+            },
+            "exam": {
+                "section_title": "Cahier d'examen (style CITO)",
+                "description": "Exportez un cahier d'examen, une feuille de réponses, une annexe et un barème de correction prêts à imprimer, dans le style d'un examen néerlandais CITO.",
+                "attachment_mode_label": "Annexe (textes de lecture)",
+                "attachment_inline": "Intégrée aux questions",
+                "attachment_separate": "Document séparé",
+                "hot_text_mirror_label": "Reproduire le texte sélectionnable pour les questions à texte actif",
+                "hot_text_mirror_hint": "Numérote chaque fragment sélectionnable afin que les élèves puissent le marquer sur papier ; sinon, le cahier cite seulement le passage concerné.",
+                "scan_markers_label": "Ajouter des repères de numérisation sur les feuilles de réponses",
+                "scan_markers_hint": "Ajoute des repères d'angle et un code QR pour un futur flux de numérisation et de correction. Désactivé par défaut pour conserver l'apparence CITO d'origine.",
+                "students_label": "Élèves",
+                "select_all": "Tout sélectionner",
+                "true": "Vrai",
+                "false": "Faux",
+                "hot_text_instruction": "Notez le(s) numéro(s) du/des fragment(s) correct(s) sur votre feuille de réponses.",
+                "booklet_subtitle": "Cahier de questions",
+                "attachment_subtitle": "Annexe",
+                "answer_sheet_title": "Feuille de réponses",
+                "candidate_name": "Nom du candidat",
+                "grading_sheet_subtitle": "Barème de correction",
+                "open_answer": "Réponse ouverte — à corriger selon le barème",
+                "if_n_correct": "Si {{n}} correct(e)s",
+                "max_score": "Score maximum : {{points}}",
+                "export_pdf": "Exporter l'examen en PDF",
+                "export_docx": "Exporter l'examen en Word",
+                "deselect_all": "Tout désélectionner",
+                "selected_count": "{{count}} sur {{total}} sélectionné(s)",
+                "question_count_line": "Cet examen comporte {{count}} questions.",
+                "points_count_line": "Un maximum de {{points}} points peut être obtenu à cet examen.",
+                "duration_line": "Durée : {{minutes}} minutes.",
+                "question_col": "Question",
+                "open_col": "Réponse ouverte",
+                "answer_col": "Réponse",
+                "scores_col": "Points",
+                "max_score_short": "max. {{points}}",
+                "categories_label": "Catégories",
+                "recorded_answer_note": "Réponse enregistrée — aucune réponse écrite nécessaire."
             }
         },
         "taking": {
@@ -2133,7 +2171,8 @@
         "period_report_success": "{{count}} rapport(s) généré(s).",
         "selected": "sélectionné(s)",
         "report_card_success": "{{count}} bulletin(s) généré(s).",
-        "rubric_students_section_title": "Élèves"
+        "rubric_students_section_title": "Élèves",
+        "select_test": "Sélectionner un test"
     },
     "reportCard": {
         "title": "Bulletin",
@@ -3271,7 +3310,9 @@
         "gr_scan_title": "Numériser un travail manuscrit",
         "gr_scan_body": "Dans le panneau de retour d'un critère, choisissez « Numériser l'écriture » pour photographier une copie papier avec la caméra de votre appareil ou importer une photo ou un PDF numérisé. Le texte est reconnu sur votre appareil (rien n'est téléversé) ; vous le vérifiez et le corrigez — les mots les moins sûrs sont surlignés — puis il est inséré dans votre retour. Cet outil est réservé aux enseignants ; les élèves ne téléversent jamais de numérisations. L'image sert uniquement à la reconnaissance et n'est pas conservée.",
         "rb_live_monitor_item_sort": "Trier et regrouper les colonnes — réordonnez les colonnes de questions par section, niveau CECR, type de question, grammaire/référentiel lié ou score cumulé de la classe, en combinant plusieurs règles.",
-        "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec leur niveau estimé dans une colonne dédiée avant les colonnes de niveau."
+        "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec leur niveau estimé dans une colonne dédiée avant les colonnes de niveau.",
+        "rb_tests_exam_export_label": "Exportation du cahier d'examen :",
+        "rb_tests_exam_export_body": "Depuis la liste des tests ou la page d'exportation, exportez un examen prêt à imprimer dans le style d'un examen CITO néerlandais : un cahier de questions, une feuille de réponses séparée, une annexe facultative pour les textes de lecture, et un barème de correction avec les bonnes réponses — en PDF ou Word, avec la police de votre choix."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
