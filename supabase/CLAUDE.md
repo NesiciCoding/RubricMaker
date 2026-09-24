@@ -77,6 +77,7 @@ Current functions:
 - Validate the request body and return proper HTTP status codes.
 - The service role key is available as `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')` inside edge functions — never expose it to the client.
 - Deploy via: `supabase functions deploy <function-name>`
+- Code shared between functions lives in `supabase/functions/_shared/` (imported as `../_shared/<file>.ts`). `_shared/testScoring.ts` is the **only** implementation of test auto-scoring and cloze/hot-text parsing: the client imports it too (`src/utils/testCalc.ts`, `clozeParse.ts`, `placementRouting.ts`), so never copy a scorer into a function or into `src/`. Files in `_shared/` must have no imports and use no Deno or DOM globals; `npm run typecheck:edge-shared` (run in CI) type-checks them under Deno, and `src/__tests__/testScoringSingleSource.test.ts` guards against re-introduced copies.
 
 ## Key tables
 

@@ -65,6 +65,9 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
+      - name: Type-check shared edge-function modules (Deno)
+        run: npm run typecheck:edge-shared
+
       - name: Lint
         run: npm run lint
 

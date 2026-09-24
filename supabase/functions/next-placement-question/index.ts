@@ -13,13 +13,14 @@
 // of drawing a new one), and with previousQuestionId + previousResponse on every
 // subsequent call to score the prior answer and advance.
 //
-// Mirrors submit-test's necessary duplication of scoring/staircase logic (Deno edge
-// functions can't import from src/) — keep LEVEL_TO_ELO etc. in sync by hand with
-// src/utils/placementStaircase.ts, the same known hazard already accepted there
-// since Phase 25.4.
+// Auto-scoring is shared with the client and submit-test via ../_shared/testScoring.ts.
+// The staircase logic is still duplicated (as in submit-test) — keep LEVEL_TO_ELO etc. in
+// sync by hand with src/utils/placementStaircase.ts, the same known hazard already
+// accepted there since Phase 25.4.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
 
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -33,240 +34,17 @@ function json(body: unknown, status = 200) {
     });
 }
 
-// ── Shared question/scoring shapes (mirrors submit-test/index.ts) ──────────
+// ── Question shapes (scoring lives in ../_shared/testScoring.ts) ───────────
 
-interface MinimalOption {
+interface MinimalQuestion extends ScorableQuestion {
     id: string;
-    isCorrect: boolean;
-}
-interface MinimalMatchingPair {
-    id: string;
-}
-interface MinimalOrderItem {
-    id: string;
-}
-interface MinimalCategorizeItem {
-    id: string;
-    categoryId: string;
-}
-interface MinimalQuestion {
-    id: string;
-    type: string;
-    points: number;
     sectionId?: string;
-    prompt: string;
-    options?: MinimalOption[];
-    matchingPairs?: MinimalMatchingPair[];
-    orderItems?: MinimalOrderItem[];
-    categorizeItems?: MinimalCategorizeItem[];
-    hotTextPassage?: string;
-    hotTextCorrectIndices?: number[];
-    expectedAnswer?: string;
-    expectedAnswers?: string[];
-    expectedNumericValue?: number;
-    numericTolerance?: number;
-    partialCredit?: boolean;
-    correctBoolean?: boolean;
     eloRating?: number;
     [key: string]: unknown;
 }
 interface MinimalAnswer {
     questionId: string;
     response: string;
-}
-
-// ── Cloze / hot-text gap parsing (mirrors src/utils/clozeParse.ts) ─────────
-
-function parseClozeGaps(prompt: string): { index: number; alternatives: string[] }[] {
-    const gaps: { index: number; alternatives: string[] }[] = [];
-    const pattern = /\{\{(.*?)\}\}/g;
-    let match: RegExpExecArray | null;
-    let index = 0;
-    while ((match = pattern.exec(prompt)) !== null) {
-        const alternatives = match[1]
-            .split('|')
-            .map((alt) => alt.trim())
-            .filter((alt) => alt.length > 0);
-        gaps.push({ index, alternatives });
-        index += 1;
-    }
-    return gaps;
-}
-
-function parseHotTextFragmentIndices(passage: string): number[] {
-    const fragmentCount = passage.match(/\[\[(.*?)\]\]/g)?.length ?? 0;
-    return Array.from({ length: fragmentCount }, (_, i) => i);
-}
-
-// ── Auto-scoring (mirrors src/utils/testCalc.ts) ────────────────────────────
-
-function scoreShortAnswerExact(question: MinimalQuestion, response: string): number {
-    const answers = question.expectedAnswers?.length
-        ? question.expectedAnswers
-        : question.expectedAnswer
-          ? [question.expectedAnswer]
-          : [];
-    if (answers.length === 0) return 0;
-    const trimmedResponse = response.trim().toLowerCase();
-    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
-}
-
-function scoreNumeric(question: MinimalQuestion, response: string): number {
-    if (question.expectedNumericValue === undefined) return 0;
-    const trimmed = response.trim();
-    if (trimmed === '') return 0;
-    const value = Number(trimmed);
-    if (Number.isNaN(value)) return 0;
-    const tolerance = question.numericTolerance ?? 0;
-    return Math.abs(value - question.expectedNumericValue) <= tolerance + 1e-9 ? question.points : 0;
-}
-
-function scoreMultipleResponse(question: MinimalQuestion, response: string): number {
-    const options = question.options ?? [];
-    let selected: string[];
-    try {
-        selected = response ? (JSON.parse(response) as string[]) : [];
-    } catch {
-        selected = [];
-    }
-    const selectedSet = new Set(selected);
-    const correctSet = new Set(options.filter((o) => o.isCorrect).map((o) => o.id));
-
-    if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((id) => correctSet.has(id));
-        return exact ? question.points : 0;
-    }
-
-    if (options.length === 0) return 0;
-    const matches = options.filter((o) => selectedSet.has(o.id) === correctSet.has(o.id)).length;
-    return question.points * (matches / options.length);
-}
-
-function scoreCloze(question: MinimalQuestion, response: string): number {
-    const gaps = parseClozeGaps(question.prompt);
-    if (gaps.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const isDropdown = question.type === 'cloze-dropdown';
-    const correctCount = gaps.filter((gap) => {
-        const studentAnswer = (answers[gap.index] ?? '').trim();
-        if (!studentAnswer) return false;
-        if (isDropdown) return studentAnswer === gap.alternatives[0];
-        return gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
-    }).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === gaps.length ? question.points : 0;
-    }
-    return question.points * (correctCount / gaps.length);
-}
-
-function scoreMatching(question: MinimalQuestion, response: string): number {
-    const pairs = question.matchingPairs ?? [];
-    if (pairs.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const correctCount = pairs.filter((pair) => answers[pair.id] === pair.id).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === pairs.length ? question.points : 0;
-    }
-    return question.points * (correctCount / pairs.length);
-}
-
-function scoreOrdering(question: MinimalQuestion, response: string): number {
-    const items = question.orderItems ?? [];
-    if (items.length === 0) return 0;
-
-    let order: string[] = [];
-    try {
-        order = response ? (JSON.parse(response) as string[]) : [];
-    } catch {
-        order = [];
-    }
-
-    const correctCount = items.filter((item, i) => order[i] === item.id).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === items.length ? question.points : 0;
-    }
-    return question.points * (correctCount / items.length);
-}
-
-function scoreCategorize(question: MinimalQuestion, response: string): number {
-    const items = question.categorizeItems ?? [];
-    if (items.length === 0) return 0;
-
-    let answers: Record<string, string> = {};
-    try {
-        answers = response ? (JSON.parse(response) as Record<string, string>) : {};
-    } catch {
-        answers = {};
-    }
-
-    const correctCount = items.filter((item) => answers[item.id] === item.categoryId).length;
-
-    if (question.partialCredit === false) {
-        return correctCount === items.length ? question.points : 0;
-    }
-    return question.points * (correctCount / items.length);
-}
-
-function scoreHotText(question: MinimalQuestion, response: string): number {
-    const fragmentIndices = parseHotTextFragmentIndices(question.hotTextPassage ?? '');
-    if (fragmentIndices.length === 0) return 0;
-
-    let selected: number[];
-    try {
-        selected = response ? (JSON.parse(response) as number[]) : [];
-    } catch {
-        selected = [];
-    }
-
-    const selectedSet = new Set(selected);
-    const correctSet = new Set(question.hotTextCorrectIndices ?? []);
-
-    if (question.partialCredit === false) {
-        const exact = selectedSet.size === correctSet.size && [...selectedSet].every((i) => correctSet.has(i));
-        return exact ? question.points : 0;
-    }
-
-    const matches = fragmentIndices.filter((i) => selectedSet.has(i) === correctSet.has(i)).length;
-    return question.points * (matches / fragmentIndices.length);
-}
-
-function autoScoreResponse(question: MinimalQuestion, response: string): number {
-    if (question.type === 'multiple-choice') {
-        const selected = question.options?.find((o) => o.id === response);
-        return selected?.isCorrect ? question.points : 0;
-    }
-    if (question.type === 'multiple-response') return scoreMultipleResponse(question, response);
-    if (question.type === 'true-false')
-        return response === String(question.correctBoolean ?? true) ? question.points : 0;
-    if (question.type === 'short-answer') return scoreShortAnswerExact(question, response);
-    if (question.type === 'numeric') return scoreNumeric(question, response);
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') return scoreCloze(question, response);
-    if (question.type === 'matching') return scoreMatching(question, response);
-    if (question.type === 'ordering') return scoreOrdering(question, response);
-    if (question.type === 'categorize') return scoreCategorize(question, response);
-    if (question.type === 'hot-text') return scoreHotText(question, response);
-    return 0; // open — needs manual points, never auto-scorable, so never picked by the generator
-}
-
-function isAutoScorable(question: MinimalQuestion): boolean {
-    return question.type !== 'open';
 }
 
 // Removes fields that only exist to score an answer or calibrate item difficulty — mirrors (and,
