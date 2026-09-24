@@ -723,9 +723,9 @@ export const GRAMMAR_CATEGORIES: GrammarCategory[] = [
             {
                 id: 'gr-pronouns-indefinite',
                 level: 'A2',
-                labelEn: 'Indefinite pronouns (someone / anything / nobody / everywhere)',
-                labelNl: 'Onbepaalde voornaamwoorden (someone / anything / nobody / everywhere)',
-                examplesEn: ['Someone called', "There's nothing to do", 'I looked everywhere'],
+                labelEn: 'Indefinite pronouns (someone / anything / nobody / everyone)',
+                labelNl: 'Onbepaalde voornaamwoorden (someone / anything / nobody / everyone)',
+                examplesEn: ['Someone called', "There's nothing to do", 'Everyone agreed'],
             },
             {
                 id: 'gr-pronouns-reciprocal',
@@ -853,10 +853,22 @@ export function getGrammarItems(filters?: { level?: CefrLevel }): GrammarItem[] 
     return all.filter((item) => item.level === filters.level);
 }
 
+/**
+ * Ids retired when a combined descriptor was split into two narrower ones, mapped to
+ * one surviving id so already-saved links (question banks, flashcards) keep resolving
+ * instead of silently going blank. Picking one side of a split is inherently lossy.
+ */
+const LEGACY_ITEM_ID_ALIASES: Record<string, string> = {
+    'gr-past-simple-negative-question': 'gr-past-simple-negative',
+    'gr-future-continuous-perfect': 'gr-future-continuous',
+    'gr-conditional-zero-first': 'gr-conditional-zero',
+};
+
 /** Builds the CefrPickerModal grammar-tab shape for a GrammarItem.id, for migrating a legacy linkedGrammarItemId. */
 export function grammarItemToFrameworkDescriptor(id: string): LinkedFrameworkDescriptor | undefined {
+    const resolvedId = LEGACY_ITEM_ID_ALIASES[id] ?? id;
     for (const category of GRAMMAR_CATEGORIES) {
-        const item = category.items.find((i) => i.id === id);
+        const item = category.items.find((i) => i.id === resolvedId);
         if (item) {
             return {
                 descriptorId: item.id,
@@ -875,8 +887,9 @@ export function grammarItemToFrameworkDescriptor(id: string): LinkedFrameworkDes
 }
 
 export function getGrammarItemById(id: string): GrammarItem | undefined {
+    const resolvedId = LEGACY_ITEM_ID_ALIASES[id] ?? id;
     for (const category of GRAMMAR_CATEGORIES) {
-        const found = category.items.find((item) => item.id === id);
+        const found = category.items.find((item) => item.id === resolvedId);
         if (found) return found;
     }
     return undefined;
