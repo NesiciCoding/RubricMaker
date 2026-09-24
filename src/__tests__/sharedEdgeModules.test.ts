@@ -75,7 +75,11 @@ describe('shared edge-function modules', () => {
         '%s only imports sibling _shared modules, so Deno needs no import map',
         (_name, file) => {
             const source = readFileSync(file, 'utf8');
-            const specifiers = [...source.matchAll(/^\s*import\s[^;]*?from\s+'([^']+)'/gm)].map((m) => m[1]);
+            const specifiers = [
+                ...source.matchAll(/^\s*(?:import|export)\s[^;]*?from\s+['"]([^'"]+)['"]/gm),
+                ...source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm),
+                ...source.matchAll(/\bimport\(\s*['"]([^'"]+)['"]/g),
+            ].map((m) => m[1]);
             for (const specifier of specifiers) expect(specifier).toMatch(/^\.\/[\w-]+\.ts$/);
             expect(source).not.toMatch(/\brequire\(/);
         }
