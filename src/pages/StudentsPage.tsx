@@ -379,6 +379,7 @@ export default function StudentsPage() {
     const [email, setEmail] = useState('');
     const [editStudentClassId, setEditStudentClassId] = useState('');
     const [editStudentTrack, setEditStudentTrack] = useState<VoTrack | ''>('');
+    const [editStudentReadAloud, setEditStudentReadAloud] = useState(false);
     const [newClassName, setNewClassName] = useState('');
     const [importFile, setImportFile] = useState<File | null>(null);
     const [tourRun, setTourRun] = useState(false);
@@ -639,6 +640,7 @@ export default function StudentsPage() {
                 email,
                 classId: editStudentClassId,
                 voTrack: targetClass?.voTrack ? editStudentTrack || undefined : undefined,
+                readAloudAccommodation: editStudentReadAloud || undefined,
                 pastClassMemberships: isTransfer
                     ? [
                           ...(prev.pastClassMemberships ?? []),
@@ -651,7 +653,12 @@ export default function StudentsPage() {
                     : prev.pastClassMemberships,
             });
         } else {
-            addStudent({ name, email, classId: editStudentClassId || singleClassId || classes[0]?.id || '' });
+            addStudent({
+                name,
+                email,
+                classId: editStudentClassId || singleClassId || classes[0]?.id || '',
+                readAloudAccommodation: editStudentReadAloud || undefined,
+            });
         }
         setName('');
         setEmail('');
@@ -667,6 +674,7 @@ export default function StudentsPage() {
         setEmail('');
         setEditStudentClassId(singleClassId ?? selectedCohorts[0] ?? classes[0]?.id ?? '');
         setEditStudentTrack('');
+        setEditStudentReadAloud(false);
         setShowAddModal(true);
     }
 
@@ -1354,6 +1362,9 @@ export default function StudentsPage() {
                                                                     setEmail(s.email ?? '');
                                                                     setEditStudentClassId(s.classId);
                                                                     setEditStudentTrack(s.voTrack ?? '');
+                                                                    setEditStudentReadAloud(
+                                                                        s.readAloudAccommodation ?? false
+                                                                    );
                                                                     setShowAddModal(true);
                                                                 }}
                                                             >
@@ -1487,6 +1498,23 @@ export default function StudentsPage() {
                                             </div>
                                         );
                                     })()}
+                                <div className="form-group" style={{ marginTop: 12 }}>
+                                    <label
+                                        htmlFor="student-read-aloud"
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                                    >
+                                        <input
+                                            id="student-read-aloud"
+                                            type="checkbox"
+                                            checked={editStudentReadAloud}
+                                            onChange={(e) => setEditStudentReadAloud(e.target.checked)}
+                                        />
+                                        {t('studentsPage.form_read_aloud_accommodation')}
+                                    </label>
+                                    <p className="text-xs text-muted" style={{ margin: '4px 0 0' }}>
+                                        {t('studentsPage.form_read_aloud_accommodation_hint')}
+                                    </p>
+                                </div>
                             </div>
                             <div className="modal-footer">
                                 <button

@@ -48,6 +48,7 @@ export type AssessmentValue = Pick<
     | 'saveTestAssignment'
     | 'fetchMyTestAssignments'
     | 'fetchAssignedTestContent'
+    | 'fetchMyReadAloudAccommodation'
     | 'fetchTestAssignmentTeacherKeys'
     | 'setPlacementOverride'
     | 'recoverPlacementResults'
@@ -78,6 +79,7 @@ export type AssessmentActions = Pick<
     | 'saveTestAssignment'
     | 'fetchMyTestAssignments'
     | 'fetchAssignedTestContent'
+    | 'fetchMyReadAloudAccommodation'
     | 'fetchTestAssignmentTeacherKeys'
     | 'setPlacementOverride'
     | 'recoverPlacementResults'
@@ -148,6 +150,8 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
     const fetchMyTestAssignments = async () => (await loadDb()).storageSync.fetchMyTestAssignments();
     const fetchAssignedTestContent = async (testId: string) =>
         (await loadDb()).storageSync.fetchAssignedTestContent(testId);
+    const fetchMyReadAloudAccommodation = async (studentId: string) =>
+        (await loadDb()).storageSync.fetchMyReadAloudAccommodation(studentId);
     const fetchTestAssignmentTeacherKeys = async (testId: string) =>
         (await loadDb()).storageSync.fetchTestAssignmentTeacherKeys(testId);
     const setPlacementOverride = async (assignmentId: string, direction: 'up' | 'down') =>
@@ -181,6 +185,7 @@ export function createAssessmentActions(ctx: StoreActionsCtx): AssessmentActions
         saveTestAssignment,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
+        fetchMyReadAloudAccommodation,
         fetchTestAssignmentTeacherKeys,
         setPlacementOverride,
         recoverPlacementResults,

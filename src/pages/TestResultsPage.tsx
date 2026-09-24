@@ -524,6 +524,15 @@ export default function TestResultsPage() {
                                 <Clock size={12} /> {t('tests.results.late_submission')}
                             </span>
                         )}
+                        {student?.readAloudAccommodation && (
+                            <span
+                                className="badge"
+                                title={t('tests.results.read_aloud_used_hint')}
+                                style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                                <Languages size={12} /> {t('tests.results.read_aloud_used')}
+                            </span>
+                        )}
                     </p>
                     <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                         <div>

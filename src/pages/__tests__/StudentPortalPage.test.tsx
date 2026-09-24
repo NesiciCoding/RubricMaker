@@ -43,6 +43,7 @@ const emptyArr: never[] = [];
 const mockFetchMyEssayAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchMyTestAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchAssignedTestContent = vi.fn().mockResolvedValue(null);
+const mockFetchMyReadAloudAccommodation = vi.fn().mockResolvedValue(false);
 const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
 const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
 const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
@@ -186,6 +187,7 @@ const mockAppValue: Record<string, unknown> = {
     fetchMyEssayAssignments: mockFetchMyEssayAssignments,
     fetchMyTestAssignments: mockFetchMyTestAssignments,
     fetchAssignedTestContent: mockFetchAssignedTestContent,
+    fetchMyReadAloudAccommodation: mockFetchMyReadAloudAccommodation,
     fetchMyMessages: mockFetchMyMessages,
     sendMessageAsStudent: mockSendMessageAsStudent,
     markMessagesReadByStudent: mockMarkMessagesReadByStudent,

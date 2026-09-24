@@ -129,10 +129,13 @@ export default function TestAssignmentModal({ test, onClose }: Props) {
                 base.supabaseAnonKey = config.supabaseAnonKey;
             } else {
                 base.test = test;
+                // Offline links have no live student record to re-check at test-taking time, so
+                // the accommodation is snapshotted here; DB-mode links resolve it fresh server-side.
+                base.readAloudAccommodation = students.find((s) => s.id === studentId)?.readAloudAccommodation;
             }
             return base;
         },
-        [test, teacherKeys, expiresAt, embedDb, dbStatus.isConnected, config]
+        [test, teacherKeys, expiresAt, embedDb, dbStatus.isConnected, config, students]
     );
 
     function buildUrl(studentId: string): string {

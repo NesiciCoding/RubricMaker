@@ -153,6 +153,7 @@ const mockUseApp = {
     saveRubricSelfAssessment: vi.fn(),
     fetchMyTestAssignments: vi.fn(() => Promise.resolve([])),
     fetchAssignedTestContent: vi.fn(() => Promise.resolve(null)),
+    fetchMyReadAloudAccommodation: vi.fn(() => Promise.resolve(false)),
     fetchMyMessages: vi.fn(() => Promise.resolve([])),
     sendMessageAsStudent: vi.fn(() => Promise.resolve()),
     markMessagesReadByStudent: vi.fn(() => Promise.resolve()),

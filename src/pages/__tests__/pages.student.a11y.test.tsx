@@ -190,6 +190,7 @@ const base = {
     fetchMyEssayAssignments: vi.fn(() => Promise.resolve([])),
     fetchMyTestAssignments: vi.fn(() => Promise.resolve([])),
     fetchAssignedTestContent: vi.fn(() => Promise.resolve(null)),
+    fetchMyReadAloudAccommodation: vi.fn(() => Promise.resolve(false)),
     fetchMyMessages: vi.fn(() => Promise.resolve([])),
     fetchMyFlashcardAssignments: vi.fn(() => Promise.resolve([])),
     fetchMyNewsFlashes: vi.fn(() => Promise.resolve([])),
