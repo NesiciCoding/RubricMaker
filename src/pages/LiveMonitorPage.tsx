@@ -245,23 +245,40 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // setLiveStates → full grid recompute across every student × question. Batching
     // same-tick updates into a single flush turns a full-class burst into one
     // re-render instead of dozens.
-    const pendingLiveStatesRef = useRef<Record<string, StudentLiveState>>({});
-    const liveStatesRef = useRef<Record<string, StudentLiveState>>({});
+    //
+    // Pending updates are queued as PATCH FUNCTIONS, not precomputed state, and
+    // applied against the latest `prev` when the timer fires — not the `current`
+    // seen when the broadcast arrived. Precomputing would let a concurrent direct
+    // setLiveStates (e.g. the essay-submission persisted-fetch effect above) get
+    // clobbered by a stale pending object at flush time.
+    const pendingPatchesRef = useRef<Record<string, Array<(current: StudentLiveState) => StudentLiveState>>>({});
     const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    useEffect(() => {
-        liveStatesRef.current = liveStates;
-    }, [liveStates]);
+
+    function flushLiveStates() {
+        if (flushTimerRef.current) {
+            clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = null;
+        }
+        const pending = pendingPatchesRef.current;
+        pendingPatchesRef.current = {};
+        if (Object.keys(pending).length === 0) return;
+        setLiveStates((prev) => {
+            const next = { ...prev };
+            for (const [studentId, patches] of Object.entries(pending)) {
+                let current = next[studentId] ?? emptyLiveState(studentId);
+                for (const patch of patches) current = patch(current);
+                next[studentId] = current;
+            }
+            return next;
+        });
+    }
 
     function updateLiveState(studentId: string, patch: (current: StudentLiveState) => StudentLiveState) {
-        const current =
-            pendingLiveStatesRef.current[studentId] ?? liveStatesRef.current[studentId] ?? emptyLiveState(studentId);
-        pendingLiveStatesRef.current[studentId] = patch(current);
+        (pendingPatchesRef.current[studentId] ??= []).push(patch);
         if (flushTimerRef.current) return;
         flushTimerRef.current = setTimeout(() => {
             flushTimerRef.current = null;
-            const pending = pendingLiveStatesRef.current;
-            pendingLiveStatesRef.current = {};
-            setLiveStates((prev) => ({ ...prev, ...pending }));
+            flushLiveStates();
         }, 300);
     }
 
@@ -308,11 +325,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channels.forEach((c) => void client.removeChannel(c));
             channelsRef.current = new Map();
             clientRef.current = null;
-            if (flushTimerRef.current) {
-                clearTimeout(flushTimerRef.current);
-                flushTimerRef.current = null;
-            }
-            pendingLiveStatesRef.current = {};
+            // Flush rather than discard: this cleanup also runs when the student list or
+            // teacher keys change (still the same assessment) — a queued broadcast (a
+            // one-off proctoring event, a 'submitted') must land before channels rebuild,
+            // not vanish because nothing else arrives to re-trigger it.
+            flushLiveStates();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [

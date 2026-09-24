@@ -606,6 +606,46 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('tests.monitor.draft.word_count (2)')).toBeInTheDocument();
         });
 
+        it('preserves a submitted flag set while a snapshot patch is still queued (debounce-flush race)', async () => {
+            let resolveSubmissions: (rows: { submittedAt: string }[]) => void = () => {};
+            mockUseApp = {
+                ...mockUseApp,
+                fetchEssayAssignmentByKey: vi
+                    .fn()
+                    .mockResolvedValue({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }),
+                fetchEssaySubmissions: vi.fn(() => new Promise((resolve) => (resolveSubmissions = resolve))),
+            };
+            renderPage(['/essays/assn-1/monitor']);
+            await screen.findByText('tests.monitor.title_essay: My Essay');
+            await waitFor(() => expect(channels.length).toBeGreaterThan(0));
+            const ch = channels[0];
+
+            // A snapshot broadcast queues a pending patch (computed without submitted:true)
+            // before the persisted-submission lookup below resolves.
+            act(() => {
+                ch.handlers.snapshot({ payload: { text: '<p>Draft</p>', wordCount: 3 } });
+            });
+
+            // The persisted-submission fetch resolves and sets submitted:true directly on
+            // state, landing before the debounced snapshot patch flushes.
+            await act(async () => {
+                resolveSubmissions([{ submittedAt: '2026-01-01T00:00:05.000Z' }]);
+            });
+
+            // Confirm the submitted badge landed before the debounce window elapses — a
+            // waitFor here would pass as soon as this shows up and never actually observe
+            // the later flush, which is the moment a wholesale-replace bug would clobber it.
+            expect(screen.getAllByLabelText('tests.monitor.status.submitted').length).toBeGreaterThan(0);
+
+            // Wait past the debounce window — the queued snapshot patch flushes now. It must
+            // merge onto the latest state, not overwrite it with a stale precomputed one.
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 350));
+            });
+
+            expect(screen.getAllByLabelText('tests.monitor.status.submitted').length).toBeGreaterThan(0);
+        });
+
         it('ignores the essay assignment result after unmount', async () => {
             let resolve: (v: unknown) => void = () => {};
             mockUseApp = {
