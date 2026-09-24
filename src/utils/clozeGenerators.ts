@@ -18,12 +18,20 @@ const LEVEL_RANK: Record<CefrLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 
 const WORD_PATTERN = /[A-Za-z][A-Za-z']*/g;
 
 /**
- * Lazily splits text into sentence chunks, each including its trailing punctuation and
- * whitespace, so `chunks.join('') === text`. Not abbreviation-aware — good enough for an
- * authoring aid the teacher reviews before saving, not for the scorer itself.
+ * Splits text into sentence chunks, each including its trailing punctuation and whitespace, so
+ * `chunks.join('') === text` always holds — the split point is zero-width (after a `.!?`, before
+ * the next non-space run), so no character is ever consumed by the split itself. Not
+ * abbreviation-aware ("U.S." splits as a sentence) — good enough for an authoring aid the teacher
+ * reviews before saving, not for the scorer itself.
  */
 function splitSentences(text: string): string[] {
-    return text.match(/[^.!?]+[.!?]*(?:\s+|$)/g) ?? (text ? [text] : []);
+    if (!text) return [];
+    const parts = text.split(/(?<=[.!?])(\s+)/);
+    const chunks: string[] = [];
+    for (let i = 0; i < parts.length; i += 2) {
+        chunks.push(parts[i] + (parts[i + 1] ?? ''));
+    }
+    return chunks;
 }
 
 function wrapGap(word: string): string {

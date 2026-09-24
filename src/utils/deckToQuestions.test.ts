@@ -35,6 +35,18 @@ describe('generateMatchingFromDeck', () => {
     it('returns null with fewer than 2 usable cards', () => {
         expect(generateMatchingFromDeck('My Deck', [card({})])).toBeNull();
     });
+
+    it("excludes cards with a duplicate front or back — ambiguous pairs can't be told apart", () => {
+        const cards = [
+            card({ front: 'run', back: 'to move fast' }),
+            card({ front: 'run', back: 'to manage a business' }), // duplicate front
+            card({ front: 'jog', back: 'to move fast' }), // duplicate back (with the first "run")
+            card({ front: 'sprint', back: 'to run very fast' }),
+            card({ front: 'walk', back: 'to move slowly' }),
+        ];
+        const q = generateMatchingFromDeck('My Deck', cards);
+        expect(q?.matchingPairs?.map((p) => p.left)).toEqual(['sprint', 'walk']);
+    });
 });
 
 describe('generateMultipleChoiceFromDeck', () => {
@@ -52,6 +64,19 @@ describe('generateMultipleChoiceFromDeck', () => {
     it('returns nothing when the deck is too small for distinct distractors', () => {
         expect(generateMultipleChoiceFromDeck(deck.slice(0, 3))).toEqual([]);
     });
+
+    it('excludes cards with a duplicate back — two questions with the same prompt but different correct answers are unanswerable', () => {
+        const cards = [
+            card({ front: 'run', back: 'to move fast' }),
+            card({ front: 'sprint', back: 'to move fast' }), // duplicate back
+            card({ front: 'walk', back: 'to move slowly' }),
+            card({ front: 'crawl', back: 'to move on hands and knees' }),
+            card({ front: 'jump', back: 'to leap' }),
+        ];
+        const questions = generateMultipleChoiceFromDeck(cards);
+        const prompts = questions.map((q) => q.prompt);
+        expect(prompts).not.toContain('to move fast');
+    });
 });
 
 describe('generateClozeFromDeck', () => {
@@ -66,6 +91,19 @@ describe('generateClozeFromDeck', () => {
 
     it('skips cards without an example or without the word in it', () => {
         const cards = [card({ front: 'abandon' }), card({ front: 'flee', example: 'He ran away quickly.' })];
+        expect(generateClozeFromDeck(cards)).toHaveLength(0);
+    });
+
+    it('matches accented words — \\b is ASCII-only and fails after a letter like "é"', () => {
+        const cards = [card({ front: 'café', example: 'We went to a café yesterday.' })];
+        const questions = generateClozeFromDeck(cards);
+        expect(questions).toHaveLength(1);
+        const gaps = renderClozeSegments(questions[0].prompt).filter((s) => s.type === 'gap');
+        expect(gaps[0].gap.alternatives[0].toLowerCase()).toBe('café');
+    });
+
+    it('does not match the word as a substring of a longer word', () => {
+        const cards = [card({ front: 'run', example: 'She is running late.' })];
         expect(generateClozeFromDeck(cards)).toHaveLength(0);
     });
 });
@@ -85,6 +123,17 @@ describe('generateCategorizeFromDeck', () => {
     it('returns null with only one part of speech', () => {
         const cards = [card({ front: 'run', partOfSpeech: 'verb' }), card({ front: 'jump', partOfSpeech: 'verb' })];
         expect(generateCategorizeFromDeck('My Deck', cards)).toBeNull();
+    });
+
+    it('excludes a front duplicated under two different parts of speech', () => {
+        const cards = [
+            card({ front: 'run', partOfSpeech: 'verb' }),
+            card({ front: 'run', partOfSpeech: 'noun' }),
+            card({ front: 'jump', partOfSpeech: 'verb' }),
+            card({ front: 'happy', partOfSpeech: 'adjective' }),
+        ];
+        const q = generateCategorizeFromDeck('My Deck', cards);
+        expect(q?.categorizeItems?.map((i) => i.text)).toEqual(['jump', 'happy']);
     });
 });
 

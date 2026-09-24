@@ -517,6 +517,34 @@ describe('QuestionEditor', () => {
         expect(screen.getByText('tests.cloze_insert_dropdown_gap')).toBeInTheDocument();
     });
 
+    it('hides the "Generate gaps" toolbar for cloze-dropdown (generated gaps carry no distractors)', () => {
+        render(
+            <QuestionEditor
+                question={makeQuestion({ type: 'cloze-dropdown', prompt: '' })}
+                index={0}
+                total={1}
+                sections={sections}
+                onChange={vi.fn()}
+                onRemove={vi.fn()}
+            />
+        );
+        expect(screen.queryByText('tests.cloze_generate_button')).not.toBeInTheDocument();
+    });
+
+    it('shows the "Generate gaps" toolbar for plain cloze', () => {
+        render(
+            <QuestionEditor
+                question={makeQuestion({ type: 'cloze', prompt: '' })}
+                index={0}
+                total={1}
+                sections={sections}
+                onChange={vi.fn()}
+                onRemove={vi.fn()}
+            />
+        );
+        expect(screen.getByText('tests.cloze_generate_button')).toBeInTheDocument();
+    });
+
     it('renders cloze with parsed gaps preview', () => {
         render(
             <QuestionEditor

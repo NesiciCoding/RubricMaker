@@ -556,64 +556,70 @@ export default function QuestionEditor({
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
                 {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
                     <>
-                        <div
-                            style={{
-                                display: 'flex',
-                                gap: 6,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                marginBottom: 8,
-                            }}
-                        >
-                            <select
-                                aria-label={t('tests.cloze_generate_strategy_label')}
-                                value={clozeStrategy}
-                                onChange={(e) => setClozeStrategy(e.target.value as ClozeStrategy)}
-                                style={{ width: 'auto' }}
+                        {question.type === 'cloze' && (
+                            // Generated gaps carry only the correct word as a single alternative, no
+                            // distractors — fine for a plain fill-in blank, but a cloze-dropdown gap needs
+                            // several options to be a dropdown at all, so the generator is hidden there
+                            // until it can produce distractors too.
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    gap: 6,
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    marginBottom: 8,
+                                }}
                             >
-                                <option value="fixedRatio">{t('tests.cloze_generate_fixed_ratio')}</option>
-                                <option value="cTest">{t('tests.cloze_generate_c_test')}</option>
-                                <option value="preposition">{t('tests.cloze_generate_preposition')}</option>
-                                <option value="article">{t('tests.cloze_generate_article')}</option>
-                                <option value="modal">{t('tests.cloze_generate_modal')}</option>
-                                <option value="pastTense">{t('tests.cloze_generate_past_tense')}</option>
-                                <option value="aboveLevel">{t('tests.cloze_generate_above_level')}</option>
-                                <option value="academic">{t('tests.cloze_generate_academic')}</option>
-                            </select>
-                            {clozeStrategy === 'fixedRatio' && (
-                                <input
-                                    type="number"
-                                    min={2}
-                                    max={20}
-                                    value={clozeEveryNth}
-                                    onChange={(e) => setClozeEveryNth(Number(e.target.value) || 7)}
-                                    aria-label={t('tests.cloze_generate_every_nth_label')}
-                                    style={{ width: 60 }}
-                                />
-                            )}
-                            {clozeStrategy === 'aboveLevel' && (
                                 <select
-                                    aria-label={t('tests.cloze_generate_level_label')}
-                                    value={clozeLevel}
-                                    onChange={(e) => setClozeLevel(e.target.value as CefrLevel)}
+                                    aria-label={t('tests.cloze_generate_strategy_label')}
+                                    value={clozeStrategy}
+                                    onChange={(e) => setClozeStrategy(e.target.value as ClozeStrategy)}
                                     style={{ width: 'auto' }}
                                 >
-                                    {CEFR_LEVELS.map((level) => (
-                                        <option key={level} value={level}>
-                                            {level}
-                                        </option>
-                                    ))}
+                                    <option value="fixedRatio">{t('tests.cloze_generate_fixed_ratio')}</option>
+                                    <option value="cTest">{t('tests.cloze_generate_c_test')}</option>
+                                    <option value="preposition">{t('tests.cloze_generate_preposition')}</option>
+                                    <option value="article">{t('tests.cloze_generate_article')}</option>
+                                    <option value="modal">{t('tests.cloze_generate_modal')}</option>
+                                    <option value="pastTense">{t('tests.cloze_generate_past_tense')}</option>
+                                    <option value="aboveLevel">{t('tests.cloze_generate_above_level')}</option>
+                                    <option value="academic">{t('tests.cloze_generate_academic')}</option>
                                 </select>
-                            )}
-                            <button
-                                type="button"
-                                className="btn btn-ghost btn-sm"
-                                onClick={generateGaps}
-                                title={t('tests.cloze_generate_hint')}
-                            >
-                                <Sparkles size={14} /> {t('tests.cloze_generate_button')}
-                            </button>
-                        </div>
+                                {clozeStrategy === 'fixedRatio' && (
+                                    <input
+                                        type="number"
+                                        min={2}
+                                        max={20}
+                                        value={clozeEveryNth}
+                                        onChange={(e) => setClozeEveryNth(Number(e.target.value) || 7)}
+                                        aria-label={t('tests.cloze_generate_every_nth_label')}
+                                        style={{ width: 60 }}
+                                    />
+                                )}
+                                {clozeStrategy === 'aboveLevel' && (
+                                    <select
+                                        aria-label={t('tests.cloze_generate_level_label')}
+                                        value={clozeLevel}
+                                        onChange={(e) => setClozeLevel(e.target.value as CefrLevel)}
+                                        style={{ width: 'auto' }}
+                                    >
+                                        {CEFR_LEVELS.map((level) => (
+                                            <option key={level} value={level}>
+                                                {level}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={generateGaps}
+                                    title={t('tests.cloze_generate_hint')}
+                                >
+                                    <Sparkles size={14} /> {t('tests.cloze_generate_button')}
+                                </button>
+                            </div>
+                        )}
                         {/* Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
                             prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
                             clickable pills instead of hand-typed syntax, but the stored format and the

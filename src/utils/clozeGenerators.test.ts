@@ -30,6 +30,15 @@ describe('generateFixedRatioCloze', () => {
     it('is a no-op on a single-sentence passage', () => {
         expect(generateFixedRatioCloze('Only one sentence here.', 3)).toBe('Only one sentence here.');
     });
+
+    it('never drops characters around mid-word periods (e.g. decimals)', () => {
+        const text = 'The value is 3.5 metres. Next sentence goes here for good measure.';
+        const result = generateFixedRatioCloze(text, 5);
+        const rebuilt = renderClozeSegments(result)
+            .map((s) => (s.type === 'gap' ? s.gap.alternatives[0] : s.text))
+            .join('');
+        expect(rebuilt).toBe(text);
+    });
 });
 
 describe('generateCTest', () => {
