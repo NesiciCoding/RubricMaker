@@ -595,14 +595,17 @@ export default function CefrPickerModal({
                             const text = lang === 'nl' ? labelNl : labelEn;
                             return text.toLowerCase().includes(search.toLowerCase());
                         };
-                        const visibleCategories = GRAMMAR_CATEGORIES.map((cat) => ({
-                            cat,
-                            items: cat.items.filter(
-                                (item) =>
-                                    (!selectedLevel || item.level === selectedLevel) &&
-                                    matches(item.labelEn, item.labelNl)
-                            ),
-                        })).filter((g) => g.items.length > 0);
+                        const visibleCategories = GRAMMAR_CATEGORIES.map((cat) => {
+                            const categoryMatches = matches(cat.labelEn, cat.labelNl);
+                            return {
+                                cat,
+                                items: cat.items.filter(
+                                    (item) =>
+                                        (!selectedLevel || item.level === selectedLevel) &&
+                                        (categoryMatches || matches(item.labelEn, item.labelNl))
+                                ),
+                            };
+                        }).filter((g) => g.items.length > 0);
 
                         if (visibleCategories.length === 0) {
                             return (
