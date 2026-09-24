@@ -9,7 +9,7 @@ interface Props {
     'aria-label'?: string;
 }
 
-/** A native grouped <select> for tagging a single grammar item (~48 items across ~10 categories — no search/modal needed). */
+/** A native grouped <select> for tagging a single grammar item (no search/modal needed — the list is short enough to scroll). */
 export default function GrammarItemSelect({ value, onChange, id, 'aria-label': ariaLabel }: Props) {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
