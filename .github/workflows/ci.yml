@@ -276,7 +276,10 @@ jobs:
   e2e-supabase:
     name: E2E — Supabase Integration
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -300,10 +303,15 @@ jobs:
 
       # Cold-starting the local stack pulls several images from ghcr.io on a
       # fresh hosted runner, which has intermittently exceeded 5 minutes and
-      # killed the job (see PRs #449, #456, #459). Give it ample headroom.
+      # killed the job (see PRs #449, #456, #459). Anonymous pulls from shared
+      # runner IPs also get rate-limited (toomanyrequests), so the script logs
+      # in with the workflow token and retries with backoff.
       - name: Start local Supabase stack
-        run: supabase start
-        timeout-minutes: 10
+        run: ./scripts/ci-supabase-start.sh
+        timeout-minutes: 20
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Export Supabase credentials
         run: |

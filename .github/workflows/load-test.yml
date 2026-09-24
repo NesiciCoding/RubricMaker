@@ -34,7 +34,10 @@ jobs:
   load-test:
     name: k6 Load Test (local Supabase)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -53,10 +56,13 @@ jobs:
           k6 version
 
       # Cold-starting the local stack pulls several images from ghcr.io on a
-      # fresh runner; give it the same headroom as the e2e-supabase job.
+      # fresh runner; same authenticated, retrying start as the e2e-supabase job.
       - name: Start local Supabase stack
-        run: supabase start
-        timeout-minutes: 10
+        run: ./scripts/ci-supabase-start.sh
+        timeout-minutes: 20
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Export Supabase credentials
         run: |
