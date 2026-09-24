@@ -240,6 +240,48 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     };
 
     // ── Subscribe to one Realtime channel per monitored student ───────────────────
+    // Broadcasts from a full class arrive in bursts (every student's ~5s snapshot
+    // interval, join announces, heartbeats), and each one used to trigger its own
+    // setLiveStates → full grid recompute across every student × question. Batching
+    // same-tick updates into a single flush turns a full-class burst into one
+    // re-render instead of dozens.
+    //
+    // Pending updates are queued as PATCH FUNCTIONS, not precomputed state, and
+    // applied against the latest `prev` when the timer fires — not the `current`
+    // seen when the broadcast arrived. Precomputing would let a concurrent direct
+    // setLiveStates (e.g. the essay-submission persisted-fetch effect above) get
+    // clobbered by a stale pending object at flush time.
+    const pendingPatchesRef = useRef<Record<string, Array<(current: StudentLiveState) => StudentLiveState>>>({});
+    const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    function flushLiveStates() {
+        if (flushTimerRef.current) {
+            clearTimeout(flushTimerRef.current);
+            flushTimerRef.current = null;
+        }
+        const pending = pendingPatchesRef.current;
+        pendingPatchesRef.current = {};
+        if (Object.keys(pending).length === 0) return;
+        setLiveStates((prev) => {
+            const next = { ...prev };
+            for (const [studentId, patches] of Object.entries(pending)) {
+                let current = next[studentId] ?? emptyLiveState(studentId);
+                for (const patch of patches) current = patch(current);
+                next[studentId] = current;
+            }
+            return next;
+        });
+    }
+
+    function updateLiveState(studentId: string, patch: (current: StudentLiveState) => StudentLiveState) {
+        (pendingPatchesRef.current[studentId] ??= []).push(patch);
+        if (flushTimerRef.current) return;
+        flushTimerRef.current = setTimeout(() => {
+            flushTimerRef.current = null;
+            flushLiveStates();
+        }, 300);
+    }
+
     const clientRef = useRef<SupabaseClient | null>(null);
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
@@ -254,43 +296,25 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channelMap.set(row.studentId, channel);
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                events: [...current.events, payload as ProctorEvent],
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        events: [...current.events, payload as ProctorEvent],
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .on('broadcast', { event: 'snapshot' }, ({ payload }) => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                snapshot: payload as StudentLiveState['snapshot'],
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        snapshot: payload as StudentLiveState['snapshot'],
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .on('broadcast', { event: 'submitted' }, () => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                submitted: true,
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        submitted: true,
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .subscribe();
             return channel;
@@ -301,6 +325,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channels.forEach((c) => void client.removeChannel(c));
             channelsRef.current = new Map();
             clientRef.current = null;
+            // Flush rather than discard: this cleanup also runs when the student list or
+            // teacher keys change (still the same assessment) — a queued broadcast (a
+            // one-off proctoring event, a 'submitted') must land before channels rebuild,
+            // not vanish because nothing else arrives to re-trigger it.
+            flushLiveStates();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
