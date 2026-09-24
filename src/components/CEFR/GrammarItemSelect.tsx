@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { GRAMMAR_CATEGORIES } from '../../data/grammarStandards';
+import { GRAMMAR_CATEGORIES, resolveGrammarItemId } from '../../data/grammarStandards';
 
 interface Props {
     value: string | undefined;
@@ -13,13 +13,14 @@ interface Props {
 export default function GrammarItemSelect({ value, onChange, id, 'aria-label': ariaLabel }: Props) {
     const { t, i18n } = useTranslation();
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
+    const resolvedValue = value ? resolveGrammarItemId(value) : value;
 
     return (
         <select
             id={id}
             aria-label={ariaLabel ?? t('grammar.item_select_label')}
             className="input"
-            value={value ?? ''}
+            value={resolvedValue ?? ''}
             onChange={(e) => onChange(e.target.value || undefined)}
         >
             <option value="">{t('grammar.no_item')}</option>

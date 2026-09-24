@@ -864,9 +864,14 @@ const LEGACY_ITEM_ID_ALIASES: Record<string, string> = {
     'gr-conditional-zero-first': 'gr-conditional-zero',
 };
 
+/** Resolves a possibly-retired grammar item id to its current, pickable id (a no-op for current ids). */
+export function resolveGrammarItemId(id: string): string {
+    return LEGACY_ITEM_ID_ALIASES[id] ?? id;
+}
+
 /** Builds the CefrPickerModal grammar-tab shape for a GrammarItem.id, for migrating a legacy linkedGrammarItemId. */
 export function grammarItemToFrameworkDescriptor(id: string): LinkedFrameworkDescriptor | undefined {
-    const resolvedId = LEGACY_ITEM_ID_ALIASES[id] ?? id;
+    const resolvedId = resolveGrammarItemId(id);
     for (const category of GRAMMAR_CATEGORIES) {
         const item = category.items.find((i) => i.id === resolvedId);
         if (item) {
@@ -887,7 +892,7 @@ export function grammarItemToFrameworkDescriptor(id: string): LinkedFrameworkDes
 }
 
 export function getGrammarItemById(id: string): GrammarItem | undefined {
-    const resolvedId = LEGACY_ITEM_ID_ALIASES[id] ?? id;
+    const resolvedId = resolveGrammarItemId(id);
     for (const category of GRAMMAR_CATEGORIES) {
         const found = category.items.find((item) => item.id === resolvedId);
         if (found) return found;

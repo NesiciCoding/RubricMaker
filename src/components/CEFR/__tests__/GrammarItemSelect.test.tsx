@@ -53,4 +53,17 @@ describe('GrammarItemSelect', () => {
         fireEvent.change(select, { target: { value: firstItem.value } });
         expect(onChange).toHaveBeenCalledWith(firstItem.value);
     });
+
+    it('displays a retired id (from a catalog split) as its surviving replacement', () => {
+        render(
+            <GrammarItemSelect
+                value="gr-past-simple-negative-question"
+                onChange={vi.fn()}
+                id="gr"
+                aria-label="Grammar picker"
+            />
+        );
+        const select = screen.getByLabelText('Grammar picker') as HTMLSelectElement;
+        expect(select.value).toBe('gr-past-simple-negative');
+    });
 });
