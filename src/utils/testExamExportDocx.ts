@@ -7,6 +7,7 @@ import {
     TableRow,
     TableCell,
     TextRun,
+    ImageRun,
     WidthType,
     HeadingLevel,
     PageBreak,
@@ -20,12 +21,12 @@ import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { sanitizeFilename, stripHtmlTags } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
-import { formatCorrectAnswer } from './testAnswerText';
 import { calcTestMaxPoints } from './testCalc';
 import {
     ANSWER_LINE_SPACING_MM,
     CHOICE_CELL_WIDTH_MM,
     LONG_ANSWER_HEIGHT_MM,
+    answerKeyText,
     answerSheetGeometry,
     categorizeBookletData,
     clozeBookletParts,
@@ -43,6 +44,20 @@ import {
 
 /** 1mm in docx twips (1/1440 inch, 1mm = 1/25.4 inch). */
 const MM_TO_TWIPS = 56.6929;
+
+/**
+ * Splits a rich-text passage into one Paragraph per block element, instead of collapsing every
+ * paragraph/list item into one run of text — stripHtmlTags() alone flattens all whitespace to a
+ * single space, so a multi-paragraph reading passage would otherwise print as one unbroken block.
+ */
+function htmlToParagraphs(html: string, spacingAfter = 120): Paragraph[] {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
+    const texts = (blocks.length > 0 ? blocks.map((b) => b.textContent ?? '') : [doc.body.textContent ?? ''])
+        .map((t) => t.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+    return texts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
+}
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
 
@@ -166,11 +181,43 @@ function categorizeParagraphs(question: TestQuestion): Paragraph[] {
     return [...items, categoryLine];
 }
 
-function questionParagraphs(
+/** Image MIME types docx can embed directly; anything else (e.g. webp, svg) is skipped rather than crash the export. */
+const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+};
+
+/**
+ * Fetches a question's image (data URI or URL) and wraps it as a docx ImageRun, scaled to a
+ * consistent max width. Returns null on any failure (unsupported format, network/CORS error) so
+ * the export still completes with the rest of the question's text intact — the HTML booklet
+ * renders `imageUrl` directly (browsers decode/display it natively), but docx needs the raw bytes,
+ * a known MIME type, and explicit pixel dimensions up front.
+ */
+async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+    try {
+        const blob = await fetch(imageUrl).then((r) => r.blob());
+        const type = DOCX_IMAGE_TYPE[blob.type];
+        if (!type) return null;
+        const bitmap = await createImageBitmap(blob);
+        const scale = Math.min(1, maxWidthPx / bitmap.width);
+        const width = Math.round(bitmap.width * scale);
+        const height = Math.round(bitmap.height * scale);
+        const data = await blob.arrayBuffer();
+        return new ImageRun({ type, data, transformation: { width, height } });
+    } catch {
+        return null;
+    }
+}
+
+async function questionParagraphs(
     question: TestQuestion,
     number: number,
     options: TestExamExportOptions
-): (Paragraph | Table)[] {
+): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const promptRuns = isCloze
         ? clozeRuns(question)
@@ -186,6 +233,11 @@ function questionParagraphs(
             spacing: { after: 60 },
         }),
     ];
+
+    if (question.imageUrl) {
+        const imageRun = await questionImageRun(question.imageUrl);
+        if (imageRun) blocks.push(new Paragraph({ children: [imageRun], spacing: { after: 80 } }));
+    }
 
     switch (question.type) {
         case 'multiple-choice':
@@ -262,17 +314,17 @@ function questionParagraphs(
     return blocks;
 }
 
-function buildBookletChildren(test: Test, options: TestExamExportOptions): (Paragraph | Table)[] {
+async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
     const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'))];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
             if (options.attachmentMode === 'inline' && group.section.content) {
-                children.push(new Paragraph({ text: stripHtmlTags(group.section.content), spacing: { after: 120 } }));
+                children.push(...htmlToParagraphs(group.section.content, 120));
             }
         }
         for (const { question, number } of group.questions) {
-            children.push(...questionParagraphs(question, number, options));
+            children.push(...(await questionParagraphs(question, number, options)));
         }
     }
     return children;
@@ -285,7 +337,7 @@ function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
         if (!group.section?.content) return;
         if (i > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(sectionDivider(group.section.title));
-        children.push(new Paragraph({ text: stripHtmlTags(group.section.content), spacing: { after: 200 } }));
+        children.push(...htmlToParagraphs(group.section.content, 200));
     });
     return children;
 }
@@ -469,7 +521,7 @@ function gradingTableRows(test: Test): TableRow[] {
         }
         for (const { question, number } of group.questions) {
             const ladder = partialCreditLadder(question);
-            const correct = formatCorrectAnswer(question);
+            const correct = answerKeyText(question);
             const questionPara = [
                 new Paragraph({ children: [new TextRun({ text: String(number), bold: true })] }),
                 new Paragraph({
@@ -564,7 +616,10 @@ interface ExportExamDocxOptions extends TestExamExportOptions {
 export async function exportExamDocx(test: Test, options: ExportExamDocxOptions): Promise<void> {
     const base = sanitizeFilename(test.name);
     const files: { name: string; blob: Blob }[] = [
-        { name: `${base}-booklet.docx`, blob: await buildDocxBlob(buildBookletChildren(test, options), options) },
+        {
+            name: `${base}-booklet.docx`,
+            blob: await buildDocxBlob(await buildBookletChildren(test, options), options),
+        },
     ];
     if (options.attachmentMode === 'separate') {
         files.push({

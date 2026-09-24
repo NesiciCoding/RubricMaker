@@ -8,6 +8,7 @@ import type { Test, TestQuestion, TestSection } from '../types';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
 import { stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
+import { formatCorrectAnswer } from './testAnswerText';
 import type { DocxStyleTemplateOverrides } from './docxExport';
 
 export interface NumberedQuestion {
@@ -120,9 +121,23 @@ export interface ClozeBlankPart {
 
 /** Cloze/cloze-dropdown prompt broken into text/blank parts, blanks left empty (never the model answer) for booklet printing. */
 export function clozeBookletParts(question: TestQuestion): ClozeBlankPart[] {
-    return renderClozeSegments(question.prompt).map((s) =>
+    return renderClozeSegments(stripHtmlTags(question.prompt)).map((s) =>
         s.type === 'gap' ? { text: '', blankNumber: s.gap.index + 1 } : { text: s.text }
     );
+}
+
+/**
+ * Deterministic shuffle that never returns the input order (for n > 1), so booklet position can
+ * never accidentally reveal the answer — seededShuffle alone has a 1/n! chance of landing back on
+ * the identity permutation (50% for 2 items), which would leak matching pairs and ordering answers
+ * through row position exactly as if they hadn't been shuffled at all.
+ */
+function nonIdentityShuffle<T>(items: T[], seed: string): T[] {
+    const shuffled = seededShuffle(items, seed);
+    if (shuffled.length > 1 && shuffled.every((item, i) => item === items[i])) {
+        return [...shuffled.slice(1), shuffled[0]];
+    }
+    return shuffled;
 }
 
 export interface MatchingBookletData {
@@ -135,7 +150,7 @@ export interface MatchingBookletData {
 /** Matching question split into a numbered left column and a shuffled, lettered right-hand word bank — printing pairs in stored order would trivially leak the answer via row position. */
 export function matchingBookletData(question: TestQuestion): MatchingBookletData {
     const pairs = question.matchingPairs ?? [];
-    const shuffledRight = seededShuffle(pairs, `${question.id}:right`);
+    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
     return {
         left: pairs.map((p) => p.left),
         rightOptions: shuffledRight.map((p, i) => ({ letter: optionLetter(i), text: p.right })),
@@ -144,8 +159,53 @@ export function matchingBookletData(question: TestQuestion): MatchingBookletData
 
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */
 export function orderingBookletItems(question: TestQuestion): { letter: string; text: string }[] {
-    const items = seededShuffle(question.orderItems ?? [], question.id);
+    const items = nonIdentityShuffle(question.orderItems ?? [], question.id);
     return items.map((item, i) => ({ letter: optionLetter(i), text: item.text }));
+}
+
+/** For each left-hand item (by row), the letter of its correct match in the booklet's shuffled right-hand word bank — e.g. "1→C; 2→A" — matching what a student actually writes, for the grading key. */
+function matchingCorrectLetterKey(question: TestQuestion): string {
+    const pairs = question.matchingPairs ?? [];
+    const shuffledRight = nonIdentityShuffle(pairs, `${question.id}:right`);
+    const letterByPairId = new Map(shuffledRight.map((p, i) => [p.id, optionLetter(i)]));
+    return pairs.map((p, i) => `${i + 1}→${letterByPairId.get(p.id) ?? '?'}`).join('; ');
+}
+
+/** The correct sequence expressed in the booklet's shuffled letters — e.g. "C → A → B" — matching what a student actually writes, for the grading key. */
+function orderingCorrectLetterSequence(question: TestQuestion): string {
+    const original = question.orderItems ?? [];
+    const shuffled = nonIdentityShuffle(original, question.id);
+    const letterById = new Map(shuffled.map((item, i) => [item.id, optionLetter(i)]));
+    return original.map((item) => letterById.get(item.id) ?? '?').join(' → ');
+}
+
+/**
+ * The grading-key answer text for a question, expressed in the same letters/format the booklet
+ * and answer sheet actually use — plain option text (as formatCorrectAnswer returns) isn't enough
+ * for choice/matching/ordering questions, where a student writes a letter, not the option's text,
+ * and matching/ordering are additionally shuffled per question, so the key must reference the same
+ * shuffle. Falls back to formatCorrectAnswer() for every other question type.
+ */
+export function answerKeyText(question: TestQuestion): string {
+    switch (question.type) {
+        case 'multiple-choice': {
+            const index = (question.options ?? []).findIndex((o) => o.isCorrect);
+            return index >= 0 ? optionLetter(index) : '';
+        }
+        case 'multiple-response':
+            return (question.options ?? [])
+                .map((o, i) => (o.isCorrect ? optionLetter(i) : null))
+                .filter((letter): letter is string => letter !== null)
+                .join(', ');
+        case 'true-false':
+            return (question.correctBoolean ?? true) ? 'A' : 'B';
+        case 'matching':
+            return matchingCorrectLetterKey(question);
+        case 'ordering':
+            return orderingCorrectLetterSequence(question);
+        default:
+            return formatCorrectAnswer(question);
+    }
 }
 
 export interface CategorizeBookletData {

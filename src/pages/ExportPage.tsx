@@ -78,7 +78,7 @@ export default function ExportPage() {
         new Set(['rubric', 'rubricStudents', 'examBooklet', 'essays', 'period', 'reportCard'])
     );
     const [selectedTestId, setSelectedTestId] = useState(tests[0]?.id ?? '');
-    const selectedTest = tests.find((tst) => tst.id === selectedTestId);
+    const selectedTest = tests.find((tst) => tst.id === selectedTestId) ?? tests[0];
     const toggleSection = (key: string) =>
         setCollapsedSections((prev) => {
             const next = new Set(prev);
@@ -1284,7 +1284,10 @@ export default function ExportPage() {
                             <>
                                 <div className="form-group" style={{ marginBottom: 12 }}>
                                     <label>{t('exportPage.select_test')}</label>
-                                    <select value={selectedTestId} onChange={(e) => setSelectedTestId(e.target.value)}>
+                                    <select
+                                        value={selectedTest?.id ?? ''}
+                                        onChange={(e) => setSelectedTestId(e.target.value)}
+                                    >
                                         {tests.map((tst) => (
                                             <option key={tst.id} value={tst.id}>
                                                 {tst.name}

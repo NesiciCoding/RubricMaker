@@ -1,15 +1,16 @@
 /** CITO-style exam document rendering (HTML -> browser print-to-PDF), mirroring pdfExport.ts's pattern. */
 import i18n from 'i18next';
+import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { printHtml } from './pdfExport';
 import { escapeHtml, sanitizeFilename, stripHtmlTags } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
-import { formatCorrectAnswer } from './testAnswerText';
 import { calcTestMaxPoints } from './testCalc';
 import {
     ANSWER_LINE_SPACING_MM,
     LONG_ANSWER_HEIGHT_MM,
+    answerKeyText,
     answerSheetGeometry,
     answerSheetQrPayload,
     categorizeBookletData,
@@ -74,7 +75,7 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
     let extra = '';
 
     if (question.imageUrl) {
-        extra += `<div style="margin:8px 0"><img src="${question.imageUrl}" style="max-width:100%;max-height:220px" /></div>`;
+        extra += `<div style="margin:8px 0"><img src="${escapeHtml(question.imageUrl)}" style="max-width:100%;max-height:220px" /></div>`;
     }
 
     switch (question.type) {
@@ -167,7 +168,7 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
             if (options.attachmentMode === 'inline' && group.section.content) {
-                html += `<div style="margin-bottom:10px;font-size:13px">${group.section.content}</div>`;
+                html += `<div style="margin-bottom:10px;font-size:13px">${DOMPurify.sanitize(group.section.content)}</div>`;
             }
         }
         html += group.questions.map(({ question, number }) => questionBodyHtml(question, number, options)).join('');
@@ -182,7 +183,7 @@ export function buildExamAttachmentHtml(test: Test): string {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
         html += `<div style="${pageBreak}page-break-inside:avoid">${sectionDividerHtml(group.section.title)}</div>`;
-        html += `<div style="font-size:13px;margin-bottom:14px">${group.section.content}</div>`;
+        html += `<div style="font-size:13px;margin-bottom:14px">${DOMPurify.sanitize(group.section.content ?? '')}</div>`;
     });
     return `<div class="print-page">${html}</div>`;
 }
@@ -284,7 +285,7 @@ function gradingTableRowsHtml(test: Test): string {
         }
         for (const { question, number } of group.questions) {
             const ladder = partialCreditLadder(question);
-            const correct = formatCorrectAnswer(question);
+            const correct = answerKeyText(question);
             const answerCell = correct
                 ? escapeHtml(correct)
                 : `<span style="color:#94a3b8">${tx('open_answer')}</span>`;
