@@ -240,6 +240,31 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     };
 
     // ── Subscribe to one Realtime channel per monitored student ───────────────────
+    // Broadcasts from a full class arrive in bursts (every student's ~5s snapshot
+    // interval, join announces, heartbeats), and each one used to trigger its own
+    // setLiveStates → full grid recompute across every student × question. Batching
+    // same-tick updates into a single flush turns a full-class burst into one
+    // re-render instead of dozens.
+    const pendingLiveStatesRef = useRef<Record<string, StudentLiveState>>({});
+    const liveStatesRef = useRef<Record<string, StudentLiveState>>({});
+    const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        liveStatesRef.current = liveStates;
+    }, [liveStates]);
+
+    function updateLiveState(studentId: string, patch: (current: StudentLiveState) => StudentLiveState) {
+        const current =
+            pendingLiveStatesRef.current[studentId] ?? liveStatesRef.current[studentId] ?? emptyLiveState(studentId);
+        pendingLiveStatesRef.current[studentId] = patch(current);
+        if (flushTimerRef.current) return;
+        flushTimerRef.current = setTimeout(() => {
+            flushTimerRef.current = null;
+            const pending = pendingLiveStatesRef.current;
+            pendingLiveStatesRef.current = {};
+            setLiveStates((prev) => ({ ...prev, ...pending }));
+        }, 300);
+    }
+
     const clientRef = useRef<SupabaseClient | null>(null);
     const channelsRef = useRef<Map<string, RealtimeChannel>>(new Map());
     useEffect(() => {
@@ -254,43 +279,25 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channelMap.set(row.studentId, channel);
             channel
                 .on('broadcast', { event: 'event' }, ({ payload }) => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                events: [...current.events, payload as ProctorEvent],
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        events: [...current.events, payload as ProctorEvent],
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .on('broadcast', { event: 'snapshot' }, ({ payload }) => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                snapshot: payload as StudentLiveState['snapshot'],
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        snapshot: payload as StudentLiveState['snapshot'],
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .on('broadcast', { event: 'submitted' }, () => {
-                    setLiveStates((prev) => {
-                        const current = prev[row.studentId] ?? emptyLiveState(row.studentId);
-                        return {
-                            ...prev,
-                            [row.studentId]: {
-                                ...current,
-                                submitted: true,
-                                lastUpdateAt: new Date().toISOString(),
-                            },
-                        };
-                    });
+                    updateLiveState(row.studentId, (current) => ({
+                        ...current,
+                        submitted: true,
+                        lastUpdateAt: new Date().toISOString(),
+                    }));
                 })
                 .subscribe();
             return channel;
@@ -301,6 +308,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             channels.forEach((c) => void client.removeChannel(c));
             channelsRef.current = new Map();
             clientRef.current = null;
+            if (flushTimerRef.current) {
+                clearTimeout(flushTimerRef.current);
+                flushTimerRef.current = null;
+            }
+            pendingLiveStatesRef.current = {};
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [

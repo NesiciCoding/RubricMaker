@@ -338,6 +338,7 @@ describe('LiveMonitorPage', () => {
         });
 
         it('renders proctoring flags from live broadcast events', () => {
+            vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
             const ch = channels[0];
             act(() => {
@@ -347,6 +348,7 @@ describe('LiveMonitorPage', () => {
                 ch.handlers.event({ payload: { type: 'paste', at: '2026-01-01T00:00:04Z' } });
                 ch.handlers.event({ payload: { type: 'battery', at: '2026-01-01T00:00:05Z', value: '60+' } });
                 ch.handlers.event({ payload: { type: 'seb_status', at: '2026-01-01T00:00:06Z', value: true } });
+                vi.advanceTimersByTime(300);
             });
             // Below the 3-switch warning threshold → yellow badge.
             expect(screen.getByText('tests.monitor.flags.tabSwitch (2)')).toBeInTheDocument();
@@ -356,21 +358,25 @@ describe('LiveMonitorPage', () => {
         });
 
         it('renders the non-charging battery flag variant', () => {
+            vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
             const ch = channels[0];
             act(() => {
                 ch.handlers.event({ payload: { type: 'battery', at: '2026-01-01T00:00:05Z', value: '40' } });
+                vi.advanceTimersByTime(300);
             });
             expect(screen.getByText('tests.monitor.flags.battery')).toBeInTheDocument();
         });
 
         it('warns in red once tab switches reach the threshold', () => {
+            vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
             const ch = channels[0];
             act(() => {
                 ch.handlers.event({ payload: { type: 'tab_switch', at: '2026-01-01T00:00:01Z' } });
                 ch.handlers.event({ payload: { type: 'tab_switch', at: '2026-01-01T00:00:02Z' } });
                 ch.handlers.event({ payload: { type: 'tab_switch', at: '2026-01-01T00:00:03Z' } });
+                vi.advanceTimersByTime(300);
             });
             expect(screen.getByText('tests.monitor.flags.tabSwitch (3)')).toBeInTheDocument();
         });
@@ -420,10 +426,12 @@ describe('LiveMonitorPage', () => {
                     },
                 ],
             };
+            vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
             const ch = channels[0];
             act(() => {
                 ch.handlers.snapshot({ payload: { answers: { q1: 'b' } } });
+                vi.advanceTimersByTime(300);
             });
             // The live answer (correct) replaces the persisted one for q1; q2 stays persisted (incorrect).
             expect(screen.getAllByTitle('tests.monitor.grid.state.correct')).toHaveLength(1);
@@ -590,6 +598,9 @@ describe('LiveMonitorPage', () => {
             act(() => {
                 ch.handlers.snapshot({ payload: { text: '<p>Hello draft</p>', wordCount: 2 } });
             });
+            // Snapshot updates are coalesced onto a short debounce (see LiveMonitorPage) so a
+            // burst of broadcasts from a full class only triggers one re-render.
+            await waitFor(() => expect(screen.queryByLabelText('tests.monitor.draft.toggle_preview')).not.toBeNull());
             fireEvent.click(screen.getByLabelText('tests.monitor.draft.toggle_preview'));
             expect(screen.getByText('Hello draft')).toBeInTheDocument();
             expect(screen.getByText('tests.monitor.draft.word_count (2)')).toBeInTheDocument();
