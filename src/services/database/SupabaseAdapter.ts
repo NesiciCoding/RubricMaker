@@ -1553,6 +1553,19 @@ export class SupabaseAdapter {
     }
 
     /**
+     * The current portal student's own Student.readAloudAccommodation (roadmap Phase 44, §6.2),
+     * for embedding into the self-contained test-open link built in StudentPortalPage — that link
+     * reuses StudentTestPage's disconnected offline-content flow, which has no live student record
+     * to re-check. RLS: `students_self_by_email` scopes this to the caller's own row regardless of
+     * the id filter, so a mismatched studentId just returns no row rather than someone else's flag.
+     */
+    async fetchMyReadAloudAccommodation(studentId: string): Promise<boolean> {
+        const { data, error } = await this.db().from('students').select('data').eq('id', studentId).maybeSingle();
+        if (error || !data) return false;
+        return !!(data.data as { readAloudAccommodation?: boolean } | null)?.readAloudAccommodation;
+    }
+
+    /**
      * Map studentId -> teacherKey for every assignment row of one test, owner-scoped
      * (RLS: `test_assignments_owner_all`). LiveMonitorPage's Realtime channel name for a
      * 'test' session is the per-student teacherKey (matching what StudentTestPage actually

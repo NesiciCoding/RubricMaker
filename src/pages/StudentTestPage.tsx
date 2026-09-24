@@ -22,6 +22,7 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
@@ -111,6 +112,18 @@ function isShortCode(code: string): boolean {
     return /^[A-Za-z0-9_-]{10,40}$/.test(code);
 }
 
+/** Plain read-aloud text for a question's prompt + options — cloze gaps become `blankWord` rather
+ * than their answer, so a graded cloze's read-aloud accommodation can't hand out the answer. */
+function speakableQuestionText(question: TestQuestion, blankWord: string): string {
+    const promptText = ['cloze', 'cloze-dropdown'].includes(question.type)
+        ? renderClozeSegments(question.prompt)
+              .map((s) => (s.type === 'gap' ? blankWord : s.text))
+              .join('')
+        : htmlToPlainText(question.prompt);
+    const optionsText = (question.options ?? []).map((o) => o.text).join('. ');
+    return [promptText, optionsText].filter(Boolean).join('. ');
+}
+
 export default function StudentTestPage() {
     const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
@@ -171,11 +184,19 @@ export default function StudentTestPage() {
                   durationMinutes: assignment.durationMinutes ?? null,
                   expiresAt: assignment.expiresAt ?? null,
                   test: assignment.test,
+                  readAloudAccommodation: assignment.readAloudAccommodation,
               }
             : undefined
     );
     const contentReady = resolvedContent !== undefined;
     const test = resolvedContent?.test ?? null;
+    // Read-aloud is always on in practice mode (today's behaviour); in graded modes
+    // (assessment/placement) it's gated on the student's accommodation setting (roadmap
+    // Phase 44, §6.2) so it doesn't quietly help everyone on a test that's meant to measure
+    // unassisted reading.
+    const readAloudAllowed =
+        test?.mode === 'practice' ||
+        (resolvedContent?.readAloudAccommodation ?? assignment?.readAloudAccommodation ?? false);
     // Tracks an 'expired' result from the edge function so the expiry guard fires
     // even for short-code links that have no expiresAt embedded in the URL.
     const [contentExpired, setContentExpired] = useState(false);
@@ -1101,10 +1122,12 @@ export default function StudentTestPage() {
                                         borderRadius: 10,
                                     }}
                                 >
-                                    <PassageReadAloud
-                                        contentHtml={currentSection.content}
-                                        lang={test?.contentLanguage ?? 'en'}
-                                    />
+                                    {readAloudAllowed && (
+                                        <PassageReadAloud
+                                            contentHtml={currentSection.content}
+                                            lang={test?.contentLanguage ?? 'en'}
+                                        />
+                                    )}
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
@@ -1128,6 +1151,8 @@ export default function StudentTestPage() {
                                     code={/* v8 ignore next 1 */ code ?? ''}
                                     onRecordingChange={setIsRecordingAudio}
                                     hideTotal={isStaircase || isGenerator}
+                                    readAloudAllowed={readAloudAllowed}
+                                    lang={test?.contentLanguage ?? 'en'}
                                 />
                             )}
 
@@ -1471,6 +1496,10 @@ interface QuestionCardProps {
     onRecordingChange?: (recording: boolean) => void;
     /** True for an adaptive (staircase) run, where the total question count isn't known ahead of time */
     hideTotal?: boolean;
+    /** Per-student read-aloud accommodation gate (roadmap Phase 44, §6.2) — practice mode is always allowed regardless. */
+    readAloudAllowed?: boolean;
+    /** BCP-47 base language code for read-aloud voice selection. */
+    lang?: string;
 }
 
 function QuestionCard({
@@ -1482,6 +1511,8 @@ function QuestionCard({
     code,
     onRecordingChange,
     hideTotal,
+    readAloudAllowed,
+    lang,
 }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
@@ -1497,6 +1528,12 @@ function QuestionCard({
                 padding: 20,
             }}
         >
+            {readAloudAllowed && (
+                <PassageReadAloud
+                    contentHtml={speakableQuestionText(question, t('tests.taking.cloze_blank_spoken'))}
+                    lang={lang ?? 'en'}
+                />
+            )}
             <div
                 style={{
                     fontSize: '0.75rem',

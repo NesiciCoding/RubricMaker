@@ -148,6 +148,17 @@ serve(async (req) => {
 
     if (testErr || !test) return json({ error: 'Test not found' }, 404);
 
+    // Best-effort: a missing/anonymized student row must not fail the whole request, the
+    // accommodation just defaults off.
+    const { data: student } = await admin
+        .from('students')
+        .select('data')
+        .eq('id', assignment.student_id)
+        .eq('owner_id', assignment.owner_id)
+        .single();
+    const readAloudAccommodation = !!(student?.data as { readAloudAccommodation?: boolean } | null)
+        ?.readAloudAccommodation;
+
     return json({
         testId: assignment.test_id,
         studentId: assignment.student_id,
@@ -155,5 +166,6 @@ serve(async (req) => {
         durationMinutes: assignment.duration_minutes ?? null,
         expiresAt: assignment.expires_at ?? null,
         test: toStudentSafeTest(test.data),
+        readAloudAccommodation,
     });
 });

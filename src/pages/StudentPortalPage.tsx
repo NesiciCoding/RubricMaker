@@ -175,6 +175,7 @@ export default function StudentPortalPage() {
         saveRubricSelfAssessment,
         fetchMyTestAssignments,
         fetchAssignedTestContent,
+        fetchMyReadAloudAccommodation,
         fetchMyEssayAssignments,
         fetchMyMessages,
         sendMessageAsStudent,
@@ -460,7 +461,13 @@ export default function StudentPortalPage() {
         setTestOpenErrorKey(null);
         setOpeningTestKey(row.teacherKey);
         try {
-            const content = await fetchAssignedTestContent(row.testId);
+            const [content, readAloudAccommodation] = await Promise.all([
+                fetchAssignedTestContent(row.testId),
+                // Best-effort: this embedded link reuses StudentTestPage's disconnected offline-content
+                // flow, which has no live student record to re-check, so the accommodation (roadmap
+                // Phase 44, §6.2) is snapshotted here. A failed lookup must not block opening the test.
+                fetchMyReadAloudAccommodation(row.studentId).catch(() => false),
+            ]);
             if (!content) {
                 setTestOpenErrorKey(row.teacherKey);
                 return;
@@ -474,6 +481,7 @@ export default function StudentPortalPage() {
                 createdAt: row.createdAt,
                 expiresAt: row.expiresAt ?? undefined,
                 test: content,
+                readAloudAccommodation,
             };
             const code = encodeTestAssignment(payload);
             if (!code) {

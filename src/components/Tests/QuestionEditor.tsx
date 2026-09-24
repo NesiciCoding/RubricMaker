@@ -19,6 +19,7 @@ import {
     Settings2,
     BookmarkPlus,
     Gauge,
+    Sparkles,
 } from 'lucide-react';
 import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { useAuthoring, useSettings } from '../../context/AppContext';
@@ -31,7 +32,9 @@ import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
-import { parseClozeGaps } from '../../utils/clozeParse';
+import { parseClozeGaps, plainQuestionPromptText, renderClozeSegments } from '../../utils/clozeParse';
+import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
+import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
 import type {
@@ -46,6 +49,7 @@ import type {
     LinkedStandard,
     LinkedCefrDescriptor,
     LinkedFrameworkDescriptor,
+    CefrLevel,
 } from '../../types';
 
 interface Props {
@@ -103,9 +107,26 @@ export default function QuestionEditor({
     const [advancedOpen, setAdvancedOpen] = React.useState(
         () => !!(question.hint || question.explanation || question.eloRating)
     );
+    const [clozeStrategy, setClozeStrategy] = React.useState<ClozeStrategy>('fixedRatio');
+    const [clozeEveryNth, setClozeEveryNth] = React.useState(7);
+    const [clozeLevel, setClozeLevel] = React.useState<CefrLevel>('B2');
 
     function update(patch: Partial<TestQuestion>) {
         onChange({ ...question, ...patch });
+    }
+
+    function generateGaps() {
+        const plainText = plainQuestionPromptText(question).trim();
+        if (!plainText) {
+            showToast(t('tests.cloze_generate_empty'), 'info');
+            return;
+        }
+        const prompt = generateCloze(plainText, clozeStrategy, { everyNth: clozeEveryNth, cefrLevel: clozeLevel });
+        if (renderClozeSegments(prompt).filter((s) => s.type === 'gap').length === 0) {
+            showToast(t('tests.cloze_generate_none_found'), 'info');
+            return;
+        }
+        update({ prompt });
     }
 
     // A question can only carry one grammar tag at a time (mastery/learning-path aggregation reads
@@ -534,17 +555,77 @@ export default function QuestionEditor({
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
                 {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
-                    // Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
-                    // prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
-                    // clickable pills instead of hand-typed syntax, but the stored format and the
-                    // parse/scoring layer are unchanged.
-                    <ClozeGapEditor
-                        value={question.prompt}
-                        onChange={(prompt) => update({ prompt })}
-                        allowDropdown={question.type === 'cloze-dropdown'}
-                        insertGapLabel={t('tests.cloze_insert_gap')}
-                        insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
-                    />
+                    <>
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: 6,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                marginBottom: 8,
+                            }}
+                        >
+                            <select
+                                aria-label={t('tests.cloze_generate_strategy_label')}
+                                value={clozeStrategy}
+                                onChange={(e) => setClozeStrategy(e.target.value as ClozeStrategy)}
+                                style={{ width: 'auto' }}
+                            >
+                                <option value="fixedRatio">{t('tests.cloze_generate_fixed_ratio')}</option>
+                                <option value="cTest">{t('tests.cloze_generate_c_test')}</option>
+                                <option value="preposition">{t('tests.cloze_generate_preposition')}</option>
+                                <option value="article">{t('tests.cloze_generate_article')}</option>
+                                <option value="modal">{t('tests.cloze_generate_modal')}</option>
+                                <option value="pastTense">{t('tests.cloze_generate_past_tense')}</option>
+                                <option value="aboveLevel">{t('tests.cloze_generate_above_level')}</option>
+                                <option value="academic">{t('tests.cloze_generate_academic')}</option>
+                            </select>
+                            {clozeStrategy === 'fixedRatio' && (
+                                <input
+                                    type="number"
+                                    min={2}
+                                    max={20}
+                                    value={clozeEveryNth}
+                                    onChange={(e) => setClozeEveryNth(Number(e.target.value) || 7)}
+                                    aria-label={t('tests.cloze_generate_every_nth_label')}
+                                    style={{ width: 60 }}
+                                />
+                            )}
+                            {clozeStrategy === 'aboveLevel' && (
+                                <select
+                                    aria-label={t('tests.cloze_generate_level_label')}
+                                    value={clozeLevel}
+                                    onChange={(e) => setClozeLevel(e.target.value as CefrLevel)}
+                                    style={{ width: 'auto' }}
+                                >
+                                    {CEFR_LEVELS.map((level) => (
+                                        <option key={level} value={level}>
+                                            {level}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={generateGaps}
+                                title={t('tests.cloze_generate_hint')}
+                            >
+                                <Sparkles size={14} /> {t('tests.cloze_generate_button')}
+                            </button>
+                        </div>
+                        {/* Cloze/cloze-dropdown gaps are authored as {{gap|alt}} syntax directly in the
+                            prompt string (see clozeParse.ts) — ClozeGapEditor edits that string via
+                            clickable pills instead of hand-typed syntax, but the stored format and the
+                            parse/scoring layer are unchanged. */}
+                        <ClozeGapEditor
+                            value={question.prompt}
+                            onChange={(prompt) => update({ prompt })}
+                            allowDropdown={question.type === 'cloze-dropdown'}
+                            insertGapLabel={t('tests.cloze_insert_gap')}
+                            insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
+                        />
+                    </>
                 ) : (
                     <EssayEditor
                         content={question.prompt}

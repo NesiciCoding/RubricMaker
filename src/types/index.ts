@@ -650,6 +650,8 @@ export interface Student {
     updatedAt?: string;
     /** Per-student override of the class's default VO track; must be adjacent to the class track (see isAdjacentTrack). */
     voTrack?: VoTrack;
+    /** Read-aloud accommodation (roadmap Phase 44, §6.2): when true, this student gets TTS read-aloud on passages, question prompts and options in every test mode, including graded ones — separate from the app-wide dyslexiaFriendlyMode preference. */
+    readAloudAccommodation?: boolean;
 }
 
 export type VoTrack = 'vmbo-bb' | 'vmbo-kb' | 'vmbo-tl' | 'havo' | 'vwo';
@@ -1394,6 +1396,8 @@ export interface TestAssignmentPayload {
     supabaseAnonKey?: string;
     /** Full test content embedded for offline use (no Supabase) — without this, an offline link cannot load its questions */
     test?: Test;
+    /** Snapshot of the student's Student.readAloudAccommodation at share-link generation time (roadmap Phase 44, §6.2) — offline links have no live student record to re-check. */
+    readAloudAccommodation?: boolean;
 }
 
 /** Assignment content resolved from the get-test-assignment edge function for a short-code (DB mode) share link */
@@ -1404,6 +1408,8 @@ export interface TestAssignmentContent {
     durationMinutes: number | null;
     expiresAt: string | null;
     test: Test;
+    /** The assigned student's current Student.readAloudAccommodation, resolved server-side (roadmap Phase 44, §6.2). */
+    readAloudAccommodation?: boolean;
 }
 
 /** A teacher-created test assignment persisted to `test_assignments` so the student portal can list it, mirrors EssayAssignment */

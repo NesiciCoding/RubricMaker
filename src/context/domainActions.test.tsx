@@ -158,6 +158,7 @@ vi.mock('../services/database', () => ({
         saveTestAssignment: vi.fn(() => Promise.resolve()),
         fetchMyTestAssignments: vi.fn(() => Promise.resolve([])),
         fetchAssignedTestContent: vi.fn(() => Promise.resolve(null)),
+        fetchMyReadAloudAccommodation: vi.fn(() => Promise.resolve(false)),
         fetchTestAssignmentTeacherKeys: vi.fn(() => Promise.resolve([])),
         setPlacementOverride: vi.fn(() => Promise.resolve()),
         saveEssayAssignment: vi.fn(() => Promise.resolve()),
