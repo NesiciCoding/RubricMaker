@@ -390,6 +390,7 @@ vi.mock('react-i18next', () => ({
 const mockFetchMyEssayAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchMyTestAssignments = vi.fn().mockResolvedValue([]);
 const mockFetchAssignedTestContent = vi.fn().mockResolvedValue(null);
+const mockFetchMyReadAloudAccommodation = vi.fn().mockResolvedValue(false);
 const mockFetchMyMessages = vi.fn().mockResolvedValue([]);
 const mockSendMessageAsStudent = vi.fn().mockResolvedValue({ success: true });
 const mockMarkMessagesReadByStudent = vi.fn().mockResolvedValue({ success: true });
@@ -416,6 +417,7 @@ const mockAppValue: Record<string, unknown> = {
     fetchMyEssayAssignments: mockFetchMyEssayAssignments,
     fetchMyTestAssignments: mockFetchMyTestAssignments,
     fetchAssignedTestContent: mockFetchAssignedTestContent,
+    fetchMyReadAloudAccommodation: mockFetchMyReadAloudAccommodation,
     fetchMyMessages: mockFetchMyMessages,
     sendMessageAsStudent: mockSendMessageAsStudent,
     markMessagesReadByStudent: mockMarkMessagesReadByStudent,
@@ -650,6 +652,43 @@ describe('StudentPortalPage extended coverage', () => {
         expect(mockEncodeTest).toHaveBeenCalledWith(
             expect.objectContaining({ testId: 't1', studentId: 's1', teacherKey: 'test-1' })
         );
+    });
+
+    it('embeds the student’s live read-aloud accommodation into the opened test payload', async () => {
+        mockFetchMyTestAssignments.mockResolvedValueOnce([mockPendingTest]);
+        mockFetchAssignedTestContent.mockResolvedValueOnce({
+            id: 't1',
+            name: 'Vocabulary Quiz',
+            questions: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00Z',
+        });
+        mockFetchMyReadAloudAccommodation.mockResolvedValueOnce(true);
+        renderAt('s1');
+        switchTab('assignments');
+        fireEvent.click(await screen.findByText('studentPortal.test_open'));
+        await waitFor(() => expect(window.location.hash).toBe('#/test/test-code'));
+        expect(mockFetchMyReadAloudAccommodation).toHaveBeenCalledWith('s1');
+        expect(mockEncodeTest).toHaveBeenCalledWith(expect.objectContaining({ readAloudAccommodation: true }));
+    });
+
+    it('still opens the test when the read-aloud accommodation lookup fails', async () => {
+        mockFetchMyTestAssignments.mockResolvedValueOnce([mockPendingTest]);
+        mockFetchAssignedTestContent.mockResolvedValueOnce({
+            id: 't1',
+            name: 'Vocabulary Quiz',
+            questions: [],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2024-01-01T00:00:00Z',
+        });
+        mockFetchMyReadAloudAccommodation.mockRejectedValueOnce(new Error('network'));
+        renderAt('s1');
+        switchTab('assignments');
+        fireEvent.click(await screen.findByText('studentPortal.test_open'));
+        await waitFor(() => expect(window.location.hash).toBe('#/test/test-code'));
+        expect(mockEncodeTest).toHaveBeenCalledWith(expect.objectContaining({ readAloudAccommodation: false }));
     });
 
     it('shows the open error when assigned test content is missing', async () => {

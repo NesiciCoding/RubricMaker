@@ -511,6 +511,10 @@ class StorageSyncService {
         return this.adapter.fetchAssignedTestContent(testId);
     }
 
+    async fetchMyReadAloudAccommodation(studentId: string): Promise<boolean> {
+        return this.adapter.fetchMyReadAloudAccommodation(studentId);
+    }
+
     async fetchTestAssignmentTeacherKeys(testId: string): Promise<Record<string, string>> {
         return this.adapter.fetchTestAssignmentTeacherKeys(testId);
     }

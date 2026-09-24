@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Upload, Play, Send, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, Play, Send, X, FileQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
-import { useClasses, useFlashcards, useStudents } from '../context/AppContext';
+import { useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { nanoid } from '../utils/nanoid';
 import FlashcardImportModal from '../components/Flashcards/FlashcardImportModal';
@@ -12,6 +12,7 @@ import FlashcardStudySession from '../components/Flashcards/FlashcardStudySessio
 import FlashcardInsightsPanel from '../components/Flashcards/FlashcardInsightsPanel';
 import GrammarItemSelect from '../components/CEFR/GrammarItemSelect';
 import { computeDeckInsights } from '../utils/flashcardInsights';
+import { generateQuestionsFromDeck } from '../utils/deckToQuestions';
 import type { FlashcardCard, FlashcardDeck } from '../types';
 import type { ParsedFlashcard } from '../utils/flashcardImport';
 
@@ -26,6 +27,7 @@ export default function FlashcardDeckPage() {
 
     const { flashcardDecks, flashcardAssignments, flashcardReviews, updateFlashcardDeck, addFlashcardAssignments } =
         useFlashcards();
+    const { addQuestionBankItems } = useAuthoring();
 
     const { showToast } = useToast();
 
@@ -150,6 +152,21 @@ export default function FlashcardDeckPage() {
         showToast(t('flashcards.assign_success', { count: classStudents.length }), 'success');
     }
 
+    function generateTestQuestions() {
+        /* v8 ignore next -- provably dead: generateTestQuestions only runs from a rendered deck */
+        if (!draft) return;
+        const generated = generateQuestionsFromDeck(draft.name, draft.cards);
+        if (generated.length === 0) {
+            showToast(t('flashcards.generate_questions_empty'), 'info');
+            return;
+        }
+        addQuestionBankItems(
+            generated.map((question) => ({ kind: 'question' as const, question, tags: [draft.name] }))
+        );
+        showToast(t('flashcards.generate_questions_success', { count: generated.length }), 'success');
+        navigate('/question-bank');
+    }
+
     const validCardCount = draft.cards.filter((c) => c.front.trim() && c.back.trim()).length;
     const frontLabel = t(draft.deckKind === 'grammar' ? 'flashcards.card_front_grammar' : 'flashcards.card_front');
     const backLabel = t(draft.deckKind === 'grammar' ? 'flashcards.card_back_grammar' : 'flashcards.card_back');
@@ -169,6 +186,14 @@ export default function FlashcardDeckPage() {
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
                             <Upload size={15} /> {t('flashcards.import_button')}
+                        </button>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            disabled={validCardCount === 0}
+                            onClick={generateTestQuestions}
+                            title={t('flashcards.generate_questions_hint')}
+                        >
+                            <FileQuestion size={15} /> {t('flashcards.generate_questions_button')}
                         </button>
                     </div>
                 }

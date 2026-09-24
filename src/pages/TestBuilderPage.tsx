@@ -12,6 +12,7 @@ import {
     FileText,
     BookMarked,
     Music,
+    Layers,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -19,7 +20,9 @@ import type { EventData } from 'react-joyride';
 import { getTestBuilderTourSteps } from '../data/TutorialSteps';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
-import { useAssessment, useAuthoring, useSettings } from '../context/AppContext';
+import { useAssessment, useAuthoring, useFlashcards, useSettings } from '../context/AppContext';
+import { computeTargetVerdict } from '../utils/textLevelVerdict';
+import { htmlToPlainText } from '../hooks/useTTS';
 import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -46,6 +49,7 @@ import {
     CEFR_SKILL_LABELS,
     QUESTION_BANK_SKILLS,
     QUESTION_BANK_SKILL_LABELS,
+    CEFR_LEVEL_COLORS,
 } from '../data/cefrDescriptors';
 import { sectionQuestions, isAutoScorable, hasRoutingCycle } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
@@ -69,6 +73,7 @@ export default function TestBuilderPage() {
     const { gradeScales, addSectionBankItem, questionBank } = useAuthoring();
     const { tests, addTest, updateTest } = useAssessment();
     const { settings } = useSettings();
+    const { addFlashcardDeck } = useFlashcards();
 
     const existing = id ? tests.find((tst) => tst.id === id) : undefined;
     const notFound = !!id && !existing;
@@ -321,6 +326,17 @@ export default function TestBuilderPage() {
             section.cefrLevel
         );
         showToast(t('questionBank.saved_toast'), 'success');
+    }
+
+    function seedDeckFromAboveLevelWords(section: TestSection, words: { word: string; level: CefrLevel }[]) {
+        if (words.length === 0) return;
+        const deck = addFlashcardDeck({
+            name: t('tests.section_seed_deck_name', { section: section.title }),
+            deckKind: 'vocabulary',
+            cards: words.map((w) => ({ id: nanoid(), front: w.word, back: '', cefrLevel: w.level })),
+        });
+        showToast(t('vocabProfile.seed_deck_created', { name: deck.name, count: words.length }), 'success');
+        navigate(`/flashcards/${deck.id}`);
     }
 
     function updateQuestion(qid: string, question: TestQuestion) {
@@ -1394,6 +1410,94 @@ export default function TestBuilderPage() {
                                                             showTableOfContents
                                                             allowImageEmbedding
                                                         />
+                                                        {(() => {
+                                                            const targetLevel = (cefrTargetLevel ||
+                                                                section.cefrLevel) as CefrLevel | '';
+                                                            if (!targetLevel || !section.content) return null;
+                                                            const verdict = computeTargetVerdict(
+                                                                htmlToPlainText(section.content),
+                                                                targetLevel
+                                                            );
+                                                            return (
+                                                                <div
+                                                                    className="text-sm"
+                                                                    style={{
+                                                                        marginTop: 8,
+                                                                        padding: '8px 10px',
+                                                                        borderRadius: 6,
+                                                                        background: 'var(--bg-elevated)',
+                                                                    }}
+                                                                >
+                                                                    <span
+                                                                        style={{
+                                                                            fontWeight: 700,
+                                                                            color:
+                                                                                verdict.verdict === 'suitable'
+                                                                                    ? 'var(--green)'
+                                                                                    : verdict.verdict ===
+                                                                                        'slightly_above'
+                                                                                      ? 'var(--yellow)'
+                                                                                      : 'var(--red)',
+                                                                        }}
+                                                                    >
+                                                                        {t(`analysis.verdict_${verdict.verdict}`)}
+                                                                    </span>{' '}
+                                                                    <span className="text-muted">
+                                                                        {t('analysis.coverage_known', {
+                                                                            level: targetLevel,
+                                                                            pct: verdict.coveragePercent.toFixed(0),
+                                                                        })}
+                                                                    </span>
+                                                                    {verdict.aboveTargetWords.length > 0 && (
+                                                                        <div style={{ marginTop: 6 }}>
+                                                                            <div
+                                                                                style={{
+                                                                                    display: 'flex',
+                                                                                    gap: 6,
+                                                                                    flexWrap: 'wrap',
+                                                                                    marginBottom: 6,
+                                                                                }}
+                                                                            >
+                                                                                {verdict.aboveTargetWords.map(
+                                                                                    ({ word, level }) => (
+                                                                                        <span
+                                                                                            key={word}
+                                                                                            title={level}
+                                                                                            style={{
+                                                                                                fontSize: '0.78rem',
+                                                                                                padding: '2px 7px',
+                                                                                                borderRadius: 4,
+                                                                                                background:
+                                                                                                    CEFR_LEVEL_COLORS[
+                                                                                                        level
+                                                                                                    ] + '18',
+                                                                                                border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
+                                                                                                color: 'var(--text)',
+                                                                                            }}
+                                                                                        >
+                                                                                            {word}
+                                                                                        </span>
+                                                                                    )
+                                                                                )}
+                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-ghost btn-sm"
+                                                                                onClick={() =>
+                                                                                    seedDeckFromAboveLevelWords(
+                                                                                        section,
+                                                                                        verdict.aboveTargetWords
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                <Layers size={14} />{' '}
+                                                                                {t('tests.section_seed_deck_button')}
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <div className="form-group" style={{ marginTop: 8 }}>
                                                             <label
                                                                 htmlFor={`section-audio-${section.id}`}

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { GRAMMAR_CATEGORIES, getGrammarItems, getGrammarItemById } from './grammarStandards';
+import {
+    GRAMMAR_CATEGORIES,
+    getGrammarItems,
+    getGrammarItemById,
+    grammarItemToFrameworkDescriptor,
+} from './grammarStandards';
 
 describe('grammarStandards', () => {
     it('filters items by CEFR level', () => {
@@ -30,5 +35,17 @@ describe('grammarStandards', () => {
     it('every item id is unique', () => {
         const ids = getGrammarItems().map((i) => i.id);
         expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('resolves ids retired by a catalog split to a surviving item', () => {
+        const legacyIds = [
+            'gr-past-simple-negative-question',
+            'gr-future-continuous-perfect',
+            'gr-conditional-zero-first',
+        ];
+        for (const id of legacyIds) {
+            expect(getGrammarItemById(id)).toBeDefined();
+            expect(grammarItemToFrameworkDescriptor(id)).toBeDefined();
+        }
     });
 });
