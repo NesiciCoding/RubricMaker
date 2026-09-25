@@ -804,6 +804,47 @@
                 "discrimination": "Trennschärfe",
                 "top_distractor": "Häufigster Distraktor",
                 "generated_by": "Erstellt mit Rubric Maker · {{date}}"
+            },
+            "exam": {
+                "section_title": "Prüfungsheft (CITO-Stil)",
+                "description": "Exportieren Sie ein druckfertiges Prüfungsheft, Antwortblatt, eine Anlage und ein Korrekturschema im Stil einer niederländischen CITO-Prüfung.",
+                "attachment_mode_label": "Anlage (Lesetexte)",
+                "attachment_inline": "Bei den Fragen eingebettet",
+                "attachment_separate": "Separates Dokument",
+                "hot_text_mirror_label": "Auswählbaren Text bei Hot-Text-Fragen spiegeln",
+                "hot_text_mirror_hint": "Nummeriert jedes auswählbare Textfragment, damit Schüler es auf Papier markieren können; andernfalls zitiert das Heft nur die betreffende Textstelle.",
+                "scan_markers_label": "Scanmarkierungen auf Antwortblättern einfügen",
+                "scan_markers_hint": "Fügt Eckregistrierungsmarken und einen QR-Code für einen zukünftigen Scan-und-Korrektur-Workflow hinzu. Standardmäßig aus, um dem ursprünglichen CITO-Look zu entsprechen.",
+                "students_label": "Schüler",
+                "select_all": "Alle auswählen",
+                "true": "Wahr",
+                "false": "Falsch",
+                "hot_text_instruction": "Schreiben Sie die Nummer(n) des/der richtigen Fragments/Fragmente auf Ihr Antwortblatt.",
+                "booklet_subtitle": "Fragenheft",
+                "attachment_subtitle": "Anlage",
+                "answer_sheet_title": "Antwortblatt",
+                "candidate_name": "Name des Kandidaten",
+                "grading_sheet_subtitle": "Korrekturschema",
+                "open_answer": "Offene Frage — gemäß Bewertungsrichtlinie korrigieren",
+                "if_n_correct": "Bei {{n}} richtig",
+                "max_score": "Höchstpunktzahl: {{points}}",
+                "export_pdf": "Prüfung als PDF exportieren",
+                "export_docx": "Prüfung als Word exportieren",
+                "deselect_all": "Alle abwählen",
+                "selected_count": "{{count}} von {{total}} ausgewählt",
+                "question_count_line": "Diese Prüfung besteht aus {{count}} Fragen.",
+                "points_count_line": "Bei dieser Prüfung können maximal {{points}} Punkte erzielt werden.",
+                "duration_line": "Bearbeitungszeit: {{minutes}} Minuten.",
+                "question_col": "Frage",
+                "open_col": "Offene Antwort",
+                "answer_col": "Antwort",
+                "scores_col": "Punkte",
+                "max_score_short": "max. {{points}}",
+                "categories_label": "Kategorien",
+                "recorded_answer_note": "Aufgezeichnete Antwort — keine schriftliche Antwort erforderlich.",
+                "grading_key_warning": "Enthält die richtigen Antworten — nur für die Lehrkraft. Nicht zusammen mit Materialien für Schüler weitergeben.",
+                "export_grading_key_pdf": "Korrekturschema (PDF)",
+                "export_grading_key_docx": "Korrekturschema (Word)"
             }
         },
         "taking": {
@@ -2155,7 +2196,8 @@
         "period_report_success": "{{count}} Bericht(e) erstellt.",
         "selected": "ausgewählt",
         "report_card_success": "{{count}} Zeugnis(se) erstellt.",
-        "rubric_students_section_title": "Schüler"
+        "rubric_students_section_title": "Schüler",
+        "select_test": "Test auswählen"
     },
     "reportCard": {
         "title": "Zeugnis",
@@ -3305,7 +3347,9 @@
         "gr_scan_title": "Handschriftliche Arbeit scannen",
         "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert.",
         "rb_live_monitor_item_sort": "Spalten sortieren und gruppieren — ordnen Sie die Fragespalten nach Abschnitt, GER-Niveau, Fragetyp, verknüpfter Grammatik/Standard oder kumulativer Klassenpunktzahl, auch mehrere Regeln kombiniert.",
-        "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten."
+        "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten.",
+        "rb_tests_exam_export_label": "Prüfungsheft exportieren:",
+        "rb_tests_exam_export_body": "Exportieren Sie über die Testliste oder die Exportseite eine druckfertige Prüfung im Stil einer niederländischen CITO-Prüfung: ein Fragenheft, ein separates Antwortblatt, eine optionale Anlage für Lesetexte und ein Korrekturschema mit den richtigen Antworten — als PDF oder Word, mit der von Ihnen gewählten Schriftart."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

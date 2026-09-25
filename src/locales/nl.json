@@ -804,6 +804,47 @@
                 "discrimination": "Discriminatie",
                 "top_distractor": "Top-afleider",
                 "generated_by": "Gegenereerd door Rubric Maker · {{date}}"
+            },
+            "exam": {
+                "section_title": "Examenboekje (CITO-stijl)",
+                "description": "Exporteer een printklaar examenboekje, antwoordblad, bijlage en correctievoorschrift, in de stijl van een Nederlands CITO-examen.",
+                "attachment_mode_label": "Bijlage (leesteksten)",
+                "attachment_inline": "Inline bij de vragen",
+                "attachment_separate": "Apart document",
+                "hot_text_mirror_label": "Selecteerbare tekst spiegelen bij hot-text-vragen",
+                "hot_text_mirror_hint": "Nummert elk selecteerbaar tekstfragment zodat leerlingen het op papier kunnen aanstrepen; anders citeert het boekje alleen het relevante tekstdeel.",
+                "scan_markers_label": "Scanmarkeringen toevoegen aan antwoordbladen",
+                "scan_markers_hint": "Voegt hoekregistratiemarkeringen en een QR-code toe voor een toekomstige scan-en-nakijk-workflow. Standaard uit, voor de originele CITO-look.",
+                "students_label": "Leerlingen",
+                "select_all": "Alles selecteren",
+                "true": "Waar",
+                "false": "Onwaar",
+                "hot_text_instruction": "Schrijf het nummer/de nummers van het juiste fragment/de juiste fragmenten op je antwoordblad.",
+                "booklet_subtitle": "Vragenboekje",
+                "attachment_subtitle": "Bijlage",
+                "answer_sheet_title": "Antwoordblad",
+                "candidate_name": "Naam kandidaat",
+                "grading_sheet_subtitle": "Correctievoorschrift",
+                "open_answer": "Open vraag — beoordeel volgens de beoordelingsrichtlijn",
+                "if_n_correct": "Indien {{n}} goed",
+                "max_score": "Maximumscore: {{points}}",
+                "export_pdf": "Examen exporteren als PDF",
+                "export_docx": "Examen exporteren als Word",
+                "deselect_all": "Alles deselecteren",
+                "selected_count": "{{count}} van {{total}} geselecteerd",
+                "question_count_line": "Dit examen bestaat uit {{count}} vragen.",
+                "points_count_line": "Voor dit examen zijn maximaal {{points}} punten te behalen.",
+                "duration_line": "Tijdsduur: {{minutes}} minuten.",
+                "question_col": "Vraag",
+                "open_col": "Open vraag",
+                "answer_col": "Antwoord",
+                "scores_col": "Scores",
+                "max_score_short": "max. {{points}}",
+                "categories_label": "Categorieën",
+                "recorded_answer_note": "Opgenomen antwoord — geen geschreven antwoord nodig.",
+                "grading_key_warning": "Bevat de juiste antwoorden — alleen voor de docent. Deel dit niet samen met materiaal voor leerlingen.",
+                "export_grading_key_pdf": "Correctievoorschrift (PDF)",
+                "export_grading_key_docx": "Correctievoorschrift (Word)"
             }
         },
         "taking": {
@@ -2155,7 +2196,8 @@
         "period_report_success": "{{count}} rapport(en) gegenereerd.",
         "selected": "geselecteerd",
         "report_card_success": "{{count}} rapport(en) gegenereerd.",
-        "rubric_students_section_title": "Leerlingen"
+        "rubric_students_section_title": "Leerlingen",
+        "select_test": "Selecteer toets"
     },
     "reportCard": {
         "title": "Rapport",
@@ -3305,7 +3347,9 @@
         "gr_scan_title": "Handgeschreven werk scannen",
         "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard.",
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
-        "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen."
+        "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen.",
+        "rb_tests_exam_export_label": "Examenboekje exporteren:",
+        "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

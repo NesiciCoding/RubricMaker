@@ -891,6 +891,9 @@ function RubricsTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_distribute_body')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>{t('docs.rb_tests_exam_export_label')}</strong> {t('docs.rb_tests_exam_export_body')}
+                </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_tests_student_view_title')}
                 </h3>
