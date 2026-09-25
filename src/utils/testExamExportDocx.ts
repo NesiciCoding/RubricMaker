@@ -48,37 +48,36 @@ const MM_TO_TWIPS = 56.6929;
 const HTML_BLOCK_TAGS = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'DIV']);
 
 /**
- * This element's own text, walking into inline descendants but stopping at any nested block
- * element — that nested block gets visited (and emits its own paragraph) separately by the
- * document-order traversal below, so including it here would print its text twice.
+ * Single document-order pass collecting one text segment per "run" of inline content: a block
+ * boundary (entering or leaving a block element) flushes whatever inline text has accumulated so
+ * far as its own segment, so text that surrounds a nested block — e.g.
+ * `<blockquote>Before<p>Inside</p>After</blockquote>` — comes out in source order ("Before",
+ * "Inside", "After") instead of the nested block's text being reordered around it. A plain `<div>`
+ * (which `querySelectorAll('p, li, ...')` would miss) is included via the same block-boundary
+ * flush, and a passage with no block tags at all still produces one segment from the trailing flush.
  */
-function ownBlockText(el: Element): string {
-    let text = '';
-    for (const child of Array.from(el.childNodes)) {
-        if (child.nodeType === Node.TEXT_NODE) {
-            text += child.textContent ?? '';
-        } else if (child.nodeType === Node.ELEMENT_NODE && !HTML_BLOCK_TAGS.has((child as Element).tagName)) {
-            text += ownBlockText(child as Element);
-        }
-    }
-    return text;
-}
-
-/**
- * Document-order traversal collecting one text segment per block element (including a plain
- * `<div>`, which querySelectorAll('p, li, ...') would otherwise miss entirely) without duplicating
- * text from nested blocks (e.g. `<blockquote><p>...</p></blockquote>` previously printed twice).
- */
-function collectParagraphTexts(root: Element): string[] {
+export function collectParagraphTexts(root: Element): string[] {
     const texts: string[] = [];
-    const walk = (el: Element) => {
-        if (HTML_BLOCK_TAGS.has(el.tagName)) {
-            const text = ownBlockText(el).replace(/\s+/g, ' ').trim();
-            if (text) texts.push(text);
-        }
-        Array.from(el.children).forEach(walk);
+    let buffer = '';
+    const flush = () => {
+        const text = buffer.replace(/\s+/g, ' ').trim();
+        if (text) texts.push(text);
+        buffer = '';
     };
-    Array.from(root.children).forEach(walk);
+    const walk = (node: ChildNode) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            buffer += node.textContent ?? '';
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const el = node as Element;
+        const isBlock = HTML_BLOCK_TAGS.has(el.tagName);
+        if (isBlock) flush();
+        el.childNodes.forEach(walk);
+        if (isBlock) flush();
+    };
+    root.childNodes.forEach(walk);
+    flush();
     return texts;
 }
 
@@ -90,9 +89,7 @@ function collectParagraphTexts(root: Element): string[] {
 function htmlToParagraphs(html: string, spacingAfter = 120): Paragraph[] {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const texts = collectParagraphTexts(doc.body);
-    const fallback = texts.length === 0 ? (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
-    const finalTexts = texts.length > 0 ? texts : fallback ? [fallback] : [];
-    return finalTexts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
+    return texts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
 }
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
