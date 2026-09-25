@@ -45,6 +45,43 @@ import {
 /** 1mm in docx twips (1/1440 inch, 1mm = 1/25.4 inch). */
 const MM_TO_TWIPS = 56.6929;
 
+const HTML_BLOCK_TAGS = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'DIV']);
+
+/**
+ * This element's own text, walking into inline descendants but stopping at any nested block
+ * element — that nested block gets visited (and emits its own paragraph) separately by the
+ * document-order traversal below, so including it here would print its text twice.
+ */
+function ownBlockText(el: Element): string {
+    let text = '';
+    for (const child of Array.from(el.childNodes)) {
+        if (child.nodeType === Node.TEXT_NODE) {
+            text += child.textContent ?? '';
+        } else if (child.nodeType === Node.ELEMENT_NODE && !HTML_BLOCK_TAGS.has((child as Element).tagName)) {
+            text += ownBlockText(child as Element);
+        }
+    }
+    return text;
+}
+
+/**
+ * Document-order traversal collecting one text segment per block element (including a plain
+ * `<div>`, which querySelectorAll('p, li, ...') would otherwise miss entirely) without duplicating
+ * text from nested blocks (e.g. `<blockquote><p>...</p></blockquote>` previously printed twice).
+ */
+function collectParagraphTexts(root: Element): string[] {
+    const texts: string[] = [];
+    const walk = (el: Element) => {
+        if (HTML_BLOCK_TAGS.has(el.tagName)) {
+            const text = ownBlockText(el).replace(/\s+/g, ' ').trim();
+            if (text) texts.push(text);
+        }
+        Array.from(el.children).forEach(walk);
+    };
+    Array.from(root.children).forEach(walk);
+    return texts;
+}
+
 /**
  * Splits a rich-text passage into one Paragraph per block element, instead of collapsing every
  * paragraph/list item into one run of text — stripHtmlTags() alone flattens all whitespace to a
@@ -52,11 +89,10 @@ const MM_TO_TWIPS = 56.6929;
  */
 function htmlToParagraphs(html: string, spacingAfter = 120): Paragraph[] {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const blocks = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, blockquote'));
-    const texts = (blocks.length > 0 ? blocks.map((b) => b.textContent ?? '') : [doc.body.textContent ?? ''])
-        .map((t) => t.replace(/\s+/g, ' ').trim())
-        .filter(Boolean);
-    return texts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
+    const texts = collectParagraphTexts(doc.body);
+    const fallback = texts.length === 0 ? (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
+    const finalTexts = texts.length > 0 ? texts : fallback ? [fallback] : [];
+    return finalTexts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
 }
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
@@ -197,9 +233,14 @@ const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
  * renders `imageUrl` directly (browsers decode/display it natively), but docx needs the raw bytes,
  * a known MIME type, and explicit pixel dimensions up front.
  */
+/** A hung image request would otherwise block buildBookletChildren (and the whole zip) indefinitely. */
+const IMAGE_FETCH_TIMEOUT_MS = 8000;
+
 async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
-        const blob = await fetch(imageUrl).then((r) => r.blob());
+        const blob = await fetch(imageUrl, { signal: controller.signal }).then((r) => r.blob());
         const type = DOCX_IMAGE_TYPE[blob.type];
         if (!type) return null;
         const bitmap = await createImageBitmap(blob);
@@ -210,6 +251,8 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
         return new ImageRun({ type, data, transformation: { width, height } });
     } catch {
         return null;
+    } finally {
+        clearTimeout(timer);
     }
 }
 
@@ -613,6 +656,14 @@ interface ExportExamDocxOptions extends TestExamExportOptions {
  * silently drops every download after the first when a page triggers more than one without an
  * intervening user gesture.
  */
+/**
+ * Exports the booklet, (optionally) attachment, and one answer-sheet doc (one page per student) —
+ * the documents meant to reach students — bundled into a single .zip when there's more than one
+ * file (see the module doc comment on why sequential downloads get silently dropped otherwise).
+ * Deliberately excludes the grading sheet: bundling the answer key alongside student-facing
+ * materials risks disclosing it if the whole archive is shared or handed out as a unit. Export the
+ * grading key separately via exportExamGradingKeyDocx().
+ */
 export async function exportExamDocx(test: Test, options: ExportExamDocxOptions): Promise<void> {
     const base = sanitizeFilename(test.name);
     const files: { name: string; blob: Blob }[] = [
@@ -636,10 +687,6 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
               ])
             : answerSheetChildren(test);
     files.push({ name: `${base}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
-    files.push({
-        name: `${base}-grading-sheet.docx`,
-        blob: await buildDocxBlob(buildGradingSheetChildren(test), options),
-    });
 
     if (files.length === 1) {
         saveAs(files[0].blob, files[0].name);
@@ -650,4 +697,10 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     for (const file of files) zip.file(file.name, file.blob);
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     saveAs(zipBlob, `${base}-exam.zip`);
+}
+
+/** Exports only the grading key — kept as an explicit, separate action from exportExamDocx() so a teacher never bundles it with student-facing materials by default. */
+export async function exportExamGradingKeyDocx(test: Test, options: TestExamExportOptions): Promise<void> {
+    const blob = await buildDocxBlob(buildGradingSheetChildren(test), options);
+    saveAs(blob, `${sanitizeFilename(test.name)}-grading-sheet.docx`);
 }

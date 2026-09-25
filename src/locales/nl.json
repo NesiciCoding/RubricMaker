@@ -841,7 +841,10 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categorieën",
-                "recorded_answer_note": "Opgenomen antwoord — geen geschreven antwoord nodig."
+                "recorded_answer_note": "Opgenomen antwoord — geen geschreven antwoord nodig.",
+                "grading_key_warning": "Bevat de juiste antwoorden — alleen voor de docent. Deel dit niet samen met materiaal voor leerlingen.",
+                "export_grading_key_pdf": "Correctievoorschrift (PDF)",
+                "export_grading_key_docx": "Correctievoorschrift (Word)"
             }
         },
         "taking": {

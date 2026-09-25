@@ -841,7 +841,10 @@
                 "scores_col": "Points",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Catégories",
-                "recorded_answer_note": "Réponse enregistrée — aucune réponse écrite nécessaire."
+                "recorded_answer_note": "Réponse enregistrée — aucune réponse écrite nécessaire.",
+                "grading_key_warning": "Contient les bonnes réponses — réservé à l'enseignant. Ne partagez pas ce document avec les documents destinés aux élèves.",
+                "export_grading_key_pdf": "Barème de correction (PDF)",
+                "export_grading_key_docx": "Barème de correction (Word)"
             }
         },
         "taking": {

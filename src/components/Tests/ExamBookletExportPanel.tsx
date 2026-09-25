@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, Loader, CheckSquare, Square } from 'lucide-react';
+import { Download, Loader, CheckSquare, Square, ShieldAlert } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 import type { Student, Test } from '../../types';
@@ -62,6 +62,36 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
             logAuditEvent('export', `export_test_exam_${format}`, 'test', test.id, {
                 count: selectedStudents.length,
             });
+        } catch {
+            showToast(t('toast.export_error'), 'error');
+        } finally {
+            setExporting(false);
+        }
+    }
+
+    /**
+     * Kept as its own action, deliberately never bundled into handleExport()'s output: the grading
+     * key contains every correct answer, so mixing it into the same archive/print run as
+     * student-facing materials risks disclosing it if that output is shared or handed out as a unit.
+     */
+    async function handleExportGradingKey(format: 'pdf' | 'docx') {
+        setExporting(true);
+        try {
+            const options: TestExamExportOptions = {
+                fontFamily,
+                styleTemplate,
+                attachmentMode: hasAttachment ? attachmentMode : 'inline',
+                hotTextMirror,
+                scanMarkers,
+            };
+            if (format === 'pdf') {
+                const { exportExamGradingKeyPdf } = await import('../../utils/testExamExportHtml');
+                await exportExamGradingKeyPdf(test, options);
+            } else {
+                const { exportExamGradingKeyDocx } = await import('../../utils/testExamExportDocx');
+                await exportExamGradingKeyDocx(test, options);
+            }
+            logAuditEvent('export', `export_test_exam_grading_key_${format}`, 'test', test.id, {});
         } catch {
             showToast(t('toast.export_error'), 'error');
         } finally {
@@ -165,6 +195,40 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                     {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
                     {t('tests.export.exam.export_docx')}
                 </button>
+            </div>
+
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px dashed var(--border)' }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginBottom: 8,
+                        color: '#b45309',
+                        fontSize: '0.85rem',
+                    }}
+                >
+                    <ShieldAlert size={15} />
+                    {t('tests.export.exam.grading_key_warning')}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={exporting}
+                        onClick={() => handleExportGradingKey('pdf')}
+                    >
+                        {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                        {t('tests.export.exam.export_grading_key_pdf')}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={exporting}
+                        onClick={() => handleExportGradingKey('docx')}
+                    >
+                        {exporting ? <Loader size={13} className="spin" /> : <Download size={13} />}
+                        {t('tests.export.exam.export_grading_key_docx')}
+                    </button>
+                </div>
             </div>
         </div>
     );

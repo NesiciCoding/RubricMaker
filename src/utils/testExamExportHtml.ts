@@ -312,7 +312,12 @@ interface ExportExamPdfOptions extends TestExamExportOptions {
     students?: Student[];
 }
 
-/** Exports the booklet, (optionally) attachment, answer sheet(s), and grading sheet as separate print-to-PDF flows. */
+/**
+ * Exports the booklet, (optionally) attachment, and answer sheet(s) — the documents meant to reach
+ * students — as separate print-to-PDF flows. Deliberately excludes the grading sheet: bundling the
+ * answer key alongside student-facing materials risks disclosing it if the whole set is shared or
+ * handed out as a unit. Export the grading key separately via exportExamGradingKeyPdf().
+ */
 export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
     const orientation = 'portrait';
     await printHtml(buildExamBookletHtml(test, options), orientation, options.fontFamily, options.styleTemplate);
@@ -321,7 +326,11 @@ export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): 
     }
     const answerSheetHtml = await buildAnswerSheetHtml(test, options, options.students);
     await printHtml(answerSheetHtml, orientation, options.fontFamily, options.styleTemplate);
-    await printHtml(buildGradingSheetHtml(test), orientation, options.fontFamily, options.styleTemplate);
+}
+
+/** Exports only the grading key/answer sheet — kept as an explicit, separate action from exportExamPdf() so a teacher never bundles it with student-facing materials by default. */
+export async function exportExamGradingKeyPdf(test: Test, options: TestExamExportOptions): Promise<void> {
+    await printHtml(buildGradingSheetHtml(test), 'portrait', options.fontFamily, options.styleTemplate);
 }
 
 export function examExportFilename(test: Test, doc: 'booklet' | 'attachment' | 'answer-sheet' | 'grading-sheet') {

@@ -841,7 +841,10 @@
                 "scores_col": "Punkte",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Kategorien",
-                "recorded_answer_note": "Aufgezeichnete Antwort — keine schriftliche Antwort erforderlich."
+                "recorded_answer_note": "Aufgezeichnete Antwort — keine schriftliche Antwort erforderlich.",
+                "grading_key_warning": "Enthält die richtigen Antworten — nur für die Lehrkraft. Nicht zusammen mit Materialien für Schüler weitergeben.",
+                "export_grading_key_pdf": "Korrekturschema (PDF)",
+                "export_grading_key_docx": "Korrekturschema (Word)"
             }
         },
         "taking": {

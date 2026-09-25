@@ -382,7 +382,14 @@ export interface AnswerSheetQrPayload {
     pageIndex: number;
 }
 
-/** JSON payload encoded into an answer sheet's per-page QR marker, for a future scan-ingestion step to identify the sheet. */
+/**
+ * JSON payload encoded into an answer sheet's per-page QR marker, for a future scan-ingestion step
+ * to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
+ * who can read the QR (e.g. a photo of a handed-out sheet) can reconstruct or forge one. A future
+ * ingestion step must not treat a scanned `studentId` as proof of who submitted the sheet; it needs
+ * its own authentication (e.g. requiring the submitting teacher's session, or cross-checking against
+ * an expected roster) before accepting scanned answers as that student's.
+ */
 export function answerSheetQrPayload(testId: string, pageIndex: number, studentId?: string): string {
     const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer', pageIndex };
     return JSON.stringify(payload);

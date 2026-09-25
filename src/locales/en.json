@@ -841,7 +841,10 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categories",
-                "recorded_answer_note": "Recorded answer — no written response needed."
+                "recorded_answer_note": "Recorded answer — no written response needed.",
+                "grading_key_warning": "Contains correct answers — for teacher use only. Don't share this alongside student-facing materials.",
+                "export_grading_key_pdf": "Grading key (PDF)",
+                "export_grading_key_docx": "Grading key (Word)"
             }
         },
         "taking": {

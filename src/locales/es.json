@@ -841,7 +841,10 @@
                 "scores_col": "Puntos",
                 "max_score_short": "máx. {{points}}",
                 "categories_label": "Categorías",
-                "recorded_answer_note": "Respuesta grabada — no se necesita respuesta escrita."
+                "recorded_answer_note": "Respuesta grabada — no se necesita respuesta escrita.",
+                "grading_key_warning": "Contiene las respuestas correctas — solo para el profesor. No lo compartas junto con el material para los alumnos.",
+                "export_grading_key_pdf": "Hoja de calificación (PDF)",
+                "export_grading_key_docx": "Hoja de calificación (Word)"
             }
         },
         "taking": {
