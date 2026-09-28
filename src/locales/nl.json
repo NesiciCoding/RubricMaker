@@ -1693,7 +1693,8 @@
     "pwa": {
         "update_available_title": "Update beschikbaar",
         "update_available_refresh": "Vernieuwen",
-        "update_available_report_issue": "Een probleem melden"
+        "update_available_report_issue": "Een probleem melden",
+        "update_available_dismiss": "Sluiten"
     },
     "cefr": {
         "placement_recover": "Plaatsingsresultaten laden",

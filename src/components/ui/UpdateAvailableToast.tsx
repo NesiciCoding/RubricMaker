@@ -1,6 +1,6 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
-import { subscribe, getUpdateSW } from '../../pwaUpdateStore';
+import { subscribe, getUpdateSW, getUpdateVersion } from '../../pwaUpdateStore';
 import { PWA_UPDATE_NOTES } from '../../pwaChangelog';
 
 const ISSUES_URL = 'https://github.com/NesiciCoding/RubricMaker/issues';
@@ -8,12 +8,14 @@ const ISSUES_URL = 'https://github.com/NesiciCoding/RubricMaker/issues';
 export function UpdateAvailableToast() {
     const { t } = useTranslation();
     const updateSW = useSyncExternalStore(subscribe, getUpdateSW);
+    const version = useSyncExternalStore(subscribe, getUpdateVersion);
+    const [dismissedVersion, setDismissedVersion] = useState(0);
 
-    if (!updateSW) return null;
+    if (!updateSW || version === dismissedVersion) return null;
 
     return (
         <div
-            role="alert"
+            role="status"
             style={{
                 position: 'fixed',
                 bottom: '1.5rem',
@@ -30,7 +32,24 @@ export function UpdateAvailableToast() {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             }}
         >
-            <strong>{t('pwa.update_available_title')}</strong>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <strong>{t('pwa.update_available_title')}</strong>
+                <button
+                    onClick={() => setDismissedVersion(version)}
+                    aria-label={t('pwa.update_available_dismiss')}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text)',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        lineHeight: 1,
+                        padding: 0,
+                    }}
+                >
+                    ✕
+                </button>
+            </div>
             {PWA_UPDATE_NOTES.length > 0 && (
                 <ul style={{ margin: '0.5rem 0', paddingLeft: '1.1rem' }}>
                     {PWA_UPDATE_NOTES.map((note) => (

@@ -28,6 +28,21 @@ describe('setupPwaUpdatePrompt', () => {
         expect(getUpdateSW()).toBe(updateSW);
     });
 
+    it('bumps the update version on each refresh notice, so a dismissed toast re-shows for a newer update', async () => {
+        registerSW.mockReturnValue(vi.fn());
+
+        const { setupPwaUpdatePrompt } = await import('./pwa');
+        const { getUpdateVersion } = await import('./pwaUpdateStore');
+        setupPwaUpdatePrompt();
+
+        const { onNeedRefresh } = registerSW.mock.calls[0][0];
+        const before = getUpdateVersion();
+        onNeedRefresh();
+        onNeedRefresh();
+
+        expect(getUpdateVersion()).toBe(before + 2);
+    });
+
     it('polls registration.update() periodically so a stale tab still notices new deploys', async () => {
         registerSW.mockReturnValue(vi.fn());
         const registration = { update: vi.fn() };
