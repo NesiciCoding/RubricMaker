@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ExamScanCaptureModal from '../ExamScanCaptureModal';
 import type { Student, StudentTest, Test } from '../../../types';
@@ -192,5 +192,104 @@ describe('ExamScanCaptureModal', () => {
 
         expect(onSave).toHaveBeenCalledTimes(1);
         expect((onSave.mock.calls[0][0] as StudentTest).id).toBe('st1');
+    });
+
+    it('asks for confirmation before overwriting an already-graded StudentTest, and clears its grading metadata on confirm', async () => {
+        const graded: StudentTest = {
+            id: 'st1',
+            testId: 't1',
+            studentId: 's1',
+            answers: [{ questionId: 'q1', response: 'o2', pointsEarned: 0, feedback: 'Wrong' }],
+            status: 'graded',
+            startedAt: '2026-01-01T00:00:00.000Z',
+            gradedAt: '2026-01-02T00:00:00.000Z',
+            adjustmentPoints: 1,
+            adjustment: { points: 1, appliedAt: '2026-01-02T00:00:00.000Z' },
+        };
+        const onSave = vi.fn();
+        render(
+            <ExamScanCaptureModal
+                test={test}
+                students={[student]}
+                studentTests={[graded]}
+                onSave={onSave}
+                onClose={vi.fn()}
+            />
+        );
+
+        pickStudentAndOpenCapture();
+        pickFile();
+        const img = await screen.findByAltText('scan.preview_alt');
+        clickAllCorners(img);
+        await screen.findByText('tests.scan.source_bubble');
+        fireEvent.click(screen.getByText('tests.scan.save_button'));
+
+        const dialogTitle = await screen.findByText('tests.scan.overwrite_graded_title');
+        expect(onSave).not.toHaveBeenCalled();
+
+        fireEvent.click(within(dialogTitle.closest('[role="dialog"]')!).getByText('common.confirm'));
+
+        await screen.findByText('tests.scan.save_success');
+        expect(onSave).toHaveBeenCalledTimes(1);
+        const saved = onSave.mock.calls[0][0] as StudentTest;
+        expect(saved.id).toBe('st1');
+        expect(saved.status).toBe('submitted');
+        expect(saved.gradedAt).toBeUndefined();
+        expect(saved.adjustmentPoints).toBeUndefined();
+        expect(saved.adjustment).toBeUndefined();
+    });
+
+    it('cancelling the overwrite confirmation does not save', async () => {
+        const graded: StudentTest = {
+            id: 'st1',
+            testId: 't1',
+            studentId: 's1',
+            answers: [],
+            status: 'graded',
+            startedAt: '2026-01-01T00:00:00.000Z',
+        };
+        const onSave = vi.fn();
+        render(
+            <ExamScanCaptureModal
+                test={test}
+                students={[student]}
+                studentTests={[graded]}
+                onSave={onSave}
+                onClose={vi.fn()}
+            />
+        );
+
+        pickStudentAndOpenCapture();
+        pickFile();
+        const img = await screen.findByAltText('scan.preview_alt');
+        clickAllCorners(img);
+        await screen.findByText('tests.scan.source_bubble');
+        fireEvent.click(screen.getByText('tests.scan.save_button'));
+
+        const dialogTitle = await screen.findByText('tests.scan.overwrite_graded_title');
+        fireEvent.click(within(dialogTitle.closest('[role="dialog"]')!).getByText('common.cancel'));
+
+        expect(onSave).not.toHaveBeenCalled();
+    });
+
+    it('lets the teacher retry after an import error without closing the modal', async () => {
+        importScanFiles.mockResolvedValueOnce({ images: [], skipped: [{ name: 'x.txt', reason: 'unsupported-type' }] });
+        render(
+            <ExamScanCaptureModal
+                test={test}
+                students={[student]}
+                studentTests={[]}
+                onSave={vi.fn()}
+                onClose={vi.fn()}
+            />
+        );
+
+        pickStudentAndOpenCapture();
+        pickFile();
+        await screen.findByText('scan.no_image');
+
+        fireEvent.click(screen.getByText('scan.rescan'));
+
+        expect(screen.getByText('scan.use_camera')).toBeInTheDocument();
     });
 });

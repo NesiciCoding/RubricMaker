@@ -1188,7 +1188,9 @@
             "no_answer_option": "No answer",
             "save_button": "Save answers",
             "save_success": "Answers saved.",
-            "retry_corners": "Redo corners"
+            "retry_corners": "Redo corners",
+            "overwrite_graded_title": "Overwrite graded result?",
+            "overwrite_graded_message": "This student's test has already been graded. Saving this scan will replace all their answers and clear the existing grade, points, and feedback. Continue?"
         }
     },
     "studentsPage": {

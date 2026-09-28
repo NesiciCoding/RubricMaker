@@ -1188,7 +1188,9 @@
             "no_answer_option": "Geen antwoord",
             "save_button": "Antwoorden opslaan",
             "save_success": "Antwoorden opgeslagen.",
-            "retry_corners": "Hoeken opnieuw"
+            "retry_corners": "Hoeken opnieuw",
+            "overwrite_graded_title": "Beoordeeld resultaat overschrijven?",
+            "overwrite_graded_message": "De toets van deze leerling is al beoordeeld. Als je deze scan opslaat, worden alle antwoorden vervangen en wordt het bestaande cijfer, de punten en de feedback gewist. Doorgaan?"
         }
     },
     "studentsPage": {

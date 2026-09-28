@@ -23,12 +23,13 @@ describe('imageSourceToRgbaImage', () => {
         vi.unstubAllGlobals();
     });
 
-    it('draws a decoded blob onto a canvas sized to the bitmap and reads its pixels', async () => {
+    it('draws a decoded blob onto a canvas sized to the bitmap, reads its pixels, and closes the bitmap', async () => {
         const fakeImageData = { data: new Uint8ClampedArray(16), width: 2, height: 2 };
         const ctx = stubCanvas(fakeImageData);
+        const close = vi.fn();
         vi.stubGlobal(
             'createImageBitmap',
-            vi.fn(async () => ({ width: 2, height: 2 }))
+            vi.fn(async () => ({ width: 2, height: 2, close }))
         );
         vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:mock'), revokeObjectURL: vi.fn() });
 
@@ -36,6 +37,7 @@ describe('imageSourceToRgbaImage', () => {
 
         expect(ctx.drawImage).toHaveBeenCalled();
         expect(ctx.getImageData).toHaveBeenCalledWith(0, 0, 2, 2);
+        expect(close).toHaveBeenCalled();
         expect(result).toBe(fakeImageData);
     });
 });

@@ -1188,7 +1188,9 @@
             "no_answer_option": "Aucune réponse",
             "save_button": "Enregistrer les réponses",
             "save_success": "Réponses enregistrées.",
-            "retry_corners": "Refaire les coins"
+            "retry_corners": "Refaire les coins",
+            "overwrite_graded_title": "Écraser le résultat noté ?",
+            "overwrite_graded_message": "Le test de cet élève a déjà été noté. Enregistrer ce scan remplacera toutes ses réponses et effacera la note, les points et les commentaires existants. Continuer ?"
         }
     },
     "studentsPage": {
