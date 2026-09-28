@@ -1169,7 +1169,25 @@
         "audio_check_checking": "Comprobando el enlace de audio…",
         "audio_check_ok": "El enlace de audio se reproduce correctamente.",
         "audio_check_error": "No se pudo reproducir este enlace de audio. Usa un enlace directo a un archivo de audio (.mp3/.m4a/.ogg), no una página para compartir (Google Drive, Dropbox, OneDrive).",
-        "audio_check_mixed": "Los enlaces no seguros (http://) se bloquean en una página segura: usa un enlace https://."
+        "audio_check_mixed": "Los enlaces no seguros (http://) se bloquean en una página segura: usa un enlace https://.",
+        "scan": {
+            "action_scan": "Escanear hoja de respuestas",
+            "title": "Escanear hoja de respuestas",
+            "pick_student_label": "¿De qué estudiante es esto?",
+            "step_capture_hint": "Capture o importe una foto de la hoja de respuestas completada.",
+            "step_corners_hint": "Haga clic en las cuatro esquinas de la página impresa, en cualquier orden.",
+            "processing": "Leyendo respuestas…",
+            "review_title": "Revisar respuestas detectadas",
+            "source_bubble": "Respuesta marcada",
+            "source_ocr": "Texto reconocido",
+            "source_unscanned": "No escaneado automáticamente",
+            "unscanned_note": "Este tipo de pregunta aún no se escanea automáticamente: cálifíquela desde la página de resultados completa.",
+            "unsupported_sheet": "Esta hoja de respuestas es demasiado larga para escanearse automáticamente (no cabe en una sola página). Introduzca las respuestas de este estudiante desde la página de resultados.",
+            "no_answer_option": "Sin respuesta",
+            "save_button": "Guardar respuestas",
+            "save_success": "Respuestas guardadas.",
+            "retry_corners": "Rehacer esquinas"
+        }
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",
@@ -3352,7 +3370,9 @@
         "rb_live_monitor_item_sort": "Ordenar y agrupar columnas — reordena las columnas de preguntas por sección, nivel MCER, tipo de pregunta, gramática/estándar vinculado o puntuación acumulada de la clase, combinando varias reglas.",
         "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel.",
         "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
-        "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas."
+        "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas.",
+        "gr_exam_scan_title": "Escanear la hoja de respuestas de un examen en papel",
+        "gr_exam_scan_body": "En la página de Exámenes, elija “Escanear hoja de respuestas” en un examen, seleccione al estudiante y fotografíe o importe su hoja de respuestas completada al estilo CITO. Toque las cuatro esquinas de la página impresa para enderezarla; las burbujas de opción múltiple/verdadero-falso se leen mediante detección de marcas y el texto de respuesta corta/numérico/abierto mediante OCR en el dispositivo — revise y corrija cada respuesta antes de guardar. Las preguntas de emparejar, ordenar, rellenar huecos, categorizar y texto interactivo aún no se detectan automáticamente; cálifíquelas desde la página de resultados."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

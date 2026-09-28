@@ -15,6 +15,7 @@ import {
     Sparkles,
     LayoutGrid,
     List,
+    ScanLine,
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +28,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import TestAssignmentModal from '../components/Tests/TestAssignmentModal';
 import TestSubmissionImportModal from '../components/Tests/TestSubmissionImportModal';
+import ExamScanCaptureModal from '../components/Tests/ExamScanCaptureModal';
 import ClassAverageAdjuster from '../components/Tests/ClassAverageAdjuster';
 import ItemAnalysisPanel from '../components/Tests/ItemAnalysisPanel';
 import PlacementAnalysisPanel from '../components/Tests/PlacementAnalysisPanel';
@@ -92,6 +94,7 @@ export default function TestListPage() {
     const { showToast } = useToast();
     const [assigningTestId, setAssigningTestId] = useState<string | null>(null);
     const [importingTestId, setImportingTestId] = useState<string | null>(null);
+    const [scanningTestId, setScanningTestId] = useState<string | null>(null);
     const [resultsTestId, setResultsTestId] = useState<string | null>(null);
     const [examExportTestId, setExamExportTestId] = useState<string | null>(null);
     const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
@@ -637,6 +640,15 @@ export default function TestListPage() {
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('tests.scan.action_scan')}
+                                                                    aria-label={t('tests.scan.action_scan')}
+                                                                    onClick={() => setScanningTestId(test.id)}
+                                                                >
+                                                                    <ScanLine size={14} />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tests.monitor.action_monitor')}
                                                                     aria-label={t('tests.monitor.action_monitor')}
                                                                     onClick={() =>
@@ -949,6 +961,22 @@ export default function TestListPage() {
                                 studentTests={studentTests.filter((st) => st.testId === test.id)}
                                 onSave={saveStudentTest}
                                 onClose={() => setImportingTestId(null)}
+                            />
+                        );
+                    })()}
+
+                {scanningTestId &&
+                    (() => {
+                        const test = tests.find((tst) => tst.id === scanningTestId);
+                        // v8 ignore next line — scan buttons only render for existing tests
+                        if (!test) return null;
+                        return (
+                            <ExamScanCaptureModal
+                                test={test}
+                                students={students}
+                                studentTests={studentTests.filter((st) => st.testId === test.id)}
+                                onSave={saveStudentTest}
+                                onClose={() => setScanningTestId(null)}
                             />
                         );
                     })()}

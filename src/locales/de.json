@@ -1169,7 +1169,25 @@
         "audio_check_checking": "Audiolink wird geprüft…",
         "audio_check_ok": "Audiolink wird korrekt abgespielt.",
         "audio_check_error": "Dieser Audiolink konnte nicht abgespielt werden. Verwende einen direkten Link zu einer Audiodatei (.mp3/.m4a/.ogg), keine Freigabeseite (Google Drive, Dropbox, OneDrive).",
-        "audio_check_mixed": "Unsichere (http://) Links werden auf einer sicheren Seite blockiert — verwende einen https://-Link."
+        "audio_check_mixed": "Unsichere (http://) Links werden auf einer sicheren Seite blockiert — verwende einen https://-Link.",
+        "scan": {
+            "action_scan": "Antwortbogen scannen",
+            "title": "Antwortbogen scannen",
+            "pick_student_label": "Von welcher Schülerin/welchem Schüler ist das?",
+            "step_capture_hint": "Fotografieren oder importieren Sie den ausgefüllten Antwortbogen.",
+            "step_corners_hint": "Klicken Sie auf die vier Ecken der gedruckten Seite, in beliebiger Reihenfolge.",
+            "processing": "Antworten werden gelesen…",
+            "review_title": "Erkannte Antworten überprüfen",
+            "source_bubble": "Markierte Antwort",
+            "source_ocr": "Erkannter Text",
+            "source_unscanned": "Nicht automatisch gescannt",
+            "unscanned_note": "Dieser Fragetyp wird noch nicht automatisch gescannt — bewerten Sie ihn auf der vollständigen Ergebnisseite.",
+            "unsupported_sheet": "Dieser Antwortbogen ist zu lang zum automatischen Scannen (er passt nicht auf eine Seite). Geben Sie die Antworten dieser Schülerin/dieses Schülers stattdessen auf der Ergebnisseite ein.",
+            "no_answer_option": "Keine Antwort",
+            "save_button": "Antworten speichern",
+            "save_success": "Antworten gespeichert.",
+            "retry_corners": "Ecken erneut wählen"
+        }
     },
     "studentsPage": {
         "title": "Schüler und Klassen",
@@ -3352,7 +3370,9 @@
         "rb_live_monitor_item_sort": "Spalten sortieren und gruppieren — ordnen Sie die Fragespalten nach Abschnitt, GER-Niveau, Fragetyp, verknüpfter Grammatik/Standard oder kumulativer Klassenpunktzahl, auch mehrere Regeln kombiniert.",
         "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten.",
         "rb_tests_exam_export_label": "Prüfungsheft exportieren:",
-        "rb_tests_exam_export_body": "Exportieren Sie über die Testliste oder die Exportseite eine druckfertige Prüfung im Stil einer niederländischen CITO-Prüfung: ein Fragenheft, ein separates Antwortblatt, eine optionale Anlage für Lesetexte und ein Korrekturschema mit den richtigen Antworten — als PDF oder Word, mit der von Ihnen gewählten Schriftart."
+        "rb_tests_exam_export_body": "Exportieren Sie über die Testliste oder die Exportseite eine druckfertige Prüfung im Stil einer niederländischen CITO-Prüfung: ein Fragenheft, ein separates Antwortblatt, eine optionale Anlage für Lesetexte und ein Korrekturschema mit den richtigen Antworten — als PDF oder Word, mit der von Ihnen gewählten Schriftart.",
+        "gr_exam_scan_title": "Den Antwortbogen einer Papierprüfung scannen",
+        "gr_exam_scan_body": "Wählen Sie auf der Tests-Seite bei einem Test „Antwortbogen scannen“, wählen Sie die Schülerin bzw. den Schüler aus und fotografieren oder importieren Sie den ausgefüllten CITO-ähnlichen Antwortbogen. Tippen Sie auf die vier Ecken der gedruckten Seite, um sie zu begradigen — Multiple-Choice-/Wahr-falsch-Kreise werden durch Markierungserkennung gelesen, Kurzantwort-/numerische/offene Texte per OCR auf dem Gerät — prüfen und korrigieren Sie jede Antwort vor dem Speichern. Zuordnungs-, Reihenfolge-, Lücken-, Kategorisierungs- und Hot-Text-Fragen werden noch nicht automatisch erkannt; bewerten Sie diese auf der Ergebnisseite."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
