@@ -1691,7 +1691,9 @@
         "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost."
     },
     "pwa": {
-        "update_available_confirm": "A new version of RubricMaker is available. Reload now?"
+        "update_available_title": "Update available",
+        "update_available_refresh": "Refresh",
+        "update_available_report_issue": "Report an issue"
     },
     "cefr": {
         "placement_recover": "Load placement results",

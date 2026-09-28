@@ -1,35 +1,45 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
 const registerSW = vi.fn();
 vi.mock('virtual:pwa-register', () => ({ registerSW }));
 
 describe('setupPwaUpdatePrompt', () => {
-    it('reloads via updateSW when the user confirms the refresh prompt', async () => {
+    beforeEach(() => {
+        vi.resetModules();
+        registerSW.mockReset();
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('publishes updateSW to the update store when a new version is found', async () => {
         const updateSW = vi.fn();
         registerSW.mockReturnValue(updateSW);
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
 
         const { setupPwaUpdatePrompt } = await import('./pwa');
+        const { getUpdateSW } = await import('./pwaUpdateStore');
         setupPwaUpdatePrompt();
 
         const { onNeedRefresh } = registerSW.mock.calls[0][0];
         onNeedRefresh();
 
-        expect(updateSW).toHaveBeenCalled();
+        expect(getUpdateSW()).toBe(updateSW);
     });
 
-    it('does not reload when the user declines', async () => {
-        vi.resetModules();
-        const updateSW = vi.fn();
-        registerSW.mockReturnValue(updateSW);
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('polls registration.update() periodically so a stale tab still notices new deploys', async () => {
+        registerSW.mockReturnValue(vi.fn());
+        const registration = { update: vi.fn() };
 
         const { setupPwaUpdatePrompt } = await import('./pwa');
         setupPwaUpdatePrompt();
 
-        const { onNeedRefresh } = registerSW.mock.calls.at(-1)![0];
-        onNeedRefresh();
+        const { onRegisteredSW } = registerSW.mock.calls[0][0];
+        onRegisteredSW(undefined, registration);
 
-        expect(updateSW).not.toHaveBeenCalled();
+        expect(registration.update).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(60 * 60 * 1000);
+        expect(registration.update).toHaveBeenCalledTimes(1);
     });
 });

@@ -1691,7 +1691,9 @@
         "signout_pending_writes": "Sommige wijzigingen zijn nog niet gesynchroniseerd — je lokale gegevens zijn bewaard zodat niets verloren gaat."
     },
     "pwa": {
-        "update_available_confirm": "Er is een nieuwe versie van RubricMaker beschikbaar. Nu opnieuw laden?"
+        "update_available_title": "Update beschikbaar",
+        "update_available_refresh": "Vernieuwen",
+        "update_available_report_issue": "Een probleem melden"
     },
     "cefr": {
         "placement_recover": "Plaatsingsresultaten laden",
