@@ -8,6 +8,7 @@ import './index.css';
 import { i18nReady } from './i18n';
 import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
+import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
 
 setupPwaUpdatePrompt();
 
@@ -175,6 +176,7 @@ function renderApp() {
             <Suspense fallback={null}>
                 <RouterProvider router={router} />
             </Suspense>
+            <UpdateAvailableToast />
         </React.StrictMode>
     );
 }

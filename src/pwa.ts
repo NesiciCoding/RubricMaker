@@ -1,14 +1,21 @@
 import { registerSW } from 'virtual:pwa-register';
-import i18n from './i18n';
+import { setUpdateAvailable } from './pwaUpdateStore';
 
-// ponytail: a confirm() dialog is the whole UI here — a new version is rare
-// enough that a blocking native prompt beats wiring a toast action button.
+// HashRouter never triggers a full-page navigation, and browsers only check
+// a service worker for updates on navigation — so on a tab left open (or
+// only ever hash-navigated), this app's SW could go days without noticing a
+// new deploy exists. Poll registration.update() ourselves so onNeedRefresh
+// actually fires.
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+
 export function setupPwaUpdatePrompt() {
     const updateSW = registerSW({
         onNeedRefresh() {
-            if (window.confirm(i18n.t('pwa.update_available_confirm'))) {
-                updateSW();
-            }
+            setUpdateAvailable(updateSW);
+        },
+        onRegisteredSW(_url, registration) {
+            if (!registration) return;
+            setInterval(() => registration.update(), UPDATE_CHECK_INTERVAL_MS);
         },
     });
 }
