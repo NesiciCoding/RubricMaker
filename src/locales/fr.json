@@ -1169,7 +1169,27 @@
         "audio_check_checking": "Vérification du lien audio…",
         "audio_check_ok": "Le lien audio se lit correctement.",
         "audio_check_error": "Ce lien audio n'a pas pu être lu. Utilisez un lien direct vers un fichier audio (.mp3/.m4a/.ogg), pas une page de partage (Google Drive, Dropbox, OneDrive).",
-        "audio_check_mixed": "Les liens non sécurisés (http://) sont bloqués sur une page sécurisée — utilisez un lien https://."
+        "audio_check_mixed": "Les liens non sécurisés (http://) sont bloqués sur une page sécurisée — utilisez un lien https://.",
+        "scan": {
+            "action_scan": "Scanner la feuille de réponses",
+            "title": "Scanner la feuille de réponses",
+            "pick_student_label": "De quel élève s'agit-il ?",
+            "step_capture_hint": "Prenez une photo de la feuille de réponses remplie ou importez-en une.",
+            "step_corners_hint": "Cliquez sur les quatre coins de la page imprimée, dans n'importe quel ordre.",
+            "processing": "Lecture des réponses…",
+            "review_title": "Vérifier les réponses détectées",
+            "source_bubble": "Réponse cochée",
+            "source_ocr": "Texte reconnu",
+            "source_unscanned": "Non scanné automatiquement",
+            "unscanned_note": "Ce type de question n'est pas encore scanné automatiquement — notez-le depuis la page des résultats complète.",
+            "unsupported_sheet": "Cette feuille de réponses est trop longue pour être scannée automatiquement (elle ne tient pas sur une seule page). Saisissez les réponses de cet élève depuis la page des résultats.",
+            "no_answer_option": "Aucune réponse",
+            "save_button": "Enregistrer les réponses",
+            "save_success": "Réponses enregistrées.",
+            "retry_corners": "Refaire les coins",
+            "overwrite_graded_title": "Écraser le résultat noté ?",
+            "overwrite_graded_message": "Le test de cet élève a déjà été noté. Enregistrer ce scan remplacera toutes ses réponses et effacera la note, les points et les commentaires existants. Continuer ?"
+        }
     },
     "studentsPage": {
         "title": "Élèves et Classes",
@@ -3352,7 +3372,9 @@
         "rb_live_monitor_item_sort": "Trier et regrouper les colonnes — réordonnez les colonnes de questions par section, niveau CECR, type de question, grammaire/référentiel lié ou score cumulé de la classe, en combinant plusieurs règles.",
         "rb_live_monitor_item_placement": "Vue de placement adaptatif — les tests staircase et générateur donnent des questions différentes à chaque élève ; la grille s’aligne donc sur le niveau CECR : une barre de précision par niveau et par élève, avec leur niveau estimé dans une colonne dédiée avant les colonnes de niveau.",
         "rb_tests_exam_export_label": "Exportation du cahier d'examen :",
-        "rb_tests_exam_export_body": "Depuis la liste des tests ou la page d'exportation, exportez un examen prêt à imprimer dans le style d'un examen CITO néerlandais : un cahier de questions, une feuille de réponses séparée, une annexe facultative pour les textes de lecture, et un barème de correction avec les bonnes réponses — en PDF ou Word, avec la police de votre choix."
+        "rb_tests_exam_export_body": "Depuis la liste des tests ou la page d'exportation, exportez un examen prêt à imprimer dans le style d'un examen CITO néerlandais : un cahier de questions, une feuille de réponses séparée, une annexe facultative pour les textes de lecture, et un barème de correction avec les bonnes réponses — en PDF ou Word, avec la police de votre choix.",
+        "gr_exam_scan_title": "Scanner la feuille de réponses d'un examen papier",
+        "gr_exam_scan_body": "Sur la page Tests, choisissez « Scanner la feuille de réponses » pour un test, sélectionnez l'élève, puis photographiez ou importez sa feuille de réponses remplie de type CITO. Touchez les quatre coins de la page imprimée pour la redresser : les bulles à choix multiple/vrai-faux sont détectées par analyse des marques et les réponses courtes/numériques/ouvertes par OCR sur l'appareil — vérifiez et corrigez chaque réponse avant d'enregistrer. Les questions d'appariement, d'ordonnancement, à trous, de catégorisation et de type « hot text » ne sont pas encore détectées automatiquement ; notez-les depuis la page des résultats."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

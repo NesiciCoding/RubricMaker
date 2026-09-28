@@ -1169,7 +1169,27 @@
         "audio_check_checking": "Audiolink controleren…",
         "audio_check_ok": "Audiolink speelt correct af.",
         "audio_check_error": "Deze audiolink kon niet worden afgespeeld. Gebruik een directe link naar een audiobestand (eindigend op .mp3/.m4a/.ogg), geen deelpagina (Google Drive, Dropbox, OneDrive).",
-        "audio_check_mixed": "Onveilige (http://) links worden geblokkeerd op een beveiligde pagina — gebruik een https://-link."
+        "audio_check_mixed": "Onveilige (http://) links worden geblokkeerd op een beveiligde pagina — gebruik een https://-link.",
+        "scan": {
+            "action_scan": "Antwoordblad scannen",
+            "title": "Antwoordblad scannen",
+            "pick_student_label": "Van welke leerling is dit?",
+            "step_capture_hint": "Maak een foto van het ingevulde antwoordblad of importeer er een.",
+            "step_corners_hint": "Klik op de vier hoeken van de afgedrukte pagina, in willekeurige volgorde.",
+            "processing": "Antwoorden lezen…",
+            "review_title": "Gedetecteerde antwoorden controleren",
+            "source_bubble": "Gemarkeerd antwoord",
+            "source_ocr": "Herkende tekst",
+            "source_unscanned": "Niet automatisch gescand",
+            "unscanned_note": "Dit vraagtype wordt nog niet automatisch gescand — beoordeel het via de volledige resultatenpagina.",
+            "unsupported_sheet": "Dit antwoordblad is te lang om automatisch te scannen (het past niet op één pagina). Voer de antwoorden van deze leerling in via de resultatenpagina.",
+            "no_answer_option": "Geen antwoord",
+            "save_button": "Antwoorden opslaan",
+            "save_success": "Antwoorden opgeslagen.",
+            "retry_corners": "Hoeken opnieuw",
+            "overwrite_graded_title": "Beoordeeld resultaat overschrijven?",
+            "overwrite_graded_message": "De toets van deze leerling is al beoordeeld. Als je deze scan opslaat, worden alle antwoorden vervangen en wordt het bestaande cijfer, de punten en de feedback gewist. Doorgaan?"
+        }
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
@@ -3352,7 +3372,9 @@
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
         "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen.",
         "rb_tests_exam_export_label": "Examenboekje exporteren:",
-        "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype."
+        "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype.",
+        "gr_exam_scan_title": "Een antwoordblad van een papieren toets scannen",
+        "gr_exam_scan_body": "Kies op de Toetsenpagina “Antwoordblad scannen” bij een toets, selecteer de leerling en fotografeer of importeer het ingevulde CITO-achtige antwoordblad. Tik op de vier hoeken van de afgedrukte pagina om deze recht te trekken; meerkeuze-/waar-onwaarbolletjes worden herkend via markeringsdetectie en open/kort-antwoord- en numerieke antwoorden via OCR op het apparaat — controleer en corrigeer elk antwoord voordat je opslaat. Combineer-, volgorde-, invul-, categoriseer- en hot-text-vragen worden nog niet automatisch herkend; beoordeel die via de resultatenpagina."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
