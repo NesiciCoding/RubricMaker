@@ -844,7 +844,9 @@
                 "recorded_answer_note": "Aufgezeichnete Antwort — keine schriftliche Antwort erforderlich.",
                 "grading_key_warning": "Enthält die richtigen Antworten — nur für die Lehrkraft. Nicht zusammen mit Materialien für Schüler weitergeben.",
                 "export_grading_key_pdf": "Korrekturschema (PDF)",
-                "export_grading_key_docx": "Korrekturschema (Word)"
+                "export_grading_key_docx": "Korrekturschema (Word)",
+                "cover_class_label": "Klasse",
+                "cover_date_label": "Datum"
             }
         },
         "taking": {

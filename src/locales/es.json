@@ -844,7 +844,9 @@
                 "recorded_answer_note": "Respuesta grabada — no se necesita respuesta escrita.",
                 "grading_key_warning": "Contiene las respuestas correctas — solo para el profesor. No lo compartas junto con el material para los alumnos.",
                 "export_grading_key_pdf": "Hoja de calificación (PDF)",
-                "export_grading_key_docx": "Hoja de calificación (Word)"
+                "export_grading_key_docx": "Hoja de calificación (Word)",
+                "cover_class_label": "Clase",
+                "cover_date_label": "Fecha"
             }
         },
         "taking": {
