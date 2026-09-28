@@ -49,8 +49,29 @@ interface Row {
 
 const textDim: React.CSSProperties = { color: 'var(--border)', fontSize: '0.7rem' };
 
-function textColorForBg(pct: number): string {
-    return pct < 30 || pct > 70 ? 'white' : '#1e293b';
+function parseColor(color: string): { r: number; g: number; b: number } | null {
+    const hexMatch = /^#([0-9a-f]{6})$/i.exec(color.trim());
+    if (hexMatch) {
+        const hex = hexMatch[1];
+        return {
+            r: parseInt(hex.slice(0, 2), 16),
+            g: parseInt(hex.slice(2, 4), 16),
+            b: parseInt(hex.slice(4, 6), 16),
+        };
+    }
+    const rgbMatch = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i.exec(color.trim());
+    if (rgbMatch) {
+        return { r: Number(rgbMatch[1]), g: Number(rgbMatch[2]), b: Number(rgbMatch[3]) };
+    }
+    return null;
+}
+
+/** Readable text color for an arbitrary (teacher-configurable) background, from its actual luminance rather than the score — a light custom band color must not get unreadable white text. */
+function textColorForBg(color: string): string {
+    const rgb = parseColor(color);
+    if (!rgb) return '#1e293b';
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    return luminance < 0.6 ? 'white' : '#1e293b';
 }
 
 export default function StudentSnapshotTable({
@@ -253,24 +274,29 @@ export default function StudentSnapshotTable({
                                 }}
                             >
                                 {grammarScore !== null ? (
-                                    <button
-                                        type="button"
-                                        title={t('dashboard.snapshot_open_grammar', { name: s.name })}
-                                        aria-label={t('dashboard.snapshot_open_grammar', { name: s.name })}
-                                        onClick={() => navigate(`/students/${s.id}/learning-path`)}
-                                        style={{
-                                            cursor: 'pointer',
-                                            border: 'none',
-                                            borderRadius: 4,
-                                            padding: '3px 8px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 700,
-                                            background: scoreToMasteryColor(grammarScore, masteryColorBands),
-                                            color: textColorForBg(grammarScore),
-                                        }}
-                                    >
-                                        {Math.round(grammarScore)}%
-                                    </button>
+                                    (() => {
+                                        const bg = scoreToMasteryColor(grammarScore, masteryColorBands);
+                                        return (
+                                            <button
+                                                type="button"
+                                                title={t('dashboard.snapshot_open_grammar', { name: s.name })}
+                                                aria-label={t('dashboard.snapshot_open_grammar', { name: s.name })}
+                                                onClick={() => navigate(`/students/${s.id}/learning-path`)}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    border: 'none',
+                                                    borderRadius: 4,
+                                                    padding: '3px 8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    background: bg,
+                                                    color: textColorForBg(bg),
+                                                }}
+                                            >
+                                                {Math.round(grammarScore)}%
+                                            </button>
+                                        );
+                                    })()
                                 ) : (
                                     <span style={textDim} title={t('dashboard.snapshot_no_data')}>
                                         {t('dashboard.snapshot_no_data_short')}
@@ -374,9 +400,9 @@ export default function StudentSnapshotTable({
                           { label: t('dashboard.snapshot_legend_developing'), color: '#eab308' },
                           { label: t('dashboard.snapshot_legend_strong'), color: '#22c55e' },
                       ]
-                ).map(({ label, color }) => (
+                ).map(({ label, color }, idx) => (
                     <div
-                        key={label}
+                        key={`${idx}-${label}`}
                         style={{
                             display: 'flex',
                             alignItems: 'center',

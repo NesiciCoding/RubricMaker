@@ -144,19 +144,37 @@ export default function Dashboard() {
     const initialCohorts =
         settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
     const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
+    // Until the teacher touches the chips, keep adopting settings.activeClassId (which can
+    // change out from under us via a later hydration/sync) instead of writing our initial,
+    // possibly-stale snapshot of it back to settings.
+    const hasUserSelectedCohorts = React.useRef(false);
     const isAllCohorts = selectedCohorts.length === 0;
     const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
 
     function toggleCohort(id: string) {
+        hasUserSelectedCohorts.current = true;
         setSelectedCohorts((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    }
+
+    function selectAllCohorts() {
+        hasUserSelectedCohorts.current = true;
+        setSelectedCohorts([]);
     }
 
     React.useEffect(() => {
         if (classes.length === 0) return;
+        if (!hasUserSelectedCohorts.current) {
+            setSelectedCohorts(
+                settings.activeClassId && classes.some((c) => c.id === settings.activeClassId)
+                    ? [settings.activeClassId]
+                    : []
+            );
+            return;
+        }
         if (singleClassId !== settings.activeClassId) {
             updateSettings({ activeClassId: singleClassId });
         }
-    }, [classes.length, singleClassId, settings.activeClassId, updateSettings]);
+    }, [classes, singleClassId, settings.activeClassId, updateSettings]);
 
     const snapshotStudents = useMemo(
         () => students.filter((s) => isAllCohorts || selectedCohorts.includes(s.classId)),
@@ -417,13 +435,10 @@ export default function Dashboard() {
                     >
                         <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{t('dashboard.snapshot_title')}</h2>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => setSelectedCohorts([])}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') setSelectedCohorts([]);
-                                }}
+                            <button
+                                type="button"
+                                aria-pressed={isAllCohorts}
+                                onClick={selectAllCohorts}
                                 style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -438,18 +453,15 @@ export default function Dashboard() {
                                 }}
                             >
                                 {t('statistics.all_classes')}
-                            </span>
+                            </button>
                             {classes.map((c) => {
                                 const active = selectedCohorts.includes(c.id);
                                 return (
-                                    <span
+                                    <button
+                                        type="button"
                                         key={c.id}
-                                        role="button"
-                                        tabIndex={0}
+                                        aria-pressed={active}
                                         onClick={() => toggleCohort(c.id)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') toggleCohort(c.id);
-                                        }}
                                         style={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
@@ -464,7 +476,7 @@ export default function Dashboard() {
                                         }}
                                     >
                                         {c.name}
-                                    </span>
+                                    </button>
                                 );
                             })}
                         </div>

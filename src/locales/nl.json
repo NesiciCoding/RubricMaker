@@ -230,6 +230,7 @@
         "mastery_band_needs_work": "Werk nodig",
         "mastery_band_developing": "In ontwikkeling",
         "mastery_band_strong": "Sterk",
+        "mastery_band_new": "Nieuw",
         "export_templates": "Export Sjablonen",
         "export_templates_help": "Upload een leeg .docx-bestand om exports te stylen: een rubriektabelsjabloon (kolomkoppen en kleuren) of een essay-/rapportstijlsjabloon (kop- en tekstlettertype).",
         "action_upload_template": "Sjabloon Uploaden",

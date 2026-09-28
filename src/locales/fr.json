@@ -227,6 +227,7 @@
         "mastery_band_needs_work": "À travailler",
         "mastery_band_developing": "En progrès",
         "mastery_band_strong": "Solide",
+        "mastery_band_new": "Nouveau",
         "export_templates": "Modèles d'export",
         "export_templates_help": "Importez un .docx vierge pour styliser les exports : un modèle de tableau de rubrique (en-têtes de colonnes et couleurs) ou un modèle de style d'essai/bulletin (police de titre et de corps).",
         "action_upload_template": "Importer un modèle",

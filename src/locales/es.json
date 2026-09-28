@@ -230,6 +230,7 @@
         "mastery_band_needs_work": "Necesita trabajo",
         "mastery_band_developing": "En desarrollo",
         "mastery_band_strong": "Sólido",
+        "mastery_band_new": "Nuevo",
         "export_templates": "Plantillas de Exportación",
         "export_templates_help": "Sube un .docx en blanco para dar estilo a las exportaciones: una plantilla de tabla de rúbrica (encabezados de columna y colores) o una plantilla de estilo de ensayo/informe (fuente de título y de cuerpo).",
         "action_upload_template": "Subir Plantilla",

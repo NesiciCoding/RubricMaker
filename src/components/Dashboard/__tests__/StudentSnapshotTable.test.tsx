@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import StudentSnapshotTable from '../StudentSnapshotTable';
@@ -15,6 +15,10 @@ const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
     return { ...actual, useNavigate: () => mockNavigate };
+});
+
+beforeEach(() => {
+    mockNavigate.mockClear();
 });
 
 const emptyProps = {
@@ -100,6 +104,48 @@ describe('StudentSnapshotTable', () => {
         const cell = screen.getByText('100%');
         fireEvent.click(cell);
         expect(mockNavigate).toHaveBeenCalledWith('/students/s1/learning-path');
+    });
+
+    it('picks dark text for a light custom mastery band color, not just for a high score', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [
+                {
+                    id: 'q1',
+                    prompt: '...',
+                    type: 'cloze',
+                    points: 1,
+                    linkedGrammarItemId: 'gr-present-simple-affirmative',
+                },
+            ],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        render(
+            <StudentSnapshotTable
+                {...emptyProps}
+                students={[alice]}
+                classes={[cls]}
+                tests={[test]}
+                studentTests={studentTests}
+                masteryColorBands={[{ min: 0, max: 100, label: 'All', color: '#f5f5f5' }]}
+            />
+        );
+        const cell = screen.getByText('100%');
+        expect(cell.style.background).toBe('rgb(245, 245, 245)');
+        expect(cell.style.color).toBe('rgb(30, 41, 59)');
     });
 
     it('shows a needs-attention flag when the student has an intervention streak, and none otherwise', () => {

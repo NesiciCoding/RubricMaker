@@ -380,7 +380,9 @@ export default function SettingsPage() {
             });
             return;
         }
-        updateSettings({ masteryColorBands: [...bands, { min: 0, max: 0, label: 'New', color: '#6b7280' }] });
+        updateSettings({
+            masteryColorBands: [...bands, { min: 0, max: 0, label: t('settings.mastery_band_new'), color: '#6b7280' }],
+        });
     }
 
     function removeMasteryBand(idx: number) {

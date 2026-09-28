@@ -227,6 +227,7 @@
         "mastery_band_needs_work": "Braucht Übung",
         "mastery_band_developing": "In Entwicklung",
         "mastery_band_strong": "Stark",
+        "mastery_band_new": "Neu",
         "export_templates": "Exportvorlagen",
         "export_templates_help": "Lade ein leeres .docx hoch, um Exporte zu stylen: eine Rubrik-Tabellenvorlage (Spaltenüberschriften und Farben) oder eine Aufsatz-/Berichtsstilvorlage (Überschriften- und Fließtext-Schriftart).",
         "action_upload_template": "Vorlage hochladen",

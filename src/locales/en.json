@@ -230,6 +230,7 @@
         "mastery_band_needs_work": "Needs work",
         "mastery_band_developing": "Developing",
         "mastery_band_strong": "Strong",
+        "mastery_band_new": "New",
         "export_templates": "Export Templates",
         "export_templates_help": "Upload a blank .docx to style exports: a rubric table template (column headers and colours) or an essay/period-report style template (heading and body font).",
         "action_upload_template": "Upload Template",
