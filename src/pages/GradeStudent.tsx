@@ -126,10 +126,10 @@ export default function GradeStudent() {
     // vocabulary phrases and student names on whitespace.
     const scanUserWords = useMemo(
         () => [
-            ...(liveRubric?.vocabularyItems ?? []).flatMap((v) => v.phrase.split(/\s+/)),
+            ...(rubric?.vocabularyItems ?? []).flatMap((v) => v.phrase.split(/\s+/)),
             ...classStudents.flatMap((s) => s.name.split(/\s+/)),
         ],
-        [liveRubric?.vocabularyItems, classStudents]
+        [rubric?.vocabularyItems, classStudents]
     );
 
     // The essay assignment to pre-fill the "Assign Essay" modal from, and to link a

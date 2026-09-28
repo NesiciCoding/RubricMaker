@@ -15,7 +15,7 @@ export function examAnswerVocabulary(test: Test): string[] {
     for (const question of test.questions) {
         if (question.type !== 'short-answer') continue;
         const answers = question.expectedAnswers ?? (question.expectedAnswer ? [question.expectedAnswer] : []);
-        for (const answer of answers) words.push(...answer.split(/\s+/));
+        for (const answer of answers) words.push(...answer.split(/\s+/).filter(Boolean));
     }
     return words;
 }

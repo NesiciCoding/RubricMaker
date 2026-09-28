@@ -24,6 +24,7 @@ import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
     ANSWER_LINE_SPACING_MM,
+    CHOICE_CELL_GAP_MM,
     CHOICE_CELL_WIDTH_MM,
     LONG_ANSWER_HEIGHT_MM,
     answerKeyText,
@@ -385,32 +386,36 @@ function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
 /**
  * Compact bordered box row — one cell per option letter — approximating the HTML rendering's
  * empty bubbles (docx has no true circle primitive). Cells use a fixed DXA (absolute twips)
- * width rather than a table-relative percentage, so every MC/true-false/multiple-response
- * question's bubble is physically the same size regardless of its option count — a scanning
- * pipeline can then assume one constant cell width across the whole answer sheet instead of
- * recomputing it per question.
+ * width and are separated by an unbordered CHOICE_CELL_GAP_MM spacer cell, so every
+ * MC/true-false/multiple-response question's bubble sits at the same width/pitch as the HTML
+ * renderer and examScanRegions.ts's choiceCellRects() — a scanning pipeline can then assume one
+ * constant cell geometry across the whole answer sheet instead of recomputing it per question.
  */
 function choiceAnswerTable(letters: string[]): Table {
     const cellWidthTwips = Math.round(CHOICE_CELL_WIDTH_MM * MM_TO_TWIPS);
+    const gapWidthTwips = Math.round(CHOICE_CELL_GAP_MM * MM_TO_TWIPS);
+    const cells = letters.map(
+        (l) =>
+            new TableCell({
+                borders: CELL_BORDER,
+                width: { size: cellWidthTwips, type: WidthType.DXA },
+                children: [
+                    new Paragraph({
+                        alignment: 'center',
+                        children: [new TextRun({ text: l, bold: true })],
+                    }),
+                ],
+            })
+    );
+    const spacer = () =>
+        new TableCell({ borders: NO_BORDER, width: { size: gapWidthTwips, type: WidthType.DXA }, children: [] });
+    const children = cells.flatMap((cell, i) => (i === 0 ? [cell] : [spacer(), cell]));
     return new Table({
-        rows: [
-            new TableRow({
-                children: letters.map(
-                    (l) =>
-                        new TableCell({
-                            borders: CELL_BORDER,
-                            width: { size: cellWidthTwips, type: WidthType.DXA },
-                            children: [
-                                new Paragraph({
-                                    alignment: 'center',
-                                    children: [new TextRun({ text: l, bold: true })],
-                                }),
-                            ],
-                        })
-                ),
-            }),
-        ],
-        width: { size: cellWidthTwips * letters.length, type: WidthType.DXA },
+        rows: [new TableRow({ children })],
+        width: {
+            size: cellWidthTwips * letters.length + gapWidthTwips * Math.max(0, letters.length - 1),
+            type: WidthType.DXA,
+        },
     });
 }
 

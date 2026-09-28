@@ -62,4 +62,19 @@ describe('examAnswerVocabulary', () => {
     it('returns [] for a test with no questions', () => {
         expect(examAnswerVocabulary(makeTest())).toEqual([]);
     });
+
+    it('drops empty tokens from blank or padded answers', () => {
+        const test = makeTest({
+            questions: [
+                q({
+                    id: 'a',
+                    type: 'short-answer',
+                    points: 1,
+                    prompt: 'P',
+                    expectedAnswers: ['   ', '  Newton  ', ''],
+                }),
+            ],
+        });
+        expect(examAnswerVocabulary(test)).toEqual(['Newton']);
+    });
 });

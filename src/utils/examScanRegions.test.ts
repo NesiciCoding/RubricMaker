@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { RgbaImage } from '../types';
-import { CHOICE_CELL_WIDTH_MM, type AnswerBlockGeometry } from './testExamContent';
+import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, type AnswerBlockGeometry } from './testExamContent';
 import {
-    CHOICE_CELL_GAP_MM,
     answerSheetFitsOnOnePage,
     choiceCellRects,
     mmRectToPixelRect,

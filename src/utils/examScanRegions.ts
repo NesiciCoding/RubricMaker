@@ -16,10 +16,7 @@
 
 import type { RgbaImage } from '../types';
 import { luminance } from './preprocessScan';
-import { EXAM_PAGE_MM, CHOICE_CELL_WIDTH_MM, type AnswerBlockGeometry } from './testExamContent';
-
-/** Horizontal gap between adjacent choice-bubble cells, in mm. */
-export const CHOICE_CELL_GAP_MM = 4;
+import { EXAM_PAGE_MM, CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, type AnswerBlockGeometry } from './testExamContent';
 
 export interface MmRect {
     x: number;
