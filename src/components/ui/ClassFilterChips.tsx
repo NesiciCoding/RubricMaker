@@ -14,6 +14,7 @@ interface Props {
 
 const chipStyle = (active: boolean): React.CSSProperties => ({
     display: 'inline-flex',
+    flexShrink: 0,
     alignItems: 'center',
     gap: 6,
     padding: '5px 12px',
