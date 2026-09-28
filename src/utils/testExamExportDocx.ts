@@ -132,7 +132,39 @@ function blackBannerTable(text: string): Table {
     });
 }
 
-function coverParagraphs(test: Test, docLabel: string): (Paragraph | Table)[] {
+const LIGHT_BORDER: ITableCellBorders = {
+    top: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    bottom: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    left: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    right: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+};
+
+/** Bordered Name / Class / Date fill-in row for a booklet/attachment cover, so a page can still be attributed to a student if it's separated from the answer sheet. */
+function nameClassDateTable(): Table {
+    const field = (label: string) =>
+        new TableCell({
+            borders: LIGHT_BORDER,
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            children: [
+                new Paragraph({ children: [new TextRun({ text: label, size: 16, color: '6b7280' })] }),
+                new Paragraph({
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' } },
+                    spacing: { before: 120 },
+                    children: [new TextRun({ text: ' ' })],
+                }),
+            ],
+        });
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: [field(tx('candidate_name')), field(tx('cover_class_label')), field(tx('cover_date_label'))],
+            }),
+        ],
+    });
+}
+
+function coverParagraphs(test: Test, docLabel: string, includeNameBox = false): (Paragraph | Table)[] {
     const totalQuestions = test.questions.length;
     const totalPoints = calcTestMaxPoints(test);
     const summaryLines: Paragraph[] = [];
@@ -153,7 +185,8 @@ function coverParagraphs(test: Test, docLabel: string): (Paragraph | Table)[] {
             spacing: { after: 120 },
         }),
         blackBannerTable(test.name),
-        new Paragraph({ text: '', spacing: { before: 400 } }),
+        ...(includeNameBox ? [new Paragraph({ text: '', spacing: { before: 200 } }), nameClassDateTable()] : []),
+        new Paragraph({ text: '', spacing: { before: includeNameBox ? 200 : 400 } }),
         ...summaryLines,
         new Paragraph({ children: [new PageBreak()] }),
     ];
@@ -351,12 +384,29 @@ async function questionParagraphs(
             break;
     }
 
-    blocks.push(new Paragraph({ text: '', spacing: { after: 120 } }));
     return blocks;
 }
 
+/** Wraps one question's content in a light bordered card, matching answerSpaceHtml()'s question card in the HTML renderer. */
+function questionCard(blocks: (Paragraph | Table)[]): Table {
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({
+                        borders: LIGHT_BORDER,
+                        margins: { top: 120, bottom: 120, left: 140, right: 140 },
+                        children: blocks,
+                    }),
+                ],
+            }),
+        ],
+    });
+}
+
 async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'))];
+    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'), true)];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
@@ -365,14 +415,15 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
             }
         }
         for (const { question, number } of group.questions) {
-            children.push(...(await questionParagraphs(question, number, options)));
+            children.push(questionCard(await questionParagraphs(question, number, options)));
+            children.push(new Paragraph({ text: '', spacing: { after: 80 } }));
         }
     }
     return children;
 }
 
 function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'))];
+    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'), true)];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
     groups.forEach((group, i) => {
         if (!group.section?.content) return;
@@ -523,6 +574,12 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
             spacing: { before: 160 },
         }),
         ...answerSpaceChildren(block.space),
+        // Hairline divider between answer blocks, matching answerBlockHtml()'s border-bottom in the HTML renderer.
+        new Paragraph({
+            text: '',
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'e5e7eb' } },
+            spacing: { before: 80 },
+        }),
     ]);
 
     return [
@@ -542,8 +599,15 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
 function gradingTableRows(test: Test): TableRow[] {
     const groups = groupQuestionsBySection(test);
     const rows: TableRow[] = [];
-    const cell = (children: Paragraph[], size: number) =>
-        new TableCell({ borders: CELL_BORDER, width: { size, type: WidthType.PERCENTAGE }, children });
+    let rowIndex = 0;
+    const cell = (children: Paragraph[], size: number, shaded: boolean) =>
+        new TableCell({
+            borders: CELL_BORDER,
+            width: { size, type: WidthType.PERCENTAGE },
+            // Zebra striping (a light, print-safe gray) so a long key stays easy to track row by row.
+            ...(shaded ? { shading: { fill: 'F8FAFC' } } : {}),
+            children,
+        });
 
     for (const group of groups) {
         if (group.section) {
@@ -602,9 +666,15 @@ function gradingTableRows(test: Test): TableRow[] {
                   )
                 : [new Paragraph({ alignment: 'right', children: [new TextRun({ text: String(question.points) })] })];
 
+            const shaded = rowIndex % 2 === 1;
+            rowIndex++;
             rows.push(
                 new TableRow({
-                    children: [cell(questionPara, 15), cell(answerPara, 55), cell(scoresPara, 30)],
+                    children: [
+                        cell(questionPara, 15, shaded),
+                        cell(answerPara, 55, shaded),
+                        cell(scoresPara, 30, shaded),
+                    ],
                 })
             );
         }

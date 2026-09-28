@@ -844,7 +844,9 @@
                 "recorded_answer_note": "Recorded answer — no written response needed.",
                 "grading_key_warning": "Contains correct answers — for teacher use only. Don't share this alongside student-facing materials.",
                 "export_grading_key_pdf": "Grading key (PDF)",
-                "export_grading_key_docx": "Grading key (Word)"
+                "export_grading_key_docx": "Grading key (Word)",
+                "cover_class_label": "Class",
+                "cover_date_label": "Date"
             }
         },
         "taking": {
