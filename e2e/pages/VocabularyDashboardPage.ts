@@ -11,7 +11,7 @@ export class VocabularyDashboardPage extends BasePage {
     }
 
     async filterByClass(className: string): Promise<void> {
-        await this.page.locator('#vocab-class-filter').selectOption({ label: className });
+        await this.page.getByRole('button', { name: className, exact: true }).click();
     }
 
     async setExportBand(band: 'all' | string): Promise<void> {

@@ -212,8 +212,7 @@ describe('StatisticsPage', () => {
     it('changes the active class filter, syncing back to settings', async () => {
         renderPage();
         await waitForCharts();
-        const classSelect = screen.getByDisplayValue('statistics.all_classes');
-        fireEvent.change(classSelect, { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: 'c1' });
     });
 

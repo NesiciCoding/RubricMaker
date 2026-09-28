@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
 import { calcGradeSummary } from '../utils/gradeCalc';
@@ -1514,22 +1515,17 @@ export default function ExportPage() {
                         </p>
 
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-                            <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
+                            <div className="form-group" style={{ flex: '2 1 240px', marginBottom: 0 }}>
                                 <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_class')}</label>
-                                <select
-                                    value={reportClassId}
-                                    onChange={(e) => {
-                                        setReportClassId(e.target.value);
+                                <ClassFilterChips
+                                    classes={classes}
+                                    selectedClassId={reportClassId}
+                                    onChange={(classId) => {
+                                        setReportClassId(classId);
                                         setReportStudentIds(new Set());
                                     }}
-                                >
-                                    <option value="">{t('exportPage.period_select_class')}</option>
-                                    {classes.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    ariaLabel={t('exportPage.period_class')}
+                                />
                             </div>
                             <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
                                 <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_from')}</label>

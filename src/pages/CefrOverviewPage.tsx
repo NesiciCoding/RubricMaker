@@ -7,6 +7,7 @@ import type { EventData } from 'react-joyride';
 import { getCefrOverviewTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrOverviewGrid from '../components/CEFR/CefrOverviewGrid';
 import PracticeCefrProgressPanel from '../components/CEFR/PracticeCefrProgressPanel';
@@ -188,23 +189,18 @@ export default function CefrOverviewPage() {
                     data-tour="cefr-controls"
                     style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}
                 >
-                    <div className="form-group" style={{ flex: '0 0 auto', minWidth: 180, marginBottom: 0 }}>
+                    <div className="form-group" style={{ flex: '1 1 260px', marginBottom: 0 }}>
                         <label>{t('statistics.label_class_filter')}</label>
-                        <select
-                            aria-label={t('statistics.label_class_filter')}
-                            value={selectedClassId}
-                            onChange={(e) => {
-                                setSelectedClassId(e.target.value);
+                        <ClassFilterChips
+                            classes={classes}
+                            selectedClassId={selectedClassId}
+                            onChange={(classId) => {
+                                setSelectedClassId(classId);
                                 setSelectedStudentId('');
                             }}
-                        >
-                            <option value="all">{t('statistics.all_classes')}</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                            ariaLabel={t('statistics.label_class_filter')}
+                            allLabel={t('statistics.all_classes')}
+                        />
                     </div>
 
                     <div

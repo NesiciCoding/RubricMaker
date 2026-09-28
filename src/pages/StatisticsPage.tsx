@@ -10,6 +10,7 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
 import { useSettings } from '../context/AppContext';
 import { useStoreSelector } from '../context/useStore';
 import {
@@ -746,20 +747,15 @@ export default function StatisticsPage() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                                <label htmlFor="stats-class">{t('statistics.label_class_filter')}</label>
-                                <select
-                                    id="stats-class"
-                                    value={selectedClassId}
-                                    onChange={(e) => handleSelectedClassChange(e.target.value)}
-                                >
-                                    <option value="all">{t('statistics.all_classes')}</option>
-                                    {filteredClasses.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="form-group" style={{ flex: 2, minWidth: 200, marginBottom: 0 }}>
+                                <label>{t('statistics.label_class_filter')}</label>
+                                <ClassFilterChips
+                                    classes={filteredClasses}
+                                    selectedClassId={selectedClassId}
+                                    onChange={handleSelectedClassChange}
+                                    ariaLabel={t('statistics.label_class_filter')}
+                                    allLabel={t('statistics.all_classes')}
+                                />
                             </div>
                             {/* Criterion chart type toggle */}
                             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -870,20 +866,15 @@ export default function StatisticsPage() {
                         </>
                     ) : (
                         <>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                                <label htmlFor="stats-student-class">{t('statistics.label_class_filter')}</label>
-                                <select
-                                    id="stats-student-class"
-                                    value={studentViewClassId}
-                                    onChange={(e) => setStudentViewClassId(e.target.value)}
-                                >
-                                    <option value="all">{t('statistics.all_classes')}</option>
-                                    {classes.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="form-group" style={{ flex: 2, minWidth: 200, marginBottom: 0 }}>
+                                <label>{t('statistics.label_class_filter')}</label>
+                                <ClassFilterChips
+                                    classes={classes}
+                                    selectedClassId={studentViewClassId}
+                                    onChange={setStudentViewClassId}
+                                    ariaLabel={t('statistics.label_class_filter')}
+                                    allLabel={t('statistics.all_classes')}
+                                />
                             </div>
                             <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
                                 <label htmlFor="stats-student">{t('statistics.label_student')}</label>

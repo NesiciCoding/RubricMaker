@@ -284,7 +284,7 @@ describe('ExportPage', () => {
     it('generates a period report for a selected class and students', async () => {
         renderPage();
         fireEvent.click(screen.getByText('exportPage.period_report_title'));
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         expect(aliceBtn).toBeInTheDocument();
         fireEvent.click(aliceBtn!);
@@ -298,7 +298,7 @@ describe('ExportPage', () => {
         renderPage();
         // Report Card reuses the Period Report's class + student selection state.
         fireEvent.click(screen.getByText('exportPage.period_report_title'));
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn2 = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         expect(aliceBtn2).toBeInTheDocument();
         fireEvent.click(aliceBtn2!);
