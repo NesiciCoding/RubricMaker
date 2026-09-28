@@ -12,6 +12,8 @@ import type { CaptureHint } from '../../utils/ocrConfig';
 interface Props {
     /** Tesseract language(s) for recognition, e.g. `'eng'` or `'eng+nld'`. */
     defaultLang: string;
+    /** Rubric vocabulary / class roster names to bias recognition toward. */
+    userWords?: string[];
     /** Insert the confirmed, teacher-corrected text into the grade. */
     onInsert: (text: string) => void;
     onClose: () => void;
@@ -33,7 +35,7 @@ const BAND_COLOR: Record<ConfidenceBand, string> = {
  * image is used only for recognition and is not stored — cloud archival/retention is a separate,
  * not-yet-enabled step.
  */
-export default function ScanCaptureModal({ defaultLang, onInsert, onClose }: Props) {
+export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onClose }: Props) {
     const { t } = useTranslation();
     const { videoRef, start, capture, stop } = useCameraCapture();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +62,7 @@ export default function ScanCaptureModal({ defaultLang, onInsert, onClose }: Pro
                 const pages: OcrResult[] = [];
                 for (const b of blobs) {
                     const dataUrl = b === blobs[0] ? firstUrl : await fileToDataUrl(b);
-                    pages.push(await recognizeImage(dataUrl, { langs: defaultLang, captureHint }));
+                    pages.push(await recognizeImage(dataUrl, { langs: defaultLang, captureHint, userWords }));
                 }
                 if (cancelledRef.current) return;
                 const words: OcrWord[] = pages.flatMap((p) => p.words);
@@ -79,7 +81,7 @@ export default function ScanCaptureModal({ defaultLang, onInsert, onClose }: Pro
                 setPhase('error');
             }
         },
-        [defaultLang, captureHint]
+        [defaultLang, captureHint, userWords]
     );
 
     const startCamera = useCallback(async () => {

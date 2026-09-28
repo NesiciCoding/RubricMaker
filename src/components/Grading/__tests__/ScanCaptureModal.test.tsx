@@ -121,6 +121,24 @@ describe('ScanCaptureModal', () => {
         expect(screen.getByText('scan.hint_label')).toBeInTheDocument();
     });
 
+    it('passes rubric/roster user words through to recognizeImage', async () => {
+        render(
+            <ScanCaptureModal
+                defaultLang="eng"
+                userWords={['Rembrandt', 'Vermeer']}
+                onInsert={vi.fn()}
+                onClose={vi.fn()}
+            />
+        );
+        pickFile();
+        await screen.findByLabelText('scan.review_label');
+        expect(recognizeImage).toHaveBeenCalledWith('data:image/png;base64,aGk=', {
+            langs: 'eng',
+            captureHint: 'auto',
+            userWords: ['Rembrandt', 'Vermeer'],
+        });
+    });
+
     it('reports when an imported file has no scannable image', async () => {
         importScanFiles.mockResolvedValueOnce({ images: [], skipped: [{ name: 'x.txt', reason: 'unsupported-type' }] });
         render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);

@@ -122,6 +122,15 @@ export default function GradeStudent() {
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),
         [students, student?.classId]
     );
+    // Tesseract's user-words dictionary only accepts single tokens, so split rubric
+    // vocabulary phrases and student names on whitespace.
+    const scanUserWords = useMemo(
+        () => [
+            ...(liveRubric?.vocabularyItems ?? []).flatMap((v) => v.phrase.split(/\s+/)),
+            ...classStudents.flatMap((s) => s.name.split(/\s+/)),
+        ],
+        [liveRubric?.vocabularyItems, classStudents]
+    );
 
     // The essay assignment to pre-fill the "Assign Essay" modal from, and to link a
     // newly-created individual assignment back to. Prefer this student's own row for
@@ -1817,6 +1826,7 @@ export default function GradeStudent() {
                     return (
                         <ScanCaptureModal
                             defaultLang={scanSettings.defaultLang}
+                            userWords={scanUserWords}
                             onClose={() => setScanForCrit(null)}
                             onInsert={(text) => {
                                 // Land the recognised text as a document node via the TipTap
