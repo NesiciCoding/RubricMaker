@@ -22,9 +22,13 @@ export async function imageSourceToRgbaImage(source: Blob | string): Promise<Rgb
     const url = typeof source === 'string' ? source : URL.createObjectURL(source);
     try {
         const bitmap = await createImageBitmap(typeof source === 'string' ? await (await fetch(url)).blob() : source);
-        const ctx = canvasContext(bitmap.width, bitmap.height);
-        ctx.drawImage(bitmap, 0, 0);
-        return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+        try {
+            const ctx = canvasContext(bitmap.width, bitmap.height);
+            ctx.drawImage(bitmap, 0, 0);
+            return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+        } finally {
+            bitmap.close();
+        }
     } finally {
         if (typeof source !== 'string') URL.revokeObjectURL(url);
     }

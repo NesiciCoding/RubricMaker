@@ -1186,7 +1186,9 @@
             "no_answer_option": "Keine Antwort",
             "save_button": "Antworten speichern",
             "save_success": "Antworten gespeichert.",
-            "retry_corners": "Ecken erneut wählen"
+            "retry_corners": "Ecken erneut wählen",
+            "overwrite_graded_title": "Bewertetes Ergebnis überschreiben?",
+            "overwrite_graded_message": "Der Test dieser Schülerin/dieses Schülers wurde bereits bewertet. Wenn Sie diesen Scan speichern, werden alle Antworten ersetzt und die vorhandene Note, Punkte und das Feedback gelöscht. Fortfahren?"
         }
     },
     "studentsPage": {

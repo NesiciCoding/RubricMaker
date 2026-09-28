@@ -1181,12 +1181,14 @@
             "source_bubble": "Respuesta marcada",
             "source_ocr": "Texto reconocido",
             "source_unscanned": "No escaneado automáticamente",
-            "unscanned_note": "Este tipo de pregunta aún no se escanea automáticamente: cálifíquela desde la página de resultados completa.",
+            "unscanned_note": "Este tipo de pregunta aún no se escanea automáticamente: califíquela desde la página de resultados completa.",
             "unsupported_sheet": "Esta hoja de respuestas es demasiado larga para escanearse automáticamente (no cabe en una sola página). Introduzca las respuestas de este estudiante desde la página de resultados.",
             "no_answer_option": "Sin respuesta",
             "save_button": "Guardar respuestas",
             "save_success": "Respuestas guardadas.",
-            "retry_corners": "Rehacer esquinas"
+            "retry_corners": "Rehacer esquinas",
+            "overwrite_graded_title": "¿Sobrescribir el resultado calificado?",
+            "overwrite_graded_message": "El examen de este estudiante ya ha sido calificado. Guardar este escaneo reemplazará todas sus respuestas y borrará la calificación, los puntos y los comentarios existentes. ¿Continuar?"
         }
     },
     "studentsPage": {
@@ -3372,7 +3374,7 @@
         "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
         "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas.",
         "gr_exam_scan_title": "Escanear la hoja de respuestas de un examen en papel",
-        "gr_exam_scan_body": "En la página de Exámenes, elija “Escanear hoja de respuestas” en un examen, seleccione al estudiante y fotografíe o importe su hoja de respuestas completada al estilo CITO. Toque las cuatro esquinas de la página impresa para enderezarla; las burbujas de opción múltiple/verdadero-falso se leen mediante detección de marcas y el texto de respuesta corta/numérico/abierto mediante OCR en el dispositivo — revise y corrija cada respuesta antes de guardar. Las preguntas de emparejar, ordenar, rellenar huecos, categorizar y texto interactivo aún no se detectan automáticamente; cálifíquelas desde la página de resultados."
+        "gr_exam_scan_body": "En la página de Exámenes, elija “Escanear hoja de respuestas” en un examen, seleccione al estudiante y fotografíe o importe su hoja de respuestas completada al estilo CITO. Toque las cuatro esquinas de la página impresa para enderezarla; las burbujas de opción múltiple/verdadero-falso se leen mediante detección de marcas y el texto de respuesta corta/numérico/abierto mediante OCR en el dispositivo — revise y corrija cada respuesta antes de guardar. Las preguntas de emparejar, ordenar, rellenar huecos, categorizar y texto interactivo aún no se detectan automáticamente; califíquelas desde la página de resultados."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
