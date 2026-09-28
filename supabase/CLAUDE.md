@@ -124,6 +124,7 @@ Current functions:
 | `question_bank_items`       | Reusable test questions saved outside any one test (roadmap 24.1)                                                                                                                                                                                                                                 |
 | `document_comments`         | Inline anchored comments on graded documents (essay/DOCX attachments), grading-side only (roadmap 26.3)                                                                                                                                                                                           |
 | `placement_sessions`        | Server-authoritative per-(assignment,student) run state for a generator-engine placement test (roadmap 27.1) — level/Elo trace, asked-item ids, and a one-shot teacher level nudge (roadmap 27.2); written only by `next-placement-question` (service role) or the `set_placement_override()` RPC |
+| `comparative_matchups`      | Append-only log of completed comparative-grading matchups (rubric + both student ids); derives the per-student, per-rubric comparison cap (`Rubric.comparativeMatchupLimit`) so it persists across reloads/devices instead of resetting every session                                             |
 
 The full schema is spread across migrations — `001_initial_schema.sql` covers most core tables; see individual `NNN_description.sql` files (named after the feature) for the rest.
 

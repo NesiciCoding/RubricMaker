@@ -34,6 +34,7 @@ import type {
     StaircaseStep,
     DocumentComment,
     NotificationDismissal,
+    ComparativeMatchup,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
@@ -910,6 +911,7 @@ const KEYS = {
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
     notificationDismissals: 'rm_notification_dismissals',
+    comparativeMatchups: 'rm_comparative_matchups',
     migrationDone: 'rm_migration_done',
 };
 
@@ -1083,6 +1085,7 @@ export interface StoreData {
     questionBank: QuestionBankItem[];
     documentComments: DocumentComment[];
     notificationDismissals: NotificationDismissal[];
+    comparativeMatchups: ComparativeMatchup[];
 }
 
 export function loadStore(): StoreData {
@@ -1137,6 +1140,7 @@ export function loadStore(): StoreData {
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
         documentComments: load<DocumentComment[]>(KEYS.documentComments, []),
         notificationDismissals: load<NotificationDismissal[]>(KEYS.notificationDismissals, []),
+        comparativeMatchups: load<ComparativeMatchup[]>(KEYS.comparativeMatchups, []),
     };
 }
 
@@ -1263,6 +1267,9 @@ export function saveDocumentComments(comments: DocumentComment[]) {
 }
 export function saveNotificationDismissals(dismissals: NotificationDismissal[]) {
     save(KEYS.notificationDismissals, dismissals);
+}
+export function saveComparativeMatchups(matchups: ComparativeMatchup[]) {
+    save(KEYS.comparativeMatchups, matchups);
 }
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
@@ -1601,6 +1608,21 @@ export function importFullBackup(json: string): boolean {
             )
                 saveNotificationDismissals(data.notificationDismissals as NotificationDismissal[]);
             else console.warn('[importFullBackup] notificationDismissals failed validation — skipped');
+        }
+        if (data.comparativeMatchups !== undefined) {
+            if (
+                Array.isArray(data.comparativeMatchups) &&
+                data.comparativeMatchups.every(
+                    (m) =>
+                        isPlainObject(m) &&
+                        typeof (m as Record<string, unknown>).id === 'string' &&
+                        typeof (m as Record<string, unknown>).rubricId === 'string' &&
+                        typeof (m as Record<string, unknown>).studentAId === 'string' &&
+                        typeof (m as Record<string, unknown>).studentBId === 'string'
+                )
+            )
+                saveComparativeMatchups(data.comparativeMatchups as ComparativeMatchup[]);
+            else console.warn('[importFullBackup] comparativeMatchups failed validation — skipped');
         }
         return true;
     } catch (e) {

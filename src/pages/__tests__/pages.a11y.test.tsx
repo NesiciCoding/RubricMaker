@@ -107,6 +107,7 @@ const base = {
     students: [mockStudent],
     classes: [mockClass],
     studentRubrics: [] as StudentRubric[],
+    comparativeMatchups: [],
     selfAssessments: [],
     speakingSessions: [],
     gradeScales: [{ id: 'gs1', name: 'Default', ranges: [] }],
@@ -157,6 +158,7 @@ const base = {
     deleteVocabularyItems: vi.fn(),
     // GradeStudent actions
     saveStudentRubric: vi.fn(),
+    addComparativeMatchup: vi.fn(),
     saveAnalysisResult: vi.fn(),
     addCommentBankItem: vi.fn(),
     addAttachment: vi.fn(),

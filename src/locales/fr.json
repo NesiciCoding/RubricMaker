@@ -3020,6 +3020,7 @@
         "gr_comparative_body_prefix": "Cliquez sur",
         "gr_comparative_button": "Comparer",
         "gr_comparative_body_suffix": "sur la liste des rubriques pour ouvrir la vue de notation côte à côte. Notez deux élèves à la fois pour la calibration et la notation basée sur des ancres. L'interface suggère de manière adaptative des ajustements de niveau lorsqu'il y a un écart entre les scores des élèves.",
+        "gr_comparative_limit_note": "Chaque grille a sa propre limite de comparaisons par élève (réglable depuis l'écran de session). Les comparaisons terminées sont enregistrées sur la grille et comptées par élève, si bien que la limite reste valable après un rechargement ou sur un autre appareil au lieu d'être réinitialisée à chaque session — c'est ce qui empêche la notation comparative de boucler indéfiniment.",
         "gr_group_title": "Notation de groupe",
         "gr_group_body_prefix": "Cliquez sur",
         "gr_group_button": "Note de groupe",

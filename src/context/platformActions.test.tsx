@@ -63,6 +63,7 @@ const mockEmptyState = vi.hoisted(() => (): StoreData => ({
     questionBank: [],
     documentComments: [],
     notificationDismissals: [],
+    comparativeMatchups: [],
     gradingTasks: [],
     tests: [],
     studentTests: [],

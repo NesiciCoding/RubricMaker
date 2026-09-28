@@ -73,6 +73,7 @@ vi.mock('../store/storage', () => {
         'saveQuestionBank',
         'saveDocumentComments',
         'saveNotificationDismissals',
+        'saveComparativeMatchups',
         'saveUserTemplates',
         'importFullBackup',
         'loadPendingQueue',
@@ -187,6 +188,7 @@ function makeState(overrides: Partial<StoreData> = {}): StoreData {
         questionBank: [],
         documentComments: [],
         notificationDismissals: [],
+        comparativeMatchups: [],
         ...overrides,
     };
 }

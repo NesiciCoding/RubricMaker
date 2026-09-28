@@ -3020,6 +3020,7 @@
         "gr_comparative_body_prefix": "Haz clic en",
         "gr_comparative_button": "Comparar",
         "gr_comparative_body_suffix": "en la lista de rúbricas para abrir la vista de calificación en paralelo. Califica a dos alumnos a la vez para calibración y calificación basada en anclas. La interfaz sugiere de forma adaptativa ajustes de nivel cuando hay una discrepancia entre las puntuaciones de los alumnos.",
+        "gr_comparative_limit_note": "Cada rúbrica tiene su propio límite de comparaciones por alumno (ajustable desde la pantalla de sesión). Las comparaciones completadas se guardan en la rúbrica y se cuentan por alumno, así que el límite se mantiene tras recargar la página o en otro dispositivo en lugar de reiniciarse en cada sesión, lo que evita que la calificación comparativa se repita indefinidamente.",
         "gr_group_title": "Calificación grupal",
         "gr_group_body_prefix": "Haz clic en",
         "gr_group_button": "Calificación grupal",

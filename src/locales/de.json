@@ -3020,6 +3020,7 @@
         "gr_comparative_body_prefix": "Klicke auf",
         "gr_comparative_button": "Vergleichen",
         "gr_comparative_body_suffix": "in der Rubrikenliste, um die Nebeneinander-Bewertungsansicht zu öffnen. Bewerte zwei Schüler gleichzeitig für Kalibrierung und ankerbasierte Bewertung. Die Oberfläche schlägt adaptiv Stufenanpassungen vor, wenn es eine Diskrepanz zwischen den Bewertungen der Schüler gibt.",
+        "gr_comparative_limit_note": "Jede Rubrik hat ein eigenes Vergleichslimit pro Schüler (einstellbar im Sitzungsbildschirm). Abgeschlossene Vergleiche werden bei der Rubrik gespeichert und pro Schüler gezählt, sodass das Limit über Neuladen und Geräte hinweg bestehen bleibt, statt bei jeder Sitzung zurückgesetzt zu werden — genau das verhindert eine endlose Vergleichsschleife.",
         "gr_group_title": "Gruppenbewertung",
         "gr_group_body_prefix": "Klicke auf",
         "gr_group_button": "Gruppennote",
