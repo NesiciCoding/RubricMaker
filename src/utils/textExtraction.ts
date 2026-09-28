@@ -2,7 +2,7 @@ import DOMPurify from 'dompurify';
 import type { Attachment } from '../types';
 import { type PSM } from 'tesseract.js';
 import { resolveOcrLanguages } from './ocrLanguage';
-import { Oem, type CaptureHint, psmForCaptureHint } from './ocrConfig';
+import { Oem, type CaptureHint, psmForCaptureHint, buildUserWords, buildUserPatterns } from './ocrConfig';
 
 export class UnsupportedFormatError extends Error {
     constructor(mimeType: string) {
@@ -93,6 +93,10 @@ export interface RecognizeImageOptions {
     captureHint?: CaptureHint;
     /** Explicit Tesseract PSM override; wins over `captureHint` when set. */
     psm?: PSM;
+    /** Domain words (rubric vocabulary, class roster names) to bias recognition toward. */
+    userWords?: Iterable<string>;
+    /** Domain regex-free patterns (Tesseract `user_patterns` syntax) to bias recognition toward. */
+    userPatterns?: Iterable<string>;
 }
 
 /** Tesseract reports confidence 0–100; the app models it in [0, 1]. */
@@ -147,6 +151,27 @@ export async function recognizeImage(dataUrl: string, opts: RecognizeImageOption
     const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
     const worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
     try {
+        // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect
+        // via reinitialize() after the worker's first load — setParameters silently ignores
+        // user_words_suffix/user_patterns_suffix/load_*_dawg (they're init-only members).
+        const userWordsText = buildUserWords(opts.userWords ?? []);
+        const userPatternsText = buildUserPatterns(opts.userPatterns ?? []);
+        if (userWordsText || userPatternsText) {
+            const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
+            // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
+            // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
+            // code/identifier-heavy text and would hurt recognition of ordinary student prose.
+            const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
+            if (userWordsText) {
+                await worker.writeText(`${primaryLang}.user-words`, userWordsText);
+                config.user_words_suffix = 'user-words';
+            }
+            if (userPatternsText) {
+                await worker.writeText(`${primaryLang}.user-patterns`, userPatternsText);
+                config.user_patterns_suffix = 'user-patterns';
+            }
+            await worker.reinitialize(langs, Oem.LSTM_ONLY, config);
+        }
         await worker.setParameters({ tessedit_pageseg_mode: psm });
         const { data } = (await worker.recognize(dataUrl, {}, { blocks: true })) as unknown as { data: RecognizeData };
         const words = collectWords(data);

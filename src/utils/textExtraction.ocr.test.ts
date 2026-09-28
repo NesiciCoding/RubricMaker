@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Attachment } from '../types';
 
-const { recognize, setParameters, terminate, createWorkerSpy } = vi.hoisted(() => ({
+const { recognize, setParameters, terminate, writeText, reinitialize, createWorkerSpy } = vi.hoisted(() => ({
     recognize: vi.fn(),
     setParameters: vi.fn(),
     terminate: vi.fn(),
+    writeText: vi.fn(),
+    reinitialize: vi.fn(),
     createWorkerSpy: vi.fn(),
 }));
 
@@ -21,7 +23,9 @@ beforeEach(() => {
     recognize.mockReset();
     setParameters.mockReset().mockResolvedValue(undefined);
     terminate.mockReset().mockResolvedValue(undefined);
-    createWorkerSpy.mockReset().mockResolvedValue({ recognize, setParameters, terminate });
+    writeText.mockReset().mockResolvedValue(undefined);
+    reinitialize.mockReset().mockResolvedValue(undefined);
+    createWorkerSpy.mockReset().mockResolvedValue({ recognize, setParameters, terminate, writeText, reinitialize });
     recognize.mockResolvedValue({ data: { text: '', words: [] } });
 });
 
@@ -85,6 +89,38 @@ describe('recognizeImage', () => {
         recognize.mockRejectedValue(new Error('ocr boom'));
         await expect(recognizeImage(imageUrl)).rejects.toThrow('ocr boom');
         expect(terminate).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips the dictionary reinitialize round-trip when no words or patterns are given', async () => {
+        await recognizeImage(imageUrl);
+        expect(writeText).not.toHaveBeenCalled();
+        expect(reinitialize).not.toHaveBeenCalled();
+    });
+
+    it('seeds a user-words dictionary and reinitializes before recognizing', async () => {
+        await recognizeImage(imageUrl, { userWords: ['Rembrandt', 'Vermeer', 'Rembrandt'] });
+        expect(writeText).toHaveBeenCalledWith('eng.user-words', 'Rembrandt\nVermeer');
+        expect(reinitialize).toHaveBeenCalledWith('eng', 1, {
+            load_system_dawg: '1',
+            load_freq_dawg: '1',
+            user_words_suffix: 'user-words',
+        });
+    });
+
+    it('seeds a user-patterns dictionary alongside user words, keyed to the primary language', async () => {
+        await recognizeImage(imageUrl, {
+            langs: ['en', 'nl'],
+            userWords: ['photosynthesis'],
+            userPatterns: ['\\d\\d-\\d\\d-\\d\\d\\d\\d'],
+        });
+        expect(writeText).toHaveBeenCalledWith('eng.user-words', 'photosynthesis');
+        expect(writeText).toHaveBeenCalledWith('eng.user-patterns', '\\d\\d-\\d\\d-\\d\\d\\d\\d');
+        expect(reinitialize).toHaveBeenCalledWith('eng+nld', 1, {
+            load_system_dawg: '1',
+            load_freq_dawg: '1',
+            user_words_suffix: 'user-words',
+            user_patterns_suffix: 'user-patterns',
+        });
     });
 });
 

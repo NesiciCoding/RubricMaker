@@ -337,6 +337,8 @@ export const LONG_ANSWER_HEIGHT_MM = 130;
 export const ANSWER_LINE_SPACING_MM = 7;
 /** Fixed physical width of every MC/choice bubble cell, in mm — constant regardless of how many options a question has, so a scanning pipeline can assume one cell width across the whole answer sheet instead of a table-relative one that shrinks as option count grows. */
 export const CHOICE_CELL_WIDTH_MM = 11;
+/** Gap between adjacent MC/choice bubble cells, in mm — shared by the HTML/DOCX renderers and the scan-region pixel mapping (examScanRegions.ts) so a scanned sheet's bubble positions match what was actually printed. */
+export const CHOICE_CELL_GAP_MM = 4;
 
 /** Estimated mm height per AnswerSpaceKind, used only to compute the running `y` flow hint below. */
 const ANSWER_SPACE_HEIGHT_MM: Record<AnswerSpaceKind, number> = {
