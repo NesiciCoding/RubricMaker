@@ -29,7 +29,12 @@ function makeTest(): Test {
 describe('buildAnswerSheetHtml choice bubbles', () => {
     it('sizes and spaces MC bubbles from the same CHOICE_CELL_WIDTH_MM/CHOICE_CELL_GAP_MM constants examScanRegions.ts scans against', async () => {
         const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS);
-        expect(html).toContain(`width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm`);
+        // box-sizing:border-box keeps the border inside the declared width, so the printed pitch
+        // (width + gap) matches choiceCellRects()'s assumption exactly instead of growing by the
+        // border thickness per cell.
+        expect(html).toContain(
+            `box-sizing:border-box;width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm`
+        );
         expect(html).toContain(`gap:${CHOICE_CELL_GAP_MM}mm`);
         // Not the old hardcoded px sizing this used to diverge from the scanner geometry with.
         expect(html).not.toContain('width:20px');

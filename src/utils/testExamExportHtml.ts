@@ -217,7 +217,7 @@ function answerSpaceHtml(space: AnswerSpaceSpec): string {
             )
                 .map(
                     (l) =>
-                        `<div style="width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm;border:1.5px solid #000;border-radius:${shape};display:flex;align-items:center;justify-content:center;font-size:11px">${l}</div>`
+                        `<div style="box-sizing:border-box;width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm;border:1.5px solid #000;border-radius:${shape};display:flex;align-items:center;justify-content:center;font-size:11px">${l}</div>`
                 )
                 .join('')}</div>`;
         }
