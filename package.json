@@ -71,7 +71,7 @@
     "compromise": "^14.17.0",
     "docx": "^9.7.2",
     "docx-preview": "^0.4.1",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.16",
     "file-saver": "^2.0.5",
     "i18next": "^26.4.2",
     "i18next-browser-languagedetector": "^8.2.1",
