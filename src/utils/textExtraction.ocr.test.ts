@@ -101,8 +101,8 @@ describe('recognizeImage', () => {
         await recognizeImage(imageUrl, { userWords: ['Rembrandt', 'Vermeer', 'Rembrandt'] });
         expect(writeText).toHaveBeenCalledWith('eng.user-words', 'Rembrandt\nVermeer');
         expect(reinitialize).toHaveBeenCalledWith('eng', 1, {
-            load_system_dawg: '0',
-            load_freq_dawg: '0',
+            load_system_dawg: '1',
+            load_freq_dawg: '1',
             user_words_suffix: 'user-words',
         });
     });
@@ -116,8 +116,8 @@ describe('recognizeImage', () => {
         expect(writeText).toHaveBeenCalledWith('eng.user-words', 'photosynthesis');
         expect(writeText).toHaveBeenCalledWith('eng.user-patterns', '\\d\\d-\\d\\d-\\d\\d\\d\\d');
         expect(reinitialize).toHaveBeenCalledWith('eng+nld', 1, {
-            load_system_dawg: '0',
-            load_freq_dawg: '0',
+            load_system_dawg: '1',
+            load_freq_dawg: '1',
             user_words_suffix: 'user-words',
             user_patterns_suffix: 'user-patterns',
         });

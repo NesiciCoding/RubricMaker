@@ -158,7 +158,10 @@ export async function recognizeImage(dataUrl: string, opts: RecognizeImageOption
         const userPatternsText = buildUserPatterns(opts.userPatterns ?? []);
         if (userWordsText || userPatternsText) {
             const primaryLang = (Array.isArray(langs) ? langs[0] : langs).split('+')[0];
-            const config: Record<string, string> = { load_system_dawg: '0', load_freq_dawg: '0' };
+            // Keep the standard dictionaries on: user words/patterns are meant to *supplement*
+            // recognition, not replace it — disabling load_system_dawg/load_freq_dawg is for
+            // code/identifier-heavy text and would hurt recognition of ordinary student prose.
+            const config: Record<string, string> = { load_system_dawg: '1', load_freq_dawg: '1' };
             if (userWordsText) {
                 await worker.writeText(`${primaryLang}.user-words`, userWordsText);
                 config.user_words_suffix = 'user-words';

@@ -9,6 +9,8 @@ import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
     ANSWER_LINE_SPACING_MM,
+    CHOICE_CELL_GAP_MM,
+    CHOICE_CELL_WIDTH_MM,
     LONG_ANSWER_HEIGHT_MM,
     answerKeyText,
     answerSheetGeometry,
@@ -207,10 +209,15 @@ function answerSpaceHtml(space: AnswerSpaceSpec): string {
     switch (space.kind) {
         case 'choice': {
             const shape = space.multiSelect ? '3px' : '50%';
-            return `<div style="display:flex;gap:14px;margin-top:4px;flex-wrap:wrap">${(space.optionLetters ?? [])
+            // Bubble width and gap share CHOICE_CELL_WIDTH_MM/CHOICE_CELL_GAP_MM with the DOCX
+            // renderer and examScanRegions.ts's choiceCellRects(), so a scanned sheet's bubble
+            // positions match what was actually printed.
+            return `<div style="display:flex;gap:${CHOICE_CELL_GAP_MM}mm;margin-top:4px;flex-wrap:wrap">${(
+                space.optionLetters ?? []
+            )
                 .map(
                     (l) =>
-                        `<div style="width:20px;height:20px;border:1.5px solid #000;border-radius:${shape};display:flex;align-items:center;justify-content:center;font-size:11px">${l}</div>`
+                        `<div style="width:${CHOICE_CELL_WIDTH_MM}mm;height:${CHOICE_CELL_WIDTH_MM}mm;border:1.5px solid #000;border-radius:${shape};display:flex;align-items:center;justify-content:center;font-size:11px">${l}</div>`
                 )
                 .join('')}</div>`;
         }
