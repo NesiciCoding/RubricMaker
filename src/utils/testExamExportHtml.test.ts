@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import '../i18n';
-import type { Test } from '../types';
+import type { Student, Test } from '../types';
 import { buildAnswerSheetHtml, buildExamAttachmentHtml, buildExamBookletHtml } from './testExamExportHtml';
 import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, DEFAULT_EXAM_EXPORT_OPTIONS } from './testExamContent';
 
@@ -106,5 +106,59 @@ describe('booklet images and cloze layout', () => {
         expect(html).toContain('white-space:pre-line');
         expect(html).toContain('Line one');
         expect(html).toContain('\nLine two');
+    });
+});
+
+describe('answer sheet scan markers', () => {
+    const students = [
+        { id: 's1', name: 'Ann', classId: 'c' },
+        { id: 's2', name: 'Bob', classId: 'c' },
+    ] as Student[];
+
+    it('gives every student their own margin-wrapped sheet with markers in the repeated header, starting a fresh page between sheets', async () => {
+        const html = await buildAnswerSheetHtml(
+            makeTest(),
+            { ...DEFAULT_EXAM_EXPORT_OPTIONS, scanMarkers: true },
+            students
+        );
+        const sheets = html.split('<table').slice(1);
+        expect(sheets).toHaveLength(2);
+        expect(sheets[0]).toContain('page-break-after:always');
+        expect(sheets[1]).not.toContain('page-break-after:always');
+        for (const sheet of sheets) {
+            const thead = sheet.slice(sheet.indexOf('<thead>'), sheet.indexOf('</thead>'));
+            expect(thead.match(/position:absolute/g)).toHaveLength(4);
+            expect(thead).toContain('<img src="data:image/png');
+        }
+        expect(sheets[0]).toContain('Ann');
+        expect(sheets[1]).toContain('Bob');
+    });
+
+    it('omits the markers when the option is off', async () => {
+        const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS, students);
+        expect(html).not.toContain('position:absolute');
+    });
+});
+
+describe('audio notes and point labels', () => {
+    it('prints a listen note for audio questions and audio sections', () => {
+        const test = makeTest();
+        test.sections = [{ id: 's1', title: 'Listening', audioUrl: 'https://example.com/a.mp3' }];
+        test.questions[0].sectionId = 's1';
+        test.questions[0].audioUrl = 'https://example.com/q.mp3';
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html.match(/Listen to the recording\./g)).toHaveLength(2);
+    });
+
+    it('prints no listen note without audio', () => {
+        expect(buildExamBookletHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS)).not.toContain('Listen to the recording');
+    });
+
+    it('formats the margin point label through i18n with plural forms', () => {
+        const test = makeTest();
+        test.questions.push({ ...test.questions[0], id: 'q2', points: 3 });
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('>1 pt<');
+        expect(html).toContain('>3 pts<');
     });
 });

@@ -39,7 +39,6 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    pointLabel,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -180,6 +179,13 @@ function coverParagraphs(test: Test, docLabel: string, includeNameBox = false): 
         ...summaryLines,
         new Paragraph({ children: [new PageBreak()] }),
     ];
+}
+
+function audioNoteParagraph(): Paragraph {
+    return new Paragraph({
+        children: [new TextRun({ text: tx('audio_note'), italics: true, size: 18, color: '6b7280' })],
+        spacing: { after: 80 },
+    });
 }
 
 function sectionDivider(title: string): Paragraph {
@@ -338,13 +344,14 @@ async function questionParagraphs(
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
             children: [
-                new TextRun({ text: `${pointLabel(question.points)}  `, color: '6b7280', size: 18 }),
+                new TextRun({ text: `${tx('point_label', { count: question.points })}  `, color: '6b7280', size: 18 }),
                 new TextRun({ text: `${number}  `, bold: true }),
                 ...promptRuns,
             ],
             spacing: { after: 60 },
         }),
         ...(rich?.rest ?? []),
+        ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 
     if (question.imageUrl) {
@@ -451,6 +458,7 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
+            if (group.section.audioUrl) children.push(audioNoteParagraph());
             if (options.attachmentMode === 'inline' && group.section.content) {
                 children.push(...(await richPassageToDocx(group.section.content, 120)));
             }

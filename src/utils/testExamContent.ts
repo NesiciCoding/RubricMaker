@@ -40,11 +40,6 @@ export function groupQuestionsBySection(test: Test): ExamSectionGroup[] {
     return groups;
 }
 
-/** CITO-style margin label, e.g. "3p" for a 3-point question. */
-export function pointLabel(points: number): string {
-    return `${points}p`;
-}
-
 export function optionLetter(index: number): string {
     return String.fromCharCode(65 + index);
 }
@@ -381,18 +376,18 @@ export interface AnswerSheetQrPayload {
     testId: string;
     studentId?: string;
     sheetType: 'answer';
-    pageIndex: number;
 }
 
 /**
- * JSON payload encoded into an answer sheet's per-page QR marker, for a future scan-ingestion step
- * to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
+ * JSON payload encoded into an answer sheet's QR marker (repeated on every page of the sheet, so it
+ * carries no page number — a scanner recovers page order from scan order), for a future
+ * scan-ingestion step to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
  * who can read the QR (e.g. a photo of a handed-out sheet) can reconstruct or forge one. A future
  * ingestion step must not treat a scanned `studentId` as proof of who submitted the sheet; it needs
  * its own authentication (e.g. requiring the submitting teacher's session, or cross-checking against
  * an expected roster) before accepting scanned answers as that student's.
  */
-export function answerSheetQrPayload(testId: string, pageIndex: number, studentId?: string): string {
-    const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer', pageIndex };
+export function answerSheetQrPayload(testId: string, studentId?: string): string {
+    const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer' };
     return JSON.stringify(payload);
 }

@@ -3,6 +3,7 @@ import type { Test, TestQuestion } from '../types';
 import {
     answerSheetGeometry,
     answerSpaceFor,
+    answerSheetQrPayload,
     clozeBookletParts,
     groupQuestionsBySection,
     hotTextFallbackText,
@@ -10,7 +11,6 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    pointLabel,
 } from './testExamContent';
 
 function q(overrides: Partial<TestQuestion> & Pick<TestQuestion, 'id' | 'type' | 'points' | 'prompt'>): TestQuestion {
@@ -54,7 +54,6 @@ describe('optionLetter / pointLabel', () => {
     it('derives A/B/C... and "Np" labels', () => {
         expect(optionLetter(0)).toBe('A');
         expect(optionLetter(4)).toBe('E');
-        expect(pointLabel(3)).toBe('3p');
     });
 });
 
@@ -237,5 +236,15 @@ describe('clozeBookletParts line breaks', () => {
             .map((p) => (p.blankNumber ? `(${p.blankNumber})` : p.text))
             .join('');
         expect(text).toBe('One (1).\nTwo.\n\nThree.');
+    });
+});
+
+describe('answerSheetQrPayload', () => {
+    it('identifies the sheet without a page number, since the marker repeats on every page', () => {
+        expect(JSON.parse(answerSheetQrPayload('t1', 's1'))).toEqual({
+            testId: 't1',
+            studentId: 's1',
+            sheetType: 'answer',
+        });
     });
 });

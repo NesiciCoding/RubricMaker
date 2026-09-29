@@ -1,6 +1,12 @@
+import JSZip from 'jszip';
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { collectParagraphTexts, richPassageToDocx, richPromptToDocx } from './testExamExportDocx';
+import '../i18n';
+import type { Test } from '../types';
+import { collectParagraphTexts, exportExamDocx, richPassageToDocx, richPromptToDocx } from './testExamExportDocx';
 import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
+
+const saved: Blob[] = [];
+vi.mock('file-saver', () => ({ saveAs: (blob: Blob) => saved.push(blob) }));
 
 function parse(html: string): Element {
     return new DOMParser().parseFromString(html, 'text/html').body;
@@ -103,5 +109,43 @@ describe('rich docx blocks with images', () => {
         stubImages();
         const blocks = await richPassageToDocx('<img src="x"><p>Text</p>');
         expect(blocks).toHaveLength(2);
+    });
+});
+
+describe('exam booklet .docx content', () => {
+    async function bookletXml(test: Test): Promise<string> {
+        saved.length = 0;
+        await exportExamDocx(test, { attachmentMode: 'inline', hotTextMirror: false, scanMarkers: false });
+        const zip = await JSZip.loadAsync(saved[0]);
+        const name = Object.keys(zip.files).find((f) => f.endsWith('-booklet.docx'))!;
+        const booklet = await JSZip.loadAsync(await zip.files[name].async('arraybuffer'));
+        return booklet.files['word/document.xml'].async('string');
+    }
+
+    const test: Test = {
+        id: 't1',
+        name: 'Quiz',
+        requireSEB: false,
+        shuffleQuestions: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        sections: [{ id: 's1', title: 'Listening', audioUrl: 'https://example.com/a.mp3' }],
+        questions: [
+            { id: 'q1', type: 'open', points: 1, prompt: '<p>One</p>', sectionId: 's1' },
+            {
+                id: 'q2',
+                type: 'open',
+                points: 3,
+                prompt: '<p>Two</p>',
+                sectionId: 's1',
+                audioUrl: 'https://example.com/q.mp3',
+            },
+        ],
+    };
+
+    it('prints listen notes for the section and the audio question, and pluralised point labels', async () => {
+        const xml = await bookletXml(test);
+        expect(xml.match(/Listen to the recording\./g)).toHaveLength(2);
+        expect(xml).toContain('1 pt');
+        expect(xml).toContain('3 pts');
     });
 });
