@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countWords } from './essayUtils';
+import { countWords, htmlToPlainText } from './essayUtils';
 
 describe('countWords', () => {
     it('returns 0 for empty string', () => {
@@ -52,5 +52,9 @@ describe('countWords', () => {
 
     it('does not count empty tokens from multiple spaces', () => {
         expect(countWords('one   two   three')).toBe(3);
+    });
+
+    it('decodes &amp; last so an escaped entity stays literal text', () => {
+        expect(htmlToPlainText('<p>a &amp;lt; b &amp; c</p>')).toBe('a &lt; b & c');
     });
 });

@@ -7,6 +7,7 @@ import {
     countSentences,
     countSyllables,
     countTransitions,
+    splitSentences,
     tokenizeWords,
 } from './essayTextStats';
 
@@ -51,6 +52,29 @@ describe('shared fixtures', () => {
             maxSentenceLength: f.maxSentenceLength,
         });
         if (f.transitions) expect(s.transitions).toMatchObject(f.transitions);
+    });
+});
+
+describe('splitSentences', () => {
+    const reference = (text: string) => text.split(/[.!?]+(?:\s+|$)/).filter((p) => p.trim());
+
+    it('matches the CLI regex split on random punctuation-heavy text', () => {
+        const alphabet = ['a', 'b', ' ', ' ', '.', '!', '?', '\n', 'e.g'];
+        let seed = 7;
+        const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+        for (let n = 0; n < 500; n++) {
+            const text = Array.from(
+                { length: 1 + Math.floor(rand() * 40) },
+                () => alphabet[Math.floor(rand() * alphabet.length)]
+            ).join('');
+            expect(splitSentences(text), JSON.stringify(text)).toEqual(reference(text));
+        }
+    });
+
+    it('stays linear on a long run of punctuation', () => {
+        const start = performance.now();
+        splitSentences('!'.repeat(200_000) + 'x');
+        expect(performance.now() - start).toBeLessThan(500);
     });
 });
 

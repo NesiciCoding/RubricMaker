@@ -64,15 +64,37 @@ export const TRANSITION_WORDS: Record<TransitionCategory, string[]> = {
     ],
 };
 
-const SENT_SPLIT_RE = /[.!?]+(?:\s+|$)/;
 const WORD_RE = /[a-zA-Z0-9]+/g;
 
 export function tokenizeWords(text: string): string[] {
     return text.match(WORD_RE) ?? [];
 }
 
+const isTerminator = (c: string) => c === '.' || c === '!' || c === '?';
+
+/**
+ * Same boundaries as the CLI's /[.!?]+(?:\s+|$)/ split (a run of . ! ? followed by whitespace or the
+ * end), scanned in one pass: the regex backtracks quadratically on a long run of punctuation.
+ */
 export function splitSentences(text: string): string[] {
-    return text.split(SENT_SPLIT_RE).filter((p) => p.trim());
+    const parts: string[] = [];
+    let start = 0;
+    let i = 0;
+    while (i < text.length) {
+        if (!isTerminator(text[i])) {
+            i++;
+            continue;
+        }
+        const runStart = i;
+        while (i < text.length && isTerminator(text[i])) i++;
+        if (i === text.length || /\s/.test(text[i])) {
+            parts.push(text.slice(start, runStart));
+            while (i < text.length && /\s/.test(text[i])) i++;
+            start = i;
+        }
+    }
+    parts.push(text.slice(start));
+    return parts.filter((p) => p.trim());
 }
 
 export function countSentences(text: string): number {
