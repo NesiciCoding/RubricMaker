@@ -52,6 +52,22 @@ export function stripHtmlTags(text: string): string {
     return result.replace(/\s+/g, ' ').trim();
 }
 
+/** Drops inline font sizes (pasted Word/web text carries stray ones) so a passage prints at the booklet's base size; headings keep their relative size. */
+export function stripInlineFontSizes(html: string): string {
+    if (!html) return '';
+    const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+    doc.body.querySelectorAll('[style]').forEach((el) => {
+        const kept = (el.getAttribute('style') ?? '')
+            .split(';')
+            .filter((decl) => decl.trim() && !/^\s*font(-size)?\s*:/i.test(decl))
+            .join(';');
+        if (kept) el.setAttribute('style', kept);
+        else el.removeAttribute('style');
+    });
+    doc.body.querySelectorAll('font[size]').forEach((el) => el.removeAttribute('size'));
+    return doc.body.firstElementChild?.innerHTML ?? '';
+}
+
 /** Normalises a stored question prompt to HTML: TipTap output passes through, legacy plain text keeps its line breaks. */
 export function promptToHtml(prompt: string): string {
     if (!prompt) return '';

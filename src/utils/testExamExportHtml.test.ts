@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import '../i18n';
 import type { Test } from '../types';
-import { buildAnswerSheetHtml, buildExamBookletHtml } from './testExamExportHtml';
+import { buildAnswerSheetHtml, buildExamAttachmentHtml, buildExamBookletHtml } from './testExamExportHtml';
 import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, DEFAULT_EXAM_EXPORT_OPTIONS } from './testExamContent';
 
 function makeTest(): Test {
@@ -60,5 +60,19 @@ describe('buildExamBookletHtml rich prompt', () => {
         test.questions[0].prompt = 'line one\nfish & chips';
         const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
         expect(html).toContain('<p>line one</p><p>fish &amp; chips</p>');
+    });
+});
+
+describe('reading passage font sizes', () => {
+    it('prints passages at the base size regardless of pasted inline font sizes (inline and attachment)', () => {
+        const test = makeTest();
+        test.sections = [{ id: 's1', title: 'Reading', content: '<p style="font-size:12pt">Text <b>one</b></p>' }];
+        test.questions[0].sectionId = 's1';
+        const inline = buildExamBookletHtml(test, { ...DEFAULT_EXAM_EXPORT_OPTIONS, attachmentMode: 'inline' });
+        const attachment = buildExamAttachmentHtml(test);
+        for (const html of [inline, attachment]) {
+            expect(html).toContain('Text <b>one</b>');
+            expect(html).not.toContain('font-size:12pt');
+        }
     });
 });
