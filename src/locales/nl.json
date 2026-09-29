@@ -3054,6 +3054,7 @@
         "gr_comparative_body_prefix": "Klik op",
         "gr_comparative_button": "Vergelijken",
         "gr_comparative_body_suffix": "op de lijst Rubrieken om het naast-elkaar-beoordelingsscherm te openen. Beoordeel twee leerlingen tegelijk voor calibratie en op anker gebaseerde beoordeling. De interface stelt adaptief niveau-aanpassingen voor wanneer er een mismatch is tussen de scores van leerlingen.",
+        "gr_comparative_limit_note": "Elke rubriek heeft een eigen vergelijkingslimiet per leerling (in te stellen vanaf het sessiescherm). Voltooide vergelijkingen worden opgeslagen bij de rubriek en per leerling geteld, zodat de limiet blijft gelden na herladen en op andere apparaten in plaats van elke sessie te resetten — hierdoor kan vergelijkend beoordelen niet oneindig doorlopen.",
         "gr_group_title": "Groepsbeoordeling",
         "gr_group_body_prefix": "Klik op",
         "gr_group_button": "Groepscijfer",

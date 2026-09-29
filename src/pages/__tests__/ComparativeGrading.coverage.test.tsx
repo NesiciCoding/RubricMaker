@@ -4,7 +4,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ComparativeGradingDefault from '../ComparativeGrading';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Attachment, Class, GradeScale, Rubric, Student, StudentRubric } from '../../types';
+import type {
+    AppSettings,
+    Attachment,
+    Class,
+    ComparativeMatchup,
+    GradeScale,
+    Rubric,
+    Student,
+    StudentRubric,
+} from '../../types';
 
 // ---- Hoisted mock state ----
 const joyrideState = vi.hoisted(() => ({ onEvent: null as null | ((d: { status: string }) => void) }));
@@ -132,6 +141,7 @@ let studentRubricsArr: StudentRubric[];
 let attachmentsArr: Attachment[];
 let settingsObj: AppSettings;
 let gradeScalesArr: GradeScale[];
+let comparativeMatchupsArr: ComparativeMatchup[];
 
 function makeAppValue() {
     return {
@@ -140,13 +150,34 @@ function makeAppValue() {
         classes: classesArr,
         studentRubrics: studentRubricsArr,
         attachments: attachmentsArr,
+        comparativeMatchups: comparativeMatchupsArr,
         saveStudentRubric: mockSaveStudentRubric,
+        addComparativeMatchup: mockAddComparativeMatchup,
+        updateRubric: mockUpdateRubric,
         gradeScales: gradeScalesArr,
         settings: settingsObj,
     };
 }
 
 const mockSaveStudentRubric = vi.fn();
+// Mirrors the real context: an upsert-style dispatch that actually grows the persisted
+// list, so a later render's rubricMatchups (and the eligibility it drives) reflects it —
+// unlike a bare spy, which would leave every later pick computed against a stale, empty list.
+const mockAddComparativeMatchup = vi.fn((rubricId: string, studentAId: string, studentBId: string) => {
+    comparativeMatchupsArr = [
+        ...comparativeMatchupsArr,
+        {
+            id: `cm${comparativeMatchupsArr.length}`,
+            rubricId,
+            studentAId,
+            studentBId,
+            gradedAt: new Date().toISOString(),
+        },
+    ];
+});
+const mockUpdateRubric = vi.fn((r: Rubric) => {
+    rubricsArr = rubricsArr.map((x) => (x.id === r.id ? r : x));
+});
 const mockNavigate = vi.fn();
 
 vi.mock('../../context/AppContext', () => ({
@@ -206,7 +237,10 @@ describe('ComparativeGrading coverage', () => {
         attachmentsArr = [];
         settingsObj = { ...mockSettings };
         gradeScalesArr = [mockGradeScale];
+        comparativeMatchupsArr = [];
         mockSaveStudentRubric.mockClear();
+        mockAddComparativeMatchup.mockClear();
+        mockUpdateRubric.mockClear();
         mockNavigate.mockClear();
         joyrideState.onEvent = null;
         vi.spyOn(window, 'print').mockImplementation(() => {});
@@ -398,9 +432,12 @@ describe('ComparativeGrading coverage', () => {
     });
 
     it('sorts the progress panel with a count-less student second', () => {
-        // first matchup picks Bob vs Carol, leaving Alice count-less and second in the sort input
+        // First matchup picks Bob vs Carol (Math.random mocked to 0.5); completing it is what
+        // actually counts against the cap, leaving Alice count-less and second in the sort order.
         mathRandomSpy.mockReturnValue(0.5);
         renderAt('/grade-comparative/c1/r1');
+        fireEvent.click(screen.getAllByText('comparativeGrading.action_equal')[0]);
+        fireEvent.click(screen.getByText('comparativeGrading.action_save_next'));
         fireEvent.click(screen.getByText(/comparativeGrading.student_progress_count/));
         expect(screen.getByText(/0 \/ 2/)).toBeInTheDocument();
     });
@@ -412,6 +449,38 @@ describe('ComparativeGrading coverage', () => {
         // negative inputs clamp to zero; a zero value trips the || 0 fallback
         fireEvent.change(input, { target: { value: '-3' } });
         fireEvent.change(input, { target: { value: '0' } });
+    });
+
+    it('persists the matchup limit to the rubric on blur, but only when it actually changed', () => {
+        renderAt('/grade-comparative/c1/r1');
+        const input = screen.getByTitle('comparativeGrading.per_student_limit_hint');
+        // blurring without editing is a no-op — nothing changed from the rubric's own value
+        fireEvent.blur(input, { target: { value: '' } });
+        expect(mockUpdateRubric).not.toHaveBeenCalled();
+
+        fireEvent.change(input, { target: { value: '3' } });
+        fireEvent.blur(input, { target: { value: '3' } });
+        expect(mockUpdateRubric).toHaveBeenCalledTimes(1);
+        expect(mockUpdateRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'r1', comparativeMatchupLimit: 3 })
+        );
+    });
+
+    it('persists comparison counts across a remount, so a reload does not reset the cap', () => {
+        // First session: Alice vs Bob (Math.random mocked to 0 → first two eligible students).
+        const first = renderAt('/grade-comparative/c1/r1');
+        fireEvent.click(screen.getAllByText('comparativeGrading.action_equal')[0]);
+        fireEvent.click(screen.getByText('comparativeGrading.action_save_next'));
+        expect(mockAddComparativeMatchup).toHaveBeenCalledWith('r1', 's1', 's2');
+        first.unmount();
+
+        // Simulate a reload: a fresh mount reads the same persisted comparativeMatchupsArr.
+        renderAt('/grade-comparative/c1/r1');
+        fireEvent.click(screen.getByText(/comparativeGrading.student_progress_count/));
+        // Alice and Bob already have one completed matchup each from before the "reload".
+        expect(screen.getAllByText(/1 \/ 2/).length).toBe(2);
+        // The next pairing avoids re-matching Alice with Bob now that they're already paired.
+        expect(screen.getAllByText('Carol').length).toBeGreaterThan(0);
     });
 
     it('compares sub-items across all comparison modes and clamps', () => {
@@ -494,10 +563,12 @@ describe('ComparativeGrading coverage', () => {
         renderAt('/grade-comparative/c1/r1');
         // attachments columns render for both students
         expect(screen.getAllByText('attachment-mock').length).toBe(2);
-        // progress panel toggles open and lists all session students with per-student counts
+        // progress panel toggles open and lists all session students with per-student counts —
+        // nobody has completed a matchup yet, so everyone still reads 0 (a shown-but-unsaved
+        // matchup doesn't count until it's saved).
         fireEvent.click(screen.getByText(/comparativeGrading.student_progress_count/));
         expect(screen.getByText('Carol')).toBeInTheDocument();
-        expect(screen.getByText(/0 \/ 2/)).toBeInTheDocument();
+        expect(screen.getAllByText(/0 \/ 2/).length).toBe(3);
         fireEvent.click(screen.getByText(/comparativeGrading.student_progress_count/));
         // tour start + finish/skip handlers
         fireEvent.click(screen.getByText('tutorial.cg_tour_button'));

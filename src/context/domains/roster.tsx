@@ -1,7 +1,7 @@
 // Generated from src/context/AppContext.tsx by the domain-split refactor.
 import React, { createContext, useMemo, ReactNode } from 'react';
 import { AppContextValue, StoreActionsCtx, useContextOrThrow } from '../storeCore';
-import type { Attachment, Class, ScoreEntry, Student, StudentRubric } from '../../types';
+import type { Attachment, Class, ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../../types';
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
@@ -15,6 +15,7 @@ export type RosterValue = Pick<
     | 'attachments'
     | 'archivedStudents'
     | 'deletedStudentRubrics'
+    | 'comparativeMatchups'
     | 'addStudent'
     | 'updateStudent'
     | 'deleteStudent'
@@ -33,6 +34,7 @@ export type RosterValue = Pick<
     | 'addAttachment'
     | 'deleteAttachment'
     | 'setStudentPassword'
+    | 'addComparativeMatchup'
 >;
 
 const RosterContext = createContext<RosterValue | null>(null);
@@ -60,6 +62,7 @@ export type GradingValue = Pick<
     | 'studentRubrics'
     | 'deletedStudentRubrics'
     | 'attachments'
+    | 'comparativeMatchups'
     | 'saveStudentRubric'
     | 'saveRubricSelfAssessment'
     | 'createStudentRubric'
@@ -68,6 +71,7 @@ export type GradingValue = Pick<
     | 'restoreStudentRubric'
     | 'addAttachment'
     | 'deleteAttachment'
+    | 'addComparativeMatchup'
 >;
 
 const StudentsContext = createContext<StudentsValue | null>(null);
@@ -94,6 +98,7 @@ export type RosterActions = Pick<
     | 'deleteAttachment'
     | 'setStudentPassword'
     | 'anonymizeStudent'
+    | 'addComparativeMatchup'
 >;
 
 export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
@@ -217,6 +222,16 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         return att;
     };
     const deleteAttachment = (id: string) => dispatch({ type: 'DELETE_ATTACHMENT', id });
+    const addComparativeMatchup = (rubricId: string, studentAId: string, studentBId: string) => {
+        const matchup: ComparativeMatchup = {
+            id: nanoid(),
+            rubricId,
+            studentAId,
+            studentBId,
+            gradedAt: new Date().toISOString(),
+        };
+        dispatch({ type: 'ADD_COMPARATIVE_MATCHUP', payload: matchup });
+    };
     const setStudentPassword = async (studentEmail: string, password: string) =>
         (await loadDb()).storageSync.setStudentPassword(studentEmail, password);
     const anonymizeStudent = (id: string) => {
@@ -245,6 +260,7 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         deleteAttachment,
         setStudentPassword,
         anonymizeStudent,
+        addComparativeMatchup,
     };
 }
 
@@ -298,6 +314,7 @@ export function useRosterValue(
             studentRubrics: activeStudentRubrics,
             deletedStudentRubrics: deletedStudentRubrics,
             attachments: state.attachments,
+            comparativeMatchups: state.comparativeMatchups,
             saveStudentRubric: actions.saveStudentRubric,
             saveRubricSelfAssessment: actions.saveRubricSelfAssessment,
             createStudentRubric: actions.createStudentRubric,
@@ -306,8 +323,9 @@ export function useRosterValue(
             restoreStudentRubric: actions.restoreStudentRubric,
             addAttachment: actions.addAttachment,
             deleteAttachment: actions.deleteAttachment,
+            addComparativeMatchup: actions.addComparativeMatchup,
         }),
-        [activeStudentRubrics, deletedStudentRubrics, state.attachments, actions]
+        [activeStudentRubrics, deletedStudentRubrics, state.attachments, state.comparativeMatchups, actions]
     );
 
     // Merged compatibility view: re-creates whenever any roster slice changes, which is

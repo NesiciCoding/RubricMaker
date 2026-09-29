@@ -3052,6 +3052,7 @@
         "gr_comparative_body_prefix": "Click",
         "gr_comparative_button": "Compare",
         "gr_comparative_body_suffix": "on the Rubrics list to open the side-by-side grading view. Grade two students at once for calibration and anchor-based grading. The interface adaptively suggests level adjustments when there is a mismatch between students' scores.",
+        "gr_comparative_limit_note": "Each rubric has its own per-student comparison limit (set from the session screen). Completed comparisons are saved to the rubric and counted per student, so the cap holds across reloads and devices instead of resetting every session — this is what keeps comparative grading from looping forever.",
         "gr_group_title": "Group grading",
         "gr_group_body_prefix": "Click",
         "gr_group_button": "Group grade",

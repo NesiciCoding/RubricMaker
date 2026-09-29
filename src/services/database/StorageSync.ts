@@ -50,6 +50,7 @@ import type {
     QuestionBankItem,
     DocumentComment,
     NotificationDismissal,
+    ComparativeMatchup,
 } from '../../types';
 
 const LAST_SYNC_KEY = 'rm_last_sync_at';
@@ -110,6 +111,7 @@ class StorageSyncService {
         { table: 'question_bank_items', filterColumn: 'owner_id' },
         { table: 'document_comments', filterColumn: 'owner_id' },
         { table: 'notification_dismissals', filterColumn: 'owner_id' },
+        { table: 'comparative_matchups', filterColumn: 'owner_id' },
     ];
     private static readonly REALTIME_DEBOUNCE_MS = 800;
 
@@ -147,6 +149,7 @@ class StorageSyncService {
         'question_bank_items',
         'document_comments',
         'notification_dismissals',
+        'comparative_matchups',
     ]);
 
     // ── Status ────────────────────────────────────────────────────────────────
@@ -718,6 +721,7 @@ class StorageSyncService {
                 questionBank,
                 documentComments,
                 notificationDismissals,
+                comparativeMatchups,
             ] = await Promise.all([
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
@@ -728,6 +732,12 @@ class StorageSyncService {
                 this.adapter.fetchQuestionBank().catch(() => []),
                 this.adapter.fetchDocumentComments().catch(() => []),
                 this.adapter.fetchNotificationDismissals().catch(() => []),
+                // Not caught into [] like its siblings above — see fetchComparativeMatchups'
+                // own comment: an empty result here is indistinguishable from "no matchups
+                // exist" and would wipe local comparison history on merge. Left uncaught, a
+                // failure here rejects this whole Promise.all and falls through to the
+                // outer try/catch below, which safely keeps local state instead.
+                this.adapter.fetchComparativeMatchups(),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
@@ -798,6 +808,7 @@ class StorageSyncService {
                 questionBank,
                 documentComments,
                 notificationDismissals,
+                comparativeMatchups,
                 attachments,
                 ...(mergedSettings ? { settings: mergedSettings as StoreData['settings'] } : {}),
             };
@@ -949,6 +960,9 @@ class StorageSyncService {
                             a.fetchNotificationDismissals().then((x) => void (result.notificationDismissals = x))
                         );
                         break;
+                    case 'comparative_matchups':
+                        jobs.push(a.fetchComparativeMatchups().then((x) => void (result.comparativeMatchups = x)));
+                        break;
                     default:
                         // Unknown table, or user_settings (needs the full-hydrate profile machinery).
                         return { data: null, fullFallback: true };
@@ -1006,6 +1020,7 @@ class StorageSyncService {
                 ...state.questionBank.map((q) => this.adapter.upsertQuestionBankItem(q)),
                 ...state.documentComments.map((c) => this.adapter.upsertDocumentComment(c)),
                 ...state.notificationDismissals.map((d) => this.adapter.upsertNotificationDismissal(d)),
+                ...state.comparativeMatchups.map((m) => this.adapter.upsertComparativeMatchup(m)),
                 this.adapter.saveSettings(state.settings),
             ];
             await Promise.all(ups);
@@ -1098,6 +1113,11 @@ class StorageSyncService {
                     if (action === 'upsert')
                         result = await this.adapter.upsertNotificationDismissal(payload as NotificationDismissal);
                     else if (id) result = await this.adapter.deleteNotificationDismissal(id);
+                    break;
+                case 'comparativeMatchup':
+                    if (action === 'upsert')
+                        result = await this.adapter.upsertComparativeMatchup(payload as ComparativeMatchup);
+                    else if (id) result = await this.adapter.deleteComparativeMatchup(id);
                     break;
                 case 'exportTemplate':
                     if (action === 'upsert') await this.attachmentSync.pushExportTemplate(payload as ExportTemplate);
