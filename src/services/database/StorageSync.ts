@@ -732,7 +732,12 @@ class StorageSyncService {
                 this.adapter.fetchQuestionBank().catch(() => []),
                 this.adapter.fetchDocumentComments().catch(() => []),
                 this.adapter.fetchNotificationDismissals().catch(() => []),
-                this.adapter.fetchComparativeMatchups().catch(() => []),
+                // Not caught into [] like its siblings above — see fetchComparativeMatchups'
+                // own comment: an empty result here is indistinguishable from "no matchups
+                // exist" and would wipe local comparison history on merge. Left uncaught, a
+                // failure here rejects this whole Promise.all and falls through to the
+                // outer try/catch below, which safely keeps local state instead.
+                this.adapter.fetchComparativeMatchups(),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole

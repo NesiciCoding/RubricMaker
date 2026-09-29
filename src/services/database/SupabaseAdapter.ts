@@ -1067,10 +1067,12 @@ export class SupabaseAdapter {
 
     async fetchComparativeMatchups(): Promise<ComparativeMatchup[]> {
         const { data, error } = await this.db().from('comparative_matchups').select('data').eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchComparativeMatchups', error);
-            return [];
-        }
+        // Unlike most fetchX methods here, this one must not swallow the error into an empty
+        // array: mergeCollection() would then read that as "the remote truly has none" and
+        // delete every local (non-pending) matchup, silently wiping the comparison history
+        // this feature exists to persist. Throwing lets the caller's existing hydrate-failure
+        // fallback (keep local state, don't merge) do its job instead.
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as ComparativeMatchup);
     }
 
