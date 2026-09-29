@@ -19,7 +19,7 @@
 - `src/data/grammarConstructions.ts` is generated from the CLI's `_CONSTRUCTIONS` registry and the CEFR-J Grammar Profile (Tono Laboratory, TUFS), so levels match the CLI.
 - Tests replay recorded CoNLL-U snapshots (`src/utils/__fixtures__/`) so no model or wasm download is needed in CI. All 33 of the CLI's `detect_check` cases pass through the same detectors; get-passive ("The window got broken.") relies on a fallback because UDPipe tags "broken" as an adverb.
 - **Model licensing:** the UD 2.5 English model is CC BY-NC-SA, so it is not committed or bundled. Deployments download it into `public/models/` (see `public/models/README.md`); without it the panel is hidden and the compromise-based profile from `grammarChecker.ts` remains the fallback.
-- **Known limits:** UDPipe is less accurate than spaCy on some constructions (e.g. tag questions, causatives with unusual attachments). Treat the panel as a range indicator, not a grade.
+- **Known limits:** UDPipe is less accurate than spaCy on some constructions (e.g. tag questions, causatives with unusual attachments). **The panel is a range indicator, not a grade.** It is shown as such in the UI and docs, and its output never feeds an automatic score.
 
 ## 34.2 Cross-essay weak-criterion trends
 

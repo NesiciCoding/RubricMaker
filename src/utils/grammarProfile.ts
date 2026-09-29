@@ -2,6 +2,7 @@
 // run over a Universal Dependencies parse (udpipe-wasm, see udParse.ts), so the token model is
 // spaCy-shaped (`dep`, `tag`) and the UD differences are handled in place: copulas are children
 // (`cop`) rather than heads, infinitival "to" is a `mark`, and "when"/"whenever" are `advmod`.
+// Output is a range indicator, not a grade: UDPipe is less accurate than spaCy on some constructions.
 import type { CefrLevel } from '../types';
 import {
     CEFRJ_CODE_LEVELS,

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { computeEssayStats } from '../../utils/essayTextStats';
 import type { TransitionCategory } from '../../types';
+import SentenceLengthChart from './SentenceLengthChart';
 
 const CATEGORIES: TransitionCategory[] = ['addition', 'contrast', 'cause', 'sequence', 'example', 'conclusion'];
 
@@ -17,7 +18,6 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 export default function EssayStatsPanel({ text }: { text: string }) {
     const { t } = useTranslation();
     const stats = useMemo(() => computeEssayStats(text), [text]);
-    const maxLen = Math.max(...stats.sentenceLengths, 1);
     const { readability, transitions } = stats;
 
     return (
@@ -48,21 +48,7 @@ export default function EssayStatsPanel({ text }: { text: string }) {
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 6 }}>
                         {t('writingStats.sentenceLengths')}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 48 }}>
-                        {stats.sentenceLengths.map((len, i) => (
-                            <div
-                                key={i}
-                                title={`#${i + 1}: ${len}`}
-                                style={{
-                                    flex: '1 1 0',
-                                    maxWidth: 14,
-                                    height: `${Math.max((len / maxLen) * 100, 4)}%`,
-                                    background: 'var(--accent)',
-                                    borderRadius: 2,
-                                }}
-                            />
-                        ))}
-                    </div>
+                    <SentenceLengthChart lengths={stats.sentenceLengths} />
                 </div>
             )}
 

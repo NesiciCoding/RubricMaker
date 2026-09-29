@@ -3416,7 +3416,7 @@
         "es_stats_item_transitions": "Fréquence des mots de transition par type (addition, contraste, cause, séquence, exemple, conclusion).",
         "es_stats_item_readability": "Niveau Flesch-Kincaid et facilité de lecture Flesch, calculés par des formules fixes.",
         "es_stats_item_grammar": "Étendue grammaticale : constructions utilisées (temps, passif, relatives, conditionnelles…) classées par niveau CEFR-J, avec le niveau typique et le niveau le plus élevé atteint.",
-        "es_stats_info": "Le panneau d'étendue grammaticale nécessite le modèle d'analyseur UD anglais, non inclus car sous licence CC BY-NC-SA (non commerciale). Les auto-hébergeurs le téléchargent une fois dans public/models/ (voir le README) ; sans lui, le panneau reste masqué.",
+        "es_stats_info": "Le panneau d'étendue grammaticale nécessite le modèle d'analyseur UD anglais, non inclus car sous licence CC BY-NC-SA (non commerciale). Les auto-hébergeurs le téléchargent une fois dans public/models/ (voir le README) ; sans lui, le panneau reste masqué. C'est un indicateur d'étendue, pas une note : l'analyseur est moins précis sur certaines constructions, à utiliser avec votre propre jugement.",
         "an_trends_title": "Tendances d'écriture",
         "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent."
     },
@@ -3918,7 +3918,8 @@
         "typical": "Typique",
         "reaches": "Atteint",
         "none": "Aucune construction classée détectée",
-        "attribution": "Basé sur des règles à partir d'une analyse UDPipe ; niveaux issus du CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sans IA."
+        "attribution": "Basé sur des règles à partir d'une analyse UDPipe ; niveaux issus du CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sans IA.",
+        "notAGrade": "Un indicateur d'étendue, pas une note : la précision de l'analyseur varie, à utiliser avec votre propre jugement."
     },
     "writingTrends": {
         "title": "Tendances d'écriture",

@@ -52,6 +52,9 @@ export default function UdGrammarPanel({ text }: { text: string }) {
                     </div>
                 </div>
             ))}
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                {t('grammarProfile.notAGrade')}
+            </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('grammarProfile.attribution')}</div>
         </div>
     );

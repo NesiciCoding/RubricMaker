@@ -3414,7 +3414,7 @@
         "es_stats_item_transitions": "Transition-word frequency by type (addition, contrast, cause, sequence, example, conclusion).",
         "es_stats_item_readability": "Flesch-Kincaid grade and Flesch Reading Ease, calculated by fixed formulas.",
         "es_stats_item_grammar": "Grammar range: constructions used (tenses, passive, relative clauses, conditionals…) banded by CEFR-J level, with the typical level and the highest level reached.",
-        "es_stats_info": "The grammar range panel needs the English UD parser model, which is not bundled because it is licensed CC BY-NC-SA (non-commercial). Self-hosters download it once into public/models/ (see the README there); without it the panel stays hidden.",
+        "es_stats_info": "The grammar range panel needs the English UD parser model, which is not bundled because it is licensed CC BY-NC-SA (non-commercial). Self-hosters download it once into public/models/ (see the README there); without it the panel stays hidden. It is a range indicator, not a grade: the parser is less accurate on some constructions, so use it alongside your own judgement.",
         "an_trends_title": "Writing trends",
         "an_trends_body": "On a student's profile (Overview tab) and on the Statistics page for a class, RubricMaker follows each rubric criterion across the student's graded essays and flags criteria that are persistently weak or declining. It is rule-based: a criterion is weak when its last three essays are all at or below 60%. Only graded, handed-in essays (with an essay assignment) count."
     },
@@ -3916,7 +3916,8 @@
         "typical": "Typical",
         "reaches": "Reaches",
         "none": "No graded constructions detected",
-        "attribution": "Rule-based over a UDPipe parse; levels from the CEFR-J Grammar Profile (Tono Laboratory, TUFS). No AI."
+        "attribution": "Rule-based over a UDPipe parse; levels from the CEFR-J Grammar Profile (Tono Laboratory, TUFS). No AI.",
+        "notAGrade": "A range indicator, not a grade: parser accuracy varies, so use it alongside your own judgement."
     },
     "writingTrends": {
         "title": "Writing trends",

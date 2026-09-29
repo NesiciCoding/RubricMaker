@@ -3416,7 +3416,7 @@
         "es_stats_item_transitions": "Frequentie van signaalwoorden per type (toevoeging, tegenstelling, oorzaak, volgorde, voorbeeld, conclusie).",
         "es_stats_item_readability": "Flesch-Kincaid-niveau en Flesch-leesgemak, berekend met vaste formules.",
         "es_stats_item_grammar": "Grammaticaal bereik: gebruikte constructies (tijden, passief, betrekkelijke bijzinnen, voorwaardelijke zinnen…) per CEFR-J-niveau, met het typische niveau en het hoogst bereikte niveau.",
-        "es_stats_info": "Het paneel voor grammaticaal bereik heeft het Engelse UD-parsermodel nodig. Dat is niet meegeleverd omdat het onder CC BY-NC-SA (niet-commercieel) valt. Zelf-hosters downloaden het één keer in public/models/ (zie de README daar); zonder model blijft het paneel verborgen.",
+        "es_stats_info": "Het paneel voor grammaticaal bereik heeft het Engelse UD-parsermodel nodig. Dat is niet meegeleverd omdat het onder CC BY-NC-SA (niet-commercieel) valt. Zelf-hosters downloaden het één keer in public/models/ (zie de README daar); zonder model blijft het paneel verborgen. Het is een indicatie van het bereik, geen cijfer: de parser is bij sommige constructies minder nauwkeurig, gebruik het naast je eigen oordeel.",
         "an_trends_title": "Schrijftrends",
         "an_trends_body": "Op het profiel van een leerling (tabblad Overzicht) en op de Statistiekenpagina voor een klas volgt RubricMaker elk rubriccriterium over de beoordeelde essays van de leerling en markeert criteria die aanhoudend zwak zijn of dalen. Dit is regelgebaseerd: een criterium is zwak als de laatste drie essays allemaal op of onder 60% liggen. Alleen beoordeelde, ingeleverde essays (met een essayopdracht) tellen mee."
     },
@@ -3918,7 +3918,8 @@
         "typical": "Typisch",
         "reaches": "Bereikt",
         "none": "Geen ingedeelde constructies gevonden",
-        "attribution": "Regelgebaseerd op een UDPipe-analyse; niveaus uit het CEFR-J Grammar Profile (Tono Laboratory, TUFS). Geen AI."
+        "attribution": "Regelgebaseerd op een UDPipe-analyse; niveaus uit het CEFR-J Grammar Profile (Tono Laboratory, TUFS). Geen AI.",
+        "notAGrade": "Een indicatie van het bereik, geen cijfer: de nauwkeurigheid van de parser varieert, gebruik het naast je eigen oordeel."
     },
     "writingTrends": {
         "title": "Schrijftrends",

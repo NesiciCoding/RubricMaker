@@ -3416,7 +3416,7 @@
         "es_stats_item_transitions": "Frecuencia de conectores por tipo (adición, contraste, causa, secuencia, ejemplo, conclusión).",
         "es_stats_item_readability": "Nivel Flesch-Kincaid y facilidad de lectura Flesch, calculados con fórmulas fijas.",
         "es_stats_item_grammar": "Alcance gramatical: construcciones usadas (tiempos, pasiva, oraciones de relativo, condicionales…) por nivel CEFR-J, con el nivel típico y el más alto alcanzado.",
-        "es_stats_info": "El panel de alcance gramatical necesita el modelo de analizador UD en inglés, que no se incluye porque tiene licencia CC BY-NC-SA (no comercial). Quien aloja la aplicación lo descarga una vez en public/models/ (véase el README); sin él, el panel permanece oculto.",
+        "es_stats_info": "El panel de alcance gramatical necesita el modelo de analizador UD en inglés, que no se incluye porque tiene licencia CC BY-NC-SA (no comercial). Quien aloja la aplicación lo descarga una vez en public/models/ (véase el README); sin él, el panel permanece oculto. Es un indicador de alcance, no una calificación: el analizador es menos preciso en algunas construcciones, úsalo junto con tu propio criterio.",
         "an_trends_title": "Tendencias de escritura",
         "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo)."
     },
@@ -3918,7 +3918,8 @@
         "typical": "Típico",
         "reaches": "Alcanza",
         "none": "No se detectaron construcciones clasificadas",
-        "attribution": "Basado en reglas sobre un análisis UDPipe; niveles del CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sin IA."
+        "attribution": "Basado en reglas sobre un análisis UDPipe; niveles del CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sin IA.",
+        "notAGrade": "Un indicador de alcance, no una calificación: la precisión del analizador varía, úsalo junto con tu propio criterio."
     },
     "writingTrends": {
         "title": "Tendencias de escritura",
