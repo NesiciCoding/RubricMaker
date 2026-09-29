@@ -23,10 +23,13 @@ function reportWebVitals() {
     }
 
     // FCP and FID fire once per visit by definition, so the observer can log them directly.
-    const observe = (type: string, name: string, pick: (entry: PerformanceEntry) => number) => {
+    const observe = (type: string, name: string, pick: (entry: PerformanceEntry) => number | undefined) => {
         try {
             const observer = new PerformanceObserver((list) => {
-                for (const entry of list.getEntries()) logMetric(name, pick(entry));
+                for (const entry of list.getEntries()) {
+                    const value = pick(entry);
+                    if (value !== undefined) logMetric(name, value);
+                }
             });
             observer.observe({ type, buffered: true });
         } catch {
@@ -34,7 +37,7 @@ function reportWebVitals() {
         }
     };
 
-    observe('first-contentful-paint', 'fcp', (e) => Math.round(e.startTime));
+    observe('paint', 'fcp', (e) => (e.name === 'first-contentful-paint' ? Math.round(e.startTime) : undefined));
     observe('first-input', 'fid', (e) => {
         const timing = e as PerformanceEntry & { processingStart?: number };
         return Math.round((timing.processingStart ?? e.startTime) - e.startTime);
