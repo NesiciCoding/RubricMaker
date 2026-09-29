@@ -5,6 +5,7 @@ import {
     stripHtmlTags,
     stripCommentHtml,
     stripInlineFontSizes,
+    stripHtmlKeepLineBreaks,
 } from './exportDataPrep';
 
 describe('sanitizeFilename', () => {
@@ -77,5 +78,15 @@ describe('stripInlineFontSizes', () => {
 
     it('returns an empty string for empty input', () => {
         expect(stripInlineFontSizes('')).toBe('');
+    });
+});
+
+describe('stripHtmlKeepLineBreaks', () => {
+    it('keeps newlines and blank lines while still stripping tags and collapsing other whitespace', () => {
+        expect(stripHtmlKeepLineBreaks('one   <b>two</b>\nthree\n\nfour')).toBe('one two\nthree\n\nfour');
+    });
+
+    it('normalises CRLF and trims stray spaces around a break', () => {
+        expect(stripHtmlKeepLineBreaks('a \r\n b')).toBe('a\nb');
     });
 });

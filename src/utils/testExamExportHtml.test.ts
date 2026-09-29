@@ -76,3 +76,35 @@ describe('reading passage font sizes', () => {
         }
     });
 });
+
+describe('booklet images and cloze layout', () => {
+    it('prints option images, and caps prompt/passage images via the rich-content styles', () => {
+        const test = makeTest();
+        test.sections = [
+            { id: 's1', title: 'Reading', content: '<p>Passage</p><p><img src="data:image/png;base64,AAA"></p>' },
+        ];
+        test.questions[0].sectionId = 's1';
+        test.questions[0].prompt = '<p>Look</p><p><img src="data:image/png;base64,BBB"></p>';
+        test.questions[0].options![0].imageUrl = 'data:image/png;base64,CCC';
+        const html = buildExamBookletHtml(test, { ...DEFAULT_EXAM_EXPORT_OPTIONS, attachmentMode: 'inline' });
+        expect(html).toContain('src="data:image/png;base64,CCC"');
+        expect(html).toContain('src="data:image/png;base64,BBB"');
+        expect(html).toContain('src="data:image/png;base64,AAA"');
+        expect(html).toContain('.exam-rich img{max-width:100%');
+        expect(html.match(/class="exam-rich"/g)?.length).toBe(2);
+    });
+
+    it('keeps paragraph breaks in cloze questions', () => {
+        const test = makeTest();
+        test.questions[0] = {
+            id: 'c',
+            type: 'cloze',
+            points: 1,
+            prompt: 'Line one {{a}}\nLine two',
+        } as Test['questions'][0];
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('white-space:pre-line');
+        expect(html).toContain('Line one');
+        expect(html).toContain('\nLine two');
+    });
+});

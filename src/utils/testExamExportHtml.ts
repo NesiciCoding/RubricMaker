@@ -69,17 +69,17 @@ function categorizeBookletHtml(question: TestQuestion): string {
   <div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('categories_label')}: ${categories}</div>`;
 }
 
-const RICH_PROMPT_CSS =
-    '<style>.exam-prompt p{margin:0 0 4px}.exam-prompt p:empty{min-height:1em}.exam-prompt mark{-webkit-print-color-adjust:exact;print-color-adjust:exact}.exam-prompt ul,.exam-prompt ol{margin:2px 0;padding-left:20px}</style>';
+const RICH_CONTENT_CSS =
+    '<style>.exam-rich p{margin:0 0 4px}.exam-rich p:empty{min-height:1em}.exam-rich mark{-webkit-print-color-adjust:exact;print-color-adjust:exact}.exam-rich ul,.exam-rich ol{margin:2px 0;padding-left:20px}.exam-rich img{max-width:100%;height:auto;max-height:220px}</style>';
 
 function richPromptHtml(question: TestQuestion): string {
-    return `${RICH_PROMPT_CSS}<div class="exam-prompt">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
+    return `${RICH_CONTENT_CSS}<div class="exam-rich">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
 }
 
 function questionBodyHtml(question: TestQuestion, number: number, options: TestExamExportOptions): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const prompt = isCloze
-        ? `<div style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+        ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
         : richPromptHtml(question);
     let extra = '';
 
@@ -93,7 +93,11 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
             extra += `<div style="margin-top:6px">${(question.options ?? [])
                 .map(
                     (o, i) =>
-                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}</div>`
+                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
+                            o.imageUrl
+                                ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" style="max-width:100%;max-height:120px" /></div>`
+                                : ''
+                        }</div>`
                 )
                 .join('')}</div>`;
             break;
@@ -178,6 +182,10 @@ function coverPageHtml(test: Test, docLabel: string, includeNameBox = false): st
   </div>`;
 }
 
+function passageHtml(content: string, extraStyle: string): string {
+    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle};font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(content))}</div>`;
+}
+
 function sectionDividerHtml(title: string): string {
     return `<div style="margin:18px 0 12px;page-break-inside:avoid">
     <div style="font-weight:700;font-size:14px;margin-bottom:4px">${escapeHtml(title)}</div>
@@ -192,7 +200,7 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
             if (options.attachmentMode === 'inline' && group.section.content) {
-                html += `<div style="margin-bottom:10px;font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content))}</div>`;
+                html += passageHtml(group.section.content, 'margin-bottom:10px');
             }
         }
         html += group.questions.map(({ question, number }) => questionBodyHtml(question, number, options)).join('');
@@ -207,7 +215,7 @@ export function buildExamAttachmentHtml(test: Test): string {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
         html += `<div style="${pageBreak}page-break-inside:avoid">${sectionDividerHtml(group.section.title)}</div>`;
-        html += `<div style="font-size:13px;margin-bottom:14px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content ?? ''))}</div>`;
+        html += passageHtml(group.section.content ?? '', 'margin-bottom:14px');
     });
     return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
 }
@@ -353,17 +361,20 @@ interface ExportExamPdfOptions extends TestExamExportOptions {
  */
 export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
     const orientation = 'portrait';
-    await printHtml(buildExamBookletHtml(test, options), orientation, options.fontFamily, options.styleTemplate);
+    const print = (html: string) =>
+        printHtml(html, orientation, options.fontFamily, options.styleTemplate, { hideBrowserChrome: true });
+    await print(buildExamBookletHtml(test, options));
     if (options.attachmentMode === 'separate') {
-        await printHtml(buildExamAttachmentHtml(test), orientation, options.fontFamily, options.styleTemplate);
+        await print(buildExamAttachmentHtml(test));
     }
-    const answerSheetHtml = await buildAnswerSheetHtml(test, options, options.students);
-    await printHtml(answerSheetHtml, orientation, options.fontFamily, options.styleTemplate);
+    await print(await buildAnswerSheetHtml(test, options, options.students));
 }
 
 /** Exports only the grading key/answer sheet — kept as an explicit, separate action from exportExamPdf() so a teacher never bundles it with student-facing materials by default. */
 export async function exportExamGradingKeyPdf(test: Test, options: TestExamExportOptions): Promise<void> {
-    await printHtml(buildGradingSheetHtml(test), 'portrait', options.fontFamily, options.styleTemplate);
+    await printHtml(buildGradingSheetHtml(test), 'portrait', options.fontFamily, options.styleTemplate, {
+        hideBrowserChrome: true,
+    });
 }
 
 export function examExportFilename(test: Test, doc: 'booklet' | 'attachment' | 'answer-sheet' | 'grading-sheet') {

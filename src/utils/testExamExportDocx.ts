@@ -83,11 +83,6 @@ export function collectParagraphTexts(root: Element): string[] {
     return texts;
 }
 
-/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables that plain-text extraction would drop. */
-function htmlToParagraphs(html: string, spacingAfter = 120): (Paragraph | Table)[] {
-    return htmlToDocxChildren(stripInlineFontSizes(promptToHtml(html)), spacingAfter);
-}
-
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
 
 const CELL_BORDER: ITableCellBorders = {
@@ -192,8 +187,10 @@ function sectionDivider(title: string): Paragraph {
 }
 
 function clozeRuns(question: TestQuestion): TextRun[] {
-    return clozeBookletParts(question).map((p) =>
-        p.blankNumber ? new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} }) : new TextRun(p.text)
+    return clozeBookletParts(question).flatMap((p) =>
+        p.blankNumber
+            ? [new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} })]
+            : p.text.split('\n').map((line, i) => new TextRun({ text: line, break: i > 0 ? 1 : undefined }))
     );
 }
 
@@ -282,13 +279,60 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
     }
 }
 
+function takeImageSources(block: Element): string[] {
+    const images = block.tagName === 'IMG' ? [block] : Array.from(block.querySelectorAll('img'));
+    const sources = images.map((img) => img.getAttribute('src')).filter((src): src is string => !!src);
+    if (block.tagName !== 'IMG') images.forEach((img) => img.remove());
+    return sources;
+}
+
+/** docx can't inline an <img> in a TextRun list, so each image becomes its own paragraph right after the block that held it. */
+async function richBlocksToDocx(blocks: Element[], spacingAfter?: number): Promise<(Paragraph | Table)[]> {
+    const out: (Paragraph | Table)[] = [];
+    for (const block of blocks) {
+        const sources = takeImageSources(block);
+        const imageOnly = sources.length > 0 && block.tagName !== 'IMG' && !block.textContent?.trim();
+        if (block.tagName !== 'IMG' && !imageOnly) out.push(...htmlToDocxChildren(block.outerHTML, spacingAfter));
+        for (const src of sources) {
+            const run = await questionImageRun(src);
+            if (run) out.push(new Paragraph({ children: [run], spacing: { after: 80 } }));
+        }
+    }
+    return out;
+}
+
+function parseRichRoot(html: string): HTMLElement {
+    return new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body.firstElementChild as HTMLElement;
+}
+
+/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables/images that plain-text extraction would drop. */
+export async function richPassageToDocx(html: string, spacingAfter = 120): Promise<(Paragraph | Table)[]> {
+    return richBlocksToDocx(Array.from(parseRichRoot(stripInlineFontSizes(promptToHtml(html))).children), spacingAfter);
+}
+
+/** Question prompt → the first paragraph's inline runs (so the point/number label can share its line) plus the remaining blocks. */
+export async function richPromptToDocx(html: string): Promise<{ leadRuns: TextRun[]; rest: (Paragraph | Table)[] }> {
+    const blocks = Array.from(parseRichRoot(promptToHtml(html)).children);
+    const first = blocks[0];
+    if (!first || first.tagName !== 'P') return { leadRuns: [], rest: await richBlocksToDocx(blocks) };
+    const leadImages = takeImageSources(first);
+    const { leadRuns } = htmlToDocxLead(first.outerHTML);
+    const rest: (Paragraph | Table)[] = [];
+    for (const src of leadImages) {
+        const run = await questionImageRun(src);
+        if (run) rest.push(new Paragraph({ children: [run], spacing: { after: 80 } }));
+    }
+    rest.push(...(await richBlocksToDocx(blocks.slice(1))));
+    return { leadRuns, rest };
+}
+
 async function questionParagraphs(
     question: TestQuestion,
     number: number,
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const rich = isCloze ? null : htmlToDocxLead(promptToHtml(plainQuestionPromptText(question)));
+    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
@@ -311,14 +355,16 @@ async function questionParagraphs(
     switch (question.type) {
         case 'multiple-choice':
         case 'multiple-response':
-            (question.options ?? []).forEach((o, i) => {
+            for (const [i, o] of (question.options ?? []).entries()) {
                 blocks.push(
                     new Paragraph({
                         children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), new TextRun(o.text)],
                         indent: { left: 360 },
                     })
                 );
-            });
+                const optionImage = o.imageUrl ? await questionImageRun(o.imageUrl, 160) : null;
+                if (optionImage) blocks.push(new Paragraph({ children: [optionImage], indent: { left: 360 } }));
+            }
             break;
         case 'true-false':
             blocks.push(
@@ -406,7 +452,7 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
         if (group.section) {
             children.push(sectionDivider(group.section.title));
             if (options.attachmentMode === 'inline' && group.section.content) {
-                children.push(...htmlToParagraphs(group.section.content, 120));
+                children.push(...(await richPassageToDocx(group.section.content, 120)));
             }
         }
         for (const { question, number } of group.questions) {
@@ -417,15 +463,15 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     return children;
 }
 
-function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
+async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
     const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'), true)];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
-    groups.forEach((group, i) => {
-        if (!group.section?.content) return;
+    for (const [i, group] of groups.entries()) {
+        if (!group.section?.content) continue;
         if (i > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(sectionDivider(group.section.title));
-        children.push(...htmlToParagraphs(group.section.content, 200));
-    });
+        children.push(...(await richPassageToDocx(group.section.content, 200)));
+    }
     return children;
 }
 
@@ -742,7 +788,7 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     if (options.attachmentMode === 'separate') {
         files.push({
             name: `${base}-attachment.docx`,
-            blob: await buildDocxBlob(buildAttachmentChildren(test), options),
+            blob: await buildDocxBlob(await buildAttachmentChildren(test), options),
         });
     }
     const students = options.students ?? [];

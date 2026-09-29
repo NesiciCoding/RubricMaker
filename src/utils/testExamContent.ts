@@ -6,7 +6,7 @@
  */
 import type { Test, TestQuestion, TestSection } from '../types';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
-import { stripHtmlTags } from './exportDataPrep';
+import { stripHtmlKeepLineBreaks, stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
 import { formatCorrectAnswer } from './testAnswerText';
 import type { DocxStyleTemplateOverrides } from './docxExport';
@@ -121,7 +121,7 @@ export interface ClozeBlankPart {
 
 /** Cloze/cloze-dropdown prompt broken into text/blank parts, blanks left empty (never the model answer) for booklet printing. */
 export function clozeBookletParts(question: TestQuestion): ClozeBlankPart[] {
-    return renderClozeSegments(stripHtmlTags(question.prompt)).map((s) =>
+    return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).map((s) =>
         s.type === 'gap' ? { text: '', blankNumber: s.gap.index + 1 } : { text: s.text }
     );
 }

@@ -229,3 +229,13 @@ describe('orderingBookletItems', () => {
         expect(items.map((i) => i.text)).not.toEqual(['first', 'second', 'third', 'fourth']);
     });
 });
+
+describe('clozeBookletParts line breaks', () => {
+    it('keeps paragraph breaks from the cloze prompt instead of collapsing them into spaces', () => {
+        const question = { id: 'c', type: 'cloze', points: 1, prompt: 'One {{a}}.\nTwo.\n\nThree.' } as TestQuestion;
+        const text = clozeBookletParts(question)
+            .map((p) => (p.blankNumber ? `(${p.blankNumber})` : p.text))
+            .join('');
+        expect(text).toBe('One (1).\nTwo.\n\nThree.');
+    });
+});

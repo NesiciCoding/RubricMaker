@@ -52,6 +52,11 @@ export function stripHtmlTags(text: string): string {
     return result.replace(/\s+/g, ' ').trim();
 }
 
+/** stripHtmlTags() for text whose newlines are meaningful (cloze prompts store paragraph breaks as "\n"), which plain stripHtmlTags collapses into single spaces. */
+export function stripHtmlKeepLineBreaks(text: string): string {
+    return stripHtmlTags(text.replace(/\r?\n/g, '\uE000')).replace(/ ?\uE000 ?/g, '\n');
+}
+
 /** Drops inline font sizes (pasted Word/web text carries stray ones) so a passage prints at the booklet's base size; headings keep their relative size. */
 export function stripInlineFontSizes(html: string): string {
     if (!html) return '';

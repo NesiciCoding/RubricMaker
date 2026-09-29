@@ -285,11 +285,26 @@ export function styleTemplateCss(styleTemplate?: DocxStyleTemplateOverrides): st
     return `${bodyRule} ${headingRule}`;
 }
 
+const PRINT_MARGIN_MM = 10;
+
+/**
+ * Browsers print their own date/URL/title header and footer into any non-zero @page margin, so a
+ * zero @page margin is the only way to keep them off student-facing paper. The page margin is then
+ * rebuilt as side padding plus a repeating thead/tfoot spacer, which — unlike body padding — recurs
+ * on every printed page. The last sheet's forced page break is dropped so the footer spacer
+ * doesn't spill onto a trailing blank page.
+ */
+export function withoutBrowserPrintChrome(html: string): string {
+    const spacer = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0"></td></tr>`;
+    return `<style>.print-page:last-child{page-break-after:auto !important}</style><table style="width:100%;border-collapse:collapse"><thead>${spacer}</thead><tbody><tr><td style="padding:0">${html}</td></tr></tbody><tfoot>${spacer}</tfoot></table>`;
+}
+
 export function printHtml(
     html: string,
     orientation?: 'portrait' | 'landscape',
     fontFamily?: string,
-    styleTemplate?: DocxStyleTemplateOverrides
+    styleTemplate?: DocxStyleTemplateOverrides,
+    options: { hideBrowserChrome?: boolean } = {}
 ) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
@@ -311,13 +326,13 @@ export function printHtml(
                 <head>
                     ${fontLink}
                     <style>
-                        @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: 10mm; }
-                        body { margin: 0; }
+                        @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: ${options.hideBrowserChrome ? '0' : `${PRINT_MARGIN_MM}mm`}; }
+                        body { margin: 0;${options.hideBrowserChrome ? ` padding: 0 ${PRINT_MARGIN_MM}mm;` : ''} }
                         ${styleTemplateCss(styleTemplate)}
                     </style>
                 </head>
                 <body>
-                    ${html}
+                    ${options.hideBrowserChrome ? withoutBrowserPrintChrome(html) : html}
                 </body>
                 </html>
             `);

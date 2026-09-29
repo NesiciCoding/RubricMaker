@@ -157,6 +157,11 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                 <input type="checkbox" checked={scanMarkers} onChange={(e) => setScanMarkers(e.target.checked)} />
                 {t('tests.export.exam.scan_markers_label')}
             </label>
+            {scanMarkers && (
+                <p className="text-muted text-sm" role="note" style={{ margin: '-8px 0 14px 24px' }}>
+                    {t('tests.export.exam.scan_markers_pdf_only')}
+                </p>
+            )}
 
             {students.length > 0 && (
                 <div style={{ marginBottom: 14 }}>
