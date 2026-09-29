@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DocumentAnalysisPanel from '../Essay/DocumentAnalysisPanel';
 import type { Attachment, VocabularyItem, DocumentAnalysisResult, RubricCriterion } from '../../types';
 
+vi.mock('../../hooks/useUdGrammarProfile', () => ({ useUdGrammarProfile: () => ({ status: 'unavailable' }) }));
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (k: string, fb?: string) => fb ?? k }),
 }));

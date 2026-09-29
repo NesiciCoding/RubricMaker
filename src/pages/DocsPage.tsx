@@ -1450,6 +1450,7 @@ function EssaysTab() {
                         t('docs.es_stats_item_transitions'),
                         t('docs.es_stats_item_readability'),
                         t('docs.es_stats_item_grammar'),
+                        t('docs.es_stats_item_linker'),
                     ]}
                 />
                 <InfoBox color="#6366f1">{t('docs.es_stats_info')}</InfoBox>

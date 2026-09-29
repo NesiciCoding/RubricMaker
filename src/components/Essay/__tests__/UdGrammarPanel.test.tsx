@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import UdGrammarPanel from '../UdGrammarPanel';
 import type { UdGrammarState } from '../../../hooks/useUdGrammarProfile';
@@ -7,31 +7,21 @@ vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (k: string) => k }),
 }));
 
-let mockState: UdGrammarState;
-vi.mock('../../../hooks/useUdGrammarProfile', () => ({
-    useUdGrammarProfile: () => mockState,
-}));
-
 const empty = { constructionCount: 0, distinct: 0, constructions: [] };
 
 describe('UdGrammarPanel', () => {
-    beforeEach(() => {
-        mockState = { status: 'loading' };
-    });
-
     it('shows a loading note', () => {
-        render(<UdGrammarPanel text="x" />);
+        render(<UdGrammarPanel state={{ status: 'loading' }} />);
         expect(screen.getByText('grammarProfile.loading')).toBeInTheDocument();
     });
 
     it('renders nothing when the model is unavailable', () => {
-        mockState = { status: 'unavailable' };
-        const { container } = render(<UdGrammarPanel text="x" />);
+        const { container } = render(<UdGrammarPanel state={{ status: 'unavailable' }} />);
         expect(container).toBeEmptyDOMElement();
     });
 
     it('lists detected constructions by level', () => {
-        mockState = {
+        const state: UdGrammarState = {
             status: 'ready',
             profile: {
                 sentenceCount: 1,
@@ -61,8 +51,9 @@ describe('UdGrammarPanel', () => {
                 },
             },
         };
-        render(<UdGrammarPanel text="x" />);
+        render(<UdGrammarPanel state={state} />);
         expect(screen.getByText('Present perfect · 2')).toBeInTheDocument();
         expect(screen.getByText('A2 · 2')).toBeInTheDocument();
+        expect(screen.getByText('grammarProfile.notAGrade')).toBeInTheDocument();
     });
 });

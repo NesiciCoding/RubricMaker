@@ -39,6 +39,7 @@ const mocks = vi.hoisted(() => ({
 
 const langState = vi.hoisted(() => ({ lang: 'en' }));
 
+vi.mock('../../../hooks/useUdGrammarProfile', () => ({ useUdGrammarProfile: () => ({ status: 'unavailable' }) }));
 vi.mock('../../../utils/textExtraction', () => ({
     UnsupportedFormatError,
     extractText: mocks.extractText,

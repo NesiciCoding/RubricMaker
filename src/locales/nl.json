@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Iets boven niveau",
         "verdict_too_hard": "Te moeilijk",
         "above_target": "Boven niveau — voorbespreken:",
-        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL."
+        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL.",
+        "grammar_engine_ud": "Gekoppelde structuren zijn gecontroleerd met de grammaticaparser — een indicatie van het bereik, geen cijfer."
     },
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
@@ -3418,7 +3419,8 @@
         "es_stats_item_grammar": "Grammaticaal bereik: gebruikte constructies (tijden, passief, betrekkelijke bijzinnen, voorwaardelijke zinnen…) per CEFR-J-niveau, met het typische niveau en het hoogst bereikte niveau.",
         "es_stats_info": "Het paneel voor grammaticaal bereik heeft het Engelse UD-parsermodel nodig. Dat is niet meegeleverd omdat het onder CC BY-NC-SA (niet-commercieel) valt. Zelf-hosters downloaden het één keer in public/models/ (zie de README daar); zonder model blijft het paneel verborgen. Het is een indicatie van het bereik, geen cijfer: de parser is bij sommige constructies minder nauwkeurig, gebruik het naast je eigen oordeel.",
         "an_trends_title": "Schrijftrends",
-        "an_trends_body": "Op het profiel van een leerling (tabblad Overzicht) en op de Statistiekenpagina voor een klas volgt RubricMaker elk rubriccriterium over de beoordeelde essays van de leerling en markeert criteria die aanhoudend zwak zijn of dalen. Dit is regelgebaseerd: een criterium is zwak als de laatste drie essays allemaal op of onder 60% liggen. Alleen beoordeelde, ingeleverde essays (met een essayopdracht) tellen mee."
+        "an_trends_body": "Op het profiel van een leerling (tabblad Overzicht) en op de Statistiekenpagina voor een klas volgt RubricMaker elk rubriccriterium over de beoordeelde essays van de leerling en markeert criteria die aanhoudend zwak zijn of dalen. Dit is regelgebaseerd: een criterium is zwak als de laatste drie essays allemaal op of onder 60% liggen. Alleen beoordeelde, ingeleverde essays (met een essayopdracht) tellen mee.",
+        "es_stats_item_linker": "Grammaticakoppeling: als het parsermodel beschikbaar is, worden aan rubriccriteria gekoppelde grammaticastructuren gecontroleerd met de parse, zodat meer structuren (vraagtags, wish-zinnen, causatieven, inversie…) automatisch in plaats van handmatig kunnen worden gecontroleerd. Zonder model worden de regex-controles gebruikt zoals eerder."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

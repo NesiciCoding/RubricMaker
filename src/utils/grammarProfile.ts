@@ -660,3 +660,12 @@ export function profileUdSentences(sentences: UdSentence[]): GrammarProfileResul
         results,
     };
 }
+
+/** Flat construction id → count, for callers that only need to ask "how often was X used". */
+export function constructionCounts(profile: GrammarProfileResult): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const band of Object.values(profile.results)) {
+        for (const c of band.constructions) counts[c.id] = c.count;
+    }
+    return counts;
+}

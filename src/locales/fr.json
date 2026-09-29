@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Légèrement au-dessus",
         "verdict_too_hard": "Trop difficile",
         "above_target": "Au-dessus du niveau — à pré-enseigner :",
-        "awl_nawl_attribution": "Vocabulaire académique issu de l'AWL (Coxhead) et de la NAWL."
+        "awl_nawl_attribution": "Vocabulaire académique issu de l'AWL (Coxhead) et de la NAWL.",
+        "grammar_engine_ud": "Les structures liées ont été vérifiées avec l'analyseur grammatical — un indicateur d'étendue, pas une note."
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} en retard)",
@@ -3418,7 +3419,8 @@
         "es_stats_item_grammar": "Étendue grammaticale : constructions utilisées (temps, passif, relatives, conditionnelles…) classées par niveau CEFR-J, avec le niveau typique et le niveau le plus élevé atteint.",
         "es_stats_info": "Le panneau d'étendue grammaticale nécessite le modèle d'analyseur UD anglais, non inclus car sous licence CC BY-NC-SA (non commerciale). Les auto-hébergeurs le téléchargent une fois dans public/models/ (voir le README) ; sans lui, le panneau reste masqué. C'est un indicateur d'étendue, pas une note : l'analyseur est moins précis sur certaines constructions, à utiliser avec votre propre jugement.",
         "an_trends_title": "Tendances d'écriture",
-        "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent."
+        "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent.",
+        "es_stats_item_linker": "Lien grammaire : lorsque le modèle d'analyseur est hébergé, les structures grammaticales liées aux critères sont vérifiées avec l'analyse, ce qui permet de contrôler automatiquement plus de structures (question tags, wish, causatifs, inversion…) au lieu de le faire à la main. Sans le modèle, les contrôles par expressions régulières sont utilisés comme avant."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

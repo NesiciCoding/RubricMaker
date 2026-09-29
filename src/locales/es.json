@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Algo por encima",
         "verdict_too_hard": "Demasiado difícil",
         "above_target": "Por encima del nivel — pre-enseñar:",
-        "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL."
+        "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL.",
+        "grammar_engine_ud": "Las estructuras vinculadas se comprobaron con el analizador gramatical: un indicador de alcance, no una calificación."
     },
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
@@ -3418,7 +3419,8 @@
         "es_stats_item_grammar": "Alcance gramatical: construcciones usadas (tiempos, pasiva, oraciones de relativo, condicionales…) por nivel CEFR-J, con el nivel típico y el más alto alcanzado.",
         "es_stats_info": "El panel de alcance gramatical necesita el modelo de analizador UD en inglés, que no se incluye porque tiene licencia CC BY-NC-SA (no comercial). Quien aloja la aplicación lo descarga una vez en public/models/ (véase el README); sin él, el panel permanece oculto. Es un indicador de alcance, no una calificación: el analizador es menos preciso en algunas construcciones, úsalo junto con tu propio criterio.",
         "an_trends_title": "Tendencias de escritura",
-        "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo)."
+        "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo).",
+        "es_stats_item_linker": "Vinculación gramatical: cuando el modelo del analizador está alojado, las estructuras gramaticales vinculadas a criterios de la rúbrica se comprueban con el análisis, de modo que más estructuras (question tags, wish, causativas, inversión…) se comprueban automáticamente en lugar de manualmente. Sin el modelo se usan las comprobaciones con expresiones regulares como antes."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

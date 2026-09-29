@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Etwas zu hoch",
         "verdict_too_hard": "Zu schwer",
         "above_target": "Über dem Niveau — vorentlasten:",
-        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL."
+        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL.",
+        "grammar_engine_ud": "Verknüpfte Strukturen wurden mit dem Grammatikparser geprüft — ein Bandbreiten-Indikator, keine Note."
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
@@ -3418,7 +3419,8 @@
         "es_stats_item_grammar": "Grammatische Bandbreite: verwendete Konstruktionen (Zeiten, Passiv, Relativsätze, Konditionalsätze…) nach CEFR-J-Niveau, mit typischem und höchstem erreichten Niveau.",
         "es_stats_info": "Das Panel zur grammatischen Bandbreite benötigt das englische UD-Parsermodell. Es ist nicht enthalten, da es unter CC BY-NC-SA (nicht kommerziell) lizenziert ist. Selbst-Hoster laden es einmal nach public/models/ herunter (siehe README dort); ohne Modell bleibt das Panel ausgeblendet. Es ist ein Bandbreiten-Indikator, keine Note: Der Parser ist bei einigen Konstruktionen weniger genau, nutzen Sie ihn zusammen mit Ihrem eigenen Urteil.",
         "an_trends_title": "Schreibtrends",
-        "an_trends_body": "Im Profil einer Person (Tab Übersicht) und auf der Statistikseite einer Klasse verfolgt RubricMaker jedes Rasterkriterium über die bewerteten Aufsätze und markiert Kriterien, die anhaltend schwach sind oder nachlassen. Regelbasiert: Ein Kriterium ist schwach, wenn seine letzten drei Aufsätze alle bei höchstens 60 % liegen. Nur bewertete, abgegebene Aufsätze (mit Aufsatzauftrag) zählen."
+        "an_trends_body": "Im Profil einer Person (Tab Übersicht) und auf der Statistikseite einer Klasse verfolgt RubricMaker jedes Rasterkriterium über die bewerteten Aufsätze und markiert Kriterien, die anhaltend schwach sind oder nachlassen. Regelbasiert: Ein Kriterium ist schwach, wenn seine letzten drei Aufsätze alle bei höchstens 60 % liegen. Nur bewertete, abgegebene Aufsätze (mit Aufsatzauftrag) zählen.",
+        "es_stats_item_linker": "Grammatikverknüpfung: Ist das Parsermodell gehostet, werden mit Rasterkriterien verknüpfte Grammatikstrukturen anhand der Analyse geprüft, sodass mehr Strukturen (Question Tags, Wish-Sätze, Kausative, Inversion…) automatisch statt manuell geprüft werden können. Ohne Modell werden wie bisher die Regex-Prüfungen verwendet."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

@@ -21,6 +21,12 @@
 - **Model licensing:** the UD 2.5 English model is CC BY-NC-SA, so it is not committed or bundled. Deployments download it into `public/models/` (see `public/models/README.md`); without it the panel is hidden and the compromise-based profile from `grammarChecker.ts` remains the fallback.
 - **Known limits:** UDPipe is less accurate than spaCy on some constructions (e.g. tag questions, causatives with unusual attachments). **The panel is a range indicator, not a grade.** It is shown as such in the UI and docs, and its output never feeds an automatic score.
 
+### Grammar linker rerouting
+
+- `evaluateGrammar(linked, text, { udCounts })` checks linked grammar items against the UD parse when the model has loaded. `src/data/grammarLinkerMap.ts` maps the linker's `detectShorthand` values and additional item ids onto UD construction ids; unmapped items keep using the regex detectors, and everything behaves as before without the model.
+- Items the regex path could only mark "manual check" (question tags, wish clauses, causatives, inversion, existential there, …) become auto-detectable under the parse. Each item result records `detectedBy`, and the panel notes when the parser was used.
+- Regular vs irregular past simple stay on the regex path (the parse profile doesn't split them). Results feed only the teacher-facing apply-as-comment flow, never an automatic score.
+
 ## 34.2 Cross-essay weak-criterion trends
 
 - `src/utils/writingTrendAggregator.ts` follows the `learningPathAggregator` shape. Essays are graded `StudentRubric`s (graded, handed in, not a peer review, not deleted) whose `(rubricId, studentId)` has an `EssayAssignment`. Criteria are matched by name so copied rubrics stay on one line.

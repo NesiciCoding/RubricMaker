@@ -1,13 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { useUdGrammarProfile } from '../../hooks/useUdGrammarProfile';
+import type { UdGrammarState } from '../../hooks/useUdGrammarProfile';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import type { CefrLevel } from '../../types';
 
 const LEVELS: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
-export default function UdGrammarPanel({ text }: { text: string }) {
+export default function UdGrammarPanel({ state }: { state: UdGrammarState }) {
     const { t } = useTranslation();
-    const state = useUdGrammarProfile(text);
 
     if (state.status === 'unavailable') return null;
     if (state.status === 'loading') {

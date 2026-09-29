@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import fixtures from './__fixtures__/grammarProfile.conllu.json';
 import { parseConlluSentences } from './udParse';
-import { constructionsAtLevel, profileUdSentences } from './grammarProfile';
+import { constructionCounts, constructionsAtLevel, profileUdSentences } from './grammarProfile';
+import { evaluateGrammar } from './grammarQualification';
 import { GRAMMAR_CONSTRUCTIONS, CEFRJ_CODE_LEVELS } from '../data/grammarConstructions';
 import type { CefrLevel } from '../types';
 
@@ -98,5 +99,40 @@ describe('construction registry', () => {
         expect(CEFRJ_CODE_LEVELS['TA.PRPF.AFF']).toBe('A2');
         expect(CEFRJ_CODE_LEVELS['MD.can.AFF']).toBe('A1');
         expect(CEFRJ_CODE_LEVELS['TO.to_have_done']).toBe('C1');
+    });
+});
+
+describe('grammar linker over recorded parses', () => {
+    const check = (text: string, itemId: string, description: string) => {
+        const counts = constructionCounts(profileUdSentences(parseConlluSentences(conllu[text])));
+        const link = {
+            descriptorId: itemId,
+            framework: 'grammar' as const,
+            categoryId: 'x',
+            categoryLabelEn: 'X',
+            categoryLabelNl: 'X',
+            categoryColor: '#000',
+            descriptionEn: description,
+            descriptionNl: description,
+            level: 'B1' as CefrLevel,
+        };
+        return evaluateGrammar([link], text, { udCounts: counts }).items[0];
+    };
+
+    it.each([
+        ["You like tea, don't you?", 'gr-question-tags'],
+        ['I wish I had a car.', 'gr-wish-if-only'],
+        ['She has been working all day.', 'gr-present-perfect-continuous'],
+        ['If I had known, I would have helped.', 'gr-conditional-third'],
+        ['The work must be finished today.', 'gr-passive-modal'],
+        ['There is a book here.', 'gr-existential-there'],
+        ['She is as tall as her brother.', 'gr-comparison-equality'],
+        ['Never have I seen such a thing.', 'gr-inversion'],
+    ])('%s satisfies %s', (text, itemId) => {
+        expect(check(text, itemId, itemId)).toMatchObject({ found: true, detectedBy: 'ud' });
+    });
+
+    it('does not satisfy an unrelated item', () => {
+        expect(check('The cat sat on the mat.', 'gr-passive-modal', 'Modal passive').found).toBe(false);
     });
 });
