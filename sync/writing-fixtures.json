@@ -1,0 +1,10 @@
+{
+    "syllables": { "cat": 1, "the": 1, "analysis": 4, "running": 2, "walked": 1, "table": 2, "wanted": 2 },
+    "sentences": { "One. Two! Three?": 3, "Hello world": 1, "": 1 },
+    "readability": [
+        { "text": "The cat sat on the mat.", "wordCount": 6, "fleschReadingEase": 116.1, "fleschKincaidGrade": -1.4, "description": "very easy" }
+    ],
+    "transitions": [
+        { "text": "First, we ate. However, it rained. For example, umbrellas help. In conclusion, plan ahead.", "total": 4, "byCategory": { "addition": 0, "contrast": 1, "cause": 0, "sequence": 1, "example": 1, "conclusion": 1 } }
+    ]
+}

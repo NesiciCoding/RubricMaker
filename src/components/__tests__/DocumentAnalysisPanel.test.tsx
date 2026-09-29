@@ -8,6 +8,7 @@ vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (k: string, fb?: string) => fb ?? k }),
 }));
 
+vi.mock('../Essay/EssayStatsPanel', () => ({ default: () => null }));
 vi.mock('../../utils/textExtraction', () => ({
     extractText: vi.fn(async () => 'sample text'),
     UnsupportedFormatError: class UnsupportedFormatError extends Error {},

@@ -3870,5 +3870,37 @@
         "remove_fav": "Verwijderen uit favorieten",
         "add_fav": "Toevoegen aan favorieten",
         "err_unknown": "Onbekende fout"
+    },
+    "writingStats": {
+        "title": "Schrijfstatistieken",
+        "words": "Woorden",
+        "sentences": "Zinnen",
+        "avgSentence": "Gem. woorden / zin",
+        "variance": "Variantie zinslengte",
+        "range": "Kortste – langste",
+        "fkGrade": "Flesch-Kincaid-niveau",
+        "fre": "Flesch-leesgemak",
+        "transitions": "Signaalwoorden",
+        "perHundred": "per 100 woorden",
+        "noTransitions": "Geen signaalwoorden gevonden",
+        "sentenceLengths": "Zinslengtes",
+        "category": {
+            "addition": "Toevoeging",
+            "contrast": "Tegenstelling",
+            "cause": "Oorzaak & gevolg",
+            "sequence": "Volgorde",
+            "example": "Voorbeeld",
+            "conclusion": "Conclusie"
+        },
+        "description": {
+            "very easy": "zeer makkelijk",
+            "easy": "makkelijk",
+            "fairly easy": "tamelijk makkelijk",
+            "plain English": "gewoon taalgebruik",
+            "fairly difficult": "tamelijk moeilijk",
+            "difficult": "moeilijk",
+            "very difficult": "zeer moeilijk"
+        },
+        "note": "Berekend met vaste regels — geen AI."
     }
 }

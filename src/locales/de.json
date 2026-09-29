@@ -3870,5 +3870,37 @@
         "remove_fav": "Aus Favoriten entfernen",
         "add_fav": "Zu Favoriten hinzufügen",
         "err_unknown": "Unbekannter Fehler"
+    },
+    "writingStats": {
+        "title": "Schreibstatistiken",
+        "words": "Wörter",
+        "sentences": "Sätze",
+        "avgSentence": "Ø Wörter / Satz",
+        "variance": "Varianz der Satzlänge",
+        "range": "Kürzester – längster",
+        "fkGrade": "Flesch-Kincaid-Stufe",
+        "fre": "Flesch-Lesbarkeit",
+        "transitions": "Überleitungswörter",
+        "perHundred": "pro 100 Wörter",
+        "noTransitions": "Keine Überleitungswörter gefunden",
+        "sentenceLengths": "Satzlängen",
+        "category": {
+            "addition": "Ergänzung",
+            "contrast": "Gegensatz",
+            "cause": "Ursache & Folge",
+            "sequence": "Reihenfolge",
+            "example": "Beispiel",
+            "conclusion": "Schluss"
+        },
+        "description": {
+            "very easy": "sehr leicht",
+            "easy": "leicht",
+            "fairly easy": "ziemlich leicht",
+            "plain English": "Alltagssprache",
+            "fairly difficult": "ziemlich schwierig",
+            "difficult": "schwierig",
+            "very difficult": "sehr schwierig"
+        },
+        "note": "Mit festen Regeln berechnet — ohne KI."
     }
 }

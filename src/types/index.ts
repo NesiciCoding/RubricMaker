@@ -1607,6 +1607,36 @@ export interface CellData {
     isLinked: boolean;
 }
 
+// ─── Essay text statistics (deterministic, no AI) ─────────────────────────────
+
+export type TransitionCategory = 'addition' | 'contrast' | 'cause' | 'sequence' | 'example' | 'conclusion';
+
+export interface ReadabilityStats {
+    fleschReadingEase: number;
+    fleschKincaidGrade: number;
+    description: string;
+}
+
+export interface EssayTextStats {
+    wordCount: number;
+    sentenceCount: number;
+    avgWordsPerSentence: number;
+    /** Words per sentence, in text order */
+    sentenceLengths: number[];
+    sentenceLengthVariance: number;
+    sentenceLengthStdDev: number;
+    minSentenceLength: number;
+    maxSentenceLength: number;
+    transitions: {
+        total: number;
+        per100Words: number;
+        byCategory: Record<TransitionCategory, number>;
+        byPhrase: Record<string, number>;
+    };
+    /** null when the text has no words */
+    readability: ReadabilityStats | null;
+}
+
 // ─── Student Learning Paths (rule-based, no AI) ───────────────────────────────
 
 /** A single rule-based suggestion to address a below-cohort-average skill gap */

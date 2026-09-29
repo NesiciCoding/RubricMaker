@@ -3870,5 +3870,37 @@
         "remove_fav": "Retirer des favoris",
         "add_fav": "Ajouter aux favoris",
         "err_unknown": "Erreur inconnue"
+    },
+    "writingStats": {
+        "title": "Statistiques d'écriture",
+        "words": "Mots",
+        "sentences": "Phrases",
+        "avgSentence": "Mots / phrase (moy.)",
+        "variance": "Variance de la longueur des phrases",
+        "range": "Plus courte – plus longue",
+        "fkGrade": "Niveau Flesch-Kincaid",
+        "fre": "Facilité de lecture Flesch",
+        "transitions": "Mots de transition",
+        "perHundred": "pour 100 mots",
+        "noTransitions": "Aucun mot de transition trouvé",
+        "sentenceLengths": "Longueur des phrases",
+        "category": {
+            "addition": "Addition",
+            "contrast": "Contraste",
+            "cause": "Cause et conséquence",
+            "sequence": "Séquence",
+            "example": "Exemple",
+            "conclusion": "Conclusion"
+        },
+        "description": {
+            "very easy": "très facile",
+            "easy": "facile",
+            "fairly easy": "assez facile",
+            "plain English": "langage courant",
+            "fairly difficult": "assez difficile",
+            "difficult": "difficile",
+            "very difficult": "très difficile"
+        },
+        "note": "Calculé avec des règles fixes — sans IA."
     }
 }

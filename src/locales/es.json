@@ -3870,5 +3870,37 @@
         "remove_fav": "Quitar de favoritos",
         "add_fav": "Añadir a favoritos",
         "err_unknown": "Error desconocido"
+    },
+    "writingStats": {
+        "title": "Estadísticas de redacción",
+        "words": "Palabras",
+        "sentences": "Oraciones",
+        "avgSentence": "Palabras / oración (media)",
+        "variance": "Varianza de longitud de oración",
+        "range": "Más corta – más larga",
+        "fkGrade": "Nivel Flesch-Kincaid",
+        "fre": "Facilidad de lectura Flesch",
+        "transitions": "Conectores",
+        "perHundred": "por 100 palabras",
+        "noTransitions": "No se encontraron conectores",
+        "sentenceLengths": "Longitud de las oraciones",
+        "category": {
+            "addition": "Adición",
+            "contrast": "Contraste",
+            "cause": "Causa y efecto",
+            "sequence": "Secuencia",
+            "example": "Ejemplo",
+            "conclusion": "Conclusión"
+        },
+        "description": {
+            "very easy": "muy fácil",
+            "easy": "fácil",
+            "fairly easy": "bastante fácil",
+            "plain English": "lenguaje llano",
+            "fairly difficult": "bastante difícil",
+            "difficult": "difícil",
+            "very difficult": "muy difícil"
+        },
+        "note": "Calculado con reglas fijas — sin IA."
     }
 }

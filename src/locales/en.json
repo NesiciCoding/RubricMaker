@@ -3868,5 +3868,37 @@
         "remove_fav": "Remove from favorites",
         "add_fav": "Add to favorites",
         "err_unknown": "Unknown error"
+    },
+    "writingStats": {
+        "title": "Writing statistics",
+        "words": "Words",
+        "sentences": "Sentences",
+        "avgSentence": "Avg. words / sentence",
+        "variance": "Sentence-length variance",
+        "range": "Shortest – longest",
+        "fkGrade": "Flesch-Kincaid grade",
+        "fre": "Flesch Reading Ease",
+        "transitions": "Transition words",
+        "perHundred": "per 100 words",
+        "noTransitions": "No transition words found",
+        "sentenceLengths": "Sentence lengths",
+        "category": {
+            "addition": "Addition",
+            "contrast": "Contrast",
+            "cause": "Cause & effect",
+            "sequence": "Sequence",
+            "example": "Example",
+            "conclusion": "Conclusion"
+        },
+        "description": {
+            "very easy": "very easy",
+            "easy": "easy",
+            "fairly easy": "fairly easy",
+            "plain English": "plain English",
+            "fairly difficult": "fairly difficult",
+            "difficult": "difficult",
+            "very difficult": "very difficult"
+        },
+        "note": "Calculated with fixed rules — no AI."
     }
 }
