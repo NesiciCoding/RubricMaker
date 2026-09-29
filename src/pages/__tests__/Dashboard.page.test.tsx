@@ -12,6 +12,7 @@ const mockSendMessage = vi.fn();
 const mockNotifyStudentMessage = vi.fn();
 const mockAddFlashcardAssignments = vi.fn();
 const mockGetGrammarRecommendations = vi.fn();
+const mockUpdateSettings = vi.fn();
 
 let store: Record<string, unknown>;
 
@@ -295,6 +296,10 @@ function makeStore(): Record<string, unknown> {
             }),
         ],
         flashcardDecks: [deck],
+        flashcardAssignments: [],
+        flashcardReviews: [],
+        selfAssessments: [],
+        analysisResults: [],
         settings: {
             theme: 'dark',
             language: 'en',
@@ -320,6 +325,10 @@ vi.mock('../../context/AppContext', () => ({
 
 vi.mock('../../context/useStore', () => ({
     useStoreSelector: (selector: (state: Record<string, unknown>) => unknown) => selector(store),
+    // A stable object (not a fresh one per call) so components that depend on updateSettings'
+    // identity in a useEffect (e.g. the class-filter sync, mirroring StudentsPage) don't re-fire
+    // on every render the way a `() => ({ updateSettings: vi.fn() })` factory would.
+    useStoreActions: () => ({ updateSettings: mockUpdateSettings }),
 }));
 
 vi.mock('../../hooks/useToast', () => ({
@@ -337,6 +346,9 @@ vi.mock('../../components/Layout/Topbar', () => ({
 
 vi.mock('../../utils/learningPathAggregator', () => ({
     getGrammarRecommendations: (...args: unknown[]) => mockGetGrammarRecommendations(...args),
+    // StudentSnapshotTable (rendered by Dashboard) also calls these two for its needs-attention flag.
+    getCriterionInterventionFlags: () => [],
+    getCefrSkillInterventionFlags: () => [],
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -373,6 +385,7 @@ describe('Dashboard page', () => {
         mockNotifyStudentMessage.mockClear();
         mockAddFlashcardAssignments.mockClear();
         mockGetGrammarRecommendations.mockReset();
+        mockUpdateSettings.mockClear();
         mockGetGrammarRecommendations.mockReturnValue([]);
     });
 
@@ -458,7 +471,7 @@ describe('Dashboard page', () => {
         await renderPage();
         expect(screen.getAllByText('Alice Smith').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Fresh Essay').length).toBeGreaterThan(0);
-        expect(screen.getByText('Class 4B')).toBeInTheDocument();
+        expect(screen.getAllByText('Class 4B').length).toBeGreaterThan(0);
         expect(screen.getByText('dashboard.time_days_ago:{"count":3}')).toBeInTheDocument();
     });
 

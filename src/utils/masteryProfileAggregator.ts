@@ -223,3 +223,28 @@ export function getStudentMasteryProfile(studentId: string, deps: MasteryProfile
 export function withEvidenceOnly(rows: GrammarItemMastery[]): GrammarItemMastery[] {
     return rows.filter((r) => r.test || r.flashcards || r.writing);
 }
+
+/** Per-item 0–100 score: the mean of whichever evidence streams are present for that item. */
+function itemScore(row: GrammarItemMastery): number | null {
+    const scores: number[] = [];
+    if (row.test) scores.push(row.test.accuracyPct);
+    if (row.flashcards && row.flashcards.cardCount > 0) {
+        scores.push((row.flashcards.masteredCount / row.flashcards.cardCount) * 100);
+    }
+    if (row.writing) scores.push(row.writing.avgPct);
+    if (scores.length === 0) return null;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
+}
+
+/**
+ * Blended 0–100 grammar mastery score for a class-overview dashboard: the mean of each
+ * evidence-bearing item's own blended score (test accuracy, flashcard mastered-ratio, writing
+ * rubric %), averaged across whichever streams that item has. Returns null when the student has
+ * no grammar evidence at all, so callers can render "no data yet" instead of a misleading 0.
+ */
+export function getStudentGrammarMasteryScore(studentId: string, deps: MasteryProfileDeps): number | null {
+    const rows = withEvidenceOnly(getStudentMasteryProfile(studentId, deps));
+    const scores = rows.map(itemScore).filter((s): s is number => s !== null);
+    if (scores.length === 0) return null;
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
+}

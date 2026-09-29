@@ -17,8 +17,12 @@ test.describe('Comparative grading (smoke)', () => {
             rm_student_rubrics: [sr1, sr2],
         });
 
-        await appPage.goto(`/grade-comparative/${cls.id}/${rubric.id}`);
+        await appPage.goto(`/#/grade-comparative/${cls.id}/${rubric.id}`);
+        // Hash-only navigation doesn't reload the page, so React never re-reads the
+        // seeded localStorage — force a reload, mirroring BasePage.navigate()'s fix
+        // for the same issue.
+        await appPage.reload();
         await expect(appPage.locator('.main-area')).toBeVisible({ timeout: 10_000 });
-        await expect(appPage.getByText('Comp Student 1')).toBeVisible();
+        await expect(appPage.getByRole('heading', { name: 'Comp Student 1' })).toBeVisible();
     });
 });
