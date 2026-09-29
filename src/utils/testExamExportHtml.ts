@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { printHtml } from './pdfExport';
-import { escapeHtml, promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { escapeHtml, promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -192,7 +192,7 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
             if (options.attachmentMode === 'inline' && group.section.content) {
-                html += `<div style="margin-bottom:10px;font-size:13px">${DOMPurify.sanitize(group.section.content)}</div>`;
+                html += `<div style="margin-bottom:10px;font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content))}</div>`;
             }
         }
         html += group.questions.map(({ question, number }) => questionBodyHtml(question, number, options)).join('');
@@ -207,7 +207,7 @@ export function buildExamAttachmentHtml(test: Test): string {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
         html += `<div style="${pageBreak}page-break-inside:avoid">${sectionDividerHtml(group.section.title)}</div>`;
-        html += `<div style="font-size:13px;margin-bottom:14px">${DOMPurify.sanitize(group.section.content ?? '')}</div>`;
+        html += `<div style="font-size:13px;margin-bottom:14px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content ?? ''))}</div>`;
     });
     return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
 }

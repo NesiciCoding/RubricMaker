@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader, CheckSquare, Square, ShieldAlert } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useStoreSelector } from '../../context/useStore';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 import type { Student, Test } from '../../types';
 import type { DocxStyleTemplateOverrides } from '../../utils/docxExport';
@@ -23,6 +24,7 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
     const [scanMarkers, setScanMarkers] = useState(false);
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
+    const classes = useStoreSelector((st) => st.classes);
 
     const hasHotText = test.questions.some((q) => q.type === 'hot-text');
     const hasAttachment = (test.sections ?? []).some((s) => s.content);
@@ -31,6 +33,22 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
         setSelectedStudentIds((prev) =>
             prev.size === students.length ? new Set() : new Set(students.map((s) => s.id))
         );
+    }
+    const classGroups = useMemo(
+        () =>
+            classes
+                .map((c) => ({ cls: c, ids: students.filter((st) => st.classId === c.id).map((st) => st.id) }))
+                .filter((g) => g.ids.length > 0),
+        [classes, students]
+    );
+
+    function toggleClass(ids: string[]) {
+        setSelectedStudentIds((prev) => {
+            const next = new Set(prev);
+            const allSelected = ids.every((id) => next.has(id));
+            ids.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+            return next;
+        });
     }
     function toggleStudent(id: string) {
         setSelectedStudentIds((prev) => {
@@ -160,6 +178,35 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                             })}
                         </span>
                     </div>
+                    {classGroups.length > 1 && (
+                        <div
+                            role="group"
+                            aria-label={t('tests.export.exam.select_by_class')}
+                            style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}
+                        >
+                            {classGroups.map(({ cls, ids }) => {
+                                const selectedCount = ids.filter((id) => selectedStudentIds.has(id)).length;
+                                const all = selectedCount === ids.length;
+                                return (
+                                    <button
+                                        key={cls.id}
+                                        type="button"
+                                        className="btn btn-sm"
+                                        aria-pressed={all}
+                                        onClick={() => toggleClass(ids)}
+                                        style={{
+                                            borderRadius: 999,
+                                            border: `1px ${selectedCount > 0 && !all ? 'dashed' : 'solid'} ${selectedCount > 0 ? 'var(--accent)' : 'var(--border)'}`,
+                                            background: all ? 'var(--accent)' : 'transparent',
+                                            color: all ? '#fff' : 'var(--text)',
+                                        }}
+                                    >
+                                        {cls.name} ({selectedCount}/{ids.length})
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                     <div
                         style={{
                             maxHeight: 160,

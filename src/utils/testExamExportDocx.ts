@@ -19,7 +19,7 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
@@ -85,7 +85,7 @@ export function collectParagraphTexts(root: Element): string[] {
 
 /** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables that plain-text extraction would drop. */
 function htmlToParagraphs(html: string, spacingAfter = 120): (Paragraph | Table)[] {
-    return htmlToDocxChildren(promptToHtml(html), spacingAfter);
+    return htmlToDocxChildren(stripInlineFontSizes(promptToHtml(html)), spacingAfter);
 }
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
