@@ -336,7 +336,7 @@ export function htmlToDocxLead(html: string): { leadRuns: TextRun[]; rest: (Para
 }
 
 /** Converts EssayEditor's TipTap HTML output to docx Paragraph/Table nodes. */
-export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
+export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragraph | Table)[] {
     const root = parseEssayHtml(html);
     const children: (Paragraph | Table)[] = [];
     for (const node of Array.from(root.children)) {
@@ -388,7 +388,7 @@ export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
             children.push(
                 new Paragraph({
                     alignment,
-                    spacing,
+                    spacing: spacingAfter === undefined ? spacing : { ...spacing, after: spacingAfter },
                     children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)),
                 })
             );

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { collectParagraphTexts } from './testExamExportDocx';
-import { htmlToDocxLead } from './essayExport';
+import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
 
 function parse(html: string): Element {
     return new DOMParser().parseFromString(html, 'text/html').body;
@@ -51,5 +51,12 @@ describe('htmlToDocxLead', () => {
         const { leadRuns, rest } = htmlToDocxLead('<ul><li>a</li></ul>');
         expect(leadRuns).toEqual([]);
         expect(rest).toHaveLength(1);
+    });
+});
+
+describe('htmlToDocxChildren spacingAfter', () => {
+    it('keeps one block per paragraph, including blank lines, for reading passages', () => {
+        const blocks = htmlToDocxChildren('<p>One <em>two</em></p><p></p><p><mark>Three</mark></p>', 120);
+        expect(blocks).toHaveLength(3);
     });
 });
