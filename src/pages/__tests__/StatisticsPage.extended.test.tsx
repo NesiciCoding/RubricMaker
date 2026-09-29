@@ -468,7 +468,7 @@ describe('StatisticsPage extended', () => {
     it('selects a class to show class goals, trend, and test averages', async () => {
         renderPage();
         await waitForCharts();
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         await waitForCharts();
         // Class trend chart (multiple rubrics graded in c1), class goals and test averages render.
         expect(screen.getByText('statistics.class_trend')).toBeInTheDocument();
@@ -579,7 +579,7 @@ describe('StatisticsPage extended', () => {
         fireEvent.change(trackSelect, { target: { value: 'havo' } });
         await waitForCharts();
         // Class filter now only offers c3; select it (kept by the sync effect).
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c3' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class C' }));
         await waitForCharts();
         fireEvent.change(comboboxWithOption('havo'), { target: { value: 'all' } });
         await waitForCharts();
@@ -676,7 +676,7 @@ describe('StatisticsPage extended', () => {
         await waitForCharts();
         fireEvent.click(screen.getByText('statistics.view_by_student'));
         await waitForCharts();
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c2' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class B' }));
         const select = screen.getByLabelText('statistics.label_student') as HTMLSelectElement;
         const options = Array.from(select.options).map((o) => o.value);
         expect(options).toContain('s2');
@@ -706,7 +706,7 @@ describe('StatisticsPage extended', () => {
         renderPage();
         await waitForCharts();
         // Class c2 has exactly one graded submission on r1.
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c2' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class B' }));
         fireEvent.click(screen.getByText('statistics.distribution_percentage'));
         await waitForCharts();
         expect(screen.getByText('statistics.no_grade_scale')).toBeInTheDocument();
@@ -718,7 +718,7 @@ describe('StatisticsPage extended', () => {
     it('exports a preset chart as PNG', async () => {
         renderPage();
         await waitForCharts();
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         await waitForCharts();
         const exportButtons = screen.getAllByTitle('statistics.export_chart');
         expect(exportButtons.length).toBeGreaterThan(0);
@@ -814,10 +814,9 @@ describe('StatisticsPage extended', () => {
     it('clears the active class when switching the filter back to all', async () => {
         renderPage();
         await waitForCharts();
-        const classSelect = screen.getByLabelText('statistics.label_class_filter');
-        fireEvent.change(classSelect, { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: 'c1' });
-        fireEvent.change(classSelect, { target: { value: 'all' } });
+        fireEvent.click(screen.getByRole('button', { name: 'statistics.all_classes' }));
         expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: undefined });
     });
 

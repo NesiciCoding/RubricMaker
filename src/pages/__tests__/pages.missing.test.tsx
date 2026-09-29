@@ -280,8 +280,7 @@ describe('CefrOverviewPage', () => {
         fireEvent.click(screen.getByText('cefr.view_student'));
         const studentSelect = screen.getByDisplayValue('statistics.select_student_placeholder') as HTMLSelectElement;
         fireEvent.change(studentSelect, { target: { value: 's1' } });
-        const classSelect = screen.getByDisplayValue('statistics.all_classes') as HTMLSelectElement;
-        fireEvent.change(classSelect, { target: { value: 'c1' } });
+        fireEvent.click(screen.getAllByRole('button', { name: 'Class A' })[0]);
         // Student select should reset to placeholder
         expect(screen.getByDisplayValue('statistics.select_student_placeholder')).toBeInTheDocument();
     });

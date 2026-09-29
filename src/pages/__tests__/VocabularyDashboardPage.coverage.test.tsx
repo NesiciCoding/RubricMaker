@@ -163,8 +163,7 @@ describe('VocabularyDashboardPage coverage', () => {
         renderWithRouter(<VocabularyDashboardPage />);
 
         expect(screen.getByText('vocabProfile.class_distribution_title')).toBeInTheDocument();
-        const select = screen.getByLabelText('vocabProfile.label_class_filter');
-        fireEvent.change(select, { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
 
         // single-class titles + drill-down table
         expect(screen.getByText('vocabProfile.class_distribution_title_single')).toBeInTheDocument();

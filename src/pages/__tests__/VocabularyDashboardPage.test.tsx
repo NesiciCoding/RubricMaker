@@ -96,9 +96,8 @@ describe('VocabularyDashboardPage', () => {
     it('shows the student drill-down when a class is selected', async () => {
         const { default: VocabularyDashboardPage } = await import('../VocabularyDashboardPage');
         renderWithRouter(<VocabularyDashboardPage />);
-        const select = screen.getByLabelText('vocabProfile.label_class_filter');
         const { fireEvent } = await import('@testing-library/react');
-        fireEvent.change(select, { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         expect(screen.getByText('vocabProfile.student_drilldown_title')).toBeInTheDocument();
         expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
