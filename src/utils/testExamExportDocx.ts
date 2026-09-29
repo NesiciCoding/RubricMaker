@@ -19,7 +19,8 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { sanitizeFilename, stripHtmlTags } from './exportDataPrep';
+import { promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { htmlToDocxLead } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -293,9 +294,8 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const promptRuns = isCloze
-        ? clozeRuns(question)
-        : [new TextRun({ text: stripHtmlTags(plainQuestionPromptText(question)) })];
+    const rich = isCloze ? null : htmlToDocxLead(promptToHtml(plainQuestionPromptText(question)));
+    const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
@@ -306,6 +306,7 @@ async function questionParagraphs(
             ],
             spacing: { after: 60 },
         }),
+        ...(rich?.rest ?? []),
     ];
 
     if (question.imageUrl) {

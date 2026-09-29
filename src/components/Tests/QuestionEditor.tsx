@@ -1027,13 +1027,14 @@ export default function QuestionEditor({
                                     value={item.text}
                                     onChange={(e) => updateCategorizeItem(item.id, { text: e.target.value })}
                                     placeholder={t('tests.categorize_item_placeholder')}
-                                    style={{ flex: 1 }}
+                                    style={{ flex: 1, minWidth: 0 }}
                                     aria-label={t('tests.categorize_item_placeholder')}
                                 />
                                 <select
                                     value={item.categoryId}
                                     onChange={(e) => updateCategorizeItem(item.id, { categoryId: e.target.value })}
                                     aria-label={t('tests.categorize_item_category_label')}
+                                    style={{ width: 'auto', maxWidth: '40%', flexShrink: 0 }}
                                 >
                                     {(question.categories ?? []).map((cat) => (
                                         <option key={cat.id} value={cat.id}>

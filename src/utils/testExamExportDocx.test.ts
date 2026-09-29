@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { collectParagraphTexts } from './testExamExportDocx';
+import { htmlToDocxLead } from './essayExport';
 
 function parse(html: string): Element {
     return new DOMParser().parseFromString(html, 'text/html').body;
@@ -36,5 +37,19 @@ describe('collectParagraphTexts', () => {
 
     it('drops empty/whitespace-only segments', () => {
         expect(collectParagraphTexts(parse('<p>   </p><p>Real content</p>'))).toEqual(['Real content']);
+    });
+});
+
+describe('htmlToDocxLead', () => {
+    it('splits the first paragraph into inline runs and the rest into blocks', () => {
+        const { leadRuns, rest } = htmlToDocxLead('<p>Hi <strong>there</strong></p><p>Second</p><p></p><p>Third</p>');
+        expect(leadRuns).toHaveLength(2);
+        expect(rest).toHaveLength(3);
+    });
+
+    it('returns no lead runs when the prompt starts with a non-paragraph block', () => {
+        const { leadRuns, rest } = htmlToDocxLead('<ul><li>a</li></ul>');
+        expect(leadRuns).toEqual([]);
+        expect(rest).toHaveLength(1);
     });
 });

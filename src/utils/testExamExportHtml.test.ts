@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import '../i18n';
 import type { Test } from '../types';
-import { buildAnswerSheetHtml } from './testExamExportHtml';
+import { buildAnswerSheetHtml, buildExamBookletHtml } from './testExamExportHtml';
 import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, DEFAULT_EXAM_EXPORT_OPTIONS } from './testExamContent';
 
 function makeTest(): Test {
@@ -39,5 +40,25 @@ describe('buildAnswerSheetHtml choice bubbles', () => {
         // Not the old hardcoded px sizing this used to diverge from the scanner geometry with.
         expect(html).not.toContain('width:20px');
         expect(html).not.toContain('gap:14px');
+    });
+});
+
+describe('buildExamBookletHtml rich prompt', () => {
+    it('keeps line breaks, bold, italic and highlight from the question prompt', () => {
+        const test = makeTest();
+        test.questions[0].prompt =
+            '<p>Read <strong>carefully</strong> and <em>think</em></p><p><mark style="background-color:#ff0">key</mark><br>next line</p><script>alert(1)</script>';
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('<strong>carefully</strong>');
+        expect(html).toContain('<em>think</em>');
+        expect(html).toContain('<mark style="background-color:#ff0">key</mark><br>next line');
+        expect(html).not.toContain('<script>');
+    });
+
+    it('preserves line breaks in legacy plain-text prompts', () => {
+        const test = makeTest();
+        test.questions[0].prompt = 'line one\nfish & chips';
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('<p>line one</p><p>fish &amp; chips</p>');
     });
 });

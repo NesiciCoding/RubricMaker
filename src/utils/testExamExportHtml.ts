@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { printHtml } from './pdfExport';
-import { escapeHtml, sanitizeFilename, stripHtmlTags } from './exportDataPrep';
+import { escapeHtml, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -69,11 +69,18 @@ function categorizeBookletHtml(question: TestQuestion): string {
   <div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('categories_label')}: ${categories}</div>`;
 }
 
+const RICH_PROMPT_CSS =
+    '<style>.exam-prompt p{margin:0 0 4px}.exam-prompt p:empty{min-height:1em}.exam-prompt mark{-webkit-print-color-adjust:exact;print-color-adjust:exact}.exam-prompt ul,.exam-prompt ol{margin:2px 0;padding-left:20px}</style>';
+
+function richPromptHtml(question: TestQuestion): string {
+    return `${RICH_PROMPT_CSS}<div class="exam-prompt">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
+}
+
 function questionBodyHtml(question: TestQuestion, number: number, options: TestExamExportOptions): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const prompt = isCloze
         ? `<div style="line-height:1.8">${clozeBookletHtml(question)}</div>`
-        : escapeHtml(stripHtmlTags(plainQuestionPromptText(question)));
+        : richPromptHtml(question);
     let extra = '';
 
     if (question.imageUrl) {
