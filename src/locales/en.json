@@ -3900,5 +3900,13 @@
             "very difficult": "very difficult"
         },
         "note": "Calculated with fixed rules — no AI."
+    },
+    "grammarProfile": {
+        "title": "Grammar range (CEFR-J)",
+        "loading": "Analysing grammar…",
+        "typical": "Typical",
+        "reaches": "Reaches",
+        "none": "No graded constructions detected",
+        "attribution": "Rule-based over a UDPipe parse; levels from the CEFR-J Grammar Profile (Tono Laboratory, TUFS). No AI."
     }
 }

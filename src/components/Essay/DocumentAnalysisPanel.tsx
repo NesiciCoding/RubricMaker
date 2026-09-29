@@ -32,6 +32,7 @@ import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
 import { Skeleton, SkeletonCard } from '../ui/Skeleton';
 import EssayStatsPanel from './EssayStatsPanel';
+import UdGrammarPanel from './UdGrammarPanel';
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -720,6 +721,7 @@ export default function DocumentAnalysisPanel({
                             </div>
 
                             {extractedText && <EssayStatsPanel text={extractedText} />}
+                            {extractedText && <UdGrammarPanel text={extractedText} />}
 
                             {/* CEFR Text Profile */}
                             {cefrProfile && extractedText && (

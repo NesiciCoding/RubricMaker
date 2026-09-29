@@ -3902,5 +3902,13 @@
             "very difficult": "zeer moeilijk"
         },
         "note": "Berekend met vaste regels — geen AI."
+    },
+    "grammarProfile": {
+        "title": "Grammaticaal bereik (CEFR-J)",
+        "loading": "Grammatica analyseren…",
+        "typical": "Typisch",
+        "reaches": "Bereikt",
+        "none": "Geen ingedeelde constructies gevonden",
+        "attribution": "Regelgebaseerd op een UDPipe-analyse; niveaus uit het CEFR-J Grammar Profile (Tono Laboratory, TUFS). Geen AI."
     }
 }

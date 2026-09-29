@@ -3902,5 +3902,13 @@
             "very difficult": "sehr schwierig"
         },
         "note": "Mit festen Regeln berechnet — ohne KI."
+    },
+    "grammarProfile": {
+        "title": "Grammatische Bandbreite (CEFR-J)",
+        "loading": "Grammatik wird analysiert…",
+        "typical": "Typisch",
+        "reaches": "Erreicht",
+        "none": "Keine eingestuften Konstruktionen gefunden",
+        "attribution": "Regelbasiert auf einer UDPipe-Analyse; Niveaus aus dem CEFR-J Grammar Profile (Tono Laboratory, TUFS). Keine KI."
     }
 }

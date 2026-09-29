@@ -3902,5 +3902,13 @@
             "very difficult": "muy difícil"
         },
         "note": "Calculado con reglas fijas — sin IA."
+    },
+    "grammarProfile": {
+        "title": "Alcance gramatical (CEFR-J)",
+        "loading": "Analizando la gramática…",
+        "typical": "Típico",
+        "reaches": "Alcanza",
+        "none": "No se detectaron construcciones clasificadas",
+        "attribution": "Basado en reglas sobre un análisis UDPipe; niveles del CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sin IA."
     }
 }

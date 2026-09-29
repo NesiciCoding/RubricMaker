@@ -9,6 +9,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('../Essay/EssayStatsPanel', () => ({ default: () => null }));
+vi.mock('../Essay/UdGrammarPanel', () => ({ default: () => null }));
 vi.mock('../../utils/textExtraction', () => ({
     extractText: vi.fn(async () => 'sample text'),
     UnsupportedFormatError: class UnsupportedFormatError extends Error {},
