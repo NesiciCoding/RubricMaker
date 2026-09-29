@@ -635,6 +635,20 @@ function GettingStartedTab() {
                 </InfoBox>
             </FeatureSection>
 
+            <FeatureSection icon={LayoutDashboard} title={t('docs.gs_snapshot_title')} color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    {t('docs.gs_snapshot_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gs_snapshot_item_columns'),
+                        t('docs.gs_snapshot_item_colors'),
+                        t('docs.gs_snapshot_item_filter'),
+                        t('docs.gs_snapshot_item_drilldown'),
+                    ]}
+                />
+            </FeatureSection>
+
             <FeatureSection icon={Layers} title={t('docs.gs_modes_title')} color="#6366f1">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                     {[

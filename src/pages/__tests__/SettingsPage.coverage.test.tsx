@@ -185,6 +185,7 @@ describe('SettingsPage coverage', () => {
         delete mockSettings.digestUnreadMessagesEnabled;
         delete mockSettings.digestEmailEnabled;
         delete mockSettings.overdueReminderThreshold;
+        delete mockSettings.masteryColorBands;
         mockGradeScalesArr.length = 0;
         mockGradeScalesArr.push({ ...mockGradeScale });
         mockTargetsArr.length = 0;
@@ -399,6 +400,42 @@ describe('SettingsPage coverage', () => {
             expect(mockDeleteGradeScale).toHaveBeenCalledWith('gs2');
             // Editing state cleared: the scale's edit panel is gone.
             expect(screen.queryByText('settings.label_min_pct')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('mastery colors', () => {
+        it('seeds three default bands when Customize Colors is clicked', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.action_customize_mastery_colors'));
+            expect(mockUpdateSettings).toHaveBeenCalledWith({
+                masteryColorBands: [
+                    { min: 0, max: 49, label: 'settings.mastery_band_needs_work', color: '#ef4444' },
+                    { min: 50, max: 74, label: 'settings.mastery_band_developing', color: '#eab308' },
+                    { min: 75, max: 100, label: 'settings.mastery_band_strong', color: '#22c55e' },
+                ],
+            });
+        });
+
+        it('edits an existing band and resets to default colors', () => {
+            mockSettings.masteryColorBands = [{ min: 0, max: 49, label: 'Needs work', color: '#ef4444' }];
+            renderPage();
+            fireEvent.click(screen.getByText('Teaching'));
+
+            const table = screen.getByRole('table');
+            const [minInput, maxInput] = within(table).getAllByRole('spinbutton');
+            fireEvent.change(minInput, { target: { value: '5' } });
+            fireEvent.change(maxInput, { target: { value: '55' } });
+            const [colorPicker] = within(table).getAllByDisplayValue('#ef4444');
+            fireEvent.change(colorPicker, { target: { value: '#123456' } });
+
+            const calls = mockUpdateSettings.mock.calls.map((c) => c[0] as Partial<AppSettings>);
+            expect(calls.some((p) => p.masteryColorBands?.[0].min === 5)).toBe(true);
+            expect(calls.some((p) => p.masteryColorBands?.[0].max === 55)).toBe(true);
+            expect(calls.some((p) => p.masteryColorBands?.[0].color === '#123456')).toBe(true);
+
+            fireEvent.click(screen.getByText('settings.action_reset_mastery_colors'));
+            expect(mockUpdateSettings).toHaveBeenCalledWith({ masteryColorBands: [] });
         });
     });
 

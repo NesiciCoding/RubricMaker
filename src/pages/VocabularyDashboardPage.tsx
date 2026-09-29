@@ -6,6 +6,7 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
 import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistributionChart';
 import { useAssessment, useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
@@ -119,21 +120,15 @@ export default function VocabularyDashboardPage() {
                 </p>
 
                 <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                    <div className="form-group" style={{ flex: '0 0 auto', minWidth: 200, marginBottom: 0 }}>
-                        <label htmlFor="vocab-class-filter">{t('vocabProfile.label_class_filter')}</label>
-                        <select
-                            id="vocab-class-filter"
-                            aria-label={t('vocabProfile.label_class_filter')}
-                            value={selectedClassId}
-                            onChange={(e) => setSelectedClassId(e.target.value)}
-                        >
-                            <option value="all">{t('vocabProfile.all_classes')}</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
+                    <div className="form-group" style={{ flex: '1 1 260px', marginBottom: 0 }}>
+                        <label>{t('vocabProfile.label_class_filter')}</label>
+                        <ClassFilterChips
+                            classes={classes}
+                            selectedClassId={selectedClassId}
+                            onChange={setSelectedClassId}
+                            ariaLabel={t('vocabProfile.label_class_filter')}
+                            allLabel={t('vocabProfile.all_classes')}
+                        />
                     </div>
 
                     <div className="form-group" style={{ flex: '0 0 auto', minWidth: 160, marginBottom: 0 }}>

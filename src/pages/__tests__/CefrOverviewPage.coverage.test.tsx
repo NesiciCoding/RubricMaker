@@ -246,11 +246,11 @@ describe('CefrOverviewPage coverage', () => {
         ];
         loadPage();
         // Filter to Class B → Zoe (and the nameless student) remain.
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'c2' } });
+        fireEvent.click(screen.getAllByRole('button', { name: 'Class B' })[0]);
         expect(screen.getByText('Zoe')).toBeInTheDocument();
         expect(screen.queryByText('Alice')).not.toBeInTheDocument();
         // A class with no students → empty state.
-        fireEvent.change(screen.getByLabelText('statistics.label_class_filter'), { target: { value: 'all' } });
+        fireEvent.click(screen.getAllByRole('button', { name: 'statistics.all_classes' })[0]);
         mockState.students = [];
         // Re-render with no students at all.
         const { unmount } = render(

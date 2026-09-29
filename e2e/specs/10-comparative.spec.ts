@@ -17,9 +17,9 @@ test.describe('Comparative grading (smoke)', () => {
             rm_student_rubrics: [sr1, sr2],
         });
 
-        // Hash-routed URLs need a reload to actually take effect — a plain goto() to a
-        // different hash is a same-document navigation, so it never re-runs seedStorage's
-        // addInitScript and the app never picks up the seeded rubric/class/students.
+        // Hash-only navigation doesn't reload the page, so React never re-reads the
+        // seeded localStorage — force a reload, mirroring BasePage.navigate()'s fix
+        // for the same issue.
         await appPage.goto(`/#/grade-comparative/${cls.id}/${rubric.id}`);
         await appPage.reload();
         await expect(appPage.locator('.main-area')).toBeVisible({ timeout: 10_000 });

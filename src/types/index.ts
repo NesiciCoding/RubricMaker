@@ -879,6 +879,12 @@ export interface AppSettings {
     dyslexiaFriendlyMode?: boolean;
     /** Scan-and-OCR preferences (Phase 33); resolve with resolveScanOcrSettings for defaults. */
     scanOcr?: ScanOcrSettings;
+    /**
+     * Teacher-configurable color bands for the Dashboard student snapshot's mastery scale
+     * (Grammar column). Reuses GradeRange's min/max/label/color shape. When unset or empty,
+     * scoreToMasteryColor falls back to pctToColor's continuous red→yellow→green interpolation.
+     */
+    masteryColorBands?: GradeRange[];
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';

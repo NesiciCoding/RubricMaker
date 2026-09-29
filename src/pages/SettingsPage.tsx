@@ -363,6 +363,33 @@ export default function SettingsPage() {
         updateGradeScale({ ...scale, ranges: scale.ranges.filter((_, i) => i !== idx) });
     }
 
+    function updateMasteryBand(idx: number, patch: Partial<GradeRange>) {
+        const bands = settings.masteryColorBands ?? [];
+        updateSettings({ masteryColorBands: bands.map((b, i) => (i === idx ? { ...b, ...patch } : b)) });
+    }
+
+    function addMasteryBand() {
+        const bands = settings.masteryColorBands ?? [];
+        if (bands.length === 0) {
+            updateSettings({
+                masteryColorBands: [
+                    { min: 0, max: 49, label: t('settings.mastery_band_needs_work'), color: '#ef4444' },
+                    { min: 50, max: 74, label: t('settings.mastery_band_developing'), color: '#eab308' },
+                    { min: 75, max: 100, label: t('settings.mastery_band_strong'), color: '#22c55e' },
+                ],
+            });
+            return;
+        }
+        updateSettings({
+            masteryColorBands: [...bands, { min: 0, max: 0, label: t('settings.mastery_band_new'), color: '#6b7280' }],
+        });
+    }
+
+    function removeMasteryBand(idx: number) {
+        const bands = settings.masteryColorBands ?? [];
+        updateSettings({ masteryColorBands: bands.filter((_, i) => i !== idx) });
+    }
+
     function getScaleName(gs: GradeScale): string {
         const key = `settings.scale_name_${gs.id.replace(/-/g, '_')}`;
         const translated = t(key);
@@ -1323,6 +1350,129 @@ export default function SettingsPage() {
                                     )}
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Mastery Colors (Dashboard student snapshot) */}
+                        <div className="card" style={{ marginBottom: 24 }}>
+                            <div className="card-header">
+                                <h3>{t('settings.mastery_colors_title')}</h3>
+                            </div>
+                            <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 14 }}>
+                                {t('settings.mastery_colors_help')}
+                            </p>
+                            {(settings.masteryColorBands ?? []).length === 0 ? (
+                                <button className="btn btn-secondary btn-sm" onClick={addMasteryBand}>
+                                    <Plus size={14} aria-hidden="true" />{' '}
+                                    {t('settings.action_customize_mastery_colors')}
+                                </button>
+                            ) : (
+                                <>
+                                    <table className="data-table" style={{ marginBottom: 10 }}>
+                                        <thead>
+                                            <tr>
+                                                <th>{t('settings.label_label')}</th>
+                                                <th>{t('settings.label_min_pct')}</th>
+                                                <th>{t('settings.label_max_pct')}</th>
+                                                <th>{t('settings.label_color')}</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {(settings.masteryColorBands ?? []).map((b, idx) => (
+                                                <tr key={idx}>
+                                                    <td>
+                                                        <input
+                                                            type="text"
+                                                            value={b.label}
+                                                            onChange={(e) =>
+                                                                updateMasteryBand(idx, { label: e.target.value })
+                                                            }
+                                                            style={{ width: 100 }}
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={b.min}
+                                                            min={0}
+                                                            max={100}
+                                                            onChange={(e) =>
+                                                                updateMasteryBand(idx, { min: Number(e.target.value) })
+                                                            }
+                                                            style={{ width: 60 }}
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            value={b.max}
+                                                            min={0}
+                                                            max={100}
+                                                            onChange={(e) =>
+                                                                updateMasteryBand(idx, { max: Number(e.target.value) })
+                                                            }
+                                                            style={{ width: 60 }}
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                gap: 6,
+                                                                alignItems: 'center',
+                                                            }}
+                                                        >
+                                                            <input
+                                                                type="color"
+                                                                value={b.color}
+                                                                onChange={(e) =>
+                                                                    updateMasteryBand(idx, { color: e.target.value })
+                                                                }
+                                                                style={{
+                                                                    width: 36,
+                                                                    height: 32,
+                                                                    padding: 2,
+                                                                    border: '1px solid var(--border)',
+                                                                    borderRadius: 5,
+                                                                }}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={b.color}
+                                                                onChange={(e) =>
+                                                                    updateMasteryBand(idx, { color: e.target.value })
+                                                                }
+                                                                style={{ width: 80 }}
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            className="btn btn-ghost btn-icon btn-sm"
+                                                            aria-label={t('common.delete')}
+                                                            style={{ color: 'var(--red)' }}
+                                                            onClick={() => removeMasteryBand(idx)}
+                                                        >
+                                                            <Trash2 size={13} aria-hidden="true" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button className="btn btn-secondary btn-sm" onClick={addMasteryBand}>
+                                            <Plus size={14} aria-hidden="true" /> {t('settings.action_add_range')}
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => updateSettings({ masteryColorBands: [] })}
+                                        >
+                                            {t('settings.action_reset_mastery_colors')}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Export Templates */}
