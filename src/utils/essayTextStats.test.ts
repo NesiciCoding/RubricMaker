@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fixtures from '../../sync/writing-fixtures.json';
 import {
+    TRANSITION_WORDS,
     computeEssayStats,
     computeReadability,
     countSentences,
@@ -30,6 +31,26 @@ describe('CLI parity fixtures', () => {
     });
     it('returns null readability for no words', () => {
         expect(computeReadability('!!!', 0)).toBeNull();
+    });
+});
+
+describe('shared fixtures', () => {
+    it('uses the same transition-word list as the CLI', () => {
+        expect(TRANSITION_WORDS).toEqual(fixtures.transitionWords);
+    });
+    it.each(fixtures.essayStats)('computeEssayStats(%j)', (f) => {
+        const s = computeEssayStats(f.text);
+        expect(s).toMatchObject({
+            wordCount: f.wordCount,
+            sentenceCount: f.sentenceCount,
+            sentenceLengths: f.sentenceLengths,
+            avgWordsPerSentence: f.avgWordsPerSentence,
+            sentenceLengthVariance: f.sentenceLengthVariance,
+            sentenceLengthStdDev: f.sentenceLengthStdDev,
+            minSentenceLength: f.minSentenceLength,
+            maxSentenceLength: f.maxSentenceLength,
+        });
+        if (f.transitions) expect(s.transitions).toMatchObject(f.transitions);
     });
 });
 
