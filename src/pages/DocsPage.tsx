@@ -1440,6 +1440,21 @@ function EssaysTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={FileText} title={t('docs.es_stats_title')} color="#6366f1">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.es_stats_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.es_stats_item_counts'),
+                        t('docs.es_stats_item_transitions'),
+                        t('docs.es_stats_item_readability'),
+                        t('docs.es_stats_item_grammar'),
+                    ]}
+                />
+                <InfoBox color="#6366f1">{t('docs.es_stats_info')}</InfoBox>
+            </FeatureSection>
+
             <FeatureSection icon={FileText} title={t('docs.es_workspace_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_workspace_intro_prefix')} <strong>{t('docs.es_workspace_intro_name')}</strong>{' '}
@@ -1532,6 +1547,12 @@ function AnalyticsTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={TrendingUp} title={t('docs.an_trends_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.an_trends_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={BookOpen} title={t('docs.an_portfolio_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.an_portfolio_body_prefix')} <strong>{t('docs.an_portfolio_students_nav')}</strong>{' '}

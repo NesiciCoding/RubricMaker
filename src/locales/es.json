@@ -3409,7 +3409,16 @@
         "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
         "rb_tests_exam_export_body": "Desde la lista de exámenes o la página de exportación, exporte un examen listo para imprimir con el estilo de un examen CITO neerlandés: un cuadernillo de preguntas, una hoja de respuestas aparte, un anexo opcional con los textos de lectura y una hoja de calificación con las respuestas correctas — en PDF o Word, con la fuente que elijas.",
         "gr_exam_scan_title": "Escanear la hoja de respuestas de un examen en papel",
-        "gr_exam_scan_body": "En la página de Exámenes, elija “Escanear hoja de respuestas” en un examen, seleccione al estudiante y fotografíe o importe su hoja de respuestas completada al estilo CITO. Toque las cuatro esquinas de la página impresa para enderezarla; las burbujas de opción múltiple/verdadero-falso se leen mediante detección de marcas y el texto de respuesta corta/numérico/abierto mediante OCR en el dispositivo — revise y corrija cada respuesta antes de guardar. Las preguntas de emparejar, ordenar, rellenar huecos, categorizar y texto interactivo aún no se detectan automáticamente; califíquelas desde la página de resultados."
+        "gr_exam_scan_body": "En la página de Exámenes, elija “Escanear hoja de respuestas” en un examen, seleccione al estudiante y fotografíe o importe su hoja de respuestas completada al estilo CITO. Toque las cuatro esquinas de la página impresa para enderezarla; las burbujas de opción múltiple/verdadero-falso se leen mediante detección de marcas y el texto de respuesta corta/numérico/abierto mediante OCR en el dispositivo — revise y corrija cada respuesta antes de guardar. Las preguntas de emparejar, ordenar, rellenar huecos, categorizar y texto interactivo aún no se detectan automáticamente; califíquelas desde la página de resultados.",
+        "es_stats_title": "Estadísticas de redacción y alcance gramatical",
+        "es_stats_body": "Al analizar el ensayo de un estudiante en la vista de calificación (Análisis de documento), el panel muestra estadísticas de escritura deterministas — sin IA.",
+        "es_stats_item_counts": "Número de palabras y oraciones, longitud media y varianza de la longitud de las oraciones, para detectar una escritura monótona o demasiado larga.",
+        "es_stats_item_transitions": "Frecuencia de conectores por tipo (adición, contraste, causa, secuencia, ejemplo, conclusión).",
+        "es_stats_item_readability": "Nivel Flesch-Kincaid y facilidad de lectura Flesch, calculados con fórmulas fijas.",
+        "es_stats_item_grammar": "Alcance gramatical: construcciones usadas (tiempos, pasiva, oraciones de relativo, condicionales…) por nivel CEFR-J, con el nivel típico y el más alto alcanzado.",
+        "es_stats_info": "El panel de alcance gramatical necesita el modelo de analizador UD en inglés, que no se incluye porque tiene licencia CC BY-NC-SA (no comercial). Quien aloja la aplicación lo descarga una vez en public/models/ (véase el README); sin él, el panel permanece oculto.",
+        "an_trends_title": "Tendencias de escritura",
+        "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo)."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3910,5 +3919,21 @@
         "reaches": "Alcanza",
         "none": "No se detectaron construcciones clasificadas",
         "attribution": "Basado en reglas sobre un análisis UDPipe; niveles del CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sin IA."
+    },
+    "writingTrends": {
+        "title": "Tendencias de escritura",
+        "intro": "Criterios de la rúbrica débiles o en descenso en los ensayos calificados de este estudiante (basado en reglas, sin IA).",
+        "direction": {
+            "improving": "mejorando",
+            "declining": "en descenso",
+            "flat": "estable"
+        },
+        "persistentWeak": "Débil en ensayos recientes",
+        "classTitle": "Criterios de escritura débiles",
+        "classIntro": "Criterios en los que los estudiantes son persistentemente débiles o descienden en los ensayos calificados.",
+        "col_criterion": "Criterio",
+        "col_average": "Media de la clase",
+        "col_weak": "Persistentemente débil",
+        "col_declining": "En descenso"
     }
 }

@@ -3409,7 +3409,16 @@
         "rb_tests_exam_export_label": "Exportation du cahier d'examen :",
         "rb_tests_exam_export_body": "Depuis la liste des tests ou la page d'exportation, exportez un examen prêt à imprimer dans le style d'un examen CITO néerlandais : un cahier de questions, une feuille de réponses séparée, une annexe facultative pour les textes de lecture, et un barème de correction avec les bonnes réponses — en PDF ou Word, avec la police de votre choix.",
         "gr_exam_scan_title": "Scanner la feuille de réponses d'un examen papier",
-        "gr_exam_scan_body": "Sur la page Tests, choisissez « Scanner la feuille de réponses » pour un test, sélectionnez l'élève, puis photographiez ou importez sa feuille de réponses remplie de type CITO. Touchez les quatre coins de la page imprimée pour la redresser : les bulles à choix multiple/vrai-faux sont détectées par analyse des marques et les réponses courtes/numériques/ouvertes par OCR sur l'appareil — vérifiez et corrigez chaque réponse avant d'enregistrer. Les questions d'appariement, d'ordonnancement, à trous, de catégorisation et de type « hot text » ne sont pas encore détectées automatiquement ; notez-les depuis la page des résultats."
+        "gr_exam_scan_body": "Sur la page Tests, choisissez « Scanner la feuille de réponses » pour un test, sélectionnez l'élève, puis photographiez ou importez sa feuille de réponses remplie de type CITO. Touchez les quatre coins de la page imprimée pour la redresser : les bulles à choix multiple/vrai-faux sont détectées par analyse des marques et les réponses courtes/numériques/ouvertes par OCR sur l'appareil — vérifiez et corrigez chaque réponse avant d'enregistrer. Les questions d'appariement, d'ordonnancement, à trous, de catégorisation et de type « hot text » ne sont pas encore détectées automatiquement ; notez-les depuis la page des résultats.",
+        "es_stats_title": "Statistiques d'écriture et étendue grammaticale",
+        "es_stats_body": "Lorsque vous analysez l'essai d'un élève dans la vue de notation (Analyse de document), le panneau affiche des statistiques d'écriture déterministes — sans IA.",
+        "es_stats_item_counts": "Nombre de mots et de phrases, longueur moyenne et variance de la longueur des phrases, pour repérer une écriture monotone ou trop longue.",
+        "es_stats_item_transitions": "Fréquence des mots de transition par type (addition, contraste, cause, séquence, exemple, conclusion).",
+        "es_stats_item_readability": "Niveau Flesch-Kincaid et facilité de lecture Flesch, calculés par des formules fixes.",
+        "es_stats_item_grammar": "Étendue grammaticale : constructions utilisées (temps, passif, relatives, conditionnelles…) classées par niveau CEFR-J, avec le niveau typique et le niveau le plus élevé atteint.",
+        "es_stats_info": "Le panneau d'étendue grammaticale nécessite le modèle d'analyseur UD anglais, non inclus car sous licence CC BY-NC-SA (non commerciale). Les auto-hébergeurs le téléchargent une fois dans public/models/ (voir le README) ; sans lui, le panneau reste masqué.",
+        "an_trends_title": "Tendances d'écriture",
+        "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3910,5 +3919,21 @@
         "reaches": "Atteint",
         "none": "Aucune construction classée détectée",
         "attribution": "Basé sur des règles à partir d'une analyse UDPipe ; niveaux issus du CEFR-J Grammar Profile (Tono Laboratory, TUFS). Sans IA."
+    },
+    "writingTrends": {
+        "title": "Tendances d'écriture",
+        "intro": "Critères de la grille faibles ou en baisse sur les essais notés de cet élève (basé sur des règles, sans IA).",
+        "direction": {
+            "improving": "en hausse",
+            "declining": "en baisse",
+            "flat": "stable"
+        },
+        "persistentWeak": "Faible dans les essais récents",
+        "classTitle": "Critères d'écriture faibles",
+        "classIntro": "Critères sur lesquels les élèves sont durablement faibles ou en baisse sur les essais notés.",
+        "col_criterion": "Critère",
+        "col_average": "Moyenne de la classe",
+        "col_weak": "Durablement faible",
+        "col_declining": "En baisse"
     }
 }
