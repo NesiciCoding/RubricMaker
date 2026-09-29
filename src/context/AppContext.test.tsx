@@ -26,6 +26,7 @@ vi.mock('../hooks/useToast', () => ({
 
 // Mock storage functions so we don't actually write to localStorage/IndexedDB during tests
 vi.mock('../store/storage', () => ({
+    loadCachedStudentRubrics: vi.fn(async () => []),
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => ({

@@ -1139,12 +1139,12 @@ describe('saveStudentRubricsCache', () => {
     });
     const stored = () => JSON.parse(localStorage.getItem('rm_student_rubrics') ?? '[]') as StudentRubric[];
 
-    it('drops soft-deleted grades', () => {
-        saveStudentRubricsCache([mk('a', '2026-01-01'), mk('b', '2026-01-02', { deletedAt: '2026-02-01' })]);
+    it('drops soft-deleted grades', async () => {
+        await saveStudentRubricsCache([mk('a', '2026-01-01'), mk('b', '2026-01-02', { deletedAt: '2026-02-01' })]);
         expect(stored().map((s) => s.id)).toEqual(['a']);
     });
 
-    it('keeps the most recently updated records that fit when over quota', () => {
+    it('keeps the most recently updated records that fit when over quota', async () => {
         const original = Storage.prototype.setItem;
         vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
             if (k === 'rm_student_rubrics' && (JSON.parse(v) as unknown[]).length > 2) {
@@ -1153,7 +1153,7 @@ describe('saveStudentRubricsCache', () => {
             original.call(this, k, v);
         });
         const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        saveStudentRubricsCache([
+        await saveStudentRubricsCache([
             mk('old', '2026-01-01'),
             mk('mid', '2026-01-02'),
             mk('new', '2026-01-03'),

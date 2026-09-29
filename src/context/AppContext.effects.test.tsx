@@ -83,6 +83,7 @@ vi.mock('../store/storage', () => ({
     markMigrationDone: vi.fn(),
     loadStore: vi.fn(() => loadStoreValue.current ?? mockEmptyState()),
     loadPendingQueue: vi.fn(() => []),
+    loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     clearLocalData: vi.fn(),
     importFullBackup: vi.fn(() => true),
