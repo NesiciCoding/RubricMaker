@@ -64,17 +64,26 @@ export const TRANSITION_WORDS: Record<TransitionCategory, string[]> = {
     ],
 };
 
-const WORD_RE = /[a-zA-Z0-9]+/g;
+const READABILITY_WORD_RE = /[a-zA-Z0-9]+/g;
+const HAS_LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
 
+/** Words as a student's live count sees them: whitespace-separated, so "don't" is one word (see countWords). */
 export function tokenizeWords(text: string): string[] {
-    return text.match(WORD_RE) ?? [];
+    return text.split(/\s+/).filter((w) => HAS_LETTER_OR_DIGIT.test(w));
+}
+
+/** The vocabulary profiler's tokenisation, kept so readability matches the CLI ("don't" is two tokens). */
+function readabilityTokens(text: string): string[] {
+    return text.match(READABILITY_WORD_RE) ?? [];
 }
 
 const isTerminator = (c: string) => c === '.' || c === '!' || c === '?';
+const CLOSERS = '"\'”’)]»';
 
 /**
- * Same boundaries as the CLI's /[.!?]+(?:\s+|$)/ split (a run of . ! ? followed by whitespace or the
- * end), scanned in one pass: the regex backtracks quadratically on a long run of punctuation.
+ * Same boundaries as the CLI's /[.!?]+["'”’)\]»]*(?:\s+|$)/ split (a run of . ! ? and any closing
+ * quotes or brackets, followed by whitespace or the end), scanned in one pass: the regex backtracks
+ * quadratically on a long run of punctuation.
  */
 export function splitSentences(text: string): string[] {
     const parts: string[] = [];
@@ -87,6 +96,7 @@ export function splitSentences(text: string): string[] {
         }
         const runStart = i;
         while (i < text.length && isTerminator(text[i])) i++;
+        while (i < text.length && CLOSERS.includes(text[i])) i++;
         if (i === text.length || /\s/.test(text[i])) {
             parts.push(text.slice(start, runStart));
             while (i < text.length && /\s/.test(text[i])) i++;
@@ -141,10 +151,10 @@ function fleschDescription(fre: number): string {
     return 'very difficult';
 }
 
-export function computeReadability(text: string, wordCount = tokenizeWords(text).length): ReadabilityStats | null {
+export function computeReadability(text: string, wordCount = readabilityTokens(text).length): ReadabilityStats | null {
     if (!wordCount) return null;
     const sentences = countSentences(text);
-    const syllables = tokenizeWords(text).reduce((sum, t) => sum + countSyllables(t), 0);
+    const syllables = readabilityTokens(text).reduce((sum, t) => sum + countSyllables(t), 0);
     const wordsPerSentence = wordCount / sentences;
     const syllablesPerWord = syllables / wordCount;
     const fre = 206.835 - 1.015 * wordsPerSentence - 84.6 * syllablesPerWord;
@@ -178,7 +188,7 @@ export function countTransitions(text: string, wordCount: number): EssayTextStat
     };
     const byPhrase: Record<string, number> = {};
     let total = 0;
-    for (const m of text.matchAll(TRANSITION_RE)) {
+    for (const m of text.replace(/\s+/g, ' ').matchAll(TRANSITION_RE)) {
         const phrase = m[1].toLowerCase();
         byCategory[CATEGORY_BY_PHRASE.get(phrase)!]++;
         byPhrase[phrase] = (byPhrase[phrase] ?? 0) + 1;
@@ -205,6 +215,6 @@ export function computeEssayStats(input: string): EssayTextStats {
         minSentenceLength: lengths.length ? Math.min(...lengths) : 0,
         maxSentenceLength: lengths.length ? Math.max(...lengths) : 0,
         transitions: countTransitions(text, wordCount),
-        readability: computeReadability(text, wordCount),
+        readability: computeReadability(text),
     };
 }

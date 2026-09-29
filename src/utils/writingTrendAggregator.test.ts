@@ -213,6 +213,11 @@ describe('getClassWeakWritingCriteria', () => {
         expect(result[1].decliningStudentIds).toEqual(['c']);
     });
 
+    it('does not count a decline that stays above the weak threshold', () => {
+        const srs = essays('a', [10, 9, 8], [9, 9, 9]);
+        expect(getClassWeakWritingCriteria(['a'], srs, rubrics, assignmentsFor('a'))).toEqual([]);
+    });
+
     it('returns nothing when no criterion is weak or declining', () => {
         expect(
             getClassWeakWritingCriteria(['a'], essays('a', [9, 9, 9], [9, 9, 9]), rubrics, assignmentsFor('a'))

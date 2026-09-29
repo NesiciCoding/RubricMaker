@@ -14,7 +14,10 @@ export function useUdGrammarProfile(text: string | null): UdGrammarState {
     const [state, setState] = useState<UdGrammarState>({ status: 'loading' });
 
     useEffect(() => {
-        if (!text) return;
+        if (!text) {
+            setState({ status: 'unavailable' });
+            return;
+        }
         let cancelled = false;
         setState({ status: 'loading' });
         (async () => {

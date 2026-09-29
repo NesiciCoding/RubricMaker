@@ -41,4 +41,11 @@ describe('parseConlluSentences', () => {
     it('skips multiword-token ranges', () => {
         expect(s2.tokens.map((t) => t.form)).toEqual(['No']);
     });
+
+    it('reads CRLF input without carrying carriage returns into the text or tokens', () => {
+        const [sentence] = parseConlluSentences(CONLLU.replace(/\n/g, '\r\n'));
+        expect(sentence.text).toBe('She was seen.');
+        expect(sentence.tokens[2].spaceAfter).toBe(false);
+        expect(sentence.tokens[2].deprel).toBe('root');
+    });
 });

@@ -11,6 +11,18 @@ vi.mock('../utils/udParse', async (orig) => ({
 }));
 
 describe('useUdGrammarProfile', () => {
+    it('reports unavailable, not a stuck loading state, when there is no text', async () => {
+        const { result, rerender } = renderHook(({ text }: { text: string | null }) => useUdGrammarProfile(text), {
+            initialProps: { text: null as string | null },
+        });
+        await waitFor(() => expect(result.current.status).toBe('unavailable'));
+        loadUdParser.mockResolvedValueOnce({ parse: () => [] });
+        rerender({ text: 'She has finished.' });
+        await waitFor(() => expect(result.current.status).toBe('ready'));
+        rerender({ text: null });
+        await waitFor(() => expect(result.current.status).toBe('unavailable'));
+    });
+
     it('reports unavailable when the model cannot be loaded', async () => {
         loadUdParser.mockRejectedValueOnce(new Error('UD model fetch failed (404)'));
         const { result } = renderHook(() => useUdGrammarProfile('She has finished.'));

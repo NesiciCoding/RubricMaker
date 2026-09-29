@@ -151,6 +151,53 @@
                     "in conclusion": 1
                 }
             }
+        },
+        {
+            "text": "He said \"Go.\" Then he left.",
+            "wordCount": 6,
+            "sentenceCount": 2,
+            "sentenceLengths": [
+                3,
+                3
+            ],
+            "avgWordsPerSentence": 3.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 3,
+            "maxSentenceLength": 3
+        },
+        {
+            "text": "Don't worry, we're fine.",
+            "wordCount": 4,
+            "sentenceCount": 1,
+            "sentenceLengths": [
+                4
+            ],
+            "avgWordsPerSentence": 4.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 4,
+            "maxSentenceLength": 4
+        },
+        {
+            "text": "In\naddition, we left.",
+            "wordCount": 4,
+            "sentenceCount": 1,
+            "sentenceLengths": [
+                4
+            ],
+            "avgWordsPerSentence": 4.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 4,
+            "maxSentenceLength": 4,
+            "transitions": {
+                "total": 1,
+                "per100Words": 25.0,
+                "byPhrase": {
+                    "in addition": 1
+                }
+            }
         }
     ]
 }

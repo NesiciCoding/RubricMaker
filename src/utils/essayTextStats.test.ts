@@ -56,10 +56,10 @@ describe('shared fixtures', () => {
 });
 
 describe('splitSentences', () => {
-    const reference = (text: string) => text.split(/[.!?]+(?:\s+|$)/).filter((p) => p.trim());
+    const reference = (text: string) => text.split(/[.!?]+["'”’)\]»]*(?:\s+|$)/).filter((p) => p.trim());
 
     it('matches the CLI regex split on random punctuation-heavy text', () => {
-        const alphabet = ['a', 'b', ' ', ' ', '.', '!', '?', '\n', 'e.g'];
+        const alphabet = ['a', 'b', ' ', ' ', '.', '!', '?', '\n', 'e.g', '"', "'", ')', '”'];
         let seed = 7;
         const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
         for (let n = 0; n < 500; n++) {

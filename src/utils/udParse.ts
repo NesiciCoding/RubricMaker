@@ -114,7 +114,7 @@ export function parseConlluSentences(conllu: string): UdSentence[] {
         text = '';
     };
 
-    for (const line of conllu.split('\n')) {
+    for (const line of conllu.split(/\r?\n/)) {
         if (!line.trim()) {
             flush();
             continue;

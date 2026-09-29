@@ -130,7 +130,7 @@ export function getClassWeakWritingCriteria(
             const e = acc.get(t.criterionKey) ?? { name: t.name, scores: [], weak: [], declining: [] };
             e.scores.push(t.average);
             if (t.persistentWeak) e.weak.push(studentId);
-            if (t.direction === 'declining') e.declining.push(studentId);
+            if (t.direction === 'declining' && t.latest <= config.lowScoreThreshold) e.declining.push(studentId);
             acc.set(t.criterionKey, e);
         }
     }
