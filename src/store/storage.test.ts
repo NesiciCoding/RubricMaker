@@ -6,6 +6,7 @@ import {
     saveClasses,
     saveStudentRubrics,
     stripAudioForOfflineCache,
+    saveStudentRubricsCache,
     saveAttachments,
     saveGradeScales,
     saveSettings,
@@ -1122,5 +1123,44 @@ describe('clipboard, user templates, and test drafts', () => {
         }
         void original;
         // Garbage and negative values are already covered by the existing timer tests.
+    });
+});
+
+describe('saveStudentRubricsCache', () => {
+    const mk = (id: string, updatedAt: string, extra: Partial<StudentRubric> = {}): StudentRubric => ({
+        id,
+        rubricId: 'r1',
+        studentId: 's1',
+        entries: [],
+        overallComment: 'x'.repeat(100),
+        isPeerReview: false,
+        updatedAt,
+        ...extra,
+    });
+    const stored = () => JSON.parse(localStorage.getItem('rm_student_rubrics') ?? '[]') as StudentRubric[];
+
+    it('drops soft-deleted grades', async () => {
+        await saveStudentRubricsCache([mk('a', '2026-01-01'), mk('b', '2026-01-02', { deletedAt: '2026-02-01' })]);
+        expect(stored().map((s) => s.id)).toEqual(['a']);
+    });
+
+    it('keeps the most recently updated records that fit when over quota', async () => {
+        const original = Storage.prototype.setItem;
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+            if (k === 'rm_student_rubrics' && (JSON.parse(v) as unknown[]).length > 2) {
+                throw new DOMException('quota', 'QuotaExceededError');
+            }
+            original.call(this, k, v);
+        });
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        await saveStudentRubricsCache([
+            mk('old', '2026-01-01'),
+            mk('mid', '2026-01-02'),
+            mk('new', '2026-01-03'),
+            mk('newest', '2026-01-04'),
+        ]);
+        expect(stored().map((s) => s.id)).toEqual(['newest', 'new']);
+        expect(warn).toHaveBeenCalled();
+        vi.restoreAllMocks();
     });
 });

@@ -1216,9 +1216,17 @@ class StorageSyncService {
                     if (action === 'upsert') result = await this.adapter.upsertNewsFlashRead(payload as NewsFlashRead);
                     break;
                 case 'questionBankItem':
-                    if (action === 'upsert')
-                        result = await this.adapter.upsertQuestionBankItem(payload as QuestionBankItem);
-                    else if (id) result = await this.adapter.deleteQuestionBankItem(id);
+                    if (action === 'upsert') {
+                        const item = payload as QuestionBankItem;
+                        const itemId = item?.id ?? id;
+                        if (!itemId) {
+                            // Legacy id-less item stuck in the queue: it can never satisfy the NOT NULL
+                            // id column, so retrying forever only re-fails on every reconnect.
+                            console.warn('[sync] dropping unsyncable questionBankItem without an id');
+                            return;
+                        }
+                        result = await this.adapter.upsertQuestionBankItem({ ...item, id: itemId });
+                    } else if (id) result = await this.adapter.deleteQuestionBankItem(id);
                     break;
                 case 'settings':
                     if (action === 'upsert')

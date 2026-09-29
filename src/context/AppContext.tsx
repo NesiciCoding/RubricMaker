@@ -28,7 +28,13 @@ import { PlatformProvider } from './domains/platform';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { loadDb, getDb } from '../services/database/lazyDb';
-import { loadStore, loadPendingQueue, onStorageQuotaExceeded, sanitizeClassYears } from '../store/storage';
+import {
+    loadStore,
+    loadPendingQueue,
+    loadCachedStudentRubrics,
+    onStorageQuotaExceeded,
+    sanitizeClassYears,
+} from '../store/storage';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
 import { mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
@@ -77,6 +83,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (seedDiffBaseline) {
             prevStateRef.current = merged;
         }
+    }, []);
+    // The connected-session student rubric cache lives in IndexedDB, which can only be read
+    // asynchronously, so it is merged in after the synchronous localStorage boot.
+    useEffect(() => {
+        let cancelled = false;
+        void loadCachedStudentRubrics().then((cached) => {
+            if (!cancelled && cached.length > 0) dispatch({ type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: cached });
+        });
+        return () => {
+            cancelled = true;
+        };
     }, []);
     const { showToast } = useToast();
     const { t } = useTranslation();

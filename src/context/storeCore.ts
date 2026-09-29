@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { markCloudHydrated } from '../services/snapshotCache';
 import type {
     AppSettings,
     Attachment,
@@ -71,11 +72,11 @@ import {
     saveSpeakingSessions,
     saveStandardMasteryTargets,
     saveStudentRubrics,
+    saveStudentRubricsCache,
     saveStudentTests,
     saveStudents,
     saveTests,
     saveUserTemplates,
-    stripAudioForOfflineCache,
     upsertRubricVersion,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
@@ -99,6 +100,7 @@ export interface PlatformCtx extends StoreActionsCtx {
 
 export type Action =
     | { type: 'SET_ALL'; payload: StoreData }
+    | { type: 'MERGE_CACHED_STUDENT_RUBRICS'; payload: StudentRubric[] }
     | { type: 'ADD_RUBRIC'; payload: Rubric }
     | { type: 'UPDATE_RUBRIC'; payload: Rubric }
     | { type: 'DELETE_RUBRIC'; id: string }
@@ -217,6 +219,11 @@ export function reducer(state: StoreData, action: Action): StoreData {
     switch (action.type) {
         case 'SET_ALL':
             return action.payload;
+        case 'MERGE_CACHED_STUDENT_RUBRICS': {
+            const known = new Set(state.studentRubrics.map((sr) => sr.id));
+            const missing = action.payload.filter((sr) => !known.has(sr.id));
+            return missing.length === 0 ? state : { ...state, studentRubrics: [...state.studentRubrics, ...missing] };
+        }
         case 'ADD_RUBRIC': {
             const next = [...state.rubrics, action.payload];
             if (isOffline()) saveRubrics(next);
@@ -1113,11 +1120,11 @@ export interface AppContextValue extends StoreData {
 
 export { LOCAL_MODE_KEY, MIGRATION_DONE_KEY } from '../store/storage';
 
-export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void>> = {
+export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) => void | Promise<void>>> = {
     rubrics: (m) => saveRubrics(m.rubrics),
     students: (m) => saveStudents(m.students),
     classes: (m) => saveClasses(m.classes),
-    studentRubrics: (m) => saveStudentRubrics(stripAudioForOfflineCache(m.studentRubrics)),
+    studentRubrics: (m) => saveStudentRubricsCache(m.studentRubrics),
     attachments: (m) => saveAttachments(m.attachments),
     gradeScales: (m) => saveGradeScales(m.gradeScales),
     settings: (m) => saveSettings(m.settings),
@@ -1150,7 +1157,8 @@ export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) =
 
 export async function flushToLocalStorage(merged: StoreData, changedKeys?: Set<keyof StoreData>) {
     const keys = changedKeys ?? (Object.keys(COLLECTION_SAVERS) as (keyof StoreData)[]);
-    for (const key of keys) COLLECTION_SAVERS[key]?.(merged);
+    markCloudHydrated();
+    for (const key of keys) await COLLECTION_SAVERS[key]?.(merged);
 
     // Best-effort: a recording blob whose session was deleted on another device has no
     // app-level delete call to clean it up locally, so sweep for orphans after a full sync

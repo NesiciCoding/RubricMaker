@@ -116,6 +116,7 @@ vi.mock('../store/storage', () => ({
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
     loadPendingQueue: vi.fn(() => []),
+    loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     loadRubricVersions: vi.fn((rubricId: string) => versionStore.get(rubricId) ?? []),
     upsertRubricVersion: vi.fn((rubricId: string, version: RubricVersion) => {

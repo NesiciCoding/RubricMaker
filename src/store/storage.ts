@@ -39,6 +39,7 @@ import type {
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import { SCHOOL_YEARS } from '../data/schoolYears';
+import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
 
 /**
  * `Class.year` used to be free text; classes carrying a pre-Phase-15.1 value that doesn't match
@@ -1190,6 +1191,71 @@ export function stripAudioForOfflineCache(srs: StudentRubric[]): StudentRubric[]
             : sr
     );
 }
+/**
+ * Connected-session variant of saveStudentRubrics for the post-hydrate offline-readiness cache.
+ * Supabase already holds every record, so the cache may be a lossy subset: it drops soft-deleted
+ * grades and audio, and if that still exceeds the quota keeps only the most recently touched
+ * records that fit. Never use on the offline save path, where localStorage is the only copy.
+ */
+function saveStudentRubricsCacheToLocalStorage(srs: StudentRubric[]): void {
+    const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
+    const stamp = (sr: StudentRubric) => sr.updatedAt ?? sr.gradedAt ?? sr.submittedAt ?? '';
+    const newestFirst = [...live].sort((a, b) => stamp(b).localeCompare(stamp(a)));
+    const tryWrite = (count: number): boolean => {
+        try {
+            localStorage.setItem(KEYS.studentRubrics, JSON.stringify(newestFirst.slice(0, count)));
+            return true;
+        } catch (e) {
+            if (!isQuotaExceededError(e)) throw e;
+            return false;
+        }
+    };
+    if (tryWrite(newestFirst.length)) return;
+    let lo = 0;
+    let hi = newestFirst.length - 1;
+    let best = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (tryWrite(mid)) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (best >= 0) {
+        tryWrite(best);
+        console.warn(`[storage] rm_student_rubrics cache trimmed to ${best}/${newestFirst.length} records (quota)`);
+    } else {
+        console.warn('[storage] rm_student_rubrics cache skipped (quota); data remains in Supabase');
+    }
+}
+export const STUDENT_RUBRICS_SNAPSHOT_KEY = 'studentRubrics';
+
+/**
+ * Writes the connected-session student rubric cache to IndexedDB (no practical size limit, unlike
+ * the ~5MB localStorage quota) and drops the localStorage copy to free that quota. Falls back to
+ * the size-trimmed localStorage writer when IndexedDB is unavailable or the write fails.
+ */
+export async function saveStudentRubricsCache(srs: StudentRubric[]): Promise<void> {
+    const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
+    if (await putSnapshot(STUDENT_RUBRICS_SNAPSHOT_KEY, live)) {
+        try {
+            localStorage.removeItem(KEYS.studentRubrics);
+        } catch {
+            // storage unavailable — nothing to free
+        }
+        return;
+    }
+    saveStudentRubricsCacheToLocalStorage(srs);
+}
+
+/** Cached student rubrics from the IndexedDB snapshot; empty once cloud data has been applied. */
+export async function loadCachedStudentRubrics(): Promise<StudentRubric[]> {
+    if (isCloudHydrated()) return [];
+    const cached = await getSnapshot<StudentRubric[]>(STUDENT_RUBRICS_SNAPSHOT_KEY);
+    return Array.isArray(cached) ? cached : [];
+}
 export function saveAttachments(atts: Attachment[]) {
     save(KEYS.attachments, atts);
 }
@@ -1289,6 +1355,7 @@ export function clearLocalData(): void {
     } catch {
         // storage unavailable — nothing to wipe
     }
+    void clearSnapshots();
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
