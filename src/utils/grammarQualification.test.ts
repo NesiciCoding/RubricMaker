@@ -69,3 +69,50 @@ describe('evaluateGrammar', () => {
         expect(result.items[0].occurrences).toBe(0);
     });
 });
+
+describe('evaluateGrammar with UD counts', () => {
+    it('uses the parse for mapped items and marks them as such', () => {
+        const linked = [grammarLink('gr-present-perfect-simple', 'Present perfect')];
+        const result = evaluateGrammar(linked, 'no regex match here', { udCounts: { pres_perf: 2 } });
+        expect(result.items[0]).toMatchObject({ autoDetectable: true, found: true, occurrences: 2, detectedBy: 'ud' });
+        expect(result.engine).toBe('ud');
+    });
+
+    it('sums every construction an item maps to', () => {
+        const linked = [grammarLink('gr-passive', 'Be + past participle')];
+        const result = evaluateGrammar(linked, '', { udCounts: { passive_past: 1, passive_modal: 2 } });
+        expect(result.items[0].occurrences).toBe(3);
+    });
+
+    it('makes items detectable that the regex path can only check manually', () => {
+        const linked = [grammarLink('gr-question-tags', 'Question tags')];
+        expect(evaluateGrammar(linked, "You like tea, don't you?").items[0].autoDetectable).toBe(false);
+        const withUd = evaluateGrammar(linked, "You like tea, don't you?", { udCounts: { tag_question: 1 } });
+        expect(withUd.items[0]).toMatchObject({ autoDetectable: true, found: true });
+    });
+
+    it('reports a mapped construction as not found when the parse did not see it', () => {
+        const linked = [grammarLink('gr-past-perfect-simple', 'Past perfect')];
+        const result = evaluateGrammar(linked, 'had gone', { udCounts: { pres_perf: 5 } });
+        expect(result.items[0]).toMatchObject({ found: false, occurrences: 0, detectedBy: 'ud' });
+        expect(result.passed).toBe(false);
+    });
+
+    it('falls back to the regex detector for items without a mapping', () => {
+        const linked = [
+            grammarLink('gr-past-simple-irregular', 'Irregular verbs'),
+            grammarLink('gr-plurals-regular', 'Plurals'),
+        ];
+        const result = evaluateGrammar(linked, 'Yesterday I went home.', { udCounts: {} });
+        expect(result.items[0]).toMatchObject({ found: true, detectedBy: 'compromise' });
+        expect(result.items[1]).toMatchObject({ autoDetectable: false, detectedBy: undefined });
+        expect(result.engine).toBe('compromise');
+    });
+
+    it('keeps the old behaviour when no parse is available', () => {
+        const linked = [grammarLink('gr-present-perfect-simple', 'Present perfect')];
+        const result = evaluateGrammar(linked, 'She has finished the report.');
+        expect(result.items[0]).toMatchObject({ found: true, detectedBy: 'compromise' });
+        expect(result.engine).toBe('compromise');
+    });
+});

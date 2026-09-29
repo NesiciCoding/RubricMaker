@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Iets boven niveau",
         "verdict_too_hard": "Te moeilijk",
         "above_target": "Boven niveau — voorbespreken:",
-        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL."
+        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL.",
+        "grammar_engine_ud": "Gekoppelde structuren zijn gecontroleerd met de grammaticaparser — een indicatie van het bereik, geen cijfer."
     },
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
@@ -3410,7 +3411,17 @@
         "rb_tests_exam_export_label": "Examenboekje exporteren:",
         "rb_tests_exam_export_body": "Exporteer vanuit de toetsenlijst of de exportpagina een printklaar examen in CITO-stijl: een vragenboekje, een apart antwoordblad, een optionele bijlage met leesteksten en een correctievoorschrift met de juiste antwoorden en scoreregels — als PDF of Word, met je gekozen lettertype.",
         "gr_exam_scan_title": "Een antwoordblad van een papieren toets scannen",
-        "gr_exam_scan_body": "Kies op de Toetsenpagina “Antwoordblad scannen” bij een toets, selecteer de leerling en fotografeer of importeer het ingevulde CITO-achtige antwoordblad. Tik op de vier hoeken van de afgedrukte pagina om deze recht te trekken; meerkeuze-/waar-onwaarbolletjes worden herkend via markeringsdetectie en open/kort-antwoord- en numerieke antwoorden via OCR op het apparaat — controleer en corrigeer elk antwoord voordat je opslaat. Combineer-, volgorde-, invul-, categoriseer- en hot-text-vragen worden nog niet automatisch herkend; beoordeel die via de resultatenpagina."
+        "gr_exam_scan_body": "Kies op de Toetsenpagina “Antwoordblad scannen” bij een toets, selecteer de leerling en fotografeer of importeer het ingevulde CITO-achtige antwoordblad. Tik op de vier hoeken van de afgedrukte pagina om deze recht te trekken; meerkeuze-/waar-onwaarbolletjes worden herkend via markeringsdetectie en open/kort-antwoord- en numerieke antwoorden via OCR op het apparaat — controleer en corrigeer elk antwoord voordat je opslaat. Combineer-, volgorde-, invul-, categoriseer- en hot-text-vragen worden nog niet automatisch herkend; beoordeel die via de resultatenpagina.",
+        "es_stats_title": "Schrijfstatistieken & grammaticaal bereik",
+        "es_stats_body": "Wanneer je het essay van een leerling analyseert in de beoordelingsweergave (Documentanalyse), toont het paneel deterministische schrijfstatistieken — geen AI.",
+        "es_stats_item_counts": "Aantal woorden en zinnen, gemiddelde zinslengte en variantie in zinslengte, zodat je eentonig of te lang schrijven herkent.",
+        "es_stats_item_transitions": "Frequentie van signaalwoorden per type (toevoeging, tegenstelling, oorzaak, volgorde, voorbeeld, conclusie).",
+        "es_stats_item_readability": "Flesch-Kincaid-niveau en Flesch-leesgemak, berekend met vaste formules.",
+        "es_stats_item_grammar": "Grammaticaal bereik: gebruikte constructies (tijden, passief, betrekkelijke bijzinnen, voorwaardelijke zinnen…) per CEFR-J-niveau, met het typische niveau en het hoogst bereikte niveau.",
+        "es_stats_info": "Het paneel voor grammaticaal bereik heeft het Engelse UD-parsermodel nodig. Dat is niet meegeleverd omdat het onder CC BY-NC-SA (niet-commercieel) valt. Zelf-hosters downloaden het één keer in public/models/ (zie de README daar); zonder model blijft het paneel verborgen. Het is een indicatie van het bereik, geen cijfer: de parser is bij sommige constructies minder nauwkeurig, gebruik het naast je eigen oordeel.",
+        "an_trends_title": "Schrijftrends",
+        "an_trends_body": "Op het profiel van een leerling (tabblad Overzicht) en op de Statistiekenpagina voor een klas volgt RubricMaker elk rubriccriterium over de beoordeelde essays van de leerling en markeert criteria die aanhoudend zwak zijn of dalen. Dit is regelgebaseerd: een criterium is zwak als de laatste drie essays allemaal op of onder 60% liggen. Alleen beoordeelde, ingeleverde essays (met een essayopdracht) tellen mee.",
+        "es_stats_item_linker": "Grammaticakoppeling: als het parsermodel beschikbaar is, worden aan rubriccriteria gekoppelde grammaticastructuren gecontroleerd met de parse, zodat meer structuren (vraagtags, wish-zinnen, causatieven, inversie…) automatisch in plaats van handmatig kunnen worden gecontroleerd. Zonder model worden de regex-controles gebruikt zoals eerder."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3871,5 +3882,62 @@
         "remove_fav": "Verwijderen uit favorieten",
         "add_fav": "Toevoegen aan favorieten",
         "err_unknown": "Onbekende fout"
+    },
+    "writingStats": {
+        "title": "Schrijfstatistieken",
+        "words": "Woorden",
+        "sentences": "Zinnen",
+        "avgSentence": "Gem. woorden / zin",
+        "variance": "Variantie zinslengte",
+        "range": "Kortste – langste",
+        "fkGrade": "Flesch-Kincaid-niveau",
+        "fre": "Flesch-leesgemak",
+        "transitions": "Signaalwoorden",
+        "perHundred": "per 100 woorden",
+        "noTransitions": "Geen signaalwoorden gevonden",
+        "sentenceLengths": "Zinslengtes",
+        "category": {
+            "addition": "Toevoeging",
+            "contrast": "Tegenstelling",
+            "cause": "Oorzaak & gevolg",
+            "sequence": "Volgorde",
+            "example": "Voorbeeld",
+            "conclusion": "Conclusie"
+        },
+        "description": {
+            "very easy": "zeer makkelijk",
+            "easy": "makkelijk",
+            "fairly easy": "tamelijk makkelijk",
+            "plain English": "gewoon taalgebruik",
+            "fairly difficult": "tamelijk moeilijk",
+            "difficult": "moeilijk",
+            "very difficult": "zeer moeilijk"
+        },
+        "note": "Berekend met vaste regels — geen AI."
+    },
+    "grammarProfile": {
+        "title": "Grammaticaal bereik (CEFR-J)",
+        "loading": "Grammatica analyseren…",
+        "typical": "Typisch",
+        "reaches": "Bereikt",
+        "none": "Geen ingedeelde constructies gevonden",
+        "attribution": "Regelgebaseerd op een UDPipe-analyse; niveaus uit het CEFR-J Grammar Profile (Tono Laboratory, TUFS). Geen AI.",
+        "notAGrade": "Een indicatie van het bereik, geen cijfer: de nauwkeurigheid van de parser varieert, gebruik het naast je eigen oordeel."
+    },
+    "writingTrends": {
+        "title": "Schrijftrends",
+        "intro": "Zwakke of dalende rubriccriteria over de beoordeelde essays van deze leerling (regelgebaseerd, geen AI).",
+        "direction": {
+            "improving": "stijgend",
+            "declining": "dalend",
+            "flat": "stabiel"
+        },
+        "persistentWeak": "Zwak in recente essays",
+        "classTitle": "Zwakke schrijfcriteria",
+        "classIntro": "Criteria waarop leerlingen consequent zwak scoren of dalen over beoordeelde essays.",
+        "col_criterion": "Criterium",
+        "col_average": "Klasgemiddelde",
+        "col_weak": "Aanhoudend zwak",
+        "col_declining": "Dalend"
     }
 }

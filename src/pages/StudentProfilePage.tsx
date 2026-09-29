@@ -40,6 +40,8 @@ import CefrBadge from '../components/CEFR/CefrBadge';
 import CefrPlacementCard from '../components/CEFR/CefrPlacementCard';
 import { getCefrStudentOverview, aggregateCefrProgress } from '../utils/cefrStudentAggregator';
 import { getStudentMasteryProfile, withEvidenceOnly } from '../utils/masteryProfileAggregator';
+import { getWeakWritingCriteria } from '../utils/writingTrendAggregator';
+import { StudentWritingTrendsCard } from '../components/Essay/WritingTrendsCard';
 import { CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { VO_TRACK_LABELS, getTrackBadgeColor, getEffectiveVoTrack } from '../data/voTracks';
 import RecordingPlayer from '../components/Recordings/RecordingPlayer';
@@ -61,6 +63,7 @@ export default function StudentProfilePage() {
         flashcardDecks,
         flashcardAssignments,
         flashcardReviews,
+        essayAssignments,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
@@ -76,6 +79,7 @@ export default function StudentProfilePage() {
         flashcardDecks: s.flashcardDecks,
         flashcardAssignments: s.flashcardAssignments,
         flashcardReviews: s.flashcardReviews,
+        essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
     // The roster domain exposes active (non-archived) students and non-deleted student
@@ -141,6 +145,11 @@ export default function StudentProfilePage() {
             effectiveTrack
         );
     }, [student, studentRubrics, rubrics, standardMasteryTargets, cls?.year, effectiveTrack]);
+
+    const writingTrends = useMemo(
+        () => (student ? getWeakWritingCriteria(student.id, studentRubrics, rubrics, essayAssignments) : []),
+        [student, studentRubrics, rubrics, essayAssignments]
+    );
 
     const masteryProfile = useMemo(() => {
         if (!student) return [];
@@ -1309,6 +1318,8 @@ export default function StudentProfilePage() {
                             </div>
                         </>
                     ))}
+
+                {activeTab === 'overview' && <StudentWritingTrendsCard trends={writingTrends} />}
 
                 {/* Cross-Domain Mastery Profile (roadmap 24.3) — independent of rubric grade history above */}
                 {activeTab === 'overview' && masteryProfile.length > 0 && (

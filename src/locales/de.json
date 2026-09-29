@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Etwas zu hoch",
         "verdict_too_hard": "Zu schwer",
         "above_target": "Über dem Niveau — vorentlasten:",
-        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL."
+        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL.",
+        "grammar_engine_ud": "Verknüpfte Strukturen wurden mit dem Grammatikparser geprüft — ein Bandbreiten-Indikator, keine Note."
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
@@ -3410,7 +3411,17 @@
         "rb_tests_exam_export_label": "Prüfungsheft exportieren:",
         "rb_tests_exam_export_body": "Exportieren Sie über die Testliste oder die Exportseite eine druckfertige Prüfung im Stil einer niederländischen CITO-Prüfung: ein Fragenheft, ein separates Antwortblatt, eine optionale Anlage für Lesetexte und ein Korrekturschema mit den richtigen Antworten — als PDF oder Word, mit der von Ihnen gewählten Schriftart.",
         "gr_exam_scan_title": "Den Antwortbogen einer Papierprüfung scannen",
-        "gr_exam_scan_body": "Wählen Sie auf der Tests-Seite bei einem Test „Antwortbogen scannen“, wählen Sie die Schülerin bzw. den Schüler aus und fotografieren oder importieren Sie den ausgefüllten CITO-ähnlichen Antwortbogen. Tippen Sie auf die vier Ecken der gedruckten Seite, um sie zu begradigen — Multiple-Choice-/Wahr-falsch-Kreise werden durch Markierungserkennung gelesen, Kurzantwort-/numerische/offene Texte per OCR auf dem Gerät — prüfen und korrigieren Sie jede Antwort vor dem Speichern. Zuordnungs-, Reihenfolge-, Lücken-, Kategorisierungs- und Hot-Text-Fragen werden noch nicht automatisch erkannt; bewerten Sie diese auf der Ergebnisseite."
+        "gr_exam_scan_body": "Wählen Sie auf der Tests-Seite bei einem Test „Antwortbogen scannen“, wählen Sie die Schülerin bzw. den Schüler aus und fotografieren oder importieren Sie den ausgefüllten CITO-ähnlichen Antwortbogen. Tippen Sie auf die vier Ecken der gedruckten Seite, um sie zu begradigen — Multiple-Choice-/Wahr-falsch-Kreise werden durch Markierungserkennung gelesen, Kurzantwort-/numerische/offene Texte per OCR auf dem Gerät — prüfen und korrigieren Sie jede Antwort vor dem Speichern. Zuordnungs-, Reihenfolge-, Lücken-, Kategorisierungs- und Hot-Text-Fragen werden noch nicht automatisch erkannt; bewerten Sie diese auf der Ergebnisseite.",
+        "es_stats_title": "Schreibstatistiken & grammatische Bandbreite",
+        "es_stats_body": "Wenn Sie den Aufsatz einer Person in der Bewertungsansicht analysieren (Dokumentanalyse), zeigt das Panel deterministische Schreibstatistiken — ohne KI.",
+        "es_stats_item_counts": "Wort- und Satzanzahl, durchschnittliche Satzlänge und Varianz der Satzlänge, um eintöniges oder überlanges Schreiben zu erkennen.",
+        "es_stats_item_transitions": "Häufigkeit von Überleitungswörtern nach Art (Ergänzung, Gegensatz, Ursache, Reihenfolge, Beispiel, Schluss).",
+        "es_stats_item_readability": "Flesch-Kincaid-Stufe und Flesch-Lesbarkeit, berechnet mit festen Formeln.",
+        "es_stats_item_grammar": "Grammatische Bandbreite: verwendete Konstruktionen (Zeiten, Passiv, Relativsätze, Konditionalsätze…) nach CEFR-J-Niveau, mit typischem und höchstem erreichten Niveau.",
+        "es_stats_info": "Das Panel zur grammatischen Bandbreite benötigt das englische UD-Parsermodell. Es ist nicht enthalten, da es unter CC BY-NC-SA (nicht kommerziell) lizenziert ist. Selbst-Hoster laden es einmal nach public/models/ herunter (siehe README dort); ohne Modell bleibt das Panel ausgeblendet. Es ist ein Bandbreiten-Indikator, keine Note: Der Parser ist bei einigen Konstruktionen weniger genau, nutzen Sie ihn zusammen mit Ihrem eigenen Urteil.",
+        "an_trends_title": "Schreibtrends",
+        "an_trends_body": "Im Profil einer Person (Tab Übersicht) und auf der Statistikseite einer Klasse verfolgt RubricMaker jedes Rasterkriterium über die bewerteten Aufsätze und markiert Kriterien, die anhaltend schwach sind oder nachlassen. Regelbasiert: Ein Kriterium ist schwach, wenn seine letzten drei Aufsätze alle bei höchstens 60 % liegen. Nur bewertete, abgegebene Aufsätze (mit Aufsatzauftrag) zählen.",
+        "es_stats_item_linker": "Grammatikverknüpfung: Ist das Parsermodell gehostet, werden mit Rasterkriterien verknüpfte Grammatikstrukturen anhand der Analyse geprüft, sodass mehr Strukturen (Question Tags, Wish-Sätze, Kausative, Inversion…) automatisch statt manuell geprüft werden können. Ohne Modell werden wie bisher die Regex-Prüfungen verwendet."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3871,5 +3882,62 @@
         "remove_fav": "Aus Favoriten entfernen",
         "add_fav": "Zu Favoriten hinzufügen",
         "err_unknown": "Unbekannter Fehler"
+    },
+    "writingStats": {
+        "title": "Schreibstatistiken",
+        "words": "Wörter",
+        "sentences": "Sätze",
+        "avgSentence": "Ø Wörter / Satz",
+        "variance": "Varianz der Satzlänge",
+        "range": "Kürzester – längster",
+        "fkGrade": "Flesch-Kincaid-Stufe",
+        "fre": "Flesch-Lesbarkeit",
+        "transitions": "Überleitungswörter",
+        "perHundred": "pro 100 Wörter",
+        "noTransitions": "Keine Überleitungswörter gefunden",
+        "sentenceLengths": "Satzlängen",
+        "category": {
+            "addition": "Ergänzung",
+            "contrast": "Gegensatz",
+            "cause": "Ursache & Folge",
+            "sequence": "Reihenfolge",
+            "example": "Beispiel",
+            "conclusion": "Schluss"
+        },
+        "description": {
+            "very easy": "sehr leicht",
+            "easy": "leicht",
+            "fairly easy": "ziemlich leicht",
+            "plain English": "Alltagssprache",
+            "fairly difficult": "ziemlich schwierig",
+            "difficult": "schwierig",
+            "very difficult": "sehr schwierig"
+        },
+        "note": "Mit festen Regeln berechnet — ohne KI."
+    },
+    "grammarProfile": {
+        "title": "Grammatische Bandbreite (CEFR-J)",
+        "loading": "Grammatik wird analysiert…",
+        "typical": "Typisch",
+        "reaches": "Erreicht",
+        "none": "Keine eingestuften Konstruktionen gefunden",
+        "attribution": "Regelbasiert auf einer UDPipe-Analyse; Niveaus aus dem CEFR-J Grammar Profile (Tono Laboratory, TUFS). Keine KI.",
+        "notAGrade": "Ein Bandbreiten-Indikator, keine Note: Die Genauigkeit des Parsers schwankt, nutzen Sie ihn zusammen mit Ihrem eigenen Urteil."
+    },
+    "writingTrends": {
+        "title": "Schreibtrends",
+        "intro": "Schwache oder sinkende Rasterkriterien über die bewerteten Aufsätze dieser Person (regelbasiert, ohne KI).",
+        "direction": {
+            "improving": "steigend",
+            "declining": "sinkend",
+            "flat": "stabil"
+        },
+        "persistentWeak": "Schwach in letzten Aufsätzen",
+        "classTitle": "Schwache Schreibkriterien",
+        "classIntro": "Kriterien, bei denen Lernende über bewertete Aufsätze anhaltend schwach sind oder nachlassen.",
+        "col_criterion": "Kriterium",
+        "col_average": "Klassendurchschnitt",
+        "col_weak": "Anhaltend schwach",
+        "col_declining": "Sinkend"
     }
 }

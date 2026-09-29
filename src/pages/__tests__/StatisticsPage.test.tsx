@@ -117,6 +117,7 @@ vi.mock('../../context/useStore', () => ({
     useStoreSelector: (selector: (state: any) => any) =>
         selector({
             standardMasteryTargets: [],
+            essayAssignments: [],
             ...mockAppValue,
         }),
 }));

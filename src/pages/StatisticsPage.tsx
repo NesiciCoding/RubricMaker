@@ -32,6 +32,8 @@ import {
     withAskedQuestionSnapshots,
 } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
+import { getClassWeakWritingCriteria } from '../utils/writingTrendAggregator';
+import { ClassWritingTrendsCard } from '../components/Essay/WritingTrendsCard';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CriterionRadarChart, { type CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import ScoreHistogram from '../components/Statistics/ScoreHistogram';
@@ -83,6 +85,7 @@ export default function StatisticsPage() {
         tests,
         studentTests,
         standardMasteryTargets,
+        essayAssignments,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
@@ -93,6 +96,7 @@ export default function StatisticsPage() {
         tests: s.tests,
         studentTests: s.studentTests,
         standardMasteryTargets: s.standardMasteryTargets,
+        essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
@@ -138,6 +142,12 @@ export default function StatisticsPage() {
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>(settings.activeClassId ?? 'all');
+
+    const classWritingWeak = useMemo(() => {
+        if (selectedClassId === 'all') return [];
+        const ids = students.filter((s) => s.classId === selectedClassId).map((s) => s.id);
+        return getClassWeakWritingCriteria(ids, studentRubrics, rubrics, essayAssignments);
+    }, [selectedClassId, students, studentRubrics, rubrics, essayAssignments]);
 
     // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere
     useEffect(() => {
@@ -1102,6 +1112,12 @@ export default function StatisticsPage() {
                 {chartsReady && viewMode === 'rubric' && (
                     <>
                         {selectedClassId !== 'all' && classGoals.length > 0 && <LearningGoalChart goals={classGoals} />}
+                        {selectedClassId !== 'all' && (
+                            <ClassWritingTrendsCard
+                                rows={classWritingWeak}
+                                students={students.filter((s) => s.classId === selectedClassId)}
+                            />
+                        )}
 
                         {/* Class trend chart */}
                         {classTrendData.length >= 2 && (

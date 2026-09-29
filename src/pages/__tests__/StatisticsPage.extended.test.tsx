@@ -332,6 +332,7 @@ const mockAppValue: Record<string, unknown> = {
     tests: testsArr,
     studentTests: studentTestsArr,
     standardMasteryTargets: masteryTargetsArr,
+    essayAssignments: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -357,6 +358,7 @@ vi.mock('../../context/useStore', async () => {
                 if (h.version !== cacheVersion) {
                     cached = selector({
                         standardMasteryTargets: [],
+                        essayAssignments: [],
                         ...mockAppValue,
                     });
                     cacheVersion = h.version;

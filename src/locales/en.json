@@ -2420,7 +2420,8 @@
         "verdict_slightly_above": "Slightly above level",
         "verdict_too_hard": "Too hard",
         "above_target": "Above level — pre-teach:",
-        "awl_nawl_attribution": "Academic vocabulary from the AWL (Coxhead) and NAWL."
+        "awl_nawl_attribution": "Academic vocabulary from the AWL (Coxhead) and NAWL.",
+        "grammar_engine_ud": "Linked structures were checked with the grammar parser — a range indicator, not a grade."
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} overdue)",
@@ -3408,7 +3409,17 @@
         "rb_tests_exam_export_label": "Exam booklet export:",
         "rb_tests_exam_export_body": "From the test list or the Export page, export a print-ready exam paper styled after a Dutch CITO exam: a question booklet, a separate answer sheet, an optional attachment document for reading passages, and a grading sheet with correct answers and scoring guidance — as PDF or Word, with your chosen font applied.",
         "gr_exam_scan_title": "Scan a paper exam's answer sheet",
-        "gr_exam_scan_body": "On the Tests page, choose “Scan answer sheet” on a test, pick the student, and photograph or import their filled-in CITO-style answer sheet. Tap the printed page's four corners to straighten it, then multiple-choice/true-false bubbles are read by mark detection and short-answer/numeric/open text by on-device OCR — review and correct every answer before saving. Matching, ordering, fill-the-gap, categorize, and hot-text questions aren't auto-detected yet; grade those from the Results page."
+        "gr_exam_scan_body": "On the Tests page, choose “Scan answer sheet” on a test, pick the student, and photograph or import their filled-in CITO-style answer sheet. Tap the printed page's four corners to straighten it, then multiple-choice/true-false bubbles are read by mark detection and short-answer/numeric/open text by on-device OCR — review and correct every answer before saving. Matching, ordering, fill-the-gap, categorize, and hot-text questions aren't auto-detected yet; grade those from the Results page.",
+        "es_stats_title": "Writing statistics & grammar range",
+        "es_stats_body": "When you analyse a student's essay in the grading view (Document Analysis), the panel shows deterministic writing statistics — no AI.",
+        "es_stats_item_counts": "Word and sentence counts, average sentence length and sentence-length variance, so you can spot monotone or run-on writing.",
+        "es_stats_item_transitions": "Transition-word frequency by type (addition, contrast, cause, sequence, example, conclusion).",
+        "es_stats_item_readability": "Flesch-Kincaid grade and Flesch Reading Ease, calculated by fixed formulas.",
+        "es_stats_item_grammar": "Grammar range: constructions used (tenses, passive, relative clauses, conditionals…) banded by CEFR-J level, with the typical level and the highest level reached.",
+        "es_stats_info": "The grammar range panel needs the English UD parser model, which is not bundled because it is licensed CC BY-NC-SA (non-commercial). Self-hosters download it once into public/models/ (see the README there); without it the panel stays hidden. It is a range indicator, not a grade: the parser is less accurate on some constructions, so use it alongside your own judgement.",
+        "an_trends_title": "Writing trends",
+        "an_trends_body": "On a student's profile (Overview tab) and on the Statistics page for a class, RubricMaker follows each rubric criterion across the student's graded essays and flags criteria that are persistently weak or declining. It is rule-based: a criterion is weak when its last three essays are all at or below 60%. Only graded, handed-in essays (with an essay assignment) count.",
+        "es_stats_item_linker": "Grammar linker: when the parser model is hosted, grammar structures linked to rubric criteria are checked against the parse, so more structures (question tags, wish clauses, causatives, inversion…) can be checked automatically instead of manually. Without the model the regex checks are used as before."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3869,5 +3880,62 @@
         "remove_fav": "Remove from favorites",
         "add_fav": "Add to favorites",
         "err_unknown": "Unknown error"
+    },
+    "writingStats": {
+        "title": "Writing statistics",
+        "words": "Words",
+        "sentences": "Sentences",
+        "avgSentence": "Avg. words / sentence",
+        "variance": "Sentence-length variance",
+        "range": "Shortest – longest",
+        "fkGrade": "Flesch-Kincaid grade",
+        "fre": "Flesch Reading Ease",
+        "transitions": "Transition words",
+        "perHundred": "per 100 words",
+        "noTransitions": "No transition words found",
+        "sentenceLengths": "Sentence lengths",
+        "category": {
+            "addition": "Addition",
+            "contrast": "Contrast",
+            "cause": "Cause & effect",
+            "sequence": "Sequence",
+            "example": "Example",
+            "conclusion": "Conclusion"
+        },
+        "description": {
+            "very easy": "very easy",
+            "easy": "easy",
+            "fairly easy": "fairly easy",
+            "plain English": "plain English",
+            "fairly difficult": "fairly difficult",
+            "difficult": "difficult",
+            "very difficult": "very difficult"
+        },
+        "note": "Calculated with fixed rules — no AI."
+    },
+    "grammarProfile": {
+        "title": "Grammar range (CEFR-J)",
+        "loading": "Analysing grammar…",
+        "typical": "Typical",
+        "reaches": "Reaches",
+        "none": "No graded constructions detected",
+        "attribution": "Rule-based over a UDPipe parse; levels from the CEFR-J Grammar Profile (Tono Laboratory, TUFS). No AI.",
+        "notAGrade": "A range indicator, not a grade: parser accuracy varies, so use it alongside your own judgement."
+    },
+    "writingTrends": {
+        "title": "Writing trends",
+        "intro": "Weak or declining rubric criteria across this student's graded essays (rule-based, no AI).",
+        "direction": {
+            "improving": "improving",
+            "declining": "declining",
+            "flat": "steady"
+        },
+        "persistentWeak": "Weak in recent essays",
+        "classTitle": "Weak writing criteria",
+        "classIntro": "Criteria where students are persistently weak or declining across graded essays.",
+        "col_criterion": "Criterion",
+        "col_average": "Class average",
+        "col_weak": "Persistently weak",
+        "col_declining": "Declining"
     }
 }
