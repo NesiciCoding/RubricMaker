@@ -1190,6 +1190,45 @@ export function stripAudioForOfflineCache(srs: StudentRubric[]): StudentRubric[]
             : sr
     );
 }
+/**
+ * Connected-session variant of saveStudentRubrics for the post-hydrate offline-readiness cache.
+ * Supabase already holds every record, so the cache may be a lossy subset: it drops soft-deleted
+ * grades and audio, and if that still exceeds the quota keeps only the most recently touched
+ * records that fit. Never use on the offline save path, where localStorage is the only copy.
+ */
+export function saveStudentRubricsCache(srs: StudentRubric[]): void {
+    const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
+    const stamp = (sr: StudentRubric) => sr.updatedAt ?? sr.gradedAt ?? sr.submittedAt ?? '';
+    const newestFirst = [...live].sort((a, b) => stamp(b).localeCompare(stamp(a)));
+    const tryWrite = (count: number): boolean => {
+        try {
+            localStorage.setItem(KEYS.studentRubrics, JSON.stringify(newestFirst.slice(0, count)));
+            return true;
+        } catch (e) {
+            if (!isQuotaExceededError(e)) throw e;
+            return false;
+        }
+    };
+    if (tryWrite(newestFirst.length)) return;
+    let lo = 0;
+    let hi = newestFirst.length - 1;
+    let best = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (tryWrite(mid)) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (best >= 0) {
+        tryWrite(best);
+        console.warn(`[storage] rm_student_rubrics cache trimmed to ${best}/${newestFirst.length} records (quota)`);
+    } else {
+        console.warn('[storage] rm_student_rubrics cache skipped (quota); data remains in Supabase');
+    }
+}
 export function saveAttachments(atts: Attachment[]) {
     save(KEYS.attachments, atts);
 }

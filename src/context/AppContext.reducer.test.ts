@@ -46,6 +46,7 @@ vi.mock('../store/storage', () => {
         'saveStudents',
         'saveClasses',
         'saveStudentRubrics',
+        'saveStudentRubricsCache',
         'stripAudioForOfflineCache',
         'saveAttachments',
         'saveGradeScales',

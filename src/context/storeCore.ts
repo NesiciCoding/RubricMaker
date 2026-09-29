@@ -71,11 +71,11 @@ import {
     saveSpeakingSessions,
     saveStandardMasteryTargets,
     saveStudentRubrics,
+    saveStudentRubricsCache,
     saveStudentTests,
     saveStudents,
     saveTests,
     saveUserTemplates,
-    stripAudioForOfflineCache,
     upsertRubricVersion,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
@@ -1117,7 +1117,7 @@ export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) =
     rubrics: (m) => saveRubrics(m.rubrics),
     students: (m) => saveStudents(m.students),
     classes: (m) => saveClasses(m.classes),
-    studentRubrics: (m) => saveStudentRubrics(stripAudioForOfflineCache(m.studentRubrics)),
+    studentRubrics: (m) => saveStudentRubricsCache(m.studentRubrics),
     attachments: (m) => saveAttachments(m.attachments),
     gradeScales: (m) => saveGradeScales(m.gradeScales),
     settings: (m) => saveSettings(m.settings),
