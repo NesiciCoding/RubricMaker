@@ -19,7 +19,8 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { sanitizeFilename, stripHtmlTags } from './exportDataPrep';
+import { promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -82,15 +83,9 @@ export function collectParagraphTexts(root: Element): string[] {
     return texts;
 }
 
-/**
- * Splits a rich-text passage into one Paragraph per block element, instead of collapsing every
- * paragraph/list item into one run of text — stripHtmlTags() alone flattens all whitespace to a
- * single space, so a multi-paragraph reading passage would otherwise print as one unbroken block.
- */
-function htmlToParagraphs(html: string, spacingAfter = 120): Paragraph[] {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const texts = collectParagraphTexts(doc.body);
-    return texts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
+/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables that plain-text extraction would drop. */
+function htmlToParagraphs(html: string, spacingAfter = 120): (Paragraph | Table)[] {
+    return htmlToDocxChildren(promptToHtml(html), spacingAfter);
 }
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
@@ -293,9 +288,8 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const promptRuns = isCloze
-        ? clozeRuns(question)
-        : [new TextRun({ text: stripHtmlTags(plainQuestionPromptText(question)) })];
+    const rich = isCloze ? null : htmlToDocxLead(promptToHtml(plainQuestionPromptText(question)));
+    const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
@@ -306,6 +300,7 @@ async function questionParagraphs(
             ],
             spacing: { after: 60 },
         }),
+        ...(rich?.rest ?? []),
     ];
 
     if (question.imageUrl) {

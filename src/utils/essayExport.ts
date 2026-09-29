@@ -320,8 +320,23 @@ function taskListToDocx(node: Element): Paragraph[] {
     });
 }
 
+/** Splits TipTap HTML into the inline runs of a leading plain paragraph (so a caller can prefix a label on the same line) and the remaining blocks. */
+export function htmlToDocxLead(html: string): { leadRuns: TextRun[]; rest: (Paragraph | Table)[] } {
+    const root = parseEssayHtml(html);
+    const first = root.firstElementChild;
+    if (!first || first.tagName !== 'P') return { leadRuns: [], rest: htmlToDocxChildren(html) };
+    const leadRuns = Array.from(first.childNodes).flatMap((c) => inlineDocxRuns(c));
+    const rest = htmlToDocxChildren(
+        Array.from(root.children)
+            .slice(1)
+            .map((n) => n.outerHTML)
+            .join('')
+    );
+    return { leadRuns, rest };
+}
+
 /** Converts EssayEditor's TipTap HTML output to docx Paragraph/Table nodes. */
-export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
+export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragraph | Table)[] {
     const root = parseEssayHtml(html);
     const children: (Paragraph | Table)[] = [];
     for (const node of Array.from(root.children)) {
@@ -373,7 +388,7 @@ export function htmlToDocxChildren(html: string): (Paragraph | Table)[] {
             children.push(
                 new Paragraph({
                     alignment,
-                    spacing,
+                    spacing: spacingAfter === undefined ? spacing : { ...spacing, after: spacingAfter },
                     children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)),
                 })
             );

@@ -52,6 +52,16 @@ export function stripHtmlTags(text: string): string {
     return result.replace(/\s+/g, ' ').trim();
 }
 
+/** Normalises a stored question prompt to HTML: TipTap output passes through, legacy plain text keeps its line breaks. */
+export function promptToHtml(prompt: string): string {
+    if (!prompt) return '';
+    if (/<[a-z][^>]*>/i.test(prompt)) return prompt;
+    return prompt
+        .split(/\r?\n/)
+        .map((line) => `<p>${escapeHtml(line)}</p>`)
+        .join('');
+}
+
 /** Plain-text rendering of a comment that may contain pasted or TipTap-authored HTML. */
 export const stripCommentHtml = stripHtmlTags;
 
