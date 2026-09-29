@@ -615,6 +615,22 @@ export interface Rubric {
     displayOrder?: number;
     /** When true, every teacher in the owner's school can view (read-only) this rubric */
     sharedWithSchool?: boolean;
+    /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
+    comparativeMatchupLimit?: number;
+}
+
+/**
+ * One completed comparative-grading matchup between two students on a rubric —
+ * an immutable, append-only record. Per-student matchup counts (the per-rubric
+ * cap in comparativeMatchupLimit) are derived by counting these, so they persist
+ * across reloads/devices instead of resetting with the browser session.
+ */
+export interface ComparativeMatchup {
+    id: string;
+    rubricId: string;
+    studentAId: string;
+    studentBId: string;
+    gradedAt: string;
 }
 
 /** A user-saved rubric template stored locally. */

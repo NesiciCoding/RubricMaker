@@ -4,6 +4,7 @@ import type {
     Attachment,
     CefrLevel,
     Class,
+    ComparativeMatchup,
     CommentBankItem,
     DocumentAnalysisResult,
     DocumentComment,
@@ -46,6 +47,7 @@ import {
     saveAttachments,
     saveClasses,
     saveCommentBank,
+    saveComparativeMatchups,
     saveDocumentComments,
     saveEssayAssignments,
     saveEssaySubmissions,
@@ -187,7 +189,8 @@ export type Action =
     | { type: 'ADD_DOCUMENT_COMMENT'; payload: DocumentComment }
     | { type: 'RESOLVE_DOCUMENT_COMMENT'; id: string; resolved: boolean }
     | { type: 'DELETE_DOCUMENT_COMMENT'; id: string }
-    | { type: 'DISMISS_NOTIFICATION'; payload: NotificationDismissal };
+    | { type: 'DISMISS_NOTIFICATION'; payload: NotificationDismissal }
+    | { type: 'ADD_COMPARATIVE_MATCHUP'; payload: ComparativeMatchup };
 
 export type StorageSyncInstance = Awaited<ReturnType<typeof loadDb>>['storageSync'];
 
@@ -834,6 +837,11 @@ export function reducer(state: StoreData, action: Action): StoreData {
             if (isOffline()) saveNotificationDismissals(next);
             return { ...state, notificationDismissals: next };
         }
+        case 'ADD_COMPARATIVE_MATCHUP': {
+            const next = [...state.comparativeMatchups, action.payload];
+            if (isOffline()) saveComparativeMatchups(next);
+            return { ...state, comparativeMatchups: next };
+        }
         case 'BULK_UPDATE_QUESTION_BANK_ITEMS': {
             const idSet = new Set(action.ids);
             const now = new Date().toISOString();
@@ -946,6 +954,7 @@ export interface AppContextValue extends StoreData {
     resolveDocumentComment: (id: string, resolved: boolean) => void;
     deleteDocumentComment: (id: string) => void;
     dismissNotification: (type: NotificationDismissalType, entityId: string, fingerprint: string) => void;
+    addComparativeMatchup: (rubricId: string, studentAId: string, studentBId: string) => void;
     addExportTemplate: (t: Omit<ExportTemplate, 'id' | 'addedAt'>) => ExportTemplate;
     deleteExportTemplate: (id: string) => void;
     // Peer Review
@@ -1136,6 +1145,7 @@ export const COLLECTION_SAVERS: Partial<Record<keyof StoreData, (m: StoreData) =
     questionBank: (m) => saveQuestionBank(m.questionBank),
     documentComments: (m) => saveDocumentComments(m.documentComments),
     notificationDismissals: (m) => saveNotificationDismissals(m.notificationDismissals),
+    comparativeMatchups: (m) => saveComparativeMatchups(m.comparativeMatchups),
 };
 
 export async function flushToLocalStorage(merged: StoreData, changedKeys?: Set<keyof StoreData>) {

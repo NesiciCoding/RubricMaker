@@ -467,6 +467,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
         diff(prev.documentComments, state.documentComments, 'documentComment', (c) => c.id);
         diff(prev.notificationDismissals, state.notificationDismissals, 'notificationDismissal', (d) => d.id);
+        diff(prev.comparativeMatchups, state.comparativeMatchups, 'comparativeMatchup', (m) => m.id);
 
         if (prev.settings !== state.settings && JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);
