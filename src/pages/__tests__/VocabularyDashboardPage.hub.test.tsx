@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 
@@ -36,6 +36,18 @@ vi.mock('../../context/AppContext', () => ({
     useEssays: () => ctx,
 }));
 
+vi.mock('../../services/wordLookup', () => ({
+    translationTarget: () => null,
+    lookupManyWordDetails: async (words: string[]) =>
+        words.map(() => ({
+            definition: 'a def',
+            phonetic: null,
+            partOfSpeech: 'noun',
+            example: null,
+            translation: null,
+        })),
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
@@ -64,6 +76,13 @@ describe('VocabularyDashboardPage hub views', () => {
         expect(screen.getByText('analysis.above_target')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: /vocabProfile.seed_deck$/ }));
-        expect(addFlashcardDeck).toHaveBeenCalledWith(expect.objectContaining({ deckKind: 'vocabulary' }));
+        await waitFor(() =>
+            expect(addFlashcardDeck).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deckKind: 'vocabulary',
+                    cards: expect.arrayContaining([expect.objectContaining({ back: 'a def', partOfSpeech: 'noun' })]),
+                })
+            )
+        );
     });
 });

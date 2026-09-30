@@ -430,6 +430,8 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `src/utils/icsExport.ts`                                    | Builds a minimal `.ics` calendar file from assignment deadlines                                                                                                                                                  |
 | `src/utils/messageThreads.ts`                               | Groups flat student/teacher `Message` rows into threads by student + context                                                                                                                                     |
 | `src/services/standardsApi.ts`                              | Common Standards Project API (CCSS, NGSS)                                                                                                                                                                        |
+| `src/services/wordnetPack.ts`                               | Optional offline definitions: downloads the Open English WordNet pack (`public/wordnet/`, built by `scripts/build-wordnet-pack.mjs`, CC BY 4.0) after confirmation and stores it in IndexedDB                    |
+| `src/services/wordLookup.ts`                                | Definition lookup chain (Free Dictionary → offline WordNet) plus keyless MyMemory word translation, used to fill decks seeded from Text screening                                                                |
 | `src/services/freeDictionaryApi.ts`                         | Keyless word lookup (definition, phonetic, part of speech) via the Free Dictionary API (`dictionaryapi.dev`) for the vocabulary panel                                                                            |
 
 ---
@@ -442,4 +444,4 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 - [Security policy](SECURITY.md) — responsible disclosure
 - [Privacy statement](PRIVACY.md) — what the app collects and stores, and when it stays fully local
 
-> **License:** [MIT](LICENSE) — free to use, modify and distribute, with attribution. See the [LICENSE](LICENSE) file for details.
+> **License:** [MIT](LICENSE) — free to use, modify and distribute, with attribution. See the [LICENSE](LICENSE) file for details. Bundled and downloadable word-list data keeps its own licences (notably the NAWL, CC BY-SA 4.0, and Open English WordNet, CC BY 4.0) — see [docs/VOCAB_WORDLISTS_PROVENANCE.md](docs/VOCAB_WORDLISTS_PROVENANCE.md).

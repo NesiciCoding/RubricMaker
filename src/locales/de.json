@@ -2425,7 +2425,7 @@
         "verdict_slightly_above": "Etwas zu hoch",
         "verdict_too_hard": "Zu schwer",
         "above_target": "Über dem Niveau — vorentlasten:",
-        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und NAWL.",
+        "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und der NAWL (Browne, Culligan & Phillips; CC BY-SA 4.0).",
         "grammar_engine_ud": "Verknüpfte Strukturen wurden mit dem Grammatikparser geprüft — ein Bandbreiten-Indikator, keine Note."
     },
     "notifications": {
@@ -3428,7 +3428,8 @@
         "an_trends_body": "Im Profil einer Person (Tab Übersicht) und auf der Statistikseite einer Klasse verfolgt RubricMaker jedes Rasterkriterium über die bewerteten Aufsätze und markiert Kriterien, die anhaltend schwach sind oder nachlassen. Regelbasiert: Ein Kriterium ist schwach, wenn seine letzten drei Aufsätze alle bei höchstens 60 % liegen. Nur bewertete, abgegebene Aufsätze (mit Aufsatzauftrag) zählen.",
         "es_stats_item_linker": "Grammatikverknüpfung: Ist das Parsermodell gehostet, werden mit Rasterkriterien verknüpfte Grammatikstrukturen anhand der Analyse geprüft, sodass mehr Strukturen (Question Tags, Wish-Sätze, Kausative, Inversion…) automatisch statt manuell geprüft werden können. Ohne Modell werden wie bisher die Regex-Prüfungen verwendet.",
         "an_vocab_item_flashcards": "Karteikarten-Ansicht: der Fortschritt aller Stapel in einer Tabelle — zugewiesene und aktive Schüler, Stufenbalken, fällige Karten und letztes Lerndatum — ohne jeden Stapel einzeln zu öffnen.",
-        "an_vocab_item_screening": "Textprüfung: Füge einen Text ein oder lade eine PDF-, Word-, Text- oder Bilddatei hoch und sieh das GER-Profil, den Anteil von Wörtern außerhalb der Liste und akademischen Wörtern sowie ein Urteil für das Niveau deiner Klasse. Erstelle danach einen Vorentlastungsstapel oder exportiere die Wörter über dem Niveau."
+        "an_vocab_item_screening": "Textprüfung: Füge einen Text ein oder lade eine PDF-, Word-, Text- oder Bilddatei hoch und sieh das GER-Profil, den Anteil von Wörtern außerhalb der Liste und akademischen Wörtern sowie ein Urteil für das Niveau deiner Klasse. Erstelle danach einen Vorentlastungsstapel oder exportiere die Wörter über dem Niveau.",
+        "an_vocab_item_lookup": "Beim Erstellen eines Stapels aus geprüften Wörtern werden Definitionen und Wortart über die kostenlose Dictionary-API ergänzt (Übersetzungen in die Oberflächensprache über MyMemory); Wörter ohne Ergebnis bleiben zum Ausfüllen leer. Lade das optionale Offline-Wörterbuch (Open English WordNet) in der Textprüfung herunter, um Definitionen ohne Verbindung zu erhalten."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3542,7 +3543,21 @@
         "screen_clear": "Leeren",
         "screen_empty": "Füge Text hinzu, um das Niveau zu sehen.",
         "screen_this_text": "Dieser Text",
-        "screen_csv_filename": "woerter_ueber_niveau"
+        "screen_csv_filename": "woerter_ueber_niveau",
+        "wordnet_title": "Offline-Wörterbuch herunterladen?",
+        "wordnet_body": "Fügt englische Definitionen ohne Internetverbindung hinzu (etwa {{size}} MB). Es wird einmal heruntergeladen und nur auf diesem Gerät gespeichert; nichts von dem, was du eingibst, wird hochgeladen.",
+        "wordnet_license": "Open English WordNet 2024, lizenziert unter CC BY 4.0 (abgeleitet von Princeton WordNet). Quellenangabe: en-word.net.",
+        "wordnet_progress": "Download-Fortschritt",
+        "wordnet_failed": "Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.",
+        "wordnet_cancel": "Abbrechen",
+        "wordnet_download": "Herunterladen",
+        "wordnet_retry": "Erneut versuchen",
+        "wordnet_installed": "Offline-Wörterbuch installiert.",
+        "wordnet_not_installed": "Offline-Wörterbuch nicht installiert.",
+        "wordnet_remove": "Entfernen",
+        "wordnet_get": "Herunterladen…",
+        "seed_deck_looking_up": "Wörter werden nachgeschlagen… {{done}}/{{total}}",
+        "seed_deck_blank_hint": "Für {{count}} Wort/Wörter wurde keine Definition gefunden — ergänze sie auf der Stapelseite."
     },
     "csv": {
         "summary_created": "erstellt",

@@ -2425,7 +2425,7 @@
         "verdict_slightly_above": "Iets boven niveau",
         "verdict_too_hard": "Te moeilijk",
         "above_target": "Boven niveau — voorbespreken:",
-        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en NAWL.",
+        "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en de NAWL (Browne, Culligan & Phillips; CC BY-SA 4.0).",
         "grammar_engine_ud": "Gekoppelde structuren zijn gecontroleerd met de grammaticaparser — een indicatie van het bereik, geen cijfer."
     },
     "notifications": {
@@ -3428,7 +3428,8 @@
         "an_trends_body": "Op het profiel van een leerling (tabblad Overzicht) en op de Statistiekenpagina voor een klas volgt RubricMaker elk rubriccriterium over de beoordeelde essays van de leerling en markeert criteria die aanhoudend zwak zijn of dalen. Dit is regelgebaseerd: een criterium is zwak als de laatste drie essays allemaal op of onder 60% liggen. Alleen beoordeelde, ingeleverde essays (met een essayopdracht) tellen mee.",
         "es_stats_item_linker": "Grammaticakoppeling: als het parsermodel beschikbaar is, worden aan rubriccriteria gekoppelde grammaticastructuren gecontroleerd met de parse, zodat meer structuren (vraagtags, wish-zinnen, causatieven, inversie…) automatisch in plaats van handmatig kunnen worden gecontroleerd. Zonder model worden de regex-controles gebruikt zoals eerder.",
         "an_vocab_item_flashcards": "Flashcardweergave: de voortgang van alle sets in één tabel — toegewezen en actieve leerlingen, een fasebalk, te herhalen kaarten en laatste leerdatum — zonder elke set te openen.",
-        "an_vocab_item_screening": "Tekstscreening: plak een tekst of upload een pdf-, Word-, tekst- of afbeeldingsbestand en zie het CEFR-profiel, het aandeel woorden buiten de lijst en academische woorden, en een oordeel voor het niveau van je klas. Maak daarna een voorbereidingsset of exporteer de woorden boven niveau."
+        "an_vocab_item_screening": "Tekstscreening: plak een tekst of upload een pdf-, Word-, tekst- of afbeeldingsbestand en zie het CEFR-profiel, het aandeel woorden buiten de lijst en academische woorden, en een oordeel voor het niveau van je klas. Maak daarna een voorbereidingsset of exporteer de woorden boven niveau.",
+        "an_vocab_item_lookup": "Een set maken van gescreende woorden vult definities en woordsoort aan via de gratis Dictionary API (vertalingen naar je interfacetaal via MyMemory); woorden zonder resultaat blijven leeg om zelf aan te vullen. Download het optionele offline woordenboek (Open English WordNet) in de tekstscreening voor definities zonder verbinding."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3542,7 +3543,21 @@
         "screen_clear": "Wissen",
         "screen_empty": "Voeg tekst toe om het niveau te zien.",
         "screen_this_text": "Deze tekst",
-        "screen_csv_filename": "woorden_boven_niveau"
+        "screen_csv_filename": "woorden_boven_niveau",
+        "wordnet_title": "Offline woordenboek downloaden?",
+        "wordnet_body": "Voegt Engelse definities toe zonder internetverbinding (ongeveer {{size}} MB). Het wordt één keer gedownload en alleen op dit apparaat opgeslagen; er wordt niets van wat je typt geüpload.",
+        "wordnet_license": "Open English WordNet 2024, onder CC BY 4.0 (afgeleid van Princeton WordNet). Bronvermelding: en-word.net.",
+        "wordnet_progress": "Downloadvoortgang",
+        "wordnet_failed": "Het downloaden is mislukt. Controleer je verbinding en probeer het opnieuw.",
+        "wordnet_cancel": "Annuleren",
+        "wordnet_download": "Downloaden",
+        "wordnet_retry": "Opnieuw proberen",
+        "wordnet_installed": "Offline woordenboek geïnstalleerd.",
+        "wordnet_not_installed": "Offline woordenboek niet geïnstalleerd.",
+        "wordnet_remove": "Verwijderen",
+        "wordnet_get": "Downloaden…",
+        "seed_deck_looking_up": "Woorden opzoeken… {{done}}/{{total}}",
+        "seed_deck_blank_hint": "Geen definitie gevonden voor {{count}} woord(en) — vul die aan op de setpagina."
     },
     "csv": {
         "summary_created": "aangemaakt",

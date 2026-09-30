@@ -305,6 +305,20 @@ export default function PrivacyPage() {
                                 dictionaryapi.dev <ExternalLink size={10} />
                             </a>
                         </li>
+                        <li>
+                            <strong>MyMemory translation</strong> — Optional word translation when you seed a flashcard
+                            deck from a text in a non-English interface language. Only the individual looked-up words
+                            (never the text itself) are sent to api.mymemory.translated.net; no key or account is
+                            required.{' '}
+                            <a
+                                href="https://mymemory.translated.net/doc/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                MyMemory <ExternalLink size={10} />
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

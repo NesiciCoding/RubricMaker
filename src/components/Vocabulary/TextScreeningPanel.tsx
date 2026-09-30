@@ -1,17 +1,20 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Download, FileUp, Layers } from 'lucide-react';
+import { BookMarked, Download, FileUp, Layers } from 'lucide-react';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import CefrBadge from '../CEFR/CefrBadge';
 import VocabCefrDistributionChart from '../Statistics/VocabCefrDistributionChart';
+import WordnetDownloadModal from './WordnetDownloadModal';
 import { useFlashcards } from '../../context/AppContext';
 import { useToast } from '../../hooks/useToast';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
 import { computeTargetVerdict } from '../../utils/textLevelVerdict';
 import { extractText } from '../../utils/textExtraction';
+import { lookupManyWordDetails, translationTarget } from '../../services/wordLookup';
+import { isWordnetInstalled, removeWordnetPack } from '../../services/wordnetPack';
 import { nanoid } from '../../utils/nanoid';
 import type { Attachment, CefrLevel } from '../../types';
 
@@ -27,7 +30,7 @@ function readAsDataUrl(file: File): Promise<string> {
 const VERDICT_COLOR = { suitable: 'var(--green)', slightly_above: 'var(--yellow)', too_hard: 'var(--red)' } as const;
 
 export default function TextScreeningPanel() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const navigate = useNavigate();
     const { addFlashcardDeck } = useFlashcards();
@@ -36,6 +39,13 @@ export default function TextScreeningPanel() {
     const [text, setText] = useState('');
     const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
     const [extracting, setExtracting] = useState(false);
+    const [seeding, setSeeding] = useState<{ done: number; total: number } | null>(null);
+    const [wordnetInstalled, setWordnetInstalled] = useState(false);
+    const [showWordnetModal, setShowWordnetModal] = useState(false);
+
+    useEffect(() => {
+        void isWordnetInstalled().then(setWordnetInstalled);
+    }, []);
 
     const profile = useMemo(() => (text.trim() ? profileText(text) : null), [text]);
     const verdict = useMemo(() => (text.trim() ? computeTargetVerdict(text, targetLevel) : null), [text, targetLevel]);
@@ -73,21 +83,46 @@ export default function TextScreeningPanel() {
         );
     }
 
-    function handleSeedDeck() {
+    async function handleSeedDeck() {
         if (!verdict || verdict.aboveTargetWords.length === 0) {
             showToast(t('vocabProfile.seed_deck_empty'), 'info');
             return;
         }
+        const hits = verdict.aboveTargetWords;
+        setSeeding({ done: 0, total: hits.length });
+        const details = await lookupManyWordDetails(
+            hits.map((w) => w.word),
+            translationTarget(i18n.language),
+            (done, total) => setSeeding({ done, total })
+        );
+        setSeeding(null);
+
         const deck = addFlashcardDeck({
             name: t('vocabProfile.seed_deck_name', { band: `>${targetLevel}` }),
             deckKind: 'vocabulary',
-            cards: verdict.aboveTargetWords.map((w) => ({ id: nanoid(), front: w.word, back: '', cefrLevel: w.level })),
+            cards: hits.map((w, i) => {
+                const d = details[i];
+                const back = [d.translation, d.definition].filter(Boolean).join(' — ');
+                return {
+                    id: nanoid(),
+                    front: w.word,
+                    back,
+                    cefrLevel: w.level,
+                    ...(d.phonetic && { phonetic: d.phonetic }),
+                    ...(d.partOfSpeech && { partOfSpeech: d.partOfSpeech }),
+                    ...(d.example && { example: d.example }),
+                };
+            }),
         });
-        showToast(
-            t('vocabProfile.seed_deck_created', { name: deck.name, count: verdict.aboveTargetWords.length }),
-            'success'
-        );
+        const missing = details.filter((d) => !d.definition && !d.translation).length;
+        showToast(t('vocabProfile.seed_deck_created', { name: deck.name, count: hits.length }), 'success');
+        if (missing > 0) showToast(t('vocabProfile.seed_deck_blank_hint', { count: missing }), 'info');
         navigate(`/flashcards/${deck.id}`);
+    }
+
+    async function handleRemoveWordnet() {
+        await removeWordnetPack();
+        setWordnetInstalled(false);
     }
 
     return (
@@ -201,8 +236,15 @@ export default function TextScreeningPanel() {
                                 ))}
                             </div>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button className="btn btn-secondary btn-sm" onClick={handleSeedDeck}>
-                                    <Layers size={14} /> {t('vocabProfile.seed_deck')}
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    disabled={seeding !== null}
+                                    onClick={() => void handleSeedDeck()}
+                                >
+                                    <Layers size={14} />{' '}
+                                    {seeding
+                                        ? t('vocabProfile.seed_deck_looking_up', seeding)
+                                        : t('vocabProfile.seed_deck')}
                                 </button>
                                 <button className="btn btn-secondary btn-sm" onClick={handleExportCsv}>
                                     <Download size={14} /> {t('vocabProfile.export_csv')}
@@ -211,10 +253,38 @@ export default function TextScreeningPanel() {
                         </div>
                     )}
 
+                    <div
+                        style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 14 }}
+                        className="text-xs text-muted"
+                    >
+                        <BookMarked size={14} />
+                        {wordnetInstalled
+                            ? t('vocabProfile.wordnet_installed')
+                            : t('vocabProfile.wordnet_not_installed')}
+                        {wordnetInstalled ? (
+                            <button className="btn btn-ghost btn-sm" onClick={() => void handleRemoveWordnet()}>
+                                {t('vocabProfile.wordnet_remove')}
+                            </button>
+                        ) : (
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowWordnetModal(true)}>
+                                {t('vocabProfile.wordnet_get')}
+                            </button>
+                        )}
+                    </div>
+
                     <p className="text-xs text-muted" style={{ marginBottom: 0 }}>
                         {t('analysis.awl_nawl_attribution')}
                     </p>
                 </>
+            )}
+            {showWordnetModal && (
+                <WordnetDownloadModal
+                    onClose={() => setShowWordnetModal(false)}
+                    onInstalled={() => {
+                        setWordnetInstalled(true);
+                        setShowWordnetModal(false);
+                    }}
+                />
             )}
         </div>
     );

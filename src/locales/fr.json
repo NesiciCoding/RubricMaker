@@ -2425,7 +2425,7 @@
         "verdict_slightly_above": "Légèrement au-dessus",
         "verdict_too_hard": "Trop difficile",
         "above_target": "Au-dessus du niveau — à pré-enseigner :",
-        "awl_nawl_attribution": "Vocabulaire académique issu de l'AWL (Coxhead) et de la NAWL.",
+        "awl_nawl_attribution": "Vocabulaire académique issu de l'AWL (Coxhead) et de la NAWL (Browne, Culligan & Phillips ; CC BY-SA 4.0).",
         "grammar_engine_ud": "Les structures liées ont été vérifiées avec l'analyseur grammatical — un indicateur d'étendue, pas une note."
     },
     "notifications": {
@@ -3428,7 +3428,8 @@
         "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent.",
         "es_stats_item_linker": "Lien grammaire : lorsque le modèle d'analyseur est hébergé, les structures grammaticales liées aux critères sont vérifiées avec l'analyse, ce qui permet de contrôler automatiquement plus de structures (question tags, wish, causatifs, inversion…) au lieu de le faire à la main. Sans le modèle, les contrôles par expressions régulières sont utilisés comme avant.",
         "an_vocab_item_flashcards": "Vue Cartes mémoire : la progression de tous les paquets dans un seul tableau — élèves assignés et actifs, barre d'étapes, cartes à revoir et date de dernière étude — sans ouvrir chaque paquet.",
-        "an_vocab_item_screening": "Vue Analyse de texte : collez un texte ou importez un fichier PDF, Word, texte ou image pour voir son profil CECR, la part de mots hors liste et académiques, et un verdict pour le niveau de votre classe, puis créez un paquet de pré-enseignement ou exportez les mots au-dessus du niveau."
+        "an_vocab_item_screening": "Vue Analyse de texte : collez un texte ou importez un fichier PDF, Word, texte ou image pour voir son profil CECR, la part de mots hors liste et académiques, et un verdict pour le niveau de votre classe, puis créez un paquet de pré-enseignement ou exportez les mots au-dessus du niveau.",
+        "an_vocab_item_lookup": "Créer un paquet à partir des mots analysés ajoute définitions et catégorie grammaticale via l'API Dictionary gratuite (traductions vers la langue de l'interface via MyMemory) ; les mots sans résultat restent vides à compléter. Téléchargez le dictionnaire hors ligne optionnel (Open English WordNet) depuis l'analyse de texte pour obtenir des définitions sans connexion."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3542,7 +3543,21 @@
         "screen_clear": "Effacer",
         "screen_empty": "Ajoutez du texte pour voir son niveau.",
         "screen_this_text": "Ce texte",
-        "screen_csv_filename": "mots_au_dessus_du_niveau"
+        "screen_csv_filename": "mots_au_dessus_du_niveau",
+        "wordnet_title": "Télécharger le dictionnaire hors ligne ?",
+        "wordnet_body": "Ajoute des définitions en anglais sans connexion internet (environ {{size}} Mo). Il est téléchargé une seule fois et stocké uniquement sur cet appareil ; rien de ce que vous saisissez n'est envoyé.",
+        "wordnet_license": "Open English WordNet 2024, sous licence CC BY 4.0 (dérivé de Princeton WordNet). Attribution : en-word.net.",
+        "wordnet_progress": "Progression du téléchargement",
+        "wordnet_failed": "Le téléchargement a échoué. Vérifiez votre connexion et réessayez.",
+        "wordnet_cancel": "Annuler",
+        "wordnet_download": "Télécharger",
+        "wordnet_retry": "Réessayer",
+        "wordnet_installed": "Dictionnaire hors ligne installé.",
+        "wordnet_not_installed": "Dictionnaire hors ligne non installé.",
+        "wordnet_remove": "Supprimer",
+        "wordnet_get": "Télécharger…",
+        "seed_deck_looking_up": "Recherche des mots… {{done}}/{{total}}",
+        "seed_deck_blank_hint": "Aucune définition trouvée pour {{count}} mot(s) — complétez-les sur la page du paquet."
     },
     "csv": {
         "summary_created": "créé(s)",

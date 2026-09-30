@@ -2425,7 +2425,7 @@
         "verdict_slightly_above": "Algo por encima",
         "verdict_too_hard": "Demasiado difícil",
         "above_target": "Por encima del nivel — pre-enseñar:",
-        "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL.",
+        "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL (Browne, Culligan y Phillips; CC BY-SA 4.0).",
         "grammar_engine_ud": "Las estructuras vinculadas se comprobaron con el analizador gramatical: un indicador de alcance, no una calificación."
     },
     "notifications": {
@@ -3428,7 +3428,8 @@
         "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo).",
         "es_stats_item_linker": "Vinculación gramatical: cuando el modelo del analizador está alojado, las estructuras gramaticales vinculadas a criterios de la rúbrica se comprueban con el análisis, de modo que más estructuras (question tags, wish, causativas, inversión…) se comprueban automáticamente en lugar de manualmente. Sin el modelo se usan las comprobaciones con expresiones regulares como antes.",
         "an_vocab_item_flashcards": "Vista de tarjetas: el progreso de todos los mazos en una tabla — estudiantes asignados y activos, barra de etapas, tarjetas pendientes y fecha del último estudio — sin abrir cada mazo.",
-        "an_vocab_item_screening": "Vista de análisis de texto: pega un texto o sube un archivo PDF, Word, de texto o imagen para ver su perfil MCER, la proporción de palabras fuera de la lista y académicas, y un veredicto para el nivel de tu clase; luego crea un mazo de preenseñanza o exporta las palabras por encima del nivel."
+        "an_vocab_item_screening": "Vista de análisis de texto: pega un texto o sube un archivo PDF, Word, de texto o imagen para ver su perfil MCER, la proporción de palabras fuera de la lista y académicas, y un veredicto para el nivel de tu clase; luego crea un mazo de preenseñanza o exporta las palabras por encima del nivel.",
+        "an_vocab_item_lookup": "Al crear un mazo con las palabras analizadas se completan definiciones y categoría gramatical con la API Dictionary gratuita (traducciones a tu idioma de interfaz con MyMemory); las palabras sin resultado quedan en blanco para completarlas. Descarga el diccionario sin conexión opcional (Open English WordNet) desde el análisis de texto para obtener definiciones sin conexión."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3542,7 +3543,21 @@
         "screen_clear": "Borrar",
         "screen_empty": "Añade texto para ver su nivel.",
         "screen_this_text": "Este texto",
-        "screen_csv_filename": "palabras_sobre_el_nivel"
+        "screen_csv_filename": "palabras_sobre_el_nivel",
+        "wordnet_title": "¿Descargar el diccionario sin conexión?",
+        "wordnet_body": "Añade definiciones en inglés sin conexión a internet (unos {{size}} MB). Se descarga una sola vez y se guarda solo en este dispositivo; no se sube nada de lo que escribes.",
+        "wordnet_license": "Open English WordNet 2024, con licencia CC BY 4.0 (derivado de Princeton WordNet). Atribución: en-word.net.",
+        "wordnet_progress": "Progreso de la descarga",
+        "wordnet_failed": "La descarga falló. Comprueba tu conexión e inténtalo de nuevo.",
+        "wordnet_cancel": "Cancelar",
+        "wordnet_download": "Descargar",
+        "wordnet_retry": "Reintentar",
+        "wordnet_installed": "Diccionario sin conexión instalado.",
+        "wordnet_not_installed": "Diccionario sin conexión no instalado.",
+        "wordnet_remove": "Quitar",
+        "wordnet_get": "Descargar…",
+        "seed_deck_looking_up": "Buscando palabras… {{done}}/{{total}}",
+        "seed_deck_blank_hint": "No se encontró definición para {{count}} palabra(s): complétalas en la página del mazo."
     },
     "csv": {
         "summary_created": "creado(s)",
