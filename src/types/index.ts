@@ -615,6 +615,22 @@ export interface Rubric {
     displayOrder?: number;
     /** When true, every teacher in the owner's school can view (read-only) this rubric */
     sharedWithSchool?: boolean;
+    /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
+    comparativeMatchupLimit?: number;
+}
+
+/**
+ * One completed comparative-grading matchup between two students on a rubric —
+ * an immutable, append-only record. Per-student matchup counts (the per-rubric
+ * cap in comparativeMatchupLimit) are derived by counting these, so they persist
+ * across reloads/devices instead of resetting with the browser session.
+ */
+export interface ComparativeMatchup {
+    id: string;
+    rubricId: string;
+    studentAId: string;
+    studentBId: string;
+    gradedAt: string;
 }
 
 /** A user-saved rubric template stored locally. */
@@ -863,6 +879,12 @@ export interface AppSettings {
     dyslexiaFriendlyMode?: boolean;
     /** Scan-and-OCR preferences (Phase 33); resolve with resolveScanOcrSettings for defaults. */
     scanOcr?: ScanOcrSettings;
+    /**
+     * Teacher-configurable color bands for the Dashboard student snapshot's mastery scale
+     * (Grammar column). Reuses GradeRange's min/max/label/color shape. When unset or empty,
+     * scoreToMasteryColor falls back to pctToColor's continuous red→yellow→green interpolation.
+     */
+    masteryColorBands?: GradeRange[];
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';
@@ -1599,6 +1621,83 @@ export interface CellData {
     submittedCount: number;
     totalStudents: number;
     isLinked: boolean;
+}
+
+// ─── Essay text statistics (deterministic, no AI) ─────────────────────────────
+
+export type TransitionCategory = 'addition' | 'contrast' | 'cause' | 'sequence' | 'example' | 'conclusion';
+
+export interface ReadabilityStats {
+    fleschReadingEase: number;
+    fleschKincaidGrade: number;
+    description: string;
+}
+
+export interface EssayTextStats {
+    wordCount: number;
+    sentenceCount: number;
+    avgWordsPerSentence: number;
+    /** Words per sentence, in text order */
+    sentenceLengths: number[];
+    sentenceLengthVariance: number;
+    sentenceLengthStdDev: number;
+    minSentenceLength: number;
+    maxSentenceLength: number;
+    transitions: {
+        total: number;
+        per100Words: number;
+        byCategory: Record<TransitionCategory, number>;
+        byPhrase: Record<string, number>;
+    };
+    /** null when the text has no words */
+    readability: ReadabilityStats | null;
+}
+
+// ─── Writing trends (rule-based, no AI) ───────────────────────────────────────
+
+export interface WritingTrendConfig {
+    /** A score at or below this percentage counts as weak (default 60) */
+    lowScoreThreshold: number;
+    /** Minimum graded essays before a trend is reported (default 3) */
+    minPoints: number;
+    /** Slope (percentage points per essay) within ±epsilon is 'flat' (default 2) */
+    slopeEpsilon: number;
+}
+
+export type WritingTrendDirection = 'improving' | 'declining' | 'flat';
+
+export interface WritingTrendPoint {
+    studentRubricId: string;
+    gradedAt: string;
+    /** Criterion score as a percentage of its maximum */
+    score: number;
+}
+
+/** One rubric criterion tracked across a student's graded essays */
+export interface WritingCriterionTrend {
+    studentId: string;
+    /** Lower-cased criterion name; lets a criterion be followed across copied rubrics */
+    criterionKey: string;
+    name: string;
+    /** Oldest first */
+    points: WritingTrendPoint[];
+    latest: number;
+    previous: number | null;
+    average: number;
+    /** Least-squares slope in percentage points per essay */
+    slope: number;
+    direction: WritingTrendDirection;
+    /** The last `minPoints` essays were all at or below the low-score threshold */
+    persistentWeak: boolean;
+}
+
+export interface ClassWeakCriterion {
+    criterionKey: string;
+    name: string;
+    studentCount: number;
+    weakStudentIds: string[];
+    decliningStudentIds: string[];
+    averageScore: number;
 }
 
 // ─── Student Learning Paths (rule-based, no AI) ───────────────────────────────

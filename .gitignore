@@ -65,3 +65,6 @@ daemon.pid
 # Supabase CLI local runtime artifacts
 supabase/.branches/
 supabase/.temp/
+
+# UD parser model (CC BY-NC-SA) is downloaded per deployment, see public/models/README.md
+public/models/*.udpipe

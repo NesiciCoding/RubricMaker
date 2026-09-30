@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { Editor } from '@tiptap/core';
 import {
     getTipTapExtensions,
     createPlaceholderExtension,
     createTableOfContentsExtension,
     createImageEmbedExtension,
+    DEFAULT_IMAGE_WIDTH,
     TIPTAP_CONTENT_STYLES,
 } from './tiptapExtensions';
 
@@ -21,6 +22,19 @@ vi.mock('../../utils/fileToDataUrl', async (importOriginal) => {
         },
     };
 });
+
+// jsdom never loads images, so stub the probe used to read an embedded image's natural width.
+function stubImageProbe(naturalWidth: number | 'error') {
+    class ProbeImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = naturalWidth === 'error' ? 0 : naturalWidth;
+        set src(_: string) {
+            queueMicrotask(() => (naturalWidth === 'error' ? this.onerror?.() : this.onload?.()));
+        }
+    }
+    vi.stubGlobal('Image', ProbeImage);
+}
 
 const editors: Editor[] = [];
 
@@ -137,6 +151,9 @@ describe('createTableOfContentsExtension', () => {
 });
 
 describe('createImageEmbedExtension', () => {
+    beforeEach(() => stubImageProbe(1600));
+    afterEach(() => vi.unstubAllGlobals());
+
     it('returns the Image and FileHandler extensions', () => {
         const [image, fileHandler] = createImageEmbedExtension();
         expect(image.name).toBe('image');
@@ -144,6 +161,19 @@ describe('createImageEmbedExtension', () => {
         expect((fileHandler.options as unknown as { allowedMimeTypes?: string[] }).allowedMimeTypes).toContain(
             'image/svg+xml'
         );
+    });
+
+    it('enables aspect-ratio-preserving resize on the image node', () => {
+        const [image] = createImageEmbedExtension();
+        expect((image as { options: { resize: unknown } }).options.resize).toMatchObject({
+            enabled: true,
+            alwaysPreserveAspectRatio: true,
+        });
+    });
+
+    it('consumes the paste event so clipboard HTML is not inserted alongside the embedded image', () => {
+        const [, fileHandler] = createImageEmbedExtension();
+        expect((fileHandler as { options: { consumePasteEvent: unknown } }).options.consumePasteEvent).toBe(true);
     });
 
     it('embeds a dropped image file as a data URL at the given position', async () => {
@@ -187,6 +217,21 @@ describe('createImageEmbedExtension', () => {
         onPaste(fakeEditor, [png, text]);
         await vi.waitFor(() => expect(insertContentAt).toHaveBeenCalledTimes(1));
         expect((insertContentAt.mock.calls[0] as unknown[])[0]).toBe(9);
+    });
+
+    it.each([
+        [1600, DEFAULT_IMAGE_WIDTH],
+        [120, 120],
+        ['error' as const, DEFAULT_IMAGE_WIDTH],
+    ])('sizes an image with natural width %s to %s on insert', async (natural, expected) => {
+        stubImageProbe(natural);
+        const insertContentAt = vi.fn(() => ({ focus: () => ({ run: vi.fn(() => true) }) }));
+        const fakeEditor = { state: { selection: { anchor: 0 } }, chain: () => ({ insertContentAt }) };
+        const [, fileHandler] = createImageEmbedExtension();
+        const { onPaste } = fileHandler.options as unknown as { onPaste: (editor: unknown, files: File[]) => void };
+        onPaste(fakeEditor, [new File(['png'], 'a.png', { type: 'image/png' })]);
+        await vi.waitFor(() => expect(insertContentAt).toHaveBeenCalledTimes(1));
+        expect((insertContentAt.mock.calls[0] as unknown[])[1]).toMatchObject({ attrs: { width: expected } });
     });
 
     it('ignores oversized images', async () => {

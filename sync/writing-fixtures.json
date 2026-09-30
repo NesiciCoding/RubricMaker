@@ -1,0 +1,203 @@
+{
+    "syllables": {
+        "cat": 1,
+        "the": 1,
+        "analysis": 4,
+        "running": 2,
+        "walked": 1,
+        "table": 2,
+        "wanted": 2
+    },
+    "sentences": {
+        "One. Two! Three?": 3,
+        "Hello world": 1,
+        "": 1
+    },
+    "readability": [
+        {
+            "text": "The cat sat on the mat.",
+            "wordCount": 6,
+            "fleschReadingEase": 116.1,
+            "fleschKincaidGrade": -1.4,
+            "description": "very easy"
+        }
+    ],
+    "transitions": [
+        {
+            "text": "First, we ate. However, it rained. For example, umbrellas help. In conclusion, plan ahead.",
+            "total": 4,
+            "byCategory": {
+                "addition": 0,
+                "contrast": 1,
+                "cause": 0,
+                "sequence": 1,
+                "example": 1,
+                "conclusion": 1
+            }
+        }
+    ],
+    "transitionWords": {
+        "addition": [
+            "in addition",
+            "additionally",
+            "furthermore",
+            "moreover",
+            "also",
+            "besides",
+            "as well as",
+            "not only"
+        ],
+        "contrast": [
+            "however",
+            "but",
+            "although",
+            "though",
+            "whereas",
+            "while",
+            "nevertheless",
+            "nonetheless",
+            "on the other hand",
+            "in contrast",
+            "despite",
+            "in spite of",
+            "yet",
+            "instead"
+        ],
+        "cause": [
+            "because",
+            "since",
+            "therefore",
+            "thus",
+            "consequently",
+            "as a result",
+            "hence",
+            "so that",
+            "due to",
+            "owing to"
+        ],
+        "sequence": [
+            "first",
+            "firstly",
+            "second",
+            "secondly",
+            "third",
+            "thirdly",
+            "next",
+            "then",
+            "finally",
+            "afterwards",
+            "meanwhile",
+            "subsequently",
+            "eventually",
+            "at first",
+            "in the end"
+        ],
+        "example": [
+            "for example",
+            "for instance",
+            "such as",
+            "in particular",
+            "namely",
+            "to illustrate"
+        ],
+        "conclusion": [
+            "in conclusion",
+            "to conclude",
+            "in summary",
+            "to sum up",
+            "overall",
+            "in short",
+            "all in all",
+            "to summarise",
+            "to summarize"
+        ]
+    },
+    "essayStats": [
+        {
+            "text": "One two. One two three four. One.",
+            "wordCount": 7,
+            "sentenceCount": 3,
+            "sentenceLengths": [
+                2,
+                4,
+                1
+            ],
+            "avgWordsPerSentence": 2.3,
+            "sentenceLengthVariance": 1.6,
+            "sentenceLengthStdDev": 1.2,
+            "minSentenceLength": 1,
+            "maxSentenceLength": 4
+        },
+        {
+            "text": "In addition we won. However, we lost. In conclusion, it was fair.",
+            "wordCount": 12,
+            "sentenceCount": 3,
+            "sentenceLengths": [
+                4,
+                3,
+                5
+            ],
+            "avgWordsPerSentence": 4.0,
+            "sentenceLengthVariance": 0.7,
+            "sentenceLengthStdDev": 0.8,
+            "minSentenceLength": 3,
+            "maxSentenceLength": 5,
+            "transitions": {
+                "total": 3,
+                "per100Words": 25.0,
+                "byPhrase": {
+                    "in addition": 1,
+                    "however": 1,
+                    "in conclusion": 1
+                }
+            }
+        },
+        {
+            "text": "He said \"Go.\" Then he left.",
+            "wordCount": 6,
+            "sentenceCount": 2,
+            "sentenceLengths": [
+                3,
+                3
+            ],
+            "avgWordsPerSentence": 3.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 3,
+            "maxSentenceLength": 3
+        },
+        {
+            "text": "Don't worry, we're fine.",
+            "wordCount": 4,
+            "sentenceCount": 1,
+            "sentenceLengths": [
+                4
+            ],
+            "avgWordsPerSentence": 4.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 4,
+            "maxSentenceLength": 4
+        },
+        {
+            "text": "In\naddition, we left.",
+            "wordCount": 4,
+            "sentenceCount": 1,
+            "sentenceLengths": [
+                4
+            ],
+            "avgWordsPerSentence": 4.0,
+            "sentenceLengthVariance": 0.0,
+            "sentenceLengthStdDev": 0.0,
+            "minSentenceLength": 4,
+            "maxSentenceLength": 4,
+            "transitions": {
+                "total": 1,
+                "per100Words": 25.0,
+                "byPhrase": {
+                    "in addition": 1
+                }
+            }
+        }
+    ]
+}

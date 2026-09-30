@@ -45,6 +45,8 @@ const mockSettings: AppSettings = {
 };
 
 const mockSaveStudentRubric = vi.fn();
+const mockAddComparativeMatchup = vi.fn();
+const mockUpdateRubric = vi.fn();
 const mockNavigate = vi.fn();
 
 // Stable references — a domain-hook mock that builds new array literals on every call
@@ -54,6 +56,7 @@ const mockStudentsArr = [mockStudentA, mockStudentB];
 const mockClassesArr = [mockClassA];
 const mockStudentRubricsArr: never[] = [];
 const mockAttachmentsArr: never[] = [];
+const mockComparativeMatchupsArr: never[] = [];
 
 const mockAppValue = {
     rubrics: mockRubricsArr,
@@ -61,7 +64,10 @@ const mockAppValue = {
     classes: mockClassesArr,
     studentRubrics: mockStudentRubricsArr,
     attachments: mockAttachmentsArr,
+    comparativeMatchups: mockComparativeMatchupsArr,
     saveStudentRubric: mockSaveStudentRubric,
+    addComparativeMatchup: mockAddComparativeMatchup,
+    updateRubric: mockUpdateRubric,
     gradeScales: [],
     settings: mockSettings,
 };
@@ -108,6 +114,8 @@ describe('ComparativeGrading', () => {
 
     beforeEach(() => {
         mockSaveStudentRubric.mockClear();
+        mockAddComparativeMatchup.mockClear();
+        mockUpdateRubric.mockClear();
         mockNavigate.mockClear();
         mathRandomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
     });

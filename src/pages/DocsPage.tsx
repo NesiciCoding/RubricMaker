@@ -635,6 +635,20 @@ function GettingStartedTab() {
                 </InfoBox>
             </FeatureSection>
 
+            <FeatureSection icon={LayoutDashboard} title={t('docs.gs_snapshot_title')} color="#0ea5e9">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    {t('docs.gs_snapshot_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.gs_snapshot_item_columns'),
+                        t('docs.gs_snapshot_item_colors'),
+                        t('docs.gs_snapshot_item_filter'),
+                        t('docs.gs_snapshot_item_drilldown'),
+                    ]}
+                />
+            </FeatureSection>
+
             <FeatureSection icon={Layers} title={t('docs.gs_modes_title')} color="#6366f1">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                     {[
@@ -1014,6 +1028,9 @@ function GradingTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
                     {t('docs.gr_comparative_body_prefix')} <strong>{t('docs.gr_comparative_button')}</strong>{' '}
                     {t('docs.gr_comparative_body_suffix')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_comparative_limit_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1426,6 +1443,22 @@ function EssaysTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={FileText} title={t('docs.es_stats_title')} color="#6366f1">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.es_stats_body')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.es_stats_item_counts'),
+                        t('docs.es_stats_item_transitions'),
+                        t('docs.es_stats_item_readability'),
+                        t('docs.es_stats_item_grammar'),
+                        t('docs.es_stats_item_linker'),
+                    ]}
+                />
+                <InfoBox color="#6366f1">{t('docs.es_stats_info')}</InfoBox>
+            </FeatureSection>
+
             <FeatureSection icon={FileText} title={t('docs.es_workspace_title')} color="#6366f1">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.es_workspace_intro_prefix')} <strong>{t('docs.es_workspace_intro_name')}</strong>{' '}
@@ -1518,6 +1551,12 @@ function AnalyticsTab() {
     const { t } = useTranslation();
     return (
         <div>
+            <FeatureSection icon={TrendingUp} title={t('docs.an_trends_title')} color="#8b5cf6">
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.an_trends_body')}
+                </p>
+            </FeatureSection>
+
             <FeatureSection icon={BookOpen} title={t('docs.an_portfolio_title')} color="#8b5cf6">
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.an_portfolio_body_prefix')} <strong>{t('docs.an_portfolio_students_nav')}</strong>{' '}
@@ -1622,6 +1661,9 @@ function AnalyticsTab() {
                         t('docs.an_vocab_item_chart'),
                         t('docs.an_vocab_item_drilldown'),
                         t('docs.an_vocab_item_csv'),
+                        t('docs.an_vocab_item_flashcards'),
+                        t('docs.an_vocab_item_screening'),
+                        t('docs.an_vocab_item_lookup'),
                     ]}
                 />
                 <InfoBox color="#f59e0b">{t('docs.an_vocab_info')}</InfoBox>

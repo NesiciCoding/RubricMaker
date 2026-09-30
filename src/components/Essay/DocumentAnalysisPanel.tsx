@@ -31,6 +31,10 @@ import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualifi
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { nanoid } from '../../utils/nanoid';
 import { Skeleton, SkeletonCard } from '../ui/Skeleton';
+import EssayStatsPanel from './EssayStatsPanel';
+import UdGrammarPanel from './UdGrammarPanel';
+import { useUdGrammarProfile } from '../../hooks/useUdGrammarProfile';
+import { constructionCounts } from '../../utils/grammarProfile';
 
 const LEVEL_ORDER: CefrLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -122,16 +126,22 @@ export default function DocumentAnalysisPanel({
         return { vocabulary, grammar, overallEstimatedLevel };
     }, [extractedText]);
 
+    const udGrammar = useUdGrammarProfile(extractedText);
+    const udCounts = useMemo(
+        () => (udGrammar.status === 'ready' ? constructionCounts(udGrammar.profile) : undefined),
+        [udGrammar]
+    );
+
     const grammarQual = useMemo(() => {
         if (!extractedText) return [];
         return criteria
             .map((c) => {
                 const linked = (c.frameworkDescriptors || []).filter((d) => d.framework === 'grammar');
                 if (linked.length === 0) return null;
-                return { criterion: c, result: evaluateGrammar(linked, extractedText) };
+                return { criterion: c, result: evaluateGrammar(linked, extractedText, { udCounts }) };
             })
             .filter((x): x is { criterion: RubricCriterion; result: ReturnType<typeof evaluateGrammar> } => !!x);
-    }, [extractedText, criteria]);
+    }, [extractedText, criteria, udCounts]);
 
     const selectedAttachment = studentAttachments.find((a) => a.id === selectedAttachmentId);
     const isAudioVideo =
@@ -718,6 +728,9 @@ export default function DocumentAnalysisPanel({
                                 </div>
                             </div>
 
+                            {extractedText && <EssayStatsPanel text={extractedText} />}
+                            {extractedText && <UdGrammarPanel state={udGrammar} />}
+
                             {/* CEFR Text Profile */}
                             {cefrProfile && extractedText && (
                                 <CefrProfilePanel profile={cefrProfile} extractedText={extractedText} />
@@ -729,6 +742,11 @@ export default function DocumentAnalysisPanel({
                                     <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
                                         {t('analysis.grammar_qualification')}
                                     </h4>
+                                    {grammarQual.some((g) => g.result.engine === 'ud') && (
+                                        <p className="text-xs text-muted" style={{ margin: '0 0 10px' }}>
+                                            {t('analysis.grammar_engine_ud')}
+                                        </p>
+                                    )}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                         {grammarQual.map(({ criterion, result: qual }) => {
                                             const applied = appliedComments.has(criterion.id);

@@ -6,6 +6,10 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
+import SegmentedToggle from '../components/ui/SegmentedToggle';
+import FlashcardOverviewPanel from '../components/Vocabulary/FlashcardOverviewPanel';
+import TextScreeningPanel from '../components/Vocabulary/TextScreeningPanel';
 import VocabCefrDistributionChart from '../components/Statistics/VocabCefrDistributionChart';
 import { useAssessment, useAuthoring, useClasses, useFlashcards, useStudents } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
@@ -27,6 +31,7 @@ export default function VocabularyDashboardPage() {
     const { showToast } = useToast();
     const navigate = useNavigate();
 
+    const [view, setView] = useState<'reading' | 'flashcards' | 'screen'>('reading');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [exportBand, setExportBand] = useState<'all' | CefrLevel>('all');
     const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
@@ -118,243 +123,270 @@ export default function VocabularyDashboardPage() {
                     {t('vocabProfile.page_subtitle')}
                 </p>
 
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                    <div className="form-group" style={{ flex: '0 0 auto', minWidth: 200, marginBottom: 0 }}>
-                        <label htmlFor="vocab-class-filter">{t('vocabProfile.label_class_filter')}</label>
-                        <select
-                            id="vocab-class-filter"
-                            aria-label={t('vocabProfile.label_class_filter')}
-                            value={selectedClassId}
-                            onChange={(e) => setSelectedClassId(e.target.value)}
-                        >
-                            <option value="all">{t('vocabProfile.all_classes')}</option>
-                            {classes.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group" style={{ flex: '0 0 auto', minWidth: 160, marginBottom: 0 }}>
-                        <label htmlFor="vocab-export-band">{t('vocabProfile.label_export_band')}</label>
-                        <select
-                            id="vocab-export-band"
-                            aria-label={t('vocabProfile.label_export_band')}
-                            value={exportBand}
-                            onChange={(e) => setExportBand(e.target.value as 'all' | CefrLevel)}
-                        >
-                            <option value="all">{t('vocabProfile.csv_band_all')}</option>
-                            {CEFR_LEVELS.map((lvl) => (
-                                <option key={lvl} value={lvl}>
-                                    {lvl}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <button className="btn btn-secondary btn-sm" onClick={handleExportCsv}>
-                        <Download size={14} /> {t('vocabProfile.export_csv')}
-                    </button>
-
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={handleSeedDeck}
-                        title={t('vocabProfile.seed_deck_hint')}
-                    >
-                        <Layers size={14} /> {t('vocabProfile.seed_deck')}
-                    </button>
+                <div style={{ marginBottom: 20 }}>
+                    <SegmentedToggle
+                        ariaLabel={t('vocabProfile.view_label')}
+                        value={view}
+                        onChange={setView}
+                        options={[
+                            { value: 'reading', label: t('vocabProfile.view_reading') },
+                            { value: 'flashcards', label: t('vocabProfile.view_flashcards') },
+                            { value: 'screen', label: t('vocabProfile.view_screen') },
+                        ]}
+                    />
                 </div>
 
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                        <Users size={16} style={{ color: 'var(--text-muted)' }} />
-                        <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
-                            {selectedClassId === 'all'
-                                ? t('vocabProfile.class_distribution_title')
-                                : t('vocabProfile.class_distribution_title_single')}
-                        </h3>
-                    </div>
-                    <VocabCefrDistributionChart entries={classChartEntries} />
+                {view === 'flashcards' && <FlashcardOverviewPanel />}
+                {view === 'screen' && <TextScreeningPanel />}
 
-                    {pooledTotal > 0 && (
+                {view === 'reading' && (
+                    <>
                         <div
                             style={{
                                 display: 'flex',
-                                alignItems: 'center',
-                                gap: 10,
+                                gap: 12,
+                                marginBottom: 20,
                                 flexWrap: 'wrap',
-                                marginTop: 14,
-                                paddingTop: 12,
-                                borderTop: '1px solid var(--border)',
+                                alignItems: 'flex-end',
                             }}
                         >
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                                {t('vocabProfile.target_level_label')}
-                            </span>
-                            <select
-                                aria-label={t('vocabProfile.target_level_label')}
-                                value={targetLevel}
-                                onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
-                                style={{ padding: '2px 6px', fontSize: '1rem' }}
-                            >
-                                {CEFR_LEVELS.map((lvl) => (
-                                    <option key={lvl} value={lvl}>
-                                        {lvl}
-                                    </option>
-                                ))}
-                            </select>
-                            <span
-                                style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color:
-                                        verdict.verdict === 'suitable'
-                                            ? 'var(--green)'
-                                            : verdict.verdict === 'slightly_above'
-                                              ? 'var(--yellow)'
-                                              : 'var(--red)',
-                                }}
-                            >
-                                {t(`analysis.verdict_${verdict.verdict}`)}
-                            </span>
-                            <span className="text-xs text-muted">
-                                {t('vocabProfile.coverage_known', { pct: verdict.coveragePercent.toFixed(0) })}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                            <div className="form-group" style={{ flex: '1 1 260px', marginBottom: 0 }}>
+                                <label>{t('vocabProfile.label_class_filter')}</label>
+                                <ClassFilterChips
+                                    classes={classes}
+                                    selectedClassId={selectedClassId}
+                                    onChange={setSelectedClassId}
+                                    ariaLabel={t('vocabProfile.label_class_filter')}
+                                    allLabel={t('vocabProfile.all_classes')}
+                                />
+                            </div>
 
-                {selectedClassId !== 'all' && (
-                    <div className="card">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <BookOpen size={16} style={{ color: 'var(--text-muted)' }} />
-                            <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
-                                {t('vocabProfile.student_drilldown_title')}
-                            </h3>
-                        </div>
-                        <VocabCefrDistributionChart entries={studentChartEntries} />
+                            <div className="form-group" style={{ flex: '0 0 auto', minWidth: 160, marginBottom: 0 }}>
+                                <label htmlFor="vocab-export-band">{t('vocabProfile.label_export_band')}</label>
+                                <select
+                                    id="vocab-export-band"
+                                    aria-label={t('vocabProfile.label_export_band')}
+                                    value={exportBand}
+                                    onChange={(e) => setExportBand(e.target.value as 'all' | CefrLevel)}
+                                >
+                                    <option value="all">{t('vocabProfile.csv_band_all')}</option>
+                                    {CEFR_LEVELS.map((lvl) => (
+                                        <option key={lvl} value={lvl}>
+                                            {lvl}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        {studentProfilesForDrillDown.length > 0 && (
-                            <div style={{ overflowX: 'auto', marginTop: 16 }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'left',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_student')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_estimated_level')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_total_words')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_off_list')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_academic')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_analyses')}
-                                            </th>
-                                            <th
-                                                style={{
-                                                    padding: '8px 10px',
-                                                    textAlign: 'center',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {t('vocabProfile.table_header_links')}
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {studentProfilesForDrillDown.map((sp) => (
-                                            <tr key={sp.studentId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                <td style={{ padding: '8px 10px' }}>{sp.studentName}</td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    <CefrBadge level={sp.estimatedLevel} size="sm" />
-                                                </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    {sp.totalWords}
-                                                </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    {sp.offListPercent.toFixed(0)}%
-                                                </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    {(sp.awlPercent + sp.nawlPercent).toFixed(0)}%
-                                                </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    {sp.analysisCount}
-                                                </td>
-                                                <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                                                    <div
+                            <button className="btn btn-secondary btn-sm" onClick={handleExportCsv}>
+                                <Download size={14} /> {t('vocabProfile.export_csv')}
+                            </button>
+
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={handleSeedDeck}
+                                title={t('vocabProfile.seed_deck_hint')}
+                            >
+                                <Layers size={14} /> {t('vocabProfile.seed_deck')}
+                            </button>
+                        </div>
+
+                        <div className="card" style={{ marginBottom: 20 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                <Users size={16} style={{ color: 'var(--text-muted)' }} />
+                                <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                                    {selectedClassId === 'all'
+                                        ? t('vocabProfile.class_distribution_title')
+                                        : t('vocabProfile.class_distribution_title_single')}
+                                </h3>
+                            </div>
+                            <VocabCefrDistributionChart entries={classChartEntries} />
+
+                            {pooledTotal > 0 && (
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        flexWrap: 'wrap',
+                                        marginTop: 14,
+                                        paddingTop: 12,
+                                        borderTop: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                                        {t('vocabProfile.target_level_label')}
+                                    </span>
+                                    <select
+                                        aria-label={t('vocabProfile.target_level_label')}
+                                        value={targetLevel}
+                                        onChange={(e) => setTargetLevel(e.target.value as CefrLevel)}
+                                        style={{ padding: '2px 6px', fontSize: '1rem' }}
+                                    >
+                                        {CEFR_LEVELS.map((lvl) => (
+                                            <option key={lvl} value={lvl}>
+                                                {lvl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span
+                                        style={{
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color:
+                                                verdict.verdict === 'suitable'
+                                                    ? 'var(--green)'
+                                                    : verdict.verdict === 'slightly_above'
+                                                      ? 'var(--yellow)'
+                                                      : 'var(--red)',
+                                        }}
+                                    >
+                                        {t(`analysis.verdict_${verdict.verdict}`)}
+                                    </span>
+                                    <span className="text-xs text-muted">
+                                        {t('vocabProfile.coverage_known', { pct: verdict.coveragePercent.toFixed(0) })}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {selectedClassId !== 'all' && (
+                            <div className="card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                    <BookOpen size={16} style={{ color: 'var(--text-muted)' }} />
+                                    <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                                        {t('vocabProfile.student_drilldown_title')}
+                                    </h3>
+                                </div>
+                                <VocabCefrDistributionChart entries={studentChartEntries} />
+
+                                {studentProfilesForDrillDown.length > 0 && (
+                                    <div style={{ overflowX: 'auto', marginTop: 16 }}>
+                                        <table
+                                            style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}
+                                        >
+                                            <thead>
+                                                <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                                                    <th
                                                         style={{
-                                                            display: 'flex',
-                                                            gap: 6,
-                                                            justifyContent: 'center',
+                                                            padding: '8px 10px',
+                                                            textAlign: 'left',
+                                                            color: 'var(--text-muted)',
                                                         }}
                                                     >
-                                                        <Link
-                                                            to={`/students/${sp.studentId}/cefr-overview`}
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title={t('vocabProfile.link_cefr_overview')}
-                                                        >
-                                                            <Gauge size={14} />
-                                                        </Link>
-                                                        <Link
-                                                            to={`/students/${sp.studentId}/learning-path`}
-                                                            className="btn btn-ghost btn-icon btn-sm"
-                                                            title={t('vocabProfile.link_learning_path')}
-                                                        >
-                                                            <Map size={14} />
-                                                        </Link>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                        {t('vocabProfile.table_header_student')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_estimated_level')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_total_words')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_off_list')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_academic')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_analyses')}
+                                                    </th>
+                                                    <th
+                                                        style={{
+                                                            padding: '8px 10px',
+                                                            textAlign: 'center',
+                                                            color: 'var(--text-muted)',
+                                                        }}
+                                                    >
+                                                        {t('vocabProfile.table_header_links')}
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {studentProfilesForDrillDown.map((sp) => (
+                                                    <tr
+                                                        key={sp.studentId}
+                                                        style={{ borderBottom: '1px solid var(--border)' }}
+                                                    >
+                                                        <td style={{ padding: '8px 10px' }}>{sp.studentName}</td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            <CefrBadge level={sp.estimatedLevel} size="sm" />
+                                                        </td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            {sp.totalWords}
+                                                        </td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            {sp.offListPercent.toFixed(0)}%
+                                                        </td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            {(sp.awlPercent + sp.nawlPercent).toFixed(0)}%
+                                                        </td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            {sp.analysisCount}
+                                                        </td>
+                                                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    gap: 6,
+                                                                    justifyContent: 'center',
+                                                                }}
+                                                            >
+                                                                <Link
+                                                                    to={`/students/${sp.studentId}/cefr-overview`}
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('vocabProfile.link_cefr_overview')}
+                                                                >
+                                                                    <Gauge size={14} />
+                                                                </Link>
+                                                                <Link
+                                                                    to={`/students/${sp.studentId}/learning-path`}
+                                                                    className="btn btn-ghost btn-icon btn-sm"
+                                                                    title={t('vocabProfile.link_learning_path')}
+                                                                >
+                                                                    <Map size={14} />
+                                                                </Link>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </>

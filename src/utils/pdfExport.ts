@@ -285,11 +285,41 @@ export function styleTemplateCss(styleTemplate?: DocxStyleTemplateOverrides): st
     return `${bodyRule} ${headingRule}`;
 }
 
+export const PRINT_MARGIN_MM = 10;
+
+/**
+ * Browsers print their own date/URL/title header and footer into any non-zero @page margin, so a
+ * zero @page margin is the only way to keep them off student-facing paper. The page margin is then
+ * rebuilt as side padding plus a repeating thead/tfoot spacer, which — unlike body padding — recurs
+ * on every printed page. The last sheet's forced page break is dropped so the footer spacer
+ * doesn't spill onto a trailing blank page.
+ *
+ * `headerExtra` is absolutely positioned content that repeats on every page of this table (the
+ * thead starts at the very top of each page, so its offsets are page coordinates minus the side
+ * padding) — used for per-sheet scan markers, which a `position: fixed` element could not do since
+ * that would repeat one sheet's marker across every student's pages. `breakAfter` starts the next
+ * table on a fresh page.
+ */
+export function withoutBrowserPrintChrome(
+    html: string,
+    { headerExtra = '', breakAfter = false }: { headerExtra?: string; breakAfter?: boolean } = {}
+): string {
+    const top = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0;position:relative">${headerExtra}</td></tr>`;
+    const bottom = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0"></td></tr>`;
+    return `<style>.print-page:last-child{page-break-after:auto !important}</style><table style="width:100%;border-collapse:collapse${breakAfter ? ';page-break-after:always' : ''}"><thead>${top}</thead><tbody><tr><td style="padding:0">${html}</td></tr></tbody><tfoot>${bottom}</tfoot></table>`;
+}
+
+/** Upper bound on how long a print job may keep its iframe alive when the browser never reports `afterprint`. */
+const PRINT_SAFETY_TIMEOUT_MS = 5 * 60_000;
+/** How long a caller that waits for the print dialog waits for `afterprint` before moving on, so a browser that advertises but never fires it can't stall a multi-document export for the full cleanup window. */
+const PRINT_DIALOG_WAIT_TIMEOUT_MS = 2 * 60_000;
+
 export function printHtml(
     html: string,
     orientation?: 'portrait' | 'landscape',
     fontFamily?: string,
-    styleTemplate?: DocxStyleTemplateOverrides
+    styleTemplate?: DocxStyleTemplateOverrides,
+    options: { hideBrowserChrome?: boolean; waitForPrintDialog?: boolean } = {}
 ) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
@@ -311,8 +341,8 @@ export function printHtml(
                 <head>
                     ${fontLink}
                     <style>
-                        @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: 10mm; }
-                        body { margin: 0; }
+                        @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: ${options.hideBrowserChrome ? '0' : `${PRINT_MARGIN_MM}mm`}; }
+                        body { margin: 0;${options.hideBrowserChrome ? ` padding: 0 ${PRINT_MARGIN_MM}mm;` : ''} }
                         ${styleTemplateCss(styleTemplate)}
                     </style>
                 </head>
@@ -325,12 +355,34 @@ export function printHtml(
 
             setTimeout(
                 () => {
-                    iframe.contentWindow?.focus();
-                    iframe.contentWindow?.print();
-                    setTimeout(() => {
-                        document.body.removeChild(iframe);
+                    const win = iframe.contentWindow;
+                    let cleaned = false;
+                    // Removing the frame right after print() drops the job in browsers where print() doesn't
+                    // block until the dialog closes, so it stays until the browser reports afterprint.
+                    const cleanup = () => {
+                        if (cleaned) return;
+                        cleaned = true;
+                        clearTimeout(safety);
+                        iframe.remove();
+                    };
+                    const safety = setTimeout(() => {
+                        cleanup();
                         resolve();
-                    }, 100);
+                    }, PRINT_SAFETY_TIMEOUT_MS);
+                    win?.addEventListener(
+                        'afterprint',
+                        () => {
+                            cleanup();
+                            resolve();
+                        },
+                        { once: true }
+                    );
+                    win?.focus();
+                    win?.print();
+                    // Only callers that print several documents in a row wait for the dialog to close (so the
+                    // next one doesn't open over it); everyone else resolves promptly as before.
+                    const waitsForDialog = options.waitForPrintDialog && !!win && 'onafterprint' in win;
+                    setTimeout(resolve, waitsForDialog ? PRINT_DIALOG_WAIT_TIMEOUT_MS : 100);
                 },
                 fontLink ? 800 : 500
             );

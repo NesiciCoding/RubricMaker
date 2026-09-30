@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getStudentMasteryProfile, withEvidenceOnly } from './masteryProfileAggregator';
+import { getStudentMasteryProfile, withEvidenceOnly, getStudentGrammarMasteryScore } from './masteryProfileAggregator';
 import { DEFAULT_FORMAT } from '../types';
 import type {
     Test,
@@ -566,5 +566,110 @@ describe('getStudentMasteryProfile — writing evidence guards', () => {
         const rows = getStudentMasteryProfile('s1', { ...emptyDeps, rubrics: [rubric], studentRubrics });
         const row = rows.find((r) => r.itemId === GRAMMAR_ITEM_ID)!;
         expect(row.writing).toEqual({ instances: 1, avgPct: 100 }); // only c1 contributes
+    });
+});
+
+describe('getStudentGrammarMasteryScore', () => {
+    const SECOND_ITEM_ID = 'gr-present-simple-negative';
+
+    it('returns null when the student has no grammar evidence at all', () => {
+        expect(getStudentGrammarMasteryScore('s1', emptyDeps)).toBeNull();
+    });
+
+    it('blends test/flashcard/writing streams within one item, then averages across items', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [{ id: 'q1', prompt: '...', type: 'cloze', points: 1, linkedGrammarItemId: GRAMMAR_ITEM_ID }],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ]; // GRAMMAR_ITEM_ID: test accuracy 100% -> item score 100
+
+        const deck: FlashcardDeck = {
+            id: 'd1',
+            name: 'Grammar deck',
+            cards: [
+                { id: 'c1', front: 'a', back: 'b', linkedGrammarItemId: SECOND_ITEM_ID },
+                { id: 'c2', front: 'c', back: 'd', linkedGrammarItemId: SECOND_ITEM_ID },
+            ],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            deckKind: 'grammar',
+        };
+        const flashcardAssignments: FlashcardAssignment[] = [
+            {
+                deckId: 'd1',
+                studentId: 's1',
+                deckName: 'Grammar deck',
+                cardCount: 2,
+                createdAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const flashcardReviews: FlashcardReview[] = [
+            {
+                id: 'd1:s1',
+                deckId: 'd1',
+                studentId: 's1',
+                updatedAt: '2026-01-01T00:00:00.000Z',
+                cardStates: {
+                    c1: {
+                        due: '2099-01-01T00:00:00.000Z',
+                        stability: 40,
+                        difficulty: 3,
+                        elapsed_days: 10,
+                        scheduled_days: 30,
+                        learning_steps: 0,
+                        reps: 5,
+                        lapses: 0,
+                        state: 2, // Review + stability >= threshold -> mastered
+                        last_review: '2026-01-01T00:00:00.000Z',
+                    },
+                },
+            },
+        ]; // SECOND_ITEM_ID: 1 of 2 cards mastered -> item score 50
+
+        const score = getStudentGrammarMasteryScore('s1', {
+            ...emptyDeps,
+            tests: [test],
+            studentTests,
+            flashcardDecks: [deck],
+            flashcardAssignments,
+            flashcardReviews,
+        });
+        // mean of the two evidence-bearing items' own scores: (100 + 50) / 2 = 75
+        expect(score).toBe(75);
+    });
+
+    it('ignores grammar items with no evidence when averaging', () => {
+        const test: Test = {
+            id: 't1',
+            name: 'Grammar test',
+            questions: [{ id: 'q1', prompt: '...', type: 'cloze', points: 1, linkedGrammarItemId: GRAMMAR_ITEM_ID }],
+            requireSEB: false,
+            shuffleQuestions: false,
+            createdAt: '2026-01-01T00:00:00.000Z',
+        };
+        const studentTests: StudentTest[] = [
+            {
+                id: 'st1',
+                testId: 't1',
+                studentId: 's1',
+                answers: [{ questionId: 'q1', response: 'x', pointsEarned: 1 }],
+                status: 'graded',
+                startedAt: '2026-01-01T00:00:00.000Z',
+            },
+        ];
+        const score = getStudentGrammarMasteryScore('s1', { ...emptyDeps, tests: [test], studentTests });
+        expect(score).toBe(100);
     });
 });

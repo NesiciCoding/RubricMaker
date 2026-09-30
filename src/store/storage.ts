@@ -34,10 +34,12 @@ import type {
     StaircaseStep,
     DocumentComment,
     NotificationDismissal,
+    ComparativeMatchup,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
 import { SCHOOL_YEARS } from '../data/schoolYears';
+import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
 
 /**
  * `Class.year` used to be free text; classes carrying a pre-Phase-15.1 value that doesn't match
@@ -910,6 +912,7 @@ const KEYS = {
     questionBank: 'rm_question_bank',
     documentComments: 'rm_document_comments',
     notificationDismissals: 'rm_notification_dismissals',
+    comparativeMatchups: 'rm_comparative_matchups',
     migrationDone: 'rm_migration_done',
 };
 
@@ -1083,6 +1086,7 @@ export interface StoreData {
     questionBank: QuestionBankItem[];
     documentComments: DocumentComment[];
     notificationDismissals: NotificationDismissal[];
+    comparativeMatchups: ComparativeMatchup[];
 }
 
 export function loadStore(): StoreData {
@@ -1137,6 +1141,7 @@ export function loadStore(): StoreData {
         questionBank: load<QuestionBankItem[]>(KEYS.questionBank, []),
         documentComments: load<DocumentComment[]>(KEYS.documentComments, []),
         notificationDismissals: load<NotificationDismissal[]>(KEYS.notificationDismissals, []),
+        comparativeMatchups: load<ComparativeMatchup[]>(KEYS.comparativeMatchups, []),
     };
 }
 
@@ -1185,6 +1190,71 @@ export function stripAudioForOfflineCache(srs: StudentRubric[]): StudentRubric[]
             ? { ...sr, entries: sr.entries.map((e) => (e.audioDataUrl ? { ...e, audioDataUrl: undefined } : e)) }
             : sr
     );
+}
+/**
+ * Connected-session variant of saveStudentRubrics for the post-hydrate offline-readiness cache.
+ * Supabase already holds every record, so the cache may be a lossy subset: it drops soft-deleted
+ * grades and audio, and if that still exceeds the quota keeps only the most recently touched
+ * records that fit. Never use on the offline save path, where localStorage is the only copy.
+ */
+function saveStudentRubricsCacheToLocalStorage(srs: StudentRubric[]): void {
+    const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
+    const stamp = (sr: StudentRubric) => sr.updatedAt ?? sr.gradedAt ?? sr.submittedAt ?? '';
+    const newestFirst = [...live].sort((a, b) => stamp(b).localeCompare(stamp(a)));
+    const tryWrite = (count: number): boolean => {
+        try {
+            localStorage.setItem(KEYS.studentRubrics, JSON.stringify(newestFirst.slice(0, count)));
+            return true;
+        } catch (e) {
+            if (!isQuotaExceededError(e)) throw e;
+            return false;
+        }
+    };
+    if (tryWrite(newestFirst.length)) return;
+    let lo = 0;
+    let hi = newestFirst.length - 1;
+    let best = -1;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (tryWrite(mid)) {
+            best = mid;
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    if (best >= 0) {
+        tryWrite(best);
+        console.warn(`[storage] rm_student_rubrics cache trimmed to ${best}/${newestFirst.length} records (quota)`);
+    } else {
+        console.warn('[storage] rm_student_rubrics cache skipped (quota); data remains in Supabase');
+    }
+}
+export const STUDENT_RUBRICS_SNAPSHOT_KEY = 'studentRubrics';
+
+/**
+ * Writes the connected-session student rubric cache to IndexedDB (no practical size limit, unlike
+ * the ~5MB localStorage quota) and drops the localStorage copy to free that quota. Falls back to
+ * the size-trimmed localStorage writer when IndexedDB is unavailable or the write fails.
+ */
+export async function saveStudentRubricsCache(srs: StudentRubric[]): Promise<void> {
+    const live = stripAudioForOfflineCache(srs.filter((sr) => !sr.deletedAt));
+    if (await putSnapshot(STUDENT_RUBRICS_SNAPSHOT_KEY, live)) {
+        try {
+            localStorage.removeItem(KEYS.studentRubrics);
+        } catch {
+            // storage unavailable — nothing to free
+        }
+        return;
+    }
+    saveStudentRubricsCacheToLocalStorage(srs);
+}
+
+/** Cached student rubrics from the IndexedDB snapshot; empty once cloud data has been applied. */
+export async function loadCachedStudentRubrics(): Promise<StudentRubric[]> {
+    if (isCloudHydrated()) return [];
+    const cached = await getSnapshot<StudentRubric[]>(STUDENT_RUBRICS_SNAPSHOT_KEY);
+    return Array.isArray(cached) ? cached : [];
 }
 export function saveAttachments(atts: Attachment[]) {
     save(KEYS.attachments, atts);
@@ -1264,6 +1334,9 @@ export function saveDocumentComments(comments: DocumentComment[]) {
 export function saveNotificationDismissals(dismissals: NotificationDismissal[]) {
     save(KEYS.notificationDismissals, dismissals);
 }
+export function saveComparativeMatchups(matchups: ComparativeMatchup[]) {
+    save(KEYS.comparativeMatchups, matchups);
+}
 
 // ─── Local data wipe (user switch / sign-out) ─────────────────────────────────
 
@@ -1282,6 +1355,7 @@ export function clearLocalData(): void {
     } catch {
         // storage unavailable — nothing to wipe
     }
+    void clearSnapshots();
 }
 
 // ─── Full Backup / Restore ─────────────────────────────────────────────────────
@@ -1601,6 +1675,21 @@ export function importFullBackup(json: string): boolean {
             )
                 saveNotificationDismissals(data.notificationDismissals as NotificationDismissal[]);
             else console.warn('[importFullBackup] notificationDismissals failed validation — skipped');
+        }
+        if (data.comparativeMatchups !== undefined) {
+            if (
+                Array.isArray(data.comparativeMatchups) &&
+                data.comparativeMatchups.every(
+                    (m) =>
+                        isPlainObject(m) &&
+                        typeof (m as Record<string, unknown>).id === 'string' &&
+                        typeof (m as Record<string, unknown>).rubricId === 'string' &&
+                        typeof (m as Record<string, unknown>).studentAId === 'string' &&
+                        typeof (m as Record<string, unknown>).studentBId === 'string'
+                )
+            )
+                saveComparativeMatchups(data.comparativeMatchups as ComparativeMatchup[]);
+            else console.warn('[importFullBackup] comparativeMatchups failed validation — skipped');
         }
         return true;
     } catch (e) {

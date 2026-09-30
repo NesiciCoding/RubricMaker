@@ -21,8 +21,9 @@ import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
-import { ScoreEntry } from '../types';
+import { ComparativeMatchup, ScoreEntry } from '../types';
 
 const COMBINED_ID = '__combined__';
 
@@ -189,9 +190,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const navigate = useNavigate();
     const { students } = useStudents();
     const { classes } = useClasses();
-    const { studentRubrics, attachments, saveStudentRubric } = useGrading();
+    const { studentRubrics, attachments, saveStudentRubric, comparativeMatchups, addComparativeMatchup } = useGrading();
 
-    const { rubrics, gradeScales } = useAuthoring();
+    const { rubrics, gradeScales, updateRubric } = useAuthoring();
     const { settings } = useSettings();
 
     const [searchParams] = useSearchParams();
@@ -212,13 +213,29 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const [studentB, setStudentB] = useState<(typeof students)[0] | null>(null);
     const [srA, setSrA] = useState<(typeof studentRubrics)[0] | null>(null);
     const [srB, setSrB] = useState<(typeof studentRubrics)[0] | null>(null);
-    const [matchups, setMatchups] = useState<Set<string>>(new Set());
     const [error, setError] = useState('');
     const [isDirty, setIsDirty] = useState(false);
     const [sessionDone, setSessionDone] = useState(false);
-    // Local limit = total matchups for this session. 0 = unlimited.
-    // Seeded from global settings but adjustable on the fly.
-    const [matchupLimit, setMatchupLimit] = useState(settings.comparativeMatchupLimit ?? 0);
+    // Per-student limit, persisted on the rubric so it survives reloads and applies across
+    // devices/sessions. Seeded from the rubric (falling back to the global default setting for
+    // a rubric that hasn't set its own yet) and adjustable on the fly; committed back to the
+    // rubric on blur rather than on every keystroke, to avoid an auto-version snapshot per digit.
+    const [matchupLimit, setMatchupLimit] = useState(
+        () => rubric?.comparativeMatchupLimit ?? settings.comparativeMatchupLimit ?? 0
+    );
+
+    // Matchups already completed (and persisted) for this rubric — the source of truth for
+    // per-student counts, so they survive reloads and follow the teacher across devices/sessions
+    // instead of resetting with the in-memory session.
+    const rubricMatchups = useMemo(
+        () => (rubric ? comparativeMatchups.filter((m) => m.rubricId === rubric.id) : []),
+        [comparativeMatchups, rubric]
+    );
+
+    function commitMatchupLimit(limit: number) {
+        if (!rubric || (rubric.comparativeMatchupLimit ?? 0) === limit) return;
+        updateRubric({ ...rubric, comparativeMatchupLimit: limit });
+    }
     const [tourRun, setTourRun] = useState(false);
     const comparativeTourSteps = useMemo(() => getComparativeTourSteps(t), [t]);
 
@@ -281,42 +298,26 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         };
     }
 
-    function getMatchKey(id1: string, id2: string) {
-        return [id1, id2].sort().join('|');
-    }
-
-    function pickNextMatchup(anchorId: string | null, keepSrA?: (typeof studentRubrics)[0] | null) {
+    // matchupsOverride lets a caller pass an up-to-date matchup list synchronously: addComparativeMatchup
+    // dispatches to context state, which only lands on the *next* render, so handleSaveAndNext (which
+    // picks the next pair in the very same call) must hand pickNextMatchup a list that already includes
+    // the comparison it just completed — otherwise that pair's cap wouldn't count until one render late.
+    function pickNextMatchup(
+        anchorId: string | null,
+        keepSrA?: (typeof studentRubrics)[0] | null,
+        matchupsOverride?: ComparativeMatchup[]
+    ) {
         // v8 ignore next 1 -- the session (and this callback) only runs with 2+ class students
         if (classStudents.length < 2) return;
 
-        // Per-student eligibility: count how many matchups each student has
-        // appeared in so far (based on the matchups Set that exists right now,
-        // before we add the next one).
-        const counts: Record<string, number> = {};
-        for (const key of matchups) {
-            const [id1, id2] = key.split('|');
-            counts[id1] = (counts[id1] ?? 0) + 1;
-            counts[id2] = (counts[id2] ?? 0) + 1;
-        }
-        const eligible =
-            matchupLimit > 0 ? classStudents.filter((s) => (counts[s.id] ?? 0) < matchupLimit) : classStudents;
-
-        if (eligible.length < 2) {
+        // Eligibility and pairing preference are both based on rubricMatchups — the persisted
+        // history for this rubric — so they hold up across reloads/devices, not just this session.
+        const pick = pickNextMatchupPair(classStudents, matchupsOverride ?? rubricMatchups, matchupLimit, anchorId);
+        if (!pick) {
             setSessionDone(true);
             return;
         }
-
-        // Prefer the requested anchor if they're still eligible; otherwise pick randomly.
-        let a = anchorId ? (eligible.find((s) => s.id === anchorId) ?? null) : null;
-        if (!a) a = eligible[Math.floor(Math.random() * eligible.length)];
-
-        // Prefer an opponent we haven't compared this anchor with; fall back to any eligible.
-        let candidatesForB = eligible.filter((s) => s.id !== a!.id && !matchups.has(getMatchKey(a!.id, s.id)));
-        if (candidatesForB.length === 0) {
-            candidatesForB = eligible.filter((s) => s.id !== a!.id);
-        }
-
-        const b = candidatesForB[Math.floor(Math.random() * candidatesForB.length)];
+        const { a, b } = pick;
 
         setStudentA(a);
         setStudentB(b);
@@ -325,22 +326,31 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         const anchorChanged = a.id !== anchorId;
         setSrA(keepSrA !== undefined ? keepSrA : anchorChanged ? getBlankSR(a.id) : getEmptySR(a.id));
         setSrB(getBlankSR(b.id));
-        setMatchups((prev) => new Set([...prev, getMatchKey(a!.id, b.id)]));
         setIsDirty(false);
     }
 
     function handleSaveAndNext() {
-        // v8 ignore next 1 -- the save button only renders once all four are set
-        if (!srA || !srB || !studentA || !rubric) return;
+        // v8 ignore next 1 -- the save button only renders once every student/score pair is set
+        if (!srA || !srB || !studentA || !studentB || !rubric) return;
         const snap = JSON.parse(JSON.stringify(rubric));
         const savedSrA = { ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
         const savedSrB = { ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
         saveStudentRubric(savedSrA);
         saveStudentRubric(savedSrB);
+        // Only a completed (saved) comparison counts against the per-student cap — an abandoned
+        // or reloaded-away-from matchup never gets here, so it doesn't burn a slot.
+        const justCompleted: ComparativeMatchup = {
+            id: nanoid(),
+            rubricId: rubric.id,
+            studentAId: studentA.id,
+            studentBId: studentB.id,
+            gradedAt: new Date().toISOString(),
+        };
+        addComparativeMatchup(rubric.id, studentA.id, studentB.id);
         setIsDirty(false);
 
         // pickNextMatchup handles per-student eligibility and sets sessionDone when done.
-        pickNextMatchup(studentA.id, savedSrA);
+        pickNextMatchup(studentA.id, savedSrA, [...rubricMatchups, justCompleted]);
     }
 
     function compareCriterion(criterionId: string, comparison: 'A_BETTER' | 'EQUAL' | 'B_BETTER') {
@@ -475,7 +485,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
     const n = classStudents.length;
     const totalPossibleMatchups = (n * (n - 1)) / 2;
-    const matchupsDone = matchups.size;
+    const matchupsDone = rubricMatchups.length;
     // Per-student limit: each student can appear in at most matchupLimit matchups.
     // Maximum matchups given that limit = floor(n * matchupLimit / 2), capped at totalPossible.
     const sessionMax =
@@ -484,15 +494,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
     const maxPerStudent = n - 1;
 
-    const perStudentDone = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const key of matchups) {
-            const [id1, id2] = key.split('|');
-            counts[id1] = (counts[id1] ?? 0) + 1;
-            counts[id2] = (counts[id2] ?? 0) + 1;
-        }
-        return counts;
-    }, [matchups]);
+    const perStudentDone = useMemo(() => countMatchupsPerStudent(rubricMatchups), [rubricMatchups]);
 
     if (!rubric) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
     if (error)
@@ -529,9 +531,10 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                 </div>
             </>
         );
-    if (!studentA || !studentB || !srA || !srB)
-        return <div className="page-content">{t('comparativeGrading.loading')}</div>;
-
+    // Checked before the loading placeholder: if the mount's very first pick already finds
+    // fewer than 2 eligible students (e.g. persisted history already has everyone at their
+    // cap), studentA/srA never get set — so "sessionDone" must win, or the page would be
+    // stuck on "Setting up matchup…" forever instead of showing the completion screen.
     if (sessionDone)
         return (
             <>
@@ -562,7 +565,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 className="btn btn-primary"
                                 onClick={() => {
                                     setSessionDone(false);
-                                    pickNextMatchup(studentA.id, srA);
+                                    // studentA/srA can still be null here — the very first pick may have
+                                    // already landed on sessionDone before ever setting them.
+                                    pickNextMatchup(studentA?.id ?? null, srA);
                                 }}
                             >
                                 {t('comparativeGrading.action_continue')}
@@ -575,6 +580,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                 </div>
             </>
         );
+
+    if (!studentA || !studentB || !srA || !srB)
+        return <div className="page-content">{t('comparativeGrading.loading')}</div>;
 
     const attA = attachments.filter((a) => a.studentId === studentA.id);
     const attB = attachments.filter((a) => a.studentId === studentB.id);
@@ -701,6 +709,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     value={matchupLimit === 0 ? '' : matchupLimit}
                                     placeholder="∞"
                                     onChange={(e) => setMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
+                                    onBlur={(e) => commitMatchupLimit(Math.max(0, parseInt(e.target.value) || 0))}
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
                                     title={t('comparativeGrading.per_student_limit_hint')}
                                 />

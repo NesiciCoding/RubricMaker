@@ -13,6 +13,7 @@ vi.mock('../hooks/useToast', () => ({
 }));
 
 vi.mock('../store/storage', () => ({
+    loadCachedStudentRubrics: vi.fn(async () => []),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],

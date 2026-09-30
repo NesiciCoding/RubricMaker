@@ -10,6 +10,7 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
+import ClassFilterChips from '../components/ui/ClassFilterChips';
 import { useSettings } from '../context/AppContext';
 import { useStoreSelector } from '../context/useStore';
 import {
@@ -31,6 +32,8 @@ import {
     withAskedQuestionSnapshots,
 } from '../utils/testCalc';
 import { getClassGoalScores } from '../utils/learningGoalsAggregator';
+import { getClassWeakWritingCriteria } from '../utils/writingTrendAggregator';
+import { ClassWritingTrendsCard } from '../components/Essay/WritingTrendsCard';
 import LearningGoalChart from '../components/Statistics/LearningGoalChart';
 import CriterionRadarChart, { type CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
 import ScoreHistogram from '../components/Statistics/ScoreHistogram';
@@ -82,6 +85,7 @@ export default function StatisticsPage() {
         tests,
         studentTests,
         standardMasteryTargets,
+        essayAssignments,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
@@ -92,6 +96,7 @@ export default function StatisticsPage() {
         tests: s.tests,
         studentTests: s.studentTests,
         standardMasteryTargets: s.standardMasteryTargets,
+        essayAssignments: s.essayAssignments,
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
@@ -137,6 +142,12 @@ export default function StatisticsPage() {
     // ── Rubric view state ─────────────────────────────────────────────────────
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedClassId, setSelectedClassId] = useState<string>(settings.activeClassId ?? 'all');
+
+    const classWritingWeak = useMemo(() => {
+        if (selectedClassId === 'all') return [];
+        const ids = students.filter((s) => s.classId === selectedClassId).map((s) => s.id);
+        return getClassWeakWritingCriteria(ids, studentRubrics, rubrics, essayAssignments);
+    }, [selectedClassId, students, studentRubrics, rubrics, essayAssignments]);
 
     // Follow the global Topbar class selector (settings.activeClassId) when it changes elsewhere
     useEffect(() => {
@@ -746,20 +757,15 @@ export default function StatisticsPage() {
                                     ))}
                                 </select>
                             </div>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                                <label htmlFor="stats-class">{t('statistics.label_class_filter')}</label>
-                                <select
-                                    id="stats-class"
-                                    value={selectedClassId}
-                                    onChange={(e) => handleSelectedClassChange(e.target.value)}
-                                >
-                                    <option value="all">{t('statistics.all_classes')}</option>
-                                    {filteredClasses.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="form-group" style={{ flex: 2, minWidth: 200, marginBottom: 0 }}>
+                                <label>{t('statistics.label_class_filter')}</label>
+                                <ClassFilterChips
+                                    classes={filteredClasses}
+                                    selectedClassId={selectedClassId}
+                                    onChange={handleSelectedClassChange}
+                                    ariaLabel={t('statistics.label_class_filter')}
+                                    allLabel={t('statistics.all_classes')}
+                                />
                             </div>
                             {/* Criterion chart type toggle */}
                             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -870,20 +876,15 @@ export default function StatisticsPage() {
                         </>
                     ) : (
                         <>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 240, marginBottom: 0 }}>
-                                <label htmlFor="stats-student-class">{t('statistics.label_class_filter')}</label>
-                                <select
-                                    id="stats-student-class"
-                                    value={studentViewClassId}
-                                    onChange={(e) => setStudentViewClassId(e.target.value)}
-                                >
-                                    <option value="all">{t('statistics.all_classes')}</option>
-                                    {classes.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.name}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="form-group" style={{ flex: 2, minWidth: 200, marginBottom: 0 }}>
+                                <label>{t('statistics.label_class_filter')}</label>
+                                <ClassFilterChips
+                                    classes={classes}
+                                    selectedClassId={studentViewClassId}
+                                    onChange={setStudentViewClassId}
+                                    ariaLabel={t('statistics.label_class_filter')}
+                                    allLabel={t('statistics.all_classes')}
+                                />
                             </div>
                             <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
                                 <label htmlFor="stats-student">{t('statistics.label_student')}</label>
@@ -1111,6 +1112,12 @@ export default function StatisticsPage() {
                 {chartsReady && viewMode === 'rubric' && (
                     <>
                         {selectedClassId !== 'all' && classGoals.length > 0 && <LearningGoalChart goals={classGoals} />}
+                        {selectedClassId !== 'all' && (
+                            <ClassWritingTrendsCard
+                                rows={classWritingWeak}
+                                students={students.filter((s) => s.classId === selectedClassId)}
+                            />
+                        )}
 
                         {/* Class trend chart */}
                         {classTrendData.length >= 2 && (

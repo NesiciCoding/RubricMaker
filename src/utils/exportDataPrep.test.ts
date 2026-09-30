@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
+import {
+    sanitizeFilename,
+    formatPointsRange,
+    stripHtmlTags,
+    stripCommentHtml,
+    stripHtmlKeepLineBreaks,
+    promptToHtml,
+} from './exportDataPrep';
 
 describe('sanitizeFilename', () => {
     it('keeps letters and digits, replacing everything else with underscores', () => {
@@ -51,5 +58,39 @@ describe('stripHtmlTags', () => {
     it('is exported as stripCommentHtml', () => {
         expect(stripCommentHtml).toBe(stripHtmlTags);
         expect(stripCommentHtml('<p>Comment</p>')).toBe('Comment');
+    });
+});
+
+describe('stripHtmlKeepLineBreaks', () => {
+    it('keeps newlines and blank lines while still stripping tags and collapsing other whitespace', () => {
+        expect(stripHtmlKeepLineBreaks('one   <b>two</b>\nthree\n\nfour')).toBe('one two\nthree\n\nfour');
+    });
+
+    it('normalises CRLF and trims stray spaces around a break', () => {
+        expect(stripHtmlKeepLineBreaks('a \r\n b')).toBe('a\nb');
+    });
+});
+
+describe('promptToHtml', () => {
+    it('wraps top-level text and inline markup in a paragraph so nothing around the markup is lost', () => {
+        expect(promptToHtml('Read <strong>this</strong> carefully.')).toBe(
+            '<p>Read <strong>this</strong> carefully.</p>'
+        );
+    });
+
+    it('wraps stray text between blocks without touching the blocks or the whitespace between them', () => {
+        expect(promptToHtml('Intro <b>x</b><p>Block</p>tail\n<ul><li>i</li></ul>')).toBe(
+            '<p>Intro <b>x</b></p><p>Block</p><p>tail\n</p><ul><li>i</li></ul>'
+        );
+    });
+
+    it('passes block-only HTML through unchanged', () => {
+        const html = '<p>One</p>\n<h2>Two</h2>';
+        expect(promptToHtml(html)).toBe(html);
+    });
+
+    it('keeps legacy plain text as escaped paragraphs and returns nothing for an empty prompt', () => {
+        expect(promptToHtml('a & b\nc')).toBe('<p>a &amp; b</p><p>c</p>');
+        expect(promptToHtml('')).toBe('');
     });
 });

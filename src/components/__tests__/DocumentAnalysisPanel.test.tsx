@@ -4,10 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DocumentAnalysisPanel from '../Essay/DocumentAnalysisPanel';
 import type { Attachment, VocabularyItem, DocumentAnalysisResult, RubricCriterion } from '../../types';
 
+vi.mock('../../hooks/useUdGrammarProfile', () => ({ useUdGrammarProfile: () => ({ status: 'unavailable' }) }));
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (k: string, fb?: string) => fb ?? k }),
 }));
 
+vi.mock('../Essay/EssayStatsPanel', () => ({ default: () => null }));
+vi.mock('../Essay/UdGrammarPanel', () => ({ default: () => null }));
 vi.mock('../../utils/textExtraction', () => ({
     extractText: vi.fn(async () => 'sample text'),
     UnsupportedFormatError: class UnsupportedFormatError extends Error {},

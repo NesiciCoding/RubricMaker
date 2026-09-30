@@ -17,11 +17,12 @@ import {
     Mail,
 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+import StudentSnapshotTable from '../components/Dashboard/StudentSnapshotTable';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { Message, Rubric } from '../types';
 import { useAuthoring, useEssays, useFlashcards } from '../context/AppContext';
-import { useStoreSelector } from '../context/useStore';
+import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
@@ -102,6 +103,10 @@ export default function Dashboard() {
         tests,
         essaySubmissions,
         flashcardDecks,
+        flashcardAssignments,
+        flashcardReviews,
+        selfAssessments,
+        analysisResults,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
@@ -114,6 +119,10 @@ export default function Dashboard() {
         tests: s.tests,
         essaySubmissions: s.essaySubmissions,
         flashcardDecks: s.flashcardDecks,
+        flashcardAssignments: s.flashcardAssignments,
+        flashcardReviews: s.flashcardReviews,
+        selfAssessments: s.selfAssessments,
+        analysisResults: s.analysisResults,
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
@@ -123,9 +132,54 @@ export default function Dashboard() {
     const { deleteUserTemplate } = useAuthoring();
     const { sendMessage, notifyStudentMessage } = useEssays();
     const { addFlashcardAssignments } = useFlashcards();
+    const { updateSettings } = useStoreActions();
 
     const [messagingStudentId, setMessagingStudentId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
+
+    // Class-filter chips for the student snapshot table, ported from StudentsPage's cohort-chip
+    // pattern: an empty selection means "all classes", seeded from the remembered single active
+    // class. Reusing settings.activeClassId keeps this filter in sync with the "Class CEFR —
+    // Writing" panel further down the page, which already reads that same setting.
+    const initialCohorts =
+        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
+    const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
+    // Until the teacher touches the chips, keep adopting settings.activeClassId (which can
+    // change out from under us via a later hydration/sync) instead of writing our initial,
+    // possibly-stale snapshot of it back to settings.
+    const hasUserSelectedCohorts = React.useRef(false);
+    const isAllCohorts = selectedCohorts.length === 0;
+    const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
+
+    function toggleCohort(id: string) {
+        hasUserSelectedCohorts.current = true;
+        setSelectedCohorts((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    }
+
+    function selectAllCohorts() {
+        hasUserSelectedCohorts.current = true;
+        setSelectedCohorts([]);
+    }
+
+    React.useEffect(() => {
+        if (classes.length === 0) return;
+        if (!hasUserSelectedCohorts.current) {
+            setSelectedCohorts(
+                settings.activeClassId && classes.some((c) => c.id === settings.activeClassId)
+                    ? [settings.activeClassId]
+                    : []
+            );
+            return;
+        }
+        if (singleClassId !== settings.activeClassId) {
+            updateSettings({ activeClassId: singleClassId });
+        }
+    }, [classes, singleClassId, settings.activeClassId, updateSettings]);
+
+    const snapshotStudents = useMemo(
+        () => students.filter((s) => isAllCohorts || selectedCohorts.includes(s.classId)),
+        [students, isAllCohorts, selectedCohorts]
+    );
 
     const scale = useMemo(
         () => gradeScales.find((g) => g.id === settings.defaultGradeScaleId) ?? gradeScales[0],
@@ -367,6 +421,83 @@ export default function Dashboard() {
                 }
             />
             <div className="page-content fade-in dashboard-container">
+                {/* Student snapshot — CEFR / Grammar / Vocabulary / needs-attention at a glance */}
+                <div style={{ marginBottom: 28 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 10,
+                            marginBottom: 12,
+                        }}
+                    >
+                        <h2 style={{ margin: 0, fontSize: '1.15rem' }}>{t('dashboard.snapshot_title')}</h2>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            <button
+                                type="button"
+                                aria-pressed={isAllCohorts}
+                                onClick={selectAllCohorts}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: '5px 12px',
+                                    borderRadius: 999,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--border)',
+                                    background: isAllCohorts ? 'var(--accent)' : 'var(--bg-raised)',
+                                    color: isAllCohorts ? 'var(--accent-fg)' : 'var(--text-muted)',
+                                }}
+                            >
+                                {t('statistics.all_classes')}
+                            </button>
+                            {classes.map((c) => {
+                                const active = selectedCohorts.includes(c.id);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={c.id}
+                                        aria-pressed={active}
+                                        onClick={() => toggleCohort(c.id)}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            padding: '5px 12px',
+                                            borderRadius: 999,
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            border: '1px solid var(--border)',
+                                            background: active ? 'var(--accent)' : 'var(--bg-raised)',
+                                            color: active ? 'var(--accent-fg)' : 'var(--text-muted)',
+                                        }}
+                                    >
+                                        {c.name}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <StudentSnapshotTable
+                        students={snapshotStudents}
+                        classes={classes}
+                        studentRubrics={studentRubrics}
+                        rubrics={rubrics}
+                        selfAssessments={selfAssessments}
+                        analysisResults={analysisResults}
+                        tests={tests}
+                        studentTests={studentTests}
+                        flashcardDecks={flashcardDecks}
+                        flashcardAssignments={flashcardAssignments}
+                        flashcardReviews={flashcardReviews}
+                        cefrAchieveThreshold={settings.cefrAchieveThreshold ?? 70}
+                        masteryColorBands={settings.masteryColorBands}
+                    />
+                </div>
+
                 {/* Greeting header */}
                 <div
                     style={{

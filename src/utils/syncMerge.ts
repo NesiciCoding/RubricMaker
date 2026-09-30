@@ -223,6 +223,13 @@ const COLLECTIONS: CollectionSpec[] = [
         getId: (d: { id: string }) => d.id,
         getUpdatedAt: (d: { dismissedAt?: string }) => d.dismissedAt,
     },
+    {
+        // Immutable/append-only records — no getUpdatedAt needed since a given id is
+        // never re-written, so there's no conflict to resolve by recency.
+        key: 'comparativeMatchups',
+        entity: 'comparativeMatchup',
+        getId: (m: { id: string }) => m.id,
+    },
 ] as CollectionSpec[];
 
 export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pendingQueue: PendingWrite[]): StoreData {

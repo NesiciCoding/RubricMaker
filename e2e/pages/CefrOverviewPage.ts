@@ -11,7 +11,7 @@ export class CefrOverviewPage extends BasePage {
     }
 
     async filterByClass(className: string): Promise<void> {
-        await this.page.getByLabel('Class Filter').selectOption({ label: className });
+        await this.page.getByRole('button', { name: className, exact: true }).click();
     }
 
     async openStudentDetail(studentName: string): Promise<void> {

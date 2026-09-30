@@ -52,6 +52,62 @@ export function stripHtmlTags(text: string): string {
     return result.replace(/\s+/g, ' ').trim();
 }
 
+/** stripHtmlTags() for text whose newlines are meaningful (cloze prompts store paragraph breaks as "\n"), which plain stripHtmlTags collapses into single spaces. */
+export function stripHtmlKeepLineBreaks(text: string): string {
+    return stripHtmlTags(text.replace(/\r?\n/g, '\uE000')).replace(/ ?\uE000 ?/g, '\n');
+}
+
+const TOP_LEVEL_BLOCK_TAGS = new Set([
+    'P',
+    'DIV',
+    'H1',
+    'H2',
+    'H3',
+    'H4',
+    'H5',
+    'H6',
+    'UL',
+    'OL',
+    'BLOCKQUOTE',
+    'HR',
+    'TABLE',
+    'PRE',
+]);
+
+/** Wraps runs of top-level text and inline elements (e.g. `Read <b>this</b> carefully.`) in <p>, so block-oriented converters don't drop the text around the markup. */
+function wrapTopLevelInline(html: string): string {
+    const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body.firstElementChild!;
+    const isInline = (node: ChildNode) =>
+        node.nodeType === Node.TEXT_NODE
+            ? !!node.textContent?.trim()
+            : node.nodeType === Node.ELEMENT_NODE && !TOP_LEVEL_BLOCK_TAGS.has((node as Element).tagName);
+    if (!Array.from(root.childNodes).some(isInline)) return html;
+
+    let paragraph: HTMLParagraphElement | null = null;
+    for (const node of Array.from(root.childNodes)) {
+        if (isInline(node) || (paragraph && node.nodeType === Node.TEXT_NODE)) {
+            if (!paragraph) {
+                paragraph = root.ownerDocument.createElement('p');
+                root.insertBefore(paragraph, node);
+            }
+            paragraph.appendChild(node);
+        } else {
+            paragraph = null;
+        }
+    }
+    return root.innerHTML;
+}
+
+/** Normalises a stored question prompt to HTML: TipTap output passes through, legacy plain text keeps its line breaks, and stray top-level text gets a paragraph. */
+export function promptToHtml(prompt: string): string {
+    if (!prompt) return '';
+    if (/<[a-z][^>]*>/i.test(prompt)) return wrapTopLevelInline(prompt);
+    return prompt
+        .split(/\r?\n/)
+        .map((line) => `<p>${escapeHtml(line)}</p>`)
+        .join('');
+}
+
 /** Plain-text rendering of a comment that may contain pasted or TipTap-authored HTML. */
 export const stripCommentHtml = stripHtmlTags;
 

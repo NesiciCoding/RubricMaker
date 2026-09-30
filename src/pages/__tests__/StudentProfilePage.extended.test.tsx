@@ -397,6 +397,7 @@ const mockAppValue = {
     flashcardDecks: mockFlashcardDecksArr,
     flashcardAssignments: mockFlashcardAssignmentsArr,
     flashcardReviews: mockFlashcardReviewsArr,
+    essayAssignments: emptyArr,
 };
 
 vi.mock('../../context/AppContext', () => ({

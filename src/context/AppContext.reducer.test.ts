@@ -46,6 +46,8 @@ vi.mock('../store/storage', () => {
         'saveStudents',
         'saveClasses',
         'saveStudentRubrics',
+        'saveStudentRubricsCache',
+        'loadCachedStudentRubrics',
         'stripAudioForOfflineCache',
         'saveAttachments',
         'saveGradeScales',
@@ -73,6 +75,7 @@ vi.mock('../store/storage', () => {
         'saveQuestionBank',
         'saveDocumentComments',
         'saveNotificationDismissals',
+        'saveComparativeMatchups',
         'saveUserTemplates',
         'importFullBackup',
         'loadPendingQueue',
@@ -187,6 +190,7 @@ function makeState(overrides: Partial<StoreData> = {}): StoreData {
         questionBank: [],
         documentComments: [],
         notificationDismissals: [],
+        comparativeMatchups: [],
         ...overrides,
     };
 }

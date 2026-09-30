@@ -28,7 +28,13 @@ import { PlatformProvider } from './domains/platform';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { loadDb, getDb } from '../services/database/lazyDb';
-import { loadStore, loadPendingQueue, onStorageQuotaExceeded, sanitizeClassYears } from '../store/storage';
+import {
+    loadStore,
+    loadPendingQueue,
+    loadCachedStudentRubrics,
+    onStorageQuotaExceeded,
+    sanitizeClassYears,
+} from '../store/storage';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
 import { mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
@@ -77,6 +83,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (seedDiffBaseline) {
             prevStateRef.current = merged;
         }
+    }, []);
+    // The connected-session student rubric cache lives in IndexedDB, which can only be read
+    // asynchronously, so it is merged in after the synchronous localStorage boot.
+    useEffect(() => {
+        let cancelled = false;
+        void loadCachedStudentRubrics().then((cached) => {
+            if (!cancelled && cached.length > 0) dispatch({ type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: cached });
+        });
+        return () => {
+            cancelled = true;
+        };
     }, []);
     const { showToast } = useToast();
     const { t } = useTranslation();
@@ -467,6 +484,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         diff(prev.questionBank, state.questionBank, 'questionBankItem', (q) => q.id);
         diff(prev.documentComments, state.documentComments, 'documentComment', (c) => c.id);
         diff(prev.notificationDismissals, state.notificationDismissals, 'notificationDismissal', (d) => d.id);
+        diff(prev.comparativeMatchups, state.comparativeMatchups, 'comparativeMatchup', (m) => m.id);
 
         if (prev.settings !== state.settings && JSON.stringify(prev.settings) !== JSON.stringify(state.settings)) {
             storageSync.pushOne('settings', 'upsert', state.settings);

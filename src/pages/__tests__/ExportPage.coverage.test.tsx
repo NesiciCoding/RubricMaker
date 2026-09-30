@@ -590,7 +590,7 @@ describe('ExportPage coverage', () => {
         };
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         // select all then deselect all (period section's own button is the last one)
         fireEvent.click(screen.getAllByText(/exportPage.select_all/).at(-1)!);
         fireEvent.click(screen.getAllByText(/exportPage.deselect_all/).at(-1)!);
@@ -622,7 +622,7 @@ describe('ExportPage coverage', () => {
     it('no-ops period generation without selected students and shows an empty class', () => {
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c2' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Empty Class' }));
         expect(screen.getByText('exportPage.period_no_students')).toBeInTheDocument();
         fireEvent.click(screen.getByText(/exportPage.period_generate_btn/));
         expect(mockExportPeriodReportsBatch).not.toHaveBeenCalled();
@@ -631,7 +631,7 @@ describe('ExportPage coverage', () => {
     it('generates a single report card with config toggles', async () => {
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         openSection('reportCard.title');
@@ -861,7 +861,7 @@ describe('ExportPage coverage', () => {
         appOverrides = { gradeScales: [] };
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         await act(async () => {
@@ -874,7 +874,7 @@ describe('ExportPage coverage', () => {
         mockExportPeriodReportsBatch.mockRejectedValueOnce(new Error('boom'));
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         await act(async () => {
@@ -895,7 +895,7 @@ describe('ExportPage coverage', () => {
         };
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         // set the period window so the test-window comparisons use the date branches
@@ -912,7 +912,7 @@ describe('ExportPage coverage', () => {
     it('generates report cards in batch and toasts on failure', async () => {
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         const bobBtn = screen.getAllByText('Bob').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
@@ -938,7 +938,7 @@ describe('ExportPage coverage', () => {
         mockExportReportCard.mockRejectedValueOnce(new Error('boom'));
         renderPage();
         openSection('exportPage.period_report_title');
-        fireEvent.change(screen.getByDisplayValue('exportPage.period_select_class'), { target: { value: 'c1' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         const aliceBtn = screen.getAllByText('Alice').find((el) => el.tagName === 'BUTTON');
         fireEvent.click(aliceBtn!);
         openSection('reportCard.title');

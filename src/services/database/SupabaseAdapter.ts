@@ -40,6 +40,7 @@ import type {
     QuestionBankItem,
     DocumentComment,
     NotificationDismissal,
+    ComparativeMatchup,
     Scan,
     StaircaseStep,
     TestQuestion,
@@ -1057,6 +1058,38 @@ export class SupabaseAdapter {
             .delete()
             .eq('id', id)
             .eq('owner_id', this.uid());
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    // ── Comparative-grading matchup history ────────────────────────────────────
+    // Owner-only, immutable append-only log — one row per completed comparison —
+    // so per-student/per-rubric matchup counts persist across devices and reloads.
+
+    async fetchComparativeMatchups(): Promise<ComparativeMatchup[]> {
+        const { data, error } = await this.db().from('comparative_matchups').select('data').eq('owner_id', this.uid());
+        // Unlike most fetchX methods here, this one must not swallow the error into an empty
+        // array: mergeCollection() would then read that as "the remote truly has none" and
+        // delete every local (non-pending) matchup, silently wiping the comparison history
+        // this feature exists to persist. Throwing lets the caller's existing hydrate-failure
+        // fallback (keep local state, don't merge) do its job instead.
+        if (error) throw error;
+        return (data ?? []).map((r) => r.data as ComparativeMatchup);
+    }
+
+    async upsertComparativeMatchup(matchup: ComparativeMatchup): Promise<SyncResult> {
+        const { error } = await this.db().from('comparative_matchups').upsert(
+            {
+                id: matchup.id,
+                owner_id: this.uid(),
+                data: matchup,
+            },
+            { onConflict: 'id' }
+        );
+        return error ? { success: false, error: error.message } : { success: true };
+    }
+
+    async deleteComparativeMatchup(id: string): Promise<SyncResult> {
+        const { error } = await this.db().from('comparative_matchups').delete().eq('id', id).eq('owner_id', this.uid());
         return error ? { success: false, error: error.message } : { success: true };
     }
 

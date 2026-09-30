@@ -19,7 +19,8 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { sanitizeFilename } from './exportDataPrep';
+import { promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -38,7 +39,6 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    pointLabel,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -47,6 +47,40 @@ import {
 const MM_TO_TWIPS = 56.6929;
 
 const HTML_BLOCK_TAGS = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'DIV']);
+
+/**
+ * Single document-order pass collecting one text segment per "run" of inline content: a block
+ * boundary (entering or leaving a block element) flushes whatever inline text has accumulated so
+ * far as its own segment, so text that surrounds a nested block — e.g.
+ * `<blockquote>Before<p>Inside</p>After</blockquote>` — comes out in source order ("Before",
+ * "Inside", "After") instead of the nested block's text being reordered around it. A plain `<div>`
+ * (which `querySelectorAll('p, li, ...')` would miss) is included via the same block-boundary
+ * flush, and a passage with no block tags at all still produces one segment from the trailing flush.
+ */
+export function collectParagraphTexts(root: Element): string[] {
+    const texts: string[] = [];
+    let buffer = '';
+    const flush = () => {
+        const text = buffer.replace(/\s+/g, ' ').trim();
+        if (text) texts.push(text);
+        buffer = '';
+    };
+    const walk = (node: ChildNode) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            buffer += node.textContent ?? '';
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const el = node as Element;
+        const isBlock = HTML_BLOCK_TAGS.has(el.tagName);
+        if (isBlock) flush();
+        el.childNodes.forEach(walk);
+        if (isBlock) flush();
+    };
+    root.childNodes.forEach(walk);
+    flush();
+    return texts;
+}
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
 
@@ -87,7 +121,39 @@ function blackBannerTable(text: string): Table {
     });
 }
 
-function coverParagraphs(test: Test, docLabel: string): (Paragraph | Table)[] {
+const LIGHT_BORDER: ITableCellBorders = {
+    top: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    bottom: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    left: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+    right: { style: BorderStyle.SINGLE, size: 2, color: 'd1d5db' },
+};
+
+/** Bordered Name / Class / Date fill-in row for a booklet/attachment cover, so a page can still be attributed to a student if it's separated from the answer sheet. */
+function nameClassDateTable(): Table {
+    const field = (label: string) =>
+        new TableCell({
+            borders: LIGHT_BORDER,
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            children: [
+                new Paragraph({ children: [new TextRun({ text: label, size: 16, color: '6b7280' })] }),
+                new Paragraph({
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' } },
+                    spacing: { before: 120 },
+                    children: [new TextRun({ text: ' ' })],
+                }),
+            ],
+        });
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: [field(tx('candidate_name')), field(tx('cover_class_label')), field(tx('cover_date_label'))],
+            }),
+        ],
+    });
+}
+
+function coverParagraphs(test: Test, docLabel: string, includeNameBox = false): (Paragraph | Table)[] {
     const totalQuestions = test.questions.length;
     const totalPoints = calcTestMaxPoints(test);
     const summaryLines: Paragraph[] = [];
@@ -108,10 +174,18 @@ function coverParagraphs(test: Test, docLabel: string): (Paragraph | Table)[] {
             spacing: { after: 120 },
         }),
         blackBannerTable(test.name),
-        new Paragraph({ text: '', spacing: { before: 400 } }),
+        ...(includeNameBox ? [new Paragraph({ text: '', spacing: { before: 200 } }), nameClassDateTable()] : []),
+        new Paragraph({ text: '', spacing: { before: includeNameBox ? 200 : 400 } }),
         ...summaryLines,
         new Paragraph({ children: [new PageBreak()] }),
     ];
+}
+
+function audioNoteParagraph(): Paragraph {
+    return new Paragraph({
+        children: [new TextRun({ text: tx('audio_note'), italics: true, size: 18, color: '6b7280' })],
+        spacing: { after: 80 },
+    });
 }
 
 function sectionDivider(title: string): Paragraph {
@@ -119,8 +193,10 @@ function sectionDivider(title: string): Paragraph {
 }
 
 function clozeRuns(question: TestQuestion): TextRun[] {
-    return clozeBookletParts(question).map((p) =>
-        p.blankNumber ? new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} }) : new TextRun(p.text)
+    return clozeBookletParts(question).flatMap((p) =>
+        p.blankNumber
+            ? [new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} })]
+            : p.text.split('\n').map((line, i) => new TextRun({ text: line, break: i > 0 ? 1 : undefined }))
     );
 }
 
@@ -189,7 +265,14 @@ const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
 /** A hung image request would otherwise block buildBookletChildren (and the whole zip) indefinitely. */
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
 
-async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+interface FetchedDocxImage {
+    type: 'jpg' | 'png' | 'gif' | 'bmp';
+    data: ArrayBuffer;
+    width: number;
+    height: number;
+}
+
+async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<FetchedDocxImage | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
@@ -198,10 +281,12 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
         if (!type) return null;
         const bitmap = await createImageBitmap(blob);
         const scale = Math.min(1, maxWidthPx / bitmap.width);
-        const width = Math.round(bitmap.width * scale);
-        const height = Math.round(bitmap.height * scale);
-        const data = await blob.arrayBuffer();
-        return new ImageRun({ type, data, transformation: { width, height } });
+        return {
+            type,
+            data: await blob.arrayBuffer(),
+            width: Math.round(bitmap.width * scale),
+            height: Math.round(bitmap.height * scale),
+        };
     } catch {
         return null;
     } finally {
@@ -209,94 +294,44 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
     }
 }
 
-interface InlineStyle {
-    bold?: boolean;
-    italics?: boolean;
-    underline?: object;
-    superScript?: boolean;
-    subScript?: boolean;
-    size?: number;
-    color?: string;
+const docxImageRun = ({ type, data, width, height }: FetchedDocxImage) =>
+    new ImageRun({ type, data, transformation: { width, height } });
+
+async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+    const image = await fetchDocxImage(imageUrl, maxWidthPx);
+    return image ? docxImageRun(image) : null;
 }
 
-/** CSS font-size (px/pt/unitless-px) → docx half-points, so a 14px editor size exports as 14px-equivalent 10.5pt. */
-function fontSizeToHalfPoints(value: string): number | undefined {
-    const m = /^([\d.]+)\s*(px|pt)?$/.exec(value.trim());
-    if (!m) return undefined;
-    const n = parseFloat(m[1]);
-    return Math.round(m[2] === 'pt' ? n * 2 : n * 1.5);
+/** Fetches every <img> in a rich-text fragment up front (the converters are synchronous); an image that can't be loaded is simply absent from the map. */
+async function loadDocxImages(html: string): Promise<DocxImageMap> {
+    const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body;
+    const sources = new Set(
+        Array.from(root.querySelectorAll('img'))
+            .map((img) => img.getAttribute('src'))
+            .filter((src): src is string => !!src)
+    );
+    const images = new Map<string, () => ImageRun>();
+    await Promise.all(
+        Array.from(sources).map(async (src) => {
+            const image = await fetchDocxImage(src, 380);
+            if (image) images.set(src, () => docxImageRun(image));
+        })
+    );
+    return images;
 }
 
-function elementStyle(el: HTMLElement, inherited: InlineStyle): InlineStyle {
-    const style = { ...inherited };
-    const tag = el.tagName;
-    if (tag === 'B' || tag === 'STRONG' || /^H[1-6]$/.test(tag)) style.bold = true;
-    if (tag === 'I' || tag === 'EM') style.italics = true;
-    if (tag === 'U') style.underline = {};
-    if (tag === 'SUP') style.superScript = true;
-    if (tag === 'SUB') style.subScript = true;
-    const size = el.style.fontSize ? fontSizeToHalfPoints(el.style.fontSize) : undefined;
-    if (size) style.size = size;
-    const hex = /^#([0-9a-f]{6})$/i.exec(el.style.color ? rgbToHex(el.style.color) : '');
-    if (hex) style.color = hex[1];
-    return style;
+/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables and images in place. */
+export async function richPassageToDocx(html: string, spacingAfter = 120): Promise<(Paragraph | Table)[]> {
+    const normalized = promptToHtml(html);
+    return htmlToDocxChildren(normalized, spacingAfter, await loadDocxImages(normalized));
 }
 
-function rgbToHex(color: string): string {
-    const m = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(color);
-    return m ? '#' + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('') : color;
-}
-
-type InlinePiece = { text: string; style: InlineStyle } | { image: ImageRun } | { lineBreak: true };
-
-/**
- * Converts rich-text HTML into one Paragraph per block element, keeping inline bold/italic/underline,
- * font size and colour plus embedded images — a flat text dump would lose the editor's formatting.
- */
-export async function htmlToParagraphs(html: string, spacingAfter = 120): Promise<Paragraph[]> {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const paragraphs: Paragraph[] = [];
-    let pieces: InlinePiece[] = [];
-    const flush = () => {
-        const texts = pieces.filter((p): p is { text: string; style: InlineStyle } => 'text' in p);
-        if (texts.length) {
-            texts[0].text = texts[0].text.trimStart();
-            texts[texts.length - 1].text = texts[texts.length - 1].text.trimEnd();
-        }
-        const children = pieces.flatMap((p): (TextRun | ImageRun)[] => {
-            if ('image' in p) return [p.image];
-            if ('lineBreak' in p) return [new TextRun({ break: 1 })];
-            return p.text ? [new TextRun({ text: p.text, ...p.style })] : [];
-        });
-        if (children.length) paragraphs.push(new Paragraph({ children, spacing: { after: spacingAfter } }));
-        pieces = [];
-    };
-    const walk = async (node: ChildNode, style: InlineStyle): Promise<void> => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            pieces.push({ text: (node.textContent ?? '').replace(/\s+/g, ' '), style });
-            return;
-        }
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        const el = node as HTMLElement;
-        if (el.tagName === 'BR') {
-            pieces.push({ lineBreak: true });
-            return;
-        }
-        if (el.tagName === 'IMG') {
-            const src = el.getAttribute('src');
-            const image = src ? await questionImageRun(src) : null;
-            if (image) pieces.push({ image });
-            return;
-        }
-        const isBlock = HTML_BLOCK_TAGS.has(el.tagName);
-        if (isBlock) flush();
-        const childStyle = elementStyle(el, style);
-        for (const child of Array.from(el.childNodes)) await walk(child, childStyle);
-        if (isBlock) flush();
-    };
-    for (const child of Array.from(doc.body.childNodes)) await walk(child, {});
-    flush();
-    return paragraphs;
+/** Question prompt → the first paragraph's inline runs (so the point/number label can share its line) plus the remaining blocks. */
+export async function richPromptToDocx(
+    html: string
+): Promise<{ leadRuns: (TextRun | ImageRun)[]; rest: (Paragraph | Table)[] }> {
+    const normalized = promptToHtml(html);
+    return htmlToDocxLead(normalized, await loadDocxImages(normalized));
 }
 
 async function questionParagraphs(
@@ -305,19 +340,20 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const promptRuns = isCloze ? clozeRuns(question) : [];
-    const promptParagraphs = isCloze ? [] : await htmlToParagraphs(plainQuestionPromptText(question), 40);
+    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
+    const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
             children: [
-                new TextRun({ text: `${pointLabel(question.points)}  `, color: '6b7280', size: 18 }),
+                new TextRun({ text: `${tx('point_label', { count: question.points })}  `, color: '6b7280', size: 18 }),
                 new TextRun({ text: `${number}  `, bold: true }),
                 ...promptRuns,
             ],
             spacing: { after: 60 },
         }),
-        ...promptParagraphs,
+        ...(rich?.rest ?? []),
+        ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 
     if (question.imageUrl) {
@@ -328,14 +364,16 @@ async function questionParagraphs(
     switch (question.type) {
         case 'multiple-choice':
         case 'multiple-response':
-            (question.options ?? []).forEach((o, i) => {
+            for (const [i, o] of (question.options ?? []).entries()) {
                 blocks.push(
                     new Paragraph({
                         children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), new TextRun(o.text)],
                         indent: { left: 360 },
                     })
                 );
-            });
+                const optionImage = o.imageUrl ? await questionImageRun(o.imageUrl, 160) : null;
+                if (optionImage) blocks.push(new Paragraph({ children: [optionImage], indent: { left: 360 } }));
+            }
             break;
         case 'true-false':
             blocks.push(
@@ -396,34 +434,53 @@ async function questionParagraphs(
             break;
     }
 
-    blocks.push(new Paragraph({ text: '', spacing: { after: 120 } }));
     return blocks;
 }
 
+/** Wraps one question's content in a light bordered card, matching answerSpaceHtml()'s question card in the HTML renderer. */
+function questionCard(blocks: (Paragraph | Table)[]): Table {
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({
+                        borders: LIGHT_BORDER,
+                        margins: { top: 120, bottom: 120, left: 140, right: 140 },
+                        children: blocks,
+                    }),
+                ],
+            }),
+        ],
+    });
+}
+
 async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'))];
+    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'), true)];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
+            if (group.section.audioUrl) children.push(audioNoteParagraph());
             if (options.attachmentMode === 'inline' && group.section.content) {
-                children.push(...(await htmlToParagraphs(group.section.content, 120)));
+                children.push(...(await richPassageToDocx(group.section.content, 120)));
             }
         }
         for (const { question, number } of group.questions) {
-            children.push(...(await questionParagraphs(question, number, options)));
+            children.push(questionCard(await questionParagraphs(question, number, options)));
+            children.push(new Paragraph({ text: '', spacing: { after: 80 } }));
         }
     }
     return children;
 }
 
 async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'))];
+    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'), true)];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
     for (const [i, group] of groups.entries()) {
         if (!group.section?.content) continue;
         if (i > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(sectionDivider(group.section.title));
-        children.push(...(await htmlToParagraphs(group.section.content, 200)));
+        children.push(...(await richPassageToDocx(group.section.content, 200)));
     }
     return children;
 }
@@ -568,6 +625,12 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
             spacing: { before: 160 },
         }),
         ...answerSpaceChildren(block.space),
+        // Hairline divider between answer blocks, matching answerBlockHtml()'s border-bottom in the HTML renderer.
+        new Paragraph({
+            text: '',
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'e5e7eb' } },
+            spacing: { before: 80 },
+        }),
     ]);
 
     return [
@@ -587,8 +650,15 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
 function gradingTableRows(test: Test): TableRow[] {
     const groups = groupQuestionsBySection(test);
     const rows: TableRow[] = [];
-    const cell = (children: Paragraph[], size: number) =>
-        new TableCell({ borders: CELL_BORDER, width: { size, type: WidthType.PERCENTAGE }, children });
+    let rowIndex = 0;
+    const cell = (children: Paragraph[], size: number, shaded: boolean) =>
+        new TableCell({
+            borders: CELL_BORDER,
+            width: { size, type: WidthType.PERCENTAGE },
+            // Zebra striping (a light, print-safe gray) so a long key stays easy to track row by row.
+            ...(shaded ? { shading: { fill: 'F8FAFC' } } : {}),
+            children,
+        });
 
     for (const group of groups) {
         if (group.section) {
@@ -647,9 +717,15 @@ function gradingTableRows(test: Test): TableRow[] {
                   )
                 : [new Paragraph({ alignment: 'right', children: [new TextRun({ text: String(question.points) })] })];
 
+            const shaded = rowIndex % 2 === 1;
+            rowIndex++;
             rows.push(
                 new TableRow({
-                    children: [cell(questionPara, 15), cell(answerPara, 55), cell(scoresPara, 30)],
+                    children: [
+                        cell(questionPara, 15, shaded),
+                        cell(answerPara, 55, shaded),
+                        cell(scoresPara, 30, shaded),
+                    ],
                 })
             );
         }

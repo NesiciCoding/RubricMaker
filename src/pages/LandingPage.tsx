@@ -63,7 +63,7 @@ const TEACHER_FEATURES = [
     {
         icon: BarChart3,
         title: 'Analytics & Export',
-        desc: 'See class progress at a glance, then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
+        desc: 'Your dashboard opens with a student snapshot — CEFR, grammar, and vocabulary mastery plus a needs-attention flag for every student, colour-coded and filterable by class — then export grades (with ready-made gradebook presets), report cards, essays, and assignment deadlines in the format that works for you.',
         color: '#06b6d4',
     },
     {
@@ -75,7 +75,7 @@ const TEACHER_FEATURES = [
     {
         icon: Languages,
         title: 'Vocabulary & Grammar',
-        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a reading suits your class’s level, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a pasted or uploaded reading suits your class’s level, see flashcard progress across all your decks, spot criteria a student keeps losing points on across essays, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
         color: '#f59e0b',
     },
     {
@@ -99,7 +99,7 @@ const TEACHER_FEATURES = [
     {
         icon: PenLine,
         title: 'Essays',
-        desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress, all in one place.',
+        desc: 'Write a prompt, link a rubric, and assign it to a class from a dedicated Essays page — then track submissions, share links, and watch live progress — and see word, sentence, transition, readability and grammar-range stats for each essay while you grade.',
         color: '#6366f1',
     },
     {
