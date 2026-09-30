@@ -80,7 +80,8 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
             logAuditEvent('export', `export_test_exam_${format}`, 'test', test.id, {
                 count: selectedStudents.length,
             });
-        } catch {
+        } catch (err) {
+            console.error('Exam export failed', err);
             showToast(t('toast.export_error'), 'error');
         } finally {
             setExporting(false);
@@ -110,7 +111,8 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
                 await exportExamGradingKeyDocx(test, options);
             }
             logAuditEvent('export', `export_test_exam_grading_key_${format}`, 'test', test.id, {});
-        } catch {
+        } catch (err) {
+            console.error('Exam export failed', err);
             showToast(t('toast.export_error'), 'error');
         } finally {
             setExporting(false);
