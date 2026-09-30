@@ -146,6 +146,19 @@ describe('createImageEmbedExtension', () => {
         );
     });
 
+    it('enables aspect-ratio-preserving resize on the image node', () => {
+        const [image] = createImageEmbedExtension();
+        expect((image as { options: { resize: unknown } }).options.resize).toMatchObject({
+            enabled: true,
+            alwaysPreserveAspectRatio: true,
+        });
+    });
+
+    it('consumes the paste event so clipboard HTML is not inserted alongside the embedded image', () => {
+        const [, fileHandler] = createImageEmbedExtension();
+        expect((fileHandler as { options: { consumePasteEvent: unknown } }).options.consumePasteEvent).toBe(true);
+    });
+
     it('embeds a dropped image file as a data URL at the given position', async () => {
         const insertContentAt = vi.fn(() => ({ focus: () => ({ run: vi.fn(() => true) }) }));
         const fakeEditor = {

@@ -261,11 +261,23 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
  */
 export function createImageEmbedExtension() {
     return [
-        Image.configure({ HTMLAttributes: { style: 'max-width: 100%; height: auto;' } }),
+        Image.configure({
+            HTMLAttributes: { style: 'max-width: 100%; height: auto;' },
+            resize: {
+                enabled: true,
+                directions: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                minWidth: 40,
+                minHeight: 40,
+                alwaysPreserveAspectRatio: true,
+            },
+        }),
         FileHandler.configure({
             allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'],
             onDrop: (editor, files, pos) => insertImageFiles(editor, files, pos),
             onPaste: (editor, files) => insertImageFiles(editor, files),
+            // Copying an image from a web page also puts `<img src=remote>` HTML on the clipboard; without this
+            // ProseMirror's default paste inserts it too, leaving a broken image and its URL text next to the embedded copy.
+            consumePasteEvent: true,
         }),
     ];
 }
