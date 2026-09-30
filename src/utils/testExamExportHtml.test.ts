@@ -64,7 +64,7 @@ describe('buildExamBookletHtml rich prompt', () => {
 });
 
 describe('reading passage font sizes', () => {
-    it('keeps the editor's inline font sizes (inline and attachment)', () => {
+    it('keeps the editor inline font sizes (inline and attachment)', () => {
         const test = makeTest();
         test.sections = [{ id: 's1', title: 'Reading', content: '<p style="font-size:12pt">Text <b>one</b></p>' }];
         test.questions[0].sectionId = 's1';
