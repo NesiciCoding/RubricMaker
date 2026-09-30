@@ -1661,6 +1661,9 @@ function AnalyticsTab() {
                         t('docs.an_vocab_item_chart'),
                         t('docs.an_vocab_item_drilldown'),
                         t('docs.an_vocab_item_csv'),
+                        t('docs.an_vocab_item_flashcards'),
+                        t('docs.an_vocab_item_screening'),
+                        t('docs.an_vocab_item_lookup'),
                     ]}
                 />
                 <InfoBox color="#f59e0b">{t('docs.an_vocab_info')}</InfoBox>
