@@ -231,6 +231,18 @@ export function createTableOfContentsExtension(onUpdate: (data: TableOfContentDa
 /** Matches `MAX_FILE_SIZE_BYTES` in `questionBankImport.ts` — the project's existing size-cap convention. Images embed as base64 data URIs in the stored `content` HTML, so an oversized one bloats the synced jsonb document the same way an unbounded import file would. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** Pasted screenshots and photos arrive at their full pixel size; capping keeps them in proportion with the surrounding text and smaller images. Users can still enlarge via the resize handles. */
+export const DEFAULT_IMAGE_WIDTH = 400;
+
+function measureImageWidth(src: string): Promise<number | null> {
+    return new Promise((resolve) => {
+        const probe = new window.Image();
+        probe.onload = () => resolve(probe.naturalWidth || null);
+        probe.onerror = () => resolve(null);
+        probe.src = src;
+    });
+}
+
 /** Inserts each dropped/pasted image file as a data URI, mirroring `TestQuestion.imageUrl`'s existing "public URL or data URI" convention — no upload step or attachment record needed. Non-image and oversized files are ignored. */
 function insertImageFiles(editor: Editor, files: File[], pos?: number) {
     // Captured synchronously, before the async FileReader resolves — the paste path has no
@@ -241,10 +253,12 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
     files.forEach((file) => {
         if (!file.type.startsWith('image/') || file.size > MAX_IMAGE_BYTES) return;
         fileToDataUrl(file)
-            .then((src) => {
+            .then(async (src) => {
+                const naturalWidth = await measureImageWidth(src);
+                const width = naturalWidth ? Math.min(naturalWidth, DEFAULT_IMAGE_WIDTH) : DEFAULT_IMAGE_WIDTH;
                 editor
                     .chain()
-                    .insertContentAt(insertPos, { type: 'image', attrs: { src, alt: file.name } })
+                    .insertContentAt(insertPos, { type: 'image', attrs: { src, alt: file.name, width } })
                     .focus()
                     .run();
             })
