@@ -114,9 +114,9 @@ describe('escapeHtml', () => {
 
 describe('cssColorToHex', () => {
     it('normalises hex and rgb() values to 6-digit hex', () => {
-        expect(cssColorToHex('#1e293b')).toBe('1E293B');
-        expect(cssColorToHex('#f00')).toBe('FF0000');
-        expect(cssColorToHex('rgb(255, 128, 0)')).toBe('FF8000');
+        expect(cssColorToHex('#1e293b')).toBe('1e293b');
+        expect(cssColorToHex('#f00')).toBe('ff0000');
+        expect(cssColorToHex('rgb(255, 128, 0)')).toBe('ff8000');
     });
 
     it('drops values docx cannot render', () => {

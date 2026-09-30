@@ -63,14 +63,13 @@ export function cssColorToHex(value: string | null | undefined): string | undefi
     const v = value?.trim();
     if (!v) return undefined;
     const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v)?.[1];
-    if (hex) return (hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex).toUpperCase();
+    if (hex) return hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex;
     const rgb = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*[\d.%]+\s*)?\)$/i.exec(v);
     if (!rgb) return undefined;
     return rgb
         .slice(1, 4)
         .map((n) => Math.min(255, Number(n)).toString(16).padStart(2, '0'))
-        .join('')
-        .toUpperCase();
+        .join('');
 }
 
 function inlineMarkdown(el: ChildNode): string {
