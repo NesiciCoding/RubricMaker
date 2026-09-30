@@ -165,6 +165,23 @@ export default function TextScreeningPanel() {
                 )}
             </div>
 
+            <div
+                style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}
+                className="text-xs text-muted"
+            >
+                <BookMarked size={14} />
+                {wordnetInstalled ? t('vocabProfile.wordnet_installed') : t('vocabProfile.wordnet_not_installed')}
+                {wordnetInstalled ? (
+                    <button className="btn btn-ghost btn-sm" onClick={() => void handleRemoveWordnet()}>
+                        {t('vocabProfile.wordnet_remove')}
+                    </button>
+                ) : (
+                    <button className="btn btn-ghost btn-sm" onClick={() => setShowWordnetModal(true)}>
+                        {t('vocabProfile.wordnet_get')}
+                    </button>
+                )}
+            </div>
+
             {!profile || !verdict ? (
                 <p className="text-muted text-sm">{t('vocabProfile.screen_empty')}</p>
             ) : (
@@ -252,25 +269,6 @@ export default function TextScreeningPanel() {
                             </div>
                         </div>
                     )}
-
-                    <div
-                        style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 14 }}
-                        className="text-xs text-muted"
-                    >
-                        <BookMarked size={14} />
-                        {wordnetInstalled
-                            ? t('vocabProfile.wordnet_installed')
-                            : t('vocabProfile.wordnet_not_installed')}
-                        {wordnetInstalled ? (
-                            <button className="btn btn-ghost btn-sm" onClick={() => void handleRemoveWordnet()}>
-                                {t('vocabProfile.wordnet_remove')}
-                            </button>
-                        ) : (
-                            <button className="btn btn-ghost btn-sm" onClick={() => setShowWordnetModal(true)}>
-                                {t('vocabProfile.wordnet_get')}
-                            </button>
-                        )}
-                    </div>
 
                     <p className="text-xs text-muted" style={{ marginBottom: 0 }}>
                         {t('analysis.awl_nawl_attribution')}

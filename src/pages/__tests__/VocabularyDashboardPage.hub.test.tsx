@@ -70,6 +70,7 @@ describe('VocabularyDashboardPage hub views', () => {
         renderWithRouter(<Page />);
         fireEvent.click(screen.getByRole('button', { name: 'vocabProfile.view_screen' }));
         expect(screen.getByText('vocabProfile.screen_empty')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'vocabProfile.wordnet_get' })).toBeInTheDocument();
 
         fireEvent.change(screen.getByLabelText('vocabProfile.screen_text_label'), { target: { value: HARD_TEXT } });
         fireEvent.change(screen.getByLabelText('vocabProfile.target_level_label'), { target: { value: 'A2' } });
