@@ -20,7 +20,7 @@ import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
-import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
+import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -265,7 +265,14 @@ const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
 /** A hung image request would otherwise block buildBookletChildren (and the whole zip) indefinitely. */
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
 
-async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+interface FetchedDocxImage {
+    type: 'jpg' | 'png' | 'gif' | 'bmp';
+    data: ArrayBuffer;
+    width: number;
+    height: number;
+}
+
+async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<FetchedDocxImage | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
@@ -274,10 +281,12 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
         if (!type) return null;
         const bitmap = await createImageBitmap(blob);
         const scale = Math.min(1, maxWidthPx / bitmap.width);
-        const width = Math.round(bitmap.width * scale);
-        const height = Math.round(bitmap.height * scale);
-        const data = await blob.arrayBuffer();
-        return new ImageRun({ type, data, transformation: { width, height } });
+        return {
+            type,
+            data: await blob.arrayBuffer(),
+            width: Math.round(bitmap.width * scale),
+            height: Math.round(bitmap.height * scale),
+        };
     } catch {
         return null;
     } finally {
@@ -285,51 +294,44 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
     }
 }
 
-function takeImageSources(block: Element): string[] {
-    const images = block.tagName === 'IMG' ? [block] : Array.from(block.querySelectorAll('img'));
-    const sources = images.map((img) => img.getAttribute('src')).filter((src): src is string => !!src);
-    if (block.tagName !== 'IMG') images.forEach((img) => img.remove());
-    return sources;
+const docxImageRun = ({ type, data, width, height }: FetchedDocxImage) =>
+    new ImageRun({ type, data, transformation: { width, height } });
+
+async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+    const image = await fetchDocxImage(imageUrl, maxWidthPx);
+    return image ? docxImageRun(image) : null;
 }
 
-/** docx can't inline an <img> in a TextRun list, so each image becomes its own paragraph right after the block that held it. */
-async function richBlocksToDocx(blocks: Element[], spacingAfter?: number): Promise<(Paragraph | Table)[]> {
-    const out: (Paragraph | Table)[] = [];
-    for (const block of blocks) {
-        const sources = takeImageSources(block);
-        const imageOnly = sources.length > 0 && block.tagName !== 'IMG' && !block.textContent?.trim();
-        if (block.tagName !== 'IMG' && !imageOnly) out.push(...htmlToDocxChildren(block.outerHTML, spacingAfter));
-        for (const src of sources) {
-            const run = await questionImageRun(src);
-            if (run) out.push(new Paragraph({ children: [run], spacing: { after: 80 } }));
-        }
-    }
-    return out;
+/** Fetches every <img> in a rich-text fragment up front (the converters are synchronous); an image that can't be loaded is simply absent from the map. */
+async function loadDocxImages(html: string): Promise<DocxImageMap> {
+    const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body;
+    const sources = new Set(
+        Array.from(root.querySelectorAll('img'))
+            .map((img) => img.getAttribute('src'))
+            .filter((src): src is string => !!src)
+    );
+    const images = new Map<string, () => ImageRun>();
+    await Promise.all(
+        Array.from(sources).map(async (src) => {
+            const image = await fetchDocxImage(src, 380);
+            if (image) images.set(src, () => docxImageRun(image));
+        })
+    );
+    return images;
 }
 
-function parseRichRoot(html: string): HTMLElement {
-    return new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body.firstElementChild as HTMLElement;
-}
-
-/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables/images that plain-text extraction would drop. */
+/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables and images in place. */
 export async function richPassageToDocx(html: string, spacingAfter = 120): Promise<(Paragraph | Table)[]> {
-    return richBlocksToDocx(Array.from(parseRichRoot(stripInlineFontSizes(promptToHtml(html))).children), spacingAfter);
+    const normalized = stripInlineFontSizes(promptToHtml(html));
+    return htmlToDocxChildren(normalized, spacingAfter, await loadDocxImages(normalized));
 }
 
 /** Question prompt → the first paragraph's inline runs (so the point/number label can share its line) plus the remaining blocks. */
-export async function richPromptToDocx(html: string): Promise<{ leadRuns: TextRun[]; rest: (Paragraph | Table)[] }> {
-    const blocks = Array.from(parseRichRoot(promptToHtml(html)).children);
-    const first = blocks[0];
-    if (!first || first.tagName !== 'P') return { leadRuns: [], rest: await richBlocksToDocx(blocks) };
-    const leadImages = takeImageSources(first);
-    const { leadRuns } = htmlToDocxLead(first.outerHTML);
-    const rest: (Paragraph | Table)[] = [];
-    for (const src of leadImages) {
-        const run = await questionImageRun(src);
-        if (run) rest.push(new Paragraph({ children: [run], spacing: { after: 80 } }));
-    }
-    rest.push(...(await richBlocksToDocx(blocks.slice(1))));
-    return { leadRuns, rest };
+export async function richPromptToDocx(
+    html: string
+): Promise<{ leadRuns: (TextRun | ImageRun)[]; rest: (Paragraph | Table)[] }> {
+    const normalized = promptToHtml(html);
+    return htmlToDocxLead(normalized, await loadDocxImages(normalized));
 }
 
 async function questionParagraphs(

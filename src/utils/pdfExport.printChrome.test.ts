@@ -74,11 +74,18 @@ describe('printHtml lifecycle', () => {
         await promise;
     });
 
-    it('gives up on a print job that never reports afterprint after the safety timeout', async () => {
-        const { promise } = startPrint({ waitForPrintDialog: true });
+    it('stops waiting for the dialog after a shorter timeout but keeps the frame until the safety timeout', async () => {
+        const { done, promise } = startPrint({ waitForPrintDialog: true });
 
-        await vi.advanceTimersByTimeAsync(5 * 60_000 + 1000);
+        await vi.advanceTimersByTimeAsync(500 + 60_000);
+        expect(done).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(60_000 + 1000);
         await promise;
+        expect(done).toHaveBeenCalledTimes(1);
+        expect(document.querySelector('iframe')).not.toBeNull();
+
+        await vi.advanceTimersByTimeAsync(3 * 60_000 + 1000);
         expect(document.querySelector('iframe')).toBeNull();
     });
 });

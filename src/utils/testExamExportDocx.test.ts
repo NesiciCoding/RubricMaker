@@ -83,7 +83,7 @@ describe('rich docx blocks with images', () => {
         );
     }
 
-    it('turns an image-only paragraph into a single image paragraph after the surrounding text blocks', async () => {
+    it('keeps an image-only paragraph in its position between the surrounding text blocks', async () => {
         stubImages();
         const blocks = await richPassageToDocx('<p>Before</p><p><img src="data:image/png;base64,AAA"></p><p>After</p>');
         expect(blocks).toHaveLength(3);
@@ -98,11 +98,11 @@ describe('rich docx blocks with images', () => {
         expect(blocks).toHaveLength(2);
     });
 
-    it('keeps the first paragraph as lead runs and moves its images and the other blocks into the rest', async () => {
+    it('keeps the first paragraph, images included, as lead runs and the other blocks as the rest', async () => {
         stubImages();
         const { leadRuns, rest } = await richPromptToDocx('<p>Lead <img src="x"></p><p>Second</p>');
-        expect(leadRuns).toHaveLength(1);
-        expect(rest).toHaveLength(2);
+        expect(leadRuns).toHaveLength(2);
+        expect(rest).toHaveLength(1);
     });
 
     it('handles a bare top-level image', async () => {
@@ -147,5 +147,50 @@ describe('exam booklet .docx content', () => {
         expect(xml.match(/Listen to the recording\./g)).toHaveLength(2);
         expect(xml).toContain('1 pt');
         expect(xml).toContain('3 pts');
+    });
+
+    describe('rich content placement', () => {
+        afterEach(() => vi.unstubAllGlobals());
+
+        const richTest = (sectionContent: string, prompt: string): Test => ({
+            ...test,
+            sections: [{ id: 's1', title: 'Reading', content: sectionContent }],
+            questions: [{ id: 'q1', type: 'open', points: 1, prompt, sectionId: 's1' }],
+        });
+
+        it('keeps an image in its table cell and a list image in its list item', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => ({
+                    blob: async () => ({ type: 'image/png', arrayBuffer: async () => new ArrayBuffer(8) }),
+                }))
+            );
+            vi.stubGlobal(
+                'createImageBitmap',
+                vi.fn(async () => ({ width: 100, height: 50 }))
+            );
+            const xml = await bookletXml(
+                richTest(
+                    '<table><tr><td>Label A</td><td><img src="data:image/png;base64,AAA"></td></tr></table><ul><li>Item <img src="data:image/png;base64,AAA"></li></ul>',
+                    '<p>Q</p>'
+                )
+            );
+
+            const cells = xml.split('<w:tc>').slice(1);
+            const labelCell = cells.findIndex((c) => c.includes('Label A'));
+            expect(labelCell).toBeGreaterThanOrEqual(0);
+            expect(cells[labelCell]).not.toContain('<w:drawing>');
+            expect(cells[labelCell + 1]).toContain('<w:drawing>');
+
+            const paragraphs = xml.split('<w:p>').slice(1);
+            expect(paragraphs.filter((p) => p.includes('Item ') && p.includes('<w:drawing>'))).toHaveLength(1);
+        });
+
+        it('keeps text that sits next to inline markup without a wrapping paragraph', async () => {
+            const xml = await bookletXml(richTest('<p>Passage</p>', 'Read <strong>this</strong> carefully.'));
+            expect(xml).toContain('Read ');
+            expect(xml).toContain('this');
+            expect(xml).toContain(' carefully.');
+        });
     });
 });

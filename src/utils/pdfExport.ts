@@ -311,6 +311,8 @@ export function withoutBrowserPrintChrome(
 
 /** Upper bound on how long a print job may keep its iframe alive when the browser never reports `afterprint`. */
 const PRINT_SAFETY_TIMEOUT_MS = 5 * 60_000;
+/** How long a caller that waits for the print dialog waits for `afterprint` before moving on, so a browser that advertises but never fires it can't stall a multi-document export for the full cleanup window. */
+const PRINT_DIALOG_WAIT_TIMEOUT_MS = 2 * 60_000;
 
 export function printHtml(
     html: string,
@@ -380,7 +382,7 @@ export function printHtml(
                     // Only callers that print several documents in a row wait for the dialog to close (so the
                     // next one doesn't open over it); everyone else resolves promptly as before.
                     const waitsForDialog = options.waitForPrintDialog && !!win && 'onafterprint' in win;
-                    if (!waitsForDialog) setTimeout(resolve, 100);
+                    setTimeout(resolve, waitsForDialog ? PRINT_DIALOG_WAIT_TIMEOUT_MS : 100);
                 },
                 fontLink ? 800 : 500
             );
