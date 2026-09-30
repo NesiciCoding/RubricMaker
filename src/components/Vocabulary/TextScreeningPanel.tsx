@@ -12,7 +12,6 @@ import { useToast } from '../../hooks/useToast';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { profileText } from '../../utils/cefrVocabularyProfiler';
 import { computeTargetVerdict } from '../../utils/textLevelVerdict';
-import { extractText } from '../../utils/textExtraction';
 import { lookupManyWordDetails, translationTarget } from '../../services/wordLookup';
 import { isWordnetInstalled, removeWordnetPack } from '../../services/wordnetPack';
 import { nanoid } from '../../utils/nanoid';
@@ -35,6 +34,7 @@ export default function TextScreeningPanel() {
     const navigate = useNavigate();
     const { addFlashcardDeck } = useFlashcards();
     const fileInput = useRef<HTMLInputElement>(null);
+    const mounted = useRef(true);
 
     const [text, setText] = useState('');
     const [targetLevel, setTargetLevel] = useState<CefrLevel>('B1');
@@ -44,7 +44,13 @@ export default function TextScreeningPanel() {
     const [showWordnetModal, setShowWordnetModal] = useState(false);
 
     useEffect(() => {
-        void isWordnetInstalled().then(setWordnetInstalled);
+        mounted.current = true;
+        void isWordnetInstalled().then((installed) => {
+            if (mounted.current) setWordnetInstalled(installed);
+        });
+        return () => {
+            mounted.current = false;
+        };
     }, []);
 
     const profile = useMemo(() => (text.trim() ? profileText(text) : null), [text]);
@@ -62,11 +68,13 @@ export default function TextScreeningPanel() {
                 size: file.size,
                 addedAt: new Date().toISOString(),
             };
-            setText(await extractText(attachment));
+            const { extractText } = await import('../../utils/textExtraction');
+            const extracted = await extractText(attachment);
+            if (mounted.current) setText(extracted);
         } catch {
-            showToast(t('vocabProfile.screen_extract_failed'), 'error');
+            if (mounted.current) showToast(t('vocabProfile.screen_extract_failed'), 'error');
         } finally {
-            setExtracting(false);
+            if (mounted.current) setExtracting(false);
             if (fileInput.current) fileInput.current.value = '';
         }
     }
@@ -95,6 +103,7 @@ export default function TextScreeningPanel() {
             translationTarget(i18n.language),
             (done, total) => setSeeding({ done, total })
         );
+        if (!mounted.current) return;
         setSeeding(null);
 
         const deck = addFlashcardDeck({
@@ -137,6 +146,7 @@ export default function TextScreeningPanel() {
                 placeholder={t('vocabProfile.screen_placeholder')}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                disabled={extracting}
                 rows={8}
                 style={{ width: '100%', resize: 'vertical' }}
             />
@@ -159,7 +169,7 @@ export default function TextScreeningPanel() {
                     {extracting ? t('vocabProfile.screen_extracting') : t('vocabProfile.screen_upload')}
                 </button>
                 {text && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setText('')}>
+                    <button className="btn btn-ghost btn-sm" disabled={extracting} onClick={() => setText('')}>
                         {t('vocabProfile.screen_clear')}
                     </button>
                 )}

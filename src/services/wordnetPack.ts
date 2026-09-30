@@ -90,6 +90,8 @@ export async function downloadWordnetPack(
         bytes.set(c, offset);
         offset += c.length;
     }
+    // An SPA fallback can answer 200 with index.html; refuse anything that isn't a usable pack.
+    await parsePack(bytes);
     await withStore('readwrite', (s) => s.put(bytes.buffer, KEY));
     onProgress?.(1);
     index = null;
@@ -110,13 +112,23 @@ async function inflate(bytes: Uint8Array): Promise<string> {
     return new Response(stream).text();
 }
 
+async function parsePack(bytes: Uint8Array): Promise<Record<string, PackEntry[]>> {
+    const parsed: unknown = JSON.parse(await inflate(bytes));
+    const first = parsed && typeof parsed === 'object' ? Object.values(parsed)[0] : undefined;
+    const entry: unknown = Array.isArray(first) ? first[0] : undefined;
+    if (!Array.isArray(entry) || typeof entry[0] !== 'string' || typeof entry[1] !== 'string') {
+        throw new Error('WordNet pack is not in the expected format');
+    }
+    return parsed as Record<string, PackEntry[]>;
+}
+
 function loadIndex(): Promise<Map<string, PackEntry[]> | null> {
     if (index) return Promise.resolve(index);
     loading ??= (async () => {
         try {
             const stored = await withStore<ArrayBuffer | undefined>('readonly', (s) => s.get(KEY));
             if (!stored) return null;
-            const parsed = JSON.parse(await inflate(new Uint8Array(stored))) as Record<string, PackEntry[]>;
+            const parsed = await parsePack(new Uint8Array(stored));
             index = new Map(Object.entries(parsed));
             return index;
         } catch {

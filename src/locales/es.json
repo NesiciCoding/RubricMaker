@@ -3545,7 +3545,7 @@
         "screen_this_text": "Este texto",
         "screen_csv_filename": "palabras_sobre_el_nivel",
         "wordnet_title": "¿Descargar el diccionario sin conexión?",
-        "wordnet_body": "Añade definiciones en inglés sin conexión a internet (unos {{size}} MB). Se descarga una sola vez y se guarda solo en este dispositivo; no se sube nada de lo que escribes.",
+        "wordnet_body": "Añade definiciones en inglés sin conexión a internet (unos {{size}} MB). La descarga se hace una sola vez y no sube nada; el paquete se guarda solo en este dispositivo. Al crear un mazo aún pueden usarse los servicios en línea de diccionario y traducción, que reciben cada una de las palabras buscadas.",
         "wordnet_license": "Open English WordNet 2024, con licencia CC BY 4.0 (derivado de Princeton WordNet). Atribución: en-word.net.",
         "wordnet_progress": "Progreso de la descarga",
         "wordnet_failed": "La descarga falló. Comprueba tu conexión e inténtalo de nuevo.",

@@ -3545,7 +3545,7 @@
         "screen_this_text": "Deze tekst",
         "screen_csv_filename": "woorden_boven_niveau",
         "wordnet_title": "Offline woordenboek downloaden?",
-        "wordnet_body": "Voegt Engelse definities toe zonder internetverbinding (ongeveer {{size}} MB). Het wordt één keer gedownload en alleen op dit apparaat opgeslagen; er wordt niets van wat je typt geüpload.",
+        "wordnet_body": "Voegt Engelse definities toe zonder internetverbinding (ongeveer {{size}} MB). Het downloaden gebeurt één keer en uploadt niets; het pakket wordt alleen op dit apparaat opgeslagen. Bij het maken van een set kunnen de online woordenboek- en vertaaldiensten nog steeds worden gebruikt; die ontvangen de afzonderlijke woorden die worden opgezocht.",
         "wordnet_license": "Open English WordNet 2024, onder CC BY 4.0 (afgeleid van Princeton WordNet). Bronvermelding: en-word.net.",
         "wordnet_progress": "Downloadvoortgang",
         "wordnet_failed": "Het downloaden is mislukt. Controleer je verbinding en probeer het opnieuw.",

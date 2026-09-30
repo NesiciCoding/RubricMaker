@@ -55,6 +55,18 @@ describe('wordnetPack', () => {
         expect(await isWordnetInstalled()).toBe(false);
     });
 
+    it('rejects a 200 response that is not a pack (e.g. an SPA index.html) without installing it', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(packResponse(new TextEncoder().encode('<!doctype html><html></html>')))
+        );
+        await expect(downloadWordnetPack()).rejects.toThrow();
+        expect(await isWordnetInstalled()).toBe(false);
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(packResponse(new TextEncoder().encode('{"cat":"nope"}'))));
+        await expect(downloadWordnetPack()).rejects.toThrow();
+        expect(await isWordnetInstalled()).toBe(false);
+    });
+
     it('removing the pack makes lookups return null again', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(packResponse(new TextEncoder().encode(JSON.stringify(PACK)))));
         await downloadWordnetPack();

@@ -3545,7 +3545,7 @@
         "screen_this_text": "Ce texte",
         "screen_csv_filename": "mots_au_dessus_du_niveau",
         "wordnet_title": "Télécharger le dictionnaire hors ligne ?",
-        "wordnet_body": "Ajoute des définitions en anglais sans connexion internet (environ {{size}} Mo). Il est téléchargé une seule fois et stocké uniquement sur cet appareil ; rien de ce que vous saisissez n'est envoyé.",
+        "wordnet_body": "Ajoute des définitions en anglais sans connexion internet (environ {{size}} Mo). Le téléchargement a lieu une seule fois et n'envoie rien ; le paquet est stocké uniquement sur cet appareil. La création d'un paquet peut toujours utiliser les services en ligne de dictionnaire et de traduction, qui reçoivent chacun des mots recherchés.",
         "wordnet_license": "Open English WordNet 2024, sous licence CC BY 4.0 (dérivé de Princeton WordNet). Attribution : en-word.net.",
         "wordnet_progress": "Progression du téléchargement",
         "wordnet_failed": "Le téléchargement a échoué. Vérifiez votre connexion et réessayez.",

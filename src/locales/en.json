@@ -3543,7 +3543,7 @@
         "screen_this_text": "This text",
         "screen_csv_filename": "above_target_words",
         "wordnet_title": "Download the offline dictionary?",
-        "wordnet_body": "Adds English definitions without an internet connection (about {{size}} MB). It is downloaded once and stored on this device only; nothing you type is uploaded.",
+        "wordnet_body": "Adds English definitions without an internet connection (about {{size}} MB). Downloading it happens once and uploads nothing; the pack is stored on this device only. Seeding a deck can still use the online dictionary and translation services, which receive the individual words being looked up.",
         "wordnet_license": "Open English WordNet 2024, licensed CC BY 4.0 (derived from Princeton WordNet). Attribution: en-word.net.",
         "wordnet_progress": "Download progress",
         "wordnet_failed": "The download failed. Check your connection and try again.",

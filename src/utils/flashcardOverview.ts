@@ -32,13 +32,19 @@ export function computeCrossDeckOverview(
     now: Date = new Date()
 ): CrossDeckOverview {
     const reviewById = new Map(reviews.map((r) => [r.id, r]));
+    const assignmentsByDeck = new Map<string, FlashcardAssignment[]>();
+    for (const a of assignments) {
+        const list = assignmentsByDeck.get(a.deckId);
+        if (list) list.push(a);
+        else assignmentsByDeck.set(a.deckId, [a]);
+    }
     const rows: DeckOverviewRow[] = [];
     const activeStudents = new Set<string>();
     let lastStudied: string | null = null;
 
     for (const deck of decks) {
         if (deck.ownerStudentId && !deck.sharedWithTeacher) continue;
-        const assigned = assignments.filter((a) => a.deckId === deck.id);
+        const assigned = assignmentsByDeck.get(deck.id) ?? [];
         const summed: DeckInsights = {
             totalCards: 0,
             newCount: 0,

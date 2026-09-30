@@ -3545,7 +3545,7 @@
         "screen_this_text": "Dieser Text",
         "screen_csv_filename": "woerter_ueber_niveau",
         "wordnet_title": "Offline-Wörterbuch herunterladen?",
-        "wordnet_body": "Fügt englische Definitionen ohne Internetverbindung hinzu (etwa {{size}} MB). Es wird einmal heruntergeladen und nur auf diesem Gerät gespeichert; nichts von dem, was du eingibst, wird hochgeladen.",
+        "wordnet_body": "Fügt englische Definitionen ohne Internetverbindung hinzu (etwa {{size}} MB). Der Download erfolgt einmal und lädt nichts hoch; das Paket wird nur auf diesem Gerät gespeichert. Beim Erstellen eines Stapels können weiterhin die Online-Wörterbuch- und Übersetzungsdienste genutzt werden, die die einzelnen nachgeschlagenen Wörter erhalten.",
         "wordnet_license": "Open English WordNet 2024, lizenziert unter CC BY 4.0 (abgeleitet von Princeton WordNet). Quellenangabe: en-word.net.",
         "wordnet_progress": "Download-Fortschritt",
         "wordnet_failed": "Der Download ist fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.",
