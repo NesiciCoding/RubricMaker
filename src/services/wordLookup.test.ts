@@ -35,6 +35,7 @@ describe('wordLookup', () => {
         expect(await translateWord('dog', 'nl')).toBe('hond');
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain('langpair=en|nl');
+        expect(String(vi.mocked(fetch).mock.calls[0][0])).toContain('de=admin%40rubricmaker.nl');
     });
 
     it('rejects failed, unchanged and errored translations', async () => {

@@ -308,8 +308,9 @@ export default function PrivacyPage() {
                         <li>
                             <strong>MyMemory translation</strong> — Optional word translation when you seed a flashcard
                             deck from a text in a non-English interface language. Only the individual looked-up words
-                            (never the text itself) are sent to api.mymemory.translated.net; no key or account is
-                            required.{' '}
+                            (never the text itself) are sent to api.mymemory.translated.net, together with this
+                            deployment's contact email address (admin@rubricmaker.nl) to raise the free daily limit; no
+                            key or account is required.{' '}
                             <a
                                 href="https://mymemory.translated.net/doc/"
                                 target="_blank"

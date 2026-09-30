@@ -3,6 +3,8 @@ import { lookupWordnet } from './wordnetPack';
 
 // MyMemory is a free public translation API: no key or account, CORS-enabled, rate-limited per IP.
 const TRANSLATE_BASE = 'https://api.mymemory.translated.net/get';
+// MyMemory's `de` parameter identifies the deployment by email, which raises the anonymous daily quota.
+const TRANSLATE_CONTACT_EMAIL = 'admin@rubricmaker.nl';
 const TIMEOUT_MS = 5000;
 const CONCURRENCY = 4;
 
@@ -32,9 +34,12 @@ export async function translateWord(word: string, target: string): Promise<strin
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-        const res = await fetch(`${TRANSLATE_BASE}?q=${encodeURIComponent(term)}&langpair=en|${target}`, {
-            signal: controller.signal,
-        });
+        const res = await fetch(
+            `${TRANSLATE_BASE}?q=${encodeURIComponent(term)}&langpair=en|${target}&de=${encodeURIComponent(TRANSLATE_CONTACT_EMAIL)}`,
+            {
+                signal: controller.signal,
+            }
+        );
         if (!res.ok) return null;
         const data = (await res.json()) as {
             responseStatus?: number | string;
