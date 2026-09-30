@@ -230,3 +230,14 @@ describe('TIPTAP_CONTENT_STYLES', () => {
         expect(TIPTAP_CONTENT_STYLES).toContain('comment-highlight');
     });
 });
+
+describe('image embed round-trip', () => {
+    it('keeps base64 data-URI images when saved content is reloaded', () => {
+        const editor = new Editor({
+            extensions: [...getTipTapExtensions(), ...createImageEmbedExtension()],
+            content: '<img src="data:image/png;base64,AAAA"><p>x</p>',
+        });
+        expect(editor.getHTML()).toContain('src="data:image/png;base64,AAAA"');
+        editor.destroy();
+    });
+});

@@ -19,7 +19,7 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { sanitizeFilename, stripHtmlTags } from './exportDataPrep';
+import { sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -47,51 +47,6 @@ import {
 const MM_TO_TWIPS = 56.6929;
 
 const HTML_BLOCK_TAGS = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'DIV']);
-
-/**
- * Single document-order pass collecting one text segment per "run" of inline content: a block
- * boundary (entering or leaving a block element) flushes whatever inline text has accumulated so
- * far as its own segment, so text that surrounds a nested block — e.g.
- * `<blockquote>Before<p>Inside</p>After</blockquote>` — comes out in source order ("Before",
- * "Inside", "After") instead of the nested block's text being reordered around it. A plain `<div>`
- * (which `querySelectorAll('p, li, ...')` would miss) is included via the same block-boundary
- * flush, and a passage with no block tags at all still produces one segment from the trailing flush.
- */
-export function collectParagraphTexts(root: Element): string[] {
-    const texts: string[] = [];
-    let buffer = '';
-    const flush = () => {
-        const text = buffer.replace(/\s+/g, ' ').trim();
-        if (text) texts.push(text);
-        buffer = '';
-    };
-    const walk = (node: ChildNode) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-            buffer += node.textContent ?? '';
-            return;
-        }
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-        const el = node as Element;
-        const isBlock = HTML_BLOCK_TAGS.has(el.tagName);
-        if (isBlock) flush();
-        el.childNodes.forEach(walk);
-        if (isBlock) flush();
-    };
-    root.childNodes.forEach(walk);
-    flush();
-    return texts;
-}
-
-/**
- * Splits a rich-text passage into one Paragraph per block element, instead of collapsing every
- * paragraph/list item into one run of text — stripHtmlTags() alone flattens all whitespace to a
- * single space, so a multi-paragraph reading passage would otherwise print as one unbroken block.
- */
-function htmlToParagraphs(html: string, spacingAfter = 120): Paragraph[] {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const texts = collectParagraphTexts(doc.body);
-    return texts.map((text) => new Paragraph({ text, spacing: { after: spacingAfter } }));
-}
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
 
@@ -254,15 +209,104 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
     }
 }
 
+interface InlineStyle {
+    bold?: boolean;
+    italics?: boolean;
+    underline?: object;
+    superScript?: boolean;
+    subScript?: boolean;
+    size?: number;
+    color?: string;
+}
+
+/** CSS font-size (px/pt/unitless-px) → docx half-points, so a 14px editor size exports as 14px-equivalent 10.5pt. */
+function fontSizeToHalfPoints(value: string): number | undefined {
+    const m = /^([\d.]+)\s*(px|pt)?$/.exec(value.trim());
+    if (!m) return undefined;
+    const n = parseFloat(m[1]);
+    return Math.round(m[2] === 'pt' ? n * 2 : n * 1.5);
+}
+
+function elementStyle(el: HTMLElement, inherited: InlineStyle): InlineStyle {
+    const style = { ...inherited };
+    const tag = el.tagName;
+    if (tag === 'B' || tag === 'STRONG' || /^H[1-6]$/.test(tag)) style.bold = true;
+    if (tag === 'I' || tag === 'EM') style.italics = true;
+    if (tag === 'U') style.underline = {};
+    if (tag === 'SUP') style.superScript = true;
+    if (tag === 'SUB') style.subScript = true;
+    const size = el.style.fontSize ? fontSizeToHalfPoints(el.style.fontSize) : undefined;
+    if (size) style.size = size;
+    const hex = /^#([0-9a-f]{6})$/i.exec(el.style.color ? rgbToHex(el.style.color) : '');
+    if (hex) style.color = hex[1];
+    return style;
+}
+
+function rgbToHex(color: string): string {
+    const m = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(color);
+    return m ? '#' + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('') : color;
+}
+
+type InlinePiece = { text: string; style: InlineStyle } | { image: ImageRun } | { lineBreak: true };
+
+/**
+ * Converts rich-text HTML into one Paragraph per block element, keeping inline bold/italic/underline,
+ * font size and colour plus embedded images — a flat text dump would lose the editor's formatting.
+ */
+export async function htmlToParagraphs(html: string, spacingAfter = 120): Promise<Paragraph[]> {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const paragraphs: Paragraph[] = [];
+    let pieces: InlinePiece[] = [];
+    const flush = () => {
+        const texts = pieces.filter((p): p is { text: string; style: InlineStyle } => 'text' in p);
+        if (texts.length) {
+            texts[0].text = texts[0].text.trimStart();
+            texts[texts.length - 1].text = texts[texts.length - 1].text.trimEnd();
+        }
+        const children = pieces.flatMap((p): (TextRun | ImageRun)[] => {
+            if ('image' in p) return [p.image];
+            if ('lineBreak' in p) return [new TextRun({ break: 1 })];
+            return p.text ? [new TextRun({ text: p.text, ...p.style })] : [];
+        });
+        if (children.length) paragraphs.push(new Paragraph({ children, spacing: { after: spacingAfter } }));
+        pieces = [];
+    };
+    const walk = async (node: ChildNode, style: InlineStyle): Promise<void> => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            pieces.push({ text: (node.textContent ?? '').replace(/\s+/g, ' '), style });
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const el = node as HTMLElement;
+        if (el.tagName === 'BR') {
+            pieces.push({ lineBreak: true });
+            return;
+        }
+        if (el.tagName === 'IMG') {
+            const src = el.getAttribute('src');
+            const image = src ? await questionImageRun(src) : null;
+            if (image) pieces.push({ image });
+            return;
+        }
+        const isBlock = HTML_BLOCK_TAGS.has(el.tagName);
+        if (isBlock) flush();
+        const childStyle = elementStyle(el, style);
+        for (const child of Array.from(el.childNodes)) await walk(child, childStyle);
+        if (isBlock) flush();
+    };
+    for (const child of Array.from(doc.body.childNodes)) await walk(child, {});
+    flush();
+    return paragraphs;
+}
+
 async function questionParagraphs(
     question: TestQuestion,
     number: number,
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const promptRuns = isCloze
-        ? clozeRuns(question)
-        : [new TextRun({ text: stripHtmlTags(plainQuestionPromptText(question)) })];
+    const promptRuns = isCloze ? clozeRuns(question) : [];
+    const promptParagraphs = isCloze ? [] : await htmlToParagraphs(plainQuestionPromptText(question), 40);
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
@@ -273,6 +317,7 @@ async function questionParagraphs(
             ],
             spacing: { after: 60 },
         }),
+        ...promptParagraphs,
     ];
 
     if (question.imageUrl) {
@@ -361,7 +406,7 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
         if (group.section) {
             children.push(sectionDivider(group.section.title));
             if (options.attachmentMode === 'inline' && group.section.content) {
-                children.push(...htmlToParagraphs(group.section.content, 120));
+                children.push(...(await htmlToParagraphs(group.section.content, 120)));
             }
         }
         for (const { question, number } of group.questions) {
@@ -371,15 +416,15 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     return children;
 }
 
-function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
+async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
     const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'))];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
-    groups.forEach((group, i) => {
-        if (!group.section?.content) return;
+    for (const [i, group] of groups.entries()) {
+        if (!group.section?.content) continue;
         if (i > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(sectionDivider(group.section.title));
-        children.push(...htmlToParagraphs(group.section.content, 200));
-    });
+        children.push(...(await htmlToParagraphs(group.section.content, 200)));
+    }
     return children;
 }
 
@@ -677,7 +722,7 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     if (options.attachmentMode === 'separate') {
         files.push({
             name: `${base}-attachment.docx`,
-            blob: await buildDocxBlob(buildAttachmentChildren(test), options),
+            blob: await buildDocxBlob(await buildAttachmentChildren(test), options),
         });
     }
     const students = options.students ?? [];

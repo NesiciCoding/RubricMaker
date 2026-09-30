@@ -1,40 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { collectParagraphTexts } from './testExamExportDocx';
+import { htmlToParagraphs } from './testExamExportDocx';
 
-function parse(html: string): Element {
-    return new DOMParser().parseFromString(html, 'text/html').body;
-}
+const runProps = (p: unknown) => JSON.stringify(p);
 
-describe('collectParagraphTexts', () => {
-    it('splits multiple paragraphs into separate segments', () => {
-        expect(collectParagraphTexts(parse('<p>First</p><p>Second</p>'))).toEqual(['First', 'Second']);
+describe('htmlToParagraphs', () => {
+    it('splits block elements into paragraphs and keeps nested block order', async () => {
+        expect(await htmlToParagraphs('<p>First</p><p>Second</p>')).toHaveLength(2);
+        const json = runProps(await htmlToParagraphs('<blockquote>Before<p>Inside</p>After</blockquote>'));
+        expect(json.indexOf('Before')).toBeLessThan(json.indexOf('Inside'));
+        expect(json.indexOf('Inside')).toBeLessThan(json.indexOf('After'));
     });
 
-    it('includes plain <div> text that a p/li/h*/blockquote-only selector would miss', () => {
-        expect(collectParagraphTexts(parse('<div>Hello world</div>'))).toEqual(['Hello world']);
+    it('handles plain text and skips empty blocks', async () => {
+        expect(await htmlToParagraphs('Just plain text')).toHaveLength(1);
+        expect(await htmlToParagraphs('<p>   </p><p>Real</p>')).toHaveLength(1);
     });
 
-    it('does not duplicate a nested block’s text', () => {
-        expect(collectParagraphTexts(parse('<blockquote><p>Read this</p></blockquote>'))).toEqual(['Read this']);
-    });
-
-    it('keeps interleaved text and a nested block in source order', () => {
-        expect(collectParagraphTexts(parse('<blockquote>Before<p>Inside</p>After</blockquote>'))).toEqual([
-            'Before',
-            'Inside',
-            'After',
-        ]);
-    });
-
-    it('merges inline formatting into the surrounding paragraph', () => {
-        expect(collectParagraphTexts(parse('<p>Hello <strong>world</strong>!</p>'))).toEqual(['Hello world!']);
-    });
-
-    it('falls back to the raw text when there are no block elements at all', () => {
-        expect(collectParagraphTexts(parse('Just plain text, no tags.'))).toEqual(['Just plain text, no tags.']);
-    });
-
-    it('drops empty/whitespace-only segments', () => {
-        expect(collectParagraphTexts(parse('<p>   </p><p>Real content</p>'))).toEqual(['Real content']);
+    it('carries the editor font size (14px = 21 half-points) and bold into the runs', async () => {
+        const json = runProps(
+            await htmlToParagraphs('<p><strong><span style="font-size: 14px">Hi</span></strong></p>')
+        );
+        expect(json).toContain('"w:sz"');
+        expect(json).toContain('21');
+        expect(json).toContain('w:b');
     });
 });

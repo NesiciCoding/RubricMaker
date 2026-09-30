@@ -261,7 +261,7 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
  */
 export function createImageEmbedExtension() {
     return [
-        Image.configure({ HTMLAttributes: { style: 'max-width: 100%; height: auto;' } }),
+        Image.configure({ allowBase64: true, HTMLAttributes: { style: 'max-width: 100%; height: auto;' } }),
         FileHandler.configure({
             allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'],
             onDrop: (editor, files, pos) => insertImageFiles(editor, files, pos),

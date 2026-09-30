@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { printHtml } from './pdfExport';
-import { escapeHtml, sanitizeFilename, stripHtmlTags } from './exportDataPrep';
+import { escapeHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -73,7 +73,7 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const prompt = isCloze
         ? `<div style="line-height:1.8">${clozeBookletHtml(question)}</div>`
-        : escapeHtml(stripHtmlTags(plainQuestionPromptText(question)));
+        : DOMPurify.sanitize(plainQuestionPromptText(question));
     let extra = '';
 
     if (question.imageUrl) {
