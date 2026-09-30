@@ -75,7 +75,7 @@ const TEACHER_FEATURES = [
     {
         icon: Languages,
         title: 'Vocabulary & Grammar',
-        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a reading suits your class’s level, spot criteria a student keeps losing points on across essays, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
+        desc: 'See each class and student’s CEFR vocabulary range (A1–C2) and academic-word coverage from their analysed work, check whether a pasted or uploaded reading suits your class’s level, see flashcard progress across all your decks, spot criteria a student keeps losing points on across essays, auto-check linked grammar in scanned essays, and export or seed flashcard decks from word lists by level.',
         color: '#f59e0b',
     },
     {

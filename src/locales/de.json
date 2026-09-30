@@ -3426,7 +3426,9 @@
         "es_stats_info": "Das Panel zur grammatischen Bandbreite benötigt das englische UD-Parsermodell. Es ist nicht enthalten, da es unter CC BY-NC-SA (nicht kommerziell) lizenziert ist. Selbst-Hoster laden es einmal nach public/models/ herunter (siehe README dort); ohne Modell bleibt das Panel ausgeblendet. Es ist ein Bandbreiten-Indikator, keine Note: Der Parser ist bei einigen Konstruktionen weniger genau, nutzen Sie ihn zusammen mit Ihrem eigenen Urteil.",
         "an_trends_title": "Schreibtrends",
         "an_trends_body": "Im Profil einer Person (Tab Übersicht) und auf der Statistikseite einer Klasse verfolgt RubricMaker jedes Rasterkriterium über die bewerteten Aufsätze und markiert Kriterien, die anhaltend schwach sind oder nachlassen. Regelbasiert: Ein Kriterium ist schwach, wenn seine letzten drei Aufsätze alle bei höchstens 60 % liegen. Nur bewertete, abgegebene Aufsätze (mit Aufsatzauftrag) zählen.",
-        "es_stats_item_linker": "Grammatikverknüpfung: Ist das Parsermodell gehostet, werden mit Rasterkriterien verknüpfte Grammatikstrukturen anhand der Analyse geprüft, sodass mehr Strukturen (Question Tags, Wish-Sätze, Kausative, Inversion…) automatisch statt manuell geprüft werden können. Ohne Modell werden wie bisher die Regex-Prüfungen verwendet."
+        "es_stats_item_linker": "Grammatikverknüpfung: Ist das Parsermodell gehostet, werden mit Rasterkriterien verknüpfte Grammatikstrukturen anhand der Analyse geprüft, sodass mehr Strukturen (Question Tags, Wish-Sätze, Kausative, Inversion…) automatisch statt manuell geprüft werden können. Ohne Modell werden wie bisher die Regex-Prüfungen verwendet.",
+        "an_vocab_item_flashcards": "Karteikarten-Ansicht: der Fortschritt aller Stapel in einer Tabelle — zugewiesene und aktive Schüler, Stufenbalken, fällige Karten und letztes Lerndatum — ohne jeden Stapel einzeln zu öffnen.",
+        "an_vocab_item_screening": "Textprüfung: Füge einen Text ein oder lade eine PDF-, Word-, Text- oder Bilddatei hoch und sieh das GER-Profil, den Anteil von Wörtern außerhalb der Liste und akademischen Wörtern sowie ein Urteil für das Niveau deiner Klasse. Erstelle danach einen Vorentlastungsstapel oder exportiere die Wörter über dem Niveau."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -3475,7 +3477,7 @@
         "writing_summary": "{{pct}}% Ø ({{count}})"
     },
     "vocabProfile": {
-        "page_title": "Wortschatzprofil",
+        "page_title": "Wortschatz-Einblicke",
         "page_subtitle": "GER-Wortschatzverteilung pro Klasse und Schüler, basierend auf analysierten Dokumenten.",
         "view_button": "Wortschatzprofil ansehen",
         "label_class_filter": "Klasse",
@@ -3511,7 +3513,36 @@
         "seed_deck_hint": "Aus diesen Wörtern ein Kartenset erstellen",
         "seed_deck_name": "Vorentlastung: {{band}}",
         "seed_deck_empty": "Keine Wörter für ein Set auf dieser Stufe.",
-        "seed_deck_created": "Set „{{name}}“ mit {{count}} Wörtern erstellt."
+        "seed_deck_created": "Set „{{name}}“ mit {{count}} Wörtern erstellt.",
+        "view_label": "Ansicht",
+        "view_reading": "Leseniveaus",
+        "view_flashcards": "Karteikarten",
+        "view_screen": "Textprüfung",
+        "fc_title": "Karteikarten-Fortschritt über alle Stapel",
+        "fc_subtitle": "Die Summen zählen die Karten jedes zugewiesenen Schülers, basierend auf den Fortschrittsdaten jedes Stapels.",
+        "fc_empty": "Noch keine Karteikartenstapel. Erstelle einen Stapel, um hier den Fortschritt zu sehen.",
+        "fc_stat_decks": "Stapel",
+        "fc_stat_active_students": "Lernende Schüler",
+        "fc_stat_mastered": "Beherrschte Karten",
+        "fc_stat_due": "Fällige Karten",
+        "fc_col_deck": "Stapel",
+        "fc_col_assigned": "Zugewiesen",
+        "fc_col_active": "Lernen",
+        "fc_col_progress": "Fortschritt",
+        "fc_col_due": "Fällig",
+        "fc_col_last": "Zuletzt gelernt",
+        "fc_never": "Nie",
+        "screen_title": "Passt dieser Text zu meiner Klasse?",
+        "screen_subtitle": "Füge einen Text ein oder lade eine Datei hoch (PDF, Word, Text, Bild), um das GER-Wortschatzprofil zu sehen. Alles wird in deinem Browser verarbeitet.",
+        "screen_text_label": "Zu prüfender Text",
+        "screen_placeholder": "Text hier einfügen…",
+        "screen_upload": "Datei hochladen",
+        "screen_extracting": "Datei wird gelesen…",
+        "screen_extract_failed": "Aus dieser Datei konnte kein Text gelesen werden.",
+        "screen_clear": "Leeren",
+        "screen_empty": "Füge Text hinzu, um das Niveau zu sehen.",
+        "screen_this_text": "Dieser Text",
+        "screen_csv_filename": "woerter_ueber_niveau"
     },
     "csv": {
         "summary_created": "erstellt",

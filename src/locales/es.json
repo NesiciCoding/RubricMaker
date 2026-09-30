@@ -3426,7 +3426,9 @@
         "es_stats_info": "El panel de alcance gramatical necesita el modelo de analizador UD en inglés, que no se incluye porque tiene licencia CC BY-NC-SA (no comercial). Quien aloja la aplicación lo descarga una vez en public/models/ (véase el README); sin él, el panel permanece oculto. Es un indicador de alcance, no una calificación: el analizador es menos preciso en algunas construcciones, úsalo junto con tu propio criterio.",
         "an_trends_title": "Tendencias de escritura",
         "an_trends_body": "En el perfil de un estudiante (pestaña Resumen) y en la página de Estadísticas de una clase, RubricMaker sigue cada criterio de la rúbrica a lo largo de los ensayos calificados y señala los criterios persistentemente débiles o en descenso. Se basa en reglas: un criterio es débil cuando sus últimos tres ensayos están todos en el 60 % o menos. Solo cuentan los ensayos calificados y entregados (con tarea de ensayo).",
-        "es_stats_item_linker": "Vinculación gramatical: cuando el modelo del analizador está alojado, las estructuras gramaticales vinculadas a criterios de la rúbrica se comprueban con el análisis, de modo que más estructuras (question tags, wish, causativas, inversión…) se comprueban automáticamente en lugar de manualmente. Sin el modelo se usan las comprobaciones con expresiones regulares como antes."
+        "es_stats_item_linker": "Vinculación gramatical: cuando el modelo del analizador está alojado, las estructuras gramaticales vinculadas a criterios de la rúbrica se comprueban con el análisis, de modo que más estructuras (question tags, wish, causativas, inversión…) se comprueban automáticamente en lugar de manualmente. Sin el modelo se usan las comprobaciones con expresiones regulares como antes.",
+        "an_vocab_item_flashcards": "Vista de tarjetas: el progreso de todos los mazos en una tabla — estudiantes asignados y activos, barra de etapas, tarjetas pendientes y fecha del último estudio — sin abrir cada mazo.",
+        "an_vocab_item_screening": "Vista de análisis de texto: pega un texto o sube un archivo PDF, Word, de texto o imagen para ver su perfil MCER, la proporción de palabras fuera de la lista y académicas, y un veredicto para el nivel de tu clase; luego crea un mazo de preenseñanza o exporta las palabras por encima del nivel."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -3475,7 +3477,7 @@
         "writing_summary": "{{pct}}% prom. ({{count}})"
     },
     "vocabProfile": {
-        "page_title": "Perfil de vocabulario",
+        "page_title": "Análisis de vocabulario",
         "page_subtitle": "Distribución del vocabulario MCER por clase y estudiante, basada en documentos analizados.",
         "view_button": "Ver perfil de vocabulario",
         "label_class_filter": "Clase",
@@ -3511,7 +3513,36 @@
         "seed_deck_hint": "Crear un mazo con estas palabras",
         "seed_deck_name": "Pre-enseñanza: {{band}}",
         "seed_deck_empty": "No hay palabras para crear un mazo en este nivel.",
-        "seed_deck_created": "Mazo «{{name}}» creado con {{count}} palabras."
+        "seed_deck_created": "Mazo «{{name}}» creado con {{count}} palabras.",
+        "view_label": "Vista",
+        "view_reading": "Niveles de lectura",
+        "view_flashcards": "Tarjetas",
+        "view_screen": "Análisis de texto",
+        "fc_title": "Progreso de tarjetas en todos los mazos",
+        "fc_subtitle": "Los totales cuentan las tarjetas de cada estudiante asignado, a partir de los datos de progreso de cada mazo.",
+        "fc_empty": "Aún no hay mazos de tarjetas. Crea un mazo para ver aquí el progreso.",
+        "fc_stat_decks": "Mazos",
+        "fc_stat_active_students": "Estudiantes estudiando",
+        "fc_stat_mastered": "Tarjetas dominadas",
+        "fc_stat_due": "Tarjetas pendientes",
+        "fc_col_deck": "Mazo",
+        "fc_col_assigned": "Asignados",
+        "fc_col_active": "Estudiando",
+        "fc_col_progress": "Progreso",
+        "fc_col_due": "Pendientes",
+        "fc_col_last": "Último estudio",
+        "fc_never": "Nunca",
+        "screen_title": "¿Es este texto adecuado para mi clase?",
+        "screen_subtitle": "Pega un texto o sube un archivo (PDF, Word, texto, imagen) para ver su perfil de vocabulario MCER. Todo se procesa en tu navegador.",
+        "screen_text_label": "Texto a analizar",
+        "screen_placeholder": "Pega aquí un texto…",
+        "screen_upload": "Subir un archivo",
+        "screen_extracting": "Leyendo archivo…",
+        "screen_extract_failed": "No se pudo leer texto de ese archivo.",
+        "screen_clear": "Borrar",
+        "screen_empty": "Añade texto para ver su nivel.",
+        "screen_this_text": "Este texto",
+        "screen_csv_filename": "palabras_sobre_el_nivel"
     },
     "csv": {
         "summary_created": "creado(s)",

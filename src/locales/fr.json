@@ -3426,7 +3426,9 @@
         "es_stats_info": "Le panneau d'étendue grammaticale nécessite le modèle d'analyseur UD anglais, non inclus car sous licence CC BY-NC-SA (non commerciale). Les auto-hébergeurs le téléchargent une fois dans public/models/ (voir le README) ; sans lui, le panneau reste masqué. C'est un indicateur d'étendue, pas une note : l'analyseur est moins précis sur certaines constructions, à utiliser avec votre propre jugement.",
         "an_trends_title": "Tendances d'écriture",
         "an_trends_body": "Sur le profil d'un élève (onglet Aperçu) et sur la page Statistiques d'une classe, RubricMaker suit chaque critère de la grille sur les essais notés de l'élève et signale les critères durablement faibles ou en baisse. C'est basé sur des règles : un critère est faible lorsque ses trois derniers essais sont tous à 60 % ou moins. Seuls les essais notés et rendus (avec une consigne d'essai) comptent.",
-        "es_stats_item_linker": "Lien grammaire : lorsque le modèle d'analyseur est hébergé, les structures grammaticales liées aux critères sont vérifiées avec l'analyse, ce qui permet de contrôler automatiquement plus de structures (question tags, wish, causatifs, inversion…) au lieu de le faire à la main. Sans le modèle, les contrôles par expressions régulières sont utilisés comme avant."
+        "es_stats_item_linker": "Lien grammaire : lorsque le modèle d'analyseur est hébergé, les structures grammaticales liées aux critères sont vérifiées avec l'analyse, ce qui permet de contrôler automatiquement plus de structures (question tags, wish, causatifs, inversion…) au lieu de le faire à la main. Sans le modèle, les contrôles par expressions régulières sont utilisés comme avant.",
+        "an_vocab_item_flashcards": "Vue Cartes mémoire : la progression de tous les paquets dans un seul tableau — élèves assignés et actifs, barre d'étapes, cartes à revoir et date de dernière étude — sans ouvrir chaque paquet.",
+        "an_vocab_item_screening": "Vue Analyse de texte : collez un texte ou importez un fichier PDF, Word, texte ou image pour voir son profil CECR, la part de mots hors liste et académiques, et un verdict pour le niveau de votre classe, puis créez un paquet de pré-enseignement ou exportez les mots au-dessus du niveau."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3475,7 +3477,7 @@
         "writing_summary": "{{pct}}% moy. ({{count}})"
     },
     "vocabProfile": {
-        "page_title": "Profil de vocabulaire",
+        "page_title": "Analyses du vocabulaire",
         "page_subtitle": "Répartition du vocabulaire CECR par classe et par élève, basée sur les documents analysés.",
         "view_button": "Voir le profil de vocabulaire",
         "label_class_filter": "Classe",
@@ -3511,7 +3513,36 @@
         "seed_deck_hint": "Créer un jeu de cartes à partir de ces mots",
         "seed_deck_name": "Pré-enseignement : {{band}}",
         "seed_deck_empty": "Aucun mot pour créer un jeu à ce niveau.",
-        "seed_deck_created": "Jeu « {{name}} » créé avec {{count}} mots."
+        "seed_deck_created": "Jeu « {{name}} » créé avec {{count}} mots.",
+        "view_label": "Vue",
+        "view_reading": "Niveaux de lecture",
+        "view_flashcards": "Cartes mémoire",
+        "view_screen": "Analyse de texte",
+        "fc_title": "Progression des cartes sur tous les paquets",
+        "fc_subtitle": "Les totaux comptent les cartes de chaque élève assigné, à partir des données de progression de chaque paquet.",
+        "fc_empty": "Aucun paquet de cartes pour l'instant. Créez un paquet pour voir ici la progression.",
+        "fc_stat_decks": "Paquets",
+        "fc_stat_active_students": "Élèves en cours d'étude",
+        "fc_stat_mastered": "Cartes maîtrisées",
+        "fc_stat_due": "Cartes à revoir",
+        "fc_col_deck": "Paquet",
+        "fc_col_assigned": "Assignés",
+        "fc_col_active": "En étude",
+        "fc_col_progress": "Progression",
+        "fc_col_due": "À revoir",
+        "fc_col_last": "Dernière étude",
+        "fc_never": "Jamais",
+        "screen_title": "Ce texte convient-il à ma classe ?",
+        "screen_subtitle": "Collez un texte ou importez un fichier (PDF, Word, texte, image) pour voir son profil de vocabulaire CECR. Tout est traité dans votre navigateur.",
+        "screen_text_label": "Texte à analyser",
+        "screen_placeholder": "Collez un texte ici…",
+        "screen_upload": "Importer un fichier",
+        "screen_extracting": "Lecture du fichier…",
+        "screen_extract_failed": "Impossible de lire le texte de ce fichier.",
+        "screen_clear": "Effacer",
+        "screen_empty": "Ajoutez du texte pour voir son niveau.",
+        "screen_this_text": "Ce texte",
+        "screen_csv_filename": "mots_au_dessus_du_niveau"
     },
     "csv": {
         "summary_created": "créé(s)",
