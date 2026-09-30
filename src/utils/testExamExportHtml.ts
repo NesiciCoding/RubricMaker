@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
-import { printHtml } from './pdfExport';
+import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
 import { escapeHtml, promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
@@ -17,6 +17,7 @@ import {
     answerSheetQrPayload,
     categorizeBookletData,
     clozeBookletParts,
+    EXAM_PAGE_MM,
     fiducialMarkers,
     groupQuestionsBySection,
     hotTextFallbackText,
@@ -25,7 +26,6 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    pointLabel,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -69,20 +69,21 @@ function categorizeBookletHtml(question: TestQuestion): string {
   <div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('categories_label')}: ${categories}</div>`;
 }
 
-const RICH_PROMPT_CSS =
-    '<style>.exam-prompt p{margin:0 0 4px}.exam-prompt p:empty{min-height:1em}.exam-prompt mark{-webkit-print-color-adjust:exact;print-color-adjust:exact}.exam-prompt ul,.exam-prompt ol{margin:2px 0;padding-left:20px}</style>';
+const RICH_CONTENT_CSS =
+    '<style>.exam-rich p{margin:0 0 4px}.exam-rich p:empty{min-height:1em}.exam-rich mark{-webkit-print-color-adjust:exact;print-color-adjust:exact}.exam-rich ul,.exam-rich ol{margin:2px 0;padding-left:20px}.exam-rich img{max-width:100%;height:auto;max-height:220px}</style>';
 
 function richPromptHtml(question: TestQuestion): string {
-    return `${RICH_PROMPT_CSS}<div class="exam-prompt">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
+    return `${RICH_CONTENT_CSS}<div class="exam-rich">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
 }
 
 function questionBodyHtml(question: TestQuestion, number: number, options: TestExamExportOptions): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
     const prompt = isCloze
-        ? `<div style="line-height:1.8">${clozeBookletHtml(question)}</div>`
+        ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
         : richPromptHtml(question);
     let extra = '';
 
+    if (question.audioUrl) extra += audioNoteHtml();
     if (question.imageUrl) {
         extra += `<div style="margin:8px 0"><img src="${escapeHtml(question.imageUrl)}" style="max-width:100%;max-height:220px" /></div>`;
     }
@@ -93,7 +94,11 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
             extra += `<div style="margin-top:6px">${(question.options ?? [])
                 .map(
                     (o, i) =>
-                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}</div>`
+                        `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
+                            o.imageUrl
+                                ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" style="max-width:100%;max-height:120px" /></div>`
+                                : ''
+                        }</div>`
                 )
                 .join('')}</div>`;
             break;
@@ -134,7 +139,7 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
 
     return `<div style="margin-bottom:10px;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;page-break-inside:avoid">
     <div style="display:flex;gap:8px">
-      <div style="width:26px;flex-shrink:0;font-size:10px;color:#6b7280;padding-top:2px">${pointLabel(question.points)}</div>
+      <div style="width:40px;flex-shrink:0;font-size:10px;color:#6b7280;padding-top:2px">${tx('point_label', { count: question.points })}</div>
       <div style="width:20px;flex-shrink:0;font-weight:700;font-size:12px">${number}</div>
       <div style="flex:1">${prompt}${extra}</div>
     </div>
@@ -178,6 +183,14 @@ function coverPageHtml(test: Test, docLabel: string, includeNameBox = false): st
   </div>`;
 }
 
+function audioNoteHtml(): string {
+    return `<div style="margin-top:4px;font-size:11px;color:#6b7280;font-style:italic">${tx('audio_note')}</div>`;
+}
+
+function passageHtml(content: string, extraStyle: string): string {
+    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle};font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(content))}</div>`;
+}
+
 function sectionDividerHtml(title: string): string {
     return `<div style="margin:18px 0 12px;page-break-inside:avoid">
     <div style="font-weight:700;font-size:14px;margin-bottom:4px">${escapeHtml(title)}</div>
@@ -191,8 +204,9 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
     for (const group of groups) {
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
+            if (group.section.audioUrl) html += `<div style="margin-bottom:8px">${audioNoteHtml()}</div>`;
             if (options.attachmentMode === 'inline' && group.section.content) {
-                html += `<div style="margin-bottom:10px;font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content))}</div>`;
+                html += passageHtml(group.section.content, 'margin-bottom:10px');
             }
         }
         html += group.questions.map(({ question, number }) => questionBodyHtml(question, number, options)).join('');
@@ -207,23 +221,26 @@ export function buildExamAttachmentHtml(test: Test): string {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
         html += `<div style="${pageBreak}page-break-inside:avoid">${sectionDividerHtml(group.section.title)}</div>`;
-        html += `<div style="font-size:13px;margin-bottom:14px">${DOMPurify.sanitize(stripInlineFontSizes(group.section.content ?? ''))}</div>`;
+        html += passageHtml(group.section.content ?? '', 'margin-bottom:14px');
     });
     return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
 }
 
-async function scanMarkerHtml(test: Test, pageIndex: number, studentId?: string): Promise<string> {
-    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, pageIndex, studentId), {
+/** Fiducials + QR for one answer sheet, as offsets inside withoutBrowserPrintChrome()'s repeated header (page coordinates minus the side margin), so they print on every page of that sheet. */
+async function scanMarkerHtml(test: Test, studentId?: string): Promise<string> {
+    const dataUrl = await QRCode.toDataURL(answerSheetQrPayload(test.id, studentId), {
         width: 96,
         margin: 0,
     });
     const markers = fiducialMarkers()
         .map(
             (m) =>
-                `<div style="position:absolute;left:${m.x}mm;top:${m.y}mm;width:${m.size}mm;height:${m.size}mm;background:#000"></div>`
+                `<div style="position:absolute;left:${m.x - PRINT_MARGIN_MM}mm;top:${m.y}mm;width:${m.size}mm;height:${m.size}mm;background:#000"></div>`
         )
         .join('');
-    return `${markers}<img src="${dataUrl}" style="position:absolute;right:6mm;bottom:6mm;width:18mm;height:18mm" />`;
+    const qrSize = 18;
+    const qrInset = 6;
+    return `${markers}<img src="${dataUrl}" style="position:absolute;left:${EXAM_PAGE_MM.width - qrInset - qrSize - PRINT_MARGIN_MM}mm;top:${EXAM_PAGE_MM.height - qrInset - qrSize}mm;width:${qrSize}mm;height:${qrSize}mm" />`;
 }
 
 /** Renders one question's answer space per its AnswerSpaceSpec — empty bubbles, ruled lines, a half-page box, or numbered sub-lines. */
@@ -278,11 +295,9 @@ function answerBlockHtml(block: ReturnType<typeof answerSheetGeometry>[number]):
 }
 
 async function answerSheetPageHtml(test: Test, options: TestExamExportOptions, student?: Student): Promise<string> {
-    const marker = options.scanMarkers ? await scanMarkerHtml(test, 0, student?.id) : '';
     const blocks = answerSheetGeometry(test).map(answerBlockHtml).join('');
 
-    return `<div class="print-page" style="page-break-after:always;position:relative;padding-top:24px;color:#1e293b;background:#fff">
-    ${marker}
+    return `<div class="print-page" style="padding-top:24px;color:#1e293b;background:#fff">
     <div style="text-align:right;font-weight:700;font-size:16px">${tx('answer_sheet_title')}</div>
     ${blackBannerHtml(test.name)}
     <div style="margin-top:16px;font-size:13px">
@@ -292,13 +307,21 @@ async function answerSheetPageHtml(test: Test, options: TestExamExportOptions, s
   </div>`;
 }
 
+/** One margin-wrapped table per student (or a single blank sheet), so each sheet's scan markers repeat on all of its own pages and the next sheet starts on a fresh page. */
 export async function buildAnswerSheetHtml(
     test: Test,
     options: TestExamExportOptions,
     students: Student[] = []
 ): Promise<string> {
-    if (students.length === 0) return answerSheetPageHtml(test, options);
-    const pages = await Promise.all(students.map((s) => answerSheetPageHtml(test, options, s)));
+    const sheets: (Student | undefined)[] = students.length > 0 ? students : [undefined];
+    const pages = await Promise.all(
+        sheets.map(async (student, i) =>
+            withoutBrowserPrintChrome(await answerSheetPageHtml(test, options, student), {
+                headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id) : '',
+                breakAfter: i < sheets.length - 1,
+            })
+        )
+    );
     return pages.join('');
 }
 
@@ -353,17 +376,29 @@ interface ExportExamPdfOptions extends TestExamExportOptions {
  */
 export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): Promise<void> {
     const orientation = 'portrait';
-    await printHtml(buildExamBookletHtml(test, options), orientation, options.fontFamily, options.styleTemplate);
+    const print = (html: string) =>
+        printHtml(html, orientation, options.fontFamily, options.styleTemplate, {
+            hideBrowserChrome: true,
+            waitForPrintDialog: true,
+        });
+    await print(withoutBrowserPrintChrome(buildExamBookletHtml(test, options)));
     if (options.attachmentMode === 'separate') {
-        await printHtml(buildExamAttachmentHtml(test), orientation, options.fontFamily, options.styleTemplate);
+        await print(withoutBrowserPrintChrome(buildExamAttachmentHtml(test)));
     }
-    const answerSheetHtml = await buildAnswerSheetHtml(test, options, options.students);
-    await printHtml(answerSheetHtml, orientation, options.fontFamily, options.styleTemplate);
+    await print(await buildAnswerSheetHtml(test, options, options.students));
 }
 
 /** Exports only the grading key/answer sheet — kept as an explicit, separate action from exportExamPdf() so a teacher never bundles it with student-facing materials by default. */
 export async function exportExamGradingKeyPdf(test: Test, options: TestExamExportOptions): Promise<void> {
-    await printHtml(buildGradingSheetHtml(test), 'portrait', options.fontFamily, options.styleTemplate);
+    await printHtml(
+        withoutBrowserPrintChrome(buildGradingSheetHtml(test)),
+        'portrait',
+        options.fontFamily,
+        options.styleTemplate,
+        {
+            hideBrowserChrome: true,
+        }
+    );
 }
 
 export function examExportFilename(test: Test, doc: 'booklet' | 'attachment' | 'answer-sheet' | 'grading-sheet') {

@@ -12,6 +12,7 @@ import {
     BorderStyle,
     AlignmentType,
     LineRuleType,
+    type ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import DOMPurify from 'dompurify';
@@ -185,7 +186,11 @@ interface InlineStyle {
     highlightFill?: string;
     font?: string;
     size?: number; // half-points
+    images?: DocxImageMap;
 }
+
+/** Pre-fetched images by <img src>, so the synchronous converters can place each one in its own paragraph/cell/list item. A factory, because one ImageRun instance must not be reused for two occurrences. */
+export type DocxImageMap = ReadonlyMap<string, () => ImageRun>;
 
 const PLAIN_STYLE: InlineStyle = {
     bold: false,
@@ -196,12 +201,16 @@ const PLAIN_STYLE: InlineStyle = {
     subScript: false,
 };
 
+function plainStyle(images?: DocxImageMap): InlineStyle {
+    return images ? { ...PLAIN_STYLE, images } : PLAIN_STYLE;
+}
+
 function ptToHalfPoints(pt: string): number | undefined {
     const n = parseFloat(pt);
     return Number.isFinite(n) ? Math.round(n * 2) : undefined;
 }
 
-function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): TextRun[] {
+function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextRun | ImageRun)[] {
     if (el.nodeType === Node.TEXT_NODE) {
         /* v8 ignore next -- a text node's value is always a string, so the ?? '' never fires */
         const text = el.textContent ?? '';
@@ -226,6 +235,10 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): TextRu
     const node = el as HTMLElement;
     const tag = node.tagName;
     if (tag === 'BR') return [new TextRun({ break: 1 })];
+    if (tag === 'IMG') {
+        const image = style.images?.get(node.getAttribute('src') ?? '');
+        return image ? [image()] : [];
+    }
 
     const color = styleValue(node, 'color');
     const fontFamily = styleValue(node, 'font-family');
@@ -243,6 +256,7 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): TextRu
         highlightFill: highlightBg ? highlightBg.replace('#', '') : style.highlightFill,
         font: fontFamily ? fontFamily.split(',')[0].replace(/['"]/g, '').trim() : style.font,
         size: fontSize ? (ptToHalfPoints(fontSize) ?? style.size) : style.size,
+        images: style.images,
     };
     return Array.from(node.childNodes).flatMap((child) => inlineDocxRuns(child, next));
 }
@@ -280,7 +294,7 @@ const TABLE_CELL_BORDERS = {
     right: TABLE_CELL_BORDER,
 };
 
-function tableToDocx(node: Element): Table {
+function tableToDocx(node: Element, images?: DocxImageMap): Table {
     const rows = Array.from(node.querySelectorAll('tr'));
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
@@ -295,7 +309,10 @@ function tableToDocx(node: Element): Table {
                             children: [
                                 new Paragraph({
                                     children: Array.from(cell.childNodes).flatMap((c) =>
-                                        inlineDocxRuns(c, isHeader ? { ...PLAIN_STYLE, bold: true } : PLAIN_STYLE)
+                                        inlineDocxRuns(
+                                            c,
+                                            isHeader ? { ...plainStyle(images), bold: true } : plainStyle(images)
+                                        )
                                     ),
                                 }),
                             ],
@@ -306,7 +323,7 @@ function tableToDocx(node: Element): Table {
     });
 }
 
-function taskListToDocx(node: Element): Paragraph[] {
+function taskListToDocx(node: Element, images?: DocxImageMap): Paragraph[] {
     return Array.from(node.children).map((li) => {
         const checked = li.getAttribute('data-checked') === 'true';
         const content = li.querySelector(':scope > div') ?? li;
@@ -314,29 +331,34 @@ function taskListToDocx(node: Element): Paragraph[] {
             indent: { left: 360 },
             children: [
                 new TextRun(checked ? '☑ ' : '☐ '),
-                ...Array.from(content.childNodes).flatMap((c) => inlineDocxRuns(c)),
+                ...Array.from(content.childNodes).flatMap((c) => inlineDocxRuns(c, plainStyle(images))),
             ],
         });
     });
 }
 
 /** Splits TipTap HTML into the inline runs of a leading plain paragraph (so a caller can prefix a label on the same line) and the remaining blocks. */
-export function htmlToDocxLead(html: string): { leadRuns: TextRun[]; rest: (Paragraph | Table)[] } {
+export function htmlToDocxLead(
+    html: string,
+    images?: DocxImageMap
+): { leadRuns: (TextRun | ImageRun)[]; rest: (Paragraph | Table)[] } {
     const root = parseEssayHtml(html);
     const first = root.firstElementChild;
-    if (!first || first.tagName !== 'P') return { leadRuns: [], rest: htmlToDocxChildren(html) };
-    const leadRuns = Array.from(first.childNodes).flatMap((c) => inlineDocxRuns(c));
+    if (!first || first.tagName !== 'P') return { leadRuns: [], rest: htmlToDocxChildren(html, undefined, images) };
+    const leadRuns = Array.from(first.childNodes).flatMap((c) => inlineDocxRuns(c, plainStyle(images)));
     const rest = htmlToDocxChildren(
         Array.from(root.children)
             .slice(1)
             .map((n) => n.outerHTML)
-            .join('')
+            .join(''),
+        undefined,
+        images
     );
     return { leadRuns, rest };
 }
 
 /** Converts EssayEditor's TipTap HTML output to docx Paragraph/Table nodes. */
-export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragraph | Table)[] {
+export function htmlToDocxChildren(html: string, spacingAfter?: number, images?: DocxImageMap): (Paragraph | Table)[] {
     const root = parseEssayHtml(html);
     const children: (Paragraph | Table)[] = [];
     for (const node of Array.from(root.children)) {
@@ -351,7 +373,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragr
                     heading,
                     alignment,
                     spacing,
-                    children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)),
+                    children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c, plainStyle(images))),
                 })
             );
         } else if (tag === 'BLOCKQUOTE') {
@@ -359,7 +381,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragr
                 new Paragraph({
                     indent: { left: 360 },
                     children: Array.from(node.childNodes).flatMap((c) =>
-                        inlineDocxRuns(c, { ...PLAIN_STYLE, italics: true })
+                        inlineDocxRuns(c, { ...plainStyle(images), italics: true })
                     ),
                 })
             );
@@ -367,7 +389,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragr
             children.push(new Paragraph({ text: '────────────', spacing: { before: 100, after: 100 } }));
         } else if (tag === 'UL' || tag === 'OL') {
             if (node.getAttribute('data-type') === 'taskList') {
-                children.push(...taskListToDocx(node));
+                children.push(...taskListToDocx(node, images));
             } else {
                 Array.from(node.children).forEach((li, i) => {
                     const bullet = tag === 'OL' ? `${i + 1}. ` : '• ';
@@ -376,20 +398,26 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number): (Paragr
                             indent: { left: 360 },
                             children: [
                                 new TextRun(bullet),
-                                ...Array.from(li.childNodes).flatMap((c) => inlineDocxRuns(c)),
+                                ...Array.from(li.childNodes).flatMap((c) => inlineDocxRuns(c, plainStyle(images))),
                             ],
                         })
                     );
                 });
             }
         } else if (tag === 'TABLE') {
-            children.push(tableToDocx(node));
+            children.push(tableToDocx(node, images));
         } else {
+            const runs =
+                tag === 'IMG'
+                    ? inlineDocxRuns(node, plainStyle(images))
+                    : Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c, plainStyle(images)));
+            // A paragraph that held nothing but an image that could not be loaded would print as a blank line.
+            if (runs.length === 0 && (tag === 'IMG' || node.querySelector('img'))) continue;
             children.push(
                 new Paragraph({
                     alignment,
                     spacing: spacingAfter === undefined ? spacing : { ...spacing, after: spacingAfter },
-                    children: Array.from(node.childNodes).flatMap((c) => inlineDocxRuns(c)),
+                    children: runs,
                 })
             );
         }

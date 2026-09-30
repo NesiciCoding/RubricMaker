@@ -60,3 +60,12 @@ describe('ExamBookletExportPanel class selection', () => {
         expect(screen.getByText('3/3 selected')).toBeInTheDocument();
     });
 });
+
+describe('ExamBookletExportPanel scan markers', () => {
+    it('warns that scan markers only apply to the PDF answer sheet once enabled', () => {
+        render(<ExamBookletExportPanel test={test} students={students} />);
+        expect(screen.queryByRole('note')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox', { name: 'tests.export.exam.scan_markers_label' }));
+        expect(screen.getByRole('note')).toHaveTextContent('tests.export.exam.scan_markers_pdf_only');
+    });
+});

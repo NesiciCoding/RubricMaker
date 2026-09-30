@@ -20,7 +20,7 @@ import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
 import { promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
-import { htmlToDocxChildren, htmlToDocxLead } from './essayExport';
+import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -39,7 +39,6 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
-    pointLabel,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -81,11 +80,6 @@ export function collectParagraphTexts(root: Element): string[] {
     root.childNodes.forEach(walk);
     flush();
     return texts;
-}
-
-/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables that plain-text extraction would drop. */
-function htmlToParagraphs(html: string, spacingAfter = 120): (Paragraph | Table)[] {
-    return htmlToDocxChildren(stripInlineFontSizes(promptToHtml(html)), spacingAfter);
 }
 
 const tx = (key: string, opts?: Record<string, unknown>) => i18n.t(`tests.export.exam.${key}`, opts);
@@ -187,13 +181,22 @@ function coverParagraphs(test: Test, docLabel: string, includeNameBox = false): 
     ];
 }
 
+function audioNoteParagraph(): Paragraph {
+    return new Paragraph({
+        children: [new TextRun({ text: tx('audio_note'), italics: true, size: 18, color: '6b7280' })],
+        spacing: { after: 80 },
+    });
+}
+
 function sectionDivider(title: string): Paragraph {
     return new Paragraph({ text: title, heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 } });
 }
 
 function clozeRuns(question: TestQuestion): TextRun[] {
-    return clozeBookletParts(question).map((p) =>
-        p.blankNumber ? new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} }) : new TextRun(p.text)
+    return clozeBookletParts(question).flatMap((p) =>
+        p.blankNumber
+            ? [new TextRun({ text: `(${p.blankNumber})`, bold: true, underline: {} })]
+            : p.text.split('\n').map((line, i) => new TextRun({ text: line, break: i > 0 ? 1 : undefined }))
     );
 }
 
@@ -262,7 +265,14 @@ const DOCX_IMAGE_TYPE: Record<string, 'jpg' | 'png' | 'gif' | 'bmp'> = {
 /** A hung image request would otherwise block buildBookletChildren (and the whole zip) indefinitely. */
 const IMAGE_FETCH_TIMEOUT_MS = 8000;
 
-async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+interface FetchedDocxImage {
+    type: 'jpg' | 'png' | 'gif' | 'bmp';
+    data: ArrayBuffer;
+    width: number;
+    height: number;
+}
+
+async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<FetchedDocxImage | null> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
     try {
@@ -271,15 +281,57 @@ async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<Ima
         if (!type) return null;
         const bitmap = await createImageBitmap(blob);
         const scale = Math.min(1, maxWidthPx / bitmap.width);
-        const width = Math.round(bitmap.width * scale);
-        const height = Math.round(bitmap.height * scale);
-        const data = await blob.arrayBuffer();
-        return new ImageRun({ type, data, transformation: { width, height } });
+        return {
+            type,
+            data: await blob.arrayBuffer(),
+            width: Math.round(bitmap.width * scale),
+            height: Math.round(bitmap.height * scale),
+        };
     } catch {
         return null;
     } finally {
         clearTimeout(timer);
     }
+}
+
+const docxImageRun = ({ type, data, width, height }: FetchedDocxImage) =>
+    new ImageRun({ type, data, transformation: { width, height } });
+
+async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+    const image = await fetchDocxImage(imageUrl, maxWidthPx);
+    return image ? docxImageRun(image) : null;
+}
+
+/** Fetches every <img> in a rich-text fragment up front (the converters are synchronous); an image that can't be loaded is simply absent from the map. */
+async function loadDocxImages(html: string): Promise<DocxImageMap> {
+    const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body;
+    const sources = new Set(
+        Array.from(root.querySelectorAll('img'))
+            .map((img) => img.getAttribute('src'))
+            .filter((src): src is string => !!src)
+    );
+    const images = new Map<string, () => ImageRun>();
+    await Promise.all(
+        Array.from(sources).map(async (src) => {
+            const image = await fetchDocxImage(src, 380);
+            if (image) images.set(src, () => docxImageRun(image));
+        })
+    );
+    return images;
+}
+
+/** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables and images in place. */
+export async function richPassageToDocx(html: string, spacingAfter = 120): Promise<(Paragraph | Table)[]> {
+    const normalized = stripInlineFontSizes(promptToHtml(html));
+    return htmlToDocxChildren(normalized, spacingAfter, await loadDocxImages(normalized));
+}
+
+/** Question prompt → the first paragraph's inline runs (so the point/number label can share its line) plus the remaining blocks. */
+export async function richPromptToDocx(
+    html: string
+): Promise<{ leadRuns: (TextRun | ImageRun)[]; rest: (Paragraph | Table)[] }> {
+    const normalized = promptToHtml(html);
+    return htmlToDocxLead(normalized, await loadDocxImages(normalized));
 }
 
 async function questionParagraphs(
@@ -288,19 +340,20 @@ async function questionParagraphs(
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
-    const rich = isCloze ? null : htmlToDocxLead(promptToHtml(plainQuestionPromptText(question)));
+    const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
             children: [
-                new TextRun({ text: `${pointLabel(question.points)}  `, color: '6b7280', size: 18 }),
+                new TextRun({ text: `${tx('point_label', { count: question.points })}  `, color: '6b7280', size: 18 }),
                 new TextRun({ text: `${number}  `, bold: true }),
                 ...promptRuns,
             ],
             spacing: { after: 60 },
         }),
         ...(rich?.rest ?? []),
+        ...(question.audioUrl ? [audioNoteParagraph()] : []),
     ];
 
     if (question.imageUrl) {
@@ -311,14 +364,16 @@ async function questionParagraphs(
     switch (question.type) {
         case 'multiple-choice':
         case 'multiple-response':
-            (question.options ?? []).forEach((o, i) => {
+            for (const [i, o] of (question.options ?? []).entries()) {
                 blocks.push(
                     new Paragraph({
                         children: [new TextRun({ text: `${optionLetter(i)}  `, bold: true }), new TextRun(o.text)],
                         indent: { left: 360 },
                     })
                 );
-            });
+                const optionImage = o.imageUrl ? await questionImageRun(o.imageUrl, 160) : null;
+                if (optionImage) blocks.push(new Paragraph({ children: [optionImage], indent: { left: 360 } }));
+            }
             break;
         case 'true-false':
             blocks.push(
@@ -405,8 +460,9 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
+            if (group.section.audioUrl) children.push(audioNoteParagraph());
             if (options.attachmentMode === 'inline' && group.section.content) {
-                children.push(...htmlToParagraphs(group.section.content, 120));
+                children.push(...(await richPassageToDocx(group.section.content, 120)));
             }
         }
         for (const { question, number } of group.questions) {
@@ -417,15 +473,15 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
     return children;
 }
 
-function buildAttachmentChildren(test: Test): (Paragraph | Table)[] {
+async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
     const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'), true)];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
-    groups.forEach((group, i) => {
-        if (!group.section?.content) return;
+    for (const [i, group] of groups.entries()) {
+        if (!group.section?.content) continue;
         if (i > 0) children.push(new Paragraph({ children: [new PageBreak()] }));
         children.push(sectionDivider(group.section.title));
-        children.push(...htmlToParagraphs(group.section.content, 200));
-    });
+        children.push(...(await richPassageToDocx(group.section.content, 200)));
+    }
     return children;
 }
 
@@ -742,7 +798,7 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     if (options.attachmentMode === 'separate') {
         files.push({
             name: `${base}-attachment.docx`,
-            blob: await buildDocxBlob(buildAttachmentChildren(test), options),
+            blob: await buildDocxBlob(await buildAttachmentChildren(test), options),
         });
     }
     const students = options.students ?? [];

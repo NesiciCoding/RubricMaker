@@ -6,7 +6,7 @@
  */
 import type { Test, TestQuestion, TestSection } from '../types';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
-import { stripHtmlTags } from './exportDataPrep';
+import { stripHtmlKeepLineBreaks, stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
 import { formatCorrectAnswer } from './testAnswerText';
 import type { DocxStyleTemplateOverrides } from './docxExport';
@@ -38,11 +38,6 @@ export function groupQuestionsBySection(test: Test): ExamSectionGroup[] {
     const ungrouped = test.questions.filter((q) => !q.sectionId || !sectionIds.has(q.sectionId));
     if (ungrouped.length > 0) groups.push({ section: null, questions: numbered(ungrouped) });
     return groups;
-}
-
-/** CITO-style margin label, e.g. "3p" for a 3-point question. */
-export function pointLabel(points: number): string {
-    return `${points}p`;
 }
 
 export function optionLetter(index: number): string {
@@ -121,7 +116,7 @@ export interface ClozeBlankPart {
 
 /** Cloze/cloze-dropdown prompt broken into text/blank parts, blanks left empty (never the model answer) for booklet printing. */
 export function clozeBookletParts(question: TestQuestion): ClozeBlankPart[] {
-    return renderClozeSegments(stripHtmlTags(question.prompt)).map((s) =>
+    return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).map((s) =>
         s.type === 'gap' ? { text: '', blankNumber: s.gap.index + 1 } : { text: s.text }
     );
 }
@@ -381,18 +376,18 @@ export interface AnswerSheetQrPayload {
     testId: string;
     studentId?: string;
     sheetType: 'answer';
-    pageIndex: number;
 }
 
 /**
- * JSON payload encoded into an answer sheet's per-page QR marker, for a future scan-ingestion step
- * to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
+ * JSON payload encoded into an answer sheet's QR marker (repeated on every page of the sheet, so it
+ * carries no page number — a scanner recovers page order from scan order), for a future
+ * scan-ingestion step to identify the sheet. This is a plain identifier, not a signed/verifiable credential — anyone
  * who can read the QR (e.g. a photo of a handed-out sheet) can reconstruct or forge one. A future
  * ingestion step must not treat a scanned `studentId` as proof of who submitted the sheet; it needs
  * its own authentication (e.g. requiring the submitting teacher's session, or cross-checking against
  * an expected roster) before accepting scanned answers as that student's.
  */
-export function answerSheetQrPayload(testId: string, pageIndex: number, studentId?: string): string {
-    const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer', pageIndex };
+export function answerSheetQrPayload(testId: string, studentId?: string): string {
+    const payload: AnswerSheetQrPayload = { testId, studentId, sheetType: 'answer' };
     return JSON.stringify(payload);
 }
