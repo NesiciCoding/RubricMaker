@@ -1,6 +1,6 @@
 // pwa.ts runs at module scope, before React renders, so an available update is
 // handed to the React tree through this tiny external store rather than props/context.
-type UpdateSW = () => Promise<void>;
+type UpdateSW = (reloadPage?: boolean) => Promise<void>;
 type Listener = () => void;
 
 let updateSW: UpdateSW | null = null;

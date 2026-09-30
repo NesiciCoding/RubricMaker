@@ -59,7 +59,7 @@ export function UpdateAvailableToast() {
             )}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.75rem' }}>
                 <button
-                    onClick={() => updateSW()}
+                    onClick={() => updateSW(true)}
                     style={{
                         padding: '0.4rem 0.9rem',
                         borderRadius: '0.375rem',
