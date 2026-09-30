@@ -19,7 +19,7 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
+import { promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
@@ -322,7 +322,7 @@ async function loadDocxImages(html: string): Promise<DocxImageMap> {
 
 /** Rich-text passage → docx blocks, keeping bold/italic/highlight/lists/tables and images in place. */
 export async function richPassageToDocx(html: string, spacingAfter = 120): Promise<(Paragraph | Table)[]> {
-    const normalized = stripInlineFontSizes(promptToHtml(html));
+    const normalized = promptToHtml(html);
     return htmlToDocxChildren(normalized, spacingAfter, await loadDocxImages(normalized));
 }
 

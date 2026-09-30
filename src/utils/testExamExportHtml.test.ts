@@ -64,7 +64,7 @@ describe('buildExamBookletHtml rich prompt', () => {
 });
 
 describe('reading passage font sizes', () => {
-    it('prints passages at the base size regardless of pasted inline font sizes (inline and attachment)', () => {
+    it('keeps the editor inline font sizes (inline and attachment)', () => {
         const test = makeTest();
         test.sections = [{ id: 's1', title: 'Reading', content: '<p style="font-size:12pt">Text <b>one</b></p>' }];
         test.questions[0].sectionId = 's1';
@@ -72,7 +72,7 @@ describe('reading passage font sizes', () => {
         const attachment = buildExamAttachmentHtml(test);
         for (const html of [inline, attachment]) {
             expect(html).toContain('Text <b>one</b>');
-            expect(html).not.toContain('font-size:12pt');
+            expect(html).toContain('font-size:12pt');
         }
     });
 });

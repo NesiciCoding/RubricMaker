@@ -4,7 +4,6 @@ import {
     formatPointsRange,
     stripHtmlTags,
     stripCommentHtml,
-    stripInlineFontSizes,
     stripHtmlKeepLineBreaks,
     promptToHtml,
 } from './exportDataPrep';
@@ -59,26 +58,6 @@ describe('stripHtmlTags', () => {
     it('is exported as stripCommentHtml', () => {
         expect(stripCommentHtml).toBe(stripHtmlTags);
         expect(stripCommentHtml('<p>Comment</p>')).toBe('Comment');
-    });
-});
-
-describe('stripInlineFontSizes', () => {
-    it('removes font-size but keeps other inline styles and formatting', () => {
-        const out = stripInlineFontSizes(
-            '<p style="font-size:12pt;text-align:center"><span style="font-size: 16px">Big</span> <strong>bold</strong></p>'
-        );
-        expect(out).toContain('style="text-align:center"');
-        expect(out).not.toMatch(/font-size/);
-        expect(out).toContain('<strong>bold</strong>');
-    });
-
-    it('drops the style attribute when font-size was the only declaration and handles <font size>', () => {
-        const out = stripInlineFontSizes('<span style="font-size:20px">a</span><font size="5">b</font>');
-        expect(out).toBe('<span>a</span><font>b</font>');
-    });
-
-    it('returns an empty string for empty input', () => {
-        expect(stripInlineFontSizes('')).toBe('');
     });
 });
 

@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
-import { escapeHtml, promptToHtml, sanitizeFilename, stripInlineFontSizes } from './exportDataPrep';
+import { escapeHtml, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -188,7 +188,7 @@ function audioNoteHtml(): string {
 }
 
 function passageHtml(content: string, extraStyle: string): string {
-    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle};font-size:13px">${DOMPurify.sanitize(stripInlineFontSizes(content))}</div>`;
+    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle};font-size:13px">${DOMPurify.sanitize(content)}</div>`;
 }
 
 function sectionDividerHtml(title: string): string {

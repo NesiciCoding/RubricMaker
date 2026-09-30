@@ -276,6 +276,7 @@ function insertImageFiles(editor: Editor, files: File[], pos?: number) {
 export function createImageEmbedExtension() {
     return [
         Image.configure({
+            allowBase64: true,
             HTMLAttributes: { style: 'max-width: 100%; height: auto;' },
             resize: {
                 enabled: true,
