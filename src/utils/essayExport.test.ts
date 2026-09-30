@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlToMarkdown, htmlToDocxChildren, escapeHtml } from './essayExport';
+import { htmlToMarkdown, htmlToDocxChildren, escapeHtml, cssColorToHex } from './essayExport';
 
 const FIXTURE_HTML = `
 <h1>My Essay</h1>
@@ -109,5 +109,29 @@ describe('escapeHtml', () => {
     it('escapes markup-significant characters so user-controlled strings cannot inject markup', () => {
         expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
         expect(escapeHtml('A & B "quoted" \'single\'')).toBe('A &amp; B &quot;quoted&quot; &#39;single&#39;');
+    });
+});
+
+describe('cssColorToHex', () => {
+    it('normalises hex and rgb() values to 6-digit hex', () => {
+        expect(cssColorToHex('#1e293b')).toBe('1e293b');
+        expect(cssColorToHex('#f00')).toBe('ff0000');
+        expect(cssColorToHex('rgb(255, 128, 0)')).toBe('ff8000');
+    });
+
+    it('drops values docx cannot render', () => {
+        for (const v of ['inherit', 'transparent', 'currentColor', 'red', '', undefined]) {
+            expect(cssColorToHex(v)).toBeUndefined();
+        }
+    });
+});
+
+describe('htmlToDocxChildren with non-hex colors', () => {
+    it('does not throw on color: inherit or a transparent highlight', () => {
+        expect(() =>
+            htmlToDocxChildren(
+                '<p><span style="color: inherit">a</span><mark style="background-color: transparent">b</mark><span style="color: rgb(1,2,3)">c</span></p>'
+            )
+        ).not.toThrow();
     });
 });

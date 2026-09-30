@@ -58,6 +58,20 @@ function styleValue(el: HTMLElement, prop: string): string | undefined {
     return new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i').exec(raw)?.[1]?.trim();
 }
 
+/** docx throws on anything but a 6-digit hex, so keywords like `inherit`/`transparent` are dropped and `rgb()`/3-digit hex are converted. */
+export function cssColorToHex(value: string | null | undefined): string | undefined {
+    const v = value?.trim();
+    if (!v) return undefined;
+    const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v)?.[1];
+    if (hex) return hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex;
+    const rgb = /^rgba?\(\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*(?:[,/]\s*[\d.%]+\s*)?\)$/i.exec(v);
+    if (!rgb) return undefined;
+    return rgb
+        .slice(1, 4)
+        .map((n) => Math.min(255, Number(n)).toString(16).padStart(2, '0'))
+        .join('');
+}
+
 function inlineMarkdown(el: ChildNode): string {
     /* v8 ignore next -- DOM text nodes always have a string value, so the ?? '' is unreachable */
     if (el.nodeType === Node.TEXT_NODE) return el.textContent ?? '';
@@ -228,7 +242,7 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
                 color: style.color,
                 font: style.font,
                 size: style.size,
-                shading: style.highlightFill ? { fill: style.highlightFill.replace('#', '') } : undefined,
+                shading: style.highlightFill ? { fill: style.highlightFill } : undefined,
             }),
         ];
     }
@@ -252,8 +266,8 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
         strike: style.strike || tag === 'S' || tag === 'STRIKE' || tag === 'DEL',
         superScript: style.superScript || tag === 'SUP',
         subScript: style.subScript || tag === 'SUB',
-        color: color ? color.replace('#', '') : style.color,
-        highlightFill: highlightBg ? highlightBg.replace('#', '') : style.highlightFill,
+        color: cssColorToHex(color) ?? style.color,
+        highlightFill: cssColorToHex(highlightBg) ?? style.highlightFill,
         font: fontFamily ? fontFamily.split(',')[0].replace(/['"]/g, '').trim() : style.font,
         size: fontSize ? (ptToHalfPoints(fontSize) ?? style.size) : style.size,
         images: style.images,
