@@ -1112,6 +1112,7 @@ export type TestQuestionType =
     | 'cloze-bank'
     | 'matrix'
     | 'dictation'
+    | 'key-word-transformation'
     | 'matching'
     | 'ordering'
     | 'categorize'
@@ -1269,6 +1270,14 @@ export interface TestQuestion {
     spokenText?: string;
     /** Listening transcript, revealed after submission in practice mode */
     transcript?: string;
+    /** For 'key-word-transformation': the word the student must use unchanged */
+    keyWord?: string;
+    /** For 'key-word-transformation': the second sentence, with a run of 3+ underscores where the answer goes */
+    gappedSentence?: string;
+    /** For 'key-word-transformation': allowed answer length in words, key word included (default 2–5); anything outside scores 0 */
+    answerWordLimit?: { min: number; max: number };
+    /** For cloze questions: gaps are followed by a stem word, e.g. {{happiness}}(HAPPY) — enables the derived-form authoring aid (FCE/CAE Part 3) */
+    wordFormation?: boolean;
     /** For 'dictation' questions: the sentence the student must write down; spoken by the browser voice when there's no audioUrl */
     dictationText?: string;
     /** Elo-style item rating for staircase placement tests, self-calibrated from response history (roadmap Phase 25.4). Defaults to `DEFAULT_ELO_RATING` when absent. */

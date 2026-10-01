@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
+import { keyWordChunks } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
@@ -135,6 +136,8 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join('');
         case 'dictation':
             return question.dictationText ?? '';
+        case 'key-word-transformation':
+            return (question.expectedAnswers ?? []).map((a) => keyWordChunks(a).join(' + ')).join(' / ');
         case 'matrix': {
             const columns = new Map((question.matrixColumns ?? []).map((c) => [c.id, c.text]));
             return (question.matrixRows ?? [])

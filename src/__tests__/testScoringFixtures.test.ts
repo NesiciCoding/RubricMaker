@@ -209,6 +209,13 @@ const dictation: ScorableQuestion = {
     dictationText: "She doesn't like coffee.",
 };
 
+const kwt: ScorableQuestion = {
+    type: 'key-word-transformation',
+    points: 2,
+    prompt: '',
+    expectedAnswers: ['have worked // for ten years', 'have been working // for years'],
+};
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -369,6 +376,55 @@ const fixtures: Fixture[] = [
         name: 'dictation with no target',
         question: { type: 'dictation', points: 2, prompt: '' },
         response: 'x',
+        expected: 0,
+    },
+
+    { name: 'kwt both chunks', question: kwt, response: 'have worked for ten years', expected: 2 },
+    {
+        name: 'kwt punctuation and case ignored',
+        question: kwt,
+        response: 'Have worked for ten years.',
+        expected: 2,
+    },
+    { name: 'kwt second accepted answer', question: kwt, response: 'have been working for years', expected: 2 },
+    { name: 'kwt one chunk', question: kwt, response: 'have worked since 2015', expected: 1 },
+    { name: 'kwt chunks must be in order', question: kwt, response: 'for ten years have worked', expected: 1 },
+    {
+        name: 'kwt over the word limit scores zero',
+        question: kwt,
+        response: 'they have worked for ten long years',
+        expected: 0,
+    },
+    { name: 'kwt under the word limit scores zero', question: kwt, response: 'worked', expected: 0 },
+    {
+        name: 'kwt custom word limit',
+        question: { ...kwt, answerWordLimit: { min: 2, max: 7 } },
+        response: 'they have worked for ten years',
+        expected: 2,
+    },
+    {
+        name: 'kwt all-or-nothing',
+        question: { ...kwt, partialCredit: false },
+        response: 'have worked since 2015',
+        expected: 0,
+    },
+    {
+        name: 'kwt single-chunk answer',
+        question: { ...kwt, expectedAnswers: ['in spite of'] },
+        response: 'in spite of',
+        expected: 2,
+    },
+    {
+        name: 'kwt slips opt-in',
+        question: { ...kwt, answerTolerance: { slips: true } },
+        response: 'have wurked for ten years',
+        expected: 2,
+    },
+    { name: 'kwt blank', question: kwt, response: '', expected: 0 },
+    {
+        name: 'kwt with no key',
+        question: { type: 'key-word-transformation', points: 2, prompt: '' },
+        response: 'a b',
         expected: 0,
     },
 

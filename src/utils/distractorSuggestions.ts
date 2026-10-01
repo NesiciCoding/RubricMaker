@@ -61,7 +61,7 @@ function posOf(word: string): 'Verb' | 'Noun' | 'Adjective' | 'Adverb' | null {
     return null;
 }
 
-function morphological(word: string): string[] {
+export function morphological(word: string): string[] {
     const forms: string[] = [];
     const doc = nlp(word);
     const [conjugation] = doc.verbs().conjugate() as Record<string, string>[];

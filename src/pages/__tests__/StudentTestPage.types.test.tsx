@@ -431,6 +431,32 @@ describe('StudentTestPage — answer types', () => {
         ]);
     });
 
+    it('answers a key word transformation with a live word-limit counter', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'She started working here ten years ago.',
+                        type: 'key-word-transformation',
+                        points: 2,
+                        keyWord: 'for',
+                        gappedSentence: 'She has worked here ___ ten years.',
+                        expectedAnswers: ['for // ten years'],
+                    },
+                ],
+            })
+        );
+        expect(screen.getByText('for')).toBeInTheDocument();
+        const input = screen.getByLabelText('tests.taking.kwt_answer_label');
+        fireEvent.change(input, { target: { value: 'for a very long time indeed' } });
+        expect(screen.getByRole('status')).toHaveTextContent('tests.taking.kwt_out_of_limit');
+        fireEvent.change(input, { target: { value: 'for' } });
+        expect(screen.getByRole('status')).toHaveTextContent('"count":1');
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe('for');
+    });
+
     it('answers a hot-text question by selecting fragments', async () => {
         renderPage(
             makeTest({

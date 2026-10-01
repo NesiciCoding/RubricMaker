@@ -296,6 +296,7 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
         case 'true-false':
             return { kind: 'choice', optionLetters: ['A', 'B'] };
         case 'short-answer':
+        case 'key-word-transformation':
             return { kind: 'short' };
         case 'open':
         case 'dictation':

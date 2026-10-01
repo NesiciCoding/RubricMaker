@@ -246,3 +246,16 @@ describe('dictation answer text', () => {
         expect(formatGivenAnswer(dictation, { questionId: 'qd', response: 'hello' })).toBe('hello');
     });
 });
+
+describe('key word transformation answer text', () => {
+    it('shows each accepted answer with its marked parts', () => {
+        const q: TestQuestion = {
+            id: 'qk',
+            prompt: '',
+            type: 'key-word-transformation',
+            points: 2,
+            expectedAnswers: ['have worked // for years', 'have been working // for years'],
+        };
+        expect(formatCorrectAnswer(q)).toBe('have worked + for years / have been working + for years');
+    });
+});

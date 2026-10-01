@@ -52,7 +52,7 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
     if (question.type === 'true-false') {
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
-    if (question.type === 'dictation') {
+    if (question.type === 'key-word-transformation' || question.type === 'dictation') {
         if (!answer.response.trim()) return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }

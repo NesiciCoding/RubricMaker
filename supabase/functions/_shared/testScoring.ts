@@ -29,6 +29,7 @@ export interface ScorableQuestion {
     correctBoolean?: boolean;
     answerTolerance?: AnswerTolerance;
     dictationText?: string;
+    answerWordLimit?: { min: number; max: number };
 }
 
 /** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
@@ -407,6 +408,66 @@ export function scoreDictation(question: ScorableQuestion, response: string): nu
     return question.points * Math.max(0, 1 - distance / matched.length);
 }
 
+export const KEY_WORD_DEFAULT_LIMIT = { min: 2, max: 5 };
+
+/** Splits an accepted key-word-transformation answer into its marked chunks: "has been // for years" → 2 chunks. */
+export function keyWordChunks(answer: string): string[] {
+    return answer
+        .split('//')
+        .map((c) => c.trim())
+        .filter(Boolean);
+}
+
+function indexOfTokens(haystack: string[], needle: string[], from: number, tol: AnswerTolerance): number {
+    for (let i = from; i + needle.length <= haystack.length; i++) {
+        if (needle.every((word, k) => tokensMatch(word, haystack[i + k], tol))) return i;
+    }
+    return -1;
+}
+
+/**
+ * Marks earned (and available) for a key word transformation response against its best accepted
+ * answer. Each `//`-separated chunk of an accepted answer is one mark, found as a contiguous word
+ * run in the response; chunk 2 must come after chunk 1. A response outside the word limit
+ * (key word included) earns nothing.
+ */
+export function keyWordMarks(question: ScorableQuestion, response: string): { earned: number; total: number } {
+    const answers = question.expectedAnswers?.length
+        ? question.expectedAnswers
+        : question.expectedAnswer
+          ? [question.expectedAnswer]
+          : [];
+    const chunkSets = answers.map(keyWordChunks).filter((c) => c.length > 0);
+    const total = Math.max(0, ...chunkSets.map((c) => c.length));
+    const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
+    const wordCount = response.trim() ? response.trim().split(/\s+/).length : 0;
+    if (total === 0 || wordCount < limit.min || wordCount > limit.max) return { earned: 0, total };
+
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    const given = answerTokens(response, tol);
+    let best = 0;
+    for (const chunks of chunkSets) {
+        let from = 0;
+        let earned = 0;
+        for (const chunk of chunks) {
+            const at = indexOfTokens(given, answerTokens(chunk, tol), from, tol);
+            if (at >= 0) {
+                earned++;
+                from = at + answerTokens(chunk, tol).length;
+            }
+        }
+        best = Math.max(best, earned / chunks.length);
+    }
+    return { earned: best * total, total };
+}
+
+/** Auto-score a key word transformation: share of marked chunks found, all-or-nothing when partialCredit is false. */
+export function scoreKeyWordTransformation(question: ScorableQuestion, response: string): number {
+    const { earned, total } = keyWordMarks(question, response);
+    if (total === 0) return 0;
+    return partialOrAll(question, earned, total);
+}
+
 /** Auto-score a matching question: each pair is correct when the student paired it with itself. Supports partial credit. */
 export function scoreMatching(question: ScorableQuestion, response: string): number {
     const pairs = question.matchingPairs ?? [];
@@ -478,6 +539,8 @@ export function autoScoreResponse(question: ScorableQuestion, response: string):
             return scoreCloze(question, response);
         case 'matrix':
             return scoreMatrix(question, response);
+        case 'key-word-transformation':
+            return scoreKeyWordTransformation(question, response);
         case 'dictation':
             return scoreDictation(question, response);
         case 'matching':

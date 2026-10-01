@@ -107,6 +107,9 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
         case 'true-false':
             extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${tx('true')}</div><div><strong>B</strong>&nbsp;&nbsp;${tx('false')}</div></div>`;
             break;
+        case 'key-word-transformation':
+            extra += `<div style="margin-top:6px"><span style="display:inline-block;padding:2px 12px;border:2px solid #000;font-weight:700;text-transform:uppercase">${escapeHtml(question.keyWord ?? '')}</span><div style="margin-top:6px">${escapeHtml(question.gappedSentence ?? '')}</div></div>`;
+            break;
         case 'cloze-bank':
             extra += `<div style="margin-top:6px;padding:6px 10px;border:1px dashed #94a3b8">${bankBookletTiles(
                 question

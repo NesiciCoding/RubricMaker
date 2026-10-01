@@ -570,3 +570,34 @@ describe('matrix and cloze-bank import', () => {
         expect(items[1].question).toMatchObject({ bankDistractors: ['x'], bankUniqueUse: false });
     });
 });
+
+describe('key word transformation import', () => {
+    it('keeps key word, gapped sentence, valid word limit and word-formation flag', () => {
+        const json = JSON.stringify({
+            items: [
+                {
+                    question: {
+                        type: 'key-word-transformation',
+                        prompt: 'x',
+                        keyWord: 'for',
+                        gappedSentence: 'a ___ b',
+                        answerWordLimit: { min: 2, max: 5 },
+                        expectedAnswers: ['for // years'],
+                    },
+                },
+                {
+                    question: {
+                        type: 'cloze',
+                        prompt: '{{a}}(B)',
+                        wordFormation: true,
+                        answerWordLimit: { min: 5, max: 2 },
+                    },
+                },
+            ],
+        });
+        const { items } = parseQuestionBankJson(json);
+        expect(items[0].question).toMatchObject({ keyWord: 'for', answerWordLimit: { min: 2, max: 5 } });
+        expect(items[1].question?.wordFormation).toBe(true);
+        expect(items[1].question?.answerWordLimit).toBeUndefined();
+    });
+});

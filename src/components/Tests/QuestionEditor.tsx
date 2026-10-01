@@ -39,6 +39,8 @@ import {
     renderClozeSegments,
 } from '../../utils/clozeParse';
 import LineListTextarea from './LineListTextarea';
+import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import KeyWordTransformationFields from './KeyWordTransformationFields';
 import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
 import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
@@ -88,6 +90,7 @@ export const QUESTION_TYPES: TestQuestionType[] = [
     'cloze-bank',
     'matrix',
     'dictation',
+    'key-word-transformation',
     'matching',
     'ordering',
     'categorize',
@@ -948,6 +951,41 @@ export default function QuestionEditor({
                         );
                     })()}
                     {question.type === 'cloze' && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>
+                            <input
+                                type="checkbox"
+                                checked={!!question.wordFormation}
+                                onChange={(e) => update({ wordFormation: e.target.checked || undefined })}
+                            />
+                            {t('tests.word_formation_label')}
+                            <HelpPopover title={t('tests.word_formation_label')}>
+                                {t('tests.word_formation_help')}
+                            </HelpPopover>
+                        </label>
+                    )}
+                    {question.type === 'cloze' &&
+                        question.wordFormation &&
+                        gapStems(question.prompt).map((stem, i) =>
+                            stem ? (
+                                <DistractorSuggestions
+                                    key={i}
+                                    answer={stem}
+                                    buttonLabel={t('tests.derived_forms_button', { stem })}
+                                    suggest={(w) =>
+                                        suggestDerivedForms(w).map((word) => ({
+                                            word,
+                                            source: 'morphological' as const,
+                                        }))
+                                    }
+                                    onPick={(word) => update({ prompt: addGapAlternative(question.prompt, i, word) })}
+                                />
+                            ) : (
+                                <p key={i} className="text-muted text-xs" style={{ margin: 0 }}>
+                                    {t('tests.word_formation_missing_stem', { number: i + 1 })}
+                                </p>
+                            )
+                        )}
+                    {question.type === 'cloze' && (
                         <AnswerToleranceFields
                             value={question.answerTolerance}
                             onChange={(answerTolerance) => update({ answerTolerance })}
@@ -985,6 +1023,14 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                 </div>
+            )}
+
+            {question.type === 'key-word-transformation' && (
+                <KeyWordTransformationFields
+                    question={question}
+                    update={update}
+                    partialCreditToggle={renderPartialCreditToggle()}
+                />
             )}
 
             {question.type === 'dictation' && (

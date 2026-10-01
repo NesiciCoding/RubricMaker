@@ -46,6 +46,10 @@ interface RawQuestion {
     spokenText?: string;
     transcript?: string;
     dictationText?: string;
+    keyWord?: string;
+    gappedSentence?: string;
+    answerWordLimit?: { min?: number; max?: number };
+    wordFormation?: boolean;
     prepSeconds?: number;
     cueBullets?: string[];
     expectedAnswer?: string;
@@ -111,6 +115,7 @@ const VALID_TYPES: TestQuestionType[] = [
     'cloze-bank',
     'matrix',
     'dictation',
+    'key-word-transformation',
     'matching',
     'ordering',
     'categorize',
@@ -273,6 +278,17 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
     Object.assign(question, listeningFields(raw));
     if (typeof raw.dictationText === 'string') question.dictationText = raw.dictationText;
+    if (typeof raw.keyWord === 'string' && raw.keyWord) question.keyWord = raw.keyWord;
+    if (typeof raw.gappedSentence === 'string' && raw.gappedSentence) question.gappedSentence = raw.gappedSentence;
+    if (
+        typeof raw.answerWordLimit?.min === 'number' &&
+        typeof raw.answerWordLimit.max === 'number' &&
+        raw.answerWordLimit.min >= 1 &&
+        raw.answerWordLimit.max >= raw.answerWordLimit.min
+    ) {
+        question.answerWordLimit = { min: raw.answerWordLimit.min, max: raw.answerWordLimit.max };
+    }
+    if (raw.wordFormation === true) question.wordFormation = true;
     if (typeof raw.prepSeconds === 'number' && raw.prepSeconds > 0) question.prepSeconds = raw.prepSeconds;
     if (Array.isArray(raw.cueBullets))
         question.cueBullets = raw.cueBullets.filter((b): b is string => typeof b === 'string');

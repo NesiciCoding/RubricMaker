@@ -389,6 +389,21 @@ async function questionParagraphs(
                 })
             );
             break;
+        case 'key-word-transformation':
+            blocks.push(
+                new Paragraph({
+                    children: [new TextRun({ text: (question.keyWord ?? '').toUpperCase(), bold: true })],
+                    indent: { left: 360 },
+                    border: {
+                        top: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        bottom: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        left: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        right: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                    },
+                }),
+                new Paragraph({ text: question.gappedSentence ?? '', indent: { left: 360 }, spacing: { before: 80 } })
+            );
+            break;
         case 'cloze-bank':
             blocks.push(
                 new Paragraph({

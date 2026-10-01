@@ -244,6 +244,31 @@ describe('QuestionEditor extended', () => {
         });
     });
 
+    describe('key word transformation and word formation', () => {
+        it('edits the key word and parses accepted answers with // chunks', () => {
+            const { onChange } = renderEditor(makeQuestion({ type: 'key-word-transformation' }));
+            fireEvent.change(screen.getByLabelText(/tests\.kwt_key_word_label/), { target: { value: ' for ' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ keyWord: 'for' }));
+            fireEvent.change(screen.getByLabelText('tests.kwt_answers_label'), {
+                target: { value: 'have worked // for years | have been // for years' },
+            });
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.objectContaining({ expectedAnswers: ['have worked // for years', 'have been // for years'] })
+            );
+        });
+
+        it('suggests derived forms for a gap stem and adds the pick as the gap answer', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'Her {{}}(HAPPY) showed.', wordFormation: true })
+            );
+            fireEvent.click(screen.getByText('tests.derived_forms_button'));
+            fireEvent.click(screen.getByRole('button', { name: 'happiness' }));
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.objectContaining({ prompt: 'Her {{happiness}}(HAPPY) showed.' })
+            );
+        });
+    });
+
     describe('true-false', () => {
         it('sets the correct boolean via the True/False buttons', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'true-false', correctBoolean: true }));

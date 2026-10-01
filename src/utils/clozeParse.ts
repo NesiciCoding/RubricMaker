@@ -62,10 +62,10 @@ export function plainQuestionPromptText(question: { type: TestQuestionType; prom
     return question.prompt;
 }
 
-/** Appends `|word` to the nth `{{…}}` gap of a prompt, leaving everything else untouched. */
+/** Adds `word` to the nth `{{…}}` gap: as its answer when the gap is empty, otherwise as one more `|` alternative. */
 export function addGapAlternative(prompt: string, gapIndex: number, word: string): string {
     let i = -1;
     return prompt.replace(new RegExp(CLOZE_GAP_PATTERN.source, 'g'), (match, inner: string) =>
-        ++i === gapIndex ? `{{${inner}|${word}}}` : match
+        ++i === gapIndex ? `{{${inner.trim() ? `${inner}|${word}` : word}}}` : match
     );
 }
