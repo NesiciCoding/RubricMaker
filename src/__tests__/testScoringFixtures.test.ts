@@ -202,6 +202,13 @@ const clozeBank: ScorableQuestion = {
     prompt: 'The {{cat}} sat on the {{mat|rug}}.',
 };
 
+const dictation: ScorableQuestion = {
+    type: 'dictation',
+    points: 4,
+    prompt: '',
+    dictationText: "She doesn't like coffee.",
+};
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -317,6 +324,53 @@ const fixtures: Fixture[] = [
     },
     { name: 'cloze-bank one gap wrong tile', question: clozeBank, response: '{"0":"dog","1":"mat"}', expected: 1 },
     { name: 'cloze-bank blank', question: clozeBank, response: '{}', expected: 0 },
+
+    {
+        name: 'dictation exact, case and punctuation ignored',
+        question: dictation,
+        response: "she doesn't like coffee",
+        expected: 4,
+    },
+    { name: 'dictation one wrong word', question: dictation, response: "She doesn't like tea.", expected: 3 },
+    { name: 'dictation one missing word', question: dictation, response: 'She like coffee', expected: 3 },
+    {
+        name: 'dictation extra word costs a word',
+        question: dictation,
+        response: "She really doesn't like coffee",
+        expected: 3,
+    },
+    { name: 'dictation blank', question: dictation, response: '', expected: 0 },
+    { name: 'dictation floors at zero', question: dictation, response: 'a b c d e f g h', expected: 0 },
+    {
+        name: 'dictation all-or-nothing',
+        question: { ...dictation, partialCredit: false },
+        response: "She doesn't like tea",
+        expected: 0,
+    },
+    {
+        name: 'dictation contractions only when opted in',
+        question: dictation,
+        response: 'She does not like coffee',
+        expected: 2,
+    },
+    {
+        name: 'dictation contractions opted in',
+        question: { ...dictation, answerTolerance: { contractions: true } },
+        response: 'She does not like coffee',
+        expected: 4,
+    },
+    {
+        name: 'dictation minor slip opted in',
+        question: { ...dictation, answerTolerance: { slips: true } },
+        response: "She doesn't like cofee",
+        expected: 4,
+    },
+    {
+        name: 'dictation with no target',
+        question: { type: 'dictation', points: 2, prompt: '' },
+        response: 'x',
+        expected: 0,
+    },
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
     { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },

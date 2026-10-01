@@ -354,6 +354,83 @@ describe('StudentTestPage — answer types', () => {
         expect(decoded!.answers[0].response).toBe(JSON.stringify({ 0: 'cat', 1: 'mat' }));
     });
 
+    it('answers a dictation question with typed text', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Write what you hear',
+                        type: 'dictation',
+                        points: 4,
+                        audioUrl: 'https://example.com/d.mp3',
+                        dictationText: 'secret sentence',
+                    },
+                ],
+            })
+        );
+        fireEvent.change(screen.getByLabelText('tests.taking.dictation_placeholder'), {
+            target: { value: 'the sentence' },
+        });
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe('the sentence');
+    });
+
+    it('counts down prep time before recording an audio response', async () => {
+        vi.useFakeTimers();
+        try {
+            renderPage(
+                makeTest({
+                    questions: [
+                        {
+                            id: 'q1',
+                            prompt: 'Describe your day',
+                            type: 'audio-response',
+                            points: 5,
+                            prepSeconds: 3,
+                            cueBullets: ['Morning', 'Evening'],
+                        },
+                    ],
+                })
+            );
+            expect(screen.getByText('Morning')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('tests.taking.start_recording'));
+            expect(screen.getByRole('timer')).toHaveTextContent('"seconds":3');
+            await act(async () => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(screen.getByRole('timer')).toHaveTextContent('"seconds":2');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('limits listening plays and logs each play as a proctor event', async () => {
+        window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Listen',
+                        type: 'short-answer',
+                        points: 1,
+                        audioUrl: 'https://example.com/clip.mp3',
+                        maxPlays: 1,
+                    },
+                ],
+            })
+        );
+        const play = screen.getByRole('button', { name: 'tests.taking.question_audio_alt' });
+        fireEvent.click(play);
+        expect(play).toBeDisabled();
+        expect(screen.getByRole('status')).toHaveTextContent('tests.taking.audio_no_plays_left');
+        const decoded = await submitSingle();
+        expect(decoded!.events?.filter((e) => e.type === 'audio_play')).toEqual([
+            expect.objectContaining({ value: 'question:q1:1' }),
+        ]);
+    });
+
     it('answers a hot-text question by selecting fragments', async () => {
         renderPage(
             makeTest({

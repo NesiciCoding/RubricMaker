@@ -38,6 +38,7 @@ import {
     plainQuestionPromptText,
     renderClozeSegments,
 } from '../../utils/clozeParse';
+import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
 import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
 import AnswerToleranceFields from './AnswerToleranceFields';
@@ -85,6 +86,7 @@ export const QUESTION_TYPES: TestQuestionType[] = [
     'cloze-dropdown',
     'cloze-bank',
     'matrix',
+    'dictation',
     'matching',
     'ordering',
     'categorize',
@@ -114,6 +116,7 @@ export default function QuestionEditor({
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
+    const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
     const [attachOpen, setAttachOpen] = React.useState(() => !!(question.imageUrl || question.audioUrl));
     const [advancedOpen, setAdvancedOpen] = React.useState(
         () => !!(question.hint || question.explanation || question.eloRating)
@@ -682,6 +685,8 @@ export default function QuestionEditor({
                     </label>
                     {(question.options ?? []).map((option) => {
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
+                        const showAudioField =
+                            expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -735,6 +740,30 @@ export default function QuestionEditor({
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_audio_label')}
+                                        aria-pressed={showAudioField}
+                                        title={t('tests.option_audio_label')}
+                                        onClick={() =>
+                                            setExpandedOptionAudio((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(option.id)) next.delete(option.id);
+                                                else next.add(option.id);
+                                                return next;
+                                            })
+                                        }
+                                        style={{
+                                            color:
+                                                option.audioUrl || option.spokenText
+                                                    ? 'var(--accent)'
+                                                    : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Music size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red)' }}
                                         disabled={question.options!.length <= 1}
@@ -775,6 +804,30 @@ export default function QuestionEditor({
                                                 }}
                                             />
                                         )}
+                                    </div>
+                                )}
+                                {showAudioField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="url"
+                                            value={option.audioUrl ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { audioUrl: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.question_audio_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_audio_label')}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={option.spokenText ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { spokenText: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.option_spoken_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_spoken_placeholder')}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -930,6 +983,63 @@ export default function QuestionEditor({
                             {t('tests.partial_credit_help')}
                         </HelpPopover>
                     </label>
+                </div>
+            )}
+
+            {question.type === 'dictation' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label htmlFor={`dictation-text-${question.id}`}>
+                        {t('tests.dictation_text_label')}{' '}
+                        <HelpPopover title={t('tests.help.dictation_teacher_title')}>
+                            {t('tests.help.dictation_teacher_body')}
+                        </HelpPopover>
+                    </label>
+                    <textarea
+                        id={`dictation-text-${question.id}`}
+                        rows={2}
+                        value={question.dictationText ?? ''}
+                        onChange={(e) => update({ dictationText: e.target.value })}
+                    />
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>
+                        {t('tests.dictation_audio_note')}
+                    </p>
+                    <AnswerToleranceFields
+                        value={question.answerTolerance}
+                        onChange={(answerTolerance) => update({ answerTolerance })}
+                    />
+                    {renderPartialCreditToggle()}
+                </div>
+            )}
+
+            {question.type === 'audio-response' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div>
+                        <label htmlFor={`prep-seconds-${question.id}`}>{t('tests.prep_seconds_label')}</label>
+                        <input
+                            id={`prep-seconds-${question.id}`}
+                            type="number"
+                            min={0}
+                            value={question.prepSeconds ?? ''}
+                            onChange={(e) => {
+                                const n = Math.floor(Number(e.target.value));
+                                update({ prepSeconds: n > 0 ? n : undefined });
+                            }}
+                            style={{ width: 120 }}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={`cue-bullets-${question.id}`}>{t('tests.cue_bullets_label')}</label>
+                        <textarea
+                            id={`cue-bullets-${question.id}`}
+                            rows={3}
+                            value={(question.cueBullets ?? []).join('\n')}
+                            onChange={(e) => {
+                                const bullets = e.target.value.split('\n').filter((line) => line.trim());
+                                update({ cueBullets: bullets.length ? bullets : undefined });
+                            }}
+                            placeholder={t('tests.cue_bullets_placeholder')}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -1343,6 +1453,12 @@ export default function QuestionEditor({
                                 />
                             )}
                         </div>
+                        <ListeningControlsFields
+                            id={`question-${question.id}`}
+                            value={question}
+                            onChange={(patch) => update(patch)}
+                            showSpokenText={question.type !== 'dictation'}
+                        />
                     </div>
                 )}
             </div>

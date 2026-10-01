@@ -58,6 +58,9 @@ export function cloneBankItemIntoTest(item: QuestionBankItem): { questions: Test
             title: item.section.title,
             content: item.section.content,
             audioUrl: item.section.audioUrl,
+            maxPlays: item.section.maxPlays,
+            spokenText: item.section.spokenText,
+            transcript: item.section.transcript,
             cefrLevel: item.cefrLevel,
         };
         return { questions, section };

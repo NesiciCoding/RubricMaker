@@ -298,6 +298,7 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
         case 'short-answer':
             return { kind: 'short' };
         case 'open':
+        case 'dictation':
             return { kind: 'long' };
         case 'numeric':
             return { kind: 'numeric' };

@@ -52,6 +52,10 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
     if (question.type === 'true-false') {
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
+    if (question.type === 'dictation') {
+        if (!answer.response.trim()) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
     if (question.type === 'short-answer') {
         const score = scoreShortAnswerExact(question, answer.response);
         if (score === null) return 'ungraded';

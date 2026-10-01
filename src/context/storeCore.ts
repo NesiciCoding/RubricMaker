@@ -937,7 +937,10 @@ export interface AppContextValue extends StoreData {
         cefrLevel?: CefrLevel
     ) => QuestionBankItem;
     addSectionBankItem: (
-        section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
+        section: Pick<
+            NonNullable<QuestionBankItem['section']>,
+            'title' | 'content' | 'audioUrl' | 'maxPlays' | 'spokenText' | 'transcript'
+        >,
         questions: Omit<TestQuestion, 'sectionId'>[],
         tags: string[],
         cefrLevel?: CefrLevel

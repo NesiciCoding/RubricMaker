@@ -1111,6 +1111,7 @@ export type TestQuestionType =
     | 'cloze-dropdown'
     | 'cloze-bank'
     | 'matrix'
+    | 'dictation'
     | 'matching'
     | 'ordering'
     | 'categorize'
@@ -1124,6 +1125,10 @@ export interface TestOption {
     isCorrect: boolean;
     /** Image shown alongside the option text — either a public URL or a data URI */
     imageUrl?: string;
+    /** Audio file played for this option (minimal pairs / "which sound") — either a public URL or a data URI */
+    audioUrl?: string;
+    /** Option text read aloud by the browser voice when no audioUrl is set */
+    spokenText?: string;
 }
 
 /** A left/right pair for matching questions; correct match is left.id === right pair's id */
@@ -1174,6 +1179,12 @@ export interface TestSection {
     content?: string;
     /** Shared listening clip for the whole section, played once above its questions (vs. per-question TestQuestion.audioUrl) */
     audioUrl?: string;
+    /** Play limit for the section clip (e.g. 2 as in Cambridge exams); unlimited when absent */
+    maxPlays?: number;
+    /** Stimulus read aloud by the browser voice instead of an uploaded clip — voices differ per device, so upload a clip for graded tests */
+    spokenText?: string;
+    /** Listening transcript, revealed after submission in practice mode */
+    transcript?: string;
     /** Target CEFR level this section is written at, for placement-test routing and result estimation */
     cefrLevel?: CefrLevel;
     /** Deterministic branching rule for placement tests (roadmap Phase 25.1): scoring at/above the threshold on this section routes to passSectionId, otherwise failSectionId */
@@ -1248,6 +1259,18 @@ export interface TestQuestion {
     explanation?: string;
     /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */
     maxRecordingSeconds?: number;
+    /** For 'audio-response' questions: preparation countdown before recording starts automatically */
+    prepSeconds?: number;
+    /** For 'audio-response' questions: cue-card bullet prompts shown during prep and recording */
+    cueBullets?: string[];
+    /** Play limit for this question's audio clip; unlimited when absent */
+    maxPlays?: number;
+    /** Stimulus read aloud by the browser voice instead of an uploaded clip */
+    spokenText?: string;
+    /** Listening transcript, revealed after submission in practice mode */
+    transcript?: string;
+    /** For 'dictation' questions: the sentence the student must write down; spoken by the browser voice when there's no audioUrl */
+    dictationText?: string;
     /** Elo-style item rating for staircase placement tests, self-calibrated from response history (roadmap Phase 25.4). Defaults to `DEFAULT_ELO_RATING` when absent. */
     eloRating?: number;
 }
@@ -1323,6 +1346,9 @@ export interface QuestionBankItem {
         title: string;
         content?: string;
         audioUrl?: string;
+        maxPlays?: number;
+        spokenText?: string;
+        transcript?: string;
         questions: Omit<TestQuestion, 'sectionId'>[];
     };
     tags: string[];
@@ -1331,7 +1357,8 @@ export interface QuestionBankItem {
     updatedAt?: string;
 }
 
-export type ProctorEventType = 'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status';
+export type ProctorEventType =
+    'tab_switch' | 'copy' | 'paste' | 'cut' | 'battery' | 'heartbeat' | 'seb_status' | 'audio_play';
 
 export interface ProctorEvent {
     type: ProctorEventType;

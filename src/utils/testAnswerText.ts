@@ -133,6 +133,8 @@ export function formatCorrectAnswer(question: TestQuestion): string {
             return renderClozeSegments(stripHtmlTags(question.prompt))
                 .map((s) => (s.type === 'text' ? s.text : `[${s.gap.alternatives[0] ?? ''}]`))
                 .join('');
+        case 'dictation':
+            return question.dictationText ?? '';
         case 'matrix': {
             const columns = new Map((question.matrixColumns ?? []).map((c) => [c.id, c.text]));
             return (question.matrixRows ?? [])

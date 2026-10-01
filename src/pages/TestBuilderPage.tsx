@@ -29,6 +29,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
+import ListeningControlsFields from '../components/Tests/ListeningControlsFields';
 import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
 import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
@@ -325,7 +326,14 @@ export default function TestBuilderPage() {
     function saveSectionToBank(section: TestSection) {
         const sectionQs = questionsFor(section.id).map(({ sectionId: _sectionId, ...q }) => q);
         addSectionBankItem(
-            { title: section.title, content: section.content, audioUrl: section.audioUrl },
+            {
+                title: section.title,
+                content: section.content,
+                audioUrl: section.audioUrl,
+                maxPlays: section.maxPlays,
+                spokenText: section.spokenText,
+                transcript: section.transcript,
+            },
             sectionQs,
             [],
             section.cefrLevel
@@ -1542,6 +1550,11 @@ export default function TestBuilderPage() {
                                                                     style={{ marginTop: 8, width: '100%' }}
                                                                 />
                                                             )}
+                                                            <ListeningControlsFields
+                                                                id={`section-${section.id}`}
+                                                                value={section}
+                                                                onChange={(patch) => updateSection(section.id, patch)}
+                                                            />
                                                         </div>
                                                     </>
                                                 )}

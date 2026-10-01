@@ -19,7 +19,7 @@ import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
-import { answersMatch } from '../../supabase/functions/_shared/testScoring';
+import { alignDictation, answersMatch } from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import CommentBankModal from '../components/Comments/CommentBankModal';
@@ -39,6 +39,7 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'cloze-dropdown' ||
         question.type === 'cloze-bank' ||
         question.type === 'matrix' ||
+        question.type === 'dictation' ||
         question.type === 'matching' ||
         question.type === 'ordering' ||
         question.type === 'categorize' ||
@@ -246,6 +247,35 @@ function formatStudentResponse(
             </>
         );
     }
+    if (question.type === 'dictation') {
+        const words = (question.dictationText ?? '').trim().split(/\s+/).filter(Boolean);
+        const { matched } = alignDictation(question, response);
+        return (
+            <>
+                <div>{response}</div>
+                {words.length > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                        {words.map((word, i) => (
+                            <span
+                                key={i}
+                                style={{
+                                    fontWeight: 600,
+                                    color:
+                                        words.length !== matched.length
+                                            ? 'var(--text-muted)'
+                                            : matched[i]
+                                              ? 'var(--green)'
+                                              : 'var(--red)',
+                                }}
+                            >
+                                {word}{' '}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </>
+        );
+    }
     if (question.type === 'hot-text') {
         const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
         if (!segments.some((s) => s.type === 'fragment')) return t('tests.results.no_response');
@@ -303,6 +333,7 @@ const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
     'battery',
     'heartbeat',
     'seb_status',
+    'audio_play',
 ];
 
 export default function TestResultsPage() {
@@ -733,6 +764,7 @@ export default function TestResultsPage() {
                             question.type === 'cloze-dropdown' ||
                             question.type === 'cloze-bank' ||
                             question.type === 'matrix' ||
+                            question.type === 'dictation' ||
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||

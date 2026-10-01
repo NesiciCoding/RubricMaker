@@ -41,7 +41,13 @@ interface RawQuestion {
     prompt?: string;
     type?: string;
     points?: number;
-    options?: Array<{ text?: string; isCorrect?: boolean; imageUrl?: string }>;
+    options?: Array<{ text?: string; isCorrect?: boolean; imageUrl?: string; audioUrl?: string; spokenText?: string }>;
+    maxPlays?: number;
+    spokenText?: string;
+    transcript?: string;
+    dictationText?: string;
+    prepSeconds?: number;
+    cueBullets?: string[];
     expectedAnswer?: string;
     expectedAnswers?: string[];
     expectedNumericValue?: number;
@@ -86,6 +92,9 @@ interface RawQuestionBankJson {
             title?: string;
             content?: string;
             audioUrl?: string;
+            maxPlays?: number;
+            spokenText?: string;
+            transcript?: string;
             questions?: RawQuestion[];
         };
     }>;
@@ -101,6 +110,7 @@ const VALID_TYPES: TestQuestionType[] = [
     'cloze-dropdown',
     'cloze-bank',
     'matrix',
+    'dictation',
     'matching',
     'ordering',
     'categorize',
@@ -111,6 +121,14 @@ const VALID_TYPES: TestQuestionType[] = [
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function listeningFields(raw: { maxPlays?: unknown; spokenText?: unknown; transcript?: unknown }) {
+    return {
+        ...(typeof raw.maxPlays === 'number' && raw.maxPlays >= 1 ? { maxPlays: Math.floor(raw.maxPlays) } : {}),
+        ...(typeof raw.spokenText === 'string' && raw.spokenText ? { spokenText: raw.spokenText } : {}),
+        ...(typeof raw.transcript === 'string' && raw.transcript ? { transcript: raw.transcript } : {}),
+    };
 }
 
 /** Parses one raw question into a full TestQuestion, or returns null (with a warning) if it's unusable. */
@@ -141,6 +159,8 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
             text: o.text ?? '',
             isCorrect: !!o.isCorrect,
             ...(o.imageUrl ? { imageUrl: o.imageUrl } : {}),
+            ...(o.audioUrl ? { audioUrl: o.audioUrl } : {}),
+            ...(o.spokenText ? { spokenText: o.spokenText } : {}),
         }));
         if (
             (type === 'multiple-choice' || type === 'multiple-response') &&
@@ -251,6 +271,11 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (raw.linkedGrammarItemId) question.linkedGrammarItemId = raw.linkedGrammarItemId;
     if (raw.explanation) question.explanation = raw.explanation;
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
+    Object.assign(question, listeningFields(raw));
+    if (typeof raw.dictationText === 'string') question.dictationText = raw.dictationText;
+    if (typeof raw.prepSeconds === 'number' && raw.prepSeconds > 0) question.prepSeconds = raw.prepSeconds;
+    if (Array.isArray(raw.cueBullets))
+        question.cueBullets = raw.cueBullets.filter((b): b is string => typeof b === 'string');
     if (typeof raw.eloRating === 'number' && Number.isFinite(raw.eloRating)) question.eloRating = raw.eloRating;
 
     return question;
@@ -342,6 +367,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
                     title: section.title,
                     content: section.content as string | undefined,
                     audioUrl: section.audioUrl as string | undefined,
+                    ...listeningFields(section),
                     questions,
                 },
                 tags,

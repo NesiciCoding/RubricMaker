@@ -76,12 +76,15 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         options,
         categorizeItems,
         matrixRows,
+        dictationText,
         ...rest
     } = question;
     return {
         ...rest,
         ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
         ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
+        // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
+        ...(dictationText !== undefined && !rest.audioUrl ? { dictationText } : {}),
         ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
     } as MinimalQuestion;
 }

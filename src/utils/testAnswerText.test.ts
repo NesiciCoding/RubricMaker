@@ -232,3 +232,17 @@ describe('matrix and cloze-bank answer text', () => {
         expect(formatCorrectAnswer(bank)).toBe('A [cat] sat.');
     });
 });
+
+describe('dictation answer text', () => {
+    const dictation: TestQuestion = {
+        id: 'qd',
+        prompt: '',
+        type: 'dictation',
+        points: 2,
+        dictationText: 'Hello there.',
+    };
+    it('uses the dictated text as the correct answer', () => {
+        expect(formatCorrectAnswer(dictation)).toBe('Hello there.');
+        expect(formatGivenAnswer(dictation, { questionId: 'qd', response: 'hello' })).toBe('hello');
+    });
+});

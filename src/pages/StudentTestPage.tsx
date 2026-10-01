@@ -22,6 +22,7 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import LimitedAudio, { OptionAudioButton } from '../components/Tests/LimitedAudio';
 import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
@@ -249,6 +250,7 @@ export default function StudentTestPage() {
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+    const [audioPlays, setAudioPlays] = useState<Record<string, number>>({});
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
@@ -440,6 +442,14 @@ export default function StudentTestPage() {
         supabaseAnonKey: assignment?.supabaseAnonKey,
         onNudge: (message) => showToast(message, 'info'),
     });
+
+    const handleAudioPlay = useCallback(
+        (key: string, count: number) => {
+            setAudioPlays((prev) => ({ ...prev, [key]: count }));
+            telemetry.recordEvent({ type: 'audio_play', at: new Date().toISOString(), value: `${key}:${count}` });
+        },
+        [telemetry]
+    );
 
     // Retry any queued hand-ins for this project (a prior failed submit, from this attempt or an
     // earlier page load). success — or a 409 "already submitted", which means a prior retry
@@ -810,6 +820,7 @@ export default function StudentTestPage() {
           ? sections.find((s) => s.id === question.sectionId)
           : null;
     const sectionAudioSrc = safeAudioSrc(currentSection?.audioUrl);
+    const sectionStimulus = currentSection as Partial<TestSection> | null | undefined;
 
     // For a staged test, the last question of a stage routes onward instead of submitting
     // directly — resolveNextSection returns null once the path reaches a terminal section.
@@ -1081,6 +1092,30 @@ export default function StudentTestPage() {
                                                         {q.explanation}
                                                     </p>
                                                 )}
+                                                {(() => {
+                                                    const section = (test?.sections ?? []).find(
+                                                        (sec) => sec.id === q.sectionId
+                                                    );
+                                                    const firstOfSection =
+                                                        !!section &&
+                                                        orderedQuestions.find((oq) => oq.sectionId === section.id)
+                                                            ?.id === q.id;
+                                                    const transcript =
+                                                        q.transcript || (firstOfSection ? section?.transcript : '');
+                                                    return transcript ? (
+                                                        <details style={{ marginTop: 8 }}>
+                                                            <summary className="text-sm">
+                                                                {t('tests.taking.transcript_title')}
+                                                            </summary>
+                                                            <p
+                                                                className="text-muted text-sm"
+                                                                style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}
+                                                            >
+                                                                {transcript}
+                                                            </p>
+                                                        </details>
+                                                    ) : null;
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -1129,13 +1164,18 @@ export default function StudentTestPage() {
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
-                            {sectionAudioSrc && (
-                                <audio
-                                    controls
-                                    src={sectionAudioSrc}
-                                    aria-label={t('tests.taking.section_audio_alt')}
-                                    style={{ marginBottom: 16, width: '100%' }}
-                                />
+                            {(sectionAudioSrc || sectionStimulus?.spokenText) && currentSection && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <LimitedAudio
+                                        src={sectionAudioSrc}
+                                        spokenText={sectionStimulus?.spokenText}
+                                        maxPlays={sectionStimulus?.maxPlays}
+                                        plays={audioPlays[`section:${currentSection.id}`] ?? 0}
+                                        onPlay={(count) => handleAudioPlay(`section:${currentSection.id}`, count)}
+                                        lang={test?.contentLanguage ?? 'en'}
+                                        label={t('tests.taking.section_audio_alt')}
+                                    />
+                                </div>
                             )}
 
                             {question && (
@@ -1151,6 +1191,8 @@ export default function StudentTestPage() {
                                     hideTotal={isStaircase || isGenerator}
                                     readAloudAllowed={readAloudAllowed}
                                     lang={test?.contentLanguage ?? 'en'}
+                                    audioPlays={audioPlays[`question:${question.id}`] ?? 0}
+                                    onAudioPlay={(count) => handleAudioPlay(`question:${question.id}`, count)}
                                 />
                             )}
 
@@ -1498,6 +1540,8 @@ interface QuestionCardProps {
     readAloudAllowed?: boolean;
     /** BCP-47 base language code for read-aloud voice selection. */
     lang?: string;
+    audioPlays?: number;
+    onAudioPlay?: (count: number) => void;
 }
 
 function QuestionCard({
@@ -1511,6 +1555,8 @@ function QuestionCard({
     hideTotal,
     readAloudAllowed,
     lang,
+    audioPlays = 0,
+    onAudioPlay,
 }: QuestionCardProps) {
     const { t } = useTranslation();
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
@@ -1594,13 +1640,32 @@ function QuestionCard({
             )}
 
             {/* Audio stimulus */}
-            {safeAudioSrc(question.audioUrl) && (
-                <audio
-                    controls
-                    src={safeAudioSrc(question.audioUrl)}
-                    aria-label={t('tests.taking.question_audio_alt')}
-                    style={{ display: 'block', width: '100%', marginBottom: 16 }}
-                />
+            {question.type !== 'dictation' && (safeAudioSrc(question.audioUrl) || question.spokenText) && (
+                <div style={{ marginBottom: 16 }}>
+                    <LimitedAudio
+                        src={safeAudioSrc(question.audioUrl)}
+                        spokenText={question.spokenText}
+                        maxPlays={question.maxPlays}
+                        plays={audioPlays}
+                        onPlay={(count) => onAudioPlay?.(count)}
+                        lang={lang ?? 'en'}
+                        label={t('tests.taking.question_audio_alt')}
+                    />
+                </div>
+            )}
+
+            {question.type === 'dictation' && (
+                <div style={{ marginBottom: 16 }}>
+                    <LimitedAudio
+                        src={safeAudioSrc(question.audioUrl)}
+                        spokenText={safeAudioSrc(question.audioUrl) ? undefined : question.dictationText}
+                        maxPlays={question.maxPlays}
+                        plays={audioPlays}
+                        onPlay={(count) => onAudioPlay?.(count)}
+                        lang={lang ?? 'en'}
+                        label={t('tests.taking.dictation_play')}
+                    />
+                </div>
             )}
 
             {/* Hint toggle */}
@@ -1679,6 +1744,12 @@ function QuestionCard({
                                 />
                             )}
                             <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                            <OptionAudioButton
+                                src={safeAudioSrc(opt.audioUrl)}
+                                spokenText={opt.spokenText}
+                                lang={lang ?? 'en'}
+                                label={t('tests.taking.option_audio_play')}
+                            />
                         </label>
                     ))}
                 </div>
@@ -1723,6 +1794,12 @@ function QuestionCard({
                                     />
                                 )}
                                 <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                                <OptionAudioButton
+                                    src={safeAudioSrc(opt.audioUrl)}
+                                    spokenText={opt.spokenText}
+                                    lang={lang ?? 'en'}
+                                    label={t('tests.taking.option_audio_play')}
+                                />
                             </label>
                         );
                     })}
@@ -1770,6 +1847,26 @@ function QuestionCard({
             )}
 
             {question.type === 'hot-text' && <HotTextAnswer question={question} value={value} onChange={onChange} />}
+
+            {question.type === 'dictation' && (
+                <textarea
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={t('tests.taking.dictation_placeholder')}
+                    aria-label={t('tests.taking.dictation_placeholder')}
+                    rows={3}
+                    style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontSize: '0.95rem',
+                        resize: 'vertical',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                    }}
+                />
+            )}
 
             {question.type === 'short-answer' && (
                 <input
@@ -1851,6 +1948,8 @@ function QuestionCard({
                     value={value}
                     onChange={onChange}
                     maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                    prepSeconds={question.prepSeconds}
+                    cueBullets={question.cueBullets}
                     onRecordingChange={onRecordingChange}
                 />
             )}
@@ -1864,6 +1963,8 @@ interface AudioResponseAnswerProps {
     value: string;
     onChange: (value: string) => void;
     maxRecordingSeconds: number;
+    prepSeconds?: number;
+    cueBullets?: string[];
     onRecordingChange?: (recording: boolean) => void;
 }
 
@@ -1872,18 +1973,34 @@ function safeRecordedAudioSrc(dataUri: string): string | undefined {
     return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
 }
 
-function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecordingChange }: AudioResponseAnswerProps) {
+function AudioResponseAnswer({
+    value,
+    onChange,
+    maxRecordingSeconds,
+    prepSeconds,
+    cueBullets,
+    onRecordingChange,
+}: AudioResponseAnswerProps) {
     const { t } = useTranslation();
     const { status, start, stop } = useMediaRecorder();
     const [elapsedSec, setElapsedSec] = useState(0);
     const [micError, setMicError] = useState(false);
     const elapsedRef = useRef(0);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [prepRemaining, setPrepRemaining] = useState<number | null>(null);
+    const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const existing = parseAudioResponse(value);
 
     useEffect(() => {
-        onRecordingChange?.(status === 'recording');
-    }, [status, onRecordingChange]);
+        onRecordingChange?.(status === 'recording' || prepRemaining !== null);
+    }, [status, prepRemaining, onRecordingChange]);
+
+    useEffect(
+        () => () => {
+            if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+        },
+        []
+    );
 
     const stopRecording = useCallback(async () => {
         /* v8 ignore next -- the interval is always set while recording */
@@ -1922,9 +2039,61 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
         };
     }, []);
 
+    function endPrep() {
+        if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+        prepTimerRef.current = null;
+        setPrepRemaining(null);
+        void startRecording();
+    }
+
+    function begin() {
+        if (!prepSeconds || prepSeconds <= 0) {
+            void startRecording();
+            return;
+        }
+        let remaining = prepSeconds;
+        setPrepRemaining(remaining);
+        prepTimerRef.current = setInterval(() => {
+            remaining -= 1;
+            if (remaining <= 0) endPrep();
+            else setPrepRemaining(remaining);
+        }, 1000);
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {status === 'recording' ? (
+            {cueBullets && cueBullets.length > 0 && (
+                <div
+                    style={{
+                        padding: '10px 14px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--bg)',
+                    }}
+                >
+                    <strong style={{ fontSize: '0.85rem' }}>{t('tests.taking.cue_card_title')}</strong>
+                    <ul style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                        {cueBullets.map((bullet, i) => (
+                            <li key={i}>{bullet}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {prepRemaining !== null ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span role="timer" style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                        {t('tests.taking.prep_countdown', { seconds: prepRemaining })}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={endPrep}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {t('tests.taking.prep_skip')}
+                    </button>
+                </div>
+            ) : status === 'recording' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span
                         style={{
@@ -1953,7 +2122,7 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
                 </div>
             ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => void startRecording()}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={begin}>
                         {existing ? t('tests.taking.re_record') : t('tests.taking.start_recording')}
                     </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>

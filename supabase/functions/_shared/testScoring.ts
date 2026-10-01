@@ -28,6 +28,7 @@ export interface ScorableQuestion {
     partialCredit?: boolean;
     correctBoolean?: boolean;
     answerTolerance?: AnswerTolerance;
+    dictationText?: string;
 }
 
 /** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
@@ -232,6 +233,13 @@ function editDistanceWithin1(a: string, b: string): boolean {
     return long.slice(i + 1) === short.slice(i);
 }
 
+function tokensMatch(expected: string, given: string, tol: AnswerTolerance): boolean {
+    return (
+        expected === given ||
+        (!!tol.slips && expected.length >= 5 && editDistanceWithin1(expected, given))
+    );
+}
+
 function answerTokens(text: string, tol: AnswerTolerance): string[] {
     let t = text.trim().toLowerCase();
     if (tol.punctuation || tol.contractions)
@@ -258,7 +266,7 @@ export function answersMatch(expected: string, response: string, tol?: AnswerTol
     const a = answerTokens(expected, tol);
     const b = answerTokens(response, tol);
     if (a.length === 0 || a.length !== b.length) return false;
-    return a.every((word, i) => word === b[i] || (!!tol.slips && word.length >= 5 && editDistanceWithin1(word, b[i])));
+    return a.every((word, i) => tokensMatch(word, b[i], tol));
 }
 
 function partialOrAll(question: ScorableQuestion, correctCount: number, total: number): number {
@@ -350,6 +358,55 @@ export function matrixRowCorrectness(question: ScorableQuestion, response: strin
     return (question.matrixRows ?? []).map((row) => answers[row.id] === row.correctColumnId);
 }
 
+/**
+ * Word-level alignment of a dictation response against the target sentence (Levenshtein over
+ * tokens, no speech recognition). Returns, per target word, whether it was matched in the best
+ * alignment, plus the edit distance. Case and punctuation never count; contractions, spelling
+ * variants and minor slips follow the question's opt-in answerTolerance.
+ */
+export function alignDictation(question: ScorableQuestion, response: string): { matched: boolean[]; distance: number } {
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    const target = answerTokens(question.dictationText ?? '', tol);
+    const given = answerTokens(response, tol);
+    const n = target.length;
+    const m = given.length;
+    const d: number[][] = Array.from({ length: n + 1 }, (_, i) => [i, ...new Array<number>(m).fill(0)]);
+    for (let j = 1; j <= m; j++) d[0][j] = j;
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            const sub = d[i - 1][j - 1] + (tokensMatch(target[i - 1], given[j - 1], tol) ? 0 : 1);
+            d[i][j] = Math.min(sub, d[i - 1][j] + 1, d[i][j - 1] + 1);
+        }
+    }
+    const matched = new Array<boolean>(n).fill(false);
+    let i = n;
+    let j = m;
+    while (i > 0 && j > 0) {
+        const isMatch = tokensMatch(target[i - 1], given[j - 1], tol);
+        if (isMatch && d[i][j] === d[i - 1][j - 1]) {
+            matched[i - 1] = true;
+            i--;
+            j--;
+        } else if (d[i][j] === d[i - 1][j - 1] + 1) {
+            i--;
+            j--;
+        } else if (d[i][j] === d[i - 1][j] + 1) {
+            i--;
+        } else {
+            j--;
+        }
+    }
+    return { matched, distance: d[n][m] };
+}
+
+/** Auto-score a dictation question: 1 − (word edit distance ÷ target words), floored at 0; all-or-nothing when partialCredit is false. */
+export function scoreDictation(question: ScorableQuestion, response: string): number {
+    const { matched, distance } = alignDictation(question, response);
+    if (matched.length === 0) return 0;
+    if (question.partialCredit === false) return distance === 0 ? question.points : 0;
+    return question.points * Math.max(0, 1 - distance / matched.length);
+}
+
 /** Auto-score a matching question: each pair is correct when the student paired it with itself. Supports partial credit. */
 export function scoreMatching(question: ScorableQuestion, response: string): number {
     const pairs = question.matchingPairs ?? [];
@@ -421,6 +478,8 @@ export function autoScoreResponse(question: ScorableQuestion, response: string):
             return scoreCloze(question, response);
         case 'matrix':
             return scoreMatrix(question, response);
+        case 'dictation':
+            return scoreDictation(question, response);
         case 'matching':
             return scoreMatching(question, response);
         case 'ordering':
