@@ -259,6 +259,11 @@ export default function TestBuilderPage() {
         return [...uncategorised, ...sections.flatMap((s) => sectionGroups[s.id] ?? [])];
     }
 
+    const displayOrderedQuestions = flattenGroups(
+        questionsFor(null),
+        Object.fromEntries(sections.map((s) => [s.id, questionsFor(s.id)]))
+    );
+
     function onDragEnd(result: DropResult) {
         if (!result.destination) return;
         const { source, destination } = result;
@@ -431,7 +436,7 @@ export default function TestBuilderPage() {
         const payload = {
             name: name.trim(),
             description: description.trim() || undefined,
-            questions,
+            questions: displayOrderedQuestions,
             sections: sanitizedSections.length > 0 ? sanitizedSections : undefined,
             durationMinutes: parsedDuration,
             dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
@@ -1304,7 +1309,7 @@ export default function TestBuilderPage() {
                                                     >
                                                         <QuestionEditor
                                                             question={question}
-                                                            index={questions.indexOf(question)}
+                                                            index={displayOrderedQuestions.indexOf(question)}
                                                             total={questions.length}
                                                             sections={sections}
                                                             dragHandleProps={draggable.dragHandleProps}
@@ -1570,7 +1575,7 @@ export default function TestBuilderPage() {
                                                                     >
                                                                         <QuestionEditor
                                                                             question={question}
-                                                                            index={questions.indexOf(question)}
+                                                                            index={displayOrderedQuestions.indexOf(question)}
                                                                             total={questions.length}
                                                                             sections={sections}
                                                                             dragHandleProps={draggable.dragHandleProps}

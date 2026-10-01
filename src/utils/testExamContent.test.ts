@@ -30,7 +30,7 @@ function makeTest(overrides: Partial<Test> = {}): Test {
 }
 
 describe('groupQuestionsBySection', () => {
-    it('numbers questions continuously across sections, then ungrouped last', () => {
+    it('numbers questions continuously, ungrouped first then sections (builder order)', () => {
         const test = makeTest({
             sections: [
                 { id: 's1', title: 'Tekst 1' },
@@ -43,7 +43,7 @@ describe('groupQuestionsBySection', () => {
             ],
         });
         const groups = groupQuestionsBySection(test);
-        expect(groups.map((g) => g.section?.title ?? null)).toEqual(['Tekst 1', 'Tekst 2', null]);
+        expect(groups.map((g) => g.section?.title ?? null)).toEqual([null, 'Tekst 1', 'Tekst 2']);
         expect(groups[0].questions[0].number).toBe(1);
         expect(groups[1].questions[0].number).toBe(2);
         expect(groups[2].questions[0].number).toBe(3);
