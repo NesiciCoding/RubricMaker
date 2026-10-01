@@ -216,6 +216,20 @@ const kwt: ScorableQuestion = {
     expectedAnswers: ['have worked // for ten years', 'have been working // for years'],
 };
 
+const errors: ScorableQuestion = {
+    type: 'error-correction',
+    points: 4,
+    prompt: '',
+    errorPassage: 'He [[go|goes]] to school [[every]] day and [[play|plays|is playing]] [[football]].',
+};
+
+const builder: ScorableQuestion = {
+    type: 'sentence-builder',
+    points: 4,
+    prompt: '',
+    sentenceTargets: ['Yesterday I went to school.', 'I went to school yesterday.'],
+};
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -445,6 +459,86 @@ const fixtures: Fixture[] = [
         response: 'a b',
         expected: 0,
     },
+
+    {
+        name: 'error-correction all found and fixed',
+        question: errors,
+        response: '{"0":"goes","2":"plays"}',
+        expected: 4,
+    },
+    {
+        name: 'error-correction alternative correction',
+        question: errors,
+        response: '{"0":"goes","2":"Is playing."}',
+        expected: 4,
+    },
+    { name: 'error-correction found but not fixed', question: errors, response: '{"0":"","2":""}', expected: 2 },
+    { name: 'error-correction one fixed', question: errors, response: '{"0":"goes"}', expected: 2 },
+    { name: 'error-correction wrong fix', question: errors, response: '{"0":"went","2":"plays"}', expected: 3 },
+    {
+        name: 'error-correction false picks free by default',
+        question: errors,
+        response: '{"0":"goes","1":"","2":"plays","3":""}',
+        expected: 4,
+    },
+    {
+        name: 'error-correction false picks penalised',
+        question: { ...errors, penaliseFalsePicks: true },
+        response: '{"0":"goes","1":"","2":"plays","3":""}',
+        expected: 2,
+    },
+    {
+        name: 'error-correction penalty floors at zero',
+        question: { ...errors, penaliseFalsePicks: true },
+        response: '{"1":"","3":""}',
+        expected: 0,
+    },
+    {
+        name: 'error-correction all-or-nothing',
+        question: { ...errors, partialCredit: false },
+        response: '{"0":"goes"}',
+        expected: 0,
+    },
+    { name: 'error-correction blank', question: errors, response: '', expected: 0 },
+    {
+        name: 'error-correction with no errors',
+        question: { type: 'error-correction', points: 2, prompt: '', errorPassage: 'A [[fine]] text.' },
+        response: '{"0":""}',
+        expected: 0,
+    },
+
+    {
+        name: 'sentence-builder exact',
+        question: builder,
+        response: '["Yesterday","I","went","to","school."]',
+        expected: 4,
+    },
+    {
+        name: 'sentence-builder second accepted order',
+        question: builder,
+        response: '["I","went","to","school","yesterday"]',
+        expected: 4,
+    },
+    {
+        name: 'sentence-builder longest run',
+        question: builder,
+        response: '["I","went","school","to","Yesterday"]',
+        expected: 1.6,
+    },
+    { name: 'sentence-builder partial placement', question: builder, response: '["went","to"]', expected: 1.6 },
+    {
+        name: 'sentence-builder all-or-nothing',
+        question: { ...builder, builderScoring: 'all-or-nothing' },
+        response: '["I","went","school","to","Yesterday"]',
+        expected: 0,
+    },
+    {
+        name: 'sentence-builder all-or-nothing exact',
+        question: { ...builder, builderScoring: 'all-or-nothing' },
+        response: '["I","went","to","school","yesterday"]',
+        expected: 4,
+    },
+    { name: 'sentence-builder blank and wrong shape', question: builder, response: '{"0":"I"}', expected: 0 },
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
     { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },

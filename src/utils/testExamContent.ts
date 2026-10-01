@@ -5,6 +5,7 @@
  * instead of reverse-engineering positions from a rendered PDF.
  */
 import type { Test, TestQuestion, TestSection } from '../types';
+import { parseErrorPassage, sentenceBuilderTiles } from '../../supabase/functions/_shared/testScoring';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
 import { stripHtmlKeepLineBreaks, stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
@@ -55,6 +56,8 @@ export function subItemCount(question: TestQuestion): number | null {
             return question.categorizeItems?.length || null;
         case 'matrix':
             return question.matrixRows?.length || null;
+        case 'error-correction':
+            return errorBookletParts(question).filter((p) => p.number).length || null;
         case 'cloze':
         case 'cloze-dropdown':
         case 'cloze-bank':
@@ -109,6 +112,30 @@ export function hotTextMirrorParts(question: TestQuestion): HotTextMirrorPart[] 
     return parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? '')).map((s) =>
         s.type === 'fragment' ? { text: s.text, number: s.index + 1 } : { text: s.text }
     );
+}
+
+export interface ErrorBookletPart {
+    text: string;
+    /** Present for a selectable fragment; 1-based. The corrections are never printed in the booklet. */
+    number?: number;
+}
+
+/** Error-correction passage as text/fragment parts with each fragment numbered; the key stays out of the booklet. */
+export function errorBookletParts(question: TestQuestion): ErrorBookletPart[] {
+    return parseErrorPassage(question.errorPassage ?? '').map((s) =>
+        s.type === 'fragment' ? { text: s.text, number: s.index + 1 } : { text: s.text }
+    );
+}
+
+/** Sentence-builder word tiles, lettered, for the booklet. */
+export function builderBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
+    return sentenceBuilderTiles(question).map((text, i) => ({ letter: optionLetter(i), text }));
+}
+
+function errorCorrectionKey(question: TestQuestion): string {
+    return parseErrorPassage(question.errorPassage ?? '')
+        .flatMap((s) => (s.type === 'fragment' ? [`${s.index + 1}→${s.corrections[0] ?? '✓'}`] : []))
+        .join('; ');
 }
 
 export interface ClozeBlankPart {
@@ -239,6 +266,8 @@ export function answerKeyText(question: TestQuestion): string {
             return (question.correctBoolean ?? true) ? 'A' : 'B';
         case 'matrix':
             return matrixCorrectLetterKey(question);
+        case 'error-correction':
+            return errorCorrectionKey(question);
         case 'cloze-bank':
             return bankCorrectLetterKey(question);
         case 'matching':
@@ -297,6 +326,7 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
             return { kind: 'choice', optionLetters: ['A', 'B'] };
         case 'short-answer':
         case 'key-word-transformation':
+        case 'sentence-builder':
             return { kind: 'short' };
         case 'open':
         case 'dictation':
@@ -307,6 +337,7 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
         case 'cloze-dropdown':
         case 'cloze-bank':
         case 'matrix':
+        case 'error-correction':
         case 'matching':
         case 'ordering':
         case 'categorize':

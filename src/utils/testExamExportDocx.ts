@@ -38,6 +38,8 @@ import {
     matchingBookletData,
     matrixBookletData,
     bankBookletTiles,
+    builderBookletTiles,
+    errorBookletParts,
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
@@ -385,6 +387,31 @@ async function questionParagraphs(
                 }),
                 new Paragraph({
                     children: [new TextRun({ text: 'B  ', bold: true }), new TextRun(tx('false'))],
+                    indent: { left: 360 },
+                })
+            );
+            break;
+        case 'error-correction':
+            blocks.push(
+                new Paragraph({
+                    children: errorBookletParts(question).map(
+                        (p) =>
+                            new TextRun({
+                                text: p.number ? `[${p.number}] ${p.text}` : p.text,
+                                underline: p.number ? {} : undefined,
+                            })
+                    ),
+                    spacing: { after: 60 },
+                }),
+                new Paragraph({
+                    children: [new TextRun({ text: tx('error_correction_instruction'), size: 18, color: '6b7280' })],
+                })
+            );
+            break;
+        case 'sentence-builder':
+            blocks.push(
+                new Paragraph({
+                    children: builderBookletTiles(question).map((t) => new TextRun(`${t.text}    `)),
                     indent: { left: 360 },
                 })
             );

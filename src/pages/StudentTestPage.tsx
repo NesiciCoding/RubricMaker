@@ -22,6 +22,8 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import ErrorCorrectionAnswer from '../components/Tests/ErrorCorrectionAnswer';
+import SentenceBuilderAnswer from '../components/Tests/SentenceBuilderAnswer';
 import LimitedAudio, { OptionAudioButton } from '../components/Tests/LimitedAudio';
 import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
@@ -1869,6 +1871,14 @@ function QuestionCard({
                         color: 'var(--text)',
                     }}
                 />
+            )}
+
+            {question.type === 'error-correction' && (
+                <ErrorCorrectionAnswer question={question} value={value} onChange={onChange} />
+            )}
+
+            {question.type === 'sentence-builder' && (
+                <SentenceBuilderAnswer question={question} value={value} onChange={onChange} />
             )}
 
             {question.type === 'key-word-transformation' && (

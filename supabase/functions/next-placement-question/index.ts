@@ -18,7 +18,13 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
+import {
+    autoScoreResponse,
+    isAutoScorable,
+    sentenceBuilderTiles,
+    stripErrorKey,
+    type ScorableQuestion,
+} from '../_shared/testScoring.ts';
 import {
     DEFAULT_ELO_RATING,
     LEVEL_TO_ELO,
@@ -80,6 +86,8 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         // Placement runs are never practice mode, so neither is revealed to the student.
         transcript: _tr,
         explanation: _ex,
+        errorPassage,
+        sentenceTargets,
         ...rest
     } = question;
     return {
@@ -87,6 +95,10 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
         ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
         // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
+        ...(typeof errorPassage === 'string' ? { errorPassage: stripErrorKey(errorPassage) } : {}),
+        ...(Array.isArray(sentenceTargets)
+            ? { sentenceTiles: sentenceBuilderTiles({ ...question, sentenceTargets }) }
+            : {}),
         ...(dictationText !== undefined && !rest.audioUrl ? { dictationText } : {}),
         ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
     } as MinimalQuestion;

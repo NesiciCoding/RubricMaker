@@ -457,6 +457,51 @@ describe('StudentTestPage — answer types', () => {
         expect(decoded!.answers[0].response).toBe('for');
     });
 
+    it('answers an error-correction question by selecting a fragment and typing a fix', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Find the error',
+                        type: 'error-correction',
+                        points: 2,
+                        errorPassage: 'He [[go|goes]] to school [[every]] day.',
+                    },
+                ],
+            })
+        );
+        expect(screen.queryByText('goes')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'go' }));
+        fireEvent.change(screen.getByLabelText(/error_correction_input/), { target: { value: 'goes' } });
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ 0: 'goes' }));
+    });
+
+    it('builds a sentence from word tiles and can take a tile back', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Build it',
+                        type: 'sentence-builder',
+                        points: 2,
+                        sentenceTiles: ['school', 'I', 'go', 'to'],
+                    },
+                ],
+            })
+        );
+        const pool = screen.getByRole('group', { name: 'tests.taking.sentence_builder_tiles' });
+        for (const w of ['I', 'go', 'to', 'school']) {
+            fireEvent.click(Array.from(pool.querySelectorAll('button')).find((b) => b.textContent === w)!);
+        }
+        fireEvent.click(screen.getByRole('button', { name: /sentence_builder_remove.*school/ }));
+        fireEvent.click(Array.from(pool.querySelectorAll('button')).find((b) => b.textContent === 'school')!);
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify(['I', 'go', 'to', 'school']));
+    });
+
     it('answers a hot-text question by selecting fragments', async () => {
         renderPage(
             makeTest({

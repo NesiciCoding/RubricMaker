@@ -50,6 +50,10 @@ interface RawQuestion {
     gappedSentence?: string;
     answerWordLimit?: { min?: number; max?: number };
     wordFormation?: boolean;
+    errorPassage?: string;
+    penaliseFalsePicks?: boolean;
+    sentenceTargets?: string[];
+    builderScoring?: string;
     prepSeconds?: number;
     cueBullets?: string[];
     expectedAnswer?: string;
@@ -116,6 +120,8 @@ const VALID_TYPES: TestQuestionType[] = [
     'matrix',
     'dictation',
     'key-word-transformation',
+    'error-correction',
+    'sentence-builder',
     'matching',
     'ordering',
     'categorize',
@@ -289,6 +295,15 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
         question.answerWordLimit = { min: raw.answerWordLimit.min, max: raw.answerWordLimit.max };
     }
     if (raw.wordFormation === true) question.wordFormation = true;
+    if (typeof raw.errorPassage === 'string' && raw.errorPassage) question.errorPassage = raw.errorPassage;
+    if (raw.penaliseFalsePicks === true) question.penaliseFalsePicks = true;
+    if (Array.isArray(raw.sentenceTargets)) {
+        const targets = raw.sentenceTargets.filter((t): t is string => typeof t === 'string' && !!t.trim());
+        if (targets.length) question.sentenceTargets = targets;
+    }
+    if (raw.builderScoring === 'longest-run' || raw.builderScoring === 'all-or-nothing') {
+        question.builderScoring = raw.builderScoring;
+    }
     if (typeof raw.prepSeconds === 'number' && raw.prepSeconds > 0) question.prepSeconds = raw.prepSeconds;
     if (Array.isArray(raw.cueBullets))
         question.cueBullets = raw.cueBullets.filter((b): b is string => typeof b === 'string');

@@ -17,6 +17,8 @@ import {
     answerSheetQrPayload,
     categorizeBookletData,
     bankBookletTiles,
+    builderBookletTiles,
+    errorBookletParts,
     clozeBookletParts,
     EXAM_PAGE_MM,
     fiducialMarkers,
@@ -106,6 +108,26 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
             break;
         case 'true-false':
             extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${tx('true')}</div><div><strong>B</strong>&nbsp;&nbsp;${tx('false')}</div></div>`;
+            break;
+        case 'error-correction':
+            extra += `<div style="margin-top:6px;padding:8px;background:#f8fafc;border-left:3px solid #94a3b8;line-height:1.8">${errorBookletParts(
+                question
+            )
+                .map((p) =>
+                    p.number
+                        ? `<span style="text-decoration:underline">[${p.number}] ${escapeHtml(p.text)}</span>`
+                        : escapeHtml(p.text)
+                )
+                .join(
+                    ''
+                )}</div><div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('error_correction_instruction')}</div>`;
+            break;
+        case 'sentence-builder':
+            extra += `<div style="margin-top:6px;padding:6px 10px;border:1px dashed #94a3b8">${builderBookletTiles(
+                question
+            )
+                .map((t) => `<span style="display:inline-block;margin:2px 10px 2px 0">${escapeHtml(t.text)}</span>`)
+                .join('')}</div>`;
             break;
         case 'key-word-transformation':
             extra += `<div style="margin-top:6px"><span style="display:inline-block;padding:2px 12px;border:2px solid #000;font-weight:700;text-transform:uppercase">${escapeHtml(question.keyWord ?? '')}</span><div style="margin-top:6px">${escapeHtml(question.gappedSentence ?? '')}</div></div>`;

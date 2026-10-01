@@ -1113,6 +1113,8 @@ export type TestQuestionType =
     | 'matrix'
     | 'dictation'
     | 'key-word-transformation'
+    | 'error-correction'
+    | 'sentence-builder'
     | 'matching'
     | 'ordering'
     | 'categorize'
@@ -1270,6 +1272,16 @@ export interface TestQuestion {
     spokenText?: string;
     /** Listening transcript, revealed after submission in practice mode */
     transcript?: string;
+    /** For 'error-correction': passage where each selectable fragment is `[[text]]` (not an error) or `[[wrong|right|other right…]]` (an error and its accepted corrections) */
+    errorPassage?: string;
+    /** For 'error-correction': each fragment picked that is not an error costs one mark (off by default) */
+    penaliseFalsePicks?: boolean;
+    /** For 'sentence-builder': accepted sentences; the first is split into word tiles */
+    sentenceTargets?: string[];
+    /** For 'sentence-builder': the shuffled tiles shown to the student — set by the server in place of sentenceTargets so the answer isn't shipped */
+    sentenceTiles?: string[];
+    /** For 'sentence-builder': 'longest-run' (default) gives credit for the longest correctly ordered run of tiles, 'all-or-nothing' only for the full sentence */
+    builderScoring?: 'longest-run' | 'all-or-nothing';
     /** For 'key-word-transformation': the word the student must use unchanged */
     keyWord?: string;
     /** For 'key-word-transformation': the second sentence, with a run of 3+ underscores where the answer goes */

@@ -3,7 +3,9 @@
 // Imported by the client (src/utils/testCalc.ts, src/utils/clozeParse.ts) and by the
 // submit-test and next-placement-question edge functions, so the score a student sees and
 // the score the server validates can never drift apart. It must stay dependency-free and
-// runnable in both Deno and the browser: no imports, no DOM, no Deno APIs.
+// runnable in both Deno and the browser: no imports beyond sibling ./*.ts files, no DOM, no Deno APIs.
+
+import { seededShuffle } from './seededShuffle.ts';
 
 export interface ScorableOption {
     id: string;
@@ -31,6 +33,11 @@ export interface ScorableQuestion {
     dictationText?: string;
     answerWordLimit?: { min: number; max: number };
     keyWord?: string;
+    errorPassage?: string;
+    penaliseFalsePicks?: boolean;
+    sentenceTargets?: string[];
+    sentenceTiles?: string[];
+    builderScoring?: 'longest-run' | 'all-or-nothing';
 }
 
 /** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
@@ -477,6 +484,113 @@ export function scoreKeyWordTransformation(question: ScorableQuestion, response:
     return partialOrAll(question, earned, total);
 }
 
+// ── Error correction ────────────────────────────────────────────────────────
+
+export interface ErrorFragment {
+    index: number;
+    /** What the student sees and can select */
+    text: string;
+    /** Accepted corrections; empty means the fragment is already correct */
+    corrections: string[];
+}
+
+export type ErrorPassageSegment = { type: 'text'; text: string } | ({ type: 'fragment' } & ErrorFragment);
+
+/** Splits an error passage into text and selectable fragments; `[[wrong|right]]` marks an error, `[[fine]]` a decoy. */
+export function parseErrorPassage(passage: string): ErrorPassageSegment[] {
+    return parseHotTextFragments(passage).map((segment) => {
+        if (segment.type === 'text') return segment;
+        const [text, ...corrections] = splitClozeAlternatives(segment.text);
+        return { type: 'fragment', index: segment.index, text: text ?? '', corrections };
+    });
+}
+
+/** The same passage with every correction removed — what students receive, so the key never leaves the server. */
+export function stripErrorKey(passage: string): string {
+    return passage.replace(/\[\[(.*?)\]\]/g, (_, inner: string) => `[[${inner.split('|')[0].trim()}]]`);
+}
+
+/** Auto-score an error-correction question: per error one mark for selecting it and one for a correct correction. */
+export function scoreErrorCorrection(question: ScorableQuestion, response: string): number {
+    const fragments = parseErrorPassage(question.errorPassage ?? '').filter(
+        (s): s is Extract<ErrorPassageSegment, { type: 'fragment' }> => s.type === 'fragment'
+    );
+    const errors = fragments.filter((f) => f.corrections.length > 0);
+    if (errors.length === 0) return 0;
+    const picks = parseJsonRecord(response);
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    let marks = 0;
+    for (const error of errors) {
+        if (!(error.index in picks)) continue;
+        marks++;
+        const typed = picks[error.index];
+        if (typeof typed === 'string' && error.corrections.some((c) => answersMatch(c, typed, tol))) marks++;
+    }
+    if (question.penaliseFalsePicks) {
+        const falsePicks = fragments.filter((f) => f.corrections.length === 0 && f.index in picks).length;
+        marks = Math.max(0, marks - falsePicks);
+    }
+    return partialOrAll(question, marks, errors.length * 2);
+}
+
+// ── Sentence builder ────────────────────────────────────────────────────────
+
+function sentenceWords(sentence: string): string[] {
+    return sentence.trim().split(/\s+/).filter(Boolean);
+}
+
+/** The shuffled word tiles for a sentence-builder question, never in the target order (for 2+ different words). */
+export function sentenceBuilderTiles(question: ScorableQuestion): string[] {
+    if (question.sentenceTiles?.length) return question.sentenceTiles;
+    const words = sentenceWords(question.sentenceTargets?.[0] ?? '');
+    const shuffled = seededShuffle(words, question.prompt + words.join(' '));
+    return shuffled.length > 1 && shuffled.every((w, i) => w === words[i])
+        ? [...shuffled.slice(1), shuffled[0]]
+        : shuffled;
+}
+
+function normaliseWord(word: string): string {
+    return word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+}
+
+function longestCommonRun(a: string[], b: string[]): number {
+    let best = 0;
+    let prev = new Array<number>(b.length + 1).fill(0);
+    for (let i = 1; i <= a.length; i++) {
+        const row = new Array<number>(b.length + 1).fill(0);
+        for (let j = 1; j <= b.length; j++) {
+            if (a[i - 1] === b[j - 1]) {
+                row[j] = prev[j - 1] + 1;
+                best = Math.max(best, row[j]);
+            }
+        }
+        prev = row;
+    }
+    return best;
+}
+
+/** Auto-score a sentence builder: the response is the JSON array of tile texts in the order placed. */
+export function scoreSentenceBuilder(question: ScorableQuestion, response: string): number {
+    const targets = (question.sentenceTargets ?? [])
+        .map((t) => sentenceWords(t).map(normaliseWord))
+        .filter((t) => t.length > 0);
+    if (targets.length === 0) return 0;
+    const placed = parseJsonArray(response)
+        .filter((w): w is string => typeof w === 'string')
+        .map(normaliseWord);
+    if (placed.length === 0) return 0;
+    const fraction = Math.max(
+        ...targets.map((target) => {
+            const run = longestCommonRun(placed, target);
+            if (question.builderScoring === 'all-or-nothing') {
+                return placed.length === target.length && run === target.length ? 1 : 0;
+            }
+            return run / target.length;
+        })
+    );
+    return question.points * fraction;
+}
+
 /** Auto-score a matching question: each pair is correct when the student paired it with itself. Supports partial credit. */
 export function scoreMatching(question: ScorableQuestion, response: string): number {
     const pairs = question.matchingPairs ?? [];
@@ -548,6 +662,10 @@ export function autoScoreResponse(question: ScorableQuestion, response: string):
             return scoreCloze(question, response);
         case 'matrix':
             return scoreMatrix(question, response);
+        case 'error-correction':
+            return scoreErrorCorrection(question, response);
+        case 'sentence-builder':
+            return scoreSentenceBuilder(question, response);
         case 'key-word-transformation':
             return scoreKeyWordTransformation(question, response);
         case 'dictation':

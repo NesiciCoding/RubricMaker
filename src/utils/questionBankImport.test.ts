@@ -601,3 +601,32 @@ describe('key word transformation import', () => {
         expect(items[1].question?.answerWordLimit).toBeUndefined();
     });
 });
+
+describe('error-correction and sentence-builder import', () => {
+    it('keeps passage, targets and valid scoring mode', () => {
+        const json = JSON.stringify({
+            items: [
+                {
+                    question: {
+                        type: 'error-correction',
+                        prompt: 'x',
+                        errorPassage: 'A [[b|c]].',
+                        penaliseFalsePicks: true,
+                    },
+                },
+                {
+                    question: {
+                        type: 'sentence-builder',
+                        prompt: 'y',
+                        sentenceTargets: ['a b', ' ', 3],
+                        builderScoring: 'bogus',
+                    },
+                },
+            ],
+        });
+        const { items } = parseQuestionBankJson(json);
+        expect(items[0].question).toMatchObject({ errorPassage: 'A [[b|c]].', penaliseFalsePicks: true });
+        expect(items[1].question?.sentenceTargets).toEqual(['a b']);
+        expect(items[1].question?.builderScoring).toBeUndefined();
+    });
+});

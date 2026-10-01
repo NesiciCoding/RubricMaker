@@ -259,3 +259,30 @@ describe('key word transformation answer text', () => {
         expect(formatCorrectAnswer(q)).toBe('have worked + for years / have been working + for years');
     });
 });
+
+describe('error-correction and sentence-builder answer text', () => {
+    const errors: TestQuestion = {
+        id: 'qe',
+        prompt: '',
+        type: 'error-correction',
+        points: 2,
+        errorPassage: 'He [[go|goes]] to school [[every]] day.',
+    };
+    const builder: TestQuestion = {
+        id: 'qs',
+        prompt: '',
+        type: 'sentence-builder',
+        points: 2,
+        sentenceTargets: ['I go home'],
+    };
+    it('formats picks with corrections and the correct key', () => {
+        expect(formatGivenAnswer(errors, { questionId: 'qe', response: '{"0":"goes","1":""}' })).toBe(
+            'go → goes; every'
+        );
+        expect(formatCorrectAnswer(errors)).toBe('go → goes');
+    });
+    it('formats the placed sentence and accepted sentences', () => {
+        expect(formatGivenAnswer(builder, { questionId: 'qs', response: '["I","go"]' })).toBe('I go');
+        expect(formatCorrectAnswer(builder)).toBe('I go home');
+    });
+});

@@ -76,7 +76,12 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         if (!Object.values(answers).some((v) => v.trim() !== '')) return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
-    if (question.type === 'matching' || question.type === 'categorize' || question.type === 'matrix') {
+    if (
+        question.type === 'matching' ||
+        question.type === 'categorize' ||
+        question.type === 'matrix' ||
+        question.type === 'error-correction'
+    ) {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(answer.response) as Record<string, string>;
@@ -84,6 +89,10 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
             /* ignore malformed response */
         }
         if (Object.keys(answers).length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'sentence-builder') {
+        if (!answer.response || answer.response === '[]') return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
     if (question.type === 'ordering') {

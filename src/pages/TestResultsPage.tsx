@@ -19,7 +19,7 @@ import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
-import { alignDictation, answersMatch } from '../../supabase/functions/_shared/testScoring';
+import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import CommentBankModal from '../components/Comments/CommentBankModal';
@@ -40,6 +40,8 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'cloze-bank' ||
         question.type === 'matrix' ||
         question.type === 'dictation' ||
+        question.type === 'error-correction' ||
+        question.type === 'sentence-builder' ||
         question.type === 'matching' ||
         question.type === 'ordering' ||
         question.type === 'categorize' ||
@@ -246,6 +248,53 @@ function formatStudentResponse(
                         </div>
                     );
                 })}
+            </>
+        );
+    }
+    if (question.type === 'error-correction') {
+        let picks: Record<string, string> = {};
+        try {
+            picks = JSON.parse(response) as Record<string, string>;
+        } catch {
+            picks = {};
+        }
+        const tol = { ...question.answerTolerance, punctuation: true };
+        return (
+            <>
+                {parseErrorPassage(question.errorPassage ?? '').map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const picked = segment.index in picks;
+                    const typed = (picks[segment.index] ?? '').trim();
+                    const isError = segment.corrections.length > 0;
+                    if (!picked && !isError) return <span key={i}>{segment.text}</span>;
+                    const fixed = segment.corrections.some((c) => answersMatch(c, typed, tol));
+                    const color = isError && picked && fixed ? 'var(--green)' : 'var(--red)';
+                    return (
+                        <span key={i} style={{ fontWeight: 600, color }}>
+                            <span style={{ textDecoration: picked ? 'line-through' : 'underline dotted' }}>
+                                {segment.text}
+                            </span>
+                            {picked && typed ? ` → ${typed}` : ''}
+                            {isError && !(picked && fixed) ? ` (${segment.corrections[0]})` : ''}
+                        </span>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'sentence-builder') {
+        let placed: string[];
+        try {
+            placed = (JSON.parse(response) as unknown[]).filter((w): w is string => typeof w === 'string');
+        } catch {
+            placed = [];
+        }
+        return (
+            <>
+                <div>{placed.join(' ')}</div>
+                <div className="text-muted" style={{ marginTop: 4 }}>
+                    {(question.sentenceTargets ?? []).join(' / ')}
+                </div>
             </>
         );
     }
@@ -766,6 +815,8 @@ export default function TestResultsPage() {
                             question.type === 'cloze-bank' ||
                             question.type === 'matrix' ||
                             question.type === 'dictation' ||
+                            question.type === 'error-correction' ||
+                            question.type === 'sentence-builder' ||
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||

@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
-import { keyWordChunks } from '../../supabase/functions/_shared/testScoring';
+import { keyWordChunks, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
@@ -62,6 +62,19 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             return segments
                 .map((s) => (s.type === 'text' ? s.text : `[${(answers[s.gap.index] ?? '').trim() || '___'}]`))
                 .join('');
+        }
+        case 'error-correction': {
+            const picks = parseJson<Record<string, string>>(response, {});
+            const picked = parseErrorPassage(question.errorPassage ?? '').flatMap((s) =>
+                s.type === 'fragment' && s.index in picks
+                    ? [`${s.text}${picks[s.index]?.trim() ? ` → ${picks[s.index].trim()}` : ''}`]
+                    : []
+            );
+            return picked.length > 0 ? picked.join('; ') : NO_RESPONSE;
+        }
+        case 'sentence-builder': {
+            const words = parseJson<unknown[]>(response, []).filter((w): w is string => typeof w === 'string');
+            return words.length > 0 ? words.join(' ') : NO_RESPONSE;
         }
         case 'matrix': {
             const rows = question.matrixRows ?? [];
@@ -136,6 +149,14 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 .join('');
         case 'dictation':
             return question.dictationText ?? '';
+        case 'error-correction':
+            return parseErrorPassage(question.errorPassage ?? '')
+                .flatMap((s) =>
+                    s.type === 'fragment' && s.corrections.length > 0 ? [`${s.text} → ${s.corrections[0]}`] : []
+                )
+                .join('; ');
+        case 'sentence-builder':
+            return (question.sentenceTargets ?? []).join(' / ');
         case 'key-word-transformation':
             return (question.expectedAnswers ?? []).map((a) => keyWordChunks(a).join(' + ')).join(' / ');
         case 'matrix': {

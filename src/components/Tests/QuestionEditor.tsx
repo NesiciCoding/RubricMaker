@@ -40,6 +40,8 @@ import {
 } from '../../utils/clozeParse';
 import LineListTextarea from './LineListTextarea';
 import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import ErrorCorrectionFields from './ErrorCorrectionFields';
+import SentenceBuilderFields from './SentenceBuilderFields';
 import KeyWordTransformationFields from './KeyWordTransformationFields';
 import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
@@ -91,6 +93,8 @@ export const QUESTION_TYPES: TestQuestionType[] = [
     'matrix',
     'dictation',
     'key-word-transformation',
+    'error-correction',
+    'sentence-builder',
     'matching',
     'ordering',
     'categorize',
@@ -1024,6 +1028,16 @@ export default function QuestionEditor({
                     </label>
                 </div>
             )}
+
+            {question.type === 'error-correction' && (
+                <ErrorCorrectionFields
+                    question={question}
+                    update={update}
+                    partialCreditToggle={renderPartialCreditToggle()}
+                />
+            )}
+
+            {question.type === 'sentence-builder' && <SentenceBuilderFields question={question} update={update} />}
 
             {question.type === 'key-word-transformation' && (
                 <KeyWordTransformationFields

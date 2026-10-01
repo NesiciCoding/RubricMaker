@@ -4,6 +4,8 @@ import {
     answerSheetGeometry,
     answerSpaceFor,
     answerKeyText,
+    builderBookletTiles,
+    errorBookletParts,
     bankBookletTiles,
     matrixBookletData,
     subItemCount,
@@ -299,5 +301,39 @@ describe('matrix and cloze-bank paper helpers', () => {
         const letterOf = (text: string) => tiles.find((t) => t.text === text)!.letter;
         expect(answerKeyText(bank)).toBe(`1→${letterOf('cat')}; 2→${letterOf('dog')}`);
         expect(subItemCount(bank)).toBe(2);
+    });
+});
+
+describe('error-correction and sentence-builder paper helpers', () => {
+    const errors = q({
+        id: 'qe',
+        type: 'error-correction',
+        points: 4,
+        prompt: '',
+        errorPassage: 'He [[go|goes]] to school [[every]] day.',
+    });
+    const builder = q({
+        id: 'qs',
+        type: 'sentence-builder',
+        points: 2,
+        prompt: '',
+        sentenceTargets: ['I go to school'],
+    });
+
+    it('numbers fragments without printing the corrections and keys them', () => {
+        expect(errorBookletParts(errors).map((p) => p.number)).toEqual([undefined, 1, undefined, 2, undefined]);
+        expect(JSON.stringify(errorBookletParts(errors))).not.toContain('goes');
+        expect(answerKeyText(errors)).toBe('1→goes; 2→✓');
+        expect(subItemCount(errors)).toBe(2);
+    });
+
+    it('prints shuffled tiles but keys the accepted sentence', () => {
+        expect(
+            builderBookletTiles(builder)
+                .map((t) => t.text)
+                .sort()
+        ).toEqual(['I', 'go', 'school', 'to']);
+        expect(answerKeyText(builder)).toBe('I go to school');
+        expect(answerSpaceFor(builder)).toEqual({ kind: 'short' });
     });
 });

@@ -16,6 +16,7 @@
 //     teacher's test content.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { sentenceBuilderTiles, stripErrorKey, type ScorableQuestion } from '../_shared/testScoring.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
@@ -51,6 +52,8 @@ interface RawQuestion {
     dictationText?: unknown;
     transcript?: unknown;
     explanation?: unknown;
+    errorPassage?: unknown;
+    sentenceTargets?: unknown;
     categorizeItems?: RawCategorizeItem[];
     expectedAnswer?: unknown;
     expectedAnswers?: unknown;
@@ -76,6 +79,17 @@ interface RawQuestion {
 // student-facing category *options* come from the separate `categories` field (CategorizeAnswer
 // in StudentTestPage renders `question.categories`, not categorizeItems[].categoryId), so
 // categoryId is a pure answer key with no rendering dependency and is safe to strip.
+// error-correction keeps its fragments but loses the corrections; sentence-builder swaps the accepted
+// sentences for the shuffled tiles so the answer order isn't shipped.
+function studentSafeBuilderFields(q: RawQuestion, errorPassage: unknown, sentenceTargets: unknown) {
+    return {
+        ...(typeof errorPassage === 'string' ? { errorPassage: stripErrorKey(errorPassage) } : {}),
+        ...(Array.isArray(sentenceTargets)
+            ? { sentenceTiles: sentenceBuilderTiles({ ...q, sentenceTargets } as unknown as ScorableQuestion) }
+            : {}),
+    };
+}
+
 function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unknown }) {
     if (!test || !Array.isArray(test.questions)) return test;
     // Explanations and listening transcripts are only revealed after submission in practice mode;
@@ -104,6 +118,8 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 dictationText,
                 transcript,
                 explanation,
+                errorPassage,
+                sentenceTargets,
                 ...rest
             } = q;
             return {
@@ -115,6 +131,7 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 ...(practice && transcript !== undefined ? { transcript } : {}),
                 ...(practice && explanation !== undefined ? { explanation } : {}),
                 // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
+                ...studentSafeBuilderFields(q, errorPassage, sentenceTargets),
                 ...(dictationText !== undefined && !rest.audioUrl ? { dictationText } : {}),
                 ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
             };
