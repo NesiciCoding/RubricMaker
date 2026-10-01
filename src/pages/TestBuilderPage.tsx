@@ -1575,7 +1575,9 @@ export default function TestBuilderPage() {
                                                                     >
                                                                         <QuestionEditor
                                                                             question={question}
-                                                                            index={displayOrderedQuestions.indexOf(question)}
+                                                                            index={displayOrderedQuestions.indexOf(
+                                                                                question
+                                                                            )}
                                                                             total={questions.length}
                                                                             sections={sections}
                                                                             dragHandleProps={draggable.dragHandleProps}
