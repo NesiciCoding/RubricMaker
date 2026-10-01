@@ -185,6 +185,23 @@ function tolerantFixtures(): Fixture[] {
     ];
 }
 
+const matrix: ScorableQuestion = {
+    type: 'matrix',
+    points: 3,
+    prompt: 'True, false or not given?',
+    matrixRows: [
+        { id: 'r1', correctColumnId: 'true' },
+        { id: 'r2', correctColumnId: 'false' },
+        { id: 'r3', correctColumnId: 'ng' },
+    ],
+};
+
+const clozeBank: ScorableQuestion = {
+    type: 'cloze-bank',
+    points: 2,
+    prompt: 'The {{cat}} sat on the {{mat|rug}}.',
+};
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -281,6 +298,25 @@ const fixtures: Fixture[] = [
 
     // Tolerant matching (A5) — opt-in per question
     ...tolerantFixtures(),
+
+    { name: 'matrix all rows', question: matrix, response: '{"r1":"true","r2":"false","r3":"ng"}', expected: 3 },
+    { name: 'matrix partial credit', question: matrix, response: '{"r1":"true","r2":"true"}', expected: 1 },
+    {
+        name: 'matrix all-or-nothing',
+        question: { ...matrix, partialCredit: false },
+        response: '{"r1":"true","r2":"false"}',
+        expected: 0,
+    },
+    { name: 'matrix wrong-shape JSON', question: matrix, response: '["true"]', expected: 0 },
+    { name: 'matrix with no rows', question: { type: 'matrix', points: 1, prompt: '' }, response: '{}', expected: 0 },
+    {
+        name: 'cloze-bank all gaps, alternative accepted',
+        question: clozeBank,
+        response: '{"0":"cat","1":"rug"}',
+        expected: 2,
+    },
+    { name: 'cloze-bank one gap wrong tile', question: clozeBank, response: '{"0":"dog","1":"mat"}', expected: 1 },
+    { name: 'cloze-bank blank', question: clozeBank, response: '{}', expected: 0 },
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
     { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },

@@ -381,6 +381,7 @@ describe('calcTestItemAnalysis', () => {
             pValue: null,
             discrimination: null,
             topDistractor: null,
+            partAccuracy: null,
         });
     });
 
@@ -581,5 +582,52 @@ describe('generator-placement fallback (empty test.questions)', () => {
         const studentTests = [makeStudentTest({ answers: [{ questionId: 'q-mc', response: 'b' }] })];
         const breakdowns = calcQuestionBreakdowns('s1', studentTests, test);
         expect(breakdowns.map((b) => b.questionId)).toEqual(['q-mc', 'q-sa', 'q-open']);
+    });
+});
+
+describe('calcTestItemAnalysis per-part accuracy', () => {
+    const matrix: TestQuestion = {
+        id: 'qm',
+        prompt: '',
+        type: 'matrix',
+        points: 2,
+        matrixColumns: [
+            { id: 'c1', text: 'True' },
+            { id: 'c2', text: 'False' },
+        ],
+        matrixRows: [
+            { id: 'r1', text: 'Sky is blue', correctColumnId: 'c1' },
+            { id: 'r2', text: 'Fire is cold', correctColumnId: 'c2' },
+        ],
+    };
+    const bank: TestQuestion = { id: 'qb', prompt: 'A {{cat}} and a {{dog}}', type: 'cloze-bank', points: 2 };
+    const test = makeTest({ id: 't1', questions: [matrix, bank, mcQuestion] });
+    const sub = (studentId: string, m: Record<string, string>, b: Record<string, string>) =>
+        makeStudentTest({
+            testId: 't1',
+            studentId,
+            answers: [
+                { questionId: 'qm', response: JSON.stringify(m) },
+                { questionId: 'qb', response: JSON.stringify(b) },
+            ],
+        });
+
+    it('reports the share of students getting each matrix row and cloze gap right', () => {
+        const rows = calcTestItemAnalysis(
+            [
+                sub('s1', { r1: 'c1', r2: 'c2' }, { 0: 'cat', 1: 'dog' }),
+                sub('s2', { r1: 'c1', r2: 'c1' }, { 0: 'cat' }),
+            ],
+            test
+        );
+        expect(rows[0].partAccuracy).toEqual([
+            { label: 'Sky is blue', accuracy: 1 },
+            { label: 'Fire is cold', accuracy: 0.5 },
+        ]);
+        expect(rows[1].partAccuracy).toEqual([
+            { label: '#1 cat', accuracy: 1 },
+            { label: '#2 dog', accuracy: 0.5 },
+        ]);
+        expect(rows[2].partAccuracy).toBeNull();
     });
 });

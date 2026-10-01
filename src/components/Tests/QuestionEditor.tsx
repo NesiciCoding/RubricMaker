@@ -38,6 +38,8 @@ import {
     plainQuestionPromptText,
     renderClozeSegments,
 } from '../../utils/clozeParse';
+import ClozeBankFields from './ClozeBankFields';
+import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
 import AnswerToleranceFields from './AnswerToleranceFields';
 import DistractorSuggestions from './DistractorSuggestions';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
@@ -81,6 +83,8 @@ export const QUESTION_TYPES: TestQuestionType[] = [
     'open',
     'cloze',
     'cloze-dropdown',
+    'cloze-bank',
+    'matrix',
     'matching',
     'ordering',
     'categorize',
@@ -178,13 +182,16 @@ export default function QuestionEditor({
         update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
     }
 
+    const isClozeLike =
+        question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
+
     function changeType(type: TestQuestionType) {
         // Clear a stale grammar link (both the derived id and its frameworkDescriptors entry) when
         // switching to a type the grammar tag doesn't apply to, since getGrammarRecommendations()-style
         // matching has no type check of its own.
-        const keepsGrammarLink = (['cloze', 'cloze-dropdown', 'hot-text', 'matching'] as TestQuestionType[]).includes(
-            type
-        );
+        const keepsGrammarLink = (
+            ['cloze', 'cloze-dropdown', 'cloze-bank', 'matrix', 'hot-text', 'matching'] as TestQuestionType[]
+        ).includes(type);
         const linkedGrammarItemId = keepsGrammarLink ? question.linkedGrammarItemId : undefined;
         const frameworkDescriptors = keepsGrammarLink
             ? effectiveFrameworkDescriptors
@@ -203,6 +210,21 @@ export default function QuestionEditor({
                 correctBoolean: question.correctBoolean ?? true,
                 linkedGrammarItemId,
                 frameworkDescriptors,
+            });
+        } else if (type === 'matrix') {
+            const matrixColumns =
+                question.matrixColumns && question.matrixColumns.length > 0
+                    ? question.matrixColumns
+                    : defaultMatrixColumns();
+            update({
+                type,
+                linkedGrammarItemId,
+                frameworkDescriptors,
+                matrixColumns,
+                matrixRows:
+                    question.matrixRows && question.matrixRows.length > 0
+                        ? question.matrixRows
+                        : defaultMatrixRows(matrixColumns),
             });
         } else if (type === 'matching') {
             update({
@@ -561,7 +583,7 @@ export default function QuestionEditor({
 
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
-                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
+                {isClozeLike ? (
                     <>
                         {question.type === 'cloze' && (
                             // Generated gaps carry only the correct word as a single alternative, no
@@ -847,7 +869,7 @@ export default function QuestionEditor({
                 </div>
             )}
 
-            {(question.type === 'cloze' || question.type === 'cloze-dropdown') && (
+            {isClozeLike && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <label>
                         {t('tests.cloze_syntax_label')}{' '}
@@ -877,6 +899,7 @@ export default function QuestionEditor({
                             onChange={(answerTolerance) => update({ answerTolerance })}
                         />
                     )}
+                    {question.type === 'cloze-bank' && <ClozeBankFields question={question} update={update} />}
                     {question.type === 'cloze-dropdown' &&
                         parseClozeGaps(question.prompt).map((gap) => (
                             <DistractorSuggestions
@@ -908,6 +931,10 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                 </div>
+            )}
+
+            {question.type === 'matrix' && (
+                <MatrixEditor question={question} update={update} partialCreditToggle={renderPartialCreditToggle()} />
             )}
 
             {question.type === 'matching' && (

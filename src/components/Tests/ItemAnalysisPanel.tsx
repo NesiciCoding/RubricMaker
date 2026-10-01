@@ -103,41 +103,60 @@ export default function ItemAnalysisPanel({ test, studentTests }: Props) {
                     </thead>
                     <tbody>
                         {analysis.map((row, index) => (
-                            <tr key={row.questionId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '6px 8px' }}>
-                                    {t('tests.question_number', { number: index + 1 })}
-                                </td>
-                                <td
-                                    style={{
-                                        textAlign: 'right',
-                                        padding: '6px 8px',
-                                        fontWeight: 700,
-                                        color: pValueColor(row.pValue),
-                                    }}
-                                >
-                                    {row.pValue === null ? '—' : row.pValue.toFixed(2)}
-                                </td>
-                                <td
-                                    style={{
-                                        textAlign: 'right',
-                                        padding: '6px 8px',
-                                        fontWeight: 700,
-                                        color: discriminationColor(row.discrimination),
-                                    }}
-                                >
-                                    {row.discrimination === null
-                                        ? t('tests.results.item_analysis_insufficient_data')
-                                        : `${row.discrimination >= 0 ? '+' : ''}${row.discrimination.toFixed(2)}`}
-                                </td>
-                                <td style={{ padding: '6px 8px' }}>
-                                    {row.topDistractor
-                                        ? t('tests.results.item_analysis_distractor_value', {
-                                              text: row.topDistractor.text,
-                                              count: row.topDistractor.count,
-                                          })
-                                        : '—'}
-                                </td>
-                            </tr>
+                            <React.Fragment key={row.questionId}>
+                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td style={{ padding: '6px 8px' }}>
+                                        {t('tests.question_number', { number: index + 1 })}
+                                    </td>
+                                    <td
+                                        style={{
+                                            textAlign: 'right',
+                                            padding: '6px 8px',
+                                            fontWeight: 700,
+                                            color: pValueColor(row.pValue),
+                                        }}
+                                    >
+                                        {row.pValue === null ? '—' : row.pValue.toFixed(2)}
+                                    </td>
+                                    <td
+                                        style={{
+                                            textAlign: 'right',
+                                            padding: '6px 8px',
+                                            fontWeight: 700,
+                                            color: discriminationColor(row.discrimination),
+                                        }}
+                                    >
+                                        {row.discrimination === null
+                                            ? t('tests.results.item_analysis_insufficient_data')
+                                            : `${row.discrimination >= 0 ? '+' : ''}${row.discrimination.toFixed(2)}`}
+                                    </td>
+                                    <td style={{ padding: '6px 8px' }}>
+                                        {row.topDistractor
+                                            ? t('tests.results.item_analysis_distractor_value', {
+                                                  text: row.topDistractor.text,
+                                                  count: row.topDistractor.count,
+                                              })
+                                            : '—'}
+                                    </td>
+                                </tr>
+                                {row.partAccuracy && (
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <td colSpan={4} style={{ padding: '2px 8px 8px 24px', fontSize: '0.8rem' }}>
+                                            <span className="text-muted">
+                                                {t('tests.results.item_analysis_parts')}:{' '}
+                                            </span>
+                                            {row.partAccuracy.map((part, i) => (
+                                                <span key={i} style={{ marginRight: 12, whiteSpace: 'nowrap' }}>
+                                                    {part.label}{' '}
+                                                    <strong style={{ color: pValueColor(part.accuracy) }}>
+                                                        {Math.round(part.accuracy * 100)}%
+                                                    </strong>
+                                                </span>
+                                            ))}
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
                         ))}
                     </tbody>
                 </table>

@@ -54,7 +54,7 @@ export function renderClozeSegments(prompt: string): ClozeSegment[] {
  * that separately).
  */
 export function plainQuestionPromptText(question: { type: TestQuestionType; prompt: string }): string {
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         return renderClozeSegments(question.prompt)
             .map((segment) => (segment.type === 'gap' ? (segment.gap.alternatives[0] ?? '') : segment.text))
             .join('');

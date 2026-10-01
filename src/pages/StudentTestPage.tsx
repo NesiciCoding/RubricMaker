@@ -115,7 +115,7 @@ function isShortCode(code: string): boolean {
 /** Plain read-aloud text for a question's prompt + options — cloze gaps become `blankWord` rather
  * than their answer, so a graded cloze's read-aloud accommodation can't hand out the answer. */
 function speakableQuestionText(question: TestQuestion, blankWord: string): string {
-    const promptText = ['cloze', 'cloze-dropdown'].includes(question.type)
+    const promptText = ['cloze', 'cloze-dropdown', 'cloze-bank'].includes(question.type)
         ? renderClozeSegments(question.prompt)
               .map((s) => (s.type === 'gap' ? blankWord : s.text))
               .join('')
@@ -1063,12 +1063,10 @@ export default function StudentTestPage() {
                                                     })}
                                                 </div>
                                                 <div style={{ fontWeight: 600, marginTop: 2 }}>
-                                                    {q.type === 'cloze' || q.type === 'cloze-dropdown'
-                                                        ? t(
-                                                              q.type === 'cloze-dropdown'
-                                                                  ? 'tests.taking.cloze_dropdown_instruction'
-                                                                  : 'tests.taking.cloze_instruction'
-                                                          )
+                                                    {q.type === 'cloze' ||
+                                                    q.type === 'cloze-dropdown' ||
+                                                    q.type === 'cloze-bank'
+                                                        ? t(clozeInstructionKey(q.type))
                                                         : q.prompt}
                                                 </div>
                                                 {q.explanation && (
@@ -1515,7 +1513,7 @@ function QuestionCard({
     lang,
 }: QuestionCardProps) {
     const { t } = useTranslation();
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const [hintVisible, setHintVisible] = useState(false);
     const wordCount =
         question.type === 'open' && value.trim() ? value.trim().split(/\s+/).filter(Boolean).length : null;
@@ -1560,13 +1558,7 @@ function QuestionCard({
                 }}
             >
                 {isCloze ? (
-                    <p style={{ margin: 0 }}>
-                        {t(
-                            question.type === 'cloze-dropdown'
-                                ? 'tests.taking.cloze_dropdown_instruction'
-                                : 'tests.taking.cloze_instruction'
-                        )}
-                    </p>
+                    <p style={{ margin: 0 }}>{t(clozeInstructionKey(question.type))}</p>
                 ) : (
                     <RichContent html={question.prompt} className="rm-question-prompt" />
                 )}
@@ -1576,6 +1568,7 @@ function QuestionCard({
                     question.type === 'ordering' ||
                     question.type === 'categorize' ||
                     question.type === 'hot-text' ||
+                    question.type === 'matrix' ||
                     isCloze) && (
                     <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_student_title`)}>
                         {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
@@ -1765,6 +1758,8 @@ function QuestionCard({
             )}
 
             {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} />}
+
+            {question.type === 'matrix' && <MatrixAnswer question={question} value={value} onChange={onChange} />}
 
             {question.type === 'matching' && (
                 <MatchingAnswer question={question} value={value} onChange={onChange} code={code} />
@@ -1985,7 +1980,201 @@ interface ClozeAnswerProps {
     code: string;
 }
 
+function clozeInstructionKey(type: TestQuestion['type']): string {
+    if (type === 'cloze-dropdown') return 'tests.taking.cloze_dropdown_instruction';
+    if (type === 'cloze-bank') return 'tests.taking.cloze_bank_instruction';
+    return 'tests.taking.cloze_instruction';
+}
+
 function ClozeAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+    if (question.type === 'cloze-bank')
+        return <ClozeBankAnswer question={question} value={value} onChange={onChange} code={code} />;
+    return <ClozeInlineAnswer question={question} value={value} onChange={onChange} code={code} />;
+}
+
+function ClozeBankAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+    const { t } = useTranslation();
+    const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
+    const tiles = useMemo(
+        () =>
+            seededShuffle(
+                [
+                    ...segments.flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : [])),
+                    ...(question.bankDistractors ?? []),
+                ].filter(Boolean),
+                `${code}-${question.id}-bank`
+            ),
+        [segments, question.bankDistractors, code, question.id]
+    );
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+    const [selected, setSelected] = useState<number | null>(null);
+    const unique = question.bankUniqueUse ?? true;
+
+    const usedCounts = new Map<string, number>();
+    Object.values(answers).forEach((text) => usedCounts.set(text, (usedCounts.get(text) ?? 0) + 1));
+    const seenSoFar = new Map<string, number>();
+    const tileUsed = tiles.map((text) => {
+        const rank = seenSoFar.get(text) ?? 0;
+        seenSoFar.set(text, rank + 1);
+        return unique && rank < (usedCounts.get(text) ?? 0);
+    });
+
+    function place(gapIndex: number, tileIndex: number) {
+        if (tileUsed[tileIndex]) return;
+        onChange(JSON.stringify({ ...answers, [gapIndex]: tiles[tileIndex] }));
+        setSelected(null);
+    }
+
+    function clear(gapIndex: number) {
+        const next = { ...answers };
+        delete next[gapIndex];
+        onChange(JSON.stringify(next));
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+                role="group"
+                aria-label={t('tests.taking.cloze_bank_tiles_label')}
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    padding: 10,
+                    border: '1px dashed var(--border)',
+                    borderRadius: 8,
+                }}
+            >
+                {tiles.map((tile, i) => (
+                    <button
+                        key={`${tile}-${i}`}
+                        type="button"
+                        draggable={!tileUsed[i]}
+                        disabled={tileUsed[i]}
+                        aria-pressed={selected === i}
+                        onDragStart={(e) => e.dataTransfer.setData('text/plain', String(i))}
+                        onClick={() => setSelected(selected === i ? null : i)}
+                        style={{
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            border: selected === i ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text)',
+                            opacity: tileUsed[i] ? 0.4 : 1,
+                            cursor: tileUsed[i] ? 'default' : 'grab',
+                        }}
+                    >
+                        {tile}
+                    </button>
+                ))}
+            </div>
+            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+                {segments.map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const gapIndex = segment.gap.index;
+                    const current = answers[gapIndex];
+                    return (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-label={t('tests.taking.cloze_bank_gap_label', { number: gapIndex + 1 })}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const dragged = Number(e.dataTransfer.getData('text/plain'));
+                                if (Number.isInteger(dragged) && tiles[dragged] !== undefined) place(gapIndex, dragged);
+                            }}
+                            onClick={() => {
+                                if (selected !== null) place(gapIndex, selected);
+                                else if (current) clear(gapIndex);
+                            }}
+                            style={{
+                                margin: '0 4px',
+                                minWidth: 80,
+                                padding: '2px 10px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                borderBottom: '2px solid var(--accent)',
+                                background: current
+                                    ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                    : 'var(--bg)',
+                                color: 'var(--text)',
+                            }}
+                        >
+                            {current || `(${gapIndex + 1})`}
+                        </button>
+                    );
+                })}
+            </p>
+        </div>
+    );
+}
+
+interface MatrixAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+}
+
+function MatrixAnswer({ question, value, onChange }: MatrixAnswerProps) {
+    const { t } = useTranslation();
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+    const columns = question.matrixColumns ?? [];
+    const cell = { padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'center' as const };
+
+    return (
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', color: 'var(--text)' }}>
+                <thead>
+                    <tr>
+                        <th scope="col" style={{ ...cell, textAlign: 'left' }}>
+                            <span className="sr-only">{t('tests.taking.matrix_statement')}</span>
+                        </th>
+                        {columns.map((col) => (
+                            <th key={col.id} scope="col" style={cell}>
+                                {col.text}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {(question.matrixRows ?? []).map((row) => (
+                        <tr key={row.id}>
+                            <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 400 }}>
+                                {row.text}
+                            </th>
+                            {columns.map((col) => (
+                                <td key={col.id} style={cell}>
+                                    <input
+                                        type="radio"
+                                        name={`${question.id}-${row.id}`}
+                                        aria-label={`${row.text} — ${col.text}`}
+                                        checked={answers[row.id] === col.id}
+                                        onChange={() => onChange(JSON.stringify(withAnswer(answers, row.id, col.id)))}
+                                    />
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function ClozeInlineAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
     const { t } = useTranslation();
     const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
     const answers: Record<string, string> = useMemo(() => {

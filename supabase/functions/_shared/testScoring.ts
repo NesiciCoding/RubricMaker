@@ -15,6 +15,7 @@ export interface ScorableQuestion {
     points: number;
     prompt: string;
     options?: ScorableOption[];
+    matrixRows?: { id: string; correctColumnId: string }[];
     matchingPairs?: { id: string }[];
     orderItems?: { id: string }[];
     categorizeItems?: { id: string; categoryId: string }[];
@@ -320,20 +321,33 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
  * first alternative (the correct option). Supports partial credit.
  */
 export function scoreCloze(question: ScorableQuestion, response: string): number {
-    const gaps = parseClozeGaps(question.prompt);
-    if (gaps.length === 0) return 0;
+    const correct = clozeGapCorrectness(question, response);
+    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+}
 
+/** Per-gap correctness of a cloze response, in gap order — also feeds per-gap item analysis. */
+export function clozeGapCorrectness(question: ScorableQuestion, response: string): boolean[] {
     const answers = parseJsonRecord(response);
-    const isDropdown = question.type === 'cloze-dropdown';
-    const correctCount = gaps.filter((gap) => {
+    const exactTile = question.type === 'cloze-dropdown';
+    return parseClozeGaps(question.prompt).map((gap) => {
         const raw = answers[gap.index];
         const studentAnswer = typeof raw === 'string' ? raw.trim() : '';
         if (!studentAnswer) return false;
-        if (isDropdown) return studentAnswer === gap.alternatives[0];
+        if (exactTile) return studentAnswer === gap.alternatives[0];
         return gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
-    }).length;
+    });
+}
 
-    return partialOrAll(question, correctCount, gaps.length);
+/** Auto-score a matrix question: each row is correct when the student picked its correctColumnId. Supports partial credit. */
+export function scoreMatrix(question: ScorableQuestion, response: string): number {
+    const correct = matrixRowCorrectness(question, response);
+    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+}
+
+/** Per-row correctness of a matrix response, in row order. */
+export function matrixRowCorrectness(question: ScorableQuestion, response: string): boolean[] {
+    const answers = parseJsonRecord(response);
+    return (question.matrixRows ?? []).map((row) => answers[row.id] === row.correctColumnId);
 }
 
 /** Auto-score a matching question: each pair is correct when the student paired it with itself. Supports partial credit. */
@@ -403,7 +417,10 @@ export function autoScoreResponse(question: ScorableQuestion, response: string):
             return scoreNumeric(question, response) ?? 0;
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
             return scoreCloze(question, response);
+        case 'matrix':
+            return scoreMatrix(question, response);
         case 'matching':
             return scoreMatching(question, response);
         case 'ordering':

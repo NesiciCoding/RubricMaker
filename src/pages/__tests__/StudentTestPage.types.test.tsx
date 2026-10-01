@@ -303,6 +303,57 @@ describe('StudentTestPage — answer types', () => {
         expect(decoded!.answers[0].response).toBe(JSON.stringify({ i1: 'animal' }));
     });
 
+    it('answers a matrix question with one column per row', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'True or false?',
+                        type: 'matrix',
+                        points: 2,
+                        matrixColumns: [
+                            { id: 'c1', text: 'True' },
+                            { id: 'c2', text: 'False' },
+                        ],
+                        matrixRows: [
+                            { id: 'r1', text: 'Sky is blue', correctColumnId: 'c1' },
+                            { id: 'r2', text: 'Fire is cold', correctColumnId: 'c2' },
+                        ],
+                    },
+                ],
+            })
+        );
+        fireEvent.click(screen.getByRole('radio', { name: 'Sky is blue — True' }));
+        fireEvent.click(screen.getByRole('radio', { name: 'Fire is cold — False' }));
+        fireEvent.click(screen.getByRole('radio', { name: 'Fire is cold — True' }));
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ r1: 'c1', r2: 'c1' }));
+    });
+
+    it('fills word-bank gaps by selecting a tile then a gap, once per tile', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'The {{cat}} sat on the {{mat}}.',
+                        type: 'cloze-bank',
+                        points: 2,
+                        bankDistractors: ['dog'],
+                    },
+                ],
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'cat' }));
+        fireEvent.click(screen.getByRole('button', { name: /cloze_bank_gap_label.*"number":1/ }));
+        expect(screen.getByRole('button', { name: 'cat' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'mat' }));
+        fireEvent.click(screen.getByRole('button', { name: /cloze_bank_gap_label.*"number":2/ }));
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ 0: 'cat', 1: 'mat' }));
+    });
+
     it('answers a hot-text question by selecting fragments', async () => {
         renderPage(
             makeTest({

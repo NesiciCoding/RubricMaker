@@ -219,6 +219,7 @@ describe('QuestionEditor extended', () => {
                 ['matching', (q) => (q.matchingPairs ?? []).length],
                 ['ordering', (q) => (q.orderItems ?? []).length],
                 ['categorize', (q) => (q.categories ?? []).length],
+                ['matrix', (q) => (q.matrixRows ?? []).length && (q.matrixColumns ?? []).length],
                 ['audio-response', (q) => q.maxRecordingSeconds],
             ];
             for (const [type, pick] of cases) {

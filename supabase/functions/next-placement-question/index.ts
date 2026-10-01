@@ -75,12 +75,14 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         eloRating: _er,
         options,
         categorizeItems,
+        matrixRows,
         ...rest
     } = question;
     return {
         ...rest,
         ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
         ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
+        ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
     } as MinimalQuestion;
 }
 

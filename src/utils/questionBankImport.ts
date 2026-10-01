@@ -47,6 +47,11 @@ interface RawQuestion {
     expectedNumericValue?: number;
     numericTolerance?: number;
     correctBoolean?: boolean;
+    matrixColumns?: Array<{ text?: string }>;
+    /** `correctColumn` references a column by its 0-based index (as a string) or by text. */
+    matrixRows?: Array<{ text?: string; correctColumn?: string }>;
+    bankDistractors?: string[];
+    bankUniqueUse?: boolean;
     matchingPairs?: Array<{ left?: string; right?: string }>;
     orderItems?: Array<{ text?: string }>;
     categories?: Array<{ label?: string }>;
@@ -94,6 +99,8 @@ const VALID_TYPES: TestQuestionType[] = [
     'open',
     'cloze',
     'cloze-dropdown',
+    'cloze-bank',
+    'matrix',
     'matching',
     'ordering',
     'categorize',
@@ -160,6 +167,27 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
             right: p.right ?? '',
         }));
     }
+    if (Array.isArray(raw.matrixColumns) && raw.matrixColumns.length) {
+        const columnIds = raw.matrixColumns.map(() => nanoid());
+        question.matrixColumns = raw.matrixColumns.map((c, ci) => ({ id: columnIds[ci], text: c.text ?? '' }));
+        const byRef = new Map<string, string>();
+        raw.matrixColumns.forEach((c, ci) => {
+            byRef.set(String(ci), columnIds[ci]);
+            if (c.text) byRef.set(c.text, columnIds[ci]);
+        });
+        question.matrixRows = (raw.matrixRows ?? []).map((r) => ({
+            id: nanoid(),
+            text: r.text ?? '',
+            correctColumnId: (r.correctColumn && byRef.get(r.correctColumn)) ?? '',
+        }));
+        if (question.matrixRows.some((r) => !r.correctColumnId)) {
+            warnings.push({ key: 'questionBank.import_warn_unknown_column', params: { item: label } });
+        }
+    }
+    if (Array.isArray(raw.bankDistractors) && raw.bankDistractors.length) {
+        question.bankDistractors = raw.bankDistractors.filter((d): d is string => typeof d === 'string');
+    }
+    if (typeof raw.bankUniqueUse === 'boolean') question.bankUniqueUse = raw.bankUniqueUse;
     if (Array.isArray(raw.orderItems) && raw.orderItems.length) {
         question.orderItems = raw.orderItems.map((o) => ({ id: nanoid(), text: o.text ?? '' }));
     }

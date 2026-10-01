@@ -1109,6 +1109,8 @@ export type TestQuestionType =
     | 'open'
     | 'cloze'
     | 'cloze-dropdown'
+    | 'cloze-bank'
+    | 'matrix'
     | 'matching'
     | 'ordering'
     | 'categorize'
@@ -1129,6 +1131,19 @@ export interface MatchingPair {
     id: string;
     left: string;
     right: string;
+}
+
+/** A shared answer column of a matrix question (e.g. True / False / Doesn't say, or A / B / C) */
+export interface MatrixColumn {
+    id: string;
+    text: string;
+}
+
+/** One statement of a matrix question and the column that answers it */
+export interface MatrixRow {
+    id: string;
+    text: string;
+    correctColumnId: string;
 }
 
 /** An item for ordering questions; array order in TestQuestion.orderItems defines the correct order */
@@ -1186,6 +1201,14 @@ export interface TestQuestion {
     numericTolerance?: number;
     /** Correct answer for true-false questions */
     correctBoolean?: boolean;
+    /** Statements for matrix questions, each answered by picking one of matrixColumns */
+    matrixRows?: MatrixRow[];
+    /** Shared answer columns for matrix questions */
+    matrixColumns?: MatrixColumn[];
+    /** Extra tiles with no gap, for cloze-bank questions */
+    bankDistractors?: string[];
+    /** cloze-bank: every tile can fill at most one gap (default true) */
+    bankUniqueUse?: boolean;
     /** Pairs for matching questions */
     matchingPairs?: MatchingPair[];
     /** Items in correct order for ordering questions */

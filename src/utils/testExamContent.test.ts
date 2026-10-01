@@ -3,6 +3,10 @@ import type { Test, TestQuestion } from '../types';
 import {
     answerSheetGeometry,
     answerSpaceFor,
+    answerKeyText,
+    bankBookletTiles,
+    matrixBookletData,
+    subItemCount,
     answerSheetQrPayload,
     clozeBookletParts,
     groupQuestionsBySection,
@@ -246,5 +250,44 @@ describe('answerSheetQrPayload', () => {
             studentId: 's1',
             sheetType: 'answer',
         });
+    });
+});
+
+describe('matrix and cloze-bank paper helpers', () => {
+    const matrix = q({
+        id: 'qm',
+        type: 'matrix',
+        points: 2,
+        prompt: '',
+        matrixColumns: [
+            { id: 'c1', text: 'Right' },
+            { id: 'c2', text: 'Wrong' },
+        ],
+        matrixRows: [
+            { id: 'r1', text: 'One', correctColumnId: 'c2' },
+            { id: 'r2', text: 'Two', correctColumnId: 'c1' },
+        ],
+    });
+    const bank = q({
+        id: 'qb',
+        type: 'cloze-bank',
+        points: 2,
+        prompt: 'The {{cat}} and the {{dog}}.',
+        bankDistractors: ['cow'],
+    });
+
+    it('prints lettered columns and numbered rows, with a letter key', () => {
+        expect(matrixBookletData(matrix).columns.map((c) => c.letter)).toEqual(['A', 'B']);
+        expect(answerKeyText(matrix)).toBe('1→B; 2→A');
+        expect(subItemCount(matrix)).toBe(2);
+        expect(answerSpaceFor(matrix)).toEqual({ kind: 'subitems', subItemCount: 2 });
+    });
+
+    it('prints a shuffled word box and keys each gap to its tile letter', () => {
+        const tiles = bankBookletTiles(bank);
+        expect(tiles.map((t) => t.text).sort()).toEqual(['cat', 'cow', 'dog']);
+        const letterOf = (text: string) => tiles.find((t) => t.text === text)!.letter;
+        expect(answerKeyText(bank)).toBe(`1→${letterOf('cat')}; 2→${letterOf('dog')}`);
+        expect(subItemCount(bank)).toBe(2);
     });
 });

@@ -36,6 +36,8 @@ import {
     hotTextFallbackText,
     hotTextMirrorParts,
     matchingBookletData,
+    matrixBookletData,
+    bankBookletTiles,
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
@@ -339,7 +341,7 @@ async function questionParagraphs(
     number: number,
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
@@ -387,6 +389,31 @@ async function questionParagraphs(
                 })
             );
             break;
+        case 'cloze-bank':
+            blocks.push(
+                new Paragraph({
+                    children: bankBookletTiles(question).flatMap((t) => [
+                        new TextRun({ text: `${t.letter} `, bold: true }),
+                        new TextRun(`${t.text}    `),
+                    ]),
+                    indent: { left: 360 },
+                })
+            );
+            break;
+        case 'matrix': {
+            const data = matrixBookletData(question);
+            blocks.push(
+                new Paragraph({
+                    children: data.columns.flatMap((c) => [
+                        new TextRun({ text: `${c.letter} `, bold: true }),
+                        new TextRun(`${c.text}    `),
+                    ]),
+                    indent: { left: 360 },
+                }),
+                ...data.rows.map((r, i) => new Paragraph({ text: `${i + 1}.  ${r}`, indent: { left: 360 } }))
+            );
+            break;
+        }
         case 'matching':
             blocks.push(matchingTable(question));
             break;

@@ -19,10 +19,14 @@ import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { answersMatch } from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem } from '../types';
+
+const isClozeType = (type: TestQuestion['type']) =>
+    type === 'cloze' || type === 'cloze-dropdown' || type === 'cloze-bank';
 
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;
@@ -33,6 +37,8 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'true-false' ||
         question.type === 'cloze' ||
         question.type === 'cloze-dropdown' ||
+        question.type === 'cloze-bank' ||
+        question.type === 'matrix' ||
         question.type === 'matching' ||
         question.type === 'ordering' ||
         question.type === 'categorize' ||
@@ -49,7 +55,7 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
 
 /** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
 function promptPreview(question: TestQuestion): string {
-    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return stripHtmlTags(question.prompt);
+    if (!isClozeType(question.type)) return stripHtmlTags(question.prompt);
     return renderClozeSegments(stripHtmlTags(question.prompt))
         .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
         .join('');
@@ -80,7 +86,7 @@ function formatStudentResponse(
     if (question.type === 'true-false') {
         return t(`tests.true_false_${response}`);
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (isClozeType(question.type)) {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(response) as Record<string, string>;
@@ -98,7 +104,7 @@ function formatStudentResponse(
                     const studentAnswer = (answers[gap.index] ?? '').trim();
                     const correct = isDropdown
                         ? studentAnswer === gap.alternatives[0]
-                        : gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
+                        : gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
                     return (
                         <span
                             key={i}
@@ -110,6 +116,38 @@ function formatStudentResponse(
                         >
                             {studentAnswer || '___'}
                         </span>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'matrix') {
+        const rows = question.matrixRows ?? [];
+        if (rows.length === 0) return t('tests.results.no_response');
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(response) as Record<string, string>;
+        } catch {
+            answers = {};
+        }
+        const columnsById = new Map((question.matrixColumns ?? []).map((c) => [c.id, c]));
+        return (
+            <>
+                {rows.map((row, i) => {
+                    const chosen = columnsById.get(answers[row.id]);
+                    const correct = answers[row.id] === row.correctColumnId;
+                    return (
+                        <div key={row.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
+                            <span>{row.text}</span> →{' '}
+                            <span
+                                style={{
+                                    fontWeight: 600,
+                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                }}
+                            >
+                                {chosen?.text ?? '___'}
+                            </span>
+                        </div>
                     );
                 })}
             </>
@@ -693,6 +731,8 @@ export default function TestResultsPage() {
                             question.type === 'true-false' ||
                             question.type === 'cloze' ||
                             question.type === 'cloze-dropdown' ||
+                            question.type === 'cloze-bank' ||
+                            question.type === 'matrix' ||
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||

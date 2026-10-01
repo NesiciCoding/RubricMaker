@@ -203,3 +203,32 @@ describe('buildTestStudentSummary', () => {
         expect(out).toContain('0/1 pts');
     });
 });
+
+describe('matrix and cloze-bank answer text', () => {
+    const matrix: TestQuestion = {
+        id: 'qm',
+        prompt: '',
+        type: 'matrix',
+        points: 2,
+        matrixColumns: [
+            { id: 'c1', text: 'True' },
+            { id: 'c2', text: 'False' },
+        ],
+        matrixRows: [
+            { id: 'r1', text: 'Sky is blue', correctColumnId: 'c1' },
+            { id: 'r2', text: 'Fire is cold', correctColumnId: 'c2' },
+        ],
+    };
+    const bank: TestQuestion = { id: 'qb', prompt: 'A {{cat}} sat.', type: 'cloze-bank', points: 1 };
+
+    it('renders matrix given and correct answers', () => {
+        const given = formatGivenAnswer(matrix, { questionId: 'qm', response: '{"r1":"c1"}' });
+        expect(given).toBe('Sky is blue → True; Fire is cold → ___');
+        expect(formatCorrectAnswer(matrix)).toBe('Sky is blue → True; Fire is cold → False');
+    });
+
+    it('renders cloze-bank like a cloze', () => {
+        expect(formatGivenAnswer(bank, { questionId: 'qb', response: '{"0":"cat"}' })).toBe('A [cat] sat.');
+        expect(formatCorrectAnswer(bank)).toBe('A [cat] sat.');
+    });
+});

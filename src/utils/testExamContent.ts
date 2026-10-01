@@ -53,8 +53,11 @@ export function subItemCount(question: TestQuestion): number | null {
             return question.orderItems?.length || null;
         case 'categorize':
             return question.categorizeItems?.length || null;
+        case 'matrix':
+            return question.matrixRows?.length || null;
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
             return renderClozeSegments(question.prompt).filter((s) => s.type === 'gap').length || null;
         case 'hot-text':
             return question.hotTextCorrectIndices?.length || null;
@@ -152,6 +155,46 @@ export function matchingBookletData(question: TestQuestion): MatchingBookletData
     };
 }
 
+export interface MatrixBookletData {
+    /** Statements in stored (numbered) order. */
+    rows: string[];
+    /** Shared answer columns, lettered — a fixed set, so no shuffling is needed. */
+    columns: { letter: string; text: string }[];
+}
+
+export function matrixBookletData(question: TestQuestion): MatrixBookletData {
+    return {
+        rows: (question.matrixRows ?? []).map((r) => r.text),
+        columns: (question.matrixColumns ?? []).map((c, i) => ({ letter: optionLetter(i), text: c.text })),
+    };
+}
+
+/** Cloze-bank tiles (every gap's answer plus the distractors) as a shuffled, lettered word box for the booklet. */
+export function bankBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
+    const answers = renderClozeSegments(question.prompt).flatMap((s) =>
+        s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
+    );
+    const tiles = nonIdentityShuffle([...answers, ...(question.bankDistractors ?? [])].filter(Boolean), question.id);
+    return tiles.map((text, i) => ({ letter: optionLetter(i), text }));
+}
+
+function matrixCorrectLetterKey(question: TestQuestion): string {
+    const letters = new Map((question.matrixColumns ?? []).map((c, i) => [c.id, optionLetter(i)]));
+    return (question.matrixRows ?? []).map((r, i) => `${i + 1}→${letters.get(r.correctColumnId) ?? '?'}`).join('; ');
+}
+
+function bankCorrectLetterKey(question: TestQuestion): string {
+    const unused = bankBookletTiles(question);
+    return renderClozeSegments(question.prompt)
+        .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []))
+        .map((answer, i) => {
+            const at = unused.findIndex((t) => t.text === answer);
+            const letter = at >= 0 ? unused.splice(at, 1)[0].letter : '?';
+            return `${i + 1}→${letter}`;
+        })
+        .join('; ');
+}
+
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */
 export function orderingBookletItems(question: TestQuestion): { letter: string; text: string }[] {
     const items = nonIdentityShuffle(question.orderItems ?? [], question.id);
@@ -194,6 +237,10 @@ export function answerKeyText(question: TestQuestion): string {
                 .join(', ');
         case 'true-false':
             return (question.correctBoolean ?? true) ? 'A' : 'B';
+        case 'matrix':
+            return matrixCorrectLetterKey(question);
+        case 'cloze-bank':
+            return bankCorrectLetterKey(question);
         case 'matching':
             return matchingCorrectLetterKey(question);
         case 'ordering':
@@ -256,6 +303,8 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
             return { kind: 'numeric' };
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
+        case 'matrix':
         case 'matching':
         case 'ordering':
         case 'categorize':

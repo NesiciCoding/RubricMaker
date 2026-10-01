@@ -62,7 +62,7 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         if (score === null) return 'ungraded';
         return score > 0 ? 'correct' : 'incorrect';
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(answer.response) as Record<string, string>;
@@ -72,7 +72,7 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         if (!Object.values(answers).some((v) => v.trim() !== '')) return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
-    if (question.type === 'matching' || question.type === 'categorize') {
+    if (question.type === 'matching' || question.type === 'categorize' || question.type === 'matrix') {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(answer.response) as Record<string, string>;
@@ -157,7 +157,7 @@ function answerDisplayText(
     if (question.type === 'true-false') {
         return t(`tests.true_false_${answer.response}`);
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         try {
             const answers = JSON.parse(answer.response) as Record<string, string>;
             const gaps = parseClozeGaps(question.prompt);

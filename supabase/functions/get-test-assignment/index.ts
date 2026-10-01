@@ -40,8 +40,14 @@ interface RawCategorizeItem {
     [key: string]: unknown;
 }
 
+interface RawMatrixRow {
+    correctColumnId?: unknown;
+    [key: string]: unknown;
+}
+
 interface RawQuestion {
     options?: RawOption[];
+    matrixRows?: RawMatrixRow[];
     categorizeItems?: RawCategorizeItem[];
     expectedAnswer?: unknown;
     expectedAnswers?: unknown;
@@ -55,7 +61,7 @@ interface RawQuestion {
 
 // Removes fields that only exist to score an answer or calibrate item difficulty, not to render
 // the question — options[].isCorrect, expectedAnswer(s), expectedNumericValue, numericTolerance,
-// correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, and eloRating (roadmap
+// correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, matrixRows[].correctColumnId, and eloRating (roadmap
 // Phase 25.4/25.5 staircase self-calibration, teacher-only) are read server/teacher-side only, so
 // a student reading this response (e.g. via devtools) must never see them.
 //
@@ -82,6 +88,7 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 eloRating: _er,
                 options,
                 categorizeItems,
+                matrixRows,
                 ...rest
             } = q;
             return {
@@ -90,6 +97,7 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 ...(categorizeItems
                     ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) }
                     : {}),
+                ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
             };
         }),
     };
