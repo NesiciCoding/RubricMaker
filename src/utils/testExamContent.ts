@@ -18,7 +18,7 @@ export interface NumberedQuestion {
 }
 
 export interface ExamSectionGroup {
-    /** null = questions with no section (or a stale/removed sectionId), grouped last. */
+    /** null = questions with no section (or a stale/removed sectionId), grouped first — same order as the test builder. */
     section: TestSection | null;
     questions: NumberedQuestion[];
 }
@@ -31,12 +31,12 @@ export function groupQuestionsBySection(test: Test): ExamSectionGroup[] {
     const numbered = (questions: TestQuestion[]): NumberedQuestion[] =>
         questions.map((question) => ({ question, number: ++counter }));
 
-    for (const section of sections) {
-        groups.push({ section, questions: numbered(test.questions.filter((q) => q.sectionId === section.id)) });
-    }
     const sectionIds = new Set(sections.map((s) => s.id));
     const ungrouped = test.questions.filter((q) => !q.sectionId || !sectionIds.has(q.sectionId));
     if (ungrouped.length > 0) groups.push({ section: null, questions: numbered(ungrouped) });
+    for (const section of sections) {
+        groups.push({ section, questions: numbered(test.questions.filter((q) => q.sectionId === section.id)) });
+    }
     return groups;
 }
 
