@@ -17,7 +17,11 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-const makeAppValue = () => ({ settings: {}, addQuestionBankItem: mockAddQuestionBankItem });
+const makeAppValue = () => ({
+    settings: {},
+    addQuestionBankItem: mockAddQuestionBankItem,
+    rubrics: [{ id: 'r1', name: 'Email rubric' }],
+});
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => makeAppValue(),
@@ -277,6 +281,20 @@ describe('QuestionEditor extended', () => {
             expect(onChange).toHaveBeenLastCalledWith(
                 expect.objectContaining({ prompt: 'Her {{happiness}}(HAPPY) showed.' })
             );
+        });
+    });
+
+    describe('rubric-scored tasks', () => {
+        it('offers a rubric on open and audio-response questions only', () => {
+            const { onChange, view } = renderEditor(makeQuestion({ type: 'open' }));
+            fireEvent.change(screen.getByLabelText('tests.question_rubric_label'), { target: { value: 'r1' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rubricId: 'r1' }));
+            fireEvent.change(screen.getByLabelText('tests.question_rubric_label'), { target: { value: '' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rubricId: undefined }));
+            view.unmount();
+
+            renderEditor(makeQuestion({ type: 'short-answer' }));
+            expect(screen.queryByLabelText('tests.question_rubric_label')).toBeNull();
         });
     });
 

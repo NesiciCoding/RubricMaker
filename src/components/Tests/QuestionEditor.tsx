@@ -117,7 +117,7 @@ export default function QuestionEditor({
     showSaveToBank = true,
 }: Props) {
     const { t, i18n } = useTranslation();
-    const { addQuestionBankItem } = useAuthoring();
+    const { addQuestionBankItem, rubrics = [] } = useAuthoring();
     const { settings } = useSettings();
 
     const { showToast } = useToast();
@@ -1069,6 +1069,28 @@ export default function QuestionEditor({
                         onChange={(answerTolerance) => update({ answerTolerance })}
                     />
                     {renderPartialCreditToggle()}
+                </div>
+            )}
+
+            {(question.type === 'open' || question.type === 'audio-response') && (
+                <div>
+                    <label htmlFor={`question-rubric-${question.id}`}>{t('tests.question_rubric_label')}</label>
+                    <select
+                        id={`question-rubric-${question.id}`}
+                        value={question.rubricId ?? ''}
+                        onChange={(e) => update({ rubricId: e.target.value || undefined })}
+                        style={{ width: 'auto', maxWidth: '100%' }}
+                    >
+                        <option value="">{t('tests.question_rubric_none')}</option>
+                        {rubrics.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-muted text-xs" style={{ margin: '4px 0 0' }}>
+                        {t('tests.question_rubric_help')}
+                    </p>
                 </div>
             )}
 

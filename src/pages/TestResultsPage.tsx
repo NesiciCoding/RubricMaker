@@ -23,8 +23,11 @@ import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
 import { parseErrorPicks, parsePlacedWords } from '../utils/answerResponseParsers';
+import RubricTaskScorer from '../components/Tests/RubricTaskScorer';
+import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel';
+import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import CommentBankModal from '../components/Comments/CommentBankModal';
-import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem } from '../types';
+import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
 const isClozeType = (type: TestQuestion['type']) =>
     type === 'cloze' || type === 'cloze-dropdown' || type === 'cloze-bank';
@@ -383,12 +386,14 @@ export default function TestResultsPage() {
     const {
         students: allStudents,
         gradeScales,
+        rubrics,
         tests,
         studentTests,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
         gradeScales: s.gradeScales,
+        rubrics: s.rubrics,
         tests: s.tests,
         studentTests: s.studentTests,
         settings: s.settings,
@@ -403,7 +408,9 @@ export default function TestResultsPage() {
     const student = students.find((s) => s.id === studentTest?.studentId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
-    const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
+    const [drafts, setDrafts] = useState<
+        Record<string, { pointsEarned: string; feedback: string; rubricEntries?: ScoreEntry[] }>
+    >({});
     const [commentBankFor, setCommentBankFor] = useState<string | null>(null);
     const [savedCommentFor, setSavedCommentFor] = useState<string | null>(null);
 
@@ -531,10 +538,17 @@ export default function TestResultsPage() {
         );
     }
 
+    /** The rubric that scores this question, when it has one this page can use (single-point rubrics have no levels to pick). */
+    function rubricFor(question: TestQuestion, answer: TestAnswer | undefined): Rubric | undefined {
+        if (!question.rubricId || (question.type !== 'open' && question.type !== 'audio-response')) return undefined;
+        const rubric = (rubrics ?? []).find((r) => r.id === question.rubricId) ?? answer?.rubricSnapshot;
+        return rubric && rubric.scoringMode !== 'single-point' ? rubric : undefined;
+    }
+
     function updateDraft(
         questionId: string,
         answer: TestAnswer | undefined,
-        patch: Partial<{ pointsEarned: string; feedback: string }>
+        patch: Partial<{ pointsEarned: string; feedback: string; rubricEntries: ScoreEntry[] }>
     ) {
         setDrafts((prev) => ({ ...prev, [questionId]: { ...getDraft(questionId, answer), ...patch } }));
     }
@@ -573,11 +587,17 @@ export default function TestResultsPage() {
             }
         }
         const draft = getDraft(question.id, idx >= 0 ? existingAnswers[idx] : undefined);
-        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
+        const rubric = rubricFor(question, idx >= 0 ? existingAnswers[idx] : undefined);
+        const rubricFields =
+            rubric && draft.rubricEntries ? { rubricEntries: draft.rubricEntries, rubricSnapshot: rubric } : {};
+        const pointsEarned =
+            rubric && draft.rubricEntries
+                ? rubricAnswerPoints(rubric, draft.rubricEntries, question.points)
+                : clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const updatedAnswer: TestAnswer =
             idx >= 0
-                ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback }
-                : { questionId: question.id, response: '', pointsEarned, feedback: draft.feedback };
+                ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback, ...rubricFields }
+                : { questionId: question.id, response: '', pointsEarned, feedback: draft.feedback, ...rubricFields };
         const nextAnswers =
             idx >= 0
                 ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a))
@@ -793,6 +813,7 @@ export default function TestResultsPage() {
                         const earned = answer?.pointsEarned ?? autoScore(question, answer);
                         const isCorrect = autoScored && earned === question.points;
                         const draft = getDraft(question.id, answer);
+                        const rubric = rubricFor(question, answer);
                         const allowManual =
                             question.type === 'open' ||
                             question.type === 'short-answer' ||
@@ -855,6 +876,17 @@ export default function TestResultsPage() {
                                     </div>
                                 </div>
 
+                                {question.type === 'open' && answer?.response && (
+                                    <OpenAnswerInsightsPanel
+                                        text={stripHtmlTags(answer.response)}
+                                        targetLevel={
+                                            test.cefrTargetLevel ??
+                                            test.sections?.find((sec) => sec.id === question.sectionId)?.cefrLevel
+                                        }
+                                        vocabularyItems={rubric?.vocabularyItems}
+                                    />
+                                )}
+
                                 {autoScored && (
                                     <div className="text-sm" style={{ marginBottom: 8 }}>
                                         {t('tests.results.auto_scored', { earned, points: question.points })}
@@ -863,22 +895,40 @@ export default function TestResultsPage() {
 
                                 {allowManual && (
                                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label htmlFor={`points-${question.id}`}>
-                                                {t('tests.results.manual_points_label')}
-                                            </label>
-                                            <input
-                                                id={`points-${question.id}`}
-                                                type="number"
-                                                min={0}
-                                                max={question.points}
-                                                value={draft.pointsEarned}
-                                                onChange={(e) =>
-                                                    updateDraft(question.id, answer, { pointsEarned: e.target.value })
+                                        {rubric && (
+                                            <RubricTaskScorer
+                                                rubric={rubric}
+                                                questionPoints={question.points}
+                                                entries={
+                                                    draft.rubricEntries ??
+                                                    answer?.rubricEntries ??
+                                                    blankRubricEntries(rubric)
                                                 }
-                                                style={{ width: 90 }}
+                                                onChange={(rubricEntries) =>
+                                                    updateDraft(question.id, answer, { rubricEntries })
+                                                }
                                             />
-                                        </div>
+                                        )}
+                                        {!rubric && (
+                                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                                <label htmlFor={`points-${question.id}`}>
+                                                    {t('tests.results.manual_points_label')}
+                                                </label>
+                                                <input
+                                                    id={`points-${question.id}`}
+                                                    type="number"
+                                                    min={0}
+                                                    max={question.points}
+                                                    value={draft.pointsEarned}
+                                                    onChange={(e) =>
+                                                        updateDraft(question.id, answer, {
+                                                            pointsEarned: e.target.value,
+                                                        })
+                                                    }
+                                                    style={{ width: 90 }}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 240px' }}>
                                             <label htmlFor={`feedback-${question.id}`}>
                                                 {t('tests.results.feedback_label')}

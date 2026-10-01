@@ -1262,6 +1262,8 @@ export interface TestQuestion {
     explanation?: string;
     /** For 'audio-response' questions: recording cap in seconds (default 60 in the UI). */
     maxRecordingSeconds?: number;
+    /** For 'open' and 'audio-response' questions: the rubric the teacher scores this answer with; the rubric total maps to the question's points */
+    rubricId?: string;
     /** For 'audio-response' questions: preparation countdown before recording starts automatically */
     prepSeconds?: number;
     /** For 'audio-response' questions: cue-card bullet prompts shown during prep and recording */
@@ -1395,6 +1397,10 @@ export interface TestAnswer {
     /** Manually awarded points; overrides auto-scoring when present */
     pointsEarned?: number;
     feedback?: string;
+    /** Per-criterion scores when the question is graded with a rubric (TestQuestion.rubricId); pointsEarned is derived from them */
+    rubricEntries?: ScoreEntry[];
+    /** The rubric as it was when scored, so later edits to the rubric don't move a graded answer */
+    rubricSnapshot?: Rubric;
 }
 
 /** One question asked during a staircase (roadmap 25.3) or generator (roadmap 27.1) placement run, in order taken. */

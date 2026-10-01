@@ -3,6 +3,8 @@ import type {
     CefrSkill,
     DocumentAnalysisResult,
     Rubric,
+    RubricCriterion,
+    ScoreEntry,
     StudentRubric,
     SelfAssessment,
     LinkedStandard,
@@ -297,6 +299,39 @@ export function getCefrStudentOverview(
     const gradedByRubricId = new Map<string, StudentRubric>();
     for (const r of graded) if (!gradedByRubricId.has(r.rubricId)) gradedByRubricId.set(r.rubricId, r);
 
+    // Shared by graded rubrics (Step 1) and rubric-scored test answers (Step 1b): a criterion graded
+    // at a level carrying a cefrLevel tag unconditionally achieves that skill/level cell.
+    const flagCriterionCefrLevels = (
+        entries: ScoreEntry[],
+        criteriaById: Map<string, RubricCriterion>,
+        fallbackSkill: CefrSkill
+    ) => {
+        for (const entry of entries) {
+            if (!entry.levelId) continue;
+            const criterion = criteriaById.get(entry.criterionId);
+            if (!criterion) continue;
+            const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
+            if (!selectedLevel?.cefrLevel) continue;
+
+            const skill: CefrSkill = criterion.cefrSkill ?? fallbackSkill;
+            const level: CefrLevel = selectedLevel.cefrLevel;
+            const key = `${skill}__${level}`;
+
+            if (!cellAccMap.has(key)) {
+                cellAccMap.set(key, {
+                    skill,
+                    level,
+                    scores: [],
+                    thresholds: [],
+                    directlyAchieved: false,
+                    confidenceByDescriptor: new Map(),
+                    evidence: [],
+                });
+            }
+            cellAccMap.get(key)!.directlyAchieved = true;
+        }
+    };
+
     for (const sr of graded) {
         const rubric = sr.rubricSnapshot ?? rubricById.get(sr.rubricId);
         if (!rubric) continue;
@@ -338,31 +373,7 @@ export function getCefrStudentOverview(
         // ── Per-criterion/level CEFR aggregation ──────────────────────────────
         // If individual RubricLevels carry a cefrLevel tag, use that directly.
         // Being graded at a tagged level is unconditionally "achieved" regardless of score averaging.
-        for (const entry of sr.entries) {
-            if (!entry.levelId) continue;
-            const criterion = criteriaById.get(entry.criterionId);
-            if (!criterion) continue;
-            const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
-            if (!selectedLevel?.cefrLevel) continue;
-
-            const skill: CefrSkill = criterion.cefrSkill ?? rubric.cefrSkill ?? 'writing';
-            const level: CefrLevel = selectedLevel.cefrLevel;
-            const key = `${skill}__${level}`;
-
-            if (!cellAccMap.has(key)) {
-                cellAccMap.set(key, {
-                    skill,
-                    level,
-                    scores: [],
-                    thresholds: [],
-                    directlyAchieved: false,
-                    confidenceByDescriptor: new Map(),
-                    evidence: [],
-                });
-            }
-            // Flag this cell as directly achieved — not subject to percentage averaging.
-            cellAccMap.get(key)!.directlyAchieved = true;
-        }
+        flagCriterionCefrLevels(sr.entries, criteriaById, rubric.cefrSkill ?? 'writing');
 
         // Standards aggregation (mirrors learningGoalsAggregator pattern)
         const pointsEarned = new Map<string, number>();
@@ -508,6 +519,21 @@ export function getCefrStudentOverview(
             score: scorePct,
             threshold,
         });
+
+        // Rubric-scored answers (open / audio-response linked to a rubric) carry per-criterion levels,
+        // so they feed the same per-criterion cell tagging as a graded rubric.
+        for (const answer of st.answers) {
+            if (!answer.rubricEntries?.length) continue;
+            const rubric =
+                answer.rubricSnapshot ??
+                rubricById.get(test.questions.find((q) => q.id === answer.questionId)?.rubricId ?? '');
+            if (!rubric) continue;
+            flagCriterionCefrLevels(
+                answer.rubricEntries,
+                new Map(rubric.criteria.map((c) => [c.id, c])),
+                rubric.cefrSkill ?? test.cefrSkill
+            );
+        }
 
         // Per-question direct achievement — mirrors Step 1's per-criterion cefrLevel tag:
         // a fully-correct answer on a question tagged with a CEFR descriptor unconditionally

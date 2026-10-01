@@ -1162,6 +1162,67 @@ describe('getCefrStudentOverview — assessment-mode test scores', () => {
     });
 });
 
+describe('getCefrStudentOverview — rubric-scored test answers', () => {
+    const rubric = {
+        id: 'r1',
+        name: 'Writing task',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        scoringMode: 'weighted-percentage',
+        totalMaxPoints: 0,
+        criteria: [
+            {
+                id: 'c1',
+                title: 'Range',
+                description: '',
+                weight: 100,
+                cefrSkill: 'writing',
+                levels: [
+                    {
+                        id: 'hi',
+                        label: 'Strong',
+                        minPoints: 4,
+                        maxPoints: 4,
+                        description: '',
+                        subItems: [],
+                        cefrLevel: 'C1',
+                    },
+                    { id: 'lo', label: 'Weak', minPoints: 1, maxPoints: 1, description: '', subItems: [] },
+                ],
+            },
+        ],
+    } as unknown as Rubric;
+    const test = makeTest({
+        questions: [{ id: 'q1', prompt: 'Write', type: 'open', points: 10, rubricId: 'r1' }],
+    });
+    const entry = (levelId: string) => ({ criterionId: 'c1', levelId, checkedSubItems: [], comment: '' });
+
+    it('tags the criterion’s CEFR cell from the rubric entries on the answer', () => {
+        const st = makeStudentTest({
+            rawTotalPoints: 9,
+            answers: [{ questionId: 'q1', response: 'text', pointsEarned: 9, rubricEntries: [entry('hi')] }],
+        });
+        const result = getCefrStudentOverview('s1', [], [rubric], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('writing__C1')?.state).toBe('achieved');
+    });
+
+    it('prefers the snapshot taken at scoring time and ignores levels without a CEFR tag', () => {
+        const st = makeStudentTest({
+            rawTotalPoints: 2,
+            answers: [
+                {
+                    questionId: 'q1',
+                    response: 'text',
+                    pointsEarned: 2,
+                    rubricEntries: [entry('lo')],
+                    rubricSnapshot: rubric,
+                },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [], [], [], undefined, undefined, undefined, [test], [st]);
+        expect(result.cellMap.get('writing__C1')).toBeUndefined();
+    });
+});
+
 describe('getCefrStudentOverview — practice-mode test scores', () => {
     it('feeds practiceCefrProgress instead of the graded cells', () => {
         const test = makeTest({ mode: 'practice' });
