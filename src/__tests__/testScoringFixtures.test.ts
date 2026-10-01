@@ -82,6 +82,91 @@ const hotText: ScorableQuestion = {
     hotTextCorrectIndices: [0, 2],
 };
 
+function tolerantFixtures(): Fixture[] {
+    const sa = (answerTolerance: ScorableQuestion['answerTolerance'], ans = "I don't know"): ScorableQuestion => ({
+        type: 'short-answer',
+        points: 2,
+        prompt: '',
+        expectedAnswers: [ans],
+        answerTolerance,
+    });
+    return [
+        {
+            name: 'tolerance off: curly quote misses',
+            question: sa(undefined),
+            response: 'I don\u2019t know',
+            expected: 0,
+        },
+        {
+            name: 'punctuation: curly quote, trailing dot, spaces',
+            question: sa({ punctuation: true }),
+            response: ' I  don\u2019t know. ',
+            expected: 2,
+        },
+        {
+            name: 'contractions: expanded form',
+            question: sa({ contractions: true }),
+            response: 'I do not know',
+            expected: 2,
+        },
+        {
+            name: 'contractions: only listed forms expand',
+            question: sa({ contractions: true }, 'she is happy'),
+            response: "she's happy",
+            expected: 0,
+        },
+        {
+            name: 'contractions: cannot',
+            question: sa({ contractions: true }, "can't"),
+            response: 'cannot',
+            expected: 2,
+        },
+        {
+            name: 'spelling: British vs American',
+            question: sa({ spelling: true }, 'favourite colour'),
+            response: 'favorite color',
+            expected: 2,
+        },
+        {
+            name: 'spelling off: no equivalence',
+            question: sa({ punctuation: true }, 'colour'),
+            response: 'color',
+            expected: 0,
+        },
+        {
+            name: 'slips: one typo in a 5+ letter word',
+            question: sa({ slips: true }, 'because'),
+            response: 'becuse',
+            expected: 2,
+        },
+        {
+            name: 'slips: transposition is two edits',
+            question: sa({ slips: true }, 'because'),
+            response: 'becuase',
+            expected: 0,
+        },
+        { name: 'slips: short words stay exact', question: sa({ slips: true }, 'went'), response: 'want', expected: 0 },
+        {
+            name: 'slips: word count must match',
+            question: sa({ slips: true }, 'a lot of people'),
+            response: 'a lot people',
+            expected: 0,
+        },
+        {
+            name: 'cloze open gap honours tolerance',
+            question: { ...cloze, answerTolerance: { slips: true } },
+            response: '{"0":"has","1":"sinse"}',
+            expected: 2,
+        },
+        {
+            name: 'cloze-dropdown ignores tolerance',
+            question: { ...clozeDropdown, answerTolerance: { slips: true } },
+            response: '{"0":"wnet","1":"ate"}',
+            expected: 1,
+        },
+    ];
+}
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -175,6 +260,9 @@ const fixtures: Fixture[] = [
         response: '[0]',
         expected: 0,
     },
+
+    // Tolerant matching (A5) — opt-in per question
+    ...tolerantFixtures(),
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
     { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },

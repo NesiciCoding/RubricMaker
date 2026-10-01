@@ -32,7 +32,14 @@ import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
-import { parseClozeGaps, plainQuestionPromptText, renderClozeSegments } from '../../utils/clozeParse';
+import {
+    addGapAlternative,
+    parseClozeGaps,
+    plainQuestionPromptText,
+    renderClozeSegments,
+} from '../../utils/clozeParse';
+import AnswerToleranceFields from './AnswerToleranceFields';
+import DistractorSuggestions from './DistractorSuggestions';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
@@ -754,6 +761,13 @@ export default function QuestionEditor({
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>
+                    <DistractorSuggestions
+                        answer={(question.options ?? []).find((o) => o.isCorrect)?.text ?? ''}
+                        exclude={(question.options ?? []).map((o) => o.text)}
+                        onPick={(text) =>
+                            update({ options: [...(question.options ?? []), { id: nanoid(), text, isCorrect: false }] })
+                        }
+                    />
                     {question.type === 'multiple-response' && (
                         <label
                             style={{
@@ -857,6 +871,23 @@ export default function QuestionEditor({
                             </p>
                         );
                     })()}
+                    {question.type === 'cloze' && (
+                        <AnswerToleranceFields
+                            value={question.answerTolerance}
+                            onChange={(answerTolerance) => update({ answerTolerance })}
+                        />
+                    )}
+                    {question.type === 'cloze-dropdown' &&
+                        parseClozeGaps(question.prompt).map((gap) => (
+                            <DistractorSuggestions
+                                key={gap.index}
+                                answer={gap.alternatives[0] ?? ''}
+                                exclude={gap.alternatives}
+                                onPick={(word) =>
+                                    update({ prompt: addGapAlternative(question.prompt, gap.index, word) })
+                                }
+                            />
+                        ))}
                     <label
                         style={{
                             display: 'flex',
@@ -1109,6 +1140,10 @@ export default function QuestionEditor({
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                         {t('tests.expected_answer_help')}
                     </p>
+                    <AnswerToleranceFields
+                        value={question.answerTolerance}
+                        onChange={(answerTolerance) => update({ answerTolerance })}
+                    />
                 </div>
             )}
 

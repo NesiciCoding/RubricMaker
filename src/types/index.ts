@@ -2,6 +2,7 @@
 
 import type { PeriodReportEntry } from '../utils/periodReportExport';
 import type { LearningGoalAggregate } from '../utils/learningGoalsAggregator';
+import type { AnswerTolerance } from '../../supabase/functions/_shared/testScoring.ts';
 import type { StandardSetGroup, CefrStudentOverview } from '../utils/cefrStudentAggregator';
 
 // ─── CEFR / ERK Types ─────────────────────────────────────────────────────────
@@ -1203,6 +1204,8 @@ export interface TestQuestion {
      * every part is correct (false).
      */
     partialCredit?: boolean;
+    /** Opt-in leniencies for typed answers on short-answer and cloze (see AnswerTolerance in testScoring.ts) */
+    answerTolerance?: AnswerTolerance;
     linkedStandards?: LinkedStandard[];
     /** CEFR Can-Do statements linked to this question */
     linkedCefrDescriptors?: LinkedCefrDescriptor[];
