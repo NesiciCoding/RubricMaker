@@ -26,6 +26,19 @@ export interface ScorableQuestion {
     numericTolerance?: number;
     partialCredit?: boolean;
     correctBoolean?: boolean;
+    answerTolerance?: AnswerTolerance;
+}
+
+/** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
+export interface AnswerTolerance {
+    /** Curly quotes → straight, punctuation dropped, whitespace collapsed */
+    punctuation?: boolean;
+    /** `don't` ≡ `do not` */
+    contractions?: boolean;
+    /** `colour` ≡ `color` (static list) */
+    spelling?: boolean;
+    /** Edit distance ≤ 1 per word, for words of 5+ letters */
+    slips?: boolean;
 }
 
 // ── Cloze / hot-text markup ─────────────────────────────────────────────────
@@ -116,6 +129,134 @@ function parseJsonRecord(response: string): Record<string, unknown> {
     }
 }
 
+// ── Tolerant answer matching ────────────────────────────────────────────────
+
+const CONTRACTIONS: Record<string, string> = {
+    "don't": 'do not',
+    "doesn't": 'does not',
+    "didn't": 'did not',
+    "isn't": 'is not',
+    "aren't": 'are not',
+    "wasn't": 'was not',
+    "weren't": 'were not',
+    "haven't": 'have not',
+    "hasn't": 'has not',
+    "hadn't": 'had not',
+    "won't": 'will not',
+    "wouldn't": 'would not',
+    "can't": 'cannot',
+    "couldn't": 'could not',
+    "shouldn't": 'should not',
+    "mustn't": 'must not',
+    "i'm": 'i am',
+    "you're": 'you are',
+    "we're": 'we are',
+    "they're": 'they are',
+    "i've": 'i have',
+    "you've": 'you have',
+    "we've": 'we have',
+    "they've": 'they have',
+    "i'll": 'i will',
+    "you'll": 'you will',
+    "he'll": 'he will',
+    "she'll": 'she will',
+    "we'll": 'we will',
+    "they'll": 'they will',
+    "i'd": 'i would',
+    "you'd": 'you would',
+    "he'd": 'he would',
+    "she'd": 'she would',
+    "we'd": 'we would',
+    "they'd": 'they would',
+    "it's": 'it is',
+    "that's": 'that is',
+    "there's": 'there is',
+    "let's": 'let us',
+};
+
+// British → American; both sides are mapped to the American form before comparing.
+const BRITISH_TO_AMERICAN: Record<string, string> = {
+    colour: 'color',
+    favourite: 'favorite',
+    neighbour: 'neighbor',
+    behaviour: 'behavior',
+    honour: 'honor',
+    humour: 'humor',
+    labour: 'labor',
+    flavour: 'flavor',
+    centre: 'center',
+    theatre: 'theater',
+    metre: 'meter',
+    litre: 'liter',
+    fibre: 'fiber',
+    organise: 'organize',
+    realise: 'realize',
+    recognise: 'recognize',
+    apologise: 'apologize',
+    analyse: 'analyze',
+    travelled: 'traveled',
+    travelling: 'traveling',
+    traveller: 'traveler',
+    cancelled: 'canceled',
+    cancelling: 'canceling',
+    grey: 'gray',
+    tyre: 'tire',
+    programme: 'program',
+    cheque: 'check',
+    defence: 'defense',
+    licence: 'license',
+    offence: 'offense',
+    practise: 'practice',
+    catalogue: 'catalog',
+    dialogue: 'dialog',
+    jewellery: 'jewelry',
+    pyjamas: 'pajamas',
+    mum: 'mom',
+    plough: 'plow',
+    aluminium: 'aluminum',
+    maths: 'math',
+    learnt: 'learned',
+    spelt: 'spelled',
+    burnt: 'burned',
+    dreamt: 'dreamed',
+};
+
+function editDistanceWithin1(a: string, b: string): boolean {
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+    const [long, short] = a.length > b.length ? [a, b] : [b, a];
+    return long.slice(i + 1) === short.slice(i);
+}
+
+function answerTokens(text: string, tol: AnswerTolerance): string[] {
+    let t = text.trim().toLowerCase();
+    if (tol.punctuation || tol.contractions)
+        t = t.replace(/[\u2018\u2019\u02bc`]/g, "'").replace(/[\u201c\u201d]/g, '"');
+    if (tol.contractions) t = t.replace(/[\p{L}]+'[\p{L}]+/gu, (w) => CONTRACTIONS[w] ?? w);
+    if (tol.punctuation) t = t.replace(/[^\p{L}\p{N}']+/gu, ' ').replace(/(^|\s)'+|'+(?=\s|$)/g, '$1');
+    let tokens = t.split(/\s+/).filter(Boolean);
+    if (tol.contractions) tokens = tokens.flatMap((w) => (CONTRACTIONS[w] ?? w).split(' '));
+    if (tol.spelling) tokens = tokens.map((w) => BRITISH_TO_AMERICAN[w] ?? w);
+    return tokens;
+}
+
+/** True when a typed response matches an accepted answer under the question's opt-in tolerances. */
+export function answersMatch(expected: string, response: string, tol?: AnswerTolerance): boolean {
+    if (!tol || !(tol.punctuation || tol.contractions || tol.spelling || tol.slips)) {
+        return expected.trim().toLowerCase() === response.trim().toLowerCase();
+    }
+    const a = answerTokens(expected, tol);
+    const b = answerTokens(response, tol);
+    if (a.length === 0 || a.length !== b.length) return false;
+    return a.every(
+        (word, i) =>
+            word === b[i] || (!!tol.slips && word.length >= 5 && b[i].length >= 5 && editDistanceWithin1(word, b[i]))
+    );
+}
+
 function partialOrAll(question: ScorableQuestion, correctCount: number, total: number): number {
     if (question.partialCredit === false) {
         return correctCount === total ? question.points : 0;
@@ -136,8 +277,7 @@ export function scoreShortAnswerExact(question: ScorableQuestion, response: stri
           ? [question.expectedAnswer]
           : [];
     if (question.type !== 'short-answer' || answers.length === 0) return null;
-    const trimmedResponse = response.trim().toLowerCase();
-    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
+    return answers.some((a) => answersMatch(a, response, question.answerTolerance)) ? question.points : 0;
 }
 
 /** Auto-score for a numeric question: full points when the response is within ± numericTolerance of expectedNumericValue. */
@@ -187,7 +327,7 @@ export function scoreCloze(question: ScorableQuestion, response: string): number
         const studentAnswer = typeof raw === 'string' ? raw.trim() : '';
         if (!studentAnswer) return false;
         if (isDropdown) return studentAnswer === gap.alternatives[0];
-        return gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
+        return gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
     }).length;
 
     return partialOrAll(question, correctCount, gaps.length);
