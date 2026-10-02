@@ -1172,8 +1172,8 @@
         "kwt_word_limit_min": "Mínimo de palabras",
         "kwt_word_limit_max": "Máximo de palabras",
         "word_formation_label": "Formación de palabras (cada hueco va seguido de su palabra base)",
-        "word_formation_help": "Escribe la palabra base en mayúsculas entre paréntesis justo tras el hueco, p. ej. her {{happiness}}(HAPPY). Los alumnos ven la palabra base junto a su respuesta y recibes formas derivadas sugeridas para cada hueco.",
-        "word_formation_missing_stem": "El hueco {{number}} no tiene (PALABRA BASE) detrás.",
+        "word_formation_help": "Estilo FCE/CAE parte 3: haga clic en un hueco e introduzca su palabra base. El alumnado ve la palabra base en mayúsculas junto a su respuesta, y recibe sugerencias de formas derivadas para cada hueco.",
+        "word_formation_missing_stem": "El hueco {{number}} aún no tiene palabra base: haga clic en el hueco para añadirla.",
         "derived_forms_button": "Sugerir formas de {{stem}}",
         "max_plays_label": "Límite de reproducciones (vacío = ilimitado)",
         "max_plays_placeholder": "p. ej. 2",
@@ -1393,7 +1393,8 @@
         "a4_intro_placeholder": "Instrucciones para el alumnado…",
         "a4_footer_label": "Pie de página",
         "a4_footer_placeholder": "Nota final, p. ej. «¡Mucha suerte!»",
-        "a4_preview_hint": "Vista previa en directo de la hoja del alumnado. Edite el encabezado, las instrucciones y el pie directamente en la página; las preguntas se editan a la izquierda. Los saltos de página son aproximados: use Imprimir para el resultado exacto."
+        "a4_preview_hint": "Vista previa en directo de la hoja del alumnado. Edite el encabezado, las instrucciones y el pie directamente en la página; las preguntas se editan a la izquierda. Los saltos de página son aproximados: use Imprimir para el resultado exacto.",
+        "cloze_gap_stem_label": "Palabra base en mayúsculas (formación de palabras):"
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",

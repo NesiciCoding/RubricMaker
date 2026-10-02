@@ -1172,8 +1172,8 @@
         "kwt_word_limit_min": "Mindestwörter",
         "kwt_word_limit_max": "Höchstwörter",
         "word_formation_label": "Wortbildung (auf jede Lücke folgt ihr Stammwort)",
-        "word_formation_help": "Schreibe das Stammwort in Großbuchstaben in Klammern direkt hinter die Lücke, z. B. her {{happiness}}(HAPPY). Schüler sehen das Stammwort neben ihrer Antwort und du erhältst vorgeschlagene abgeleitete Formen je Lücke.",
-        "word_formation_missing_stem": "Lücke {{number}} hat kein (STAMMWORT) dahinter.",
+        "word_formation_help": "FCE/CAE-Teil-3-Stil: Klicken Sie auf eine Lücke und geben Sie ihr Stammwort ein. Lernende sehen das Stammwort in Großbuchstaben neben ihrer Antwort, und Sie erhalten Vorschläge für abgeleitete Formen je Lücke.",
+        "word_formation_missing_stem": "Lücke {{number}} hat noch kein Stammwort – klicken Sie auf die Lücke, um eines hinzuzufügen.",
         "derived_forms_button": "Formen von {{stem}} vorschlagen",
         "max_plays_label": "Abspiellimit (leer = unbegrenzt)",
         "max_plays_placeholder": "z. B. 2",
@@ -1393,7 +1393,8 @@
         "a4_intro_placeholder": "Anweisungen für die Lernenden…",
         "a4_footer_label": "Fußzeile",
         "a4_footer_placeholder": "Schlussbemerkung, z. B. „Viel Erfolg!“",
-        "a4_preview_hint": "Live-Vorschau der Schülerfassung. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite; Fragen bearbeiten Sie links. Seitenumbrüche sind ungefähr – für das genaue Ergebnis nutzen Sie Drucken."
+        "a4_preview_hint": "Live-Vorschau der Schülerfassung. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite; Fragen bearbeiten Sie links. Seitenumbrüche sind ungefähr – für das genaue Ergebnis nutzen Sie Drucken.",
+        "cloze_gap_stem_label": "Stammwort in Großbuchstaben (Wortbildung):"
     },
     "studentsPage": {
         "title": "Schüler und Klassen",

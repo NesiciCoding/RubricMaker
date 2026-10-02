@@ -1172,8 +1172,8 @@
         "kwt_word_limit_min": "Minimum words",
         "kwt_word_limit_max": "Maximum words",
         "word_formation_label": "Word formation (each gap is followed by its stem word)",
-        "word_formation_help": "Write the stem in capitals in brackets right after the gap, e.g. her {{happiness}}(HAPPY). Students see the stem next to their answer, and you get suggested derived forms for each gap.",
-        "word_formation_missing_stem": "Gap {{number}} has no (STEM) after it.",
+        "word_formation_help": "FCE/CAE Part 3 style: click a gap and enter its stem word. Students see the stem in capitals next to their answer, and you get suggested derived forms for each gap.",
+        "word_formation_missing_stem": "Gap {{number}} has no stem word yet — click the gap to add one.",
         "derived_forms_button": "Suggest forms of {{stem}}",
         "max_plays_label": "Play limit (blank = unlimited)",
         "max_plays_placeholder": "e.g. 2",
@@ -1393,7 +1393,8 @@
         "a4_intro_placeholder": "Instructions for students…",
         "a4_footer_label": "Footer",
         "a4_footer_placeholder": "Closing remarks, e.g. \"Good luck!\"",
-        "a4_preview_hint": "Live preview of the student paper. Edit the header, instructions and footer directly on the page; questions are edited on the left. Page breaks are approximate — use Print for the exact result."
+        "a4_preview_hint": "Live preview of the student paper. Edit the header, instructions and footer directly on the page; questions are edited on the left. Page breaks are approximate — use Print for the exact result.",
+        "cloze_gap_stem_label": "Stem word shown in capitals (word formation):"
     },
     "studentsPage": {
         "title": "Students & Classes",

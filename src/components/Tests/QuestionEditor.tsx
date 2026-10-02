@@ -670,6 +670,7 @@ export default function QuestionEditor({
                             allowDropdown={question.type === 'cloze-dropdown'}
                             insertGapLabel={t('tests.cloze_insert_gap')}
                             insertDropdownGapLabel={t('tests.cloze_insert_dropdown_gap')}
+                            wordFormation={question.type === 'cloze' && !!question.wordFormation}
                         />
                     </>
                 ) : (

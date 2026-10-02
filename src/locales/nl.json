@@ -1172,8 +1172,8 @@
         "kwt_word_limit_min": "Minimum aantal woorden",
         "kwt_word_limit_max": "Maximum aantal woorden",
         "word_formation_label": "Woordvorming (elk gat wordt gevolgd door het stamwoord)",
-        "word_formation_help": "Zet het stamwoord in hoofdletters tussen haakjes direct na het gat, bv. her {{happiness}}(HAPPY). Leerlingen zien het stamwoord naast hun antwoord en jij krijgt voorgestelde afgeleide vormen per gat.",
-        "word_formation_missing_stem": "Gat {{number}} heeft geen (STAMWOORD) erachter.",
+        "word_formation_help": "FCE/CAE deel 3-stijl: klik op een gat en voer het stamwoord in. Leerlingen zien het stamwoord in hoofdletters naast hun antwoord en jij krijgt voorgestelde afgeleide vormen per gat.",
+        "word_formation_missing_stem": "Gat {{number}} heeft nog geen stamwoord — klik op het gat om er een toe te voegen.",
         "derived_forms_button": "Vormen van {{stem}} voorstellen",
         "max_plays_label": "Afspeellimiet (leeg = onbeperkt)",
         "max_plays_placeholder": "bv. 2",
@@ -1393,7 +1393,8 @@
         "a4_intro_placeholder": "Instructies voor leerlingen…",
         "a4_footer_label": "Voettekst",
         "a4_footer_placeholder": "Slotopmerking, bijv. 'Succes!'",
-        "a4_preview_hint": "Live voorbeeld van de leerlingenversie. Bewerk koptekst, instructies en voettekst direct op de pagina; vragen bewerk je links. Pagina-einden zijn bij benadering — gebruik Afdrukken voor het exacte resultaat."
+        "a4_preview_hint": "Live voorbeeld van de leerlingenversie. Bewerk koptekst, instructies en voettekst direct op de pagina; vragen bewerk je links. Pagina-einden zijn bij benadering — gebruik Afdrukken voor het exacte resultaat.",
+        "cloze_gap_stem_label": "Stamwoord in hoofdletters (woordvorming):"
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",
