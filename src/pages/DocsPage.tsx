@@ -897,6 +897,12 @@ function RubricsTab() {
                     <strong> {t('docs.rb_tests_hottext_body3')}</strong> {t('docs.rb_tests_hottext_body4')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>{t('docs.rb_tests_visual_editors_label')}</strong> {t('docs.rb_tests_visual_editors_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    <strong>{t('docs.rb_tests_a4_preview_label')}</strong> {t('docs.rb_tests_a4_preview_body')}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
                     {t('docs.rb_tests_due_date_body')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
