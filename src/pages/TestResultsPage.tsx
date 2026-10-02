@@ -248,8 +248,11 @@ function formatStudentResponse(
         );
     }
     if (question.type === 'dictation') {
-        const words = (question.dictationText ?? '').trim().split(/\s+/).filter(Boolean);
-        const { matched } = alignDictation(question, response);
+        const { matched, target } = alignDictation(question, response);
+        // Keep the teacher's own spelling and punctuation when each original word is one token;
+        // otherwise (contractions, hyphens, stray symbols) show the normalised words the scorer compared.
+        const original = (question.dictationText ?? '').trim().split(/\s+/).filter(Boolean);
+        const words = original.length === matched.length ? original : target;
         return (
             <>
                 <div>{response}</div>
@@ -260,12 +263,7 @@ function formatStudentResponse(
                                 key={i}
                                 style={{
                                     fontWeight: 600,
-                                    color:
-                                        words.length !== matched.length
-                                            ? 'var(--text-muted)'
-                                            : matched[i]
-                                              ? 'var(--green)'
-                                              : 'var(--red)',
+                                    color: matched[i] ? 'var(--green)' : 'var(--red)',
                                 }}
                             >
                                 {word}{' '}

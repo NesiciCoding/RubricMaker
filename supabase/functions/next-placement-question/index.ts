@@ -77,6 +77,9 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         categorizeItems,
         matrixRows,
         dictationText,
+        // Placement runs are never practice mode, so neither is revealed to the student.
+        transcript: _tr,
+        explanation: _ex,
         ...rest
     } = question;
     return {
@@ -105,7 +108,14 @@ interface BankItem {
     cefrSkill?: string;
     tags?: string[];
     question?: MinimalQuestion;
-    section?: { title: string; content?: string; audioUrl?: string; questions: MinimalQuestion[] };
+    section?: {
+        title: string;
+        content?: string;
+        audioUrl?: string;
+        spokenText?: string;
+        maxPlays?: number;
+        questions: MinimalQuestion[];
+    };
 }
 
 /** True when the item carries at least one of the config's tags (case-insensitive), or no tag filter is set. */
@@ -143,6 +153,8 @@ function passageFor(item: BankItem, sectionQuestionIndex: number) {
         title: item.section.title,
         content: item.section.content,
         audioUrl: item.section.audioUrl,
+        spokenText: item.section.spokenText,
+        maxPlays: item.section.maxPlays,
         questionIndex: sectionQuestionIndex,
         questionCount: item.section.questions.length,
     };

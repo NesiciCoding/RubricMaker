@@ -815,6 +815,8 @@ export default function StudentTestPage() {
               title: generatorPassage.title,
               content: generatorPassage.content,
               audioUrl: generatorPassage.audioUrl,
+              spokenText: generatorPassage.spokenText,
+              maxPlays: generatorPassage.maxPlays,
           }
         : question?.sectionId
           ? sections.find((s) => s.id === question.sectionId)
@@ -1989,6 +1991,7 @@ function AudioResponseAnswer({
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [prepRemaining, setPrepRemaining] = useState<number | null>(null);
     const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startingRef = useRef(false);
     const existing = parseAudioResponse(value);
 
     useEffect(() => {
@@ -2018,10 +2021,19 @@ function AudioResponseAnswer({
     }, [stop, onChange]);
 
     async function startRecording() {
+        // Synchronous guard: a double click or a skipped prep must not start a second recorder
+        // while the first request for the microphone is still pending.
+        if (startingRef.current) return;
+        startingRef.current = true;
         setMicError(false);
         elapsedRef.current = 0;
         setElapsedSec(0);
-        const ok = await start();
+        let ok: boolean;
+        try {
+            ok = await start();
+        } finally {
+            startingRef.current = false;
+        }
         if (!ok) {
             setMicError(true);
             return;
@@ -2047,6 +2059,7 @@ function AudioResponseAnswer({
     }
 
     function begin() {
+        if (startingRef.current || prepTimerRef.current || status === 'recording') return;
         if (!prepSeconds || prepSeconds <= 0) {
             void startRecording();
             return;

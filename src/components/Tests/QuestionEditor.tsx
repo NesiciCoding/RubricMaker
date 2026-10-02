@@ -38,6 +38,7 @@ import {
     plainQuestionPromptText,
     renderClozeSegments,
 } from '../../utils/clozeParse';
+import LineListTextarea from './LineListTextarea';
 import ListeningControlsFields from './ListeningControlsFields';
 import ClozeBankFields from './ClozeBankFields';
 import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
@@ -1029,14 +1030,10 @@ export default function QuestionEditor({
                     </div>
                     <div>
                         <label htmlFor={`cue-bullets-${question.id}`}>{t('tests.cue_bullets_label')}</label>
-                        <textarea
+                        <LineListTextarea
                             id={`cue-bullets-${question.id}`}
-                            rows={3}
-                            value={(question.cueBullets ?? []).join('\n')}
-                            onChange={(e) => {
-                                const bullets = e.target.value.split('\n').filter((line) => line.trim());
-                                update({ cueBullets: bullets.length ? bullets : undefined });
-                            }}
+                            value={question.cueBullets ?? []}
+                            onChange={(bullets) => update({ cueBullets: bullets.length ? bullets : undefined })}
                             placeholder={t('tests.cue_bullets_placeholder')}
                         />
                     </div>

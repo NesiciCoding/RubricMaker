@@ -364,7 +364,10 @@ export function matrixRowCorrectness(question: ScorableQuestion, response: strin
  * alignment, plus the edit distance. Case and punctuation never count; contractions, spelling
  * variants and minor slips follow the question's opt-in answerTolerance.
  */
-export function alignDictation(question: ScorableQuestion, response: string): { matched: boolean[]; distance: number } {
+export function alignDictation(
+    question: ScorableQuestion,
+    response: string
+): { matched: boolean[]; distance: number; target: string[] } {
     const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
     const target = answerTokens(question.dictationText ?? '', tol);
     const given = answerTokens(response, tol);
@@ -396,7 +399,7 @@ export function alignDictation(question: ScorableQuestion, response: string): { 
             j--;
         }
     }
-    return { matched, distance: d[n][m] };
+    return { matched, distance: d[n][m], target };
 }
 
 /** Auto-score a dictation question: 1 − (word edit distance ÷ target words), floored at 0; all-or-nothing when partialCredit is false. */

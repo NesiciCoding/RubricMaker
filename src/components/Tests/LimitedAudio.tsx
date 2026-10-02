@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTTS } from '../../hooks/useTTS';
@@ -25,6 +25,7 @@ export default function LimitedAudio({ src, spokenText, maxPlays, plays, onPlay,
     const { t } = useTranslation();
     const audioRef = useRef<HTMLAudioElement>(null);
     const [audioPlaying, setAudioPlaying] = useState(false);
+    const startingRef = useRef(false);
     const tts = useTTS({ lang });
     const limited = maxPlays !== undefined && maxPlays > 0;
 
@@ -40,14 +41,24 @@ export default function LimitedAudio({ src, spokenText, maxPlays, plays, onPlay,
     const exhausted = limited && plays >= maxPlays;
 
     function play() {
-        if (exhausted || busy) return;
-        if (limited) onPlay(plays + 1);
+        if (exhausted || busy || startingRef.current) return;
         if (src) {
             const el = audioRef.current;
             if (!el) return;
+            // A play only counts once the browser actually starts it, so a blocked or failed
+            // start doesn't burn one of the student's limited plays.
+            startingRef.current = true;
             el.currentTime = 0;
-            void el.play();
+            el.play()
+                .then(() => {
+                    if (limited) onPlay(plays + 1);
+                })
+                .catch(() => undefined)
+                .finally(() => {
+                    startingRef.current = false;
+                });
         } else {
+            if (limited) onPlay(plays + 1);
             tts.speak(spokenText!);
         }
     }
@@ -90,6 +101,14 @@ export function OptionAudioButton({
     label: string;
 }) {
     const tts = useTTS({ lang });
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    useEffect(
+        () => () => {
+            audioRef.current?.pause();
+            audioRef.current = null;
+        },
+        []
+    );
     if (!src && (!spokenText || tts.status === 'unsupported')) return null;
     return (
         <button
@@ -101,7 +120,11 @@ export function OptionAudioButton({
                 e.preventDefault();
                 e.stopPropagation();
                 if (src) {
-                    void new Audio(src).play();
+                    audioRef.current?.pause();
+                    const audio = audioRef.current ?? new Audio(src);
+                    audioRef.current = audio;
+                    audio.currentTime = 0;
+                    audio.play().catch(() => undefined);
                 } else {
                     tts.speak(spokenText!);
                 }

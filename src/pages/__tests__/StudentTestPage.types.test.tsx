@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { encodeTestAssignment } from '../../utils/shareCode';
@@ -423,7 +423,7 @@ describe('StudentTestPage — answer types', () => {
         );
         const play = screen.getByRole('button', { name: 'tests.taking.question_audio_alt' });
         fireEvent.click(play);
-        expect(play).toBeDisabled();
+        await waitFor(() => expect(play).toBeDisabled());
         expect(screen.getByRole('status')).toHaveTextContent('tests.taking.audio_no_plays_left');
         const decoded = await submitSingle();
         expect(decoded!.events?.filter((e) => e.type === 'audio_play')).toEqual([
