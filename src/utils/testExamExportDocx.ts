@@ -524,8 +524,18 @@ function questionCard(blocks: (Paragraph | Table)[]): Table {
     });
 }
 
+/** The teacher-written header/intro/footer (rich text); nothing when it is blank, so an untouched field leaves no empty paragraph. */
+async function printTextBlocks(html: string | undefined): Promise<(Paragraph | Table)[]> {
+    const hasContent = !!html && (html.replace(/<[^>]*>/g, '').trim() !== '' || /<img/i.test(html));
+    return hasContent ? richPassageToDocx(html, 120) : [];
+}
+
 async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('booklet_subtitle'), true)];
+    const children: (Paragraph | Table)[] = [
+        ...(await printTextBlocks(test.printHeader)),
+        ...coverParagraphs(test, tx('booklet_subtitle'), true),
+        ...(await printTextBlocks(test.printIntro)),
+    ];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
@@ -539,6 +549,7 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
             children.push(new Paragraph({ text: '', spacing: { after: 80 } }));
         }
     }
+    children.push(...(await printTextBlocks(test.printFooter)));
     return children;
 }
 

@@ -10,7 +10,7 @@ export interface ClozeGapOptions {
     saveLabel: string;
     /** Label for the popover's cancel button. */
     cancelLabel: string;
-    /** Label for the word-formation stem input, shown only while the editor's wordFormation storage flag is on. */
+    /** Label for the word-formation stem input. */
     stemLabel: string;
 }
 
@@ -20,9 +20,6 @@ function cleanStem(stem: string): string {
 }
 
 declare module '@tiptap/core' {
-    interface Storage {
-        clozeGap: { wordFormation: boolean };
-    }
     interface Commands<ReturnType> {
         clozeGap: {
             insertClozeGap: (alternatives: string[]) => ReturnType;
@@ -50,10 +47,6 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             cancelLabel: 'Cancel',
             stemLabel: 'Stem word (word formation):',
         };
-    },
-
-    addStorage() {
-        return { wordFormation: false };
     },
 
     addAttributes() {
@@ -93,7 +86,6 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
 
     addNodeView() {
         const { editLabel, saveLabel, cancelLabel, stemLabel } = this.options;
-        const storage = this.storage;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.className = 'cloze-gap-pill';
@@ -186,7 +178,8 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     actions.append(cancelBtn, saveBtn);
 
                     popover.append(label, input);
-                    if (storage.wordFormation) {
+                    // Read at click time from the editor's DOM so toggling word formation needs no editor rebuild.
+                    if (editor.view.dom.getAttribute('data-word-formation') === 'true') {
                         const stemText = document.createElement('div');
                         stemText.className = 'cloze-gap-popover-label';
                         stemText.textContent = stemLabel;

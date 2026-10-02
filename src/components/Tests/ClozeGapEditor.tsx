@@ -71,7 +71,9 @@ export default function ClozeGapEditor({
         extensions,
         content: promptToClozeContent(value, wordFormation),
         onUpdate: ({ editor }) => onChange(clozeContentToPrompt(editor)),
-        editorProps: { attributes: { class: 'cloze-gap-editor-content' } },
+        editorProps: {
+            attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+        },
     });
 
     // Keep the editor in sync when the prompt changes from outside (e.g. switching question type),
@@ -79,7 +81,11 @@ export default function ClozeGapEditor({
     useEffect(() => {
         /* v8 ignore next -- useEditor initializes synchronously in this environment */
         if (!editor) return;
-        editor.storage.clozeGap.wordFormation = wordFormation;
+        editor.setOptions({
+            editorProps: {
+                attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+            },
+        });
         const modeChanged = appliedMode.current !== wordFormation;
         appliedMode.current = wordFormation;
         if (!modeChanged && clozeContentToPrompt(editor) === value) return;
