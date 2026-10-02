@@ -16,6 +16,7 @@ describe('SentenceBuilderFields', () => {
     it('lets the teacher type a second sentence on a new line', () => {
         const update = vi.fn();
         render(<SentenceBuilderFields question={{ ...base, sentenceTargets: ['I go home'] }} update={update} />);
+        fireEvent.click(screen.getByRole('button', { name: 'tests.edit_as_text' }));
         const box = screen.getByRole('textbox') as HTMLTextAreaElement;
         fireEvent.change(box, { target: { value: 'I go home\n' } });
         expect(box.value).toBe('I go home\n');
@@ -31,5 +32,17 @@ describe('SentenceBuilderFields', () => {
             />
         );
         expect(screen.getByRole('alert')).toHaveTextContent('"lines":"3"');
+    });
+
+    it('edits the target sentence and alternatives as cards, and previews the tiles', () => {
+        const update = vi.fn();
+        render(<SentenceBuilderFields question={{ ...base, sentenceTargets: ['I go home'] }} update={update} />);
+        expect(screen.getByLabelText('tests.builder_tiles_label')).toHaveTextContent('Igohome');
+        fireEvent.click(screen.getByRole('button', { name: /tests.builder_add_alternative/ }));
+        const alt = screen.getByLabelText(/tests.builder_alternative/);
+        fireEvent.change(alt, { target: { value: 'Home I go' } });
+        expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I go home', 'Home I go'] });
+        fireEvent.click(screen.getByRole('button', { name: /tests.builder_remove_alternative/ }));
+        expect(update).toHaveBeenLastCalledWith({ sentenceTargets: ['I go home'] });
     });
 });

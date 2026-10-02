@@ -253,6 +253,7 @@ describe('QuestionEditor extended', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'key-word-transformation' }));
             fireEvent.change(screen.getByLabelText(/tests\.kwt_key_word_label/), { target: { value: 'for' } });
             expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ keyWord: 'for' }));
+            fireEvent.click(screen.getByRole('button', { name: 'tests.edit_as_text' }));
             fireEvent.change(screen.getByLabelText('tests.kwt_answers_label'), {
                 target: { value: 'have worked // for years | have been // for years' },
             });
@@ -267,6 +268,7 @@ describe('QuestionEditor extended', () => {
             );
             fireEvent.change(screen.getByLabelText('tests.kwt_word_limit_min'), { target: { value: '7' } });
             expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ answerWordLimit: { min: 7, max: 7 } }));
+            fireEvent.click(screen.getByRole('button', { name: 'tests.edit_as_text' }));
             const answers = screen.getByLabelText('tests.kwt_answers_label') as HTMLInputElement;
             fireEvent.change(answers, { target: { value: 'a // b | ' } });
             expect(answers.value).toBe('a // b | ');
