@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 /** Filesystem-safe filename fragment — collapses anything but letters/digits into underscores. */
 export function sanitizeFilename(name: string): string {
     return name.replace(/[^a-z0-9]/gi, '_');
@@ -114,4 +116,11 @@ export const stripCommentHtml = stripHtmlTags;
 /** Escape untrusted text for safe interpolation into export HTML (e.g. student free-text answers). */
 export function escapeHtml(text: string): string {
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Whether rich-text HTML shows anything (text or an image), judged on sanitised output so tag-stripping tricks can't hide content. */
+export function hasRichContent(html: string | undefined): boolean {
+    if (!html) return false;
+    const text = DOMPurify.sanitize(html, { ALLOWED_TAGS: [], KEEP_CONTENT: true });
+    return text.trim() !== '' || /<img/i.test(html);
 }

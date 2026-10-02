@@ -19,7 +19,7 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Student, Test, TestQuestion } from '../types';
 import { buildDocxStyles } from './docxExport';
-import { promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { htmlToDocxChildren, htmlToDocxLead, type DocxImageMap } from './essayExport';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
@@ -526,8 +526,7 @@ function questionCard(blocks: (Paragraph | Table)[]): Table {
 
 /** The teacher-written header/intro/footer (rich text); nothing when it is blank, so an untouched field leaves no empty paragraph. */
 async function printTextBlocks(html: string | undefined): Promise<(Paragraph | Table)[]> {
-    const hasContent = !!html && (html.replace(/<[^>]*>/g, '').trim() !== '' || /<img/i.test(html));
-    return hasContent ? richPassageToDocx(html, 120) : [];
+    return html && hasRichContent(html) ? richPassageToDocx(html, 120) : [];
 }
 
 async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {

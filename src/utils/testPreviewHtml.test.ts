@@ -79,3 +79,14 @@ describe('test A4 preview html', () => {
         expect(html).toContain('Good luck');
     });
 });
+
+describe('hasRichContent', () => {
+    it('is false for blank markup and true for text or images, even with split script tags', async () => {
+        const { hasRichContent } = await import('./exportDataPrep');
+        expect(hasRichContent(undefined)).toBe(false);
+        expect(hasRichContent('<p> </p>')).toBe(false);
+        expect(hasRichContent('<scr<script>ipt>x</scr</script>ipt>')).toBe(true);
+        expect(hasRichContent('<p><img src="a.png"></p>')).toBe(true);
+        expect(hasRichContent('<p>Hi</p>')).toBe(true);
+    });
+});

@@ -39,9 +39,11 @@ function useFitScale(ref: React.RefObject<HTMLElement | null>): number {
     const [scale, setScale] = useState(1);
     useEffect(() => {
         const el = ref.current;
+        const Observer = (globalThis as { ResizeObserver?: new (callback: () => void) => ResizeObserver })
+            .ResizeObserver;
         /* v8 ignore next -- ResizeObserver is missing in the jsdom test environment */
-        if (!el || typeof ResizeObserver === 'undefined') return;
-        const observer = new ResizeObserver(() => {
+        if (!el || !Observer) return;
+        const observer = new Observer(() => {
             setScale(Math.min(1, Math.max(0.3, (el.clientWidth - 24) / PAGE_WIDTH_PX)));
         });
         observer.observe(el);

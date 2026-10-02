@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import QRCode from 'qrcode';
 import type { Student, Test, TestQuestion } from '../types';
 import { PRINT_MARGIN_MM, printHtml, withoutBrowserPrintChrome } from './pdfExport';
-import { escapeHtml, promptToHtml, sanitizeFilename } from './exportDataPrep';
+import { escapeHtml, hasRichContent, promptToHtml, sanitizeFilename } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { calcTestMaxPoints } from './testCalc';
 import {
@@ -271,8 +271,7 @@ const PREVIEW_EXAM_OPTIONS: TestExamExportOptions = { ...DEFAULT_EXAM_EXPORT_OPT
 
 function richBlockHtml(html: string | undefined): string {
     const clean = html ? DOMPurify.sanitize(html) : '';
-    const hasContent = clean.replace(/<[^>]*>/g, '').trim() !== '' || /<img/i.test(clean);
-    return hasContent ? `${RICH_CONTENT_CSS}<div class="exam-rich">${clean}</div>` : '';
+    return hasRichContent(clean) ? `${RICH_CONTENT_CSS}<div class="exam-rich">${clean}</div>` : '';
 }
 
 /** The generated parts of the student paper: the title banner with name/class/date box, and the question cards. */
