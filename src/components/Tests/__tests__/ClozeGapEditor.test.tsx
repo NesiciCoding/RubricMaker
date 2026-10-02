@@ -99,4 +99,46 @@ describe('ClozeGapEditor', () => {
             expect(document.querySelector('.cloze-gap-editor-content')?.textContent).toContain('Replaced');
         });
     });
+
+    it('offers a stem field in the gap popover only for word formation, and writes it as (STEM)', async () => {
+        const onChange = vi.fn();
+        render(
+            <ClozeGapEditor
+                value="Her {{happiness}}(HAPPY) showed."
+                onChange={onChange}
+                allowDropdown={false}
+                insertGapLabel="+ gap"
+                insertDropdownGapLabel="+ dropdown"
+                wordFormation
+            />
+        );
+        const pill = await waitFor(() => {
+            const el = document.querySelector('.cloze-gap-pill');
+            expect(el).toHaveTextContent('happiness(HAPPY)');
+            return el as HTMLElement;
+        });
+        fireEvent.click(pill);
+        const inputs = document.querySelectorAll<HTMLInputElement>('.cloze-gap-popover-input');
+        expect(inputs).toHaveLength(2);
+        expect(inputs[1].value).toBe('HAPPY');
+        fireEvent.change(inputs[1], { target: { value: 'JOY(' } });
+        fireEvent.click(document.querySelector('.cloze-gap-popover-save') as HTMLElement);
+        expect(onChange).toHaveBeenLastCalledWith('Her {{happiness}}(JOY) showed.');
+    });
+
+    it('does not turn a parenthesis after a gap into a stem when word formation is off', async () => {
+        render(
+            <ClozeGapEditor
+                value="Her {{a}}(b) showed."
+                onChange={vi.fn()}
+                allowDropdown={false}
+                insertGapLabel="+ gap"
+                insertDropdownGapLabel="+ dropdown"
+            />
+        );
+        const pill = await waitFor(() => document.querySelector('.cloze-gap-pill') as HTMLElement);
+        expect(pill).toHaveTextContent(/^a$/);
+        fireEvent.click(pill);
+        expect(document.querySelectorAll('.cloze-gap-popover-input')).toHaveLength(1);
+    });
 });

@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { parseErrorPassage } from '../../../supabase/functions/_shared/testScoring';
 import type { TestQuestion } from '../../types';
 import AnswerToleranceFields from './AnswerToleranceFields';
+import ErrorPassageEditor from './ErrorPassageEditor';
 import HelpPopover from './HelpPopover';
+import RawTextToggle from './RawTextToggle';
 
 interface Props {
     question: TestQuestion;
@@ -17,18 +19,29 @@ export default function ErrorCorrectionFields({ question, update, partialCreditT
     const id = question.id;
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label htmlFor={`error-passage-${id}`}>
+            <span>
                 {t('tests.error_passage_label')}{' '}
                 <HelpPopover title={t('tests.help.error_correction_teacher_title')}>
                     {t('tests.help.error_correction_teacher_body')}
                 </HelpPopover>
-            </label>
-            <textarea
-                id={`error-passage-${id}`}
-                rows={4}
-                value={question.errorPassage ?? ''}
-                onChange={(e) => update({ errorPassage: e.target.value })}
-                placeholder={t('tests.error_passage_placeholder')}
+            </span>
+            <RawTextToggle
+                visual={
+                    <ErrorPassageEditor
+                        passage={question.errorPassage ?? ''}
+                        onChange={(errorPassage) => update({ errorPassage })}
+                    />
+                }
+                raw={
+                    <textarea
+                        id={`error-passage-${id}`}
+                        aria-label={t('tests.error_passage_label')}
+                        rows={4}
+                        value={question.errorPassage ?? ''}
+                        onChange={(e) => update({ errorPassage: e.target.value })}
+                        placeholder={t('tests.error_passage_placeholder')}
+                    />
+                }
             />
             <p className="text-muted text-xs" style={{ margin: 0 }}>
                 {t('tests.error_passage_summary', { fragments: fragments.length, errors })}

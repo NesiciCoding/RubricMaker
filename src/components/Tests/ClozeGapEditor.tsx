@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -35,6 +35,7 @@ interface Props {
     allowDropdown: boolean;
     insertGapLabel: string;
     insertDropdownGapLabel: string;
+    wordFormation?: boolean;
 }
 
 /**
@@ -49,6 +50,7 @@ export default function ClozeGapEditor({
     allowDropdown,
     insertGapLabel,
     insertDropdownGapLabel,
+    wordFormation = false,
 }: Props) {
     const { t } = useTranslation();
     const extensions = useMemo(
@@ -58,25 +60,37 @@ export default function ClozeGapEditor({
                 editLabel: t('tests.cloze_gap_alternatives_label'),
                 saveLabel: t('tests.cloze_gap_save'),
                 cancelLabel: t('tests.cloze_gap_cancel'),
+                stemLabel: t('tests.cloze_gap_stem_label'),
             }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
+    const appliedMode = useRef(wordFormation);
     const editor = useEditor({
         extensions,
-        content: promptToClozeContent(value),
+        content: promptToClozeContent(value, wordFormation),
         onUpdate: ({ editor }) => onChange(clozeContentToPrompt(editor)),
-        editorProps: { attributes: { class: 'cloze-gap-editor-content' } },
+        editorProps: {
+            attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+        },
     });
 
-    // Keep the editor in sync when the prompt changes from outside (e.g. switching question type).
+    // Keep the editor in sync when the prompt changes from outside (e.g. switching question type),
+    // and re-read the stored text when word formation is toggled, since that changes how a "(STEM)" after a gap is parsed.
     useEffect(() => {
         /* v8 ignore next -- useEditor initializes synchronously in this environment */
         if (!editor) return;
-        if (clozeContentToPrompt(editor) === value) return;
-        editor.commands.setContent(promptToClozeContent(value));
-    }, [editor, value]);
+        editor.setOptions({
+            editorProps: {
+                attributes: { class: 'cloze-gap-editor-content', 'data-word-formation': String(wordFormation) },
+            },
+        });
+        const modeChanged = appliedMode.current !== wordFormation;
+        appliedMode.current = wordFormation;
+        if (!modeChanged && clozeContentToPrompt(editor) === value) return;
+        editor.commands.setContent(promptToClozeContent(value, wordFormation));
+    }, [editor, value, wordFormation]);
 
     /* v8 ignore next -- useEditor initializes synchronously in this environment */
     if (!editor) return null;
@@ -132,6 +146,7 @@ export default function ClozeGapEditor({
                     cursor: pointer;
                     user-select: none;
                 }
+                .cloze-gap-stem { font-weight: 500; font-size: 0.8em; opacity: 0.8; margin-left: 4px; }
                 .cloze-gap-pill sup { font-size: 0.7em; opacity: 0.75; margin-left: 1px; }
                 .cloze-gap-popover {
                     position: fixed;

@@ -10,6 +10,13 @@ export interface ClozeGapOptions {
     saveLabel: string;
     /** Label for the popover's cancel button. */
     cancelLabel: string;
+    /** Label for the word-formation stem input. */
+    stemLabel: string;
+}
+
+// Parentheses delimit the stem in the stored `{{answer}}(STEM)` form (see gapStems), so one inside it would end the stem early.
+function cleanStem(stem: string): string {
+    return stem.replace(/[()]/g, '').trim();
 }
 
 declare module '@tiptap/core' {
@@ -38,6 +45,7 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             editLabel: 'Alternatives (pipe-separated), first = correct answer:',
             saveLabel: 'Save',
             cancelLabel: 'Cancel',
+            stemLabel: 'Stem word (word formation):',
         };
     },
 
@@ -49,6 +57,12 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                 renderHTML: (attrs: Record<string, unknown>) => ({
                     'data-alternatives': (attrs.alternatives as string[]).join('|'),
                 }),
+            },
+            stem: {
+                default: null as string | null,
+                parseHTML: (el: HTMLElement) => el.getAttribute('data-stem') || null,
+                renderHTML: (attrs: Record<string, unknown>) =>
+                    attrs.stem ? { 'data-stem': attrs.stem as string } : {},
             },
         };
     },
@@ -66,12 +80,12 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
             insertClozeGap:
                 (alternatives: string[]) =>
                 ({ commands }) =>
-                    commands.insertContent({ type: this.name, attrs: { alternatives } }),
+                    commands.insertContent({ type: this.name, attrs: { alternatives, stem: null } }),
         };
     },
 
     addNodeView() {
-        const { editLabel, saveLabel, cancelLabel } = this.options;
+        const { editLabel, saveLabel, cancelLabel, stemLabel } = this.options;
         return ({ node, editor, getPos }) => {
             const pill = document.createElement('span');
             pill.className = 'cloze-gap-pill';
@@ -85,13 +99,20 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     badge.textContent = `+${alternatives.length - 1}`;
                     pill.appendChild(badge);
                 }
+                const stem = node.attrs.stem as string | null;
+                if (stem) {
+                    const hint = document.createElement('span');
+                    hint.className = 'cloze-gap-stem';
+                    hint.textContent = `(${stem})`;
+                    pill.appendChild(hint);
+                }
                 pill.title = alternatives.join(' | ');
             };
             render();
 
             let closePopover: (() => void) | null = null;
 
-            function save(input: HTMLInputElement) {
+            function save(input: HTMLInputElement, stemInput?: HTMLInputElement) {
                 const alternatives = input.value
                     .split('|')
                     .map((alt) => alt.trim())
@@ -111,7 +132,10 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     .chain()
                     .focus()
                     .command(({ tr }) => {
-                        tr.setNodeMarkup(pos, undefined, { alternatives });
+                        tr.setNodeMarkup(pos, undefined, {
+                            alternatives,
+                            stem: stemInput ? cleanStem(stemInput.value) || null : (node.attrs.stem as string | null),
+                        });
                         return true;
                     })
                     .run();
@@ -129,10 +153,11 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     input.type = 'text';
                     input.className = 'cloze-gap-popover-input';
                     input.value = (node.attrs.alternatives as string[]).join('|');
+                    let stemInput: HTMLInputElement | undefined;
                     input.addEventListener('keydown', (ke) => {
                         if (ke.key === 'Enter') {
                             ke.preventDefault();
-                            save(input);
+                            save(input, stemInput);
                         } else if (ke.key === 'Escape') {
                             ke.preventDefault();
                             close();
@@ -149,10 +174,31 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
                     saveBtn.type = 'button';
                     saveBtn.className = 'cloze-gap-popover-save';
                     saveBtn.textContent = saveLabel;
-                    saveBtn.addEventListener('click', () => save(input));
+                    saveBtn.addEventListener('click', () => save(input, stemInput));
                     actions.append(cancelBtn, saveBtn);
 
-                    popover.append(label, input, actions);
+                    popover.append(label, input);
+                    // Read at click time from the editor's DOM so toggling word formation needs no editor rebuild.
+                    if (editor.view.dom.getAttribute('data-word-formation') === 'true') {
+                        const stemText = document.createElement('div');
+                        stemText.className = 'cloze-gap-popover-label';
+                        stemText.textContent = stemLabel;
+                        stemInput = document.createElement('input');
+                        stemInput.type = 'text';
+                        stemInput.className = 'cloze-gap-popover-input';
+                        stemInput.value = (node.attrs.stem as string | null) ?? '';
+                        stemInput.addEventListener('keydown', (ke) => {
+                            if (ke.key === 'Enter') {
+                                ke.preventDefault();
+                                save(input, stemInput);
+                            } else if (ke.key === 'Escape') {
+                                ke.preventDefault();
+                                close();
+                            }
+                        });
+                        popover.append(stemText, stemInput);
+                    }
+                    popover.append(actions);
                     input.focus();
                     input.select();
                 });
@@ -174,18 +220,29 @@ export const ClozeGap = Node.create<ClozeGapOptions>({
     },
 });
 
-/** Builds TipTap JSON content for a single-paragraph doc from an existing {{gap|alt}} prompt string. */
-export function promptToClozeContent(prompt: string): JSONContent {
+/** Builds TipTap JSON content for a single-paragraph doc from an existing {{gap|alt}} prompt string; with `wordFormation`, a `(STEM)` right after a gap becomes that gap's stem. */
+export function promptToClozeContent(prompt: string, wordFormation = false): JSONContent {
     const segments = renderClozeSegments(prompt);
-    const content: JSONContent[] = segments.map((segment) =>
-        segment.type === 'gap'
-            ? { type: 'clozeGap', attrs: { alternatives: segment.gap.alternatives } }
-            : { type: 'text', text: segment.text }
-    );
+    const content: JSONContent[] = [];
+    segments.forEach((segment, i) => {
+        if (segment.type === 'gap') {
+            const next = segments[i + 1];
+            const match = wordFormation && next?.type === 'text' ? /^\(([^()]+)\)/.exec(next.text) : null;
+            content.push({
+                type: 'clozeGap',
+                attrs: { alternatives: segment.gap.alternatives, ...(match && { stem: match[1].trim() }) },
+            });
+            return;
+        }
+        const prev = segments[i - 1];
+        const consumed = wordFormation && prev?.type === 'gap' ? /^\(([^()]+)\)/.exec(segment.text) : null;
+        const text = consumed ? segment.text.slice(consumed[0].length) : segment.text;
+        if (text) content.push({ type: 'text', text });
+    });
     return { type: 'doc', content: [{ type: 'paragraph', content: content.length > 0 ? content : undefined }] };
 }
 
-/** Reconstructs the flat {{gap|alt}} prompt string from the editor's current document. */
+/** Reconstructs the flat {{gap|alt}} prompt string (with `(STEM)` after a gap that has one) from the editor's current document. */
 export function clozeContentToPrompt(editor: Editor): string {
     let result = '';
     editor.state.doc.descendants((node) => {
@@ -193,7 +250,8 @@ export function clozeContentToPrompt(editor: Editor): string {
             /* v8 ignore next -- provably dead: tiptap text nodes always carry text */
             result += node.text ?? '';
         } else if (node.type.name === 'clozeGap') {
-            result += `{{${(node.attrs.alternatives as string[]).join('|')}}}`;
+            const stem = node.attrs.stem as string | null;
+            result += `{{${(node.attrs.alternatives as string[]).join('|')}}}${stem ? `(${stem})` : ''}`;
         } else if (node.type.name === 'paragraph' && result.length > 0) {
             result += '\n';
         }
