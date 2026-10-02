@@ -896,7 +896,8 @@
                 "export_grading_key_pdf": "Correctievoorschrift (PDF)",
                 "export_grading_key_docx": "Correctievoorschrift (Word)",
                 "cover_class_label": "Klas",
-                "cover_date_label": "Datum"
+                "cover_date_label": "Datum",
+                "answer_key_label": "Antwoord"
             }
         },
         "taking": {
@@ -1378,7 +1379,21 @@
         "error_fragment_corrections_label": "Geaccepteerde verbeteringen",
         "error_fragment_add_correction": "+ Verbetering toevoegen",
         "error_fragment_remove_correction": "Verbetering verwijderen",
-        "error_missing_corrections": "{{count}} foutfragment(en) hebben nog een geaccepteerde verbetering nodig — klik op het gestippelde fragment om er een toe te voegen."
+        "error_missing_corrections": "{{count}} foutfragment(en) hebben nog een geaccepteerde verbetering nodig — klik op het gestippelde fragment om er een toe te voegen.",
+        "a4_preview_toggle": "A4-voorbeeld",
+        "a4_preview_title": "Afgedrukte toets (A4)",
+        "a4_answer_key": "Antwoordmodel",
+        "a4_show_points": "Punten",
+        "a4_zoom_in": "Inzoomen",
+        "a4_zoom_out": "Uitzoomen",
+        "a4_print": "Afdrukken",
+        "a4_header_label": "Koptekst",
+        "a4_header_placeholder": "Schoolnaam, vak, klas…",
+        "a4_intro_label": "Instructies",
+        "a4_intro_placeholder": "Instructies voor leerlingen…",
+        "a4_footer_label": "Voettekst",
+        "a4_footer_placeholder": "Slotopmerking, bijv. 'Succes!'",
+        "a4_preview_hint": "Live voorbeeld van de leerlingenversie. Bewerk koptekst, instructies en voettekst direct op de pagina; vragen bewerk je links. Pagina-einden zijn bij benadering — gebruik Afdrukken voor het exacte resultaat."
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",

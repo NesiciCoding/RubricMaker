@@ -896,7 +896,8 @@
                 "export_grading_key_pdf": "Hoja de calificación (PDF)",
                 "export_grading_key_docx": "Hoja de calificación (Word)",
                 "cover_class_label": "Clase",
-                "cover_date_label": "Fecha"
+                "cover_date_label": "Fecha",
+                "answer_key_label": "Respuesta"
             }
         },
         "taking": {
@@ -1378,7 +1379,21 @@
         "error_fragment_corrections_label": "Correcciones aceptadas",
         "error_fragment_add_correction": "+ Añadir corrección",
         "error_fragment_remove_correction": "Quitar corrección",
-        "error_missing_corrections": "{{count}} fragmento(s) de error aún necesitan una corrección aceptada: haga clic en el fragmento punteado para añadirla."
+        "error_missing_corrections": "{{count}} fragmento(s) de error aún necesitan una corrección aceptada: haga clic en el fragmento punteado para añadirla.",
+        "a4_preview_toggle": "Vista previa A4",
+        "a4_preview_title": "Prueba impresa (A4)",
+        "a4_answer_key": "Clave de respuestas",
+        "a4_show_points": "Puntos",
+        "a4_zoom_in": "Acercar",
+        "a4_zoom_out": "Alejar",
+        "a4_print": "Imprimir",
+        "a4_header_label": "Encabezado",
+        "a4_header_placeholder": "Nombre del centro, asignatura, clase…",
+        "a4_intro_label": "Instrucciones",
+        "a4_intro_placeholder": "Instrucciones para el alumnado…",
+        "a4_footer_label": "Pie de página",
+        "a4_footer_placeholder": "Nota final, p. ej. «¡Mucha suerte!»",
+        "a4_preview_hint": "Vista previa en directo de la hoja del alumnado. Edite el encabezado, las instrucciones y el pie directamente en la página; las preguntas se editan a la izquierda. Los saltos de página son aproximados: use Imprimir para el resultado exacto."
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",

@@ -1313,6 +1313,12 @@ export interface Test {
     createdAt: string;
     /** ISO-8601 deadline shown to teachers and defaulted into new assignment share links; not enforced on its own. */
     dueDate?: string;
+    /** Rich-text (HTML) letterhead printed above the title on the exam booklet and A4 preview, e.g. school name and logo line */
+    printHeader?: string;
+    /** Rich-text (HTML) instructions printed under the name box, before the first question */
+    printIntro?: string;
+    /** Rich-text (HTML) footer printed after the last question */
+    printFooter?: string;
     /** ISO timestamp of the last local edit; used for last-write-wins sync conflict resolution */
     updatedAt?: string;
     /** Manual sort position in list views (TestListPage, Activity Dashboard); undefined sorts last by createdAt */

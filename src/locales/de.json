@@ -896,7 +896,8 @@
                 "export_grading_key_pdf": "Korrekturschema (PDF)",
                 "export_grading_key_docx": "Korrekturschema (Word)",
                 "cover_class_label": "Klasse",
-                "cover_date_label": "Datum"
+                "cover_date_label": "Datum",
+                "answer_key_label": "Antwort"
             }
         },
         "taking": {
@@ -1378,7 +1379,21 @@
         "error_fragment_corrections_label": "Akzeptierte Korrekturen",
         "error_fragment_add_correction": "+ Korrektur hinzufügen",
         "error_fragment_remove_correction": "Korrektur entfernen",
-        "error_missing_corrections": "{{count}} Fehlerfragment(e) benötigen noch eine akzeptierte Korrektur – klicken Sie auf das gestrichelte Fragment, um eine hinzuzufügen."
+        "error_missing_corrections": "{{count}} Fehlerfragment(e) benötigen noch eine akzeptierte Korrektur – klicken Sie auf das gestrichelte Fragment, um eine hinzuzufügen.",
+        "a4_preview_toggle": "A4-Vorschau",
+        "a4_preview_title": "Gedruckter Test (A4)",
+        "a4_answer_key": "Lösungsschlüssel",
+        "a4_show_points": "Punkte",
+        "a4_zoom_in": "Vergrößern",
+        "a4_zoom_out": "Verkleinern",
+        "a4_print": "Drucken",
+        "a4_header_label": "Kopfzeile",
+        "a4_header_placeholder": "Schulname, Fach, Klasse…",
+        "a4_intro_label": "Anweisungen",
+        "a4_intro_placeholder": "Anweisungen für die Lernenden…",
+        "a4_footer_label": "Fußzeile",
+        "a4_footer_placeholder": "Schlussbemerkung, z. B. „Viel Erfolg!“",
+        "a4_preview_hint": "Live-Vorschau der Schülerfassung. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite; Fragen bearbeiten Sie links. Seitenumbrüche sind ungefähr – für das genaue Ergebnis nutzen Sie Drucken."
     },
     "studentsPage": {
         "title": "Schüler und Klassen",

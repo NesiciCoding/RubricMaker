@@ -73,6 +73,12 @@ const mockUseApp = {
     addSectionBankItem: noop,
 };
 
+vi.mock('../../components/Tests/TestA4Preview', () => ({
+    default: ({ test }: { test: RmTest }) => (
+        <div data-testid="a4-printHeader" dangerouslySetInnerHTML={{ __html: test.printHeader ?? '' }} />
+    ),
+}));
+
 vi.mock('../../context/AppContext', () => ({
     useRoster: () => mockUseApp,
     useStudents: () => mockUseApp,
@@ -269,5 +275,19 @@ describe('TestBuilderPage', () => {
         const payload = mockUpdateTest.mock.calls[0][0];
         expect(payload.id).toBe('t1');
         expect(payload.name).toBe('Existing Test');
+    });
+
+    it('toggles the A4 preview pane and saves its header text with the test', async () => {
+        mockTests = [{ ...mockExistingTest, printHeader: '<p>Springfield</p>' }];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        renderBuilder(TestBuilderPage, '/tests/t1');
+
+        expect(screen.queryByTestId('a4-pane')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /tests.a4_preview_toggle/ }));
+        expect(screen.getByTestId('a4-pane')).toBeInTheDocument();
+        expect(screen.getByTestId('a4-printHeader')).toHaveTextContent('Springfield');
+
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateTest.mock.calls.at(-1)![0].printHeader).toBe('<p>Springfield</p>');
     });
 });

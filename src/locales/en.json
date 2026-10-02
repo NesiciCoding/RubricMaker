@@ -896,7 +896,8 @@
                 "export_grading_key_pdf": "Grading key (PDF)",
                 "export_grading_key_docx": "Grading key (Word)",
                 "cover_class_label": "Class",
-                "cover_date_label": "Date"
+                "cover_date_label": "Date",
+                "answer_key_label": "Answer"
             }
         },
         "taking": {
@@ -1378,7 +1379,21 @@
         "error_fragment_corrections_label": "Accepted corrections",
         "error_fragment_add_correction": "+ Add correction",
         "error_fragment_remove_correction": "Remove correction",
-        "error_missing_corrections": "{{count}} error fragment(s) still need an accepted correction — click the dashed fragment to add one."
+        "error_missing_corrections": "{{count}} error fragment(s) still need an accepted correction — click the dashed fragment to add one.",
+        "a4_preview_toggle": "A4 preview",
+        "a4_preview_title": "Printed test (A4)",
+        "a4_answer_key": "Answer key",
+        "a4_show_points": "Points",
+        "a4_zoom_in": "Zoom in",
+        "a4_zoom_out": "Zoom out",
+        "a4_print": "Print",
+        "a4_header_label": "Header",
+        "a4_header_placeholder": "School name, subject, class…",
+        "a4_intro_label": "Instructions",
+        "a4_intro_placeholder": "Instructions for students…",
+        "a4_footer_label": "Footer",
+        "a4_footer_placeholder": "Closing remarks, e.g. \"Good luck!\"",
+        "a4_preview_hint": "Live preview of the student paper. Edit the header, instructions and footer directly on the page; questions are edited on the left. Page breaks are approximate — use Print for the exact result."
     },
     "studentsPage": {
         "title": "Students & Classes",

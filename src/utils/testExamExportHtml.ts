@@ -20,6 +20,7 @@ import {
     builderBookletTiles,
     errorBookletParts,
     clozeBookletParts,
+    DEFAULT_EXAM_EXPORT_OPTIONS,
     EXAM_PAGE_MM,
     fiducialMarkers,
     groupQuestionsBySection,
@@ -80,7 +81,17 @@ function richPromptHtml(question: TestQuestion): string {
     return `${RICH_CONTENT_CSS}<div class="exam-rich">${DOMPurify.sanitize(promptToHtml(plainQuestionPromptText(question)))}</div>`;
 }
 
-function questionBodyHtml(question: TestQuestion, number: number, options: TestExamExportOptions): string {
+interface QuestionBodyFlags {
+    answerKey?: boolean;
+    hidePoints?: boolean;
+}
+
+function questionBodyHtml(
+    question: TestQuestion,
+    number: number,
+    options: TestExamExportOptions,
+    flags: QuestionBodyFlags = {}
+): string {
     const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
         ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
@@ -183,9 +194,14 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
             break;
     }
 
+    const key = flags.answerKey ? answerKeyText(question) : '';
+    if (key) {
+        extra += `<div style="margin-top:6px;padding:4px 8px;background:#dcfce7;border-left:3px solid #16a34a;font-size:12px;color:#14532d"><strong>${tx('answer_key_label')}:</strong> ${escapeHtml(key)}</div>`;
+    }
+
     return `<div style="margin-bottom:10px;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;page-break-inside:avoid">
     <div style="display:flex;gap:8px">
-      <div style="width:40px;flex-shrink:0;font-size:10px;color:#6b7280;padding-top:2px">${tx('point_label', { count: question.points })}</div>
+      <div style="width:40px;flex-shrink:0;font-size:10px;color:#6b7280;padding-top:2px">${flags.hidePoints ? '' : tx('point_label', { count: question.points })}</div>
       <div style="width:20px;flex-shrink:0;font-weight:700;font-size:12px">${number}</div>
       <div style="flex:1">${prompt}${extra}</div>
     </div>
@@ -244,9 +260,54 @@ function sectionDividerHtml(title: string): string {
   </div>`;
 }
 
+export interface TestPreviewOptions {
+    answerKey: boolean;
+    showPoints: boolean;
+}
+
+export const DEFAULT_TEST_PREVIEW_OPTIONS: TestPreviewOptions = { answerKey: false, showPoints: true };
+
+const PREVIEW_EXAM_OPTIONS: TestExamExportOptions = { ...DEFAULT_EXAM_EXPORT_OPTIONS, attachmentMode: 'inline' };
+
+function richBlockHtml(html: string | undefined): string {
+    const clean = html ? DOMPurify.sanitize(html) : '';
+    const hasContent = clean.replace(/<[^>]*>/g, '').trim() !== '' || /<img/i.test(clean);
+    return hasContent ? `${RICH_CONTENT_CSS}<div class="exam-rich">${clean}</div>` : '';
+}
+
+/** The generated parts of the student paper: the title banner with name/class/date box, and the question cards. */
+export function buildTestPreviewSections(test: Test, preview: TestPreviewOptions): { top: string; questions: string } {
+    let questions = '';
+    for (const group of groupQuestionsBySection(test)) {
+        if (group.section) {
+            questions += sectionDividerHtml(group.section.title);
+            if (group.section.content) questions += passageHtml(group.section.content, 'margin-bottom:10px');
+        }
+        questions += group.questions
+            .map(({ question, number }) =>
+                questionBodyHtml(question, number, PREVIEW_EXAM_OPTIONS, {
+                    answerKey: preview.answerKey,
+                    hidePoints: !preview.showPoints,
+                })
+            )
+            .join('');
+    }
+    return { top: `${blackBannerHtml(test.name || ' ')}${nameClassDateBoxHtml()}`, questions };
+}
+
+/** Complete printable A4 page: header, title and name box, intro, questions, footer. */
+export function buildTestPreviewHtml(test: Test, preview: TestPreviewOptions): string {
+    const { top, questions } = buildTestPreviewSections(test, preview);
+    const intro = richBlockHtml(test.printIntro);
+    return `<div class="print-page" style="color:#1e293b;background:#fff">${richBlockHtml(test.printHeader)}${top}${
+        intro ? `<div style="margin-top:14px">${intro}</div>` : ''
+    }<div style="height:18px"></div>${questions}${richBlockHtml(test.printFooter)}</div>`;
+}
+
 export function buildExamBookletHtml(test: Test, options: TestExamExportOptions): string {
     const groups = groupQuestionsBySection(test);
-    let html = coverPageHtml(test, tx('booklet_subtitle'), true);
+    let html = richBlockHtml(test.printHeader) + coverPageHtml(test, tx('booklet_subtitle'), true);
+    if (richBlockHtml(test.printIntro)) html += richBlockHtml(test.printIntro);
     for (const group of groups) {
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
@@ -257,7 +318,7 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
         }
         html += group.questions.map(({ question, number }) => questionBodyHtml(question, number, options)).join('');
     }
-    return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
+    return `<div class="print-page" style="color:#1e293b;background:#fff">${html}${richBlockHtml(test.printFooter)}</div>`;
 }
 
 export function buildExamAttachmentHtml(test: Test): string {

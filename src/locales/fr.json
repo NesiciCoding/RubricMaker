@@ -896,7 +896,8 @@
                 "export_grading_key_pdf": "Barème de correction (PDF)",
                 "export_grading_key_docx": "Barème de correction (Word)",
                 "cover_class_label": "Classe",
-                "cover_date_label": "Date"
+                "cover_date_label": "Date",
+                "answer_key_label": "Réponse"
             }
         },
         "taking": {
@@ -1378,7 +1379,21 @@
         "error_fragment_corrections_label": "Corrections acceptées",
         "error_fragment_add_correction": "+ Ajouter une correction",
         "error_fragment_remove_correction": "Supprimer la correction",
-        "error_missing_corrections": "{{count}} fragment(s) d'erreur ont encore besoin d'une correction acceptée — cliquez sur le fragment en pointillés pour en ajouter une."
+        "error_missing_corrections": "{{count}} fragment(s) d'erreur ont encore besoin d'une correction acceptée — cliquez sur le fragment en pointillés pour en ajouter une.",
+        "a4_preview_toggle": "Aperçu A4",
+        "a4_preview_title": "Test imprimé (A4)",
+        "a4_answer_key": "Corrigé",
+        "a4_show_points": "Points",
+        "a4_zoom_in": "Zoom avant",
+        "a4_zoom_out": "Zoom arrière",
+        "a4_print": "Imprimer",
+        "a4_header_label": "En-tête",
+        "a4_header_placeholder": "Nom de l'école, matière, classe…",
+        "a4_intro_label": "Consignes",
+        "a4_intro_placeholder": "Consignes pour les élèves…",
+        "a4_footer_label": "Pied de page",
+        "a4_footer_placeholder": "Mot de fin, p. ex. « Bonne chance ! »",
+        "a4_preview_hint": "Aperçu en direct de la copie de l'élève. Modifiez l'en-tête, les consignes et le pied de page directement sur la page ; les questions se modifient à gauche. Les sauts de page sont approximatifs — utilisez Imprimer pour le résultat exact."
     },
     "studentsPage": {
         "title": "Élèves et Classes",
