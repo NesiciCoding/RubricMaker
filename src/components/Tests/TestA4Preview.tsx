@@ -150,7 +150,7 @@ export default function TestA4Preview({ test, onChange }: Props) {
                     .a4-preview-editable { position: relative; margin: 6px 0; border: 1px dashed #cbd5e1; border-radius: 4px; padding: 4px 6px; }
                     .a4-preview-editable:focus-within { border-color: var(--accent); }
                     .a4-preview-editable-label { position: absolute; top: -9px; left: 8px; padding: 0 4px; background: #fff; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
-                    .a4-page .tiptap-editor-content { color: #1e293b; }
+                    .a4-page .tiptap-editor-content { color: #1e293b; min-height: 28px; padding: 6px 8px; font-size: 13px; }
                 `}</style>
                 <div style={{ width: PAGE_WIDTH_PX * scale, margin: '0 auto' }}>
                     <div className="a4-page" data-testid="a4-page" style={{ zoom: scale }}>
