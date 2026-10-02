@@ -236,7 +236,13 @@ function answerTokens(text: string, tol: AnswerTolerance): string[] {
     if (tol.punctuation || tol.contractions)
         t = t.replace(/[\u2018\u2019\u02bc`]/g, "'").replace(/[\u201c\u201d]/g, '"');
     if (tol.contractions) t = t.replace(/[\p{L}]+'[\p{L}]+/gu, (w) => CONTRACTIONS[w] ?? w);
-    if (tol.punctuation) t = t.replace(/[^\p{L}\p{N}']+/gu, ' ').replace(/(^|\s)'+|'+(?=\s|$)/g, '$1');
+    if (tol.punctuation) {
+        // Punctuation inside a word (don't, co-operate) is dropped, so dont and cooperate match.
+        t = t
+            .replace(/([\p{L}\p{N}])[^\p{L}\p{N}\s]+(?=[\p{L}\p{N}])/gu, '$1')
+            .replace(/[^\p{L}\p{N}']+/gu, ' ')
+            .replace(/(^|\s)'+|'+(?=\s|$)/g, '$1');
+    }
     let tokens = t.split(/\s+/).filter(Boolean);
     if (tol.contractions) tokens = tokens.flatMap((w) => (CONTRACTIONS[w] ?? w).split(' '));
     if (tol.spelling) tokens = tokens.map((w) => BRITISH_TO_AMERICAN[w] ?? w);
@@ -251,10 +257,7 @@ export function answersMatch(expected: string, response: string, tol?: AnswerTol
     const a = answerTokens(expected, tol);
     const b = answerTokens(response, tol);
     if (a.length === 0 || a.length !== b.length) return false;
-    return a.every(
-        (word, i) =>
-            word === b[i] || (!!tol.slips && word.length >= 5 && b[i].length >= 5 && editDistanceWithin1(word, b[i]))
-    );
+    return a.every((word, i) => word === b[i] || (!!tol.slips && word.length >= 5 && editDistanceWithin1(word, b[i])));
 }
 
 function partialOrAll(question: ScorableQuestion, correctCount: number, total: number): number {

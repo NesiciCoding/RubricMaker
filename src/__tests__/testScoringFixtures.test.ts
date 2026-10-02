@@ -92,6 +92,24 @@ function tolerantFixtures(): Fixture[] {
     });
     return [
         {
+            name: 'punctuation: apostrophe inside a word is dropped',
+            question: sa({ punctuation: true }),
+            response: 'I dont know',
+            expected: 2,
+        },
+        {
+            name: 'punctuation: hyphen inside a word is dropped',
+            question: sa({ punctuation: true }, 'co-operate'),
+            response: 'cooperate',
+            expected: 2,
+        },
+        {
+            name: 'slips: the typed side may be under five letters',
+            question: sa({ slips: true }, 'since'),
+            response: 'sinc',
+            expected: 2,
+        },
+        {
             name: 'tolerance off: curly quote misses',
             question: sa(undefined),
             response: 'I don\u2019t know',

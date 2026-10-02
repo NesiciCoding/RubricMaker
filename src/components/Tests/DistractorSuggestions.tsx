@@ -31,7 +31,7 @@ export default function DistractorSuggestions({ answer, exclude = [], onPick }: 
                     key={s.word}
                     type="button"
                     className="btn btn-ghost btn-sm"
-                    title={s.source}
+                    title={t(`tests.distractor_source_${s.source}`)}
                     onClick={() => onPick(s.word)}
                 >
                     {s.word}
