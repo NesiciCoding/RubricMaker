@@ -69,6 +69,8 @@ export default function ChipListEditor({
                 }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                        // An IME uses Enter to confirm a candidate; committing then would add a half-typed chip.
+                        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
                         e.preventDefault();
                         commit(draft);
                     } else if (e.key === 'Backspace' && !draft && values.length > 0) {

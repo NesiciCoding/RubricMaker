@@ -69,3 +69,22 @@ describe('ErrorFragmentExtension passage <-> doc conversion', () => {
         editor.destroy();
     });
 });
+
+describe('ErrorFragment HTML parsing', () => {
+    it('falls back to no corrections for a malformed data-corrections attribute', () => {
+        const editor = new Editor({
+            extensions: [KIT, ErrorFragment],
+            content:
+                '<p><span data-error-fragment data-text="go" data-is-error="true" data-corrections="{oops"></span></p>',
+        });
+        expect(editor.state.doc.firstChild!.child(0).attrs.corrections).toEqual([]);
+        editor.destroy();
+        const typed = new Editor({
+            extensions: [KIT, ErrorFragment],
+            content:
+                '<p><span data-error-fragment data-text="go" data-is-error="true" data-corrections="[1,&quot;goes&quot;]"></span></p>',
+        });
+        expect(typed.state.doc.firstChild!.child(0).attrs.corrections).toEqual(['goes']);
+        typed.destroy();
+    });
+});

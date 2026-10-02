@@ -68,7 +68,14 @@ export const ErrorFragment = Node.create<ErrorFragmentOptions>({
             },
             corrections: {
                 default: [] as string[],
-                parseHTML: (el: HTMLElement) => JSON.parse(el.getAttribute('data-corrections') ?? '[]') as string[],
+                parseHTML: (el: HTMLElement) => {
+                    try {
+                        const parsed: unknown = JSON.parse(el.getAttribute('data-corrections') ?? '[]');
+                        return Array.isArray(parsed) ? parsed.filter((c): c is string => typeof c === 'string') : [];
+                    } catch {
+                        return [];
+                    }
+                },
                 renderHTML: (attrs: Record<string, unknown>) => ({
                     'data-corrections': JSON.stringify(attrs.corrections),
                 }),

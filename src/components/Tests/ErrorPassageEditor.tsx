@@ -65,7 +65,9 @@ export default function ErrorPassageEditor({ passage, onChange }: Props) {
             setMissing(countFragmentsMissingCorrection(editor));
             onChange(errorContentToPassage(editor));
         },
-        editorProps: { attributes: { class: 'error-passage-editor-content' } },
+        editorProps: {
+            attributes: { class: 'error-passage-editor-content', 'aria-label': t('tests.error_passage_label') },
+        },
     });
 
     useEffect(() => {
