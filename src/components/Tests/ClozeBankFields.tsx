@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { TestQuestion } from '../../types';
+import LineListTextarea from './LineListTextarea';
 
 interface Props {
     question: TestQuestion;
@@ -11,15 +12,10 @@ export default function ClozeBankFields({ question, update }: Props) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label htmlFor={`bank-distractors-${question.id}`}>{t('tests.bank_distractors_label')}</label>
-            <textarea
+            <LineListTextarea
                 id={`bank-distractors-${question.id}`}
-                rows={3}
-                value={(question.bankDistractors ?? []).join('\n')}
-                onChange={(e) =>
-                    update({
-                        bankDistractors: e.target.value.split('\n').filter((line) => line.trim()),
-                    })
-                }
+                value={question.bankDistractors ?? []}
+                onChange={(bankDistractors) => update({ bankDistractors })}
                 placeholder={t('tests.bank_distractors_placeholder')}
             />
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>

@@ -283,6 +283,16 @@ describe('matrix and cloze-bank paper helpers', () => {
         expect(answerSpaceFor(matrix)).toEqual({ kind: 'subitems', subItemCount: 2 });
     });
 
+    it('ignores rich-text markup around the gaps in tiles and key', () => {
+        const rich = { ...bank, prompt: '<p>The {{cat}} and the {{dog}}.</p>' };
+        expect(
+            bankBookletTiles(rich)
+                .map((t) => t.text)
+                .sort()
+        ).toEqual(['cat', 'cow', 'dog']);
+        expect(answerKeyText(rich)).toBe(answerKeyText(bank));
+    });
+
     it('prints a shuffled word box and keys each gap to its tile letter', () => {
         const tiles = bankBookletTiles(bank);
         expect(tiles.map((t) => t.text).sort()).toEqual(['cat', 'cow', 'dog']);

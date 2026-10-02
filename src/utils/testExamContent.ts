@@ -171,7 +171,7 @@ export function matrixBookletData(question: TestQuestion): MatrixBookletData {
 
 /** Cloze-bank tiles (every gap's answer plus the distractors) as a shuffled, lettered word box for the booklet. */
 export function bankBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
-    const answers = renderClozeSegments(question.prompt).flatMap((s) =>
+    const answers = renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).flatMap((s) =>
         s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
     );
     const tiles = nonIdentityShuffle([...answers, ...(question.bankDistractors ?? [])].filter(Boolean), question.id);
@@ -185,7 +185,7 @@ function matrixCorrectLetterKey(question: TestQuestion): string {
 
 function bankCorrectLetterKey(question: TestQuestion): string {
     const unused = bankBookletTiles(question);
-    return renderClozeSegments(question.prompt)
+    return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt))
         .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []))
         .map((answer, i) => {
             const at = unused.findIndex((t) => t.text === answer);
