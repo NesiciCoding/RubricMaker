@@ -5,6 +5,7 @@
  * instead of reverse-engineering positions from a rendered PDF.
  */
 import type { Test, TestQuestion, TestSection } from '../types';
+import { parseErrorPassage, sentenceBuilderTiles } from '../../supabase/functions/_shared/testScoring';
 import { renderClozeSegments, parseHotTextFragments } from './clozeParse';
 import { stripHtmlKeepLineBreaks, stripHtmlTags } from './exportDataPrep';
 import { seededShuffle } from './seededShuffle';
@@ -53,8 +54,13 @@ export function subItemCount(question: TestQuestion): number | null {
             return question.orderItems?.length || null;
         case 'categorize':
             return question.categorizeItems?.length || null;
+        case 'matrix':
+            return question.matrixRows?.length || null;
+        case 'error-correction':
+            return errorBookletParts(question).filter((p) => p.number).length || null;
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
             return renderClozeSegments(question.prompt).filter((s) => s.type === 'gap').length || null;
         case 'hot-text':
             return question.hotTextCorrectIndices?.length || null;
@@ -108,6 +114,30 @@ export function hotTextMirrorParts(question: TestQuestion): HotTextMirrorPart[] 
     );
 }
 
+export interface ErrorBookletPart {
+    text: string;
+    /** Present for a selectable fragment; 1-based. The corrections are never printed in the booklet. */
+    number?: number;
+}
+
+/** Error-correction passage as text/fragment parts with each fragment numbered; the key stays out of the booklet. */
+export function errorBookletParts(question: TestQuestion): ErrorBookletPart[] {
+    return parseErrorPassage(question.errorPassage ?? '').map((s) =>
+        s.type === 'fragment' ? { text: s.text, number: s.index + 1 } : { text: s.text }
+    );
+}
+
+/** Sentence-builder word tiles, lettered, for the booklet. */
+export function builderBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
+    return sentenceBuilderTiles(question).map((text, i) => ({ letter: optionLetter(i), text }));
+}
+
+function errorCorrectionKey(question: TestQuestion): string {
+    return parseErrorPassage(question.errorPassage ?? '')
+        .flatMap((s) => (s.type === 'fragment' ? [`${s.index + 1}→${s.corrections.join(' / ') || '✓'}`] : []))
+        .join('; ');
+}
+
 export interface ClozeBlankPart {
     text: string;
     /** Present for a gap (never its answer text — the booklet must not leak it); 1-based, matches the gap's index in subItemCount()/the grading ladder. */
@@ -152,6 +182,46 @@ export function matchingBookletData(question: TestQuestion): MatchingBookletData
     };
 }
 
+export interface MatrixBookletData {
+    /** Statements in stored (numbered) order. */
+    rows: string[];
+    /** Shared answer columns, lettered — a fixed set, so no shuffling is needed. */
+    columns: { letter: string; text: string }[];
+}
+
+export function matrixBookletData(question: TestQuestion): MatrixBookletData {
+    return {
+        rows: (question.matrixRows ?? []).map((r) => r.text),
+        columns: (question.matrixColumns ?? []).map((c, i) => ({ letter: optionLetter(i), text: c.text })),
+    };
+}
+
+/** Cloze-bank tiles (every gap's answer plus the distractors) as a shuffled, lettered word box for the booklet. */
+export function bankBookletTiles(question: TestQuestion): { letter: string; text: string }[] {
+    const answers = renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt)).flatMap((s) =>
+        s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []
+    );
+    const tiles = nonIdentityShuffle([...answers, ...(question.bankDistractors ?? [])].filter(Boolean), question.id);
+    return tiles.map((text, i) => ({ letter: optionLetter(i), text }));
+}
+
+function matrixCorrectLetterKey(question: TestQuestion): string {
+    const letters = new Map((question.matrixColumns ?? []).map((c, i) => [c.id, optionLetter(i)]));
+    return (question.matrixRows ?? []).map((r, i) => `${i + 1}→${letters.get(r.correctColumnId) ?? '?'}`).join('; ');
+}
+
+function bankCorrectLetterKey(question: TestQuestion): string {
+    const unused = bankBookletTiles(question);
+    return renderClozeSegments(stripHtmlKeepLineBreaks(question.prompt))
+        .flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : []))
+        .map((answer, i) => {
+            const at = unused.findIndex((t) => t.text === answer);
+            const letter = at >= 0 ? unused.splice(at, 1)[0].letter : '?';
+            return `${i + 1}→${letter}`;
+        })
+        .join('; ');
+}
+
 /** Ordering items shuffled for booklet display — the stored array order IS the correct order, so printing it as-is would leak the answer. */
 export function orderingBookletItems(question: TestQuestion): { letter: string; text: string }[] {
     const items = nonIdentityShuffle(question.orderItems ?? [], question.id);
@@ -194,6 +264,12 @@ export function answerKeyText(question: TestQuestion): string {
                 .join(', ');
         case 'true-false':
             return (question.correctBoolean ?? true) ? 'A' : 'B';
+        case 'matrix':
+            return matrixCorrectLetterKey(question);
+        case 'error-correction':
+            return errorCorrectionKey(question);
+        case 'cloze-bank':
+            return bankCorrectLetterKey(question);
         case 'matching':
             return matchingCorrectLetterKey(question);
         case 'ordering':
@@ -249,13 +325,19 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
         case 'true-false':
             return { kind: 'choice', optionLetters: ['A', 'B'] };
         case 'short-answer':
+        case 'key-word-transformation':
+        case 'sentence-builder':
             return { kind: 'short' };
         case 'open':
+        case 'dictation':
             return { kind: 'long' };
         case 'numeric':
             return { kind: 'numeric' };
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
+        case 'matrix':
+        case 'error-correction':
         case 'matching':
         case 'ordering':
         case 'categorize':

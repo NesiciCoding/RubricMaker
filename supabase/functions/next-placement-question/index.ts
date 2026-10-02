@@ -18,7 +18,13 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { autoScoreResponse, isAutoScorable, type ScorableQuestion } from '../_shared/testScoring.ts';
+import {
+    autoScoreResponse,
+    isAutoScorable,
+    sentenceBuilderTiles,
+    stripErrorKey,
+    type ScorableQuestion,
+} from '../_shared/testScoring.ts';
 import {
     DEFAULT_ELO_RATING,
     LEVEL_TO_ELO,
@@ -75,12 +81,26 @@ function toStudentSafeQuestion(question: MinimalQuestion): MinimalQuestion {
         eloRating: _er,
         options,
         categorizeItems,
+        matrixRows,
+        dictationText,
+        // Placement runs are never practice mode, so neither is revealed to the student.
+        transcript: _tr,
+        explanation: _ex,
+        errorPassage,
+        sentenceTargets,
         ...rest
     } = question;
     return {
         ...rest,
         ...(options ? { options: options.map(({ isCorrect: _ic, ...opt }) => opt) } : {}),
         ...(categorizeItems ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) } : {}),
+        // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
+        ...(typeof errorPassage === 'string' ? { errorPassage: stripErrorKey(errorPassage) } : {}),
+        ...(Array.isArray(sentenceTargets)
+            ? { sentenceTiles: sentenceBuilderTiles({ ...question, sentenceTargets }) }
+            : {}),
+        ...(dictationText !== undefined && !rest.audioUrl ? { dictationText } : {}),
+        ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
     } as MinimalQuestion;
 }
 
@@ -100,7 +120,14 @@ interface BankItem {
     cefrSkill?: string;
     tags?: string[];
     question?: MinimalQuestion;
-    section?: { title: string; content?: string; audioUrl?: string; questions: MinimalQuestion[] };
+    section?: {
+        title: string;
+        content?: string;
+        audioUrl?: string;
+        spokenText?: string;
+        maxPlays?: number;
+        questions: MinimalQuestion[];
+    };
 }
 
 /** True when the item carries at least one of the config's tags (case-insensitive), or no tag filter is set. */
@@ -138,6 +165,8 @@ function passageFor(item: BankItem, sectionQuestionIndex: number) {
         title: item.section.title,
         content: item.section.content,
         audioUrl: item.section.audioUrl,
+        spokenText: item.section.spokenText,
+        maxPlays: item.section.maxPlays,
         questionIndex: sectionQuestionIndex,
         questionCount: item.section.questions.length,
     };

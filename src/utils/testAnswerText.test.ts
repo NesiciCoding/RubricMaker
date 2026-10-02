@@ -203,3 +203,106 @@ describe('buildTestStudentSummary', () => {
         expect(out).toContain('0/1 pts');
     });
 });
+
+describe('matrix and cloze-bank answer text', () => {
+    const matrix: TestQuestion = {
+        id: 'qm',
+        prompt: '',
+        type: 'matrix',
+        points: 2,
+        matrixColumns: [
+            { id: 'c1', text: 'True' },
+            { id: 'c2', text: 'False' },
+        ],
+        matrixRows: [
+            { id: 'r1', text: 'Sky is blue', correctColumnId: 'c1' },
+            { id: 'r2', text: 'Fire is cold', correctColumnId: 'c2' },
+        ],
+    };
+    const bank: TestQuestion = { id: 'qb', prompt: 'A {{cat}} sat.', type: 'cloze-bank', points: 1 };
+
+    it('renders matrix given and correct answers', () => {
+        const given = formatGivenAnswer(matrix, { questionId: 'qm', response: '{"r1":"c1"}' });
+        expect(given).toBe('Sky is blue → True; Fire is cold → ___');
+        expect(formatCorrectAnswer(matrix)).toBe('Sky is blue → True; Fire is cold → False');
+    });
+
+    it('renders cloze-bank like a cloze', () => {
+        expect(formatGivenAnswer(bank, { questionId: 'qb', response: '{"0":"cat"}' })).toBe('A [cat] sat.');
+        expect(formatCorrectAnswer(bank)).toBe('A [cat] sat.');
+    });
+});
+
+describe('dictation answer text', () => {
+    const dictation: TestQuestion = {
+        id: 'qd',
+        prompt: '',
+        type: 'dictation',
+        points: 2,
+        dictationText: 'Hello there.',
+    };
+    it('uses the dictated text as the correct answer', () => {
+        expect(formatCorrectAnswer(dictation)).toBe('Hello there.');
+        expect(formatGivenAnswer(dictation, { questionId: 'qd', response: 'hello' })).toBe('hello');
+    });
+});
+
+describe('key word transformation answer text', () => {
+    it('shows each accepted answer with its marked parts', () => {
+        const q: TestQuestion = {
+            id: 'qk',
+            prompt: '',
+            type: 'key-word-transformation',
+            points: 2,
+            expectedAnswers: ['have worked // for years', 'have been working // for years'],
+        };
+        expect(formatCorrectAnswer(q)).toBe('have worked + for years / have been working + for years');
+    });
+});
+
+describe('error-correction and sentence-builder answer text', () => {
+    const errors: TestQuestion = {
+        id: 'qe',
+        prompt: '',
+        type: 'error-correction',
+        points: 2,
+        errorPassage: 'He [[go|goes]] to school [[every]] day.',
+    };
+    const builder: TestQuestion = {
+        id: 'qs',
+        prompt: '',
+        type: 'sentence-builder',
+        points: 2,
+        sentenceTargets: ['I go home'],
+    };
+    it('formats picks with corrections and the correct key', () => {
+        expect(formatGivenAnswer(errors, { questionId: 'qe', response: '{"0":"goes","1":""}' })).toBe(
+            'go → goes; every'
+        );
+        expect(formatCorrectAnswer(errors)).toBe('go → goes');
+    });
+    it('formats the placed sentence and accepted sentences', () => {
+        expect(formatGivenAnswer(builder, { questionId: 'qs', response: '["I","go"]' })).toBe('I go');
+        expect(formatCorrectAnswer(builder)).toBe('I go home');
+    });
+});
+
+describe('error-correction alternatives and bad responses', () => {
+    const q: TestQuestion = {
+        id: 'qe',
+        prompt: '',
+        type: 'error-correction',
+        points: 2,
+        errorPassage: 'He [[play|plays|is playing]] [[football]].',
+    };
+    it('lists every accepted correction', () => {
+        expect(formatCorrectAnswer(q)).toBe('play → plays / is playing');
+    });
+    it('treats wrong-shaped responses as no answer', () => {
+        const none = formatGivenAnswer({ ...q, type: 'sentence-builder' }, { questionId: 'qe', response: '{"0":"I"}' });
+        expect(none).not.toContain('{');
+        expect(formatGivenAnswer(q, { questionId: 'qe', response: '[1,2]' })).toBe(
+            formatGivenAnswer(q, { questionId: 'qe', response: '' })
+        );
+    });
+});

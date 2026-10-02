@@ -48,6 +48,8 @@ export interface UseLiveSessionTelemetryReturn {
     events: ProctorEvent[];
     /** Returns the accumulated event log (excluding ephemeral snapshots) and clears it. */
     flush: () => ProctorEvent[];
+    /** Appends an application-level event (e.g. an audio play) to the log and broadcasts it. */
+    recordEvent: (event: ProctorEvent) => void;
     /** True once a Realtime broadcast channel is active (DB mode, enabled). */
     isBroadcasting: boolean;
     /**
@@ -351,5 +353,5 @@ export function useLiveSessionTelemetry({
         return () => clearInterval(interval);
     }, [enabled, getSnapshot, hasDb, isBroadcasting, wsSend]);
 
-    return { events, flush, isBroadcasting, broadcast };
+    return { events, flush, recordEvent: pushEvent, isBroadcasting, broadcast };
 }

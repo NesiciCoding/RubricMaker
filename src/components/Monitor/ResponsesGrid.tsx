@@ -3,6 +3,8 @@ import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { scoreShortAnswerExact, scoreNumeric, autoScoreResponse } from '../../utils/testCalc';
 import { parseClozeGaps, parseHotTextFragments, plainQuestionPromptText } from '../../utils/clozeParse';
+import { parseErrorPicks, parsePlacedWords } from '../../utils/answerResponseParsers';
+import { parseErrorPassage } from '../../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from '../../utils/audioResponseCode';
 import { buildColumnMeta, orderColumns, type ColumnSortRule } from '../../utils/responseGridOrder';
 import Modal from '../ui/Modal';
@@ -52,6 +54,10 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
     if (question.type === 'true-false') {
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
+    if (question.type === 'key-word-transformation' || question.type === 'dictation') {
+        if (!answer.response.trim()) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
     if (question.type === 'short-answer') {
         const score = scoreShortAnswerExact(question, answer.response);
         if (score === null) return 'ungraded';
@@ -62,7 +68,7 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         if (score === null) return 'ungraded';
         return score > 0 ? 'correct' : 'incorrect';
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(answer.response) as Record<string, string>;
@@ -72,7 +78,7 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
         if (!Object.values(answers).some((v) => v.trim() !== '')) return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
-    if (question.type === 'matching' || question.type === 'categorize') {
+    if (question.type === 'matching' || question.type === 'categorize' || question.type === 'matrix') {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(answer.response) as Record<string, string>;
@@ -80,6 +86,14 @@ function cellState(question: TestQuestion, answer: TestAnswer | undefined): Cell
             /* ignore malformed response */
         }
         if (Object.keys(answers).length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'error-correction') {
+        if (Object.keys(parseErrorPicks(answer.response)).length === 0) return 'empty';
+        return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
+    }
+    if (question.type === 'sentence-builder') {
+        if (parsePlacedWords(answer.response).length === 0) return 'empty';
         return autoScoreResponse(question, answer.response) >= question.points ? 'correct' : 'incorrect';
     }
     if (question.type === 'ordering') {
@@ -157,7 +171,7 @@ function answerDisplayText(
     if (question.type === 'true-false') {
         return t(`tests.true_false_${answer.response}`);
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         try {
             const answers = JSON.parse(answer.response) as Record<string, string>;
             const gaps = parseClozeGaps(question.prompt);
@@ -180,6 +194,17 @@ function answerDisplayText(
             return '';
         }
     }
+    if (question.type === 'error-correction') {
+        const picks = parseErrorPicks(answer.response);
+        return parseErrorPassage(question.errorPassage ?? '')
+            .flatMap((s) =>
+                s.type === 'fragment' && s.index in picks
+                    ? [picks[s.index].trim() ? `${s.text} → ${picks[s.index].trim()}` : s.text]
+                    : []
+            )
+            .join('; ');
+    }
+    if (question.type === 'sentence-builder') return parsePlacedWords(answer.response).join(' ');
     if (question.type === 'audio-response') {
         const audio = parseAudioResponse(answer.response);
         return audio ? t('tests.monitor.grid.audio_recorded', { seconds: audio.durationSec }) : '';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { encodeTestAssignment } from '../../utils/shareCode';
@@ -301,6 +301,205 @@ describe('StudentTestPage — answer types', () => {
         fireEvent.change(screen.getByRole('combobox'), { target: { value: 'animal' } });
         const decoded = await submitSingle();
         expect(decoded!.answers[0].response).toBe(JSON.stringify({ i1: 'animal' }));
+    });
+
+    it('answers a matrix question with one column per row', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'True or false?',
+                        type: 'matrix',
+                        points: 2,
+                        matrixColumns: [
+                            { id: 'c1', text: 'True' },
+                            { id: 'c2', text: 'False' },
+                        ],
+                        matrixRows: [
+                            { id: 'r1', text: 'Sky is blue', correctColumnId: 'c1' },
+                            { id: 'r2', text: 'Fire is cold', correctColumnId: 'c2' },
+                        ],
+                    },
+                ],
+            })
+        );
+        fireEvent.click(screen.getByRole('radio', { name: 'Sky is blue — True' }));
+        fireEvent.click(screen.getByRole('radio', { name: 'Fire is cold — False' }));
+        fireEvent.click(screen.getByRole('radio', { name: 'Fire is cold — True' }));
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ r1: 'c1', r2: 'c1' }));
+    });
+
+    it('fills word-bank gaps by selecting a tile then a gap, once per tile', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'The {{cat}} sat on the {{mat}}.',
+                        type: 'cloze-bank',
+                        points: 2,
+                        bankDistractors: ['dog'],
+                    },
+                ],
+            })
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'cat' }));
+        fireEvent.click(screen.getByRole('button', { name: /cloze_bank_gap_label.*"number":1/ }));
+        expect(screen.getByRole('button', { name: 'cat' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'mat' }));
+        fireEvent.click(screen.getByRole('button', { name: /cloze_bank_gap_label.*"number":2/ }));
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ 0: 'cat', 1: 'mat' }));
+    });
+
+    it('answers a dictation question with typed text', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Write what you hear',
+                        type: 'dictation',
+                        points: 4,
+                        audioUrl: 'https://example.com/d.mp3',
+                        dictationText: 'secret sentence',
+                    },
+                ],
+            })
+        );
+        fireEvent.change(screen.getByLabelText('tests.taking.dictation_placeholder'), {
+            target: { value: 'the sentence' },
+        });
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe('the sentence');
+    });
+
+    it('counts down prep time before recording an audio response', async () => {
+        vi.useFakeTimers();
+        try {
+            renderPage(
+                makeTest({
+                    questions: [
+                        {
+                            id: 'q1',
+                            prompt: 'Describe your day',
+                            type: 'audio-response',
+                            points: 5,
+                            prepSeconds: 3,
+                            cueBullets: ['Morning', 'Evening'],
+                        },
+                    ],
+                })
+            );
+            expect(screen.getByText('Morning')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('tests.taking.start_recording'));
+            expect(screen.getByRole('timer')).toHaveTextContent('"seconds":3');
+            await act(async () => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(screen.getByRole('timer')).toHaveTextContent('"seconds":2');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('limits listening plays and logs each play as a proctor event', async () => {
+        window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Listen',
+                        type: 'short-answer',
+                        points: 1,
+                        audioUrl: 'https://example.com/clip.mp3',
+                        maxPlays: 1,
+                    },
+                ],
+            })
+        );
+        const play = screen.getByRole('button', { name: 'tests.taking.question_audio_alt' });
+        fireEvent.click(play);
+        await waitFor(() => expect(play).toBeDisabled());
+        expect(screen.getByRole('status')).toHaveTextContent('tests.taking.audio_no_plays_left');
+        const decoded = await submitSingle();
+        expect(decoded!.events?.filter((e) => e.type === 'audio_play')).toEqual([
+            expect.objectContaining({ value: 'question:q1:1' }),
+        ]);
+    });
+
+    it('answers a key word transformation with a live word-limit counter', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'She started working here ten years ago.',
+                        type: 'key-word-transformation',
+                        points: 2,
+                        keyWord: 'for',
+                        gappedSentence: 'She has worked here ___ ten years.',
+                        expectedAnswers: ['for // ten years'],
+                    },
+                ],
+            })
+        );
+        expect(screen.getByText('for')).toBeInTheDocument();
+        const input = screen.getByLabelText('tests.taking.kwt_answer_label');
+        fireEvent.change(input, { target: { value: 'for a very long time indeed' } });
+        expect(screen.getByRole('status')).toHaveTextContent('tests.taking.kwt_out_of_limit');
+        fireEvent.change(input, { target: { value: 'for' } });
+        expect(screen.getByRole('status')).toHaveTextContent('"count":1');
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe('for');
+    });
+
+    it('answers an error-correction question by selecting a fragment and typing a fix', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Find the error',
+                        type: 'error-correction',
+                        points: 2,
+                        errorPassage: 'He [[go|goes]] to school [[every]] day.',
+                    },
+                ],
+            })
+        );
+        expect(screen.queryByText('goes')).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'go' }));
+        fireEvent.change(screen.getByLabelText(/error_correction_input/), { target: { value: 'goes' } });
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify({ 0: 'goes' }));
+    });
+
+    it('builds a sentence from word tiles and can take a tile back', async () => {
+        renderPage(
+            makeTest({
+                questions: [
+                    {
+                        id: 'q1',
+                        prompt: 'Build it',
+                        type: 'sentence-builder',
+                        points: 2,
+                        sentenceTiles: ['school', 'I', 'go', 'to'],
+                    },
+                ],
+            })
+        );
+        const pool = screen.getByRole('group', { name: 'tests.taking.sentence_builder_tiles' });
+        for (const w of ['I', 'go', 'to', 'school']) {
+            fireEvent.click(Array.from(pool.querySelectorAll('button')).find((b) => b.textContent === w)!);
+        }
+        fireEvent.click(screen.getByRole('button', { name: /sentence_builder_remove.*school/ }));
+        fireEvent.click(Array.from(pool.querySelectorAll('button')).find((b) => b.textContent === 'school')!);
+        const decoded = await submitSingle();
+        expect(decoded!.answers[0].response).toBe(JSON.stringify(['I', 'go', 'to', 'school']));
     });
 
     it('answers a hot-text question by selecting fragments', async () => {

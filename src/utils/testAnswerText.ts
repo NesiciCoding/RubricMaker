@@ -2,6 +2,8 @@ import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
+import { parseErrorPicks, parsePlacedWords } from './answerResponseParsers';
+import { keyWordChunks, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
@@ -53,13 +55,34 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
         case 'true-false':
             return response === 'true' ? 'True' : 'False';
         case 'cloze':
-        case 'cloze-dropdown': {
+        case 'cloze-dropdown':
+        case 'cloze-bank': {
             const answers = parseJson<Record<string, string>>(response, {});
             const segments = renderClozeSegments(stripHtmlTags(question.prompt));
             if (!segments.some((s) => s.type === 'gap')) return NO_RESPONSE;
             return segments
                 .map((s) => (s.type === 'text' ? s.text : `[${(answers[s.gap.index] ?? '').trim() || '___'}]`))
                 .join('');
+        }
+        case 'error-correction': {
+            const picks = parseErrorPicks(response);
+            const picked = parseErrorPassage(question.errorPassage ?? '').flatMap((s) =>
+                s.type === 'fragment' && s.index in picks
+                    ? [`${s.text}${picks[s.index]?.trim() ? ` → ${picks[s.index].trim()}` : ''}`]
+                    : []
+            );
+            return picked.length > 0 ? picked.join('; ') : NO_RESPONSE;
+        }
+        case 'sentence-builder': {
+            const words = parsePlacedWords(response);
+            return words.length > 0 ? words.join(' ') : NO_RESPONSE;
+        }
+        case 'matrix': {
+            const rows = question.matrixRows ?? [];
+            if (rows.length === 0) return NO_RESPONSE;
+            const answers = parseJson<Record<string, string>>(response, {});
+            const columns = new Map((question.matrixColumns ?? []).map((c) => [c.id, c.text]));
+            return rows.map((r) => `${r.text} → ${columns.get(answers[r.id]) ?? '___'}`).join('; ');
         }
         case 'matching': {
             const pairs = question.matchingPairs ?? [];
@@ -121,9 +144,30 @@ export function formatCorrectAnswer(question: TestQuestion): string {
                 : String(question.expectedNumericValue);
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
             return renderClozeSegments(stripHtmlTags(question.prompt))
                 .map((s) => (s.type === 'text' ? s.text : `[${s.gap.alternatives[0] ?? ''}]`))
                 .join('');
+        case 'dictation':
+            return question.dictationText ?? '';
+        case 'error-correction':
+            return parseErrorPassage(question.errorPassage ?? '')
+                .flatMap((s) =>
+                    s.type === 'fragment' && s.corrections.length > 0
+                        ? [`${s.text} → ${s.corrections.join(' / ')}`]
+                        : []
+                )
+                .join('; ');
+        case 'sentence-builder':
+            return (question.sentenceTargets ?? []).join(' / ');
+        case 'key-word-transformation':
+            return (question.expectedAnswers ?? []).map((a) => keyWordChunks(a).join(' + ')).join(' / ');
+        case 'matrix': {
+            const columns = new Map((question.matrixColumns ?? []).map((c) => [c.id, c.text]));
+            return (question.matrixRows ?? [])
+                .map((r) => `${r.text} → ${columns.get(r.correctColumnId) ?? '?'}`)
+                .join('; ');
+        }
         case 'matching':
             return (question.matchingPairs ?? []).map((p) => `${p.left} → ${p.right}`).join('; ');
         case 'ordering':

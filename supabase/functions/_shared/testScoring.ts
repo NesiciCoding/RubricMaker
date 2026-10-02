@@ -3,7 +3,9 @@
 // Imported by the client (src/utils/testCalc.ts, src/utils/clozeParse.ts) and by the
 // submit-test and next-placement-question edge functions, so the score a student sees and
 // the score the server validates can never drift apart. It must stay dependency-free and
-// runnable in both Deno and the browser: no imports, no DOM, no Deno APIs.
+// runnable in both Deno and the browser: no imports beyond sibling ./*.ts files, no DOM, no Deno APIs.
+
+import { seededShuffle } from './seededShuffle.ts';
 
 export interface ScorableOption {
     id: string;
@@ -15,6 +17,7 @@ export interface ScorableQuestion {
     points: number;
     prompt: string;
     options?: ScorableOption[];
+    matrixRows?: { id: string; correctColumnId: string }[];
     matchingPairs?: { id: string }[];
     orderItems?: { id: string }[];
     categorizeItems?: { id: string; categoryId: string }[];
@@ -26,6 +29,27 @@ export interface ScorableQuestion {
     numericTolerance?: number;
     partialCredit?: boolean;
     correctBoolean?: boolean;
+    answerTolerance?: AnswerTolerance;
+    dictationText?: string;
+    answerWordLimit?: { min: number; max: number };
+    keyWord?: string;
+    errorPassage?: string;
+    penaliseFalsePicks?: boolean;
+    sentenceTargets?: string[];
+    sentenceTiles?: string[];
+    builderScoring?: 'longest-run' | 'all-or-nothing';
+}
+
+/** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
+export interface AnswerTolerance {
+    /** Curly quotes → straight, punctuation dropped, whitespace collapsed */
+    punctuation?: boolean;
+    /** `don't` ≡ `do not` */
+    contractions?: boolean;
+    /** `colour` ≡ `color` (static list) */
+    spelling?: boolean;
+    /** Edit distance ≤ 1 per word, for words of 5+ letters */
+    slips?: boolean;
 }
 
 // ── Cloze / hot-text markup ─────────────────────────────────────────────────
@@ -116,6 +140,141 @@ function parseJsonRecord(response: string): Record<string, unknown> {
     }
 }
 
+// ── Tolerant answer matching ────────────────────────────────────────────────
+
+const CONTRACTIONS: Record<string, string> = {
+    "don't": 'do not',
+    "doesn't": 'does not',
+    "didn't": 'did not',
+    "isn't": 'is not',
+    "aren't": 'are not',
+    "wasn't": 'was not',
+    "weren't": 'were not',
+    "haven't": 'have not',
+    "hasn't": 'has not',
+    "hadn't": 'had not',
+    "won't": 'will not',
+    "wouldn't": 'would not',
+    "can't": 'cannot',
+    "couldn't": 'could not',
+    "shouldn't": 'should not',
+    "mustn't": 'must not',
+    "i'm": 'i am',
+    "you're": 'you are',
+    "we're": 'we are',
+    "they're": 'they are',
+    "i've": 'i have',
+    "you've": 'you have',
+    "we've": 'we have',
+    "they've": 'they have',
+    "i'll": 'i will',
+    "you'll": 'you will',
+    "he'll": 'he will',
+    "she'll": 'she will',
+    "we'll": 'we will',
+    "they'll": 'they will',
+    "i'd": 'i would',
+    "you'd": 'you would',
+    "he'd": 'he would',
+    "she'd": 'she would',
+    "we'd": 'we would',
+    "they'd": 'they would',
+    "it's": 'it is',
+    "that's": 'that is',
+    "there's": 'there is',
+    "let's": 'let us',
+};
+
+// British → American; both sides are mapped to the American form before comparing.
+const BRITISH_TO_AMERICAN: Record<string, string> = {
+    colour: 'color',
+    favourite: 'favorite',
+    neighbour: 'neighbor',
+    behaviour: 'behavior',
+    honour: 'honor',
+    humour: 'humor',
+    labour: 'labor',
+    flavour: 'flavor',
+    centre: 'center',
+    theatre: 'theater',
+    metre: 'meter',
+    litre: 'liter',
+    fibre: 'fiber',
+    organise: 'organize',
+    realise: 'realize',
+    recognise: 'recognize',
+    apologise: 'apologize',
+    analyse: 'analyze',
+    travelled: 'traveled',
+    travelling: 'traveling',
+    traveller: 'traveler',
+    cancelled: 'canceled',
+    cancelling: 'canceling',
+    grey: 'gray',
+    tyre: 'tire',
+    programme: 'program',
+    cheque: 'check',
+    defence: 'defense',
+    licence: 'license',
+    offence: 'offense',
+    practise: 'practice',
+    catalogue: 'catalog',
+    dialogue: 'dialog',
+    jewellery: 'jewelry',
+    pyjamas: 'pajamas',
+    mum: 'mom',
+    plough: 'plow',
+    aluminium: 'aluminum',
+    maths: 'math',
+    learnt: 'learned',
+    spelt: 'spelled',
+    burnt: 'burned',
+    dreamt: 'dreamed',
+};
+
+function editDistanceWithin1(a: string, b: string): boolean {
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+    const [long, short] = a.length > b.length ? [a, b] : [b, a];
+    return long.slice(i + 1) === short.slice(i);
+}
+
+function tokensMatch(expected: string, given: string, tol: AnswerTolerance): boolean {
+    return expected === given || (!!tol.slips && expected.length >= 5 && editDistanceWithin1(expected, given));
+}
+
+function answerTokens(text: string, tol: AnswerTolerance): string[] {
+    let t = text.trim().toLowerCase();
+    if (tol.punctuation || tol.contractions)
+        t = t.replace(/[\u2018\u2019\u02bc`]/g, "'").replace(/[\u201c\u201d]/g, '"');
+    if (tol.contractions) t = t.replace(/[\p{L}]+'[\p{L}]+/gu, (w) => CONTRACTIONS[w] ?? w);
+    if (tol.punctuation) {
+        // Punctuation inside a word (don't, co-operate) is dropped, so dont and cooperate match.
+        t = t
+            .replace(/([\p{L}\p{N}])[^\p{L}\p{N}\s]+(?=[\p{L}\p{N}])/gu, '$1')
+            .replace(/[^\p{L}\p{N}']+/gu, ' ')
+            .replace(/(^|\s)'+|'+(?=\s|$)/g, '$1');
+    }
+    let tokens = t.split(/\s+/).filter(Boolean);
+    if (tol.contractions) tokens = tokens.flatMap((w) => (CONTRACTIONS[w] ?? w).split(' '));
+    if (tol.spelling) tokens = tokens.map((w) => BRITISH_TO_AMERICAN[w] ?? w);
+    return tokens;
+}
+
+/** True when a typed response matches an accepted answer under the question's opt-in tolerances. */
+export function answersMatch(expected: string, response: string, tol?: AnswerTolerance): boolean {
+    if (!tol || !(tol.punctuation || tol.contractions || tol.spelling || tol.slips)) {
+        return expected.trim().toLowerCase() === response.trim().toLowerCase();
+    }
+    const a = answerTokens(expected, tol);
+    const b = answerTokens(response, tol);
+    if (a.length === 0 || a.length !== b.length) return false;
+    return a.every((word, i) => tokensMatch(word, b[i], tol));
+}
+
 function partialOrAll(question: ScorableQuestion, correctCount: number, total: number): number {
     if (question.partialCredit === false) {
         return correctCount === total ? question.points : 0;
@@ -136,8 +295,7 @@ export function scoreShortAnswerExact(question: ScorableQuestion, response: stri
           ? [question.expectedAnswer]
           : [];
     if (question.type !== 'short-answer' || answers.length === 0) return null;
-    const trimmedResponse = response.trim().toLowerCase();
-    return answers.some((a) => a.trim().toLowerCase() === trimmedResponse) ? question.points : 0;
+    return answers.some((a) => answersMatch(a, response, question.answerTolerance)) ? question.points : 0;
 }
 
 /** Auto-score for a numeric question: full points when the response is within ± numericTolerance of expectedNumericValue. */
@@ -177,20 +335,260 @@ export function scoreMultipleResponse(question: ScorableQuestion, response: stri
  * first alternative (the correct option). Supports partial credit.
  */
 export function scoreCloze(question: ScorableQuestion, response: string): number {
-    const gaps = parseClozeGaps(question.prompt);
-    if (gaps.length === 0) return 0;
+    const correct = clozeGapCorrectness(question, response);
+    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+}
 
+/** Per-gap correctness of a cloze response, in gap order — also feeds per-gap item analysis. */
+export function clozeGapCorrectness(question: ScorableQuestion, response: string): boolean[] {
     const answers = parseJsonRecord(response);
-    const isDropdown = question.type === 'cloze-dropdown';
-    const correctCount = gaps.filter((gap) => {
+    const exactTile = question.type === 'cloze-dropdown';
+    return parseClozeGaps(question.prompt).map((gap) => {
         const raw = answers[gap.index];
         const studentAnswer = typeof raw === 'string' ? raw.trim() : '';
         if (!studentAnswer) return false;
-        if (isDropdown) return studentAnswer === gap.alternatives[0];
-        return gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
-    }).length;
+        if (exactTile) return studentAnswer === gap.alternatives[0];
+        return gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
+    });
+}
 
-    return partialOrAll(question, correctCount, gaps.length);
+/** Auto-score a matrix question: each row is correct when the student picked its correctColumnId. Supports partial credit. */
+export function scoreMatrix(question: ScorableQuestion, response: string): number {
+    const correct = matrixRowCorrectness(question, response);
+    return correct.length === 0 ? 0 : partialOrAll(question, correct.filter(Boolean).length, correct.length);
+}
+
+/** Per-row correctness of a matrix response, in row order. */
+export function matrixRowCorrectness(question: ScorableQuestion, response: string): boolean[] {
+    const answers = parseJsonRecord(response);
+    return (question.matrixRows ?? []).map((row) => answers[row.id] === row.correctColumnId);
+}
+
+/**
+ * Word-level alignment of a dictation response against the target sentence (Levenshtein over
+ * tokens, no speech recognition). Returns, per target word, whether it was matched in the best
+ * alignment, plus the edit distance. Case and punctuation never count; contractions, spelling
+ * variants and minor slips follow the question's opt-in answerTolerance.
+ */
+export function alignDictation(
+    question: ScorableQuestion,
+    response: string
+): { matched: boolean[]; distance: number; target: string[] } {
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    const target = answerTokens(question.dictationText ?? '', tol);
+    const given = answerTokens(response, tol);
+    const n = target.length;
+    const m = given.length;
+    const d: number[][] = Array.from({ length: n + 1 }, (_, i) => [i, ...new Array<number>(m).fill(0)]);
+    for (let j = 1; j <= m; j++) d[0][j] = j;
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            const sub = d[i - 1][j - 1] + (tokensMatch(target[i - 1], given[j - 1], tol) ? 0 : 1);
+            d[i][j] = Math.min(sub, d[i - 1][j] + 1, d[i][j - 1] + 1);
+        }
+    }
+    const matched = new Array<boolean>(n).fill(false);
+    let i = n;
+    let j = m;
+    while (i > 0 && j > 0) {
+        const isMatch = tokensMatch(target[i - 1], given[j - 1], tol);
+        if (isMatch && d[i][j] === d[i - 1][j - 1]) {
+            matched[i - 1] = true;
+            i--;
+            j--;
+        } else if (d[i][j] === d[i - 1][j - 1] + 1) {
+            i--;
+            j--;
+        } else if (d[i][j] === d[i - 1][j] + 1) {
+            i--;
+        } else {
+            j--;
+        }
+    }
+    return { matched, distance: d[n][m], target };
+}
+
+/** Auto-score a dictation question: 1 − (word edit distance ÷ target words), floored at 0; all-or-nothing when partialCredit is false. */
+export function scoreDictation(question: ScorableQuestion, response: string): number {
+    const { matched, distance } = alignDictation(question, response);
+    if (matched.length === 0) return 0;
+    if (question.partialCredit === false) return distance === 0 ? question.points : 0;
+    return question.points * Math.max(0, 1 - distance / matched.length);
+}
+
+export const KEY_WORD_DEFAULT_LIMIT = { min: 2, max: 5 };
+
+/** Words in a typed answer, counted the way the scorer tokenizes it: punctuation-only tokens don't count and a contraction is one word. */
+export function answerWordCount(text: string): number {
+    return answerTokens(text, { punctuation: true }).length;
+}
+
+/** Splits an accepted key-word-transformation answer into its marked chunks: "has been // for years" → 2 chunks. */
+export function keyWordChunks(answer: string): string[] {
+    return answer
+        .split('//')
+        .map((c) => c.trim())
+        .filter(Boolean);
+}
+
+function indexOfTokens(haystack: string[], needle: string[], from: number, tol: AnswerTolerance): number {
+    for (let i = from; i + needle.length <= haystack.length; i++) {
+        if (needle.every((word, k) => tokensMatch(word, haystack[i + k], tol))) return i;
+    }
+    return -1;
+}
+
+/**
+ * Marks earned (and available) for a key word transformation response against its best accepted
+ * answer. Each `//`-separated chunk of an accepted answer is one mark, found as a contiguous word
+ * run in the response; chunk 2 must come after chunk 1. A response outside the word limit
+ * (key word included) earns nothing.
+ */
+export function keyWordMarks(question: ScorableQuestion, response: string): { earned: number; total: number } {
+    const answers = question.expectedAnswers?.length
+        ? question.expectedAnswers
+        : question.expectedAnswer
+          ? [question.expectedAnswer]
+          : [];
+    const chunkSets = answers.map(keyWordChunks).filter((c) => c.length > 0);
+    const total = Math.max(0, ...chunkSets.map((c) => c.length));
+    const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
+    const wordCount = answerWordCount(response);
+    if (total === 0 || wordCount < limit.min || wordCount > limit.max) return { earned: 0, total };
+
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    const given = answerTokens(response, tol);
+    // The key word must appear in the answer, unchanged, or nothing is awarded.
+    const keyTokens = answerTokens(question.keyWord ?? '', tol);
+    if (keyTokens.length > 0 && indexOfTokens(given, keyTokens, 0, tol) < 0) return { earned: 0, total };
+    let best = 0;
+    for (const chunks of chunkSets) {
+        let from = 0;
+        let earned = 0;
+        for (const chunk of chunks) {
+            const at = indexOfTokens(given, answerTokens(chunk, tol), from, tol);
+            if (at >= 0) {
+                earned++;
+                from = at + answerTokens(chunk, tol).length;
+            }
+        }
+        best = Math.max(best, earned / chunks.length);
+    }
+    return { earned: best * total, total };
+}
+
+/** Auto-score a key word transformation: share of marked chunks found, all-or-nothing when partialCredit is false. */
+export function scoreKeyWordTransformation(question: ScorableQuestion, response: string): number {
+    const { earned, total } = keyWordMarks(question, response);
+    if (total === 0) return 0;
+    return partialOrAll(question, earned, total);
+}
+
+// ── Error correction ────────────────────────────────────────────────────────
+
+export interface ErrorFragment {
+    index: number;
+    /** What the student sees and can select */
+    text: string;
+    /** Accepted corrections; empty means the fragment is already correct */
+    corrections: string[];
+}
+
+export type ErrorPassageSegment = { type: 'text'; text: string } | ({ type: 'fragment' } & ErrorFragment);
+
+/** Splits an error passage into text and selectable fragments; `[[wrong|right]]` marks an error, `[[fine]]` a decoy. */
+export function parseErrorPassage(passage: string): ErrorPassageSegment[] {
+    return parseHotTextFragments(passage).map((segment) => {
+        if (segment.type === 'text') return segment;
+        const [text, ...corrections] = splitClozeAlternatives(segment.text);
+        return { type: 'fragment', index: segment.index, text: text ?? '', corrections };
+    });
+}
+
+/** The same passage with every correction removed — what students receive, so the key never leaves the server. */
+export function stripErrorKey(passage: string): string {
+    return passage.replace(/\[\[(.*?)\]\]/g, (_, inner: string) => `[[${inner.split('|')[0].trim()}]]`);
+}
+
+/** Auto-score an error-correction question: per error one mark for selecting it and one for a correct correction. */
+export function scoreErrorCorrection(question: ScorableQuestion, response: string): number {
+    const fragments = parseErrorPassage(question.errorPassage ?? '').filter(
+        (s): s is Extract<ErrorPassageSegment, { type: 'fragment' }> => s.type === 'fragment'
+    );
+    const errors = fragments.filter((f) => f.corrections.length > 0);
+    if (errors.length === 0) return 0;
+    const picks = parseJsonRecord(response);
+    const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
+    let marks = 0;
+    for (const error of errors) {
+        if (!(error.index in picks)) continue;
+        marks++;
+        const typed = picks[error.index];
+        if (typeof typed === 'string' && error.corrections.some((c) => answersMatch(c, typed, tol))) marks++;
+    }
+    if (question.penaliseFalsePicks) {
+        const falsePicks = fragments.filter((f) => f.corrections.length === 0 && f.index in picks).length;
+        marks = Math.max(0, marks - falsePicks);
+    }
+    return partialOrAll(question, marks, errors.length * 2);
+}
+
+// ── Sentence builder ────────────────────────────────────────────────────────
+
+function sentenceWords(sentence: string): string[] {
+    return sentence.trim().split(/\s+/).filter(Boolean);
+}
+
+/** The shuffled word tiles for a sentence-builder question, never in the target order (for 2+ different words). */
+export function sentenceBuilderTiles(question: ScorableQuestion): string[] {
+    if (question.sentenceTiles?.length) return question.sentenceTiles;
+    const words = sentenceWords(question.sentenceTargets?.[0] ?? '');
+    const shuffled = seededShuffle(words, question.prompt + words.join(' '));
+    return shuffled.length > 1 && shuffled.every((w, i) => w === words[i])
+        ? [...shuffled.slice(1), shuffled[0]]
+        : shuffled;
+}
+
+function normaliseWord(word: string): string {
+    return word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
+}
+
+function longestCommonRun(a: string[], b: string[]): number {
+    let best = 0;
+    let prev = new Array<number>(b.length + 1).fill(0);
+    for (let i = 1; i <= a.length; i++) {
+        const row = new Array<number>(b.length + 1).fill(0);
+        for (let j = 1; j <= b.length; j++) {
+            if (a[i - 1] === b[j - 1]) {
+                row[j] = prev[j - 1] + 1;
+                best = Math.max(best, row[j]);
+            }
+        }
+        prev = row;
+    }
+    return best;
+}
+
+/** Auto-score a sentence builder: the response is the JSON array of tile texts in the order placed. */
+export function scoreSentenceBuilder(question: ScorableQuestion, response: string): number {
+    const targets = (question.sentenceTargets ?? [])
+        .map((t) => sentenceWords(t).map(normaliseWord))
+        .filter((t) => t.length > 0);
+    if (targets.length === 0) return 0;
+    const placed = parseJsonArray(response)
+        .filter((w): w is string => typeof w === 'string')
+        .map(normaliseWord);
+    if (placed.length === 0) return 0;
+    const fraction = Math.max(
+        ...targets.map((target) => {
+            const run = longestCommonRun(placed, target);
+            if (question.builderScoring === 'all-or-nothing') {
+                return placed.length === target.length && run === target.length ? 1 : 0;
+            }
+            return run / target.length;
+        })
+    );
+    return question.points * fraction;
 }
 
 /** Auto-score a matching question: each pair is correct when the student paired it with itself. Supports partial credit. */
@@ -260,7 +658,18 @@ export function autoScoreResponse(question: ScorableQuestion, response: string):
             return scoreNumeric(question, response) ?? 0;
         case 'cloze':
         case 'cloze-dropdown':
+        case 'cloze-bank':
             return scoreCloze(question, response);
+        case 'matrix':
+            return scoreMatrix(question, response);
+        case 'error-correction':
+            return scoreErrorCorrection(question, response);
+        case 'sentence-builder':
+            return scoreSentenceBuilder(question, response);
+        case 'key-word-transformation':
+            return scoreKeyWordTransformation(question, response);
+        case 'dictation':
+            return scoreDictation(question, response);
         case 'matching':
             return scoreMatching(question, response);
         case 'ordering':

@@ -17,7 +17,11 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-const makeAppValue = () => ({ settings: {}, addQuestionBankItem: mockAddQuestionBankItem });
+const makeAppValue = () => ({
+    settings: {},
+    addQuestionBankItem: mockAddQuestionBankItem,
+    rubrics: [{ id: 'r1', name: 'Email rubric' }],
+});
 
 vi.mock('../../../context/AppContext', () => ({
     useApp: () => makeAppValue(),
@@ -219,6 +223,7 @@ describe('QuestionEditor extended', () => {
                 ['matching', (q) => (q.matchingPairs ?? []).length],
                 ['ordering', (q) => (q.orderItems ?? []).length],
                 ['categorize', (q) => (q.categories ?? []).length],
+                ['matrix', (q) => (q.matrixRows ?? []).length && (q.matrixColumns ?? []).length],
                 ['audio-response', (q) => q.maxRecordingSeconds],
             ];
             for (const [type, pick] of cases) {
@@ -240,6 +245,56 @@ describe('QuestionEditor extended', () => {
             const updated = onChange.mock.calls.at(-1)![0] as TestQuestion;
             expect(updated.options).toHaveLength(2);
             expect(updated.type).toBe('multiple-response');
+        });
+    });
+
+    describe('key word transformation and word formation', () => {
+        it('edits the key word and parses accepted answers with // chunks', () => {
+            const { onChange } = renderEditor(makeQuestion({ type: 'key-word-transformation' }));
+            fireEvent.change(screen.getByLabelText(/tests\.kwt_key_word_label/), { target: { value: 'for' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ keyWord: 'for' }));
+            fireEvent.change(screen.getByLabelText('tests.kwt_answers_label'), {
+                target: { value: 'have worked // for years | have been // for years' },
+            });
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.objectContaining({ expectedAnswers: ['have worked // for years', 'have been // for years'] })
+            );
+        });
+
+        it('keeps max at or above min when min is raised, and keeps a typed | separator', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'key-word-transformation', answerWordLimit: { min: 2, max: 5 } })
+            );
+            fireEvent.change(screen.getByLabelText('tests.kwt_word_limit_min'), { target: { value: '7' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ answerWordLimit: { min: 7, max: 7 } }));
+            const answers = screen.getByLabelText('tests.kwt_answers_label') as HTMLInputElement;
+            fireEvent.change(answers, { target: { value: 'a // b | ' } });
+            expect(answers.value).toBe('a // b | ');
+        });
+
+        it('suggests derived forms for a gap stem and adds the pick as the gap answer', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'cloze', prompt: 'Her {{}}(HAPPY) showed.', wordFormation: true })
+            );
+            fireEvent.click(screen.getByText('tests.derived_forms_button'));
+            fireEvent.click(screen.getByRole('button', { name: 'happiness' }));
+            expect(onChange).toHaveBeenLastCalledWith(
+                expect.objectContaining({ prompt: 'Her {{happiness}}(HAPPY) showed.' })
+            );
+        });
+    });
+
+    describe('rubric-scored tasks', () => {
+        it('offers a rubric on open and audio-response questions only', () => {
+            const { onChange, view } = renderEditor(makeQuestion({ type: 'open' }));
+            fireEvent.change(screen.getByLabelText('tests.question_rubric_label'), { target: { value: 'r1' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rubricId: 'r1' }));
+            fireEvent.change(screen.getByLabelText('tests.question_rubric_label'), { target: { value: '' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ rubricId: undefined }));
+            view.unmount();
+
+            renderEditor(makeQuestion({ type: 'short-answer' }));
+            expect(screen.queryByLabelText('tests.question_rubric_label')).toBeNull();
         });
     });
 

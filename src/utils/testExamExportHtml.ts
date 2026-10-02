@@ -16,6 +16,9 @@ import {
     answerSheetGeometry,
     answerSheetQrPayload,
     categorizeBookletData,
+    bankBookletTiles,
+    builderBookletTiles,
+    errorBookletParts,
     clozeBookletParts,
     EXAM_PAGE_MM,
     fiducialMarkers,
@@ -23,6 +26,7 @@ import {
     hotTextFallbackText,
     hotTextMirrorParts,
     matchingBookletData,
+    matrixBookletData,
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
@@ -77,7 +81,7 @@ function richPromptHtml(question: TestQuestion): string {
 }
 
 function questionBodyHtml(question: TestQuestion, number: number, options: TestExamExportOptions): string {
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const prompt = isCloze
         ? `<div style="line-height:1.8;white-space:pre-line">${clozeBookletHtml(question)}</div>`
         : richPromptHtml(question);
@@ -105,6 +109,48 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
         case 'true-false':
             extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${tx('true')}</div><div><strong>B</strong>&nbsp;&nbsp;${tx('false')}</div></div>`;
             break;
+        case 'error-correction':
+            extra += `<div style="margin-top:6px;padding:8px;background:#f8fafc;border-left:3px solid #94a3b8;line-height:1.8;white-space:pre-line">${errorBookletParts(
+                question
+            )
+                .map((p) =>
+                    p.number
+                        ? `<span style="text-decoration:underline">[${p.number}] ${escapeHtml(p.text)}</span>`
+                        : escapeHtml(p.text)
+                )
+                .join(
+                    ''
+                )}</div><div style="margin-top:4px;font-size:11px;color:#6b7280">${tx('error_correction_instruction')}</div>`;
+            break;
+        case 'sentence-builder':
+            extra += `<div style="margin-top:6px;padding:6px 10px;border:1px dashed #94a3b8">${builderBookletTiles(
+                question
+            )
+                .map((t) => `<span style="display:inline-block;margin:2px 10px 2px 0">${escapeHtml(t.text)}</span>`)
+                .join('')}</div>`;
+            break;
+        case 'key-word-transformation':
+            extra += `<div style="margin-top:6px"><span style="display:inline-block;padding:2px 12px;border:2px solid #000;font-weight:700;text-transform:uppercase">${escapeHtml(question.keyWord ?? '')}</span><div style="margin-top:6px">${escapeHtml(question.gappedSentence ?? '')}</div></div>`;
+            break;
+        case 'cloze-bank':
+            extra += `<div style="margin-top:6px;padding:6px 10px;border:1px dashed #94a3b8">${bankBookletTiles(
+                question
+            )
+                .map(
+                    (t) =>
+                        `<span style="display:inline-block;margin:2px 10px 2px 0"><strong>${t.letter}</strong>&nbsp;${escapeHtml(t.text)}</span>`
+                )
+                .join('')}</div>`;
+            break;
+        case 'matrix': {
+            const data = matrixBookletData(question);
+            extra += `<div style="margin-top:6px"><div style="font-size:11px;color:#6b7280">${data.columns
+                .map((c) => `<strong>${c.letter}</strong>&nbsp;${escapeHtml(c.text)}`)
+                .join(' &nbsp;·&nbsp; ')}</div>${data.rows
+                .map((r, i) => `<div style="margin:2px 0">${i + 1}. ${escapeHtml(r)}</div>`)
+                .join('')}</div>`;
+            break;
+        }
         case 'matching':
             extra += matchingBookletHtml(question);
             break;

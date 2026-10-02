@@ -36,6 +36,10 @@ import {
     hotTextFallbackText,
     hotTextMirrorParts,
     matchingBookletData,
+    matrixBookletData,
+    bankBookletTiles,
+    builderBookletTiles,
+    errorBookletParts,
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
@@ -339,7 +343,7 @@ async function questionParagraphs(
     number: number,
     options: TestExamExportOptions
 ): Promise<(Paragraph | Table)[]> {
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const rich = isCloze ? null : await richPromptToDocx(plainQuestionPromptText(question));
     const promptRuns = rich ? rich.leadRuns : clozeRuns(question);
 
@@ -387,6 +391,71 @@ async function questionParagraphs(
                 })
             );
             break;
+        case 'error-correction':
+            blocks.push(
+                new Paragraph({
+                    children: errorBookletParts(question).map(
+                        (p) =>
+                            new TextRun({
+                                text: p.number ? `[${p.number}] ${p.text}` : p.text,
+                                underline: p.number ? {} : undefined,
+                            })
+                    ),
+                    spacing: { after: 60 },
+                }),
+                new Paragraph({
+                    children: [new TextRun({ text: tx('error_correction_instruction'), size: 18, color: '6b7280' })],
+                })
+            );
+            break;
+        case 'sentence-builder':
+            blocks.push(
+                new Paragraph({
+                    children: builderBookletTiles(question).map((t) => new TextRun(`${t.text}    `)),
+                    indent: { left: 360 },
+                })
+            );
+            break;
+        case 'key-word-transformation':
+            blocks.push(
+                new Paragraph({
+                    children: [new TextRun({ text: (question.keyWord ?? '').toUpperCase(), bold: true })],
+                    indent: { left: 360 },
+                    border: {
+                        top: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        bottom: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        left: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                        right: { style: BorderStyle.SINGLE, size: 8, color: '000000' },
+                    },
+                }),
+                new Paragraph({ text: question.gappedSentence ?? '', indent: { left: 360 }, spacing: { before: 80 } })
+            );
+            break;
+        case 'cloze-bank':
+            blocks.push(
+                new Paragraph({
+                    children: bankBookletTiles(question).flatMap((t) => [
+                        new TextRun({ text: `${t.letter} `, bold: true }),
+                        new TextRun(`${t.text}    `),
+                    ]),
+                    indent: { left: 360 },
+                })
+            );
+            break;
+        case 'matrix': {
+            const data = matrixBookletData(question);
+            blocks.push(
+                new Paragraph({
+                    children: data.columns.flatMap((c) => [
+                        new TextRun({ text: `${c.letter} `, bold: true }),
+                        new TextRun(`${c.text}    `),
+                    ]),
+                    indent: { left: 360 },
+                }),
+                ...data.rows.map((r, i) => new Paragraph({ text: `${i + 1}.  ${r}`, indent: { left: 360 } }))
+            );
+            break;
+        }
         case 'matching':
             blocks.push(matchingTable(question));
             break;

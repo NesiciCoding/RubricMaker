@@ -58,3 +58,17 @@ describe('plainQuestionPromptText', () => {
         expect(plainQuestionPromptText({ type: 'multiple-choice', prompt: '<p>Pick one</p>' })).toBe('<p>Pick one</p>');
     });
 });
+
+describe('addGapAlternative', () => {
+    it('appends to only the requested gap', async () => {
+        const { addGapAlternative } = await import('./clozeParse');
+        expect(addGapAlternative('I {{went|go}} and {{ate}}.', 1, 'eat')).toBe('I {{went|go}} and {{ate|eat}}.');
+    });
+});
+
+describe('addGapAlternative on an empty gap', () => {
+    it('sets the answer instead of leaving a leading bar', async () => {
+        const { addGapAlternative } = await import('./clozeParse');
+        expect(addGapAlternative('Her {{}}(HAPPY) showed.', 0, 'happiness')).toBe('Her {{happiness}}(HAPPY) showed.');
+    });
+});

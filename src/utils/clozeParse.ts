@@ -54,10 +54,18 @@ export function renderClozeSegments(prompt: string): ClozeSegment[] {
  * that separately).
  */
 export function plainQuestionPromptText(question: { type: TestQuestionType; prompt: string }): string {
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
         return renderClozeSegments(question.prompt)
             .map((segment) => (segment.type === 'gap' ? (segment.gap.alternatives[0] ?? '') : segment.text))
             .join('');
     }
     return question.prompt;
+}
+
+/** Adds `word` to the nth `{{…}}` gap: as its answer when the gap is empty, otherwise as one more `|` alternative. */
+export function addGapAlternative(prompt: string, gapIndex: number, word: string): string {
+    let i = -1;
+    return prompt.replace(new RegExp(CLOZE_GAP_PATTERN.source, 'g'), (match, inner: string) =>
+        ++i === gapIndex ? `{{${inner.trim() ? `${inner}|${word}` : word}}}` : match
+    );
 }

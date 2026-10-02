@@ -22,10 +22,14 @@ import SebGate from '../components/Tests/SebGate';
 import HelpPopover from '../components/Tests/HelpPopover';
 import RichContent from '../components/Editor/RichContent';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import ErrorCorrectionAnswer from '../components/Tests/ErrorCorrectionAnswer';
+import SentenceBuilderAnswer from '../components/Tests/SentenceBuilderAnswer';
+import LimitedAudio, { OptionAudioButton } from '../components/Tests/LimitedAudio';
 import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
+import { KEY_WORD_DEFAULT_LIMIT, answerWordCount } from '../../supabase/functions/_shared/testScoring';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
 import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/placementGenerator';
@@ -115,7 +119,7 @@ function isShortCode(code: string): boolean {
 /** Plain read-aloud text for a question's prompt + options — cloze gaps become `blankWord` rather
  * than their answer, so a graded cloze's read-aloud accommodation can't hand out the answer. */
 function speakableQuestionText(question: TestQuestion, blankWord: string): string {
-    const promptText = ['cloze', 'cloze-dropdown'].includes(question.type)
+    const promptText = ['cloze', 'cloze-dropdown', 'cloze-bank'].includes(question.type)
         ? renderClozeSegments(question.prompt)
               .map((s) => (s.type === 'gap' ? blankWord : s.text))
               .join('')
@@ -249,6 +253,7 @@ export default function StudentTestPage() {
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+    const [audioPlays, setAudioPlays] = useState<Record<string, number>>({});
 
     const startedAtRef = useRef<string>(new Date().toISOString());
     const submitInFlightRef = useRef(false);
@@ -440,6 +445,14 @@ export default function StudentTestPage() {
         supabaseAnonKey: assignment?.supabaseAnonKey,
         onNudge: (message) => showToast(message, 'info'),
     });
+
+    const handleAudioPlay = useCallback(
+        (key: string, count: number) => {
+            setAudioPlays((prev) => ({ ...prev, [key]: count }));
+            telemetry.recordEvent({ type: 'audio_play', at: new Date().toISOString(), value: `${key}:${count}` });
+        },
+        [telemetry]
+    );
 
     // Retry any queued hand-ins for this project (a prior failed submit, from this attempt or an
     // earlier page load). success — or a 409 "already submitted", which means a prior retry
@@ -805,11 +818,14 @@ export default function StudentTestPage() {
               title: generatorPassage.title,
               content: generatorPassage.content,
               audioUrl: generatorPassage.audioUrl,
+              spokenText: generatorPassage.spokenText,
+              maxPlays: generatorPassage.maxPlays,
           }
         : question?.sectionId
           ? sections.find((s) => s.id === question.sectionId)
           : null;
     const sectionAudioSrc = safeAudioSrc(currentSection?.audioUrl);
+    const sectionStimulus = currentSection as Partial<TestSection> | null | undefined;
 
     // For a staged test, the last question of a stage routes onward instead of submitting
     // directly — resolveNextSection returns null once the path reaches a terminal section.
@@ -1063,12 +1079,10 @@ export default function StudentTestPage() {
                                                     })}
                                                 </div>
                                                 <div style={{ fontWeight: 600, marginTop: 2 }}>
-                                                    {q.type === 'cloze' || q.type === 'cloze-dropdown'
-                                                        ? t(
-                                                              q.type === 'cloze-dropdown'
-                                                                  ? 'tests.taking.cloze_dropdown_instruction'
-                                                                  : 'tests.taking.cloze_instruction'
-                                                          )
+                                                    {q.type === 'cloze' ||
+                                                    q.type === 'cloze-dropdown' ||
+                                                    q.type === 'cloze-bank'
+                                                        ? t(clozeInstructionKey(q.type))
                                                         : q.prompt}
                                                 </div>
                                                 {q.explanation && (
@@ -1083,6 +1097,30 @@ export default function StudentTestPage() {
                                                         {q.explanation}
                                                     </p>
                                                 )}
+                                                {(() => {
+                                                    const section = (test?.sections ?? []).find(
+                                                        (sec) => sec.id === q.sectionId
+                                                    );
+                                                    const firstOfSection =
+                                                        !!section &&
+                                                        orderedQuestions.find((oq) => oq.sectionId === section.id)
+                                                            ?.id === q.id;
+                                                    const transcript =
+                                                        q.transcript || (firstOfSection ? section?.transcript : '');
+                                                    return transcript ? (
+                                                        <details style={{ marginTop: 8 }}>
+                                                            <summary className="text-sm">
+                                                                {t('tests.taking.transcript_title')}
+                                                            </summary>
+                                                            <p
+                                                                className="text-muted text-sm"
+                                                                style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}
+                                                            >
+                                                                {transcript}
+                                                            </p>
+                                                        </details>
+                                                    ) : null;
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -1131,13 +1169,18 @@ export default function StudentTestPage() {
                                     <RichContent html={currentSection.content} />
                                 </div>
                             )}
-                            {sectionAudioSrc && (
-                                <audio
-                                    controls
-                                    src={sectionAudioSrc}
-                                    aria-label={t('tests.taking.section_audio_alt')}
-                                    style={{ marginBottom: 16, width: '100%' }}
-                                />
+                            {(sectionAudioSrc || sectionStimulus?.spokenText) && currentSection && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <LimitedAudio
+                                        src={sectionAudioSrc}
+                                        spokenText={sectionStimulus?.spokenText}
+                                        maxPlays={sectionStimulus?.maxPlays}
+                                        plays={audioPlays[`section:${currentSection.id}`] ?? 0}
+                                        onPlay={(count) => handleAudioPlay(`section:${currentSection.id}`, count)}
+                                        lang={test?.contentLanguage ?? 'en'}
+                                        label={t('tests.taking.section_audio_alt')}
+                                    />
+                                </div>
                             )}
 
                             {question && (
@@ -1153,6 +1196,8 @@ export default function StudentTestPage() {
                                     hideTotal={isStaircase || isGenerator}
                                     readAloudAllowed={readAloudAllowed}
                                     lang={test?.contentLanguage ?? 'en'}
+                                    audioPlays={audioPlays[`question:${question.id}`] ?? 0}
+                                    onAudioPlay={(count) => handleAudioPlay(`question:${question.id}`, count)}
                                 />
                             )}
 
@@ -1500,6 +1545,8 @@ interface QuestionCardProps {
     readAloudAllowed?: boolean;
     /** BCP-47 base language code for read-aloud voice selection. */
     lang?: string;
+    audioPlays?: number;
+    onAudioPlay?: (count: number) => void;
 }
 
 function QuestionCard({
@@ -1513,9 +1560,11 @@ function QuestionCard({
     hideTotal,
     readAloudAllowed,
     lang,
+    audioPlays = 0,
+    onAudioPlay,
 }: QuestionCardProps) {
     const { t } = useTranslation();
-    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown';
+    const isCloze = question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
     const [hintVisible, setHintVisible] = useState(false);
     const wordCount =
         question.type === 'open' && value.trim() ? value.trim().split(/\s+/).filter(Boolean).length : null;
@@ -1560,13 +1609,7 @@ function QuestionCard({
                 }}
             >
                 {isCloze ? (
-                    <p style={{ margin: 0 }}>
-                        {t(
-                            question.type === 'cloze-dropdown'
-                                ? 'tests.taking.cloze_dropdown_instruction'
-                                : 'tests.taking.cloze_instruction'
-                        )}
-                    </p>
+                    <p style={{ margin: 0 }}>{t(clozeInstructionKey(question.type))}</p>
                 ) : (
                     <RichContent html={question.prompt} className="rm-question-prompt" />
                 )}
@@ -1576,6 +1619,7 @@ function QuestionCard({
                     question.type === 'ordering' ||
                     question.type === 'categorize' ||
                     question.type === 'hot-text' ||
+                    question.type === 'matrix' ||
                     isCloze) && (
                     <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_student_title`)}>
                         {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
@@ -1601,13 +1645,32 @@ function QuestionCard({
             )}
 
             {/* Audio stimulus */}
-            {safeAudioSrc(question.audioUrl) && (
-                <audio
-                    controls
-                    src={safeAudioSrc(question.audioUrl)}
-                    aria-label={t('tests.taking.question_audio_alt')}
-                    style={{ display: 'block', width: '100%', marginBottom: 16 }}
-                />
+            {question.type !== 'dictation' && (safeAudioSrc(question.audioUrl) || question.spokenText) && (
+                <div style={{ marginBottom: 16 }}>
+                    <LimitedAudio
+                        src={safeAudioSrc(question.audioUrl)}
+                        spokenText={question.spokenText}
+                        maxPlays={question.maxPlays}
+                        plays={audioPlays}
+                        onPlay={(count) => onAudioPlay?.(count)}
+                        lang={lang ?? 'en'}
+                        label={t('tests.taking.question_audio_alt')}
+                    />
+                </div>
+            )}
+
+            {question.type === 'dictation' && (
+                <div style={{ marginBottom: 16 }}>
+                    <LimitedAudio
+                        src={safeAudioSrc(question.audioUrl)}
+                        spokenText={safeAudioSrc(question.audioUrl) ? undefined : question.dictationText}
+                        maxPlays={question.maxPlays}
+                        plays={audioPlays}
+                        onPlay={(count) => onAudioPlay?.(count)}
+                        lang={lang ?? 'en'}
+                        label={t('tests.taking.dictation_play')}
+                    />
+                </div>
             )}
 
             {/* Hint toggle */}
@@ -1686,6 +1749,12 @@ function QuestionCard({
                                 />
                             )}
                             <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                            <OptionAudioButton
+                                src={safeAudioSrc(opt.audioUrl)}
+                                spokenText={opt.spokenText}
+                                lang={lang ?? 'en'}
+                                label={t('tests.taking.option_audio_play')}
+                            />
                         </label>
                     ))}
                 </div>
@@ -1730,6 +1799,12 @@ function QuestionCard({
                                     />
                                 )}
                                 <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                                <OptionAudioButton
+                                    src={safeAudioSrc(opt.audioUrl)}
+                                    spokenText={opt.spokenText}
+                                    lang={lang ?? 'en'}
+                                    label={t('tests.taking.option_audio_play')}
+                                />
                             </label>
                         );
                     })}
@@ -1766,6 +1841,8 @@ function QuestionCard({
 
             {isCloze && <ClozeAnswer question={question} value={value} onChange={onChange} code={code} />}
 
+            {question.type === 'matrix' && <MatrixAnswer question={question} value={value} onChange={onChange} />}
+
             {question.type === 'matching' && (
                 <MatchingAnswer question={question} value={value} onChange={onChange} code={code} />
             )}
@@ -1775,6 +1852,38 @@ function QuestionCard({
             )}
 
             {question.type === 'hot-text' && <HotTextAnswer question={question} value={value} onChange={onChange} />}
+
+            {question.type === 'dictation' && (
+                <textarea
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={t('tests.taking.dictation_placeholder')}
+                    aria-label={t('tests.taking.dictation_placeholder')}
+                    rows={3}
+                    style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        fontSize: '0.95rem',
+                        resize: 'vertical',
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                    }}
+                />
+            )}
+
+            {question.type === 'error-correction' && (
+                <ErrorCorrectionAnswer question={question} value={value} onChange={onChange} />
+            )}
+
+            {question.type === 'sentence-builder' && (
+                <SentenceBuilderAnswer question={question} value={value} onChange={onChange} />
+            )}
+
+            {question.type === 'key-word-transformation' && (
+                <KeyWordAnswer question={question} value={value} onChange={onChange} />
+            )}
 
             {question.type === 'short-answer' && (
                 <input
@@ -1856,9 +1965,82 @@ function QuestionCard({
                     value={value}
                     onChange={onChange}
                     maxRecordingSeconds={question.maxRecordingSeconds ?? DEFAULT_MAX_RECORDING_SECONDS}
+                    prepSeconds={question.prepSeconds}
+                    cueBullets={question.cueBullets}
                     onRecordingChange={onRecordingChange}
                 />
             )}
+        </div>
+    );
+}
+
+function KeyWordAnswer({
+    question,
+    value,
+    onChange,
+}: {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    const { t } = useTranslation();
+    const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
+    const words = answerWordCount(value);
+    const outside = words > 0 && (words < limit.min || words > limit.max);
+    const [before, after] = (question.gappedSentence ?? '').split(/_{3,}/, 2);
+    const hasGap = /_{3,}/.test(question.gappedSentence ?? '');
+    const input = (
+        <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            aria-label={t('tests.taking.kwt_answer_label')}
+            style={{
+                margin: '0 6px',
+                padding: '4px 8px',
+                minWidth: 220,
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text)',
+                fontSize: '0.95rem',
+            }}
+        />
+    );
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {question.keyWord && (
+                <div
+                    style={{
+                        alignSelf: 'flex-start',
+                        padding: '4px 14px',
+                        border: '2px solid var(--border)',
+                        borderRadius: 6,
+                        fontWeight: 700,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {question.keyWord}
+                </div>
+            )}
+            <p style={{ margin: 0, lineHeight: 2.2, color: 'var(--text)' }}>
+                {hasGap ? (
+                    <>
+                        {before}
+                        {input}
+                        {after}
+                    </>
+                ) : (
+                    <>
+                        {question.gappedSentence} {input}
+                    </>
+                )}
+            </p>
+            <span role="status" className="text-sm" style={{ color: outside ? 'var(--red)' : 'var(--text-muted)' }}>
+                {t('tests.taking.kwt_word_count', { count: words, min: limit.min, max: limit.max })}
+                {outside ? ` — ${t('tests.taking.kwt_out_of_limit')}` : ''}
+            </span>
         </div>
     );
 }
@@ -1869,6 +2051,8 @@ interface AudioResponseAnswerProps {
     value: string;
     onChange: (value: string) => void;
     maxRecordingSeconds: number;
+    prepSeconds?: number;
+    cueBullets?: string[];
     onRecordingChange?: (recording: boolean) => void;
 }
 
@@ -1877,18 +2061,35 @@ function safeRecordedAudioSrc(dataUri: string): string | undefined {
     return /^data:audio\//i.test(dataUri) ? dataUri : undefined;
 }
 
-function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecordingChange }: AudioResponseAnswerProps) {
+function AudioResponseAnswer({
+    value,
+    onChange,
+    maxRecordingSeconds,
+    prepSeconds,
+    cueBullets,
+    onRecordingChange,
+}: AudioResponseAnswerProps) {
     const { t } = useTranslation();
     const { status, start, stop } = useMediaRecorder();
     const [elapsedSec, setElapsedSec] = useState(0);
     const [micError, setMicError] = useState(false);
     const elapsedRef = useRef(0);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [prepRemaining, setPrepRemaining] = useState<number | null>(null);
+    const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const startingRef = useRef(false);
     const existing = parseAudioResponse(value);
 
     useEffect(() => {
-        onRecordingChange?.(status === 'recording');
-    }, [status, onRecordingChange]);
+        onRecordingChange?.(status === 'recording' || prepRemaining !== null);
+    }, [status, prepRemaining, onRecordingChange]);
+
+    useEffect(
+        () => () => {
+            if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+        },
+        []
+    );
 
     const stopRecording = useCallback(async () => {
         /* v8 ignore next -- the interval is always set while recording */
@@ -1906,10 +2107,19 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
     }, [stop, onChange]);
 
     async function startRecording() {
+        // Synchronous guard: a double click or a skipped prep must not start a second recorder
+        // while the first request for the microphone is still pending.
+        if (startingRef.current) return;
+        startingRef.current = true;
         setMicError(false);
         elapsedRef.current = 0;
         setElapsedSec(0);
-        const ok = await start();
+        let ok: boolean;
+        try {
+            ok = await start();
+        } finally {
+            startingRef.current = false;
+        }
         if (!ok) {
             setMicError(true);
             return;
@@ -1927,9 +2137,62 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
         };
     }, []);
 
+    function endPrep() {
+        if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+        prepTimerRef.current = null;
+        setPrepRemaining(null);
+        void startRecording();
+    }
+
+    function begin() {
+        if (startingRef.current || prepTimerRef.current || status === 'recording') return;
+        if (!prepSeconds || prepSeconds <= 0) {
+            void startRecording();
+            return;
+        }
+        let remaining = prepSeconds;
+        setPrepRemaining(remaining);
+        prepTimerRef.current = setInterval(() => {
+            remaining -= 1;
+            if (remaining <= 0) endPrep();
+            else setPrepRemaining(remaining);
+        }, 1000);
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {status === 'recording' ? (
+            {cueBullets && cueBullets.length > 0 && (
+                <div
+                    style={{
+                        padding: '10px 14px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--bg)',
+                    }}
+                >
+                    <strong style={{ fontSize: '0.85rem' }}>{t('tests.taking.cue_card_title')}</strong>
+                    <ul style={{ margin: '6px 0 0', paddingLeft: 20 }}>
+                        {cueBullets.map((bullet, i) => (
+                            <li key={i}>{bullet}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {prepRemaining !== null ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span role="timer" style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+                        {t('tests.taking.prep_countdown', { seconds: prepRemaining })}
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={endPrep}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        {t('tests.taking.prep_skip')}
+                    </button>
+                </div>
+            ) : status === 'recording' ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span
                         style={{
@@ -1958,7 +2221,7 @@ function AudioResponseAnswer({ value, onChange, maxRecordingSeconds, onRecording
                 </div>
             ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => void startRecording()}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={begin}>
                         {existing ? t('tests.taking.re_record') : t('tests.taking.start_recording')}
                     </button>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -1985,7 +2248,201 @@ interface ClozeAnswerProps {
     code: string;
 }
 
+function clozeInstructionKey(type: TestQuestion['type']): string {
+    if (type === 'cloze-dropdown') return 'tests.taking.cloze_dropdown_instruction';
+    if (type === 'cloze-bank') return 'tests.taking.cloze_bank_instruction';
+    return 'tests.taking.cloze_instruction';
+}
+
 function ClozeAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+    if (question.type === 'cloze-bank')
+        return <ClozeBankAnswer question={question} value={value} onChange={onChange} code={code} />;
+    return <ClozeInlineAnswer question={question} value={value} onChange={onChange} code={code} />;
+}
+
+function ClozeBankAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
+    const { t } = useTranslation();
+    const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
+    const tiles = useMemo(
+        () =>
+            seededShuffle(
+                [
+                    ...segments.flatMap((s) => (s.type === 'gap' ? [s.gap.alternatives[0] ?? ''] : [])),
+                    ...(question.bankDistractors ?? []),
+                ].filter(Boolean),
+                `${code}-${question.id}-bank`
+            ),
+        [segments, question.bankDistractors, code, question.id]
+    );
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+    const [selected, setSelected] = useState<number | null>(null);
+    const unique = question.bankUniqueUse ?? true;
+
+    const usedCounts = new Map<string, number>();
+    Object.values(answers).forEach((text) => usedCounts.set(text, (usedCounts.get(text) ?? 0) + 1));
+    const seenSoFar = new Map<string, number>();
+    const tileUsed = tiles.map((text) => {
+        const rank = seenSoFar.get(text) ?? 0;
+        seenSoFar.set(text, rank + 1);
+        return unique && rank < (usedCounts.get(text) ?? 0);
+    });
+
+    function place(gapIndex: number, tileIndex: number) {
+        if (tileUsed[tileIndex]) return;
+        onChange(JSON.stringify({ ...answers, [gapIndex]: tiles[tileIndex] }));
+        setSelected(null);
+    }
+
+    function clear(gapIndex: number) {
+        const next = { ...answers };
+        delete next[gapIndex];
+        onChange(JSON.stringify(next));
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+                role="group"
+                aria-label={t('tests.taking.cloze_bank_tiles_label')}
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    padding: 10,
+                    border: '1px dashed var(--border)',
+                    borderRadius: 8,
+                }}
+            >
+                {tiles.map((tile, i) => (
+                    <button
+                        key={`${tile}-${i}`}
+                        type="button"
+                        draggable={!tileUsed[i]}
+                        disabled={tileUsed[i]}
+                        aria-pressed={selected === i}
+                        onDragStart={(e) => e.dataTransfer.setData('text/plain', String(i))}
+                        onClick={() => setSelected(selected === i ? null : i)}
+                        style={{
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            border: selected === i ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--text)',
+                            opacity: tileUsed[i] ? 0.4 : 1,
+                            cursor: tileUsed[i] ? 'default' : 'grab',
+                        }}
+                    >
+                        {tile}
+                    </button>
+                ))}
+            </div>
+            <p style={{ margin: 0, fontSize: '1rem', lineHeight: 2.4, color: 'var(--text)' }}>
+                {segments.map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const gapIndex = segment.gap.index;
+                    const current = answers[gapIndex];
+                    return (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-label={t('tests.taking.cloze_bank_gap_label', { number: gapIndex + 1 })}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const dragged = Number(e.dataTransfer.getData('text/plain'));
+                                if (Number.isInteger(dragged) && tiles[dragged] !== undefined) place(gapIndex, dragged);
+                            }}
+                            onClick={() => {
+                                if (selected !== null) place(gapIndex, selected);
+                                else if (current) clear(gapIndex);
+                            }}
+                            style={{
+                                margin: '0 4px',
+                                minWidth: 80,
+                                padding: '2px 10px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                borderBottom: '2px solid var(--accent)',
+                                background: current
+                                    ? 'color-mix(in srgb, var(--accent) 10%, transparent)'
+                                    : 'var(--bg)',
+                                color: 'var(--text)',
+                            }}
+                        >
+                            {current || `(${gapIndex + 1})`}
+                        </button>
+                    );
+                })}
+            </p>
+        </div>
+    );
+}
+
+interface MatrixAnswerProps {
+    question: TestQuestion;
+    value: string;
+    onChange: (value: string) => void;
+}
+
+function MatrixAnswer({ question, value, onChange }: MatrixAnswerProps) {
+    const { t } = useTranslation();
+    const answers: Record<string, string> = useMemo(() => {
+        try {
+            return value ? (JSON.parse(value) as Record<string, string>) : {};
+        } catch {
+            return {};
+        }
+    }, [value]);
+    const columns = question.matrixColumns ?? [];
+    const cell = { padding: '8px 10px', borderBottom: '1px solid var(--border)', textAlign: 'center' as const };
+
+    return (
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', width: '100%', color: 'var(--text)' }}>
+                <thead>
+                    <tr>
+                        <th scope="col" style={{ ...cell, textAlign: 'left' }}>
+                            <span className="sr-only">{t('tests.taking.matrix_statement')}</span>
+                        </th>
+                        {columns.map((col) => (
+                            <th key={col.id} scope="col" style={cell}>
+                                {col.text}
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {(question.matrixRows ?? []).map((row) => (
+                        <tr key={row.id}>
+                            <th scope="row" style={{ ...cell, textAlign: 'left', fontWeight: 400 }}>
+                                {row.text}
+                            </th>
+                            {columns.map((col) => (
+                                <td key={col.id} style={cell}>
+                                    <input
+                                        type="radio"
+                                        name={`${question.id}-${row.id}`}
+                                        aria-label={`${row.text} — ${col.text}`}
+                                        checked={answers[row.id] === col.id}
+                                        onChange={() => onChange(JSON.stringify(withAnswer(answers, row.id, col.id)))}
+                                    />
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function ClozeInlineAnswer({ question, value, onChange, code }: ClozeAnswerProps) {
     const { t } = useTranslation();
     const segments = useMemo(() => renderClozeSegments(question.prompt), [question.prompt]);
     const answers: Record<string, string> = useMemo(() => {

@@ -15,6 +15,8 @@ export interface GeneratorPassage {
     title: string;
     content?: string;
     audioUrl?: string;
+    spokenText?: string;
+    maxPlays?: number;
     /** 0-based index of `question` within the bundle's questions. */
     questionIndex: number;
     questionCount: number;

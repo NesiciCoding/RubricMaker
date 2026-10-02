@@ -9,6 +9,8 @@ import type {
     TestStrongWeakSummary,
 } from '../types';
 import { autoScoreResponse, calcStudentTestRawPoints } from './testCalc';
+import { clozeGapCorrectness, matrixRowCorrectness } from '../../supabase/functions/_shared/testScoring';
+import { parseClozeGaps } from './clozeParse';
 import { clamp } from './clamp';
 
 /** Same thresholds as gradeColor() in periodReportExport.ts — keep these in sync. */
@@ -245,6 +247,26 @@ export interface QuestionItemAnalysis {
     discrimination: number | null;
     /** The most commonly chosen wrong option, for multiple-choice/multiple-response questions with options. */
     topDistractor: QuestionDistractor | null;
+    /** Share of answering students who got each row (matrix) or gap (cloze types) right; null for other question types. */
+    partAccuracy: QuestionPartAccuracy[] | null;
+}
+
+export interface QuestionPartAccuracy {
+    label: string;
+    accuracy: number;
+}
+
+function partCorrectness(question: Test['questions'][number], response: string): boolean[] | null {
+    if (question.type === 'matrix') return matrixRowCorrectness(question, response);
+    if (question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank') {
+        return clozeGapCorrectness(question, response);
+    }
+    return null;
+}
+
+function partLabels(question: Test['questions'][number]): string[] {
+    if (question.type === 'matrix') return (question.matrixRows ?? []).map((r) => r.text);
+    return parseClozeGaps(question.prompt).map((g) => `#${g.index + 1} ${g.alternatives[0] ?? ''}`);
 }
 
 // ponytail: classic upper/lower-27% split, needs at least this many submissions per
@@ -283,6 +305,7 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
         let lowerSum = 0;
         let lowerCount = 0;
         const optionCounts = new Map<string, number>();
+        const partHits: number[] = [];
 
         for (const { studentId, byQuestion } of answersByStudent) {
             const answer = byQuestion.get(question.id);
@@ -298,6 +321,10 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
                 lowerSum += fraction;
                 lowerCount++;
             }
+            const parts = partCorrectness(question, answer.response);
+            parts?.forEach((ok, i) => {
+                partHits[i] = (partHits[i] ?? 0) + (ok ? 1 : 0);
+            });
             if (question.type === 'multiple-choice' || question.type === 'multiple-response') {
                 let selected: string[];
                 try {
@@ -325,6 +352,11 @@ export function calcTestItemAnalysis(studentTests: StudentTest[], test: Test): Q
 
         const pValue = sampleSize > 0 ? fractionSum / sampleSize : null;
 
-        return { questionId: question.id, sampleSize, pValue, discrimination, topDistractor };
+        const partAccuracy =
+            partCorrectness(question, '') === null || sampleSize === 0
+                ? null
+                : partLabels(question).map((label, i) => ({ label, accuracy: (partHits[i] ?? 0) / sampleSize }));
+
+        return { questionId: question.id, sampleSize, pValue, discrimination, topDistractor, partAccuracy };
     });
 }

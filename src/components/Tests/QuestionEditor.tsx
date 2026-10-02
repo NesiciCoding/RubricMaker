@@ -32,7 +32,22 @@ import StandardsPickerModal from '../Standards/StandardsPickerModal';
 import CefrPickerModal from '../CEFR/CefrPickerModal';
 import HelpPopover from './HelpPopover';
 import AudioUrlStatus from './AudioUrlStatus';
-import { parseClozeGaps, plainQuestionPromptText, renderClozeSegments } from '../../utils/clozeParse';
+import {
+    addGapAlternative,
+    parseClozeGaps,
+    plainQuestionPromptText,
+    renderClozeSegments,
+} from '../../utils/clozeParse';
+import LineListTextarea from './LineListTextarea';
+import { gapStems, suggestDerivedForms } from '../../utils/wordFormation';
+import ErrorCorrectionFields from './ErrorCorrectionFields';
+import SentenceBuilderFields from './SentenceBuilderFields';
+import KeyWordTransformationFields from './KeyWordTransformationFields';
+import ListeningControlsFields from './ListeningControlsFields';
+import ClozeBankFields from './ClozeBankFields';
+import MatrixEditor, { defaultMatrixColumns, defaultMatrixRows } from './MatrixEditor';
+import AnswerToleranceFields from './AnswerToleranceFields';
+import DistractorSuggestions from './DistractorSuggestions';
 import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
@@ -74,6 +89,12 @@ export const QUESTION_TYPES: TestQuestionType[] = [
     'open',
     'cloze',
     'cloze-dropdown',
+    'cloze-bank',
+    'matrix',
+    'dictation',
+    'key-word-transformation',
+    'error-correction',
+    'sentence-builder',
     'matching',
     'ordering',
     'categorize',
@@ -96,13 +117,14 @@ export default function QuestionEditor({
     showSaveToBank = true,
 }: Props) {
     const { t, i18n } = useTranslation();
-    const { addQuestionBankItem } = useAuthoring();
+    const { addQuestionBankItem, rubrics = [] } = useAuthoring();
     const { settings } = useSettings();
 
     const { showToast } = useToast();
     const [pickingStandard, setPickingStandard] = React.useState(false);
     const [pickingCefr, setPickingCefr] = React.useState(false);
     const [expandedOptionImages, setExpandedOptionImages] = React.useState<Set<string>>(new Set());
+    const [expandedOptionAudio, setExpandedOptionAudio] = React.useState<Set<string>>(new Set());
     const [attachOpen, setAttachOpen] = React.useState(() => !!(question.imageUrl || question.audioUrl));
     const [advancedOpen, setAdvancedOpen] = React.useState(
         () => !!(question.hint || question.explanation || question.eloRating)
@@ -171,13 +193,16 @@ export default function QuestionEditor({
         update({ frameworkDescriptors, linkedGrammarItemId: deriveLinkedGrammarItemId(frameworkDescriptors) });
     }
 
+    const isClozeLike =
+        question.type === 'cloze' || question.type === 'cloze-dropdown' || question.type === 'cloze-bank';
+
     function changeType(type: TestQuestionType) {
         // Clear a stale grammar link (both the derived id and its frameworkDescriptors entry) when
         // switching to a type the grammar tag doesn't apply to, since getGrammarRecommendations()-style
         // matching has no type check of its own.
-        const keepsGrammarLink = (['cloze', 'cloze-dropdown', 'hot-text', 'matching'] as TestQuestionType[]).includes(
-            type
-        );
+        const keepsGrammarLink = (
+            ['cloze', 'cloze-dropdown', 'cloze-bank', 'matrix', 'hot-text', 'matching'] as TestQuestionType[]
+        ).includes(type);
         const linkedGrammarItemId = keepsGrammarLink ? question.linkedGrammarItemId : undefined;
         const frameworkDescriptors = keepsGrammarLink
             ? effectiveFrameworkDescriptors
@@ -196,6 +221,21 @@ export default function QuestionEditor({
                 correctBoolean: question.correctBoolean ?? true,
                 linkedGrammarItemId,
                 frameworkDescriptors,
+            });
+        } else if (type === 'matrix') {
+            const matrixColumns =
+                question.matrixColumns && question.matrixColumns.length > 0
+                    ? question.matrixColumns
+                    : defaultMatrixColumns();
+            update({
+                type,
+                linkedGrammarItemId,
+                frameworkDescriptors,
+                matrixColumns,
+                matrixRows:
+                    question.matrixRows && question.matrixRows.length > 0
+                        ? question.matrixRows
+                        : defaultMatrixRows(matrixColumns),
             });
         } else if (type === 'matching') {
             update({
@@ -554,7 +594,7 @@ export default function QuestionEditor({
 
             <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
-                {question.type === 'cloze' || question.type === 'cloze-dropdown' ? (
+                {isClozeLike ? (
                     <>
                         {question.type === 'cloze' && (
                             // Generated gaps carry only the correct word as a single alternative, no
@@ -653,6 +693,8 @@ export default function QuestionEditor({
                     </label>
                     {(question.options ?? []).map((option) => {
                         const showImageField = expandedOptionImages.has(option.id) || !!option.imageUrl;
+                        const showAudioField =
+                            expandedOptionAudio.has(option.id) || !!option.audioUrl || !!option.spokenText;
                         return (
                             <div key={option.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -706,6 +748,30 @@ export default function QuestionEditor({
                                     <button
                                         type="button"
                                         className="btn btn-ghost btn-icon btn-sm"
+                                        aria-label={t('tests.option_audio_label')}
+                                        aria-pressed={showAudioField}
+                                        title={t('tests.option_audio_label')}
+                                        onClick={() =>
+                                            setExpandedOptionAudio((prev) => {
+                                                const next = new Set(prev);
+                                                if (next.has(option.id)) next.delete(option.id);
+                                                else next.add(option.id);
+                                                return next;
+                                            })
+                                        }
+                                        style={{
+                                            color:
+                                                option.audioUrl || option.spokenText
+                                                    ? 'var(--accent)'
+                                                    : 'var(--text-muted)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <Music size={14} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('tests.remove_option')}
                                         style={{ color: 'var(--red)' }}
                                         disabled={question.options!.length <= 1}
@@ -748,12 +814,43 @@ export default function QuestionEditor({
                                         )}
                                     </div>
                                 )}
+                                {showAudioField && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 32 }}>
+                                        <input
+                                            type="url"
+                                            value={option.audioUrl ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { audioUrl: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.question_audio_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_audio_label')}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={option.spokenText ?? ''}
+                                            onChange={(e) =>
+                                                updateOption(option.id, { spokenText: e.target.value || undefined })
+                                            }
+                                            placeholder={t('tests.option_spoken_placeholder')}
+                                            style={{ flex: 1 }}
+                                            aria-label={t('tests.option_spoken_placeholder')}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={addOption}>
                         <Plus size={14} /> {t('tests.add_option')}
                     </button>
+                    <DistractorSuggestions
+                        answer={(question.options ?? []).find((o) => o.isCorrect)?.text ?? ''}
+                        exclude={(question.options ?? []).map((o) => o.text)}
+                        onPick={(text) =>
+                            update({ options: [...(question.options ?? []), { id: nanoid(), text, isCorrect: false }] })
+                        }
+                    />
                     {question.type === 'multiple-response' && (
                         <label
                             style={{
@@ -833,7 +930,7 @@ export default function QuestionEditor({
                 </div>
             )}
 
-            {(question.type === 'cloze' || question.type === 'cloze-dropdown') && (
+            {isClozeLike && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <label>
                         {t('tests.cloze_syntax_label')}{' '}
@@ -857,6 +954,59 @@ export default function QuestionEditor({
                             </p>
                         );
                     })()}
+                    {question.type === 'cloze' && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}>
+                            <input
+                                type="checkbox"
+                                checked={!!question.wordFormation}
+                                onChange={(e) => update({ wordFormation: e.target.checked || undefined })}
+                            />
+                            {t('tests.word_formation_label')}
+                            <HelpPopover title={t('tests.word_formation_label')}>
+                                {t('tests.word_formation_help')}
+                            </HelpPopover>
+                        </label>
+                    )}
+                    {question.type === 'cloze' &&
+                        question.wordFormation &&
+                        gapStems(question.prompt).map((stem, i) =>
+                            stem ? (
+                                <DistractorSuggestions
+                                    key={i}
+                                    answer={stem}
+                                    buttonLabel={t('tests.derived_forms_button', { stem })}
+                                    suggest={(w) =>
+                                        suggestDerivedForms(w).map((word) => ({
+                                            word,
+                                            source: 'morphological' as const,
+                                        }))
+                                    }
+                                    onPick={(word) => update({ prompt: addGapAlternative(question.prompt, i, word) })}
+                                />
+                            ) : (
+                                <p key={i} className="text-muted text-xs" style={{ margin: 0 }}>
+                                    {t('tests.word_formation_missing_stem', { number: i + 1 })}
+                                </p>
+                            )
+                        )}
+                    {question.type === 'cloze' && (
+                        <AnswerToleranceFields
+                            value={question.answerTolerance}
+                            onChange={(answerTolerance) => update({ answerTolerance })}
+                        />
+                    )}
+                    {question.type === 'cloze-bank' && <ClozeBankFields question={question} update={update} />}
+                    {question.type === 'cloze-dropdown' &&
+                        parseClozeGaps(question.prompt).map((gap) => (
+                            <DistractorSuggestions
+                                key={gap.index}
+                                answer={gap.alternatives[0] ?? ''}
+                                exclude={gap.alternatives}
+                                onPick={(word) =>
+                                    update({ prompt: addGapAlternative(question.prompt, gap.index, word) })
+                                }
+                            />
+                        ))}
                     <label
                         style={{
                             display: 'flex',
@@ -877,6 +1027,103 @@ export default function QuestionEditor({
                         </HelpPopover>
                     </label>
                 </div>
+            )}
+
+            {question.type === 'error-correction' && (
+                <ErrorCorrectionFields
+                    question={question}
+                    update={update}
+                    partialCreditToggle={renderPartialCreditToggle()}
+                />
+            )}
+
+            {question.type === 'sentence-builder' && <SentenceBuilderFields question={question} update={update} />}
+
+            {question.type === 'key-word-transformation' && (
+                <KeyWordTransformationFields
+                    question={question}
+                    update={update}
+                    partialCreditToggle={renderPartialCreditToggle()}
+                />
+            )}
+
+            {question.type === 'dictation' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <label htmlFor={`dictation-text-${question.id}`}>
+                        {t('tests.dictation_text_label')}{' '}
+                        <HelpPopover title={t('tests.help.dictation_teacher_title')}>
+                            {t('tests.help.dictation_teacher_body')}
+                        </HelpPopover>
+                    </label>
+                    <textarea
+                        id={`dictation-text-${question.id}`}
+                        rows={2}
+                        value={question.dictationText ?? ''}
+                        onChange={(e) => update({ dictationText: e.target.value })}
+                    />
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>
+                        {t('tests.dictation_audio_note')}
+                    </p>
+                    <AnswerToleranceFields
+                        value={question.answerTolerance}
+                        onChange={(answerTolerance) => update({ answerTolerance })}
+                    />
+                    {renderPartialCreditToggle()}
+                </div>
+            )}
+
+            {(question.type === 'open' || question.type === 'audio-response') && (
+                <div>
+                    <label htmlFor={`question-rubric-${question.id}`}>{t('tests.question_rubric_label')}</label>
+                    <select
+                        id={`question-rubric-${question.id}`}
+                        value={question.rubricId ?? ''}
+                        onChange={(e) => update({ rubricId: e.target.value || undefined })}
+                        style={{ width: 'auto', maxWidth: '100%' }}
+                    >
+                        <option value="">{t('tests.question_rubric_none')}</option>
+                        {rubrics.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-muted text-xs" style={{ margin: '4px 0 0' }}>
+                        {t('tests.question_rubric_help')}
+                    </p>
+                </div>
+            )}
+
+            {question.type === 'audio-response' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div>
+                        <label htmlFor={`prep-seconds-${question.id}`}>{t('tests.prep_seconds_label')}</label>
+                        <input
+                            id={`prep-seconds-${question.id}`}
+                            type="number"
+                            min={0}
+                            value={question.prepSeconds ?? ''}
+                            onChange={(e) => {
+                                const n = Math.floor(Number(e.target.value));
+                                update({ prepSeconds: n > 0 ? n : undefined });
+                            }}
+                            style={{ width: 120 }}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={`cue-bullets-${question.id}`}>{t('tests.cue_bullets_label')}</label>
+                        <LineListTextarea
+                            id={`cue-bullets-${question.id}`}
+                            value={question.cueBullets ?? []}
+                            onChange={(bullets) => update({ cueBullets: bullets.length ? bullets : undefined })}
+                            placeholder={t('tests.cue_bullets_placeholder')}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {question.type === 'matrix' && (
+                <MatrixEditor question={question} update={update} partialCreditToggle={renderPartialCreditToggle()} />
             )}
 
             {question.type === 'matching' && (
@@ -1109,6 +1356,10 @@ export default function QuestionEditor({
                     <p className="text-muted text-xs" style={{ marginTop: 4 }}>
                         {t('tests.expected_answer_help')}
                     </p>
+                    <AnswerToleranceFields
+                        value={question.answerTolerance}
+                        onChange={(answerTolerance) => update({ answerTolerance })}
+                    />
                 </div>
             )}
 
@@ -1281,6 +1532,12 @@ export default function QuestionEditor({
                                 />
                             )}
                         </div>
+                        <ListeningControlsFields
+                            id={`question-${question.id}`}
+                            value={question}
+                            onChange={(patch) => update(patch)}
+                            showSpokenText={question.type !== 'dictation'}
+                        />
                     </div>
                 )}
             </div>

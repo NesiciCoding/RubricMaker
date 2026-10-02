@@ -41,12 +41,31 @@ interface RawQuestion {
     prompt?: string;
     type?: string;
     points?: number;
-    options?: Array<{ text?: string; isCorrect?: boolean; imageUrl?: string }>;
+    options?: Array<{ text?: string; isCorrect?: boolean; imageUrl?: string; audioUrl?: string; spokenText?: string }>;
+    maxPlays?: number;
+    spokenText?: string;
+    transcript?: string;
+    dictationText?: string;
+    keyWord?: string;
+    gappedSentence?: string;
+    answerWordLimit?: { min?: number; max?: number };
+    wordFormation?: boolean;
+    errorPassage?: string;
+    penaliseFalsePicks?: boolean;
+    sentenceTargets?: string[];
+    builderScoring?: string;
+    prepSeconds?: number;
+    cueBullets?: string[];
     expectedAnswer?: string;
     expectedAnswers?: string[];
     expectedNumericValue?: number;
     numericTolerance?: number;
     correctBoolean?: boolean;
+    matrixColumns?: Array<{ text?: string }>;
+    /** `correctColumn` references a column by its 0-based index (as a string) or by text. */
+    matrixRows?: Array<{ text?: string; correctColumn?: string }>;
+    bankDistractors?: string[];
+    bankUniqueUse?: boolean;
     matchingPairs?: Array<{ left?: string; right?: string }>;
     orderItems?: Array<{ text?: string }>;
     categories?: Array<{ label?: string }>;
@@ -81,6 +100,9 @@ interface RawQuestionBankJson {
             title?: string;
             content?: string;
             audioUrl?: string;
+            maxPlays?: number;
+            spokenText?: string;
+            transcript?: string;
             questions?: RawQuestion[];
         };
     }>;
@@ -94,6 +116,12 @@ const VALID_TYPES: TestQuestionType[] = [
     'open',
     'cloze',
     'cloze-dropdown',
+    'cloze-bank',
+    'matrix',
+    'dictation',
+    'key-word-transformation',
+    'error-correction',
+    'sentence-builder',
     'matching',
     'ordering',
     'categorize',
@@ -104,6 +132,14 @@ const VALID_TYPES: TestQuestionType[] = [
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function listeningFields(raw: { maxPlays?: unknown; spokenText?: unknown; transcript?: unknown }) {
+    return {
+        ...(typeof raw.maxPlays === 'number' && raw.maxPlays >= 1 ? { maxPlays: Math.floor(raw.maxPlays) } : {}),
+        ...(typeof raw.spokenText === 'string' && raw.spokenText ? { spokenText: raw.spokenText } : {}),
+        ...(typeof raw.transcript === 'string' && raw.transcript ? { transcript: raw.transcript } : {}),
+    };
 }
 
 /** Parses one raw question into a full TestQuestion, or returns null (with a warning) if it's unusable. */
@@ -134,6 +170,8 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
             text: o.text ?? '',
             isCorrect: !!o.isCorrect,
             ...(o.imageUrl ? { imageUrl: o.imageUrl } : {}),
+            ...(o.audioUrl ? { audioUrl: o.audioUrl } : {}),
+            ...(o.spokenText ? { spokenText: o.spokenText } : {}),
         }));
         if (
             (type === 'multiple-choice' || type === 'multiple-response') &&
@@ -160,6 +198,27 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
             right: p.right ?? '',
         }));
     }
+    if (Array.isArray(raw.matrixColumns) && raw.matrixColumns.length) {
+        const columnIds = raw.matrixColumns.map(() => nanoid());
+        question.matrixColumns = raw.matrixColumns.map((c, ci) => ({ id: columnIds[ci], text: c.text ?? '' }));
+        const byRef = new Map<string, string>();
+        raw.matrixColumns.forEach((c, ci) => {
+            byRef.set(String(ci), columnIds[ci]);
+            if (c.text) byRef.set(c.text, columnIds[ci]);
+        });
+        question.matrixRows = (raw.matrixRows ?? []).map((r) => ({
+            id: nanoid(),
+            text: r.text ?? '',
+            correctColumnId: (r.correctColumn && byRef.get(r.correctColumn)) ?? '',
+        }));
+        if (question.matrixRows.some((r) => !r.correctColumnId)) {
+            warnings.push({ key: 'questionBank.import_warn_unknown_column', params: { item: label } });
+        }
+    }
+    if (Array.isArray(raw.bankDistractors) && raw.bankDistractors.length) {
+        question.bankDistractors = raw.bankDistractors.filter((d): d is string => typeof d === 'string');
+    }
+    if (typeof raw.bankUniqueUse === 'boolean') question.bankUniqueUse = raw.bankUniqueUse;
     if (Array.isArray(raw.orderItems) && raw.orderItems.length) {
         question.orderItems = raw.orderItems.map((o) => ({ id: nanoid(), text: o.text ?? '' }));
     }
@@ -223,6 +282,31 @@ function parseQuestion(q: unknown, label: string, warnings: ImportWarning[]): Te
     if (raw.linkedGrammarItemId) question.linkedGrammarItemId = raw.linkedGrammarItemId;
     if (raw.explanation) question.explanation = raw.explanation;
     if (typeof raw.maxRecordingSeconds === 'number') question.maxRecordingSeconds = raw.maxRecordingSeconds;
+    Object.assign(question, listeningFields(raw));
+    if (typeof raw.dictationText === 'string') question.dictationText = raw.dictationText;
+    if (typeof raw.keyWord === 'string' && raw.keyWord) question.keyWord = raw.keyWord;
+    if (typeof raw.gappedSentence === 'string' && raw.gappedSentence) question.gappedSentence = raw.gappedSentence;
+    if (
+        typeof raw.answerWordLimit?.min === 'number' &&
+        typeof raw.answerWordLimit.max === 'number' &&
+        raw.answerWordLimit.min >= 1 &&
+        raw.answerWordLimit.max >= raw.answerWordLimit.min
+    ) {
+        question.answerWordLimit = { min: raw.answerWordLimit.min, max: raw.answerWordLimit.max };
+    }
+    if (raw.wordFormation === true) question.wordFormation = true;
+    if (typeof raw.errorPassage === 'string' && raw.errorPassage) question.errorPassage = raw.errorPassage;
+    if (raw.penaliseFalsePicks === true) question.penaliseFalsePicks = true;
+    if (Array.isArray(raw.sentenceTargets)) {
+        const targets = raw.sentenceTargets.filter((t): t is string => typeof t === 'string' && !!t.trim());
+        if (targets.length) question.sentenceTargets = targets;
+    }
+    if (raw.builderScoring === 'longest-run' || raw.builderScoring === 'all-or-nothing') {
+        question.builderScoring = raw.builderScoring;
+    }
+    if (typeof raw.prepSeconds === 'number' && raw.prepSeconds > 0) question.prepSeconds = raw.prepSeconds;
+    if (Array.isArray(raw.cueBullets))
+        question.cueBullets = raw.cueBullets.filter((b): b is string => typeof b === 'string');
     if (typeof raw.eloRating === 'number' && Number.isFinite(raw.eloRating)) question.eloRating = raw.eloRating;
 
     return question;
@@ -314,6 +398,7 @@ export function parseQuestionBankJson(text: string): QuestionBankImportResult {
                     title: section.title,
                     content: section.content as string | undefined,
                     audioUrl: section.audioUrl as string | undefined,
+                    ...listeningFields(section),
                     questions,
                 },
                 tags,

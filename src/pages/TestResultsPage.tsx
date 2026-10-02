@@ -19,10 +19,18 @@ import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
+import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
+import { parseErrorPicks, parsePlacedWords } from '../utils/answerResponseParsers';
+import RubricTaskScorer from '../components/Tests/RubricTaskScorer';
+import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel';
+import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
 import CommentBankModal from '../components/Comments/CommentBankModal';
-import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem } from '../types';
+import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
+
+const isClozeType = (type: TestQuestion['type']) =>
+    type === 'cloze' || type === 'cloze-dropdown' || type === 'cloze-bank';
 
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;
@@ -33,11 +41,18 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'true-false' ||
         question.type === 'cloze' ||
         question.type === 'cloze-dropdown' ||
+        question.type === 'cloze-bank' ||
+        question.type === 'matrix' ||
+        question.type === 'dictation' ||
+        question.type === 'error-correction' ||
+        question.type === 'sentence-builder' ||
         question.type === 'matching' ||
         question.type === 'ordering' ||
         question.type === 'categorize' ||
         question.type === 'hot-text' ||
         (question.type === 'short-answer' && !!question.expectedAnswer) ||
+        (question.type === 'key-word-transformation' &&
+            (!!question.expectedAnswers?.length || !!question.expectedAnswer)) ||
         (question.type === 'numeric' && question.expectedNumericValue !== undefined)
     );
 }
@@ -49,7 +64,7 @@ function autoScore(question: TestQuestion, answer: TestAnswer | undefined): numb
 
 /** Renders a cloze prompt with each `{{...}}` gap shown as a blank placeholder. */
 function promptPreview(question: TestQuestion): string {
-    if (question.type !== 'cloze' && question.type !== 'cloze-dropdown') return stripHtmlTags(question.prompt);
+    if (!isClozeType(question.type)) return stripHtmlTags(question.prompt);
     return renderClozeSegments(stripHtmlTags(question.prompt))
         .map((segment) => (segment.type === 'text' ? segment.text : '_____'))
         .join('');
@@ -80,7 +95,7 @@ function formatStudentResponse(
     if (question.type === 'true-false') {
         return t(`tests.true_false_${response}`);
     }
-    if (question.type === 'cloze' || question.type === 'cloze-dropdown') {
+    if (isClozeType(question.type)) {
         let answers: Record<string, string> = {};
         try {
             answers = JSON.parse(response) as Record<string, string>;
@@ -98,7 +113,7 @@ function formatStudentResponse(
                     const studentAnswer = (answers[gap.index] ?? '').trim();
                     const correct = isDropdown
                         ? studentAnswer === gap.alternatives[0]
-                        : gap.alternatives.some((alt) => alt.toLowerCase() === studentAnswer.toLowerCase());
+                        : gap.alternatives.some((alt) => answersMatch(alt, studentAnswer, question.answerTolerance));
                     return (
                         <span
                             key={i}
@@ -110,6 +125,38 @@ function formatStudentResponse(
                         >
                             {studentAnswer || '___'}
                         </span>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'matrix') {
+        const rows = question.matrixRows ?? [];
+        if (rows.length === 0) return t('tests.results.no_response');
+        let answers: Record<string, string> = {};
+        try {
+            answers = JSON.parse(response) as Record<string, string>;
+        } catch {
+            answers = {};
+        }
+        const columnsById = new Map((question.matrixColumns ?? []).map((c) => [c.id, c]));
+        return (
+            <>
+                {rows.map((row, i) => {
+                    const chosen = columnsById.get(answers[row.id]);
+                    const correct = answers[row.id] === row.correctColumnId;
+                    return (
+                        <div key={row.id} style={{ marginTop: i === 0 ? 0 : 4 }}>
+                            <span>{row.text}</span> →{' '}
+                            <span
+                                style={{
+                                    fontWeight: 600,
+                                    color: !chosen ? 'var(--text-muted)' : correct ? 'var(--green)' : 'var(--red)',
+                                }}
+                            >
+                                {chosen?.text ?? '___'}
+                            </span>
+                        </div>
                     );
                 })}
             </>
@@ -208,6 +255,70 @@ function formatStudentResponse(
             </>
         );
     }
+    if (question.type === 'error-correction') {
+        const picks = parseErrorPicks(response);
+        const tol = { ...question.answerTolerance, punctuation: true };
+        return (
+            <>
+                {parseErrorPassage(question.errorPassage ?? '').map((segment, i) => {
+                    if (segment.type === 'text') return <span key={i}>{segment.text}</span>;
+                    const picked = segment.index in picks;
+                    const typed = (picks[segment.index] ?? '').trim();
+                    const isError = segment.corrections.length > 0;
+                    if (!picked && !isError) return <span key={i}>{segment.text}</span>;
+                    const fixed = segment.corrections.some((c) => answersMatch(c, typed, tol));
+                    const color = isError && picked && fixed ? 'var(--green)' : 'var(--red)';
+                    return (
+                        <span key={i} style={{ fontWeight: 600, color }}>
+                            <span style={{ textDecoration: picked ? 'line-through' : 'underline dotted' }}>
+                                {segment.text}
+                            </span>
+                            {picked && typed ? ` → ${typed}` : ''}
+                            {isError && !(picked && fixed) ? ` (${segment.corrections.join(' / ')})` : ''}
+                        </span>
+                    );
+                })}
+            </>
+        );
+    }
+    if (question.type === 'sentence-builder') {
+        const placed = parsePlacedWords(response);
+        return (
+            <>
+                <div>{placed.join(' ')}</div>
+                <div className="text-muted" style={{ marginTop: 4 }}>
+                    {(question.sentenceTargets ?? []).join(' / ')}
+                </div>
+            </>
+        );
+    }
+    if (question.type === 'dictation') {
+        const { matched, target } = alignDictation(question, response);
+        // Keep the teacher's own spelling and punctuation when each original word is one token;
+        // otherwise (contractions, hyphens, stray symbols) show the normalised words the scorer compared.
+        const original = (question.dictationText ?? '').trim().split(/\s+/).filter(Boolean);
+        const words = original.length === matched.length ? original : target;
+        return (
+            <>
+                <div>{response}</div>
+                {words.length > 0 && (
+                    <div style={{ marginTop: 4 }}>
+                        {words.map((word, i) => (
+                            <span
+                                key={i}
+                                style={{
+                                    fontWeight: 600,
+                                    color: matched[i] ? 'var(--green)' : 'var(--red)',
+                                }}
+                            >
+                                {word}{' '}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </>
+        );
+    }
     if (question.type === 'hot-text') {
         const segments = parseHotTextFragments(stripHtmlTags(question.hotTextPassage ?? ''));
         if (!segments.some((s) => s.type === 'fragment')) return t('tests.results.no_response');
@@ -265,6 +376,7 @@ const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
     'battery',
     'heartbeat',
     'seb_status',
+    'audio_play',
 ];
 
 export default function TestResultsPage() {
@@ -274,12 +386,14 @@ export default function TestResultsPage() {
     const {
         students: allStudents,
         gradeScales,
+        rubrics,
         tests,
         studentTests,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
         gradeScales: s.gradeScales,
+        rubrics: s.rubrics,
         tests: s.tests,
         studentTests: s.studentTests,
         settings: s.settings,
@@ -294,7 +408,9 @@ export default function TestResultsPage() {
     const student = students.find((s) => s.id === studentTest?.studentId);
     const isLateSubmission = !!test?.dueDate && !!studentTest?.submittedAt && studentTest.submittedAt > test.dueDate;
 
-    const [drafts, setDrafts] = useState<Record<string, { pointsEarned: string; feedback: string }>>({});
+    const [drafts, setDrafts] = useState<
+        Record<string, { pointsEarned: string; feedback: string; rubricEntries?: ScoreEntry[] }>
+    >({});
     const [commentBankFor, setCommentBankFor] = useState<string | null>(null);
     const [savedCommentFor, setSavedCommentFor] = useState<string | null>(null);
 
@@ -422,10 +538,21 @@ export default function TestResultsPage() {
         );
     }
 
+    /** The rubric that scores this question, when it has one this page can use (single-point rubrics have no levels to pick). */
+    function rubricFor(question: TestQuestion, answer: TestAnswer | undefined): Rubric | undefined {
+        if (!question.rubricId || (question.type !== 'open' && question.type !== 'audio-response')) return undefined;
+        // A scored answer keeps the rubric it was scored with, so later edits to the live rubric can't move it.
+        const live = (rubrics ?? []).find((r) => r.id === question.rubricId);
+        const rubric = answer?.rubricEntries?.length
+            ? (answer.rubricSnapshot ?? live)
+            : (live ?? answer?.rubricSnapshot);
+        return rubric && rubric.scoringMode !== 'single-point' ? rubric : undefined;
+    }
+
     function updateDraft(
         questionId: string,
         answer: TestAnswer | undefined,
-        patch: Partial<{ pointsEarned: string; feedback: string }>
+        patch: Partial<{ pointsEarned: string; feedback: string; rubricEntries: ScoreEntry[] }>
     ) {
         setDrafts((prev) => ({ ...prev, [questionId]: { ...getDraft(questionId, answer), ...patch } }));
     }
@@ -464,11 +591,17 @@ export default function TestResultsPage() {
             }
         }
         const draft = getDraft(question.id, idx >= 0 ? existingAnswers[idx] : undefined);
-        const pointsEarned = clamp(Number(draft.pointsEarned) || 0, 0, question.points);
+        const rubric = rubricFor(question, idx >= 0 ? existingAnswers[idx] : undefined);
+        const rubricFields =
+            rubric && draft.rubricEntries ? { rubricEntries: draft.rubricEntries, rubricSnapshot: rubric } : {};
+        const pointsEarned =
+            rubric && draft.rubricEntries
+                ? rubricAnswerPoints(rubric, draft.rubricEntries, question.points)
+                : clamp(Number(draft.pointsEarned) || 0, 0, question.points);
         const updatedAnswer: TestAnswer =
             idx >= 0
-                ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback }
-                : { questionId: question.id, response: '', pointsEarned, feedback: draft.feedback };
+                ? { ...existingAnswers[idx], pointsEarned, feedback: draft.feedback, ...rubricFields }
+                : { questionId: question.id, response: '', pointsEarned, feedback: draft.feedback, ...rubricFields };
         const nextAnswers =
             idx >= 0
                 ? existingAnswers.map((a, i) => (i === idx ? updatedAnswer : a))
@@ -684,15 +817,22 @@ export default function TestResultsPage() {
                         const earned = answer?.pointsEarned ?? autoScore(question, answer);
                         const isCorrect = autoScored && earned === question.points;
                         const draft = getDraft(question.id, answer);
+                        const rubric = rubricFor(question, answer);
                         const allowManual =
                             question.type === 'open' ||
                             question.type === 'short-answer' ||
+                            question.type === 'key-word-transformation' ||
                             question.type === 'numeric' ||
                             question.type === 'multiple-choice' ||
                             question.type === 'multiple-response' ||
                             question.type === 'true-false' ||
                             question.type === 'cloze' ||
                             question.type === 'cloze-dropdown' ||
+                            question.type === 'cloze-bank' ||
+                            question.type === 'matrix' ||
+                            question.type === 'dictation' ||
+                            question.type === 'error-correction' ||
+                            question.type === 'sentence-builder' ||
                             question.type === 'matching' ||
                             question.type === 'ordering' ||
                             question.type === 'categorize' ||
@@ -740,6 +880,17 @@ export default function TestResultsPage() {
                                     </div>
                                 </div>
 
+                                {question.type === 'open' && answer?.response && (
+                                    <OpenAnswerInsightsPanel
+                                        text={stripHtmlTags(answer.response)}
+                                        targetLevel={
+                                            test.cefrTargetLevel ??
+                                            test.sections?.find((sec) => sec.id === question.sectionId)?.cefrLevel
+                                        }
+                                        vocabularyItems={rubric?.vocabularyItems}
+                                    />
+                                )}
+
                                 {autoScored && (
                                     <div className="text-sm" style={{ marginBottom: 8 }}>
                                         {t('tests.results.auto_scored', { earned, points: question.points })}
@@ -748,22 +899,40 @@ export default function TestResultsPage() {
 
                                 {allowManual && (
                                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label htmlFor={`points-${question.id}`}>
-                                                {t('tests.results.manual_points_label')}
-                                            </label>
-                                            <input
-                                                id={`points-${question.id}`}
-                                                type="number"
-                                                min={0}
-                                                max={question.points}
-                                                value={draft.pointsEarned}
-                                                onChange={(e) =>
-                                                    updateDraft(question.id, answer, { pointsEarned: e.target.value })
+                                        {rubric && (
+                                            <RubricTaskScorer
+                                                rubric={rubric}
+                                                questionPoints={question.points}
+                                                entries={
+                                                    draft.rubricEntries ??
+                                                    answer?.rubricEntries ??
+                                                    blankRubricEntries(rubric)
                                                 }
-                                                style={{ width: 90 }}
+                                                onChange={(rubricEntries) =>
+                                                    updateDraft(question.id, answer, { rubricEntries })
+                                                }
                                             />
-                                        </div>
+                                        )}
+                                        {!rubric && (
+                                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                                <label htmlFor={`points-${question.id}`}>
+                                                    {t('tests.results.manual_points_label')}
+                                                </label>
+                                                <input
+                                                    id={`points-${question.id}`}
+                                                    type="number"
+                                                    min={0}
+                                                    max={question.points}
+                                                    value={draft.pointsEarned}
+                                                    onChange={(e) =>
+                                                        updateDraft(question.id, answer, {
+                                                            pointsEarned: e.target.value,
+                                                        })
+                                                    }
+                                                    style={{ width: 90 }}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 240px' }}>
                                             <label htmlFor={`feedback-${question.id}`}>
                                                 {t('tests.results.feedback_label')}

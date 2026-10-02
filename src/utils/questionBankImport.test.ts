@@ -543,3 +543,90 @@ describe('parseQuestionBankFile', () => {
         expect(result.items[0].question!.prompt).toBe('Hi');
     });
 });
+
+describe('matrix and cloze-bank import', () => {
+    it('resolves matrix correctColumn by index or text and keeps bank fields', () => {
+        const json = JSON.stringify({
+            items: [
+                {
+                    question: {
+                        type: 'matrix',
+                        prompt: 'T/F/NG',
+                        matrixColumns: [{ text: 'True' }, { text: 'False' }],
+                        matrixRows: [
+                            { text: 'a', correctColumn: '1' },
+                            { text: 'b', correctColumn: 'True' },
+                            { text: 'c', correctColumn: 'nope' },
+                        ],
+                    },
+                },
+                { question: { type: 'cloze-bank', prompt: '{{a}}', bankDistractors: ['x'], bankUniqueUse: false } },
+            ],
+        });
+        const { items, warnings } = parseQuestionBankJson(json);
+        const m = items[0].question!;
+        expect(m.matrixRows?.map((r) => r.correctColumnId === m.matrixColumns?.[1].id)).toEqual([true, false, false]);
+        expect(warnings.map((w) => w.key)).toContain('questionBank.import_warn_unknown_column');
+        expect(items[1].question).toMatchObject({ bankDistractors: ['x'], bankUniqueUse: false });
+    });
+});
+
+describe('key word transformation import', () => {
+    it('keeps key word, gapped sentence, valid word limit and word-formation flag', () => {
+        const json = JSON.stringify({
+            items: [
+                {
+                    question: {
+                        type: 'key-word-transformation',
+                        prompt: 'x',
+                        keyWord: 'for',
+                        gappedSentence: 'a ___ b',
+                        answerWordLimit: { min: 2, max: 5 },
+                        expectedAnswers: ['for // years'],
+                    },
+                },
+                {
+                    question: {
+                        type: 'cloze',
+                        prompt: '{{a}}(B)',
+                        wordFormation: true,
+                        answerWordLimit: { min: 5, max: 2 },
+                    },
+                },
+            ],
+        });
+        const { items } = parseQuestionBankJson(json);
+        expect(items[0].question).toMatchObject({ keyWord: 'for', answerWordLimit: { min: 2, max: 5 } });
+        expect(items[1].question?.wordFormation).toBe(true);
+        expect(items[1].question?.answerWordLimit).toBeUndefined();
+    });
+});
+
+describe('error-correction and sentence-builder import', () => {
+    it('keeps passage, targets and valid scoring mode', () => {
+        const json = JSON.stringify({
+            items: [
+                {
+                    question: {
+                        type: 'error-correction',
+                        prompt: 'x',
+                        errorPassage: 'A [[b|c]].',
+                        penaliseFalsePicks: true,
+                    },
+                },
+                {
+                    question: {
+                        type: 'sentence-builder',
+                        prompt: 'y',
+                        sentenceTargets: ['a b', ' ', 3],
+                        builderScoring: 'bogus',
+                    },
+                },
+            ],
+        });
+        const { items } = parseQuestionBankJson(json);
+        expect(items[0].question).toMatchObject({ errorPassage: 'A [[b|c]].', penaliseFalsePicks: true });
+        expect(items[1].question?.sentenceTargets).toEqual(['a b']);
+        expect(items[1].question?.builderScoring).toBeUndefined();
+    });
+});

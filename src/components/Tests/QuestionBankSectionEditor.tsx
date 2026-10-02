@@ -4,6 +4,7 @@ import { Music, Plus, ChevronUp, ChevronDown } from 'lucide-react';
 import type { QuestionBankItem, TestQuestion } from '../../types';
 import EssayEditor from '../Editor/EssayEditor';
 import QuestionEditor from './QuestionEditor';
+import ListeningControlsFields from './ListeningControlsFields';
 import AudioUrlStatus from './AudioUrlStatus';
 import { newQuestion } from '../../utils/testQuestionClone';
 
@@ -94,6 +95,7 @@ export default function QuestionBankSectionEditor({ section, onChange }: Props) 
                         style={{ marginTop: 8, width: '100%' }}
                     />
                 )}
+                <ListeningControlsFields id="bank-section" value={section} onChange={patch} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

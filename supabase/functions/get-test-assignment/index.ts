@@ -16,6 +16,7 @@
 //     teacher's test content.
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { sentenceBuilderTiles, stripErrorKey, type ScorableQuestion } from '../_shared/testScoring.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORS = {
@@ -40,8 +41,19 @@ interface RawCategorizeItem {
     [key: string]: unknown;
 }
 
+interface RawMatrixRow {
+    correctColumnId?: unknown;
+    [key: string]: unknown;
+}
+
 interface RawQuestion {
     options?: RawOption[];
+    matrixRows?: RawMatrixRow[];
+    dictationText?: unknown;
+    transcript?: unknown;
+    explanation?: unknown;
+    errorPassage?: unknown;
+    sentenceTargets?: unknown;
     categorizeItems?: RawCategorizeItem[];
     expectedAnswer?: unknown;
     expectedAnswers?: unknown;
@@ -55,7 +67,7 @@ interface RawQuestion {
 
 // Removes fields that only exist to score an answer or calibrate item difficulty, not to render
 // the question — options[].isCorrect, expectedAnswer(s), expectedNumericValue, numericTolerance,
-// correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, and eloRating (roadmap
+// correctBoolean, hotTextCorrectIndices, categorizeItems[].categoryId, matrixRows[].correctColumnId, and eloRating (roadmap
 // Phase 25.4/25.5 staircase self-calibration, teacher-only) are read server/teacher-side only, so
 // a student reading this response (e.g. via devtools) must never see them.
 //
@@ -67,10 +79,30 @@ interface RawQuestion {
 // student-facing category *options* come from the separate `categories` field (CategorizeAnswer
 // in StudentTestPage renders `question.categories`, not categorizeItems[].categoryId), so
 // categoryId is a pure answer key with no rendering dependency and is safe to strip.
+// error-correction keeps its fragments but loses the corrections; sentence-builder swaps the accepted
+// sentences for the shuffled tiles so the answer order isn't shipped.
+function studentSafeBuilderFields(q: RawQuestion, errorPassage: unknown, sentenceTargets: unknown) {
+    return {
+        ...(typeof errorPassage === 'string' ? { errorPassage: stripErrorKey(errorPassage) } : {}),
+        ...(Array.isArray(sentenceTargets)
+            ? { sentenceTiles: sentenceBuilderTiles({ ...q, sentenceTargets } as unknown as ScorableQuestion) }
+            : {}),
+    };
+}
+
 function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unknown }) {
     if (!test || !Array.isArray(test.questions)) return test;
+    // Explanations and listening transcripts are only revealed after submission in practice mode;
+    // everywhere else the client gate is not enough, so they never leave the server.
+    const practice = test.mode === 'practice';
+    const sections = Array.isArray(test.sections)
+        ? (test.sections as Record<string, unknown>[]).map(({ transcript, ...section }) =>
+              practice && transcript !== undefined ? { ...section, transcript } : section
+          )
+        : undefined;
     return {
         ...test,
+        ...(sections ? { sections } : {}),
         questions: test.questions.map((q) => {
             const {
                 expectedAnswer: _ea,
@@ -82,6 +114,12 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 eloRating: _er,
                 options,
                 categorizeItems,
+                matrixRows,
+                dictationText,
+                transcript,
+                explanation,
+                errorPassage,
+                sentenceTargets,
                 ...rest
             } = q;
             return {
@@ -90,6 +128,12 @@ function toStudentSafeTest(test: { questions?: RawQuestion[]; [key: string]: unk
                 ...(categorizeItems
                     ? { categorizeItems: categorizeItems.map(({ categoryId: _cid, ...item }) => item) }
                     : {}),
+                ...(practice && transcript !== undefined ? { transcript } : {}),
+                ...(practice && explanation !== undefined ? { explanation } : {}),
+                // A TTS dictation needs its text on the client to be spoken; with an uploaded clip it's a pure answer key.
+                ...studentSafeBuilderFields(q, errorPassage, sentenceTargets),
+                ...(dictationText !== undefined && !rest.audioUrl ? { dictationText } : {}),
+                ...(matrixRows ? { matrixRows: matrixRows.map(({ correctColumnId: _ccid, ...row }) => row) } : {}),
             };
         }),
     };

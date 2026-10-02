@@ -82,6 +82,154 @@ const hotText: ScorableQuestion = {
     hotTextCorrectIndices: [0, 2],
 };
 
+function tolerantFixtures(): Fixture[] {
+    const sa = (answerTolerance: ScorableQuestion['answerTolerance'], ans = "I don't know"): ScorableQuestion => ({
+        type: 'short-answer',
+        points: 2,
+        prompt: '',
+        expectedAnswers: [ans],
+        answerTolerance,
+    });
+    return [
+        {
+            name: 'punctuation: apostrophe inside a word is dropped',
+            question: sa({ punctuation: true }),
+            response: 'I dont know',
+            expected: 2,
+        },
+        {
+            name: 'punctuation: hyphen inside a word is dropped',
+            question: sa({ punctuation: true }, 'co-operate'),
+            response: 'cooperate',
+            expected: 2,
+        },
+        {
+            name: 'slips: the typed side may be under five letters',
+            question: sa({ slips: true }, 'since'),
+            response: 'sinc',
+            expected: 2,
+        },
+        {
+            name: 'tolerance off: curly quote misses',
+            question: sa(undefined),
+            response: 'I don\u2019t know',
+            expected: 0,
+        },
+        {
+            name: 'punctuation: curly quote, trailing dot, spaces',
+            question: sa({ punctuation: true }),
+            response: ' I  don\u2019t know. ',
+            expected: 2,
+        },
+        {
+            name: 'contractions: expanded form',
+            question: sa({ contractions: true }),
+            response: 'I do not know',
+            expected: 2,
+        },
+        {
+            name: 'contractions: only listed forms expand',
+            question: sa({ contractions: true }, 'she is happy'),
+            response: "she's happy",
+            expected: 0,
+        },
+        {
+            name: 'contractions: cannot',
+            question: sa({ contractions: true }, "can't"),
+            response: 'cannot',
+            expected: 2,
+        },
+        {
+            name: 'spelling: British vs American',
+            question: sa({ spelling: true }, 'favourite colour'),
+            response: 'favorite color',
+            expected: 2,
+        },
+        {
+            name: 'spelling off: no equivalence',
+            question: sa({ punctuation: true }, 'colour'),
+            response: 'color',
+            expected: 0,
+        },
+        {
+            name: 'slips: one typo in a 5+ letter word',
+            question: sa({ slips: true }, 'because'),
+            response: 'becuse',
+            expected: 2,
+        },
+        {
+            name: 'slips: transposition is two edits',
+            question: sa({ slips: true }, 'because'),
+            response: 'becuase',
+            expected: 0,
+        },
+        { name: 'slips: short words stay exact', question: sa({ slips: true }, 'went'), response: 'want', expected: 0 },
+        {
+            name: 'slips: word count must match',
+            question: sa({ slips: true }, 'a lot of people'),
+            response: 'a lot people',
+            expected: 0,
+        },
+        {
+            name: 'cloze open gap honours tolerance',
+            question: { ...cloze, answerTolerance: { slips: true } },
+            response: '{"0":"has","1":"sinse"}',
+            expected: 2,
+        },
+        {
+            name: 'cloze-dropdown ignores tolerance',
+            question: { ...clozeDropdown, answerTolerance: { slips: true } },
+            response: '{"0":"wnet","1":"ate"}',
+            expected: 1,
+        },
+    ];
+}
+
+const matrix: ScorableQuestion = {
+    type: 'matrix',
+    points: 3,
+    prompt: 'True, false or not given?',
+    matrixRows: [
+        { id: 'r1', correctColumnId: 'true' },
+        { id: 'r2', correctColumnId: 'false' },
+        { id: 'r3', correctColumnId: 'ng' },
+    ],
+};
+
+const clozeBank: ScorableQuestion = {
+    type: 'cloze-bank',
+    points: 2,
+    prompt: 'The {{cat}} sat on the {{mat|rug}}.',
+};
+
+const dictation: ScorableQuestion = {
+    type: 'dictation',
+    points: 4,
+    prompt: '',
+    dictationText: "She doesn't like coffee.",
+};
+
+const kwt: ScorableQuestion = {
+    type: 'key-word-transformation',
+    points: 2,
+    prompt: '',
+    expectedAnswers: ['have worked // for ten years', 'have been working // for years'],
+};
+
+const errors: ScorableQuestion = {
+    type: 'error-correction',
+    points: 4,
+    prompt: '',
+    errorPassage: 'He [[go|goes]] to school [[every]] day and [[play|plays|is playing]] [[football]].',
+};
+
+const builder: ScorableQuestion = {
+    type: 'sentence-builder',
+    points: 4,
+    prompt: '',
+    sentenceTargets: ['Yesterday I went to school.', 'I went to school yesterday.'],
+};
+
 const fixtures: Fixture[] = [
     { name: 'multiple-choice correct', question: mc, response: 'a', expected: 2 },
     { name: 'multiple-choice wrong', question: mc, response: 'b', expected: 0 },
@@ -175,6 +323,222 @@ const fixtures: Fixture[] = [
         response: '[0]',
         expected: 0,
     },
+
+    // Tolerant matching (A5) — opt-in per question
+    ...tolerantFixtures(),
+
+    { name: 'matrix all rows', question: matrix, response: '{"r1":"true","r2":"false","r3":"ng"}', expected: 3 },
+    { name: 'matrix partial credit', question: matrix, response: '{"r1":"true","r2":"true"}', expected: 1 },
+    {
+        name: 'matrix all-or-nothing',
+        question: { ...matrix, partialCredit: false },
+        response: '{"r1":"true","r2":"false"}',
+        expected: 0,
+    },
+    { name: 'matrix wrong-shape JSON', question: matrix, response: '["true"]', expected: 0 },
+    { name: 'matrix with no rows', question: { type: 'matrix', points: 1, prompt: '' }, response: '{}', expected: 0 },
+    {
+        name: 'cloze-bank all gaps, alternative accepted',
+        question: clozeBank,
+        response: '{"0":"cat","1":"rug"}',
+        expected: 2,
+    },
+    { name: 'cloze-bank one gap wrong tile', question: clozeBank, response: '{"0":"dog","1":"mat"}', expected: 1 },
+    { name: 'cloze-bank blank', question: clozeBank, response: '{}', expected: 0 },
+
+    {
+        name: 'dictation exact, case and punctuation ignored',
+        question: dictation,
+        response: "she doesn't like coffee",
+        expected: 4,
+    },
+    { name: 'dictation one wrong word', question: dictation, response: "She doesn't like tea.", expected: 3 },
+    { name: 'dictation one missing word', question: dictation, response: 'She like coffee', expected: 3 },
+    {
+        name: 'dictation extra word costs a word',
+        question: dictation,
+        response: "She really doesn't like coffee",
+        expected: 3,
+    },
+    { name: 'dictation blank', question: dictation, response: '', expected: 0 },
+    { name: 'dictation floors at zero', question: dictation, response: 'a b c d e f g h', expected: 0 },
+    {
+        name: 'dictation all-or-nothing',
+        question: { ...dictation, partialCredit: false },
+        response: "She doesn't like tea",
+        expected: 0,
+    },
+    {
+        name: 'dictation contractions only when opted in',
+        question: dictation,
+        response: 'She does not like coffee',
+        expected: 2,
+    },
+    {
+        name: 'dictation contractions opted in',
+        question: { ...dictation, answerTolerance: { contractions: true } },
+        response: 'She does not like coffee',
+        expected: 4,
+    },
+    {
+        name: 'dictation minor slip opted in',
+        question: { ...dictation, answerTolerance: { slips: true } },
+        response: "She doesn't like cofee",
+        expected: 4,
+    },
+    {
+        name: 'dictation with no target',
+        question: { type: 'dictation', points: 2, prompt: '' },
+        response: 'x',
+        expected: 0,
+    },
+
+    { name: 'kwt both chunks', question: kwt, response: 'have worked for ten years', expected: 2 },
+    {
+        name: 'kwt punctuation and case ignored',
+        question: kwt,
+        response: 'Have worked for ten years.',
+        expected: 2,
+    },
+    { name: 'kwt second accepted answer', question: kwt, response: 'have been working for years', expected: 2 },
+    { name: 'kwt one chunk', question: kwt, response: 'have worked since 2015', expected: 1 },
+    { name: 'kwt chunks must be in order', question: kwt, response: 'for ten years have worked', expected: 1 },
+    {
+        name: 'kwt over the word limit scores zero',
+        question: kwt,
+        response: 'they have worked for ten long years',
+        expected: 0,
+    },
+    { name: 'kwt under the word limit scores zero', question: kwt, response: 'worked', expected: 0 },
+    {
+        name: 'kwt custom word limit',
+        question: { ...kwt, answerWordLimit: { min: 2, max: 7 } },
+        response: 'they have worked for ten years',
+        expected: 2,
+    },
+    {
+        name: 'kwt all-or-nothing',
+        question: { ...kwt, partialCredit: false },
+        response: 'have worked since 2015',
+        expected: 0,
+    },
+    {
+        name: 'kwt single-chunk answer',
+        question: { ...kwt, expectedAnswers: ['in spite of'] },
+        response: 'in spite of',
+        expected: 2,
+    },
+    {
+        name: 'kwt slips opt-in',
+        question: { ...kwt, answerTolerance: { slips: true } },
+        response: 'have wurked for ten years',
+        expected: 2,
+    },
+    { name: 'kwt blank', question: kwt, response: '', expected: 0 },
+    {
+        name: 'kwt requires the key word when one is set',
+        question: { ...kwt, keyWord: 'since' },
+        response: 'have worked for ten years',
+        expected: 0,
+    },
+    {
+        name: 'kwt key word present',
+        question: { ...kwt, keyWord: 'for' },
+        response: 'have worked for ten years',
+        expected: 2,
+    },
+    {
+        name: 'kwt stray punctuation does not count as a word',
+        question: kwt,
+        response: 'have worked - for ten years .',
+        expected: 2,
+    },
+    {
+        name: 'kwt with no key',
+        question: { type: 'key-word-transformation', points: 2, prompt: '' },
+        response: 'a b',
+        expected: 0,
+    },
+
+    {
+        name: 'error-correction all found and fixed',
+        question: errors,
+        response: '{"0":"goes","2":"plays"}',
+        expected: 4,
+    },
+    {
+        name: 'error-correction alternative correction',
+        question: errors,
+        response: '{"0":"goes","2":"Is playing."}',
+        expected: 4,
+    },
+    { name: 'error-correction found but not fixed', question: errors, response: '{"0":"","2":""}', expected: 2 },
+    { name: 'error-correction one fixed', question: errors, response: '{"0":"goes"}', expected: 2 },
+    { name: 'error-correction wrong fix', question: errors, response: '{"0":"went","2":"plays"}', expected: 3 },
+    {
+        name: 'error-correction false picks free by default',
+        question: errors,
+        response: '{"0":"goes","1":"","2":"plays","3":""}',
+        expected: 4,
+    },
+    {
+        name: 'error-correction false picks penalised',
+        question: { ...errors, penaliseFalsePicks: true },
+        response: '{"0":"goes","1":"","2":"plays","3":""}',
+        expected: 2,
+    },
+    {
+        name: 'error-correction penalty floors at zero',
+        question: { ...errors, penaliseFalsePicks: true },
+        response: '{"1":"","3":""}',
+        expected: 0,
+    },
+    {
+        name: 'error-correction all-or-nothing',
+        question: { ...errors, partialCredit: false },
+        response: '{"0":"goes"}',
+        expected: 0,
+    },
+    { name: 'error-correction blank', question: errors, response: '', expected: 0 },
+    {
+        name: 'error-correction with no errors',
+        question: { type: 'error-correction', points: 2, prompt: '', errorPassage: 'A [[fine]] text.' },
+        response: '{"0":""}',
+        expected: 0,
+    },
+
+    {
+        name: 'sentence-builder exact',
+        question: builder,
+        response: '["Yesterday","I","went","to","school."]',
+        expected: 4,
+    },
+    {
+        name: 'sentence-builder second accepted order',
+        question: builder,
+        response: '["I","went","to","school","yesterday"]',
+        expected: 4,
+    },
+    {
+        name: 'sentence-builder longest run',
+        question: builder,
+        response: '["I","went","school","to","Yesterday"]',
+        expected: 1.6,
+    },
+    { name: 'sentence-builder partial placement', question: builder, response: '["went","to"]', expected: 1.6 },
+    {
+        name: 'sentence-builder all-or-nothing',
+        question: { ...builder, builderScoring: 'all-or-nothing' },
+        response: '["I","went","school","to","Yesterday"]',
+        expected: 0,
+    },
+    {
+        name: 'sentence-builder all-or-nothing exact',
+        question: { ...builder, builderScoring: 'all-or-nothing' },
+        response: '["I","went","to","school","yesterday"]',
+        expected: 4,
+    },
+    { name: 'sentence-builder blank and wrong shape', question: builder, response: '{"0":"I"}', expected: 0 },
 
     // Valid JSON of the wrong shape scores as unanswered instead of throwing.
     { name: 'multiple-response non-array JSON', question: mr, response: '5', expected: 2 },

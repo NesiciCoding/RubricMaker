@@ -151,7 +151,10 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         return item;
     };
     const addSectionBankItem = (
-        section: Pick<NonNullable<QuestionBankItem['section']>, 'title' | 'content' | 'audioUrl'>,
+        section: Pick<
+            NonNullable<QuestionBankItem['section']>,
+            'title' | 'content' | 'audioUrl' | 'maxPlays' | 'spokenText' | 'transcript'
+        >,
         questions: Omit<TestQuestion, 'sectionId'>[],
         tags: string[],
         cefrLevel?: CefrLevel
