@@ -27,7 +27,7 @@ import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import { seededShuffle } from '../utils/seededShuffle';
-import { KEY_WORD_DEFAULT_LIMIT } from '../../supabase/functions/_shared/testScoring';
+import { KEY_WORD_DEFAULT_LIMIT, answerWordCount } from '../../supabase/functions/_shared/testScoring';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
 import { isStaircaseTest, resolveNextStaircaseQuestion } from '../utils/placementStaircase';
 import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/placementGenerator';
@@ -1975,7 +1975,7 @@ function KeyWordAnswer({
 }) {
     const { t } = useTranslation();
     const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
-    const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+    const words = answerWordCount(value);
     const outside = words > 0 && (words < limit.min || words > limit.max);
     const [before, after] = (question.gappedSentence ?? '').split(/_{3,}/, 2);
     const hasGap = /_{3,}/.test(question.gappedSentence ?? '');

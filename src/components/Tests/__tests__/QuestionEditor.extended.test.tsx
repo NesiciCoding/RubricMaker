@@ -247,7 +247,7 @@ describe('QuestionEditor extended', () => {
     describe('key word transformation and word formation', () => {
         it('edits the key word and parses accepted answers with // chunks', () => {
             const { onChange } = renderEditor(makeQuestion({ type: 'key-word-transformation' }));
-            fireEvent.change(screen.getByLabelText(/tests\.kwt_key_word_label/), { target: { value: ' for ' } });
+            fireEvent.change(screen.getByLabelText(/tests\.kwt_key_word_label/), { target: { value: 'for' } });
             expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ keyWord: 'for' }));
             fireEvent.change(screen.getByLabelText('tests.kwt_answers_label'), {
                 target: { value: 'have worked // for years | have been // for years' },
@@ -255,6 +255,17 @@ describe('QuestionEditor extended', () => {
             expect(onChange).toHaveBeenLastCalledWith(
                 expect.objectContaining({ expectedAnswers: ['have worked // for years', 'have been // for years'] })
             );
+        });
+
+        it('keeps max at or above min when min is raised, and keeps a typed | separator', () => {
+            const { onChange } = renderEditor(
+                makeQuestion({ type: 'key-word-transformation', answerWordLimit: { min: 2, max: 5 } })
+            );
+            fireEvent.change(screen.getByLabelText('tests.kwt_word_limit_min'), { target: { value: '7' } });
+            expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ answerWordLimit: { min: 7, max: 7 } }));
+            const answers = screen.getByLabelText('tests.kwt_answers_label') as HTMLInputElement;
+            fireEvent.change(answers, { target: { value: 'a // b | ' } });
+            expect(answers.value).toBe('a // b | ');
         });
 
         it('suggests derived forms for a gap stem and adds the pick as the gap answer', () => {

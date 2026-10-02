@@ -30,6 +30,7 @@ export interface ScorableQuestion {
     answerTolerance?: AnswerTolerance;
     dictationText?: string;
     answerWordLimit?: { min: number; max: number };
+    keyWord?: string;
 }
 
 /** Opt-in leniencies for typed answers (short-answer, open cloze). Absent/false = exact match after trim + lowercase. */
@@ -410,6 +411,11 @@ export function scoreDictation(question: ScorableQuestion, response: string): nu
 
 export const KEY_WORD_DEFAULT_LIMIT = { min: 2, max: 5 };
 
+/** Words in a typed answer, counted the way the scorer tokenizes it: punctuation-only tokens don't count and a contraction is one word. */
+export function answerWordCount(text: string): number {
+    return answerTokens(text, { punctuation: true }).length;
+}
+
 /** Splits an accepted key-word-transformation answer into its marked chunks: "has been // for years" → 2 chunks. */
 export function keyWordChunks(answer: string): string[] {
     return answer
@@ -440,11 +446,14 @@ export function keyWordMarks(question: ScorableQuestion, response: string): { ea
     const chunkSets = answers.map(keyWordChunks).filter((c) => c.length > 0);
     const total = Math.max(0, ...chunkSets.map((c) => c.length));
     const limit = question.answerWordLimit ?? KEY_WORD_DEFAULT_LIMIT;
-    const wordCount = response.trim() ? response.trim().split(/\s+/).length : 0;
+    const wordCount = answerWordCount(response);
     if (total === 0 || wordCount < limit.min || wordCount > limit.max) return { earned: 0, total };
 
     const tol: AnswerTolerance = { ...question.answerTolerance, punctuation: true };
     const given = answerTokens(response, tol);
+    // The key word must appear in the answer, unchanged, or nothing is awarded.
+    const keyTokens = answerTokens(question.keyWord ?? '', tol);
+    if (keyTokens.length > 0 && indexOfTokens(given, keyTokens, 0, tol) < 0) return { earned: 0, total };
     let best = 0;
     for (const chunks of chunkSets) {
         let from = 0;

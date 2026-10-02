@@ -45,7 +45,8 @@ function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): b
         question.type === 'categorize' ||
         question.type === 'hot-text' ||
         (question.type === 'short-answer' && !!question.expectedAnswer) ||
-        (question.type === 'key-word-transformation' && !!question.expectedAnswers?.length) ||
+        (question.type === 'key-word-transformation' &&
+            (!!question.expectedAnswers?.length || !!question.expectedAnswer)) ||
         (question.type === 'numeric' && question.expectedNumericValue !== undefined)
     );
 }

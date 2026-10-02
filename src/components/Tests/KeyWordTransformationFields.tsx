@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KEY_WORD_DEFAULT_LIMIT, keyWordChunks } from '../../../supabase/functions/_shared/testScoring';
 import type { TestQuestion } from '../../types';
@@ -16,6 +17,8 @@ export default function KeyWordTransformationFields({ question, update, partialC
     const answers = question.expectedAnswers ?? [];
     const badChunkCount = answers.some((a) => keyWordChunks(a).length > 2);
     const id = question.id;
+    // Raw text, so a typed separator ("a |") survives until the next alternative is written.
+    const [rawAnswers, setRawAnswers] = useState(() => answers.join(' | '));
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -30,7 +33,7 @@ export default function KeyWordTransformationFields({ question, update, partialC
                     id={`kwt-key-${id}`}
                     type="text"
                     value={question.keyWord ?? ''}
-                    onChange={(e) => update({ keyWord: e.target.value.trim() || undefined })}
+                    onChange={(e) => update({ keyWord: e.target.value || undefined })}
                     style={{ width: 200 }}
                 />
             </div>
@@ -49,8 +52,9 @@ export default function KeyWordTransformationFields({ question, update, partialC
                 <input
                     id={`kwt-answers-${id}`}
                     type="text"
-                    value={answers.join(' | ')}
+                    value={rawAnswers}
                     onChange={(e) => {
+                        setRawAnswers(e.target.value);
                         const next = e.target.value
                             .split('|')
                             .map((a) => a.trim())
@@ -71,11 +75,10 @@ export default function KeyWordTransformationFields({ question, update, partialC
                     min={1}
                     value={limit.min}
                     aria-label={t('tests.kwt_word_limit_min')}
-                    onChange={(e) =>
-                        update({
-                            answerWordLimit: { ...limit, min: Math.max(1, Math.floor(Number(e.target.value)) || 1) },
-                        })
-                    }
+                    onChange={(e) => {
+                        const min = Math.max(1, Math.floor(Number(e.target.value)) || 1);
+                        update({ answerWordLimit: { min, max: Math.max(min, limit.max) } });
+                    }}
                     style={{ width: 70 }}
                 />
                 <span>–</span>

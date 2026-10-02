@@ -422,6 +422,24 @@ const fixtures: Fixture[] = [
     },
     { name: 'kwt blank', question: kwt, response: '', expected: 0 },
     {
+        name: 'kwt requires the key word when one is set',
+        question: { ...kwt, keyWord: 'since' },
+        response: 'have worked for ten years',
+        expected: 0,
+    },
+    {
+        name: 'kwt key word present',
+        question: { ...kwt, keyWord: 'for' },
+        response: 'have worked for ten years',
+        expected: 2,
+    },
+    {
+        name: 'kwt stray punctuation does not count as a word',
+        question: kwt,
+        response: 'have worked - for ten years .',
+        expected: 2,
+    },
+    {
         name: 'kwt with no key',
         question: { type: 'key-word-transformation', points: 2, prompt: '' },
         response: 'a b',
