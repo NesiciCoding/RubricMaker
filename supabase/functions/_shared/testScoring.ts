@@ -234,10 +234,7 @@ function editDistanceWithin1(a: string, b: string): boolean {
 }
 
 function tokensMatch(expected: string, given: string, tol: AnswerTolerance): boolean {
-    return (
-        expected === given ||
-        (!!tol.slips && expected.length >= 5 && editDistanceWithin1(expected, given))
-    );
+    return expected === given || (!!tol.slips && expected.length >= 5 && editDistanceWithin1(expected, given));
 }
 
 function answerTokens(text: string, tol: AnswerTolerance): string[] {

@@ -120,10 +120,10 @@ export function OptionAudioButton({
                 e.preventDefault();
                 e.stopPropagation();
                 if (src) {
+                    // A fresh element each time restarts the clip from the top; the previous one is stopped.
                     audioRef.current?.pause();
-                    const audio = audioRef.current ?? new Audio(src);
+                    const audio = new Audio(src);
                     audioRef.current = audio;
-                    audio.currentTime = 0;
                     audio.play().catch(() => undefined);
                 } else {
                     tts.speak(spokenText!);
