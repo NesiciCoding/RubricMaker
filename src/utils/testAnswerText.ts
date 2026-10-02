@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import type { CefrLevel, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../types';
 import { stripHtmlTags } from './exportDataPrep';
 import { renderClozeSegments, parseHotTextFragments, plainQuestionPromptText } from './clozeParse';
+import { parseErrorPicks, parsePlacedWords } from './answerResponseParsers';
 import { keyWordChunks, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { parseAudioResponse } from './audioResponseCode';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
@@ -64,7 +65,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
                 .join('');
         }
         case 'error-correction': {
-            const picks = parseJson<Record<string, string>>(response, {});
+            const picks = parseErrorPicks(response);
             const picked = parseErrorPassage(question.errorPassage ?? '').flatMap((s) =>
                 s.type === 'fragment' && s.index in picks
                     ? [`${s.text}${picks[s.index]?.trim() ? ` → ${picks[s.index].trim()}` : ''}`]
@@ -73,7 +74,7 @@ export function formatGivenAnswer(question: TestQuestion, answer: TestAnswer | u
             return picked.length > 0 ? picked.join('; ') : NO_RESPONSE;
         }
         case 'sentence-builder': {
-            const words = parseJson<unknown[]>(response, []).filter((w): w is string => typeof w === 'string');
+            const words = parsePlacedWords(response);
             return words.length > 0 ? words.join(' ') : NO_RESPONSE;
         }
         case 'matrix': {
@@ -152,7 +153,9 @@ export function formatCorrectAnswer(question: TestQuestion): string {
         case 'error-correction':
             return parseErrorPassage(question.errorPassage ?? '')
                 .flatMap((s) =>
-                    s.type === 'fragment' && s.corrections.length > 0 ? [`${s.text} → ${s.corrections[0]}`] : []
+                    s.type === 'fragment' && s.corrections.length > 0
+                        ? [`${s.text} → ${s.corrections.join(' / ')}`]
+                        : []
                 )
                 .join('; ');
         case 'sentence-builder':

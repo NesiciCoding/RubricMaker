@@ -327,6 +327,11 @@ describe('error-correction and sentence-builder paper helpers', () => {
         expect(subItemCount(errors)).toBe(2);
     });
 
+    it('keys every accepted correction', () => {
+        const multi = { ...errors, errorPassage: 'He [[go|goes|is going]] to school.' };
+        expect(answerKeyText(multi)).toBe('1→goes / is going');
+    });
+
     it('prints shuffled tiles but keys the accepted sentence', () => {
         expect(
             builderBookletTiles(builder)

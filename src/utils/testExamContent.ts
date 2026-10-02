@@ -134,7 +134,7 @@ export function builderBookletTiles(question: TestQuestion): { letter: string; t
 
 function errorCorrectionKey(question: TestQuestion): string {
     return parseErrorPassage(question.errorPassage ?? '')
-        .flatMap((s) => (s.type === 'fragment' ? [`${s.index + 1}→${s.corrections[0] ?? '✓'}`] : []))
+        .flatMap((s) => (s.type === 'fragment' ? [`${s.index + 1}→${s.corrections.join(' / ') || '✓'}`] : []))
         .join('; ');
 }
 

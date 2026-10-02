@@ -286,3 +286,23 @@ describe('error-correction and sentence-builder answer text', () => {
         expect(formatCorrectAnswer(builder)).toBe('I go home');
     });
 });
+
+describe('error-correction alternatives and bad responses', () => {
+    const q: TestQuestion = {
+        id: 'qe',
+        prompt: '',
+        type: 'error-correction',
+        points: 2,
+        errorPassage: 'He [[play|plays|is playing]] [[football]].',
+    };
+    it('lists every accepted correction', () => {
+        expect(formatCorrectAnswer(q)).toBe('play → plays / is playing');
+    });
+    it('treats wrong-shaped responses as no answer', () => {
+        const none = formatGivenAnswer({ ...q, type: 'sentence-builder' }, { questionId: 'qe', response: '{"0":"I"}' });
+        expect(none).not.toContain('{');
+        expect(formatGivenAnswer(q, { questionId: 'qe', response: '[1,2]' })).toBe(
+            formatGivenAnswer(q, { questionId: 'qe', response: '' })
+        );
+    });
+});

@@ -22,6 +22,7 @@ import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse'
 import { alignDictation, answersMatch, parseErrorPassage } from '../../supabase/functions/_shared/testScoring';
 import { calcTestTimeOnTask } from '../utils/proctorAggregator';
 import { parseAudioResponse } from '../utils/audioResponseCode';
+import { parseErrorPicks, parsePlacedWords } from '../utils/answerResponseParsers';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem } from '../types';
 
@@ -252,12 +253,7 @@ function formatStudentResponse(
         );
     }
     if (question.type === 'error-correction') {
-        let picks: Record<string, string> = {};
-        try {
-            picks = JSON.parse(response) as Record<string, string>;
-        } catch {
-            picks = {};
-        }
+        const picks = parseErrorPicks(response);
         const tol = { ...question.answerTolerance, punctuation: true };
         return (
             <>
@@ -275,7 +271,7 @@ function formatStudentResponse(
                                 {segment.text}
                             </span>
                             {picked && typed ? ` → ${typed}` : ''}
-                            {isError && !(picked && fixed) ? ` (${segment.corrections[0]})` : ''}
+                            {isError && !(picked && fixed) ? ` (${segment.corrections.join(' / ')})` : ''}
                         </span>
                     );
                 })}
@@ -283,12 +279,7 @@ function formatStudentResponse(
         );
     }
     if (question.type === 'sentence-builder') {
-        let placed: string[];
-        try {
-            placed = (JSON.parse(response) as unknown[]).filter((w): w is string => typeof w === 'string');
-        } catch {
-            placed = [];
-        }
+        const placed = parsePlacedWords(response);
         return (
             <>
                 <div>{placed.join(' ')}</div>

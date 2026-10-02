@@ -1138,6 +1138,7 @@
         "builder_targets_label": "Accepted sentences, one per line (the first becomes the word tiles)",
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} word tiles",
+        "builder_alt_mismatch": "Sentence(s) {{lines}} use different words than the first sentence, so students can't build them from its tiles. Alternatives must be re-orderings of the same words.",
         "builder_scoring_label": "Scoring",
         "builder_scoring_longest_run": "Credit for the longest correctly ordered run of tiles",
         "builder_scoring_all_or_nothing": "All or nothing",

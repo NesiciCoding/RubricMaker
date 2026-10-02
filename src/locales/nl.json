@@ -1138,6 +1138,7 @@
         "builder_targets_label": "Geaccepteerde zinnen, één per regel (de eerste wordt de woordtegels)",
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} woordtegels",
+        "builder_alt_mismatch": "Zin(nen) {{lines}} gebruiken andere woorden dan de eerste zin, dus leerlingen kunnen ze niet met de tegels bouwen. Alternatieven moeten een andere volgorde van dezelfde woorden zijn.",
         "builder_scoring_label": "Beoordeling",
         "builder_scoring_longest_run": "Punten voor de langste correct geordende reeks tegels",
         "builder_scoring_all_or_nothing": "Alles of niets",

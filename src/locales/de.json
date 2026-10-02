@@ -1138,6 +1138,7 @@
         "builder_targets_label": "Akzeptierte Sätze, einer pro Zeile (der erste wird zu den Wortkärtchen)",
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} Wortkärtchen",
+        "builder_alt_mismatch": "Satz/Sätze {{lines}} verwenden andere Wörter als der erste Satz, sodass Schüler sie nicht mit dessen Kärtchen bauen können. Alternativen müssen Umstellungen derselben Wörter sein.",
         "builder_scoring_label": "Bewertung",
         "builder_scoring_longest_run": "Punkte für die längste richtig geordnete Kärtchenfolge",
         "builder_scoring_all_or_nothing": "Alles oder nichts",

@@ -1138,6 +1138,7 @@
         "builder_targets_label": "Frases aceptadas, una por línea (la primera se convierte en las fichas de palabras)",
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} fichas de palabras",
+        "builder_alt_mismatch": "La(s) frase(s) {{lines}} usan palabras distintas de la primera, así que los alumnos no pueden construirlas con sus fichas. Las alternativas deben reordenar las mismas palabras.",
         "builder_scoring_label": "Puntuación",
         "builder_scoring_longest_run": "Puntos por la serie más larga de fichas bien ordenada",
         "builder_scoring_all_or_nothing": "Todo o nada",

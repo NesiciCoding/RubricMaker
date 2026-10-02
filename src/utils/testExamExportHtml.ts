@@ -110,7 +110,7 @@ function questionBodyHtml(question: TestQuestion, number: number, options: TestE
             extra += `<div style="margin-top:6px"><div><strong>A</strong>&nbsp;&nbsp;${tx('true')}</div><div><strong>B</strong>&nbsp;&nbsp;${tx('false')}</div></div>`;
             break;
         case 'error-correction':
-            extra += `<div style="margin-top:6px;padding:8px;background:#f8fafc;border-left:3px solid #94a3b8;line-height:1.8">${errorBookletParts(
+            extra += `<div style="margin-top:6px;padding:8px;background:#f8fafc;border-left:3px solid #94a3b8;line-height:1.8;white-space:pre-line">${errorBookletParts(
                 question
             )
                 .map((p) =>

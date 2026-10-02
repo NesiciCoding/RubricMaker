@@ -1,6 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import type { TestQuestion } from '../../types';
 import HelpPopover from './HelpPopover';
+import LineListTextarea from './LineListTextarea';
+
+const sortedWords = (sentence: string) =>
+    sentence
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}'\s]/gu, '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort()
+        .join(' ');
 
 interface Props {
     question: TestQuestion;
@@ -11,6 +21,10 @@ export default function SentenceBuilderFields({ question, update }: Props) {
     const { t } = useTranslation();
     const targets = question.sentenceTargets ?? [];
     const id = question.id;
+    // Tiles come from the first sentence only, so an alternative must reuse exactly those words.
+    const unbuildable = targets
+        .map((sentence, i) => (i > 0 && sortedWords(sentence) !== sortedWords(targets[0]) ? i + 1 : 0))
+        .filter(Boolean);
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label htmlFor={`builder-targets-${id}`}>
@@ -19,16 +33,17 @@ export default function SentenceBuilderFields({ question, update }: Props) {
                     {t('tests.help.sentence_builder_teacher_body')}
                 </HelpPopover>
             </label>
-            <textarea
+            <LineListTextarea
                 id={`builder-targets-${id}`}
-                rows={3}
-                value={targets.join('\n')}
-                onChange={(e) => {
-                    const next = e.target.value.split('\n').filter((line) => line.trim());
-                    update({ sentenceTargets: next.length ? next : undefined });
-                }}
+                value={targets}
+                onChange={(next) => update({ sentenceTargets: next.length ? next : undefined })}
                 placeholder={t('tests.builder_targets_placeholder')}
             />
+            {unbuildable.length > 0 && (
+                <p role="alert" className="text-xs" style={{ margin: 0, color: 'var(--red)' }}>
+                    {t('tests.builder_alt_mismatch', { lines: unbuildable.join(', ') })}
+                </p>
+            )}
             <p className="text-muted text-xs" style={{ margin: 0 }}>
                 {t('tests.builder_tile_count', { count: targets[0]?.trim().split(/\s+/).filter(Boolean).length ?? 0 })}
             </p>

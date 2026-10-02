@@ -1138,6 +1138,7 @@
         "builder_targets_label": "Phrases acceptées, une par ligne (la première devient les tuiles de mots)",
         "builder_targets_placeholder": "Yesterday I went to school.\nI went to school yesterday.",
         "builder_tile_count": "{{count}} tuiles de mots",
+        "builder_alt_mismatch": "La ou les phrases {{lines}} utilisent d'autres mots que la première : les élèves ne peuvent pas les construire avec ses tuiles. Les variantes doivent être des réordonnancements des mêmes mots.",
         "builder_scoring_label": "Notation",
         "builder_scoring_longest_run": "Points pour la plus longue suite de tuiles bien ordonnée",
         "builder_scoring_all_or_nothing": "Tout ou rien",
