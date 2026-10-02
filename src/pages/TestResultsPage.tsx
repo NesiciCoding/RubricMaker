@@ -541,7 +541,11 @@ export default function TestResultsPage() {
     /** The rubric that scores this question, when it has one this page can use (single-point rubrics have no levels to pick). */
     function rubricFor(question: TestQuestion, answer: TestAnswer | undefined): Rubric | undefined {
         if (!question.rubricId || (question.type !== 'open' && question.type !== 'audio-response')) return undefined;
-        const rubric = (rubrics ?? []).find((r) => r.id === question.rubricId) ?? answer?.rubricSnapshot;
+        // A scored answer keeps the rubric it was scored with, so later edits to the live rubric can't move it.
+        const live = (rubrics ?? []).find((r) => r.id === question.rubricId);
+        const rubric = answer?.rubricEntries?.length
+            ? (answer.rubricSnapshot ?? live)
+            : (live ?? answer?.rubricSnapshot);
         return rubric && rubric.scoringMode !== 'single-point' ? rubric : undefined;
     }
 

@@ -14,11 +14,13 @@ interface Props {
     vocabularyItems?: VocabularyItem[];
 }
 
+const NO_ITEMS: VocabularyItem[] = [];
+
 /**
  * Teacher-side reading aid for a typed answer. Everything here is local and deterministic
  * (no LanguageTool, no network) and is only ever an insight: it never produces or suggests points.
  */
-export default function OpenAnswerInsightsPanel({ text, targetLevel, vocabularyItems = [] }: Props) {
+export default function OpenAnswerInsightsPanel({ text, targetLevel, vocabularyItems = NO_ITEMS }: Props) {
     const { t } = useTranslation();
     const insights = useMemo(() => {
         if (!text.trim()) return null;

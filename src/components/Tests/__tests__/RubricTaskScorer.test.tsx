@@ -59,6 +59,18 @@ describe('RubricTaskScorer', () => {
         expect(screen.getByRole('button', { name: /High/ })).toHaveAttribute('aria-pressed', 'true');
     });
 
+    it('counts a criterion scored only by override as complete', () => {
+        render(
+            <RubricTaskScorer
+                rubric={rubric}
+                entries={[{ criterionId: 'c1', levelId: null, overridePoints: 2, checkedSubItems: [], comment: '' }]}
+                questionPoints={8}
+                onChange={vi.fn()}
+            />
+        );
+        expect(screen.getByRole('status')).not.toHaveTextContent('rubric_incomplete');
+    });
+
     it('lets an override replace the level and can be read-only', () => {
         const onChange = vi.fn();
         const { rerender } = render(

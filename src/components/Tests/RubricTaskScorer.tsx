@@ -28,7 +28,12 @@ export default function RubricTaskScorer({ rubric, entries, questionPoints, onCh
         });
         onChange(next);
     };
-    const complete = rubric.criteria.length > 0 && rubric.criteria.every((c) => entryFor(c.id).levelId !== null);
+    const complete =
+        rubric.criteria.length > 0 &&
+        rubric.criteria.every((c) => {
+            const entry = entryFor(c.id);
+            return entry.levelId !== null || entry.overridePoints !== undefined;
+        });
 
     return (
         <div

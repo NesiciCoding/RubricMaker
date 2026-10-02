@@ -183,6 +183,28 @@ describe('TestResultsPage — rubric-scored answers', () => {
         expect(screen.getByText('tests.results.insights_title')).toBeInTheDocument();
     });
 
+    it('keeps scoring a graded answer with the snapshot taken at scoring time, not the edited live rubric', async () => {
+        mockUseApp.rubrics = [{ ...rubric, name: 'Edited later' }];
+        mockUseApp.studentTests = [
+            {
+                ...baseStudentTest,
+                answers: [
+                    {
+                        questionId: 'q-open',
+                        response: 'Dear Sam',
+                        pointsEarned: 6,
+                        rubricEntries: [{ criterionId: 'c1', levelId: 'hi', checkedSubItems: [], comment: '' }],
+                        rubricSnapshot: rubric,
+                    },
+                ],
+            },
+        ];
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        renderPage(TestResultsPage);
+        expect(screen.getByText(/rubric_scoring_title.*Email rubric/)).toBeInTheDocument();
+        expect(screen.queryByText(/Edited later/)).toBeNull();
+    });
+
     it('falls back to manual points when the rubric is gone and no snapshot exists', async () => {
         mockUseApp.rubrics = [];
         const { default: TestResultsPage } = await import('../TestResultsPage');
