@@ -1194,7 +1194,7 @@
         "matrix_row_placeholder": "Stelling",
         "matrix_row_answer_label": "Juiste kolom",
         "matrix_add_row": "Stelling toevoegen",
-        "bank_distractors_label": "Extra tegels (afleiders), één per regel",
+        "bank_distractors_label": "Extra tegels (afleiders)",
         "bank_distractors_placeholder": "Eén extra woord of zin per regel",
         "bank_unique_use_label": "Elke tegel mag maar één keer gebruikt worden",
         "question_type_matching": "Koppelen",
@@ -1301,7 +1301,7 @@
             "cloze_dropdown_student_title": "Gaten invullen (dropdown)",
             "cloze_dropdown_student_body": "Kies het juiste woord uit elke dropdown om de zin te voltooien.",
             "cloze_bank_teacher_title": "Invullen (woordenbank)",
-            "cloze_bank_teacher_body": "Zet het antwoord van elk gat tussen dubbele accolades; zet bij een zinsgat de hele zin tussen de accolades. Leerlingen slepen tegels uit een woordenbank — de antwoorden plus je extra tegels — naar de gaten. Geschikt voor woordenkaders (A1–B1) en tekst met zinsgaten (FCE deel 6).",
+            "cloze_bank_teacher_body": "Voeg gaten toe met de knop 'Gat invoegen'; voor een zinsgat typ je de hele zin als antwoord. Leerlingen slepen tegels uit een woordenbank — de antwoorden op de gaten plus je extra tegels, zie het voorbeeld hieronder — in de gaten. Geschikt voor woordenkaders (A1–B1) en teksten met zinsgaten (FCE deel 6).",
             "cloze_bank_student_title": "Invullen (woordenbank)",
             "cloze_bank_student_body": "Sleep een tegel naar een gat, of selecteer een tegel en klik dan op een gat. Klik op een gevuld gat om het te legen.",
             "dictation_teacher_title": "Dictee",
@@ -1367,7 +1367,10 @@
         "builder_alternative": "Alternatieve woordvolgorde {{number}}",
         "builder_add_alternative": "Alternatieve woordvolgorde toevoegen",
         "builder_remove_alternative": "Verwijder alternatieve woordvolgorde {{number}}",
-        "builder_tiles_label": "Tegels die leerlingen zien"
+        "builder_tiles_label": "Tegels die leerlingen zien",
+        "bank_distractors_chip_placeholder": "Typ een extra woord of zin, druk op Enter",
+        "bank_preview_label": "Woordenbank die leerlingen zien",
+        "bank_preview_legend": "Gekleurde tegels zijn de antwoorden op de gaten; grijze tegels zijn je extra tegels. Leerlingen zien ze door elkaar."
     },
     "studentsPage": {
         "title": "Leerlingen & Klassen",

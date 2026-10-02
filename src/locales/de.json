@@ -1194,7 +1194,7 @@
         "matrix_row_placeholder": "Aussage",
         "matrix_row_answer_label": "Richtige Spalte",
         "matrix_add_row": "Aussage hinzufügen",
-        "bank_distractors_label": "Zusätzliche Kärtchen (Distraktoren), eines pro Zeile",
+        "bank_distractors_label": "Zusätzliche Kacheln (Ablenker)",
         "bank_distractors_placeholder": "Ein zusätzliches Wort oder ein Satz pro Zeile",
         "bank_unique_use_label": "Jedes Kärtchen darf nur einmal verwendet werden",
         "question_type_matching": "Zuordnung",
@@ -1301,7 +1301,7 @@
             "cloze_dropdown_student_title": "Lücken ausfüllen (Dropdown)",
             "cloze_dropdown_student_body": "Wähle das richtige Wort aus jedem Dropdown, um den Satz zu vervollständigen.",
             "cloze_bank_teacher_title": "Lückentext (Wortkasten)",
-            "cloze_bank_teacher_body": "Setze die Antwort jeder Lücke in doppelte geschweifte Klammern; bei einer Satzlücke setze den ganzen Satz in die Klammern. Schüler ziehen Kärtchen aus einem Wortkasten — die Lückenantworten plus deine zusätzlichen Kärtchen — in die Lücken. Geeignet für Wortkästen (A1–B1) und Lückentexte mit Satzkärtchen (FCE Teil 6).",
+            "cloze_bank_teacher_body": "Fügen Sie Lücken mit der Schaltfläche „Lücke einfügen“ hinzu; für eine Satzlücke geben Sie den ganzen Satz als Antwort ein. Lernende ziehen Kacheln aus einer Wortbank – die Lückenantworten plus Ihre zusätzlichen Kacheln, siehe Vorschau unten – in die Lücken. Geeignet für Wortkästen (A1–B1) und Lückentexte mit Satzkacheln (FCE Teil 6).",
             "cloze_bank_student_title": "Lückentext (Wortkasten)",
             "cloze_bank_student_body": "Ziehe ein Kärtchen in eine Lücke oder wähle ein Kärtchen und klicke dann auf eine Lücke. Klicke auf eine gefüllte Lücke, um sie zu leeren.",
             "dictation_teacher_title": "Diktat",
@@ -1367,7 +1367,10 @@
         "builder_alternative": "Alternative Wortstellung {{number}}",
         "builder_add_alternative": "Alternative Wortstellung hinzufügen",
         "builder_remove_alternative": "Alternative Wortstellung {{number}} entfernen",
-        "builder_tiles_label": "Kacheln, die Lernende sehen"
+        "builder_tiles_label": "Kacheln, die Lernende sehen",
+        "bank_distractors_chip_placeholder": "Zusätzliches Wort oder Satz eingeben, Eingabetaste drücken",
+        "bank_preview_label": "Wortbank, die Lernende sehen",
+        "bank_preview_legend": "Farbige Kacheln sind die Lückenantworten; graue Kacheln sind Ihre zusätzlichen Kacheln. Lernende sehen sie gemischt."
     },
     "studentsPage": {
         "title": "Schüler und Klassen",

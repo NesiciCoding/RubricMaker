@@ -1194,7 +1194,7 @@
         "matrix_row_placeholder": "Afirmación",
         "matrix_row_answer_label": "Columna correcta",
         "matrix_add_row": "Añadir afirmación",
-        "bank_distractors_label": "Fichas extra (distractores), una por línea",
+        "bank_distractors_label": "Fichas adicionales (distractores)",
         "bank_distractors_placeholder": "Una palabra o frase extra por línea",
         "bank_unique_use_label": "Cada ficha solo se puede usar una vez",
         "question_type_matching": "Relacionar",
@@ -1301,7 +1301,7 @@
             "cloze_dropdown_student_title": "Completar los huecos (lista desplegable)",
             "cloze_dropdown_student_body": "Elige la palabra correcta de cada lista desplegable para completar la oración.",
             "cloze_bank_teacher_title": "Completar (banco de palabras)",
-            "cloze_bank_teacher_body": "Pon la respuesta de cada hueco entre llaves dobles; para un hueco de frase, pon la frase entera entre las llaves. Los alumnos arrastran fichas de un banco — las respuestas más tus fichas extra — a los huecos. Sirve para cuadros de palabras (A1–B1) y textos con frases omitidas (FCE parte 6).",
+            "cloze_bank_teacher_body": "Añada huecos con el botón «Insertar hueco»; para un hueco de frase, escriba la frase completa como respuesta. El alumnado arrastra fichas de un banco de palabras —las respuestas de los huecos más sus fichas adicionales, visibles en la vista previa inferior— a los huecos. Sirve para recuadros de palabras (A1–B1) y textos con huecos de frases (FCE parte 6).",
             "cloze_bank_student_title": "Completar (banco de palabras)",
             "cloze_bank_student_body": "Arrastra una ficha a un hueco, o selecciona una ficha y haz clic en un hueco. Haz clic en un hueco lleno para vaciarlo.",
             "dictation_teacher_title": "Dictado",
@@ -1367,7 +1367,10 @@
         "builder_alternative": "Orden de palabras alternativo {{number}}",
         "builder_add_alternative": "Añadir orden de palabras alternativo",
         "builder_remove_alternative": "Quitar el orden de palabras alternativo {{number}}",
-        "builder_tiles_label": "Fichas que verá el alumnado"
+        "builder_tiles_label": "Fichas que verá el alumnado",
+        "bank_distractors_chip_placeholder": "Escriba una palabra o frase extra y pulse Intro",
+        "bank_preview_label": "Banco de palabras que verá el alumnado",
+        "bank_preview_legend": "Las fichas de color son las respuestas de los huecos; las grises son sus fichas adicionales. El alumnado las ve mezcladas."
     },
     "studentsPage": {
         "title": "Estudiantes y Clases",

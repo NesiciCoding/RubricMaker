@@ -1194,7 +1194,7 @@
         "matrix_row_placeholder": "Affirmation",
         "matrix_row_answer_label": "Colonne correcte",
         "matrix_add_row": "Ajouter une affirmation",
-        "bank_distractors_label": "Tuiles supplémentaires (distracteurs), une par ligne",
+        "bank_distractors_label": "Étiquettes supplémentaires (distracteurs)",
         "bank_distractors_placeholder": "Un mot ou une phrase en plus par ligne",
         "bank_unique_use_label": "Chaque tuile ne peut être utilisée qu'une fois",
         "question_type_matching": "Association",
@@ -1301,7 +1301,7 @@
             "cloze_dropdown_student_title": "Compléter les lacunes (liste déroulante)",
             "cloze_dropdown_student_body": "Choisissez le mot correct dans chaque liste déroulante pour compléter la phrase.",
             "cloze_bank_teacher_title": "Compléter (banque de mots)",
-            "cloze_bank_teacher_body": "Placez la réponse de chaque trou entre doubles accolades ; pour un trou de phrase, mettez toute la phrase entre accolades. Les élèves font glisser des tuiles d'une banque — les réponses plus vos tuiles supplémentaires — dans les trous. Convient aux encadrés de mots (A1–B1) et aux textes à phrases manquantes (FCE partie 6).",
+            "cloze_bank_teacher_body": "Ajoutez des trous avec le bouton « Insérer un trou » ; pour un trou de phrase, saisissez la phrase entière comme réponse. Les élèves font glisser des étiquettes d'une banque de mots — les réponses des trous plus vos étiquettes supplémentaires, visibles dans l'aperçu ci-dessous — dans les trous. Convient aux encadrés de mots (A1–B1) et aux textes à trous avec phrases (FCE partie 6).",
             "cloze_bank_student_title": "Compléter (banque de mots)",
             "cloze_bank_student_body": "Faites glisser une tuile dans un trou, ou sélectionnez une tuile puis cliquez sur un trou. Cliquez sur un trou rempli pour le vider.",
             "dictation_teacher_title": "Dictée",
@@ -1367,7 +1367,10 @@
         "builder_alternative": "Ordre des mots alternatif {{number}}",
         "builder_add_alternative": "Ajouter un ordre des mots alternatif",
         "builder_remove_alternative": "Supprimer l'ordre des mots alternatif {{number}}",
-        "builder_tiles_label": "Étiquettes vues par les élèves"
+        "builder_tiles_label": "Étiquettes vues par les élèves",
+        "bank_distractors_chip_placeholder": "Saisissez un mot ou une phrase en plus, appuyez sur Entrée",
+        "bank_preview_label": "Banque de mots vue par les élèves",
+        "bank_preview_legend": "Les étiquettes colorées sont les réponses des trous ; les grises sont vos étiquettes supplémentaires. Les élèves les voient mélangées."
     },
     "studentsPage": {
         "title": "Élèves et Classes",

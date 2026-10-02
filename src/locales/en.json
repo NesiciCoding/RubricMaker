@@ -1194,7 +1194,7 @@
         "matrix_row_placeholder": "Statement",
         "matrix_row_answer_label": "Correct column",
         "matrix_add_row": "Add statement",
-        "bank_distractors_label": "Extra tiles (distractors), one per line",
+        "bank_distractors_label": "Extra tiles (distractors)",
         "bank_distractors_placeholder": "One extra word or sentence per line",
         "bank_unique_use_label": "Each tile can be used only once",
         "question_type_matching": "Matching",
@@ -1301,7 +1301,7 @@
             "cloze_dropdown_student_title": "Fill in the gaps (dropdown)",
             "cloze_dropdown_student_body": "Choose the correct word from each dropdown to complete the sentence.",
             "cloze_bank_teacher_title": "Fill in the gap (word bank)",
-            "cloze_bank_teacher_body": "Put each gap's answer in double curly braces; for a sentence gap, put the whole sentence inside the braces. Students drag tiles from a word bank — the gap answers plus your extra tiles — into the gaps. Works for word boxes (A1–B1) and gapped texts with sentence tiles (FCE Part 6).",
+            "cloze_bank_teacher_body": "Add gaps with the \"Insert gap\" button; for a sentence gap, type the whole sentence as the gap answer. Students drag tiles from a word bank — the gap answers plus your extra tiles, shown in the preview below — into the gaps. Works for word boxes (A1–B1) and gapped texts with sentence tiles (FCE Part 6).",
             "cloze_bank_student_title": "Fill in the gaps (word bank)",
             "cloze_bank_student_body": "Drag a tile into a gap, or select a tile and then click a gap. Click a filled gap to empty it.",
             "dictation_teacher_title": "Dictation",
@@ -1367,7 +1367,10 @@
         "builder_alternative": "Alternative word order {{number}}",
         "builder_add_alternative": "Add alternative word order",
         "builder_remove_alternative": "Remove alternative word order {{number}}",
-        "builder_tiles_label": "Tiles students will see"
+        "builder_tiles_label": "Tiles students will see",
+        "bank_distractors_chip_placeholder": "Type an extra word or sentence, press Enter",
+        "bank_preview_label": "Word bank students will see",
+        "bank_preview_legend": "Coloured tiles are the gap answers; grey tiles are your extra tiles. Students see them shuffled together."
     },
     "studentsPage": {
         "title": "Students & Classes",
