@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, XCircle, Award, Languages, ShieldAlert, Clock, BookOpen, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -381,6 +383,7 @@ const PROCTOR_EVENT_TYPES: ProctorEventType[] = [
 
 export default function TestResultsPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('tresults');
     const navigate = useNavigate();
     const { testId, studentTestId } = useParams<{ testId: string; studentTestId: string }>();
     const {
@@ -636,16 +639,22 @@ export default function TestResultsPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('tests.results.title')}
                 actions={
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
-                        <ArrowLeft size={14} /> {t('tests.back_to_list')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
+                            <ArrowLeft size={14} /> {t('tests.back_to_list')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div className="card">
+                <div data-tour="tr-summary" className="card">
                     <h2 style={{ margin: '0 0 4px' }}>{test.name}</h2>
                     <p className="text-muted text-sm" style={{ margin: '0 0 14px' }}>
                         {t('tests.results.student_label')}: {student?.name ?? studentTest.studentId}
@@ -772,7 +781,7 @@ export default function TestResultsPage() {
                     </div>
                 )}
 
-                <div className="card">
+                <div data-tour="tr-integrity" className="card">
                     <h3 style={{ margin: '0 0 12px' }}>
                         <ShieldAlert size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                         {t('tests.results.integrity_title')}
@@ -811,7 +820,7 @@ export default function TestResultsPage() {
                     )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div data-tour="tr-questions" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {effectiveAnswers.map(({ question, answer }, index) => {
                         const autoScored = isAutoScored(question, answer);
                         const earned = answer?.pointsEarned ?? autoScore(question, answer);

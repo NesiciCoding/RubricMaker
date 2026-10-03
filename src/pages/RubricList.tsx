@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -49,6 +51,7 @@ import CohortFilter from '../components/CohortFilter';
 
 export default function RubricList() {
     const { t } = useTranslation();
+    const tour = usePageTourState('rubrics');
     const navigate = useNavigate();
     const { students } = useStudents();
     const { classes } = useClasses();
@@ -292,10 +295,14 @@ export default function RubricList() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('rubricList.title')}
                 actions={
                     <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => {
@@ -309,14 +316,18 @@ export default function RubricList() {
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
                             <Upload size={15} /> {t('rubricList.import_rubric')}
                         </button>
-                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>
+                        <button
+                            data-tour="rl-new"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => navigate('/rubrics/new')}
+                        >
                             <Plus size={15} /> {t('rubricList.new_rubric')}
                         </button>
                     </>
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div data-tour="rl-filters" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 400 }}>
                         <Search
                             size={15}

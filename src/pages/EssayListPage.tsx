@@ -1,4 +1,6 @@
 import React from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Edit2, Trash2, FileText, Radio, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
@@ -15,6 +17,7 @@ import CohortFilter from '../components/CohortFilter';
 
 export default function EssayListPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('essays');
     const navigate = useNavigate();
     const { students } = useStudents();
     const { classes } = useClasses();
@@ -69,16 +72,26 @@ export default function EssayListPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('essays.list_title')}
                 actions={
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/essays/new')}>
-                        <Plus size={15} /> {t('essays.new_essay')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button
+                            data-tour="el-new"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => navigate('/essays/new')}
+                        >
+                            <Plus size={15} /> {t('essays.new_essay')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div data-tour="el-filters" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
                 </div>
                 {groups.length === 0 ? (

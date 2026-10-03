@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Download, BookOpen, Users, Gauge, Map, Layers } from 'lucide-react';
@@ -28,6 +30,7 @@ export default function VocabularyDashboardPage() {
     const { addFlashcardDeck } = useFlashcards();
 
     const { t } = useTranslation();
+    const tour = usePageTourState('vocab');
     const { showToast } = useToast();
     const navigate = useNavigate();
 
@@ -117,13 +120,21 @@ export default function VocabularyDashboardPage() {
 
     return (
         <>
-            <Topbar title={t('vocabProfile.page_title')} />
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('vocabProfile.page_title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
                 <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 20 }}>
                     {t('vocabProfile.page_subtitle')}
                 </p>
 
-                <div style={{ marginBottom: 20 }}>
+                <div data-tour="voc-views" style={{ marginBottom: 20 }}>
                     <SegmentedToggle
                         ariaLabel={t('vocabProfile.view_label')}
                         value={view}
@@ -142,6 +153,7 @@ export default function VocabularyDashboardPage() {
                 {view === 'reading' && (
                     <>
                         <div
+                            data-tour="voc-filters"
                             style={{
                                 display: 'flex',
                                 gap: 12,

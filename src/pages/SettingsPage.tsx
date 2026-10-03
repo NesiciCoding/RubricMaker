@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { saveAs } from 'file-saver';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
@@ -86,6 +88,7 @@ const ROLE_META: Record<
  */
 export default function SettingsPage() {
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('settings');
     const navigate = useNavigate();
     const {
         students: allStudents,
@@ -408,10 +411,23 @@ export default function SettingsPage() {
 
     return (
         <>
-            <Topbar title={t('settings.title')} />
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('settings.title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in" style={{ maxWidth: 900 }}>
                 {/* Tab bar */}
-                <nav className="settings-tabs" aria-label={t('a11y.settings_sections')} role="tablist">
+                <nav
+                    data-tour="set-tabs"
+                    className="settings-tabs"
+                    aria-label={t('a11y.settings_sections')}
+                    role="tablist"
+                >
                     <button
                         role="tab"
                         className={`settings-tab${activeTab === 'general' ? ' active' : ''}`}
@@ -516,7 +532,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Display */}
-                        <div className="card" style={{ marginBottom: 24 }}>
+                        <div data-tour="set-display" className="card" style={{ marginBottom: 24 }}>
                             <h3 style={{ marginBottom: 16 }}>{t('settings.general')}</h3>
                             <div className="grid-2" style={{ gap: 16 }}>
                                 <div className="form-group">
@@ -803,7 +819,7 @@ export default function SettingsPage() {
                         </div>
 
                         {/* Guided tour */}
-                        <div className="card">
+                        <div data-tour="set-tutorial" className="card">
                             <h3 style={{ marginBottom: 16 }}>{t('tutorial.restart_section_title')}</h3>
                             <button
                                 className="btn btn-secondary"

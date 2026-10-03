@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +19,7 @@ import type { DbUser } from '../services/database';
 
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('moderation');
     const navigate = useNavigate();
     const {
         students: allStudents,
@@ -112,9 +115,17 @@ export default function ModerationQueuePage() {
 
     return (
         <>
-            <Topbar title={t('coGrading.moderation_title')} />
-            <div className="page-content fade-in">
-                <div className="form-group" style={{ maxWidth: 280, marginBottom: 20 }}>
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('coGrading.moderation_title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
+            <div className="page-content fade-in" data-tour="mod-content">
+                <div data-tour="mod-threshold" className="form-group" style={{ maxWidth: 280, marginBottom: 20 }}>
                     <label htmlFor="moderation-threshold">{t('coGrading.threshold_label')}</label>
                     <input
                         id="moderation-threshold"
