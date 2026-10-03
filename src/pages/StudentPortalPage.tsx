@@ -27,7 +27,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
-import { Joyride, STATUS } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
+import { STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
@@ -635,26 +636,7 @@ export default function StudentPortalPage() {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 60 }}>
-            <Joyride
-                steps={tourSteps}
-                run={tourRun}
-                continuous
-                onEvent={handleTourCallback}
-                options={{
-                    showProgress: true,
-                    buttons: ['back', 'skip', 'primary'],
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
-                styles={{
-                    tooltipContainer: {
-                        textAlign: 'left',
-                    },
-                }}
-            />
+            <PageTour steps={tourSteps} run={tourRun} onFinish={() => {}} onEvent={handleTourCallback} />
             {isTeacherPreview && (
                 <div
                     style={{

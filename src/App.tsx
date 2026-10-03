@@ -1,10 +1,11 @@
 import React, { Suspense, lazy, useMemo, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
-import type { EventData } from 'react-joyride';
 import { usePlatform, useSettings, useStudents } from './context/AppContext';
 import { MobileMenuContext } from './context/MobileMenuContext';
-import { getTutorialSteps } from './data/TutorialSteps';
+import { getTutorialSteps, withMobileDrawer } from './data/TutorialSteps';
+import { isMobileViewport } from './hooks/usePageTour';
+import { TourProvider } from './context/TourContext';
 import { useTranslation } from 'react-i18next';
 import { Loader, GraduationCap } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
@@ -16,7 +17,7 @@ import { PageViewLogger } from './components/ui/PageViewLogger';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
-const Joyride = lazy(() => import('react-joyride').then((m) => ({ default: m.Joyride })));
+const PageTour = lazy(() => import('./components/Tour/PageTour'));
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const RubricList = lazy(() => import('./pages/RubricList'));
@@ -88,7 +89,10 @@ export default function App() {
 
     const { t } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const steps = useMemo(() => getTutorialSteps(t), [t]);
+    const steps = useMemo(
+        () => (isMobileViewport() ? withMobileDrawer(getTutorialSteps(t), setMobileMenuOpen) : getTutorialSteps(t)),
+        [t]
+    );
 
     if (isCheckingSession) {
         return (
@@ -161,115 +165,109 @@ export default function App() {
         );
     }
 
-    const handleJoyrideCallback = (data: EventData) => {
-        // Matches react-joyride's own STATUS.FINISHED/STATUS.SKIPPED constants — inlined so
-        // this file doesn't need a runtime import of the (lazy-loaded) library just for these.
-        if (data.status === 'finished' || data.status === 'skipped') {
-            updateSettings({ hasSeenTutorial: true });
-        }
+    const finishTutorial = () => {
+        setMobileMenuOpen(false);
+        updateSettings({ hasSeenTutorial: true });
     };
 
     return (
         <MobileMenuContext.Provider value={{ open: () => setMobileMenuOpen(true) }}>
-            <MigrationPrompt />
-            <div className="app-layout">
-                <a href="#main-content" className="skip-nav">
-                    {t('a11y.skip_to_content')}
-                </a>
-                {!settings.hasSeenTutorial && (
-                    <ErrorBoundary fallback={null}>
-                        <Suspense fallback={null}>
-                            <Joyride
-                                steps={steps}
-                                run={!settings.hasSeenTutorial}
-                                continuous
-                                onEvent={handleJoyrideCallback}
-                                options={{
-                                    showProgress: true,
-                                    buttons: ['back', 'skip', 'primary'],
-                                    primaryColor: 'var(--accent)',
-                                    backgroundColor: 'var(--bg-elevated)',
-                                    textColor: 'var(--text)',
-                                    arrowColor: 'var(--bg-elevated)',
-                                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                                }}
-                                styles={{
-                                    tooltipContainer: {
-                                        textAlign: 'left',
-                                    },
-                                }}
-                            />
-                        </Suspense>
-                    </ErrorBoundary>
-                )}
-                <RouteAnnouncer />
-                <PageViewLogger />
-                <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
-                <main className="main-area" id="main-content">
-                    <ErrorBoundary>
-                        <Suspense fallback={<RouteSkeleton />}>
-                            <Routes>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/rubrics" element={<RubricList />} />
-                                <Route path="/rubrics/new" element={<RubricBuilder />} />
-                                <Route path="/rubrics/:id" element={<RubricBuilder />} />
-                                <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
-                                <Route path="/rubrics/:rubricId/peer-review/:studentId" element={<PeerReviewView />} />
-                                <Route path="/peer-analytics/:rubricId" element={<PeerReviewAnalyticsPage />} />
-                                <Route path="/rubrics/:rubricId/self-assess/:studentId" element={<SelfAssessPage />} />
-                                <Route path="/speaking/:rubricId/:studentId" element={<SpeakingSession />} />
-                                <Route path="/grade-comparative/:classId/:rubricId" element={<ComparativeGrading />} />
-                                <Route path="/students" element={<StudentsPage />} />
-                                <Route path="/students/:id" element={<StudentProfilePage />} />
-                                <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
-                                <Route path="/students/:id/learning-path" element={<StudentLearningPathPage />} />
-                                <Route path="/cefr-overview" element={<CefrOverviewPage />} />
-                                <Route path="/vocabulary" element={<VocabularyDashboardPage />} />
-                                <Route path="/tests" element={<TestListPage />} />
-                                <Route path="/tests/new" element={<TestBuilderPage />} />
-                                <Route path="/tests/:id" element={<TestBuilderPage />} />
-                                <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
-                                <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
-                                <Route path="/essays" element={<EssayListPage />} />
-                                <Route path="/essays/new" element={<EssayBuilderPage />} />
-                                <Route path="/essays/:teacherKey" element={<EssayBuilderPage />} />
-                                <Route
-                                    path="/essays/:assignmentId/monitor"
-                                    element={<LiveMonitorPage kind="essay" />}
+            <TourProvider>
+                <MigrationPrompt />
+                <div className="app-layout">
+                    <a href="#main-content" className="skip-nav">
+                        {t('a11y.skip_to_content')}
+                    </a>
+                    {!settings.hasSeenTutorial && (
+                        <ErrorBoundary fallback={null}>
+                            <Suspense fallback={null}>
+                                <PageTour
+                                    steps={steps}
+                                    run={!settings.hasSeenTutorial}
+                                    onFinish={finishTutorial}
+                                    autoPlacement={false}
                                 />
-                                <Route path="/flashcards" element={<FlashcardsPage />} />
-                                <Route path="/flashcards/:id" element={<FlashcardDeckPage />} />
-                                <Route path="/news-flashes" element={<NewsFlashesPage />} />
-                                <Route path="/portal/:studentId" element={<StudentPortalPage />} />
-                                <Route
-                                    path="/portal/:studentId/flashcards/:deckId"
-                                    element={<StudentFlashcardStudyPage />}
-                                />
-                                <Route path="/attachments" element={<AttachmentsPage />} />
-                                <Route path="/export" element={<ExportPage />} />
-                                <Route path="/statistics" element={<StatisticsPage />} />
-                                <Route path="/activity-dashboard" element={<ActivityDashboardPage />} />
-                                <Route path="/moderation" element={<ModerationQueuePage />} />
-                                <Route path="/notifications" element={<NotificationsPage />} />
-                                <Route path="/messages" element={<MessagesPage />} />
-                                <Route path="/comments" element={<CommentBankPage />} />
-                                <Route path="/question-bank" element={<QuestionBankPage />} />
-                                <Route path="/marketplace" element={<MarketplacePage />} />
-                                <Route path="/settings" element={<SettingsPage />} />
-                                <Route
-                                    path="/admin"
-                                    element={
-                                        settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
-                                    }
-                                />
-                                <Route path="/docs" element={<DocsPage />} />
-                                <Route path="/privacy" element={<PrivacyPage />} />
-                                <Route path="*" element={<NotFoundPage />} />
-                            </Routes>
-                        </Suspense>
-                    </ErrorBoundary>
-                </main>
-            </div>
+                            </Suspense>
+                        </ErrorBoundary>
+                    )}
+                    <RouteAnnouncer />
+                    <PageViewLogger />
+                    <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+                    <main className="main-area" id="main-content">
+                        <ErrorBoundary>
+                            <Suspense fallback={<RouteSkeleton />}>
+                                <Routes>
+                                    <Route path="/" element={<Dashboard />} />
+                                    <Route path="/rubrics" element={<RubricList />} />
+                                    <Route path="/rubrics/new" element={<RubricBuilder />} />
+                                    <Route path="/rubrics/:id" element={<RubricBuilder />} />
+                                    <Route path="/rubrics/:rubricId/grade/:studentId" element={<GradeStudentRoute />} />
+                                    <Route
+                                        path="/rubrics/:rubricId/peer-review/:studentId"
+                                        element={<PeerReviewView />}
+                                    />
+                                    <Route path="/peer-analytics/:rubricId" element={<PeerReviewAnalyticsPage />} />
+                                    <Route
+                                        path="/rubrics/:rubricId/self-assess/:studentId"
+                                        element={<SelfAssessPage />}
+                                    />
+                                    <Route path="/speaking/:rubricId/:studentId" element={<SpeakingSession />} />
+                                    <Route
+                                        path="/grade-comparative/:classId/:rubricId"
+                                        element={<ComparativeGrading />}
+                                    />
+                                    <Route path="/students" element={<StudentsPage />} />
+                                    <Route path="/students/:id" element={<StudentProfilePage />} />
+                                    <Route path="/students/:id/cefr-overview" element={<StudentCefrOverviewPage />} />
+                                    <Route path="/students/:id/learning-path" element={<StudentLearningPathPage />} />
+                                    <Route path="/cefr-overview" element={<CefrOverviewPage />} />
+                                    <Route path="/vocabulary" element={<VocabularyDashboardPage />} />
+                                    <Route path="/tests" element={<TestListPage />} />
+                                    <Route path="/tests/new" element={<TestBuilderPage />} />
+                                    <Route path="/tests/:id" element={<TestBuilderPage />} />
+                                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                                    <Route path="/tests/:testId/monitor" element={<LiveMonitorPage kind="test" />} />
+                                    <Route path="/essays" element={<EssayListPage />} />
+                                    <Route path="/essays/new" element={<EssayBuilderPage />} />
+                                    <Route path="/essays/:teacherKey" element={<EssayBuilderPage />} />
+                                    <Route
+                                        path="/essays/:assignmentId/monitor"
+                                        element={<LiveMonitorPage kind="essay" />}
+                                    />
+                                    <Route path="/flashcards" element={<FlashcardsPage />} />
+                                    <Route path="/flashcards/:id" element={<FlashcardDeckPage />} />
+                                    <Route path="/news-flashes" element={<NewsFlashesPage />} />
+                                    <Route path="/portal/:studentId" element={<StudentPortalPage />} />
+                                    <Route
+                                        path="/portal/:studentId/flashcards/:deckId"
+                                        element={<StudentFlashcardStudyPage />}
+                                    />
+                                    <Route path="/attachments" element={<AttachmentsPage />} />
+                                    <Route path="/export" element={<ExportPage />} />
+                                    <Route path="/statistics" element={<StatisticsPage />} />
+                                    <Route path="/activity-dashboard" element={<ActivityDashboardPage />} />
+                                    <Route path="/moderation" element={<ModerationQueuePage />} />
+                                    <Route path="/notifications" element={<NotificationsPage />} />
+                                    <Route path="/messages" element={<MessagesPage />} />
+                                    <Route path="/comments" element={<CommentBankPage />} />
+                                    <Route path="/question-bank" element={<QuestionBankPage />} />
+                                    <Route path="/marketplace" element={<MarketplacePage />} />
+                                    <Route path="/settings" element={<SettingsPage />} />
+                                    <Route
+                                        path="/admin"
+                                        element={
+                                            settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
+                                        }
+                                    />
+                                    <Route path="/docs" element={<DocsPage />} />
+                                    <Route path="/privacy" element={<PrivacyPage />} />
+                                    <Route path="*" element={<NotFoundPage />} />
+                                </Routes>
+                            </Suspense>
+                        </ErrorBoundary>
+                    </main>
+                </div>
+            </TourProvider>
         </MobileMenuContext.Provider>
     );
 }

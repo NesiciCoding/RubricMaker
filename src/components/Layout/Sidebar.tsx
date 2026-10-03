@@ -14,6 +14,7 @@ import {
     X,
     GraduationCap,
     HelpCircle,
+    Compass,
     Languages,
     ClipboardCheck,
     PenLine,
@@ -30,6 +31,7 @@ import { useTranslation } from 'react-i18next';
 import { useStoreSelector } from '../../context/useStore';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
+import { usePageTourRegistry } from '../../context/TourContext';
 
 interface SidebarProps {
     mobileOpen?: boolean;
@@ -56,6 +58,7 @@ interface Domain {
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
+    const { hasPageTour, startPageTour } = usePageTourRegistry();
     const {
         students: allStudents,
         studentRubrics: allStudentRubrics,
@@ -271,10 +274,28 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             <Settings size={16} aria-hidden="true" />
                             {t('common.settings')}
                         </NavLink>
-                        <NavLink to="/docs" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                        <NavLink
+                            to="/docs"
+                            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                            data-tour="help"
+                        >
                             <HelpCircle size={16} aria-hidden="true" />
                             {t('navigation.docs')}
                         </NavLink>
+                        {hasPageTour && (
+                            <button
+                                type="button"
+                                className="nav-item"
+                                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'start' }}
+                                onClick={() => {
+                                    onMobileClose?.();
+                                    startPageTour();
+                                }}
+                            >
+                                <Compass size={16} aria-hidden="true" />
+                                {t('tutorial.page_tour_button')}
+                            </button>
+                        )}
                         {isAdmin && (
                             <NavLink to="/admin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <Shield size={16} aria-hidden="true" />
