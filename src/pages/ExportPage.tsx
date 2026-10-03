@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { saveAs } from 'file-saver';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { storageSync } from '../services/database';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getExportTourSteps } from '../data/TutorialSteps';
 import {
     Download,
@@ -625,23 +624,11 @@ export default function ExportPage() {
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={exportTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={t('navigation.export')}

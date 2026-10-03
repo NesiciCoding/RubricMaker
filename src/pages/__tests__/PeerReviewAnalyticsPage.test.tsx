@@ -128,6 +128,22 @@ describe('PeerReviewAnalyticsPage', () => {
         expect(screen.getByText('peerAnalytics.empty_state')).toBeInTheDocument();
     });
 
+    it('offers the page tour in the empty state, anchored on the rubric summary card', () => {
+        mockUseApp = {
+            ...baseApp,
+            rubrics: [mockRubric],
+            students: [mockStudentA, mockStudentReviewer],
+            peerReviews: [],
+            studentRubrics: [teacherBaseline],
+        };
+
+        const { container } = renderPage();
+
+        expect(screen.getByText('tutorial.page_tour_button')).toBeInTheDocument();
+        expect(container.querySelector('[data-tour="pa-header"]')).not.toBeNull();
+        expect(container.querySelector('[data-tour="pa-heatmap"]')).toBeNull();
+    });
+
     it('shows rubric-not-found state for an unknown rubric', () => {
         mockUseApp = {
             ...baseApp,

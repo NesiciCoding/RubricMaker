@@ -6,6 +6,8 @@ import { useFlashcards, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import FlashcardStudySession from '../components/Flashcards/FlashcardStudySession';
 import FlashcardInsightsPanel from '../components/Flashcards/FlashcardInsightsPanel';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import type { FlashcardCardState, FlashcardDeck, FlashcardReview } from '../types';
 
@@ -75,6 +77,10 @@ export default function StudentFlashcardStudyPage() {
     // real spaced-repetition state — only persist for the student themself (connected)
     // or in local mode, where the portal runs on the teacher's device by design.
     const isTeacherPreview = isConnected && settings.userRole !== 'student';
+    const tour = usePageTourState('studyflash', {
+        seenKey: `rm_flashcard_tour_seen_${studentId}`,
+        autoRun: settings.userRole === 'student' && !loading && deck !== null,
+    });
 
     function handleStatesChange(nextStates: Record<string, FlashcardCardState>) {
         setSessionStates(nextStates);
@@ -97,7 +103,9 @@ export default function StudentFlashcardStudyPage() {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 60 }}>
+            <PageTour {...tour.tourProps} />
             <div
+                data-tour="sf-header"
                 style={{
                     background: 'var(--bg-elevated)',
                     borderBottom: '1px solid var(--border)',
@@ -112,9 +120,14 @@ export default function StudentFlashcardStudyPage() {
                     >
                         <ArrowLeft size={15} /> {t('flashcards.back_to_portal')}
                     </Link>
-                    <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
-                        {deck?.name ?? t('flashcards.deck_title')}
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
+                            {deck?.name ?? t('flashcards.deck_title')}
+                        </h1>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                    </div>
                     {student && (
                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
                             {student.name}
@@ -155,6 +168,7 @@ export default function StudentFlashcardStudyPage() {
                     <>
                         {insights && (
                             <div
+                                data-tour="sf-progress"
                                 style={{
                                     background: 'var(--bg-elevated)',
                                     border: '1px solid var(--border)',
@@ -169,11 +183,13 @@ export default function StudentFlashcardStudyPage() {
                                 <FlashcardInsightsPanel insights={insights} deckKind={deck?.deckKind} />
                             </div>
                         )}
-                        <FlashcardStudySession
-                            deck={deck}
-                            initialStates={initialReview?.cardStates ?? {}}
-                            onStatesChange={handleStatesChange}
-                        />
+                        <div data-tour="sf-session">
+                            <FlashcardStudySession
+                                deck={deck}
+                                initialStates={initialReview?.cardStates ?? {}}
+                                onStatesChange={handleStatesChange}
+                            />
+                        </div>
                     </>
                 )}
             </div>

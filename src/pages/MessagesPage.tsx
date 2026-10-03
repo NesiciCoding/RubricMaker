@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
 import { Mail, Plus, Send, X } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
@@ -16,6 +18,7 @@ const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
 
 export default function MessagesPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('messages');
     const { students } = useStudents();
 
     const { messages, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useEssays();
@@ -96,10 +99,19 @@ export default function MessagesPage() {
 
     return (
         <>
-            <Topbar title={t('messages.page_title')} />
-            <div className="page-content fade-in">
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('messages.page_title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
+            <div className="page-content fade-in" data-tour="msg-content">
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
                     <button
+                        data-tour="msg-new"
                         type="button"
                         className="btn btn-primary btn-sm"
                         onClick={() => setNewThreadOpen((v) => !v)}

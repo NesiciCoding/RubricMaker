@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams } from 'react-router-dom';
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
 import { Eye, EyeOff, AlertTriangle, Database, Send, SlidersHorizontal } from 'lucide-react';
@@ -64,6 +66,7 @@ export interface LiveMonitorPageProps {
 
 export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     const { t } = useTranslation();
+    const tour = usePageTourState('monitor');
     const params = useParams<{ testId?: string; assignmentId?: string }>();
     const { students } = useStudents();
     const { classes } = useClasses();
@@ -537,19 +540,32 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={
                     kind === 'test'
                         ? t('tests.monitor.title_test', { name: test!.name })
                         : t('tests.monitor.title_essay', { title: essayAssignment!.title })
                 }
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
             />
             <div className="page-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {/* Controls */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div
+                    data-tour="lm-controls"
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}
+                >
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}>
                         {t('tests.monitor.sort_label')}
-                        <select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
+                        <select
+                            data-tour="lm-sort"
+                            value={sortMode}
+                            onChange={(e) => setSortMode(e.target.value as SortMode)}
+                        >
                             <option value="active">{t('tests.monitor.sort.active')}</option>
                             <option value="name">{t('tests.monitor.sort.name')}</option>
                             <option value="progress">{t('tests.monitor.sort.progress')}</option>

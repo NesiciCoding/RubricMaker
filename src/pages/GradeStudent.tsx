@@ -25,8 +25,7 @@ import {
     LayoutGrid,
     Rows3,
 } from 'lucide-react';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import Topbar from '../components/Layout/Topbar';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
@@ -676,24 +675,11 @@ export default function GradeStudent() {
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={gradingTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    buttons: ['back', 'skip', 'primary'],
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={`${t('gradeStudent.title_prefix')} ${student.name}`}

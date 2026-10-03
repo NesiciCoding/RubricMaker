@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, AlertTriangle, Users, ExternalLink, BookOpen, PenSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -50,6 +52,7 @@ export default function StudentLearningPathPage() {
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('lpath');
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     const student = students.find((s) => s.id === id);
@@ -158,20 +161,30 @@ export default function StudentLearningPathPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('learningPath.page_title')}
                 actions={
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => navigate(`/students/${student.id}`)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                    >
-                        <ArrowLeft size={14} /> {t('learningPath.back_to_profile')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => navigate(`/students/${student.id}`)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <ArrowLeft size={14} /> {t('learningPath.back_to_profile')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
-                <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
+                <div
+                    data-tour="slp-header"
+                    className="card"
+                    style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
+                >
                     <Avatar name={student.name} size={64} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem' }}>{student.name}</h2>
@@ -203,7 +216,7 @@ export default function StudentLearningPathPage() {
                     />
                 )}
 
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div data-tour="slp-recs" className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                         <TrendingUp size={18} style={{ color: 'var(--accent)' }} />
                         {t('learningPath.recommendations_title')}

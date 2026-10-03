@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle2, Mail, UserCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +19,7 @@ const TYPE_ICON: Record<NotificationFeedItem['type'], React.ElementType> = {
 
 export default function NotificationsPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('notifications');
     const navigate = useNavigate();
     const { items, overdueItems, messageItems, moderationItems, threshold, dismiss, dismissAll, markThreadRead } =
         useNotificationFeed();
@@ -52,9 +55,20 @@ export default function NotificationsPage() {
 
     return (
         <>
-            <Topbar title={t('notifications.page_title')} />
-            <div className="page-content fade-in">
-                <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('notifications.page_title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
+            <div className="page-content fade-in" data-tour="nt-content">
+                <div
+                    data-tour="nt-filters"
+                    style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}
+                >
                     {FILTERS.map((kind) => (
                         <button
                             key={kind}

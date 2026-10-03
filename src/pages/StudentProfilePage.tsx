@@ -20,8 +20,7 @@ import {
     Layers,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
@@ -350,23 +349,11 @@ export default function StudentProfilePage() {
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={profileTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={t('tooltips.student_profile')}

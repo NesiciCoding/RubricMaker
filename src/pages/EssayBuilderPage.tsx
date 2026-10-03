@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getEssayBuilderTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Save, UserPlus, Upload, Radio, Copy, Check, X, FileText, ExternalLink } from 'lucide-react';
 import { nanoid } from '../utils/nanoid';
@@ -222,23 +221,11 @@ export default function EssayBuilderPage() {
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={essayTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={existing ? t('essays.builder_title_edit') : t('essays.builder_title_new')}

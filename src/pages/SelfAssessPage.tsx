@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Check, AlertCircle, Save, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +16,7 @@ export default function SelfAssessPage() {
     const { rubricId, studentId } = useParams();
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('selfassess');
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     const { students } = useStudents();
@@ -198,10 +201,14 @@ export default function SelfAssessPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('selfAssess.title')}
                 actions={
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>
                             <ArrowLeft size={14} /> {t('gradeStudent.action_back')}
                         </button>
@@ -217,7 +224,11 @@ export default function SelfAssessPage() {
             />
             <div className="page-content fade-in">
                 {/* Header */}
-                <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div
+                    data-tour="sa-header"
+                    className="card"
+                    style={{ marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}
+                >
                     <Avatar name={student.name} size={56} />
                     <div style={{ flex: 1 }}>
                         <h2 style={{ margin: '0 0 4px' }}>{student.name}</h2>
@@ -249,6 +260,7 @@ export default function SelfAssessPage() {
 
                 {/* Intro */}
                 <div
+                    data-tour="sa-instructions"
                     className="card"
                     style={{ marginBottom: 24, background: 'var(--accent-soft)', border: '1px solid var(--accent)' }}
                 >
@@ -258,88 +270,90 @@ export default function SelfAssessPage() {
                 </div>
 
                 {/* Descriptors grouped by skill */}
-                {Array.from(bySkill.entries()).map(([skill, descriptors]) => {
-                    /* v8 ignore next -- provably dead: skill is always a key of CEFR_SKILL_LABELS and lang is always 'en'|'nl' */
-                    const skillLabel = CEFR_SKILL_LABELS[skill]?.[lang] ?? skill;
-                    return (
-                        <div key={skill} className="card" style={{ marginBottom: 20 }}>
-                            <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <BookOpen size={16} style={{ color: 'var(--accent)' }} />
-                                {skillLabel}
-                            </h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {descriptors.map((d) => {
-                                    const currentLevel = confidence.get(d.descriptorId);
-                                    const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
-                                    const cefrColor = CEFR_LEVEL_COLORS[d.level];
-                                    return (
-                                        <div
-                                            key={d.descriptorId}
-                                            style={{
-                                                padding: '12px 14px',
-                                                borderRadius: 10,
-                                                border: `1px solid ${currentLevel ? cefrColor + '60' : 'var(--border)'}`,
-                                                background: currentLevel ? `${cefrColor}08` : 'var(--bg-elevated)',
-                                                transition: 'border-color 0.15s, background 0.15s',
-                                            }}
-                                        >
-                                            {/* Text + level badge */}
+                <div data-tour="sa-descriptors">
+                    {Array.from(bySkill.entries()).map(([skill, descriptors]) => {
+                        /* v8 ignore next -- provably dead: skill is always a key of CEFR_SKILL_LABELS and lang is always 'en'|'nl' */
+                        const skillLabel = CEFR_SKILL_LABELS[skill]?.[lang] ?? skill;
+                        return (
+                            <div key={skill} className="card" style={{ marginBottom: 20 }}>
+                                <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <BookOpen size={16} style={{ color: 'var(--accent)' }} />
+                                    {skillLabel}
+                                </h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {descriptors.map((d) => {
+                                        const currentLevel = confidence.get(d.descriptorId);
+                                        const text = lang === 'nl' ? d.descriptionNl : d.descriptionEn;
+                                        const cefrColor = CEFR_LEVEL_COLORS[d.level];
+                                        return (
                                             <div
+                                                key={d.descriptorId}
                                                 style={{
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    gap: 10,
-                                                    marginBottom: 10,
+                                                    padding: '12px 14px',
+                                                    borderRadius: 10,
+                                                    border: `1px solid ${currentLevel ? cefrColor + '60' : 'var(--border)'}`,
+                                                    background: currentLevel ? `${cefrColor}08` : 'var(--bg-elevated)',
+                                                    transition: 'border-color 0.15s, background 0.15s',
                                                 }}
                                             >
-                                                <div style={{ flex: 1 }}>
-                                                    <div
-                                                        style={{
-                                                            fontSize: '0.92rem',
-                                                            lineHeight: 1.5,
-                                                            color: 'var(--text)',
-                                                        }}
-                                                    >
-                                                        {text}
-                                                    </div>
-                                                </div>
-                                                <CefrBadge level={d.level} size="sm" />
-                                            </div>
-                                            {/* 4-point confidence selector */}
-                                            <div style={{ display: 'flex', gap: 4 }}>
-                                                {([1, 2, 3, 4] as ConfidenceLevel[]).map((lvl) => {
-                                                    const selected = currentLevel === lvl;
-                                                    const clr = CONFIDENCE_COLORS[lvl];
-                                                    return (
-                                                        <button
-                                                            key={lvl}
-                                                            onClick={() => setLevel(d.descriptorId, lvl)}
+                                                {/* Text + level badge */}
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        gap: 10,
+                                                        marginBottom: 10,
+                                                    }}
+                                                >
+                                                    <div style={{ flex: 1 }}>
+                                                        <div
                                                             style={{
-                                                                flex: 1,
-                                                                padding: '5px 2px',
-                                                                borderRadius: 6,
-                                                                border: `1.5px solid ${selected ? clr : 'var(--border)'}`,
-                                                                background: selected ? clr : 'transparent',
-                                                                color: selected ? '#fff' : 'var(--text-muted)',
-                                                                fontSize: '0.72rem',
-                                                                fontWeight: selected ? 700 : 400,
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.15s',
-                                                                whiteSpace: 'nowrap',
+                                                                fontSize: '0.92rem',
+                                                                lineHeight: 1.5,
+                                                                color: 'var(--text)',
                                                             }}
                                                         >
-                                                            {CONFIDENCE_LABELS[lvl]}
-                                                        </button>
-                                                    );
-                                                })}
+                                                            {text}
+                                                        </div>
+                                                    </div>
+                                                    <CefrBadge level={d.level} size="sm" />
+                                                </div>
+                                                {/* 4-point confidence selector */}
+                                                <div style={{ display: 'flex', gap: 4 }}>
+                                                    {([1, 2, 3, 4] as ConfidenceLevel[]).map((lvl) => {
+                                                        const selected = currentLevel === lvl;
+                                                        const clr = CONFIDENCE_COLORS[lvl];
+                                                        return (
+                                                            <button
+                                                                key={lvl}
+                                                                onClick={() => setLevel(d.descriptorId, lvl)}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    padding: '5px 2px',
+                                                                    borderRadius: 6,
+                                                                    border: `1.5px solid ${selected ? clr : 'var(--border)'}`,
+                                                                    background: selected ? clr : 'transparent',
+                                                                    color: selected ? '#fff' : 'var(--text-muted)',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: selected ? 700 : 400,
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.15s',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                {CONFIDENCE_LABELS[lvl]}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
 
                 {/* Reflection */}
                 <div className="card" style={{ marginBottom: 24 }}>

@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation } from 'react-i18next';
 import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
@@ -51,6 +53,7 @@ export function filterAndSortListings(
 
 export default function MarketplacePage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('market');
     const { rubrics, questionBank, tests, flashcardDecks, settings } = useStoreSelector((s) => ({
         rubrics: s.rubrics,
         questionBank: s.questionBank,
@@ -203,16 +206,26 @@ export default function MarketplacePage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('marketplace.title')}
                 actions={
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowPublish(true)}>
-                        <Upload size={16} /> {t('marketplace.publish_button')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button
+                            data-tour="mp-publish"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => setShowPublish(true)}
+                        >
+                            <Upload size={16} /> {t('marketplace.publish_button')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
-                <p className="text-muted text-xs" style={{ marginBottom: 16 }}>
+                <p data-tour="mp-intro" className="text-muted text-xs" style={{ marginBottom: 16 }}>
                     {t('marketplace.intro')}
                 </p>
 

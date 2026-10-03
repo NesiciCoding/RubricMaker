@@ -1,4 +1,6 @@
 import React from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Layers, Edit2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +11,7 @@ import { useConfirm } from '../hooks/useConfirm';
 
 export default function FlashcardsPage() {
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('flashcards');
     const navigate = useNavigate();
     const { flashcardDecks, flashcardAssignments, addFlashcardDeck, deleteFlashcardDeck } = useFlashcards();
 
@@ -37,15 +40,21 @@ export default function FlashcardsPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('flashcards.list_title')}
                 actions={
-                    <button className="btn btn-primary btn-sm" onClick={handleCreate}>
-                        <Plus size={15} /> {t('flashcards.new_deck')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button data-tour="fc-new" className="btn btn-primary btn-sm" onClick={handleCreate}>
+                            <Plus size={15} /> {t('flashcards.new_deck')}
+                        </button>
+                    </>
                 }
             />
-            <div className="page-content fade-in">
+            <div className="page-content fade-in" data-tour="fc-content">
                 {sorted.length === 0 ? (
                     <div className="empty-state">
                         <Layers size={40} />

@@ -67,8 +67,7 @@ import { useToast } from '../hooks/useToast';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getRubricBuilderTourSteps } from '../data/TutorialSteps';
 
 function newLevel(min = 0, max = 0, label = ''): RubricLevel {
@@ -177,6 +176,7 @@ export default function RubricBuilder() {
     const [diffAgainstVersion, setDiffAgainstVersion] = useState<RubricVersion | null>(null);
     const [showPreviewStdDesc, setShowPreviewStdDesc] = useState(false);
     const [tourRun, setTourRun] = useState(false);
+    const rubricTourSteps = React.useMemo(() => getRubricBuilderTourSteps(t), [t]);
 
     // ── Collapsible criteria ─────────────────────────────────────────────────
     const [collapsedCriteria, setCollapsedCriteria] = useState<Set<string>>(new Set());
@@ -706,23 +706,11 @@ export default function RubricBuilder() {
 
     return (
         <>
-            <Joyride
-                steps={getRubricBuilderTourSteps(t)}
+            <PageTour
+                steps={rubricTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={id ? t('rubricBuilder.edit_rubric') : t('rubricBuilder.new_rubric')}
@@ -879,9 +867,9 @@ export default function RubricBuilder() {
                 >
                     <div style={{ display: viewMode === 'form' ? 'block' : 'none' }}>
                         {/* Rubric Meta */}
-                        <div data-tour="rb-meta" className="card" style={{ marginBottom: 20 }}>
+                        <div className="card" style={{ marginBottom: 20 }}>
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
-                            <div className="grid-2" style={{ gap: 12 }}>
+                            <div data-tour="rb-meta" className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
                                     <label>{t('rubricBuilder.name_label')}</label>
                                     <input

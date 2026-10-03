@@ -360,23 +360,16 @@ export function getStudentsTourSteps(t: TFunction): Step[] {
 export function getTutorialSteps(t: TFunction): Step[] {
     return [
         {
-            target: '.dashboard-container',
+            target: 'body',
             title: t('tutorial.step_welcome_title'),
             content: t('tutorial.step_welcome_content'),
             placement: 'center',
             skipBeacon: true,
         },
         {
-            target: '[data-tour="/rubrics"]',
-            title: t('tutorial.step_rubrics_title'),
-            content: t('tutorial.step_rubrics_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
-            target: '[data-tour="/students"]',
-            title: t('tutorial.step_students_title'),
-            content: t('tutorial.step_students_content'),
+            target: '.nav-rail',
+            title: t('tutorial.step_nav_title'),
+            content: t('tutorial.step_nav_content'),
             placement: 'right',
             skipBeacon: true,
         },
@@ -388,46 +381,38 @@ export function getTutorialSteps(t: TFunction): Step[] {
             skipBeacon: true,
         },
         {
-            target: '[data-tour="/cefr-overview"]',
-            title: t('tutorial.step_cefr_title'),
-            content: t('tutorial.step_cefr_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
-            target: '[data-tour="/attachments"]',
-            title: t('tutorial.step_attachments_title'),
-            content: t('tutorial.step_attachments_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
-            target: '[data-tour="/statistics"]',
-            title: t('tutorial.step_statistics_title'),
-            content: t('tutorial.step_statistics_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
-            target: '[data-tour="/comments"]',
-            title: t('tutorial.step_comments_title'),
-            content: t('tutorial.step_comments_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
-            target: '[data-tour="/export"]',
-            title: t('tutorial.step_export_title'),
-            content: t('tutorial.step_export_content'),
-            placement: 'right',
-            skipBeacon: true,
-        },
-        {
             target: '[data-tour="/settings"]',
             title: t('tutorial.step_settings_title'),
             content: t('tutorial.step_settings_content'),
             placement: 'right',
             skipBeacon: true,
         },
+        {
+            target: '[data-tour="help"]',
+            title: t('tutorial.step_help_title'),
+            content: t('tutorial.step_help_content'),
+            placement: 'right',
+            skipBeacon: true,
+        },
     ];
+}
+
+/** Steps that live inside the sidebar, which is an off-canvas drawer on mobile. */
+export const SIDEBAR_TOUR_TARGETS = ['.nav-rail', '[data-tour="/settings"]', '[data-tour="help"]'];
+
+const DRAWER_TRANSITION_MS = 350;
+
+/** On mobile the sidebar is an off-canvas drawer, so it must be open while a step highlights it. */
+export function withMobileDrawer(steps: Step[], setDrawerOpen: (open: boolean) => void): Step[] {
+    return steps.map((step) => {
+        const inDrawer = typeof step.target === 'string' && SIDEBAR_TOUR_TARGETS.includes(step.target);
+        return {
+            ...step,
+            placement: step.target === '.nav-rail' ? 'center' : step.placement,
+            before: async () => {
+                setDrawerOpen(inDrawer);
+                if (inDrawer) await new Promise((resolve) => setTimeout(resolve, DRAWER_TRANSITION_MS));
+            },
+        };
+    });
 }

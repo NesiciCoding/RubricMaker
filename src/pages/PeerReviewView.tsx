@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, AlertCircle, FileText, BarChart3 } from 'lucide-react';
@@ -18,6 +20,7 @@ export default function PeerReviewView() {
     const reviewerId = searchParams.get('reviewerId') ?? studentId;
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const tour = usePageTourState('peerreview');
     const { students } = useStudents();
 
     const { rubrics } = useAuthoring();
@@ -136,10 +139,14 @@ export default function PeerReviewView() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={`${t('rubricList.grade_students')} - ${student.name}`}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
                         <button
                             className="btn btn-secondary"
                             onClick={() => navigate(`/peer-analytics/${rubricId}`)}
@@ -156,7 +163,7 @@ export default function PeerReviewView() {
             />
 
             <div className="page-content fade-in">
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div data-tour="pr-header" className="card" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                         <FileText size={20} style={{ color: 'var(--accent)' }} />
                         <h2 style={{ margin: 0 }}>{rubric.name}</h2>
@@ -164,6 +171,7 @@ export default function PeerReviewView() {
                     <p className="text-muted text-sm">{rubric.description}</p>
                     {/* Round selector */}
                     <div
+                        data-tour="pr-rounds"
                         style={{
                             display: 'flex',
                             alignItems: 'center',

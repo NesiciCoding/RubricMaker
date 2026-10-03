@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Award, Users, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -62,6 +64,7 @@ export default function StudentCefrOverviewPage() {
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
 
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('scefr');
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [copiedLink, setCopiedLink] = useState(false);
 
@@ -169,21 +172,31 @@ export default function StudentCefrOverviewPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('cefrOverview.page_title')}
                 actions={
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => navigate(`/students/${student.id}`)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                    >
-                        <ArrowLeft size={14} /> {t('cefrOverview.back_to_profile')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => navigate(`/students/${student.id}`)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                            <ArrowLeft size={14} /> {t('cefrOverview.back_to_profile')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
                 {/* Student header card */}
-                <div className="card" style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
+                <div
+                    data-tour="scefr-header"
+                    className="card"
+                    style={{ marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}
+                >
                     <Avatar name={student.name} size={64} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.4rem' }}>{student.name}</h2>
@@ -347,7 +360,7 @@ export default function StudentCefrOverviewPage() {
 
                 {/* CEFR Can-Do Grid */}
                 {overview && (
-                    <div className="card" style={{ marginBottom: 24 }}>
+                    <div data-tour="scefr-grid" className="card" style={{ marginBottom: 24 }}>
                         <h3
                             style={{
                                 marginBottom: 6,

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -44,6 +46,7 @@ import { calcClassAveragePercentage } from '../utils/testCalc';
 
 export default function TestListPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('tests');
     const navigate = useNavigate();
     const {
         students: allStudents,
@@ -257,14 +260,22 @@ export default function TestListPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('tests.list_title')}
                 actions={
                     <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerateModal(true)}>
                             <Sparkles size={15} /> {t('generateTest.entry_point')}
                         </button>
-                        <button className="btn btn-primary btn-sm" onClick={() => navigate('/tests/new')}>
+                        <button
+                            data-tour="tl-new"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => navigate('/tests/new')}
+                        >
                             <Plus size={15} /> {t('tests.new_test')}
                         </button>
                     </>
@@ -272,7 +283,7 @@ export default function TestListPage() {
             />
             {showGenerateModal && <GenerateTestModal onClose={() => setShowGenerateModal(false)} />}
             <div className="page-content fade-in">
-                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div data-tour="tl-filters" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                     <CohortFilter classes={classes} value={cohortFilter} onChange={setCohortFilter} />
                     <div style={{ marginLeft: 'auto' }}>
                         <SegmentedToggle

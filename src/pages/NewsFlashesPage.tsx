@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import {
     Plus,
     Newspaper,
@@ -61,6 +63,7 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
+    const tour = usePageTourState('news');
     const {
         students: allStudents,
         rubrics,
@@ -153,15 +156,21 @@ export default function NewsFlashesPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={t('newsFlashes.page_title')}
                 actions={
-                    <button className="btn btn-primary btn-sm" onClick={openCreate}>
-                        <Plus size={15} /> {t('newsFlashes.new_flash')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                        <button data-tour="nf-new" className="btn btn-primary btn-sm" onClick={openCreate}>
+                            <Plus size={15} /> {t('newsFlashes.new_flash')}
+                        </button>
+                    </>
                 }
             />
-            <div className="page-content fade-in">
+            <div className="page-content fade-in" data-tour="nf-content">
                 {sorted.length === 0 ? (
                     <div className="empty-state">
                         <Newspaper size={40} />
