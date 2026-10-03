@@ -26,6 +26,12 @@ export const PAGE_TOURS = {
     lpath: [{ target: 'slp-header' }, { target: 'slp-recs' }],
     tresults: [{ target: 'tr-summary' }, { target: 'tr-integrity' }, { target: 'tr-questions' }],
     monitor: [{ target: 'lm-controls' }, { target: 'lm-sort' }],
+    admin: [{ target: 'admin-tabs' }, { target: 'admin-content' }],
+    peerreview: [{ target: 'pr-header' }, { target: 'pr-rounds' }],
+    selfassess: [{ target: 'sa-header' }, { target: 'sa-instructions' }, { target: 'sa-descriptors' }],
+    peeranalytics: [{ target: 'pa-header' }, { target: 'pa-heatmap' }],
+    deck: [{ target: 'fd-settings' }, { target: 'fd-cards' }],
+    studyflash: [{ target: 'sf-header' }, { target: 'sf-progress' }, { target: 'sf-session' }],
 } satisfies Record<string, StepDef[]>;
 
 export type PageTourId = keyof typeof PAGE_TOURS;

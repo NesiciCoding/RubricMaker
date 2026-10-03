@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, FileText, Users } from 'lucide-react';
@@ -12,6 +14,7 @@ export default function PeerReviewAnalyticsPage() {
     const { rubricId } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const tour = usePageTourState('peeranalytics');
     const { students } = useStudents();
     const { studentRubrics } = useGrading();
 
@@ -101,9 +104,17 @@ export default function PeerReviewAnalyticsPage() {
 
     return (
         <>
-            <Topbar title={t('peerAnalytics.title', { rubricName: rubric.name })} />
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('peerAnalytics.title', { rubricName: rubric.name })}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div data-tour="pa-header" className="card" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                         <FileText size={20} style={{ color: 'var(--accent)' }} />
                         <h2 style={{ margin: 0 }}>{rubric.name}</h2>
@@ -151,7 +162,7 @@ export default function PeerReviewAnalyticsPage() {
                 )}
 
                 {/* Criterion feedback heatmap */}
-                <div className="card" style={{ marginBottom: 24 }}>
+                <div data-tour="pa-heatmap" className="card" style={{ marginBottom: 24 }}>
                     <h3 style={{ marginBottom: 16 }}>{t('peerAnalytics.feedback_heatmap')}</h3>
                     <p className="text-muted text-xs" style={{ marginBottom: 12 }}>
                         {t('peerAnalytics.feedback_heatmap_hint')}

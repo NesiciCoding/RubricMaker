@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Users,
@@ -1846,6 +1848,7 @@ function ArchiveTab() {
 
 export default function AdminPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('admin');
     const [tab, setTab] = useState<Tab>('users');
 
     const tabs: { id: Tab; label: string; Icon: React.ElementType }[] = [
@@ -1861,10 +1864,19 @@ export default function AdminPage() {
 
     return (
         <>
-            <Topbar title={t('admin.title')} />
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('admin.title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
 
             <div className="page-content fade-in">
                 <div
+                    data-tour="admin-tabs"
                     style={{
                         display: 'flex',
                         gap: 4,
@@ -1899,14 +1911,16 @@ export default function AdminPage() {
                     ))}
                 </div>
 
-                {tab === 'users' && <UsersTab />}
-                {tab === 'schools' && <SchoolsTab />}
-                {tab === 'database' && <DatabaseTab />}
-                {tab === 'integrations' && <IntegrationsTab />}
-                {tab === 'data' && <DataTab />}
-                {tab === 'retention' && <RetentionTab />}
-                {tab === 'audit' && <AuditTab />}
-                {tab === 'archive' && <ArchiveTab />}
+                <div data-tour="admin-content">
+                    {tab === 'users' && <UsersTab />}
+                    {tab === 'schools' && <SchoolsTab />}
+                    {tab === 'database' && <DatabaseTab />}
+                    {tab === 'integrations' && <IntegrationsTab />}
+                    {tab === 'data' && <DataTab />}
+                    {tab === 'retention' && <RetentionTab />}
+                    {tab === 'audit' && <AuditTab />}
+                    {tab === 'archive' && <ArchiveTab />}
+                </div>
             </div>
         </>
     );

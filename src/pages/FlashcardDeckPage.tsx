@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Upload, Play, Send, X, FileQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +22,7 @@ const AUTOSAVE_DELAY_MS = 700;
 
 export default function FlashcardDeckPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('deck');
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const { students } = useStudents();
@@ -173,10 +176,14 @@ export default function FlashcardDeckPage() {
 
     return (
         <>
+            <PageTour {...tour.tourProps} />
             <Topbar
                 title={draft.name || t('flashcards.deck_title')}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
                         <button
                             className="btn btn-secondary btn-sm"
                             disabled={validCardCount === 0}
@@ -207,7 +214,7 @@ export default function FlashcardDeckPage() {
                     <ArrowLeft size={15} /> {t('flashcards.back_to_decks')}
                 </button>
 
-                <div className="card" style={{ marginBottom: 20 }}>
+                <div data-tour="fd-settings" className="card" style={{ marginBottom: 20 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div>
                             <label className="text-sm" htmlFor="deck-name" style={{ fontWeight: 600 }}>
@@ -252,7 +259,7 @@ export default function FlashcardDeckPage() {
                     </div>
                 </div>
 
-                <div className="card" style={{ marginBottom: 20 }}>
+                <div data-tour="fd-cards" className="card" style={{ marginBottom: 20 }}>
                     <div
                         style={{
                             display: 'flex',
