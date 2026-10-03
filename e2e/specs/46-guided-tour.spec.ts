@@ -75,8 +75,8 @@ test.describe('Guided tours', () => {
         await page.goto('/#/');
         await page.waitForSelector(skip);
         await page.click(skip);
-        await page.goto('/#/settings');
-        await page.waitForSelector('.main-area');
+        await page.goto('/#/docs');
+        await page.waitForSelector('.main-area nav');
         await openDrawerIfMobile(page, isMobile);
         await expect(page.locator('.sidebar-footer button.nav-item')).toHaveCount(0);
     });

@@ -56,9 +56,17 @@ export default function PeerReviewAnalyticsPage() {
     if (!analytics || analytics.totalReviews === 0) {
         return (
             <>
-                <Topbar title={t('peerAnalytics.title', { rubricName: rubric.name })} />
+                <PageTour {...tour.tourProps} />
+                <Topbar
+                    title={t('peerAnalytics.title', { rubricName: rubric.name })}
+                    actions={
+                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                            {t('tutorial.page_tour_button')}
+                        </button>
+                    }
+                />
                 <div className="page-content fade-in">
-                    <div className="card" style={{ marginBottom: 24 }}>
+                    <div data-tour="pa-header" className="card" style={{ marginBottom: 24 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                             <FileText size={20} style={{ color: 'var(--accent)' }} />
                             <h2 style={{ margin: 0 }}>{rubric.name}</h2>
