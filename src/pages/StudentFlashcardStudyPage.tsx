@@ -79,7 +79,7 @@ export default function StudentFlashcardStudyPage() {
     const isTeacherPreview = isConnected && settings.userRole !== 'student';
     const tour = usePageTourState('studyflash', {
         seenKey: `rm_flashcard_tour_seen_${studentId}`,
-        autoRun: !isTeacherPreview && !loading && deck !== null,
+        autoRun: settings.userRole === 'student' && !loading && deck !== null,
     });
 
     function handleStatesChange(nextStates: Record<string, FlashcardCardState>) {
