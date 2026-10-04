@@ -162,3 +162,28 @@ describe('audio notes and point labels', () => {
         expect(html).toContain('>3 pts<');
     });
 });
+
+describe('teacher header, instructions and footer', () => {
+    const withText = (): Test => ({
+        ...makeTest(),
+        sections: [{ id: 's1', title: 'Reading', content: '<p>Passage</p>' }],
+        printHeader: '<p>HDR</p>',
+        printIntro: '<p>INTRO</p>',
+        printFooter: '<p>FTR</p>',
+    });
+    it('puts header and instructions on the booklet and attachment cover pages', () => {
+        const opts = { ...DEFAULT_EXAM_EXPORT_OPTIONS, attachmentMode: 'separate' as const };
+        for (const html of [buildExamBookletHtml(withText(), opts), buildExamAttachmentHtml(withText())]) {
+            const afterCover = html.indexOf('Reading');
+            expect(html.indexOf('HDR')).toBeLessThan(html.indexOf('Quiz'));
+            expect(html.indexOf('INTRO')).toBeLessThan(afterCover);
+            expect(html).toContain('FTR');
+        }
+    });
+
+    it('prints header and footer on the answer sheet', async () => {
+        const html = await buildAnswerSheetHtml(withText(), DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('HDR');
+        expect(html).toContain('FTR');
+    });
+});

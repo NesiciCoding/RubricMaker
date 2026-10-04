@@ -529,12 +529,19 @@ async function printTextBlocks(html: string | undefined): Promise<(Paragraph | T
     return html && hasRichContent(html) ? richPassageToDocx(html, 120) : [];
 }
 
-async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [
+async function coverWithPrintText(test: Test, label: string): Promise<(Paragraph | Table)[]> {
+    const cover = coverParagraphs(test, label, true);
+    // Intro goes inside the cover page, i.e. before its trailing PageBreak paragraph.
+    return [
         ...(await printTextBlocks(test.printHeader)),
-        ...coverParagraphs(test, tx('booklet_subtitle'), true),
+        ...cover.slice(0, -1),
         ...(await printTextBlocks(test.printIntro)),
+        cover[cover.length - 1],
     ];
+}
+
+async function buildBookletChildren(test: Test, options: TestExamExportOptions): Promise<(Paragraph | Table)[]> {
+    const children: (Paragraph | Table)[] = [...(await coverWithPrintText(test, tx('booklet_subtitle')))];
     for (const group of groupQuestionsBySection(test)) {
         if (group.section) {
             children.push(sectionDivider(group.section.title));
@@ -553,7 +560,7 @@ async function buildBookletChildren(test: Test, options: TestExamExportOptions):
 }
 
 async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[]> {
-    const children: (Paragraph | Table)[] = [...coverParagraphs(test, tx('attachment_subtitle'), true)];
+    const children: (Paragraph | Table)[] = [...(await coverWithPrintText(test, tx('attachment_subtitle')))];
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
     for (const [i, group] of groups.entries()) {
         if (!group.section?.content) continue;
@@ -561,6 +568,7 @@ async function buildAttachmentChildren(test: Test): Promise<(Paragraph | Table)[
         children.push(sectionDivider(group.section.title));
         children.push(...(await richPassageToDocx(group.section.content, 200)));
     }
+    children.push(...(await printTextBlocks(test.printFooter)));
     return children;
 }
 
@@ -697,7 +705,7 @@ function answerSpaceChildren(space: AnswerSpaceSpec): (Paragraph | Table)[] {
     }
 }
 
-function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)[] {
+async function answerSheetChildren(test: Test, student?: Student): Promise<(Paragraph | Table)[]> {
     const blocks = answerSheetGeometry(test).flatMap((block) => [
         new Paragraph({
             children: [new TextRun({ text: String(block.number), bold: true })],
@@ -713,6 +721,7 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
     ]);
 
     return [
+        ...(await printTextBlocks(test.printHeader)),
         new Paragraph({ text: tx('answer_sheet_title'), heading: HeadingLevel.HEADING_1, alignment: 'right' }),
         blackBannerTable(test.name),
         new Paragraph({
@@ -723,6 +732,7 @@ function answerSheetChildren(test: Test, student?: Student): (Paragraph | Table)
             spacing: { before: 200, after: 200 },
         }),
         ...blocks,
+        ...(await printTextBlocks(test.printFooter)),
     ];
 }
 
@@ -883,11 +893,15 @@ export async function exportExamDocx(test: Test, options: ExportExamDocxOptions)
     const students = options.students ?? [];
     const answerChildren: (Paragraph | Table)[] =
         students.length > 0
-            ? students.flatMap((s, i) => [
-                  ...(i > 0 ? [new Paragraph({ children: [new PageBreak()] })] : []),
-                  ...answerSheetChildren(test, s),
-              ])
-            : answerSheetChildren(test);
+            ? (
+                  await Promise.all(
+                      students.map(async (s, i) => [
+                          ...(i > 0 ? [new Paragraph({ children: [new PageBreak()] })] : []),
+                          ...(await answerSheetChildren(test, s)),
+                      ])
+                  )
+              ).flat()
+            : await answerSheetChildren(test);
     files.push({ name: `${base}-answer-sheet.docx`, blob: await buildDocxBlob(answerChildren, options) });
 
     if (files.length === 1) {
