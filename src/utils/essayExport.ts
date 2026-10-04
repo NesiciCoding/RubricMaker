@@ -200,6 +200,7 @@ interface InlineStyle {
     highlightFill?: string;
     font?: string;
     size?: number; // half-points
+    hidden?: boolean;
     images?: DocxImageMap;
 }
 
@@ -223,7 +224,8 @@ function ptToHalfPoints(size: string): number | undefined {
     const m = /^([\d.]+)\s*(px|pt)?$/i.exec(size.trim());
     if (!m) return undefined;
     const n = parseFloat(m[1]);
-    return Number.isFinite(n) ? Math.round(n * (m[2]?.toLowerCase() === 'px' ? 1.5 : 2)) : undefined;
+    if (!Number.isFinite(n)) return undefined;
+    return n === 0 ? 0 : Math.max(2, Math.round(n * (m[2]?.toLowerCase() === 'px' ? 1.5 : 2)));
 }
 
 /** A block's own font-size is the base for its text; without it the paragraph's runs fall back to the document default and diverge from sibling blocks. */
@@ -231,6 +233,7 @@ function blockStyle(node: Element, parent?: Element, images?: DocxImageMap): Inl
     const fontSize =
         styleValue(node as HTMLElement, 'font-size') ?? (parent && styleValue(parent as HTMLElement, 'font-size'));
     const size = fontSize ? ptToHalfPoints(fontSize) : undefined;
+    if (size === 0) return { ...plainStyle(images), hidden: true };
     return size ? { ...plainStyle(images), size } : plainStyle(images);
 }
 
@@ -252,6 +255,7 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
                 color: style.color,
                 font: style.font,
                 size: style.size,
+                vanish: style.hidden || undefined,
                 shading: style.highlightFill ? { fill: style.highlightFill } : undefined,
             }),
         ];
@@ -267,6 +271,7 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
     const color = styleValue(node, 'color');
     const fontFamily = styleValue(node, 'font-family');
     const fontSize = styleValue(node, 'font-size');
+    const parsedSize = fontSize ? ptToHalfPoints(fontSize) : undefined;
     const highlightBg =
         tag === 'MARK' ? (styleValue(node, 'background-color') ?? node.getAttribute('data-color')) : undefined;
     const next: InlineStyle = {
@@ -279,7 +284,8 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
         color: cssColorToHex(color) ?? style.color,
         highlightFill: cssColorToHex(highlightBg) ?? style.highlightFill,
         font: fontFamily ? fontFamily.split(',')[0].replace(/['"]/g, '').trim() : style.font,
-        size: fontSize ? (ptToHalfPoints(fontSize) ?? style.size) : style.size,
+        size: parsedSize ? parsedSize : style.size,
+        hidden: style.hidden || parsedSize === 0,
         images: style.images,
     };
     return Array.from(node.childNodes).flatMap((child) => inlineDocxRuns(child, next));
@@ -372,7 +378,7 @@ function taskListToDocx(node: Element, images?: DocxImageMap): Paragraph[] {
             indent: { left: 360 },
             spacing: blockSpacing(content, content === li ? node : li),
             children: [
-                new TextRun({ text: checked ? '☑ ' : '☐ ', size: liStyle.size }),
+                new TextRun({ text: checked ? '☑ ' : '☐ ', size: liStyle.size, vanish: liStyle.hidden || undefined }),
                 ...Array.from(content.childNodes).flatMap((c) => inlineDocxRuns(c, liStyle)),
             ],
         });
@@ -451,7 +457,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
                             indent: { left: 360 },
                             spacing: blockSpacing(inner, inner === li ? node : li),
                             children: [
-                                new TextRun({ text: bullet, size: liStyle.size }),
+                                new TextRun({ text: bullet, size: liStyle.size, vanish: liStyle.hidden || undefined }),
                                 ...Array.from(li.childNodes).flatMap((c) => inlineDocxRuns(c, liStyle)),
                             ],
                         })

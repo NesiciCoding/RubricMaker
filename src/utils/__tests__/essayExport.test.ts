@@ -217,6 +217,15 @@ describe('essayExport', () => {
             expect(item).toContain('"value":480');
         });
 
+        it('hides font-size 0 text instead of writing a zero size, and clamps tiny sizes', () => {
+            const [p] = htmlToDocxChildren(
+                '<p><span style="font-size: 0">x</span><span style="font-size: 0.1pt">y</span></p>'
+            );
+            const props = JSON.stringify(rootOf(p));
+            expect(props).toContain('w:vanish');
+            expect(props).toContain('"val":2');
+        });
+
         it('exposes the lead paragraph size and spacing', () => {
             const lead = htmlToDocxLead('<p style="font-size: 12pt; line-height: 2">x</p>');
             expect(lead.leadSize).toBe(24);
