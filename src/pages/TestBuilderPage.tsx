@@ -13,6 +13,7 @@ import {
     BookMarked,
     Music,
     Layers,
+    Eye,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
@@ -29,6 +30,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { nanoid } from '../utils/nanoid';
 import { toLocalDatetimeInput } from '../utils/dateInput';
 import QuestionEditor from '../components/Tests/QuestionEditor';
+import TestA4Preview, { type PrintTextFields } from '../components/Tests/TestA4Preview';
 import ListeningControlsFields from '../components/Tests/ListeningControlsFields';
 import AudioUrlStatus from '../components/Tests/AudioUrlStatus';
 import EssayEditor from '../components/Editor/EssayEditor';
@@ -137,6 +139,18 @@ export default function TestBuilderPage() {
     const [contentArea, setContentArea] = useState<'listening' | 'reading' | 'grammar' | ''>(
         existing?.contentArea ?? ''
     );
+    const [printText, setPrintText] = useState<PrintTextFields>({
+        printHeader: existing?.printHeader,
+        printIntro: existing?.printIntro,
+        printFooter: existing?.printFooter,
+    });
+    const [showPreview, setShowPreview] = useState(() => window.innerWidth >= 1400);
+    const [isWide, setIsWide] = useState(() => window.innerWidth >= 1100);
+    useEffect(() => {
+        const onResize = () => setIsWide(window.innerWidth >= 1100);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
     const [tourRun, setTourRun] = useState(false);
     const testTourSteps = React.useMemo(() => getTestBuilderTourSteps(t), [t]);
 
@@ -164,6 +178,7 @@ export default function TestBuilderPage() {
         cefrTargetLevel,
         cefrSkill,
         contentArea,
+        printText,
         generatorMinLevel,
         generatorMaxLevel,
         generatorSkills,
@@ -264,6 +279,19 @@ export default function TestBuilderPage() {
         questionsFor(null),
         Object.fromEntries(sections.map((s) => [s.id, questionsFor(s.id)]))
     );
+
+    const previewTest: Test = {
+        id: existing?.id ?? 'preview',
+        name,
+        description,
+        questions: displayOrderedQuestions,
+        sections: sections.length > 0 ? sections : undefined,
+        durationMinutes: Number(durationMinutes) > 0 ? Number(durationMinutes) : undefined,
+        requireSEB,
+        shuffleQuestions,
+        createdAt: existing?.createdAt ?? '',
+        ...printText,
+    };
 
     function onDragEnd(result: DropResult) {
         if (!result.destination) return;
@@ -469,6 +497,9 @@ export default function TestBuilderPage() {
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
             contentArea: mode === 'practice' ? contentArea || undefined : undefined,
+            printHeader: printText.printHeader,
+            printIntro: printText.printIntro,
+            printFooter: printText.printFooter,
         };
 
         if (existing) {
@@ -529,6 +560,13 @@ export default function TestBuilderPage() {
                         <button className="btn btn-ghost btn-sm" onClick={() => setTourRun(true)}>
                             {t('tutorial.tb_tour_button')}
                         </button>
+                        <button
+                            className={`btn btn-sm ${showPreview ? 'btn-primary' : 'btn-secondary'}`}
+                            aria-pressed={showPreview}
+                            onClick={() => setShowPreview((v) => !v)}
+                        >
+                            <Eye size={15} /> {t('tests.a4_preview_toggle')}
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/tests')}>
                             <ArrowLeft size={15} /> {t('tests.back_to_list')}
                         </button>
@@ -538,688 +576,564 @@ export default function TestBuilderPage() {
                     </>
                 }
             />
-            <div className="page-content fade-in">
-                <div
-                    className="card"
-                    data-tour="tb-details"
-                    style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}
-                >
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label htmlFor="test-name">{t('tests.name_label')}</label>
-                        <input
-                            id="test-name"
-                            value={name}
-                            onChange={(e) => {
-                                setName(e.target.value);
-                                if (nameError) setNameError('');
-                            }}
-                            placeholder={t('tests.name_placeholder')}
-                        />
-                        {nameError && (
-                            <p style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}>
-                                <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                {nameError}
-                            </p>
-                        )}
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label htmlFor="test-description">
-                            {t('tests.description_label')}{' '}
-                            <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                                ({t('essay_assignment.optional')})
-                            </span>
-                        </label>
-                        <textarea
-                            id="test-description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={2}
-                            placeholder={t('tests.description_placeholder')}
-                            style={{ resize: 'vertical' }}
-                        />
-                    </div>
-                </div>
-
-                {/* Settings panel */}
-                <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>{t('tests.settings_title')}</h3>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                            <label htmlFor="test-mode">{t('tests.mode_label')}</label>
-                            <select
-                                id="test-mode"
-                                value={mode}
-                                onChange={(e) => setMode(e.target.value as NonNullable<Test['mode']>)}
-                            >
-                                <option value="assessment">{t('tests.mode_assessment')}</option>
-                                <option value="practice">{t('tests.mode_practice')}</option>
-                                <option value="placement">{t('tests.mode_placement')}</option>
-                            </select>
-                            <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                {mode === 'practice'
-                                    ? t('tests.mode_practice_help')
-                                    : mode === 'placement'
-                                      ? t('tests.mode_placement_help')
-                                      : t('tests.mode_assessment_help')}
-                            </p>
+            <div
+                className="page-content fade-in"
+                style={
+                    showPreview && isWide
+                        ? {
+                              display: 'grid',
+                              gridTemplateColumns: 'minmax(0, 1fr) minmax(380px, 46%)',
+                              gap: 20,
+                              alignItems: 'start',
+                          }
+                        : undefined
+                }
+            >
+                <div style={{ minWidth: 0 }}>
+                    <div
+                        className="card"
+                        data-tour="tb-details"
+                        style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 14 }}
+                    >
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="test-name">{t('tests.name_label')}</label>
+                            <input
+                                id="test-name"
+                                value={name}
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    if (nameError) setNameError('');
+                                }}
+                                placeholder={t('tests.name_placeholder')}
+                            />
+                            {nameError && (
+                                <p style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}>
+                                    <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                    {nameError}
+                                </p>
+                            )}
                         </div>
-                        {mode === 'placement' && (
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 220px' }}>
-                                <label htmlFor="test-placement-engine">{t('tests.placement_engine_label')}</label>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label htmlFor="test-description">
+                                {t('tests.description_label')}{' '}
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                    ({t('essay_assignment.optional')})
+                                </span>
+                            </label>
+                            <textarea
+                                id="test-description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={2}
+                                placeholder={t('tests.description_placeholder')}
+                                style={{ resize: 'vertical' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Settings panel */}
+                    <div className="card" data-tour="tb-settings" style={{ marginBottom: 20 }}>
+                        <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
+                            {t('tests.settings_title')}
+                        </h3>
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                <label htmlFor="test-mode">{t('tests.mode_label')}</label>
                                 <select
-                                    id="test-placement-engine"
-                                    value={placementEngine}
-                                    onChange={(e) =>
-                                        setPlacementEngine(e.target.value as NonNullable<Test['placementEngine']>)
-                                    }
+                                    id="test-mode"
+                                    value={mode}
+                                    onChange={(e) => setMode(e.target.value as NonNullable<Test['mode']>)}
                                 >
-                                    <option value="mst">{t('tests.placement_engine_mst')}</option>
-                                    <option value="staircase">{t('tests.placement_engine_staircase')}</option>
-                                    <option value="generator">{t('tests.placement_engine_generator')}</option>
+                                    <option value="assessment">{t('tests.mode_assessment')}</option>
+                                    <option value="practice">{t('tests.mode_practice')}</option>
+                                    <option value="placement">{t('tests.mode_placement')}</option>
                                 </select>
                                 <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                    {placementEngine === 'staircase'
-                                        ? t('tests.placement_engine_staircase_help')
-                                        : placementEngine === 'generator'
-                                          ? t('tests.placement_engine_generator_help')
-                                          : t('tests.placement_engine_mst_help')}
+                                    {mode === 'practice'
+                                        ? t('tests.mode_practice_help')
+                                        : mode === 'placement'
+                                          ? t('tests.mode_placement_help')
+                                          : t('tests.mode_assessment_help')}
                                 </p>
                             </div>
-                        )}
-                        {mode === 'practice' && (
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                                <label htmlFor="test-content-area">{t('tests.content_area_label')}</label>
-                                <select
-                                    id="test-content-area"
-                                    value={contentArea}
-                                    onChange={(e) =>
-                                        setContentArea(e.target.value as 'listening' | 'reading' | 'grammar' | '')
-                                    }
-                                >
-                                    <option value="">{t('tests.content_area_none')}</option>
-                                    <option value="listening">{t('tests.content_area_listening')}</option>
-                                    <option value="reading">{t('tests.content_area_reading')}</option>
-                                    <option value="grammar">{t('tests.content_area_grammar')}</option>
-                                </select>
-                            </div>
-                        )}
-                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
-                            <label htmlFor="test-duration">{t('tests.duration_label')}</label>
-                            <input
-                                id="test-duration"
-                                type="number"
-                                min={1}
-                                value={durationMinutes}
-                                onChange={(e) => setDurationMinutes(e.target.value)}
-                                placeholder={t('tests.duration_placeholder')}
-                            />
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                            <label htmlFor="test-grade-scale">{t('tests.grade_scale_label')}</label>
-                            <select
-                                id="test-grade-scale"
-                                value={gradeScaleId ?? ''}
-                                onChange={(e) => setGradeScaleId(e.target.value || undefined)}
-                            >
-                                <option value="">{t('tests.grade_scale_none')}</option>
-                                {gradeScales.map((gs) => (
-                                    <option key={gs.id} value={gs.id}>
-                                        {gs.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
-                            <label htmlFor="test-due-date">{t('tests.due_date_label')}</label>
-                            <input
-                                id="test-due-date"
-                                type="datetime-local"
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                        <label
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                cursor: 'pointer',
-                                fontSize: '0.875rem',
-                            }}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={shuffleQuestions}
-                                onChange={(e) => setShuffleQuestions(e.target.checked)}
-                                style={{ accentColor: 'var(--accent)' }}
-                            />
-                            {t('tests.shuffle_questions_label')}
-                        </label>
-                        <div>
-                            <label
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                }}
-                            >
+                            {mode === 'placement' && (
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 220px' }}>
+                                    <label htmlFor="test-placement-engine">{t('tests.placement_engine_label')}</label>
+                                    <select
+                                        id="test-placement-engine"
+                                        value={placementEngine}
+                                        onChange={(e) =>
+                                            setPlacementEngine(e.target.value as NonNullable<Test['placementEngine']>)
+                                        }
+                                    >
+                                        <option value="mst">{t('tests.placement_engine_mst')}</option>
+                                        <option value="staircase">{t('tests.placement_engine_staircase')}</option>
+                                        <option value="generator">{t('tests.placement_engine_generator')}</option>
+                                    </select>
+                                    <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                        {placementEngine === 'staircase'
+                                            ? t('tests.placement_engine_staircase_help')
+                                            : placementEngine === 'generator'
+                                              ? t('tests.placement_engine_generator_help')
+                                              : t('tests.placement_engine_mst_help')}
+                                    </p>
+                                </div>
+                            )}
+                            {mode === 'practice' && (
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                    <label htmlFor="test-content-area">{t('tests.content_area_label')}</label>
+                                    <select
+                                        id="test-content-area"
+                                        value={contentArea}
+                                        onChange={(e) =>
+                                            setContentArea(e.target.value as 'listening' | 'reading' | 'grammar' | '')
+                                        }
+                                    >
+                                        <option value="">{t('tests.content_area_none')}</option>
+                                        <option value="listening">{t('tests.content_area_listening')}</option>
+                                        <option value="reading">{t('tests.content_area_reading')}</option>
+                                        <option value="grammar">{t('tests.content_area_grammar')}</option>
+                                    </select>
+                                </div>
+                            )}
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 160px' }}>
+                                <label htmlFor="test-duration">{t('tests.duration_label')}</label>
                                 <input
-                                    type="checkbox"
-                                    checked={requireSEB}
-                                    onChange={(e) => setRequireSEB(e.target.checked)}
-                                    style={{ accentColor: 'var(--accent)' }}
-                                />
-                                {t('tests.require_seb_label')}
-                            </label>
-                            <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
-                                {t('tests.require_seb_help')}
-                            </p>
-                        </div>
-                        {mode === 'practice' && (
-                            <label
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    cursor: 'pointer',
-                                    fontSize: '0.875rem',
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={allowMultipleAttempts}
-                                    onChange={(e) => setAllowMultipleAttempts(e.target.checked)}
-                                    style={{ accentColor: 'var(--accent)' }}
-                                />
-                                {t('tests.allow_multiple_attempts_label')}
-                            </label>
-                        )}
-                    </div>
-                    <div className="grid-2" style={{ gap: 12, marginTop: 14 }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="test-cefr-level">{t('cefr.target_level_label')}</label>
-                            <select
-                                id="test-cefr-level"
-                                value={cefrTargetLevel}
-                                onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
-                            >
-                                <option value="">{t('cefr.no_level')}</option>
-                                {CEFR_LEVELS.map((lvl) => (
-                                    <option key={lvl} value={lvl}>
-                                        {lvl} – {t(`cefr.level_${lvl}`)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label htmlFor="test-cefr-skill">{t('cefr.skill_label')}</label>
-                            <select
-                                id="test-cefr-skill"
-                                value={cefrSkill}
-                                onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
-                            >
-                                <option value="">{t('cefr.no_skill')}</option>
-                                {CEFR_SKILLS.map((skill) => (
-                                    <option key={skill} value={skill}>
-                                        {CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Generator config panel (roadmap 27.1) — replaces manual sections/routing for this
-                    engine, since questions are pulled live from the bank rather than authored. */}
-                {mode === 'placement' && placementEngine === 'generator' && (
-                    <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
-                        <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: '0.95rem' }}>
-                            {t('tests.generator_config_title')}
-                        </h3>
-                        <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 14 }}>
-                            {t('tests.generator_config_hint')}
-                        </p>
-                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
-                                <label htmlFor="generator-min-level">{t('tests.generator_min_level_label')}</label>
-                                <select
-                                    id="generator-min-level"
-                                    value={generatorMinLevel}
-                                    onChange={(e) => {
-                                        const next = e.target.value as CefrLevel;
-                                        setGeneratorMinLevel(next);
-                                        setGeneratorMaxLevel((prev) =>
-                                            CEFR_LEVELS.indexOf(prev) < CEFR_LEVELS.indexOf(next) ? next : prev
-                                        );
-                                    }}
-                                >
-                                    {CEFR_LEVELS.map((lvl) => (
-                                        <option key={lvl} value={lvl}>
-                                            {lvl}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
-                                <label htmlFor="generator-max-level">{t('tests.generator_max_level_label')}</label>
-                                <select
-                                    id="generator-max-level"
-                                    value={generatorMaxLevel}
-                                    onChange={(e) => {
-                                        const next = e.target.value as CefrLevel;
-                                        setGeneratorMaxLevel(next);
-                                        setGeneratorMinLevel((prev) =>
-                                            CEFR_LEVELS.indexOf(prev) > CEFR_LEVELS.indexOf(next) ? next : prev
-                                        );
-                                    }}
-                                >
-                                    {CEFR_LEVELS.map((lvl) => (
-                                        <option key={lvl} value={lvl}>
-                                            {lvl}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
-                                <label htmlFor="generator-min-questions">
-                                    {t('tests.generator_min_questions_label')}
-                                </label>
-                                <input
-                                    id="generator-min-questions"
+                                    id="test-duration"
                                     type="number"
                                     min={1}
-                                    value={generatorMinQuestions}
-                                    onChange={(e) => {
-                                        const next = Math.max(1, Number(e.target.value) || 1);
-                                        setGeneratorMinQuestions(next);
-                                        setGeneratorMaxQuestions((prev) => Math.max(prev, next));
-                                    }}
+                                    value={durationMinutes}
+                                    onChange={(e) => setDurationMinutes(e.target.value)}
+                                    placeholder={t('tests.duration_placeholder')}
                                 />
                             </div>
-                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
-                                <label htmlFor="generator-max-questions">
-                                    {t('tests.generator_max_questions_label')}
-                                </label>
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                <label htmlFor="test-grade-scale">{t('tests.grade_scale_label')}</label>
+                                <select
+                                    id="test-grade-scale"
+                                    value={gradeScaleId ?? ''}
+                                    onChange={(e) => setGradeScaleId(e.target.value || undefined)}
+                                >
+                                    <option value="">{t('tests.grade_scale_none')}</option>
+                                    {gradeScales.map((gs) => (
+                                        <option key={gs.id} value={gs.id}>
+                                            {gs.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
+                                <label htmlFor="test-due-date">{t('tests.due_date_label')}</label>
                                 <input
-                                    id="generator-max-questions"
-                                    type="number"
-                                    min={generatorMinQuestions}
-                                    value={generatorMaxQuestions}
-                                    onChange={(e) =>
-                                        setGeneratorMaxQuestions(
-                                            Math.max(
-                                                generatorMinQuestions,
-                                                Number(e.target.value) || generatorMinQuestions
-                                            )
-                                        )
-                                    }
+                                    id="test-due-date"
+                                    type="datetime-local"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
                                 />
                             </div>
                         </div>
-                        <div className="form-group" style={{ marginBottom: 14 }}>
-                            <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
-                                {t('tests.generator_skills_label')}
-                            </span>
-                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                {QUESTION_BANK_SKILLS.map((skill) => (
-                                    <label
-                                        key={skill}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.875rem' }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={generatorSkills.includes(skill)}
-                                            onChange={(e) =>
-                                                setGeneratorSkills((prev) =>
-                                                    e.target.checked
-                                                        ? [...prev, skill]
-                                                        : prev.filter((s) => s !== skill)
-                                                )
-                                            }
-                                        />
-                                        {
-                                            QUESTION_BANK_SKILL_LABELS[skill][
-                                                i18n.language.startsWith('nl') ? 'nl' : 'en'
-                                            ]
-                                        }
-                                    </label>
-                                ))}
+                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                            <label
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    cursor: 'pointer',
+                                    fontSize: '0.875rem',
+                                }}
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={shuffleQuestions}
+                                    onChange={(e) => setShuffleQuestions(e.target.checked)}
+                                    style={{ accentColor: 'var(--accent)' }}
+                                />
+                                {t('tests.shuffle_questions_label')}
+                            </label>
+                            <div>
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        cursor: 'pointer',
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={requireSEB}
+                                        onChange={(e) => setRequireSEB(e.target.checked)}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    {t('tests.require_seb_label')}
+                                </label>
+                                <p className="text-muted text-xs" style={{ marginTop: 4, marginBottom: 0 }}>
+                                    {t('tests.require_seb_help')}
+                                </p>
+                            </div>
+                            {mode === 'practice' && (
+                                <label
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        cursor: 'pointer',
+                                        fontSize: '0.875rem',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={allowMultipleAttempts}
+                                        onChange={(e) => setAllowMultipleAttempts(e.target.checked)}
+                                        style={{ accentColor: 'var(--accent)' }}
+                                    />
+                                    {t('tests.allow_multiple_attempts_label')}
+                                </label>
+                            )}
+                        </div>
+                        <div className="grid-2" style={{ gap: 12, marginTop: 14 }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="test-cefr-level">{t('cefr.target_level_label')}</label>
+                                <select
+                                    id="test-cefr-level"
+                                    value={cefrTargetLevel}
+                                    onChange={(e) => setCefrTargetLevel(e.target.value as CefrLevel | '')}
+                                >
+                                    <option value="">{t('cefr.no_level')}</option>
+                                    {CEFR_LEVELS.map((lvl) => (
+                                        <option key={lvl} value={lvl}>
+                                            {lvl} – {t(`cefr.level_${lvl}`)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="test-cefr-skill">{t('cefr.skill_label')}</label>
+                                <select
+                                    id="test-cefr-skill"
+                                    value={cefrSkill}
+                                    onChange={(e) => setCefrSkill(e.target.value as CefrSkill | '')}
+                                >
+                                    <option value="">{t('cefr.no_skill')}</option>
+                                    {CEFR_SKILLS.map((skill) => (
+                                        <option key={skill} value={skill}>
+                                            {CEFR_SKILL_LABELS[skill][i18n.language.startsWith('nl') ? 'nl' : 'en']}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
-                        <div className="form-group" style={{ marginBottom: 14 }}>
-                            <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
-                                {t('tests.generator_tags_label')}
-                            </span>
-                            {bankTags.length === 0 ? (
-                                <p className="text-muted text-sm" style={{ margin: 0 }}>
-                                    {t('tests.generator_tags_none')}
-                                </p>
-                            ) : (
-                                <TagFilterChips
-                                    tags={bankTags}
-                                    isSelected={(tag) =>
-                                        generatorTags.some((g) => g.toLowerCase() === tag.toLowerCase())
-                                    }
-                                    onToggle={(tag) =>
-                                        setGeneratorTags((prev) =>
-                                            prev.some((g) => g.toLowerCase() === tag.toLowerCase())
-                                                ? prev.filter((g) => g.toLowerCase() !== tag.toLowerCase())
-                                                : [...prev, tag]
-                                        )
-                                    }
+                    </div>
+
+                    {/* Generator config panel (roadmap 27.1) — replaces manual sections/routing for this
+                    engine, since questions are pulled live from the bank rather than authored. */}
+                    {mode === 'placement' && placementEngine === 'generator' && (
+                        <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
+                            <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: '0.95rem' }}>
+                                {t('tests.generator_config_title')}
+                            </h3>
+                            <p className="text-muted text-sm" style={{ marginTop: 0, marginBottom: 14 }}>
+                                {t('tests.generator_config_hint')}
+                            </p>
+                            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
+                                    <label htmlFor="generator-min-level">{t('tests.generator_min_level_label')}</label>
+                                    <select
+                                        id="generator-min-level"
+                                        value={generatorMinLevel}
+                                        onChange={(e) => {
+                                            const next = e.target.value as CefrLevel;
+                                            setGeneratorMinLevel(next);
+                                            setGeneratorMaxLevel((prev) =>
+                                                CEFR_LEVELS.indexOf(prev) < CEFR_LEVELS.indexOf(next) ? next : prev
+                                            );
+                                        }}
+                                    >
+                                        {CEFR_LEVELS.map((lvl) => (
+                                            <option key={lvl} value={lvl}>
+                                                {lvl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
+                                    <label htmlFor="generator-max-level">{t('tests.generator_max_level_label')}</label>
+                                    <select
+                                        id="generator-max-level"
+                                        value={generatorMaxLevel}
+                                        onChange={(e) => {
+                                            const next = e.target.value as CefrLevel;
+                                            setGeneratorMaxLevel(next);
+                                            setGeneratorMinLevel((prev) =>
+                                                CEFR_LEVELS.indexOf(prev) > CEFR_LEVELS.indexOf(next) ? next : prev
+                                            );
+                                        }}
+                                    >
+                                        {CEFR_LEVELS.map((lvl) => (
+                                            <option key={lvl} value={lvl}>
+                                                {lvl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
+                                    <label htmlFor="generator-min-questions">
+                                        {t('tests.generator_min_questions_label')}
+                                    </label>
+                                    <input
+                                        id="generator-min-questions"
+                                        type="number"
+                                        min={1}
+                                        value={generatorMinQuestions}
+                                        onChange={(e) => {
+                                            const next = Math.max(1, Number(e.target.value) || 1);
+                                            setGeneratorMinQuestions(next);
+                                            setGeneratorMaxQuestions((prev) => Math.max(prev, next));
+                                        }}
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0, flex: '1 1 140px' }}>
+                                    <label htmlFor="generator-max-questions">
+                                        {t('tests.generator_max_questions_label')}
+                                    </label>
+                                    <input
+                                        id="generator-max-questions"
+                                        type="number"
+                                        min={generatorMinQuestions}
+                                        value={generatorMaxQuestions}
+                                        onChange={(e) =>
+                                            setGeneratorMaxQuestions(
+                                                Math.max(
+                                                    generatorMinQuestions,
+                                                    Number(e.target.value) || generatorMinQuestions
+                                                )
+                                            )
+                                        }
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 14 }}>
+                                <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
+                                    {t('tests.generator_skills_label')}
+                                </span>
+                                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                    {QUESTION_BANK_SKILLS.map((skill) => (
+                                        <label
+                                            key={skill}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={generatorSkills.includes(skill)}
+                                                onChange={(e) =>
+                                                    setGeneratorSkills((prev) =>
+                                                        e.target.checked
+                                                            ? [...prev, skill]
+                                                            : prev.filter((s) => s !== skill)
+                                                    )
+                                                }
+                                            />
+                                            {
+                                                QUESTION_BANK_SKILL_LABELS[skill][
+                                                    i18n.language.startsWith('nl') ? 'nl' : 'en'
+                                                ]
+                                            }
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 14 }}>
+                                <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
+                                    {t('tests.generator_tags_label')}
+                                </span>
+                                {bankTags.length === 0 ? (
+                                    <p className="text-muted text-sm" style={{ margin: 0 }}>
+                                        {t('tests.generator_tags_none')}
+                                    </p>
+                                ) : (
+                                    <TagFilterChips
+                                        tags={bankTags}
+                                        isSelected={(tag) =>
+                                            generatorTags.some((g) => g.toLowerCase() === tag.toLowerCase())
+                                        }
+                                        onToggle={(tag) =>
+                                            setGeneratorTags((prev) =>
+                                                prev.some((g) => g.toLowerCase() === tag.toLowerCase())
+                                                    ? prev.filter((g) => g.toLowerCase() !== tag.toLowerCase())
+                                                    : [...prev, tag]
+                                            )
+                                        }
+                                    />
+                                )}
+                            </div>
+                            {generatorLevelPoolWarnings.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                                    {generatorLevelPoolWarnings.map(({ level, count }) => (
+                                        <p
+                                            key={level}
+                                            style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}
+                                        >
+                                            <AlertCircle
+                                                size={13}
+                                                style={{ verticalAlign: 'middle', marginRight: 4 }}
+                                            />
+                                            {t('tests.generator_pool_warning', { level, count })}
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
+                                    {t('tests.generator_starter_item_label')}
+                                </span>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                    <span className="text-muted text-sm">
+                                        {generatorStarterBankItemId
+                                            ? generatorStarterLabel || generatorStarterBankItemId
+                                            : t('tests.generator_starter_item_none')}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => setShowGeneratorStarterModal(true)}
+                                    >
+                                        <BookMarked size={14} /> {t('tests.generator_pick_starter_button')}
+                                    </button>
+                                    {generatorStarterBankItemId && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setGeneratorStarterBankItemId(undefined)}
+                                        >
+                                            {t('common.clear')}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {showGeneratorStarterModal && (
+                                <QuestionBankModal
+                                    onClose={() => setShowGeneratorStarterModal(false)}
+                                    onSelect={(item) => {
+                                        setGeneratorStarterBankItemId(item.id);
+                                        setShowGeneratorStarterModal(false);
+                                    }}
                                 />
                             )}
                         </div>
-                        {generatorLevelPoolWarnings.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-                                {generatorLevelPoolWarnings.map(({ level, count }) => (
-                                    <p key={level} style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}>
-                                        <AlertCircle size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                        {t('tests.generator_pool_warning', { level, count })}
-                                    </p>
-                                ))}
-                            </div>
-                        )}
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <span className="text-xs" style={{ display: 'block', marginBottom: 6 }}>
-                                {t('tests.generator_starter_item_label')}
-                            </span>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                <span className="text-muted text-sm">
-                                    {generatorStarterBankItemId
-                                        ? generatorStarterLabel || generatorStarterBankItemId
-                                        : t('tests.generator_starter_item_none')}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={() => setShowGeneratorStarterModal(true)}
-                                >
-                                    <BookMarked size={14} /> {t('tests.generator_pick_starter_button')}
-                                </button>
-                                {generatorStarterBankItemId && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => setGeneratorStarterBankItemId(undefined)}
-                                    >
-                                        {t('common.clear')}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        {showGeneratorStarterModal && (
-                            <QuestionBankModal
-                                onClose={() => setShowGeneratorStarterModal(false)}
-                                onSelect={(item) => {
-                                    setGeneratorStarterBankItemId(item.id);
-                                    setShowGeneratorStarterModal(false);
-                                }}
-                            />
-                        )}
-                    </div>
-                )}
+                    )}
 
-                {/* Sections panel */}
-                {!(mode === 'placement' && placementEngine === 'generator') && (
-                    <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
-                        <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
-                            {t('tests.sections_title')}
-                        </h3>
-                        {sections.length === 0 ? (
-                            <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
-                                {t('tests.sections_none_hint')}
-                            </p>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                                {routingCycleWarning && (
-                                    <p style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}>
-                                        <AlertCircle size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                                        {t('tests.section_routing_warning_cycle')}
-                                    </p>
-                                )}
-                                {sections.map((s) => {
-                                    const routingEnabled = !!s.routing;
-                                    const autoScorableCount = sectionQuestions({ questions, sections }, s.id).filter(
-                                        isAutoScorable
-                                    ).length;
-                                    const sectionHasAutoScorable = autoScorableCount > 0;
-                                    return (
-                                        <div
-                                            key={s.id}
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 8,
-                                                padding: mode === 'placement' ? 10 : 0,
-                                                border: mode === 'placement' ? '1px solid var(--border)' : 'none',
-                                                borderRadius: mode === 'placement' ? 8 : 0,
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                                <input
-                                                    value={s.title}
-                                                    onChange={(e) => renameSection(s.id, e.target.value)}
-                                                    style={{ flex: 1, fontSize: '0.875rem' }}
-                                                    aria-label={t('tests.section_name_label')}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                    aria-label={t('tests.remove_section')}
-                                                    style={{ color: 'var(--red)', flexShrink: 0 }}
-                                                    onClick={() => removeSection(s.id)}
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-
-                                            {mode === 'placement' && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    <div
-                                                        className="form-group"
-                                                        style={{ marginBottom: 0, maxWidth: 260 }}
+                    {/* Sections panel */}
+                    {!(mode === 'placement' && placementEngine === 'generator') && (
+                        <div className="card" data-tour="tb-sections" style={{ marginBottom: 20 }}>
+                            <h3 style={{ marginTop: 0, marginBottom: 14, fontSize: '0.95rem' }}>
+                                {t('tests.sections_title')}
+                            </h3>
+                            {sections.length === 0 ? (
+                                <p className="text-muted text-sm" style={{ marginBottom: 12 }}>
+                                    {t('tests.sections_none_hint')}
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                                    {routingCycleWarning && (
+                                        <p style={{ color: 'var(--yellow)', fontSize: '0.8125rem', margin: 0 }}>
+                                            <AlertCircle
+                                                size={13}
+                                                style={{ verticalAlign: 'middle', marginRight: 4 }}
+                                            />
+                                            {t('tests.section_routing_warning_cycle')}
+                                        </p>
+                                    )}
+                                    {sections.map((s) => {
+                                        const routingEnabled = !!s.routing;
+                                        const autoScorableCount = sectionQuestions(
+                                            { questions, sections },
+                                            s.id
+                                        ).filter(isAutoScorable).length;
+                                        const sectionHasAutoScorable = autoScorableCount > 0;
+                                        return (
+                                            <div
+                                                key={s.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: 8,
+                                                    padding: mode === 'placement' ? 10 : 0,
+                                                    border: mode === 'placement' ? '1px solid var(--border)' : 'none',
+                                                    borderRadius: mode === 'placement' ? 8 : 0,
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                    <input
+                                                        value={s.title}
+                                                        onChange={(e) => renameSection(s.id, e.target.value)}
+                                                        style={{ flex: 1, fontSize: '0.875rem' }}
+                                                        aria-label={t('tests.section_name_label')}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-ghost btn-icon btn-sm"
+                                                        aria-label={t('tests.remove_section')}
+                                                        style={{ color: 'var(--red)', flexShrink: 0 }}
+                                                        onClick={() => removeSection(s.id)}
                                                     >
-                                                        <label
-                                                            htmlFor={`section-cefr-${s.id}`}
-                                                            className="text-muted text-xs"
-                                                        >
-                                                            {t('tests.section_cefr_level_label')}
-                                                        </label>
-                                                        <select
-                                                            id={`section-cefr-${s.id}`}
-                                                            value={s.cefrLevel ?? ''}
-                                                            onChange={(e) =>
-                                                                updateSection(s.id, {
-                                                                    cefrLevel:
-                                                                        (e.target.value as CefrLevel | '') || undefined,
-                                                                })
-                                                            }
-                                                        >
-                                                            <option value="">
-                                                                {t('tests.section_cefr_level_none')}
-                                                            </option>
-                                                            {CEFR_LEVELS.map((lvl) => (
-                                                                <option key={lvl} value={lvl}>
-                                                                    {lvl} – {t(`cefr.level_${lvl}`)}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
 
-                                                    {placementEngine === 'staircase' ? (
-                                                        <p
-                                                            className="text-muted text-xs"
-                                                            style={{
-                                                                margin: 0,
-                                                                color:
-                                                                    !s.cefrLevel ||
-                                                                    autoScorableCount < MIN_QUESTIONS_PER_LEVEL
-                                                                        ? 'var(--yellow)'
-                                                                        : undefined,
-                                                            }}
+                                                {mode === 'placement' && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                        <div
+                                                            className="form-group"
+                                                            style={{ marginBottom: 0, maxWidth: 260 }}
                                                         >
-                                                            {(!s.cefrLevel ||
-                                                                autoScorableCount < MIN_QUESTIONS_PER_LEVEL) && (
-                                                                <AlertCircle
-                                                                    size={12}
-                                                                    style={{ verticalAlign: 'middle', marginRight: 4 }}
-                                                                />
-                                                            )}
-                                                            {!s.cefrLevel
-                                                                ? t('tests.section_level_pool_untagged')
-                                                                : t('tests.section_level_pool_count', {
-                                                                      count: autoScorableCount,
-                                                                  })}
-                                                        </p>
-                                                    ) : (
-                                                        <>
                                                             <label
+                                                                htmlFor={`section-cefr-${s.id}`}
+                                                                className="text-muted text-xs"
+                                                            >
+                                                                {t('tests.section_cefr_level_label')}
+                                                            </label>
+                                                            <select
+                                                                id={`section-cefr-${s.id}`}
+                                                                value={s.cefrLevel ?? ''}
+                                                                onChange={(e) =>
+                                                                    updateSection(s.id, {
+                                                                        cefrLevel:
+                                                                            (e.target.value as CefrLevel | '') ||
+                                                                            undefined,
+                                                                    })
+                                                                }
+                                                            >
+                                                                <option value="">
+                                                                    {t('tests.section_cefr_level_none')}
+                                                                </option>
+                                                                {CEFR_LEVELS.map((lvl) => (
+                                                                    <option key={lvl} value={lvl}>
+                                                                        {lvl} – {t(`cefr.level_${lvl}`)}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        {placementEngine === 'staircase' ? (
+                                                            <p
+                                                                className="text-muted text-xs"
                                                                 style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 8,
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '0.8125rem',
+                                                                    margin: 0,
+                                                                    color:
+                                                                        !s.cefrLevel ||
+                                                                        autoScorableCount < MIN_QUESTIONS_PER_LEVEL
+                                                                            ? 'var(--yellow)'
+                                                                            : undefined,
                                                                 }}
                                                             >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={routingEnabled}
-                                                                    onChange={(e) =>
-                                                                        toggleSectionRouting(s.id, e.target.checked)
-                                                                    }
-                                                                    style={{ accentColor: 'var(--accent)' }}
-                                                                />
-                                                                {t('tests.section_routing_toggle')}
-                                                            </label>
-
-                                                            {routingEnabled && s.routing && (
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        gap: 8,
-                                                                        flexWrap: 'wrap',
-                                                                        alignItems: 'flex-end',
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        className="form-group"
-                                                                        style={{ marginBottom: 0, width: 120 }}
-                                                                    >
-                                                                        <label
-                                                                            htmlFor={`routing-threshold-${s.id}`}
-                                                                            className="text-muted text-xs"
-                                                                        >
-                                                                            {t('tests.section_routing_threshold_label')}
-                                                                        </label>
-                                                                        <input
-                                                                            id={`routing-threshold-${s.id}`}
-                                                                            type="number"
-                                                                            min={0}
-                                                                            max={100}
-                                                                            value={s.routing.thresholdPct}
-                                                                            onChange={(e) =>
-                                                                                updateSection(s.id, {
-                                                                                    routing: {
-                                                                                        ...s.routing!,
-                                                                                        thresholdPct: clampThresholdPct(
-                                                                                            Number(e.target.value)
-                                                                                        ),
-                                                                                    },
-                                                                                })
-                                                                            }
-                                                                        />
-                                                                    </div>
-                                                                    <div
-                                                                        className="form-group"
-                                                                        style={{ marginBottom: 0, flex: '1 1 160px' }}
-                                                                    >
-                                                                        <label
-                                                                            htmlFor={`routing-pass-${s.id}`}
-                                                                            className="text-muted text-xs"
-                                                                        >
-                                                                            {t('tests.section_routing_pass_label')}
-                                                                        </label>
-                                                                        <select
-                                                                            id={`routing-pass-${s.id}`}
-                                                                            value={s.routing.passSectionId}
-                                                                            onChange={(e) =>
-                                                                                updateSection(s.id, {
-                                                                                    routing: {
-                                                                                        ...s.routing!,
-                                                                                        passSectionId: e.target.value,
-                                                                                    },
-                                                                                })
-                                                                            }
-                                                                        >
-                                                                            <option value="">
-                                                                                {t('tests.section_routing_end_test')}
-                                                                            </option>
-                                                                            {sections
-                                                                                .filter((other) => other.id !== s.id)
-                                                                                .map((other) => (
-                                                                                    <option
-                                                                                        key={other.id}
-                                                                                        value={other.id}
-                                                                                    >
-                                                                                        {other.title}
-                                                                                    </option>
-                                                                                ))}
-                                                                        </select>
-                                                                    </div>
-                                                                    <div
-                                                                        className="form-group"
-                                                                        style={{ marginBottom: 0, flex: '1 1 160px' }}
-                                                                    >
-                                                                        <label
-                                                                            htmlFor={`routing-fail-${s.id}`}
-                                                                            className="text-muted text-xs"
-                                                                        >
-                                                                            {t('tests.section_routing_fail_label')}
-                                                                        </label>
-                                                                        <select
-                                                                            id={`routing-fail-${s.id}`}
-                                                                            value={s.routing.failSectionId}
-                                                                            onChange={(e) =>
-                                                                                updateSection(s.id, {
-                                                                                    routing: {
-                                                                                        ...s.routing!,
-                                                                                        failSectionId: e.target.value,
-                                                                                    },
-                                                                                })
-                                                                            }
-                                                                        >
-                                                                            <option value="">
-                                                                                {t('tests.section_routing_end_test')}
-                                                                            </option>
-                                                                            {sections
-                                                                                .filter((other) => other.id !== s.id)
-                                                                                .map((other) => (
-                                                                                    <option
-                                                                                        key={other.id}
-                                                                                        value={other.id}
-                                                                                    >
-                                                                                        {other.title}
-                                                                                    </option>
-                                                                                ))}
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {routingEnabled && !sectionHasAutoScorable && (
-                                                                <p
-                                                                    style={{
-                                                                        color: 'var(--yellow)',
-                                                                        fontSize: '0.75rem',
-                                                                        margin: 0,
-                                                                    }}
-                                                                >
+                                                                {(!s.cefrLevel ||
+                                                                    autoScorableCount < MIN_QUESTIONS_PER_LEVEL) && (
                                                                     <AlertCircle
                                                                         size={12}
                                                                         style={{
@@ -1227,407 +1141,637 @@ export default function TestBuilderPage() {
                                                                             marginRight: 4,
                                                                         }}
                                                                     />
-                                                                    {t('tests.section_routing_warning_no_autoscore')}
-                                                                </p>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <input
-                                value={newSectionTitle}
-                                onChange={(e) => setNewSectionTitle(e.target.value)}
-                                placeholder={t('tests.new_section_placeholder')}
-                                onKeyDown={(e) => e.key === 'Enter' && addSection()}
-                                style={{ flex: 1, fontSize: '0.875rem' }}
-                            />
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={addSection}
-                                disabled={!newSectionTitle.trim()}
-                            >
-                                <Plus size={14} /> {t('tests.add_section')}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Questions */}
-                <div
-                    data-tour="tb-add-question"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}
-                >
-                    <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
-                        {t('tests.questions_title')}{' '}
-                        <span className="text-muted text-sm">
-                            {t('tests.questions_summary', { count: questions.length, points: totalPoints })}
-                        </span>
-                    </h3>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => setShowBankModal(true)}
-                        >
-                            <Plus size={14} /> {t('questionBank.insert_button')}
-                        </button>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
-                            <Plus size={14} /> {t('tests.add_question')}
-                        </button>
-                    </div>
-                </div>
-
-                {questions.length === 0 ? (
-                    <div className="empty-state">
-                        <h3>{t('tests.no_questions')}</h3>
-                        <p className="text-muted text-sm">{t('tests.no_questions_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => addQuestion()}>
-                            <Plus size={16} /> {t('tests.add_question')}
-                        </button>
-                    </div>
-                ) : (
-                    <DragDropContext onDragEnd={onDragEnd}>
-                        {/* Uncategorised questions */}
-                        {(uncategorised.length > 0 || sections.length === 0) && (
-                            <Droppable droppableId="__none__">
-                                {(provided) => (
-                                    <div
-                                        ref={provided.innerRef}
-                                        {...provided.droppableProps}
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 16,
-                                            marginBottom: sections.length > 0 ? 20 : 0,
-                                        }}
-                                    >
-                                        {uncategorised.map((question, index) => (
-                                            <Draggable key={question.id} draggableId={question.id} index={index}>
-                                                {(draggable) => (
-                                                    <div
-                                                        ref={draggable.innerRef}
-                                                        {...draggable.draggableProps}
-                                                        style={draggable.draggableProps.style as React.CSSProperties}
-                                                    >
-                                                        <QuestionEditor
-                                                            question={question}
-                                                            index={displayOrderedQuestions.indexOf(question)}
-                                                            total={questions.length}
-                                                            sections={sections}
-                                                            dragHandleProps={draggable.dragHandleProps}
-                                                            onChange={(q) => updateQuestion(question.id, q)}
-                                                            onRemove={() => removeQuestion(question.id)}
-                                                        />
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            style={{ alignSelf: 'flex-start' }}
-                                            onClick={() => addQuestion()}
-                                        >
-                                            <Plus size={14} /> {t('tests.add_question')}
-                                        </button>
-                                    </div>
-                                )}
-                            </Droppable>
-                        )}
-
-                        {/* Sections */}
-                        {sections.map((section) => {
-                            const sectionQs = questionsFor(section.id);
-                            const collapsed = collapsedSections.has(section.id);
-                            return (
-                                <div
-                                    key={section.id}
-                                    style={{
-                                        marginBottom: 20,
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 10,
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <button
-                                        onClick={() => toggleSection(section.id)}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                            padding: '10px 14px',
-                                            background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-elevated))',
-                                            border: 'none',
-                                            borderBottom: collapsed ? 'none' : '1px solid var(--border)',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
-                                            fontWeight: 600,
-                                            fontSize: '0.9rem',
-                                            color: 'var(--text)',
-                                        }}
-                                    >
-                                        {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                                        {section.title}
-                                        <span className="text-muted text-sm" style={{ fontWeight: 400, marginLeft: 4 }}>
-                                            ({t('tests.section_question_count', { count: sectionQs.length })})
-                                        </span>
-                                    </button>
-
-                                    {!collapsed && (
-                                        <div style={{ padding: '16px 14px' }}>
-                                            <div style={{ marginBottom: 16 }}>
-                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        onClick={() =>
-                                                            setExpandedPassages((prev) => {
-                                                                const next = new Set(prev);
-                                                                if (next.has(section.id)) next.delete(section.id);
-                                                                else next.add(section.id);
-                                                                return next;
-                                                            })
-                                                        }
-                                                        style={{
-                                                            marginBottom: expandedPassages.has(section.id) ? 8 : 0,
-                                                        }}
-                                                    >
-                                                        <FileText size={14} /> {t('tests.section_passage_label')}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-ghost btn-sm"
-                                                        onClick={() => saveSectionToBank(section)}
-                                                        disabled={sectionQs.length === 0}
-                                                    >
-                                                        <BookMarked size={14} />{' '}
-                                                        {t('questionBank.save_section_to_bank')}
-                                                    </button>
-                                                </div>
-                                                {expandedPassages.has(section.id) && (
-                                                    <>
-                                                        <EssayEditor
-                                                            content={section.content ?? ''}
-                                                            onChange={(html) => updateSectionContent(section.id, html)}
-                                                            placeholder={t('tests.section_passage_placeholder')}
-                                                            minHeight={160}
-                                                            allowPageMode={false}
-                                                            showDragHandle
-                                                            showTableOfContents
-                                                            allowImageEmbedding
-                                                        />
-                                                        {(() => {
-                                                            const targetLevel = (cefrTargetLevel ||
-                                                                section.cefrLevel) as CefrLevel | '';
-                                                            if (!targetLevel || !section.content) return null;
-                                                            const verdict = computeTargetVerdict(
-                                                                htmlToPlainText(section.content),
-                                                                targetLevel
-                                                            );
-                                                            return (
-                                                                <div
-                                                                    className="text-sm"
+                                                                )}
+                                                                {!s.cefrLevel
+                                                                    ? t('tests.section_level_pool_untagged')
+                                                                    : t('tests.section_level_pool_count', {
+                                                                          count: autoScorableCount,
+                                                                      })}
+                                                            </p>
+                                                        ) : (
+                                                            <>
+                                                                <label
                                                                     style={{
-                                                                        marginTop: 8,
-                                                                        padding: '8px 10px',
-                                                                        borderRadius: 6,
-                                                                        background: 'var(--bg-elevated)',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.8125rem',
                                                                     }}
                                                                 >
-                                                                    <span
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={routingEnabled}
+                                                                        onChange={(e) =>
+                                                                            toggleSectionRouting(s.id, e.target.checked)
+                                                                        }
+                                                                        style={{ accentColor: 'var(--accent)' }}
+                                                                    />
+                                                                    {t('tests.section_routing_toggle')}
+                                                                </label>
+
+                                                                {routingEnabled && s.routing && (
+                                                                    <div
                                                                         style={{
-                                                                            fontWeight: 700,
-                                                                            color:
-                                                                                verdict.verdict === 'suitable'
-                                                                                    ? 'var(--green)'
-                                                                                    : verdict.verdict ===
-                                                                                        'slightly_above'
-                                                                                      ? 'var(--yellow)'
-                                                                                      : 'var(--red)',
+                                                                            display: 'flex',
+                                                                            gap: 8,
+                                                                            flexWrap: 'wrap',
+                                                                            alignItems: 'flex-end',
                                                                         }}
                                                                     >
-                                                                        {t(`analysis.verdict_${verdict.verdict}`)}
-                                                                    </span>{' '}
-                                                                    <span className="text-muted">
-                                                                        {t('analysis.coverage_known', {
-                                                                            level: targetLevel,
-                                                                            pct: verdict.coveragePercent.toFixed(0),
-                                                                        })}
-                                                                    </span>
-                                                                    {verdict.aboveTargetWords.length > 0 && (
-                                                                        <div style={{ marginTop: 6 }}>
-                                                                            <div
-                                                                                style={{
-                                                                                    display: 'flex',
-                                                                                    gap: 6,
-                                                                                    flexWrap: 'wrap',
-                                                                                    marginBottom: 6,
-                                                                                }}
+                                                                        <div
+                                                                            className="form-group"
+                                                                            style={{ marginBottom: 0, width: 120 }}
+                                                                        >
+                                                                            <label
+                                                                                htmlFor={`routing-threshold-${s.id}`}
+                                                                                className="text-muted text-xs"
                                                                             >
-                                                                                {verdict.aboveTargetWords.map(
-                                                                                    ({ word, level }) => (
-                                                                                        <span
-                                                                                            key={word}
-                                                                                            title={level}
-                                                                                            style={{
-                                                                                                fontSize: '0.78rem',
-                                                                                                padding: '2px 7px',
-                                                                                                borderRadius: 4,
-                                                                                                background:
-                                                                                                    CEFR_LEVEL_COLORS[
-                                                                                                        level
-                                                                                                    ] + '18',
-                                                                                                border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
-                                                                                                color: 'var(--text)',
-                                                                                            }}
-                                                                                        >
-                                                                                            {word}
-                                                                                        </span>
-                                                                                    )
+                                                                                {t(
+                                                                                    'tests.section_routing_threshold_label'
                                                                                 )}
-                                                                            </div>
-                                                                            <button
-                                                                                type="button"
-                                                                                className="btn btn-ghost btn-sm"
-                                                                                onClick={() =>
-                                                                                    seedDeckFromAboveLevelWords(
-                                                                                        section,
-                                                                                        verdict.aboveTargetWords
-                                                                                    )
+                                                                            </label>
+                                                                            <input
+                                                                                id={`routing-threshold-${s.id}`}
+                                                                                type="number"
+                                                                                min={0}
+                                                                                max={100}
+                                                                                value={s.routing.thresholdPct}
+                                                                                onChange={(e) =>
+                                                                                    updateSection(s.id, {
+                                                                                        routing: {
+                                                                                            ...s.routing!,
+                                                                                            thresholdPct:
+                                                                                                clampThresholdPct(
+                                                                                                    Number(
+                                                                                                        e.target.value
+                                                                                                    )
+                                                                                                ),
+                                                                                        },
+                                                                                    })
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                        <div
+                                                                            className="form-group"
+                                                                            style={{
+                                                                                marginBottom: 0,
+                                                                                flex: '1 1 160px',
+                                                                            }}
+                                                                        >
+                                                                            <label
+                                                                                htmlFor={`routing-pass-${s.id}`}
+                                                                                className="text-muted text-xs"
+                                                                            >
+                                                                                {t('tests.section_routing_pass_label')}
+                                                                            </label>
+                                                                            <select
+                                                                                id={`routing-pass-${s.id}`}
+                                                                                value={s.routing.passSectionId}
+                                                                                onChange={(e) =>
+                                                                                    updateSection(s.id, {
+                                                                                        routing: {
+                                                                                            ...s.routing!,
+                                                                                            passSectionId:
+                                                                                                e.target.value,
+                                                                                        },
+                                                                                    })
                                                                                 }
                                                                             >
-                                                                                <Layers size={14} />{' '}
-                                                                                {t('tests.section_seed_deck_button')}
-                                                                            </button>
+                                                                                <option value="">
+                                                                                    {t(
+                                                                                        'tests.section_routing_end_test'
+                                                                                    )}
+                                                                                </option>
+                                                                                {sections
+                                                                                    .filter(
+                                                                                        (other) => other.id !== s.id
+                                                                                    )
+                                                                                    .map((other) => (
+                                                                                        <option
+                                                                                            key={other.id}
+                                                                                            value={other.id}
+                                                                                        >
+                                                                                            {other.title}
+                                                                                        </option>
+                                                                                    ))}
+                                                                            </select>
                                                                         </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })()}
-                                                        <div className="form-group" style={{ marginTop: 8 }}>
-                                                            <label
-                                                                htmlFor={`section-audio-${section.id}`}
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 6,
-                                                                }}
-                                                            >
-                                                                <Music size={14} /> {t('tests.section_audio_label')}{' '}
-                                                                <span
-                                                                    style={{
-                                                                        color: 'var(--text-muted)',
-                                                                        fontWeight: 400,
-                                                                    }}
-                                                                >
-                                                                    ({t('essay_assignment.optional')})
-                                                                </span>
-                                                            </label>
-                                                            <input
-                                                                id={`section-audio-${section.id}`}
-                                                                type="url"
-                                                                value={section.audioUrl ?? ''}
-                                                                onChange={(e) =>
-                                                                    updateSection(section.id, {
-                                                                        audioUrl: e.target.value || undefined,
-                                                                    })
-                                                                }
-                                                                placeholder={t('tests.question_audio_placeholder')}
-                                                            />
-                                                            <AudioUrlStatus url={section.audioUrl} />
-                                                            {section.audioUrl && (
-                                                                <audio
-                                                                    controls
-                                                                    src={section.audioUrl}
-                                                                    aria-label={t('tests.question_audio_preview_alt')}
-                                                                    style={{ marginTop: 8, width: '100%' }}
-                                                                />
-                                                            )}
-                                                            <ListeningControlsFields
-                                                                id={`section-${section.id}`}
-                                                                value={section}
-                                                                onChange={(patch) => updateSection(section.id, patch)}
-                                                            />
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <Droppable droppableId={section.id}>
-                                                {(provided) => (
-                                                    <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.droppableProps}
-                                                        style={{
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            gap: 16,
-                                                            minHeight: 40,
-                                                        }}
-                                                    >
-                                                        {sectionQs.map((question, index) => (
-                                                            <Draggable
-                                                                key={question.id}
-                                                                draggableId={question.id}
-                                                                index={index}
-                                                            >
-                                                                {(draggable) => (
-                                                                    <div
-                                                                        ref={draggable.innerRef}
-                                                                        {...draggable.draggableProps}
-                                                                        style={
-                                                                            draggable.draggableProps
-                                                                                .style as React.CSSProperties
-                                                                        }
-                                                                    >
-                                                                        <QuestionEditor
-                                                                            question={question}
-                                                                            index={displayOrderedQuestions.indexOf(
-                                                                                question
-                                                                            )}
-                                                                            total={questions.length}
-                                                                            sections={sections}
-                                                                            dragHandleProps={draggable.dragHandleProps}
-                                                                            onChange={(q) =>
-                                                                                updateQuestion(question.id, q)
-                                                                            }
-                                                                            onRemove={() => removeQuestion(question.id)}
-                                                                        />
+                                                                        <div
+                                                                            className="form-group"
+                                                                            style={{
+                                                                                marginBottom: 0,
+                                                                                flex: '1 1 160px',
+                                                                            }}
+                                                                        >
+                                                                            <label
+                                                                                htmlFor={`routing-fail-${s.id}`}
+                                                                                className="text-muted text-xs"
+                                                                            >
+                                                                                {t('tests.section_routing_fail_label')}
+                                                                            </label>
+                                                                            <select
+                                                                                id={`routing-fail-${s.id}`}
+                                                                                value={s.routing.failSectionId}
+                                                                                onChange={(e) =>
+                                                                                    updateSection(s.id, {
+                                                                                        routing: {
+                                                                                            ...s.routing!,
+                                                                                            failSectionId:
+                                                                                                e.target.value,
+                                                                                        },
+                                                                                    })
+                                                                                }
+                                                                            >
+                                                                                <option value="">
+                                                                                    {t(
+                                                                                        'tests.section_routing_end_test'
+                                                                                    )}
+                                                                                </option>
+                                                                                {sections
+                                                                                    .filter(
+                                                                                        (other) => other.id !== s.id
+                                                                                    )
+                                                                                    .map((other) => (
+                                                                                        <option
+                                                                                            key={other.id}
+                                                                                            value={other.id}
+                                                                                        >
+                                                                                            {other.title}
+                                                                                        </option>
+                                                                                    ))}
+                                                                            </select>
+                                                                        </div>
                                                                     </div>
                                                                 )}
-                                                            </Draggable>
-                                                        ))}
-                                                        {provided.placeholder}
-                                                        {sectionQs.length === 0 && (
-                                                            <p
-                                                                className="text-muted text-sm"
-                                                                style={{ margin: '8px 0' }}
-                                                            >
-                                                                {t('tests.section_empty_hint')}
-                                                            </p>
+
+                                                                {routingEnabled && !sectionHasAutoScorable && (
+                                                                    <p
+                                                                        style={{
+                                                                            color: 'var(--yellow)',
+                                                                            fontSize: '0.75rem',
+                                                                            margin: 0,
+                                                                        }}
+                                                                    >
+                                                                        <AlertCircle
+                                                                            size={12}
+                                                                            style={{
+                                                                                verticalAlign: 'middle',
+                                                                                marginRight: 4,
+                                                                            }}
+                                                                        />
+                                                                        {t(
+                                                                            'tests.section_routing_warning_no_autoscore'
+                                                                        )}
+                                                                    </p>
+                                                                )}
+                                                            </>
                                                         )}
                                                     </div>
                                                 )}
-                                            </Droppable>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <input
+                                    value={newSectionTitle}
+                                    onChange={(e) => setNewSectionTitle(e.target.value)}
+                                    placeholder={t('tests.new_section_placeholder')}
+                                    onKeyDown={(e) => e.key === 'Enter' && addSection()}
+                                    style={{ flex: 1, fontSize: '0.875rem' }}
+                                />
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={addSection}
+                                    disabled={!newSectionTitle.trim()}
+                                >
+                                    <Plus size={14} /> {t('tests.add_section')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Questions */}
+                    <div
+                        data-tour="tb-add-question"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 14,
+                        }}
+                    >
+                        <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+                            {t('tests.questions_title')}{' '}
+                            <span className="text-muted text-sm">
+                                {t('tests.questions_summary', { count: questions.length, points: totalPoints })}
+                            </span>
+                        </h3>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowBankModal(true)}
+                            >
+                                <Plus size={14} /> {t('questionBank.insert_button')}
+                            </button>
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => addQuestion()}>
+                                <Plus size={14} /> {t('tests.add_question')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {questions.length === 0 ? (
+                        <div className="empty-state">
+                            <h3>{t('tests.no_questions')}</h3>
+                            <p className="text-muted text-sm">{t('tests.no_questions_instruction')}</p>
+                            <button className="btn btn-primary" onClick={() => addQuestion()}>
+                                <Plus size={16} /> {t('tests.add_question')}
+                            </button>
+                        </div>
+                    ) : (
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            {/* Uncategorised questions */}
+                            {(uncategorised.length > 0 || sections.length === 0) && (
+                                <Droppable droppableId="__none__">
+                                    {(provided) => (
+                                        <div
+                                            ref={provided.innerRef}
+                                            {...provided.droppableProps}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 16,
+                                                marginBottom: sections.length > 0 ? 20 : 0,
+                                            }}
+                                        >
+                                            {uncategorised.map((question, index) => (
+                                                <Draggable key={question.id} draggableId={question.id} index={index}>
+                                                    {(draggable) => (
+                                                        <div
+                                                            ref={draggable.innerRef}
+                                                            {...draggable.draggableProps}
+                                                            style={
+                                                                draggable.draggableProps.style as React.CSSProperties
+                                                            }
+                                                        >
+                                                            <QuestionEditor
+                                                                question={question}
+                                                                index={displayOrderedQuestions.indexOf(question)}
+                                                                total={questions.length}
+                                                                sections={sections}
+                                                                dragHandleProps={draggable.dragHandleProps}
+                                                                onChange={(q) => updateQuestion(question.id, q)}
+                                                                onRemove={() => removeQuestion(question.id)}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
                                             <button
                                                 className="btn btn-secondary btn-sm"
-                                                style={{ marginTop: 12 }}
-                                                onClick={() => addQuestion(section.id)}
+                                                style={{ alignSelf: 'flex-start' }}
+                                                onClick={() => addQuestion()}
                                             >
                                                 <Plus size={14} /> {t('tests.add_question')}
                                             </button>
                                         </div>
                                     )}
-                                </div>
-                            );
-                        })}
-                    </DragDropContext>
+                                </Droppable>
+                            )}
+
+                            {/* Sections */}
+                            {sections.map((section) => {
+                                const sectionQs = questionsFor(section.id);
+                                const collapsed = collapsedSections.has(section.id);
+                                return (
+                                    <div
+                                        key={section.id}
+                                        style={{
+                                            marginBottom: 20,
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 10,
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <button
+                                            onClick={() => toggleSection(section.id)}
+                                            style={{
+                                                width: '100%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                padding: '10px 14px',
+                                                background: 'color-mix(in srgb, var(--accent) 8%, var(--bg-elevated))',
+                                                border: 'none',
+                                                borderBottom: collapsed ? 'none' : '1px solid var(--border)',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                fontWeight: 600,
+                                                fontSize: '0.9rem',
+                                                color: 'var(--text)',
+                                            }}
+                                        >
+                                            {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                            {section.title}
+                                            <span
+                                                className="text-muted text-sm"
+                                                style={{ fontWeight: 400, marginLeft: 4 }}
+                                            >
+                                                ({t('tests.section_question_count', { count: sectionQs.length })})
+                                            </span>
+                                        </button>
+
+                                        {!collapsed && (
+                                            <div style={{ padding: '16px 14px' }}>
+                                                <div style={{ marginBottom: 16 }}>
+                                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-sm"
+                                                            onClick={() =>
+                                                                setExpandedPassages((prev) => {
+                                                                    const next = new Set(prev);
+                                                                    if (next.has(section.id)) next.delete(section.id);
+                                                                    else next.add(section.id);
+                                                                    return next;
+                                                                })
+                                                            }
+                                                            style={{
+                                                                marginBottom: expandedPassages.has(section.id) ? 8 : 0,
+                                                            }}
+                                                        >
+                                                            <FileText size={14} /> {t('tests.section_passage_label')}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-sm"
+                                                            onClick={() => saveSectionToBank(section)}
+                                                            disabled={sectionQs.length === 0}
+                                                        >
+                                                            <BookMarked size={14} />{' '}
+                                                            {t('questionBank.save_section_to_bank')}
+                                                        </button>
+                                                    </div>
+                                                    {expandedPassages.has(section.id) && (
+                                                        <>
+                                                            <EssayEditor
+                                                                content={section.content ?? ''}
+                                                                onChange={(html) =>
+                                                                    updateSectionContent(section.id, html)
+                                                                }
+                                                                placeholder={t('tests.section_passage_placeholder')}
+                                                                minHeight={160}
+                                                                allowPageMode={false}
+                                                                showDragHandle
+                                                                showTableOfContents
+                                                                allowImageEmbedding
+                                                            />
+                                                            {(() => {
+                                                                const targetLevel = (cefrTargetLevel ||
+                                                                    section.cefrLevel) as CefrLevel | '';
+                                                                if (!targetLevel || !section.content) return null;
+                                                                const verdict = computeTargetVerdict(
+                                                                    htmlToPlainText(section.content),
+                                                                    targetLevel
+                                                                );
+                                                                return (
+                                                                    <div
+                                                                        className="text-sm"
+                                                                        style={{
+                                                                            marginTop: 8,
+                                                                            padding: '8px 10px',
+                                                                            borderRadius: 6,
+                                                                            background: 'var(--bg-elevated)',
+                                                                        }}
+                                                                    >
+                                                                        <span
+                                                                            style={{
+                                                                                fontWeight: 700,
+                                                                                color:
+                                                                                    verdict.verdict === 'suitable'
+                                                                                        ? 'var(--green)'
+                                                                                        : verdict.verdict ===
+                                                                                            'slightly_above'
+                                                                                          ? 'var(--yellow)'
+                                                                                          : 'var(--red)',
+                                                                            }}
+                                                                        >
+                                                                            {t(`analysis.verdict_${verdict.verdict}`)}
+                                                                        </span>{' '}
+                                                                        <span className="text-muted">
+                                                                            {t('analysis.coverage_known', {
+                                                                                level: targetLevel,
+                                                                                pct: verdict.coveragePercent.toFixed(0),
+                                                                            })}
+                                                                        </span>
+                                                                        {verdict.aboveTargetWords.length > 0 && (
+                                                                            <div style={{ marginTop: 6 }}>
+                                                                                <div
+                                                                                    style={{
+                                                                                        display: 'flex',
+                                                                                        gap: 6,
+                                                                                        flexWrap: 'wrap',
+                                                                                        marginBottom: 6,
+                                                                                    }}
+                                                                                >
+                                                                                    {verdict.aboveTargetWords.map(
+                                                                                        ({ word, level }) => (
+                                                                                            <span
+                                                                                                key={word}
+                                                                                                title={level}
+                                                                                                style={{
+                                                                                                    fontSize: '0.78rem',
+                                                                                                    padding: '2px 7px',
+                                                                                                    borderRadius: 4,
+                                                                                                    background:
+                                                                                                        CEFR_LEVEL_COLORS[
+                                                                                                            level
+                                                                                                        ] + '18',
+                                                                                                    border: `1px solid ${CEFR_LEVEL_COLORS[level]}44`,
+                                                                                                    color: 'var(--text)',
+                                                                                                }}
+                                                                                            >
+                                                                                                {word}
+                                                                                            </span>
+                                                                                        )
+                                                                                    )}
+                                                                                </div>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="btn btn-ghost btn-sm"
+                                                                                    onClick={() =>
+                                                                                        seedDeckFromAboveLevelWords(
+                                                                                            section,
+                                                                                            verdict.aboveTargetWords
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <Layers size={14} />{' '}
+                                                                                    {t(
+                                                                                        'tests.section_seed_deck_button'
+                                                                                    )}
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                            <div className="form-group" style={{ marginTop: 8 }}>
+                                                                <label
+                                                                    htmlFor={`section-audio-${section.id}`}
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                    }}
+                                                                >
+                                                                    <Music size={14} /> {t('tests.section_audio_label')}{' '}
+                                                                    <span
+                                                                        style={{
+                                                                            color: 'var(--text-muted)',
+                                                                            fontWeight: 400,
+                                                                        }}
+                                                                    >
+                                                                        ({t('essay_assignment.optional')})
+                                                                    </span>
+                                                                </label>
+                                                                <input
+                                                                    id={`section-audio-${section.id}`}
+                                                                    type="url"
+                                                                    value={section.audioUrl ?? ''}
+                                                                    onChange={(e) =>
+                                                                        updateSection(section.id, {
+                                                                            audioUrl: e.target.value || undefined,
+                                                                        })
+                                                                    }
+                                                                    placeholder={t('tests.question_audio_placeholder')}
+                                                                />
+                                                                <AudioUrlStatus url={section.audioUrl} />
+                                                                {section.audioUrl && (
+                                                                    <audio
+                                                                        controls
+                                                                        src={section.audioUrl}
+                                                                        aria-label={t(
+                                                                            'tests.question_audio_preview_alt'
+                                                                        )}
+                                                                        style={{ marginTop: 8, width: '100%' }}
+                                                                    />
+                                                                )}
+                                                                <ListeningControlsFields
+                                                                    id={`section-${section.id}`}
+                                                                    value={section}
+                                                                    onChange={(patch) =>
+                                                                        updateSection(section.id, patch)
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <Droppable droppableId={section.id}>
+                                                    {(provided) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.droppableProps}
+                                                            style={{
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: 16,
+                                                                minHeight: 40,
+                                                            }}
+                                                        >
+                                                            {sectionQs.map((question, index) => (
+                                                                <Draggable
+                                                                    key={question.id}
+                                                                    draggableId={question.id}
+                                                                    index={index}
+                                                                >
+                                                                    {(draggable) => (
+                                                                        <div
+                                                                            ref={draggable.innerRef}
+                                                                            {...draggable.draggableProps}
+                                                                            style={
+                                                                                draggable.draggableProps
+                                                                                    .style as React.CSSProperties
+                                                                            }
+                                                                        >
+                                                                            <QuestionEditor
+                                                                                question={question}
+                                                                                index={displayOrderedQuestions.indexOf(
+                                                                                    question
+                                                                                )}
+                                                                                total={questions.length}
+                                                                                sections={sections}
+                                                                                dragHandleProps={
+                                                                                    draggable.dragHandleProps
+                                                                                }
+                                                                                onChange={(q) =>
+                                                                                    updateQuestion(question.id, q)
+                                                                                }
+                                                                                onRemove={() =>
+                                                                                    removeQuestion(question.id)
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </Draggable>
+                                                            ))}
+                                                            {provided.placeholder}
+                                                            {sectionQs.length === 0 && (
+                                                                <p
+                                                                    className="text-muted text-sm"
+                                                                    style={{ margin: '8px 0' }}
+                                                                >
+                                                                    {t('tests.section_empty_hint')}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </Droppable>
+                                                <button
+                                                    className="btn btn-secondary btn-sm"
+                                                    style={{ marginTop: 12 }}
+                                                    onClick={() => addQuestion(section.id)}
+                                                >
+                                                    <Plus size={14} /> {t('tests.add_question')}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </DragDropContext>
+                    )}
+                </div>
+                {showPreview && (
+                    <aside
+                        data-testid="a4-pane"
+                        style={
+                            isWide
+                                ? { position: 'sticky', top: 12, minWidth: 0 }
+                                : {
+                                      position: 'fixed',
+                                      top: 56,
+                                      right: 0,
+                                      bottom: 0,
+                                      width: 'min(100%, 560px)',
+                                      zIndex: 60,
+                                      padding: 12,
+                                      overflow: 'auto',
+                                      background: 'var(--bg-panel)',
+                                      borderLeft: '1px solid var(--border)',
+                                  }
+                        }
+                    >
+                        <TestA4Preview
+                            test={previewTest}
+                            onChange={(patch) => setPrintText((prev) => ({ ...prev, ...patch }))}
+                        />
+                    </aside>
                 )}
             </div>
             {showBankModal && <QuestionBankModal onClose={() => setShowBankModal(false)} onSelect={insertFromBank} />}

@@ -70,3 +70,23 @@ describe('ClozeGapExtension prompt <-> doc conversion', () => {
         });
     });
 });
+
+describe('ClozeGap word-formation stems', () => {
+    const make = (prompt: string, wordFormation: boolean) =>
+        new Editor({ extensions: [MINIMAL_KIT, ClozeGap], content: promptToClozeContent(prompt, wordFormation) });
+
+    it('moves a (STEM) after a gap into the gap and writes it back unchanged', () => {
+        const prompt = 'Her {{happiness}}(HAPPY) was clear but the {{end}} was not.';
+        const editor = make(prompt, true);
+        expect(editor.state.doc.firstChild!.child(1).attrs.stem).toBe('HAPPY');
+        expect(clozeContentToPrompt(editor)).toBe(prompt);
+        editor.destroy();
+    });
+
+    it('leaves a parenthesis after a gap as plain text when word formation is off', () => {
+        const editor = make('A {{b}}(c) d', false);
+        expect(editor.state.doc.firstChild!.child(1).attrs.stem).toBeNull();
+        expect(clozeContentToPrompt(editor)).toBe('A {{b}}(c) d');
+        editor.destroy();
+    });
+});

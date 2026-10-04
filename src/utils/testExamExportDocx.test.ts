@@ -149,6 +149,27 @@ describe('exam booklet .docx content', () => {
         expect(xml).toContain('3 pts');
     });
 
+    it('prints the header before the cover, the instructions after it, and the footer last', async () => {
+        const xml = await bookletXml({
+            ...test,
+            printHeader: '<p>Springfield High</p>',
+            printIntro: '<p><strong>Read carefully</strong></p>',
+            printFooter: '<p>Good luck</p>',
+        });
+        const at = (text: string) => xml.indexOf(text);
+        expect(at('Springfield High')).toBeGreaterThan(-1);
+        expect(at('Springfield High')).toBeLessThan(at('Quiz'));
+        expect(at('Quiz')).toBeLessThan(at('Read carefully'));
+        expect(at('Read carefully')).toBeLessThan(at('One'));
+        expect(at('Two')).toBeLessThan(at('Good luck'));
+    });
+
+    it('adds nothing for blank header, instructions and footer', async () => {
+        const plain = await bookletXml(test);
+        const blank = await bookletXml({ ...test, printHeader: '<p></p>', printIntro: '', printFooter: '<p> </p>' });
+        expect(blank).toBe(plain);
+    });
+
     describe('rich content placement', () => {
         afterEach(() => vi.unstubAllGlobals());
 
