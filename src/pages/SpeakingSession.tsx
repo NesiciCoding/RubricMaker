@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getSpeakingTourSteps } from '../data/TutorialSteps';
 import { ArrowLeft, Play, Pause, Square, Save, Mic, X, Trash2 } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
@@ -240,23 +239,11 @@ export default function SpeakingSession() {
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={speakingTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={`${t('speaking.page_title')} — ${student.name}`}

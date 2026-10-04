@@ -14,8 +14,7 @@ import {
     ChevronUp,
     Printer,
 } from 'lucide-react';
-import { Joyride, STATUS } from 'react-joyride';
-import type { EventData } from 'react-joyride';
+import PageTour from '../components/Tour/PageTour';
 import { getComparativeTourSteps } from '../data/TutorialSteps';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
@@ -594,23 +593,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
     return (
         <>
-            <Joyride
+            <PageTour
                 steps={comparativeTourSteps}
                 run={tourRun}
-                continuous
-                onEvent={(data: EventData) => {
-                    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-                        setTourRun(false);
-                    }
-                }}
-                options={{
-                    showProgress: true,
-                    primaryColor: 'var(--accent)',
-                    backgroundColor: 'var(--bg-elevated)',
-                    textColor: 'var(--text)',
-                    arrowColor: 'var(--bg-elevated)',
-                    overlayColor: 'rgba(0, 0, 0, 0.6)',
-                }}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
             />
             <Topbar
                 title={t('comparativeGrading.title_compare', { name: rubric.name })}

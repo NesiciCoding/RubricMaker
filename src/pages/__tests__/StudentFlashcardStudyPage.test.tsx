@@ -92,6 +92,16 @@ vi.mock('../../components/Flashcards/FlashcardInsightsPanel', () => ({
     default: () => null,
 }));
 
+const tourState: { run: boolean; onFinish: () => void } = { run: false, onFinish: () => {} };
+
+vi.mock('../../components/Tour/PageTour', () => ({
+    default: (props: { run: boolean; onFinish: () => void }) => {
+        tourState.run = props.run;
+        tourState.onFinish = props.onFinish;
+        return null;
+    },
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
@@ -119,6 +129,8 @@ describe('StudentFlashcardStudyPage', () => {
         mockReviews = [];
         mockIsConnected = false;
         mockUserRole = 'student';
+        tourState.run = false;
+        localStorage.clear();
         const mod = await import('../StudentFlashcardStudyPage');
         StudentStudyPage = mod.default;
     });
@@ -158,5 +170,32 @@ describe('StudentFlashcardStudyPage', () => {
         await act(async () => {});
         expect(mockSaveFlashcardReview).not.toHaveBeenCalled();
         expect(mockSaveFlashcardReviewAsStudent).not.toHaveBeenCalled();
+    });
+
+    it('auto-runs the tour once for a student, then remembers it was seen', async () => {
+        renderPage();
+        await waitFor(() => expect(tourState.run).toBe(true));
+        act(() => tourState.onFinish());
+        expect(tourState.run).toBe(false);
+        expect(localStorage.getItem('rm_flashcard_tour_seen_s1')).toBe('true');
+    });
+
+    it('does not auto-run the tour when it was already seen', async () => {
+        localStorage.setItem('rm_flashcard_tour_seen_s1', 'true');
+        renderPage();
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 600));
+        });
+        expect(tourState.run).toBe(false);
+    });
+
+    it('never auto-runs the student tour for a non-student role, even offline', async () => {
+        mockUserRole = 'admin';
+        renderPage();
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 600));
+        });
+        expect(tourState.run).toBe(false);
+        expect(localStorage.getItem('rm_flashcard_tour_seen_s1')).toBeNull();
     });
 });

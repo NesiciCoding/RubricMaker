@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
+import PageTour from '../components/Tour/PageTour';
+import { usePageTourState } from '../hooks/usePageTourState';
 import { Upload, Paperclip, Trash2, Download, Link2, Users, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
@@ -9,6 +11,7 @@ import { fileToDataUrl } from '../utils/fileToDataUrl';
 
 export default function AttachmentsPage() {
     const { t } = useTranslation();
+    const tour = usePageTourState('attachments');
     const { students } = useStudents();
     const { classes } = useClasses();
     const { attachments, addAttachment, deleteAttachment } = useGrading();
@@ -58,10 +61,19 @@ export default function AttachmentsPage() {
 
     return (
         <>
-            <Topbar title={t('attachments.title')} />
+            <PageTour {...tour.tourProps} />
+            <Topbar
+                title={t('attachments.title')}
+                actions={
+                    <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        {t('tutorial.page_tour_button')}
+                    </button>
+                }
+            />
             <div className="page-content fade-in">
                 {/* Drop zone */}
                 <div
+                    data-tour="att-dropzone"
                     className={`drop-zone ${dragOver ? 'drag-over' : ''}`}
                     style={{ marginBottom: 24 }}
                     onClick={() => fileRef.current?.click()}
@@ -94,6 +106,7 @@ export default function AttachmentsPage() {
                             {t('attachments.link_to_rubric')}
                         </label>
                         <select
+                            data-tour="att-rubric"
                             id="att-rubric"
                             value={selectedRubricId}
                             onChange={(e) => {

@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import en from '../locales/en.json';
+import nl from '../locales/nl.json';
+import fr from '../locales/fr.json';
+import de from '../locales/de.json';
+import es from '../locales/es.json';
 import {
     getTutorialSteps,
+    getStatisticsTourSteps,
+    withMobileDrawer,
+    SIDEBAR_TOUR_TARGETS,
     getComparativeTourSteps,
     getEssayBuilderTourSteps,
     getTestBuilderTourSteps,
@@ -14,9 +22,9 @@ import {
 const t = (key: string) => key;
 
 describe('getTutorialSteps', () => {
-    it('returns 10 steps', () => {
+    it('returns 5 steps', () => {
         const steps = getTutorialSteps(t as any);
-        expect(steps).toHaveLength(10);
+        expect(steps).toHaveLength(5);
     });
 
     it('every step has a non-empty target, title, content, and placement', () => {
@@ -49,10 +57,10 @@ describe('getTutorialSteps', () => {
     it('step targets include expected data-tour selectors', () => {
         const steps = getTutorialSteps(t as any);
         const targets = steps.map((s) => s.target as string);
-        expect(targets).toContain('[data-tour="/rubrics"]');
-        expect(targets).toContain('[data-tour="/students"]');
-        expect(targets).toContain('[data-tour="/cefr-overview"]');
-        expect(targets).toContain('[data-tour="/statistics"]');
+        expect(targets).toContain('.nav-rail');
+        expect(targets).toContain('[data-tour="dashboard-grades"]');
+        expect(targets).toContain('[data-tour="/settings"]');
+        expect(targets).toContain('[data-tour="help"]');
     });
 
     it('no step targets a class that only exists on a sub-page', () => {
@@ -95,6 +103,48 @@ describe('per-page tours', () => {
                 return key;
             }) as any);
             expect(keys.every((k) => k.startsWith('tutorial.'))).toBe(true);
+        });
+    }
+});
+
+describe('withMobileDrawer', () => {
+    it('opens the drawer for sidebar steps and closes it for others', async () => {
+        vi.useFakeTimers();
+        const setOpen = vi.fn();
+        const steps = withMobileDrawer(getTutorialSteps(t as any), setOpen);
+        const nav = steps.find((s) => s.target === '.nav-rail')!;
+        const grades = steps.find((s) => s.target === '[data-tour="dashboard-grades"]')!;
+
+        const pending = nav.before!({} as any);
+        expect(setOpen).toHaveBeenLastCalledWith(true);
+        await vi.advanceTimersByTimeAsync(400);
+        await pending;
+
+        await grades.before!({} as any);
+        expect(setOpen).toHaveBeenLastCalledWith(false);
+        vi.useRealTimers();
+    });
+
+    it('SIDEBAR_TOUR_TARGETS only lists targets used by the main tour', () => {
+        const targets = getTutorialSteps(t as any).map((s) => s.target);
+        for (const target of SIDEBAR_TOUR_TARGETS) expect(targets).toContain(target);
+    });
+});
+
+describe('tutorial locale keys', () => {
+    const locales = { en, nl, fr, de, es } as Record<string, any>;
+    const collect = (build: (tf: any) => unknown) => {
+        const keys: string[] = [];
+        build((k: string) => (keys.push(k), k));
+        return keys;
+    };
+    const keys = [...collect(getTutorialSteps), ...collect(getStatisticsTourSteps), 'tutorial.page_tour_button'];
+
+    for (const [name, locale] of Object.entries(locales)) {
+        it(`${name} has every key used by the main and statistics tours`, () => {
+            for (const key of keys) {
+                expect(locale.tutorial[key.replace('tutorial.', '')], key).toBeTruthy();
+            }
         });
     }
 });

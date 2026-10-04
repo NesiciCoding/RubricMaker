@@ -10,6 +10,8 @@ import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
+import PageTour from '../components/Tour/PageTour';
+import { getStatisticsTourSteps } from '../data/TutorialSteps';
 import ClassFilterChips from '../components/ui/ClassFilterChips';
 import { useSettings } from '../context/AppContext';
 import { useStoreSelector } from '../context/useStore';
@@ -107,6 +109,8 @@ export default function StatisticsPage() {
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
     // ── View mode ────────────────────────────────────────────────────────────
+    const [tourRun, setTourRun] = useState(false);
+    const statsTourSteps = useMemo(() => getStatisticsTourSteps(t), [t]);
     const [viewMode, setViewMode] = useState<'rubric' | 'student' | 'compare'>('rubric');
 
     // ── Track / year filters (shared across rubric + compare modes) ───────────
@@ -664,18 +668,30 @@ export default function StatisticsPage() {
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <>
+            <PageTour
+                steps={statsTourSteps}
+                run={tourRun}
+                onFinish={() => setTourRun(false)}
+                onStartRequest={() => setTourRun(true)}
+            />
             <Topbar
                 title={t('statistics.title')}
                 actions={
-                    <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
-                        <Printer size={14} /> {t('common.print')}
-                    </button>
+                    <>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => setTourRun(true)}>
+                            {t('tutorial.stats_tour_button')}
+                        </button>
+                        <button className="btn btn-ghost btn-sm no-print" onClick={() => window.print()}>
+                            <Printer size={14} /> {t('common.print')}
+                        </button>
+                    </>
                 }
             />
             <div className="page-content fade-in">
                 {/* ── Top controls ── */}
                 <div
                     className="statistics-controls"
+                    data-tour="stats-controls"
                     style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}
                 >
                     {/* View mode toggle */}
@@ -1405,7 +1421,7 @@ export default function StatisticsPage() {
                                     </div>
 
                                     {/* Per-criterion chart — Bar or Radar */}
-                                    <div className="card">
+                                    <div className="card" data-tour="stats-criterion-chart">
                                         <div
                                             style={{
                                                 display: 'flex',
