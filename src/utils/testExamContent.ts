@@ -354,7 +354,10 @@ export function answerSpaceFor(question: TestQuestion): AnswerSpaceSpec {
 export interface TestExamExportOptions {
     /** Base export font — mirrors RubricFormat.fontFamily / rubric export's font pipeline. */
     fontFamily?: string;
+    /** Body text size in pt; every export section inherits it instead of picking its own. */
     fontSize?: number;
+    /** Line-height multiplier for body text. */
+    lineSpacing?: number;
     styleTemplate?: DocxStyleTemplateOverrides;
     /** Whether the attachment (reading passages) is its own document or appended inline in the booklet. */
     attachmentMode: 'inline' | 'separate';
@@ -363,6 +366,9 @@ export interface TestExamExportOptions {
     /** Fiducial markers + a per-page QR header on answer sheets, for a future scan-ingestion pipeline. Off by default. */
     scanMarkers: boolean;
 }
+
+export const EXAM_BASE_FONT_PT = 11;
+export const EXAM_BASE_LINE_SPACING = 1.15;
 
 export const DEFAULT_EXAM_EXPORT_OPTIONS: TestExamExportOptions = {
     attachmentMode: 'separate',

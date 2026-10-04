@@ -3,6 +3,7 @@ import {
     escapeHtml,
     htmlToMarkdown,
     htmlToDocxChildren,
+    htmlToDocxLead,
     exportEssayMarkdown,
     exportEssayDocx,
     exportEssaysBatch,
@@ -192,8 +193,34 @@ describe('essayExport', () => {
             const props = JSON.stringify(rootOf(p));
             expect(props).toContain('ff0000');
             expect(props).toContain('Georgia');
-            expect(props).toContain('28'); // 14pt → 28 half-points
+            expect(props).toContain('"val":21'); // 14px → 10.5pt → 21 half-points
             expect(props).toContain('ffff00');
+        });
+
+        it('honors block-level font-size and line-height on paragraphs and list items, including the bullet', () => {
+            const [p, li] = htmlToDocxChildren(
+                '<p style="font-size: 12pt; line-height: 150%">a</p><ul style="font-size: 12pt; line-height: 2"><li>b</li></ul>'
+            );
+            const para = JSON.stringify(rootOf(p));
+            expect(para).toContain('"val":24');
+            expect(para).toContain('"value":360');
+            const item = JSON.stringify(rootOf(li));
+            expect(item.match(/"val":24/g)?.length).toBeGreaterThanOrEqual(4); // bullet + text, sz + szCs
+            expect(item).toContain('"value":480');
+        });
+
+        it('reads size and line-height from the <p> TipTap wraps list-item text in', () => {
+            const [li] = htmlToDocxChildren(
+                '<ul><li><p style="line-height: 2"><span style="font-size: 12pt">b</span></p></li></ul>'
+            );
+            const item = JSON.stringify(rootOf(li));
+            expect(item).toContain('"value":480');
+        });
+
+        it('exposes the lead paragraph size and spacing', () => {
+            const lead = htmlToDocxLead('<p style="font-size: 12pt; line-height: 2">x</p>');
+            expect(lead.leadSize).toBe(24);
+            expect(lead.leadSpacing?.line).toBe(480);
         });
 
         it('renders sub/sup and line breaks', () => {
