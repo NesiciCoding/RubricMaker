@@ -227,10 +227,11 @@ function nameClassDateBoxHtml(): string {
 }
 
 /** Right-aligned title block + black subject banner + question/point/duration summary — the CITO cover-page pattern. */
-function coverPageHtml(test: Test, docLabel: string, includeNameBox = false): string {
+function coverPageHtml(test: Test, docLabel: string, includeNameBox = false, withPrintText = false): string {
     const totalQuestions = test.questions.length;
     const totalPoints = calcTestMaxPoints(test);
     return `<div class="print-page" style="page-break-after:always;padding-top:36px;font-family:inherit;color:#1e293b;background:#fff">
+    ${withPrintText ? richBlockHtml(test.printHeader) : ''}
     <div style="text-align:right">
       <div style="font-weight:700;font-size:16px">${escapeHtml(docLabel)}</div>
       <div style="font-weight:800;font-size:34px;margin-top:2px">${new Date().getFullYear()}</div>
@@ -242,6 +243,7 @@ function coverPageHtml(test: Test, docLabel: string, includeNameBox = false): st
       ${totalPoints > 0 ? `<p style="margin:0 0 4px">${tx('points_count_line', { points: totalPoints })}</p>` : ''}
       ${test.durationMinutes ? `<p style="margin:0 0 4px">${tx('duration_line', { minutes: test.durationMinutes })}</p>` : ''}
     </div>
+    ${withPrintText ? richBlockHtml(test.printIntro) : ''}
   </div>`;
 }
 
@@ -305,8 +307,7 @@ export function buildTestPreviewHtml(test: Test, preview: TestPreviewOptions): s
 
 export function buildExamBookletHtml(test: Test, options: TestExamExportOptions): string {
     const groups = groupQuestionsBySection(test);
-    let html = richBlockHtml(test.printHeader) + coverPageHtml(test, tx('booklet_subtitle'), true);
-    if (richBlockHtml(test.printIntro)) html += richBlockHtml(test.printIntro);
+    let html = coverPageHtml(test, tx('booklet_subtitle'), true, true);
     for (const group of groups) {
         if (group.section) {
             html += sectionDividerHtml(group.section.title);
@@ -322,14 +323,14 @@ export function buildExamBookletHtml(test: Test, options: TestExamExportOptions)
 
 export function buildExamAttachmentHtml(test: Test): string {
     const groups = groupQuestionsBySection(test).filter((g) => g.section?.content);
-    let html = coverPageHtml(test, tx('attachment_subtitle'), true);
+    let html = coverPageHtml(test, tx('attachment_subtitle'), true, true);
     groups.forEach((group, i) => {
         if (!group.section) return;
         const pageBreak = i > 0 ? 'page-break-before:always;' : '';
         html += `<div style="${pageBreak}page-break-inside:avoid">${sectionDividerHtml(group.section.title)}</div>`;
         html += passageHtml(group.section.content ?? '', 'margin-bottom:14px');
     });
-    return `<div class="print-page" style="color:#1e293b;background:#fff">${html}</div>`;
+    return `<div class="print-page" style="color:#1e293b;background:#fff">${html}${richBlockHtml(test.printFooter)}</div>`;
 }
 
 /** Fiducials + QR for one answer sheet, as offsets inside withoutBrowserPrintChrome()'s repeated header (page coordinates minus the side margin), so they print on every page of that sheet. */
@@ -404,12 +405,14 @@ async function answerSheetPageHtml(test: Test, options: TestExamExportOptions, s
     const blocks = answerSheetGeometry(test).map(answerBlockHtml).join('');
 
     return `<div class="print-page" style="padding-top:24px;color:#1e293b;background:#fff">
+    ${richBlockHtml(test.printHeader)}
     <div style="text-align:right;font-weight:700;font-size:16px">${tx('answer_sheet_title')}</div>
     ${blackBannerHtml(test.name)}
     <div style="margin-top:16px;font-size:13px">
       <strong>${tx('candidate_name')}:</strong> ${student ? escapeHtml(student.name) : '______________________'}
     </div>
     <div style="margin-top:16px">${blocks}</div>
+    ${richBlockHtml(test.printFooter)}
   </div>`;
 }
 
