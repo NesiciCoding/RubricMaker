@@ -11,6 +11,7 @@ import {
     HeadingLevel,
     PageOrientation,
     PageBreak,
+    LineRuleType,
     type IRunOptions,
 } from 'docx';
 import { saveAs } from 'file-saver';
@@ -70,12 +71,17 @@ export interface DocxStyleTemplateOverrides {
  * format's chosen export font) is the base, and `styleTemplate` (an uploaded style ExportTemplate)
  * overrides body/heading font plus heading size/color when set.
  */
-export function buildDocxStyles(fontFamily?: string, styleTemplate?: DocxStyleTemplateOverrides) {
+export function buildDocxStyles(
+    fontFamily?: string,
+    styleTemplate?: DocxStyleTemplateOverrides,
+    base: { fontSize?: number; lineSpacing?: number } = {}
+) {
     const font = extractDocxFontName(fontFamily);
     const bodyFont = styleTemplate?.bodyFont ?? font;
     const headingFont = styleTemplate?.headingFont ?? font;
     const { headingSize, headingColor } = styleTemplate ?? {};
-    if (!bodyFont && !headingFont && !headingSize && !headingColor) return undefined;
+    if (!bodyFont && !headingFont && !headingSize && !headingColor && !base.fontSize && !base.lineSpacing)
+        return undefined;
 
     const headingRun: IRunOptions = {
         ...(headingFont ? { font: headingFont } : {}),
@@ -84,7 +90,16 @@ export function buildDocxStyles(fontFamily?: string, styleTemplate?: DocxStyleTe
     };
     return {
         default: {
-            document: { run: bodyFont ? { font: bodyFont } : {} },
+            document: {
+                run: { ...(bodyFont ? { font: bodyFont } : {}), ...(base.fontSize ? { size: base.fontSize * 2 } : {}) },
+                ...(base.lineSpacing
+                    ? {
+                          paragraph: {
+                              spacing: { line: Math.round(base.lineSpacing * 240), lineRule: LineRuleType.AUTO },
+                          },
+                      }
+                    : {}),
+            },
             heading1: { run: headingRun },
             heading2: { run: headingRun },
         },

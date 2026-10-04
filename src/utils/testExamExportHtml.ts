@@ -31,6 +31,8 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
+    EXAM_BASE_FONT_PT,
+    EXAM_BASE_LINE_SPACING,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -252,7 +254,7 @@ function audioNoteHtml(): string {
 }
 
 function passageHtml(content: string, extraStyle: string): string {
-    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle};font-size:13px">${DOMPurify.sanitize(content)}</div>`;
+    return `${RICH_CONTENT_CSS}<div class="exam-rich" style="${extraStyle}">${DOMPurify.sanitize(content)}</div>`;
 }
 
 function sectionDividerHtml(title: string): string {
@@ -489,6 +491,7 @@ export async function exportExamPdf(test: Test, options: ExportExamPdfOptions): 
         printHtml(html, orientation, options.fontFamily, options.styleTemplate, {
             hideBrowserChrome: true,
             waitForPrintDialog: true,
+            ...examBase(options),
         });
     await print(withoutBrowserPrintChrome(buildExamBookletHtml(test, options)));
     if (options.attachmentMode === 'separate') {
@@ -506,8 +509,16 @@ export async function exportExamGradingKeyPdf(test: Test, options: TestExamExpor
         options.styleTemplate,
         {
             hideBrowserChrome: true,
+            ...examBase(options),
         }
     );
+}
+
+function examBase(options: TestExamExportOptions) {
+    return {
+        fontSize: options.fontSize ?? EXAM_BASE_FONT_PT,
+        lineSpacing: options.lineSpacing ?? EXAM_BASE_LINE_SPACING,
+    };
 }
 
 export function examExportFilename(test: Test, doc: 'booklet' | 'attachment' | 'answer-sheet' | 'grading-sheet') {

@@ -319,7 +319,7 @@ export function printHtml(
     orientation?: 'portrait' | 'landscape',
     fontFamily?: string,
     styleTemplate?: DocxStyleTemplateOverrides,
-    options: { hideBrowserChrome?: boolean; waitForPrintDialog?: boolean } = {}
+    options: { hideBrowserChrome?: boolean; waitForPrintDialog?: boolean; fontSize?: number; lineSpacing?: number } = {}
 ) {
     return new Promise<void>((resolve) => {
         const iframe = document.createElement('iframe');
@@ -342,7 +342,7 @@ export function printHtml(
                     ${fontLink}
                     <style>
                         @page { size: ${orientation === 'landscape' ? 'landscape' : 'portrait'}; margin: ${options.hideBrowserChrome ? '0' : `${PRINT_MARGIN_MM}mm`}; }
-                        body { margin: 0;${options.hideBrowserChrome ? ` padding: 0 ${PRINT_MARGIN_MM}mm;` : ''} }
+                        body { margin: 0;${options.fontSize ? ` font-size: ${options.fontSize}pt;` : ''}${options.lineSpacing ? ` line-height: ${options.lineSpacing};` : ''}${options.hideBrowserChrome ? ` padding: 0 ${PRINT_MARGIN_MM}mm;` : ''} }
                         ${styleTemplateCss(styleTemplate)}
                     </style>
                 </head>

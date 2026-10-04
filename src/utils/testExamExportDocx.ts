@@ -43,6 +43,8 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
+    EXAM_BASE_FONT_PT,
+    EXAM_BASE_LINE_SPACING,
     type AnswerSpaceSpec,
     type TestExamExportOptions,
 } from './testExamContent';
@@ -331,9 +333,7 @@ export async function richPassageToDocx(html: string, spacingAfter = 120): Promi
 }
 
 /** Question prompt → the first paragraph's inline runs (so the point/number label can share its line) plus the remaining blocks. */
-export async function richPromptToDocx(
-    html: string
-): Promise<{ leadRuns: (TextRun | ImageRun)[]; rest: (Paragraph | Table)[] }> {
+export async function richPromptToDocx(html: string): Promise<ReturnType<typeof htmlToDocxLead>> {
     const normalized = promptToHtml(html);
     return htmlToDocxLead(normalized, await loadDocxImages(normalized));
 }
@@ -351,10 +351,10 @@ async function questionParagraphs(
         new Paragraph({
             children: [
                 new TextRun({ text: `${tx('point_label', { count: question.points })}  `, color: '6b7280', size: 18 }),
-                new TextRun({ text: `${number}  `, bold: true }),
+                new TextRun({ text: `${number}  `, bold: true, size: rich?.leadSize }),
                 ...promptRuns,
             ],
-            spacing: { after: 60 },
+            spacing: { ...rich?.leadSpacing, after: 60 },
         }),
         ...(rich?.rest ?? []),
         ...(question.audioUrl ? [audioNoteParagraph()] : []),
@@ -851,7 +851,10 @@ function buildGradingSheetChildren(test: Test): (Paragraph | Table)[] {
 
 async function buildDocxBlob(children: (Paragraph | Table)[], options: TestExamExportOptions): Promise<Blob> {
     const doc = new Document({
-        styles: buildDocxStyles(options.fontFamily, options.styleTemplate),
+        styles: buildDocxStyles(options.fontFamily, options.styleTemplate, {
+            fontSize: options.fontSize ?? EXAM_BASE_FONT_PT,
+            lineSpacing: options.lineSpacing ?? EXAM_BASE_LINE_SPACING,
+        }),
         sections: [{ children }],
     });
     return Packer.toBlob(doc);
