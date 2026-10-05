@@ -2157,7 +2157,10 @@
         "a_better_on_sub": "A besser auf diesem Unterkriterium",
         "equal_on_sub": "Gleich auf diesem Unterkriterium",
         "b_better_on_sub": "B besser auf diesem Unterkriterium",
-        "performed_better": "{{name}} hat besser abgeschnitten"
+        "performed_better": "{{name}} hat besser abgeschnitten",
+        "duplicate_records": "Für diese Person gibt es {{count}} Bewertungen zu diesem Raster.",
+        "duplicate_records_keep": "Nur diese behalten",
+        "duplicate_records_keep_hint": "Die anderen Bewertungen werden nach Admin → Archiv → Kürzlich gelöschte Noten verschoben und können dort wiederhergestellt werden."
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",
@@ -3721,7 +3724,8 @@
         "rb_tests_visual_editors_label": "Visuelle Frage-Editoren:",
         "rb_tests_visual_editors_body": "Fragen zu Fehlerkorrektur, Schlüsselwort-Umformung, Lückentext mit Wortbank und Satzbau bearbeiten Sie ohne spezielle Syntax: Markieren Sie Fehler und richtige Fragmente, indem Sie Wörter im Text auswählen, fügen Sie akzeptierte Antworten als Karten mit Chips hinzu und Ablenker als Chips. Lieber tippen oder einfügen? Jeder Editor hat eine Schaltfläche „Als Text bearbeiten“, die die Rohsyntax zeigt; beide Ansichten bearbeiten dieselben Daten.",
         "rb_tests_a4_preview_label": "A4-Vorschau:",
-        "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes."
+        "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
+        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
