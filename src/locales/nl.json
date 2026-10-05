@@ -4084,6 +4084,7 @@
         "linked_test": "Toets",
         "linked_rubric": "Rubric",
         "open_link": "Link openen",
+        "error_invalid_url": "Voer een link in die begint met http://, https:// of mailto:",
         "read_receipt_count": "{{read}} van {{total}} gelezen",
         "read_receipt_none": "Nog niemand heeft dit gelezen",
         "unread_label": "Ongelezen",

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { BookMarked, Download, FileUp, Layers } from 'lucide-react';
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from '../../utils/csvOptions';
 import { saveAs } from 'file-saver';
 import CefrBadge from '../CEFR/CefrBadge';
 import VocabCefrDistributionChart from '../Statistics/VocabCefrDistributionChart';
@@ -86,7 +87,7 @@ export default function TextScreeningPanel() {
             [t('vocabProfile.csv_column_level')]: w.level,
         }));
         saveAs(
-            new Blob([Papa.unparse(rows)], { type: 'text/csv;charset=utf-8;' }),
+            new Blob([Papa.unparse(rows, CSV_UNPARSE_OPTIONS)], { type: 'text/csv;charset=utf-8;' }),
             `${t('vocabProfile.screen_csv_filename')}_${targetLevel}.csv`
         );
     }

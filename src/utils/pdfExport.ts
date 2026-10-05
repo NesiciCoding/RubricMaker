@@ -15,6 +15,7 @@ import {
     describeTestMeta,
     pickLatestAttempt,
 } from './testAnswerText';
+import DOMPurify from 'dompurify';
 import { formatPointsRange, stripCommentHtml, stripHtmlTags, escapeHtml } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
@@ -178,10 +179,10 @@ export function buildRubricHTML(
   <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
         <div>
-          <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
-          ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${rubric.subject}</div>` : ''}
-          <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${student.name}</div>
-          ${student.email ? `<div style="font-size:13px;color:#6b7280">${student.email}</div>` : ''}
+          <h1 style="margin:0;font-size:20px">${escapeHtml(rubric.name)}</h1>
+          ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${escapeHtml(rubric.subject)}</div>` : ''}
+          <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${escapeHtml(student.name)}</div>
+          ${student.email ? `<div style="font-size:13px;color:#6b7280">${escapeHtml(student.email)}</div>` : ''}
           <div style="font-size:12px;color:#6b7280;margin-top:4px">Graded: ${sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : 'N/A'}</div>
         </div>
         <div style="text-align:right">
@@ -201,7 +202,7 @@ export function buildRubricHTML(
           ${
               sr.globalModifier && sr.globalModifier.value !== 0
                   ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">Modifier: ${sr.globalModifier.value > 0 ? '+' : ''}${sr.globalModifier.value}${sr.globalModifier.type === 'percentage' ? '%' : 'pts'}
-               ${sr.globalModifier.reason ? `(${sr.globalModifier.reason})` : ''}</div>`
+               ${sr.globalModifier.reason ? `(${escapeHtml(sr.globalModifier.reason)})` : ''}</div>`
                   : ''
           }
         </div>
@@ -233,9 +234,9 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
     return `
   <div class="print-page" style="page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
       <div style="margin-bottom:18px">
-        <h1 style="margin:0;font-size:20px">${rubric.name}</h1>
-        ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${rubric.subject}</div>` : ''}
-        ${rubric.description ? `<div style="color:#6b7280;margin-top:4px;font-size:12px">${rubric.description}</div>` : ''}
+        <h1 style="margin:0;font-size:20px">${escapeHtml(rubric.name)}</h1>
+        ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${escapeHtml(rubric.subject)}</div>` : ''}
+        ${rubric.description ? `<div style="color:#6b7280;margin-top:4px;font-size:12px">${escapeHtml(rubric.description)}</div>` : ''}
       </div>
 
       ${gridHtml}
@@ -272,12 +273,13 @@ export function googleFontsLinkFor(...fontFamilies: Array<string | undefined>): 
 export function styleTemplateCss(styleTemplate?: DocxStyleTemplateOverrides): string {
     if (!styleTemplate) return '';
     const { bodyFont, headingFont, headingSize, headingColor } = styleTemplate;
-    const bodyRule = bodyFont ? `body { font-family: '${bodyFont}'; }` : '';
+    const fontName = (name: string) => name.replace(/[^\p{L}\p{N} _-]/gu, '');
+    const bodyRule = bodyFont ? `body { font-family: '${fontName(bodyFont)}'; }` : '';
     const headingDecls = [
-        headingFont ? `font-family: '${headingFont}';` : '',
+        headingFont ? `font-family: '${fontName(headingFont)}';` : '',
         // headingSize is in docx half-points; CSS wants pt.
-        headingSize ? `font-size: ${headingSize / 2}pt;` : '',
-        headingColor ? `color: #${headingColor};` : '',
+        headingSize ? `font-size: ${Number(headingSize) / 2}pt;` : '',
+        headingColor ? `color: #${headingColor.replace(/[^0-9a-fA-F]/g, '')};` : '',
     ]
         .filter(Boolean)
         .join(' ');
@@ -286,6 +288,12 @@ export function styleTemplateCss(styleTemplate?: DocxStyleTemplateOverrides): st
 }
 
 export const PRINT_MARGIN_MM = 10;
+
+// The builders interpolate imported rubric/student text, and printHtml writes into a same-origin frame,
+// so every export is sanitised here as well as escaped at the source.
+function sanitizePrintHtml(html: string): string {
+    return DOMPurify.sanitize(html, { FORCE_BODY: true });
+}
 
 /**
  * Browsers print their own date/URL/title header and footer into any non-zero @page margin, so a
@@ -347,7 +355,7 @@ export function printHtml(
                     </style>
                 </head>
                 <body>
-                    ${html}
+                    ${sanitizePrintHtml(html)}
                 </body>
                 </html>
             `);
@@ -534,7 +542,7 @@ function buildTestSummaryHTML(
     return `
   <div class="print-page" style="page-break-after: always; font-family: system-ui, sans-serif; color: #1e293b; background: #fff;">
       <div style="margin-bottom:18px">
-        <h1 style="margin:0;font-size:20px">${test.name}</h1>
+        <h1 style="margin:0;font-size:20px">${escapeHtml(test.name)}</h1>
         <div style="margin-top:8px;font-size:14px"><strong>${tx('student')}:</strong> ${student ? escapeHtml(student.name) : tx('whole_class')}</div>
         ${cefr ? `<div style="margin-top:4px;font-size:14px"><strong>${tx('cefr')}:</strong> ${escapeHtml(cefr)}</div>` : ''}
         ${metaLines.map((line) => `<div style="margin-top:4px;font-size:13px;color:#475569">${escapeHtml(line)}</div>`).join('')}

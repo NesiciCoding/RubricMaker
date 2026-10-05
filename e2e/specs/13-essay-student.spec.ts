@@ -321,10 +321,21 @@ test.describe('Essay page — DB mode (mocked Supabase)', () => {
     });
 });
 
+// A student who logged in through the portal always has this device configured for the project, which is
+// what lets the essay page reuse that session; the portal session is ignored on an unconfigured device.
+async function configureDevice(page: import('@playwright/test').Page) {
+    await page.addInitScript(
+        ({ url, key }) =>
+            localStorage.setItem('rm_supabase_config', JSON.stringify({ supabaseUrl: url, supabaseAnonKey: key })),
+        { url: MOCK_SUPABASE_URL, key: MOCK_ANON_KEY }
+    );
+}
+
 // ── Group 3: Portal session bypass ───────────────────────────────────────────
 
 test.describe('Essay page — portal session bypass', () => {
     test('existing portal session skips the email gate entirely', async ({ page }) => {
+        await configureDevice(page);
         // Inject the portal session into localStorage BEFORE the page loads.
         // The key is sb-{projectRef}-auth-token where projectRef = hostname[0].
         // For https://mock.supabase.co → sb-mock-auth-token.
@@ -351,6 +362,7 @@ test.describe('Essay page — portal session bypass', () => {
     });
 
     test('portal session email appears in header after bypass', async ({ page }) => {
+        await configureDevice(page);
         const portalSession = buildPortalSession('jane.doe@myschool.nl', 'user-jane');
         await page.addInitScript(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
             key: 'sb-mock-auth-token',

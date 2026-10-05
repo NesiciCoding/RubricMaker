@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
+import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Users,
@@ -1594,12 +1596,20 @@ function AuditTab() {
 
     function exportCsv() {
         const header = ['timestamp', 'category', 'action', 'entity_type', 'entity_id', 'actor_id'];
-        const csv = [
-            header.join(','),
-            ...rows.map((r) =>
-                [r.created_at, r.category, r.action, r.entity_type ?? '', r.entity_id ?? '', r.actor_id ?? ''].join(',')
-            ),
-        ].join('\n');
+        const csv = Papa.unparse(
+            [
+                header,
+                ...rows.map((r) => [
+                    r.created_at,
+                    r.category,
+                    r.action,
+                    r.entity_type ?? '',
+                    r.entity_id ?? '',
+                    r.actor_id ?? '',
+                ]),
+            ],
+            CSV_UNPARSE_OPTIONS
+        );
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
         a.download = `audit_log_${new Date().toISOString().slice(0, 10)}.csv`;

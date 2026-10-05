@@ -10,6 +10,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const PAGE_SIZE = 1000;
 
@@ -34,7 +35,7 @@ serve(async (req) => {
 
     // pg_cron passes the service role key as the bearer token (see migration 059).
     const authHeader = req.headers.get('Authorization') ?? '';
-    if (authHeader !== `Bearer ${serviceKey}`) {
+    if (!secretsMatch(authHeader, `Bearer ${serviceKey}`)) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 

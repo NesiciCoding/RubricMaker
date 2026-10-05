@@ -19,11 +19,13 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { useToast } from '../hooks/useToast';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
+import { safeHref } from '../utils/safeUrl';
 
 const EMPTY_CONTENT_HTML = '<p></p>';
 
@@ -63,6 +65,7 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
     const tour = usePageTourState('news');
     const {
         students: allStudents,
@@ -112,12 +115,16 @@ export default function NewsFlashesPage() {
     function handleSave() {
         /* v8 ignore next -- the Save button is disabled while the title is empty */
         if (!draft || !draft.title.trim()) return;
+        if (draft.url.trim() && !safeHref(draft.url)) {
+            showToast(t('newsFlashes.error_invalid_url'), 'error');
+            return;
+        }
         const isContentEmpty = htmlToPlainText(draft.content).length === 0;
         const payload = {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
             content: isContentEmpty ? undefined : draft.content,
-            url: draft.url.trim() || undefined,
+            url: safeHref(draft.url),
             kind: draft.kind,
             tags: draft.tags
                 .split(',')
@@ -229,10 +236,14 @@ export default function NewsFlashesPage() {
                                             </div>
                                             <div className="text-muted text-xs" style={{ marginTop: 8 }}>
                                                 {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
-                                                {flash.url && (
+                                                {safeHref(flash.url) && (
                                                     <>
                                                         {' · '}
-                                                        <a href={flash.url} target="_blank" rel="noopener noreferrer">
+                                                        <a
+                                                            href={safeHref(flash.url)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
                                                             <ExternalLink
                                                                 size={11}
                                                                 style={{ verticalAlign: 'middle', marginRight: 3 }}
