@@ -2988,7 +2988,10 @@
         "meta_time_left": "Temps restant",
         "tip_label": "Astuce",
         "tip_body": "Faites un plan rapide avant d'écrire, puis vérifiez votre nombre de mots et relisez-vous pour plus de clarté avant de soumettre.",
-        "submission_code_label": "Code de soumission"
+        "submission_code_label": "Code de soumission",
+        "submit_failed": "Ta rédaction n'a pas encore été envoyée. Elle est toujours enregistrée sur cet appareil — vérifie ta connexion et clique sur Réessayer. Nous réessaierons aussi automatiquement dès que tu seras de nouveau en ligne.",
+        "retry_submit": "Réessayer",
+        "copy_backup_code": "Copier le code de secours"
     },
     "editor": {
         "switchToCompactView": "Vue compacte",

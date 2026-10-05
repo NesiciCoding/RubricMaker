@@ -31,6 +31,7 @@ import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
+import { isAlreadySubmitted } from '../utils/testSubmitOutbox';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
 const TIMER_KEY_PREFIX = 'rm_essay_timer_';
@@ -439,23 +440,25 @@ export default function StudentEssayPage() {
                 wordCount
             );
             setSubmitting(false);
-            if (!result.success) {
-                setSubmitError(`Submission failed: ${result.error}. Your essay is saved below as a backup code.`);
-                setSubmissionCode(legacyCode); // show fallback code so student isn't stuck
+            // A 409 means an earlier attempt landed but its response was lost — that is a success.
+            if (!result.success && !isAlreadySubmitted(result.error)) {
+                // Keep the draft and the editable form; the backup code is only a secondary escape hatch.
+                setSubmitError(t('essay.submit_failed'));
+                setSubmissionCode(legacyCode);
                 logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
-            } else {
-                logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
-                adapter.clearStoredEmail();
-                // Tell the teacher's live monitor the essay was handed in — the last
-                // broadcast before `setSubmitted(true)` below disables telemetry and
-                // tears the channel down. The monitor also re-checks essay_submissions
-                // on mount, so a reload after the fact still shows Submitted. Await
-                // the server ack so the live flip isn't silently dropped; on failure
-                // the persisted-row path still covers the monitor.
-                const ack = await telemetry.broadcast('submitted', { submittedAt: now, wordCount });
-                if (ack !== 'ok') {
-                    logEvent('error', 'submitted_broadcast_failed', { ack }, 'error');
-                }
+                return;
+            }
+            logEvent('action', 'essay_submitted', { teacherKey: assignment.teacherKey, wordCount });
+            adapter.clearStoredEmail();
+            // Tell the teacher's live monitor the essay was handed in — the last
+            // broadcast before `setSubmitted(true)` below disables telemetry and
+            // tears the channel down. The monitor also re-checks essay_submissions
+            // on mount, so a reload after the fact still shows Submitted. Await
+            // the server ack so the live flip isn't silently dropped; on failure
+            // the persisted-row path still covers the monitor.
+            const ack = await telemetry.broadcast('submitted', { submittedAt: now, wordCount });
+            if (ack !== 'ok') {
+                logEvent('error', 'submitted_broadcast_failed', { ack }, 'error');
             }
         }
 
@@ -480,6 +483,7 @@ export default function StudentEssayPage() {
         sebQuitUrl,
         resolvedContent,
         telemetry,
+        t,
     ]);
 
     // Keep a stable ref to handleSubmit so the timer interval always calls the latest version,
@@ -488,6 +492,14 @@ export default function StudentEssayPage() {
     useEffect(() => {
         handleSubmitRef.current = handleSubmit;
     }, [handleSubmit]);
+
+    // A failed DB hand-in is retried as soon as connectivity returns.
+    useEffect(() => {
+        if (!submitError || submitted) return;
+        const onOnline = () => void handleSubmitRef.current();
+        window.addEventListener('online', onOnline);
+        return () => window.removeEventListener('online', onOnline);
+    }, [submitError, submitted]);
 
     // Countdown — auto-submit when time runs out
     useEffect(() => {
@@ -840,8 +852,9 @@ export default function StudentEssayPage() {
             >
                 <div style={{ flex: 1, minWidth: 320 }}>
                     {/* DB submission error */}
-                    {submitError && (
+                    {submitError && !submitted && (
                         <div
+                            role="alert"
                             style={{
                                 background: '#fef2f2',
                                 border: '1px solid #fca5a5',
@@ -856,7 +869,22 @@ export default function StudentEssayPage() {
                             }}
                         >
                             <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-                            {submitError}
+                            <div style={{ flex: 1 }}>
+                                <div>{submitError}</div>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => void handleSubmit()}
+                                        disabled={submitting}
+                                    >
+                                        {t('essay.retry_submit')}
+                                    </button>
+                                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
+                                        <Copy size={14} /> {copied ? t('essay.copied') : t('essay.copy_backup_code')}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -874,10 +902,10 @@ export default function StudentEssayPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                                 <CheckCircle size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
                                 <span style={{ fontWeight: 700, fontSize: '1rem', color: '#15803d' }}>
-                                    {hasDb && !submitError ? t('essay.submitted_title_db') : t('essay.submitted_title')}
+                                    {hasDb ? t('essay.submitted_title_db') : t('essay.submitted_title')}
                                 </span>
                             </div>
-                            {hasDb && !submitError ? (
+                            {hasDb ? (
                                 <p style={{ margin: '0 0 12px', fontSize: '0.875rem', color: '#166534' }}>
                                     {t('essay.submitted_desc_db')}
                                 </p>

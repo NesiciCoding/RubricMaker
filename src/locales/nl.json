@@ -2988,7 +2988,10 @@
         "meta_time_left": "Resterende tijd",
         "tip_label": "Tip",
         "tip_body": "Maak eerst een korte opzet, controleer daarna je aantal woorden en lees je tekst nog eens door op duidelijkheid voordat je inlevert.",
-        "submission_code_label": "Inzendcode"
+        "submission_code_label": "Inzendcode",
+        "submit_failed": "Je essay is nog niet verstuurd. Het staat nog op dit apparaat — controleer je verbinding en klik op Opnieuw proberen. We proberen het ook automatisch opnieuw zodra je weer online bent.",
+        "retry_submit": "Opnieuw proberen",
+        "copy_backup_code": "Back-upcode kopiëren"
     },
     "editor": {
         "switchToCompactView": "Compact weergave",

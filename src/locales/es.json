@@ -2988,7 +2988,10 @@
         "meta_time_left": "Tiempo restante",
         "tip_label": "Consejo",
         "tip_body": "Haz un breve esquema antes de escribir, luego revisa tu recuento de palabras y relee el texto para mayor claridad antes de enviarlo.",
-        "submission_code_label": "Código de entrega"
+        "submission_code_label": "Código de entrega",
+        "submit_failed": "Tu redacción aún no se ha enviado. Sigue guardada en este dispositivo: comprueba tu conexión y pulsa Reintentar. También lo reintentaremos automáticamente cuando vuelvas a estar en línea.",
+        "retry_submit": "Reintentar",
+        "copy_backup_code": "Copiar código de respaldo"
     },
     "editor": {
         "switchToCompactView": "Vista compacta",

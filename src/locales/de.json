@@ -2988,7 +2988,10 @@
         "meta_time_left": "Verbleibende Zeit",
         "tip_label": "Tipp",
         "tip_body": "Erstelle vor dem Schreiben eine kurze Gliederung, prüfe dann deine Wortzahl und lies deinen Text vor dem Absenden noch einmal auf Verständlichkeit.",
-        "submission_code_label": "Abgabecode"
+        "submission_code_label": "Abgabecode",
+        "submit_failed": "Dein Aufsatz wurde noch nicht gesendet. Er ist weiterhin auf diesem Gerät gespeichert — prüfe deine Verbindung und klicke auf Erneut versuchen. Sobald du wieder online bist, versuchen wir es auch automatisch erneut.",
+        "retry_submit": "Erneut versuchen",
+        "copy_backup_code": "Sicherungscode kopieren"
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",
