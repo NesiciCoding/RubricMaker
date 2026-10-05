@@ -1,15 +1,33 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale, Test as RmTest, QuestionBankItem } from '../../types';
+import { RemountOnParam } from '../../components/ui/RemountOnParam';
 
 function renderBuilder(TestBuilderPage: React.ComponentType, route = '/tests/new') {
     const router = createMemoryRouter(
         [
             { path: '/tests/new', element: <TestBuilderPage /> },
             { path: '/tests/:id', element: <TestBuilderPage /> },
+        ],
+        { initialEntries: [route] }
+    );
+    return { router, ...render(<RouterProvider router={router} />) };
+}
+
+// Mirrors the App.tsx wiring, which remounts the builder whenever the :id changes (#612).
+function renderKeyedBuilder(TestBuilderPage: React.ComponentType, route: string) {
+    const element = (
+        <RemountOnParam param="id">
+            <TestBuilderPage />
+        </RemountOnParam>
+    );
+    const router = createMemoryRouter(
+        [
+            { path: '/tests/new', element },
+            { path: '/tests/:id', element },
         ],
         { initialEntries: [route] }
     );
@@ -275,6 +293,22 @@ describe('TestBuilderPage', () => {
         const payload = mockUpdateTest.mock.calls[0][0];
         expect(payload.id).toBe('t1');
         expect(payload.name).toBe('Existing Test');
+    });
+
+    it('reloads the form when navigating between tests and to /tests/new (#612)', async () => {
+        const other: RmTest = { ...mockExistingTest, id: 't2', name: 'Other Test', description: 'other' };
+        mockTests = [mockExistingTest, other];
+        const { default: TestBuilderPage } = await import('../TestBuilderPage');
+        const { router } = renderKeyedBuilder(TestBuilderPage, '/tests/t1');
+        expect(screen.getByLabelText('tests.name_label')).toHaveValue('Existing Test');
+
+        await act(() => router.navigate('/tests/t2'));
+        expect(screen.getByLabelText('tests.name_label')).toHaveValue('Other Test');
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockUpdateTest).toHaveBeenLastCalledWith(expect.objectContaining({ id: 't2', name: 'Other Test' }));
+
+        await act(() => router.navigate('/tests/new'));
+        expect(screen.getByLabelText('tests.name_label')).toHaveValue('');
     });
 
     it('toggles the A4 preview pane and saves its header text with the test', async () => {
