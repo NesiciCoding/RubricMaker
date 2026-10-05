@@ -6,6 +6,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
+import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const BATCH_SIZE = 100;
 // Candidates are fetched wider than the batch so rows the guard rejects cannot crowd out the rest.
@@ -15,15 +16,13 @@ serve(async (req) => {
     // Supabase Cron passes the service role key as the bearer token.
     const authHeader = req.headers.get('Authorization') ?? '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    if (authHeader !== `Bearer ${serviceKey}`) {
+    if (!secretsMatch(authHeader, `Bearer ${serviceKey}`)) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        serviceKey,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     const { data: candidates, error: fetchErr } = await admin.rpc('get_overdue_attachments', {
         batch_size: CANDIDATE_SIZE,
@@ -41,18 +40,17 @@ serve(async (req) => {
     }
 
     const paths = rows.map((r) => r.storage_path);
-    const ids   = rows.map((r) => r.id);
+    const ids = rows.map((r) => r.id);
 
     // Storage API — this is the only way to delete; direct SQL is blocked.
     const { error: storageErr } = await admin.storage.from('attachments').remove(paths);
     if (storageErr) {
-        return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), { status: 500 });
+        return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), {
+            status: 500,
+        });
     }
 
-    const { error: dbErr } = await admin
-        .from('attachments')
-        .delete()
-        .in('id', ids);
+    const { error: dbErr } = await admin.from('attachments').delete().in('id', ids);
     if (dbErr) {
         return new Response(JSON.stringify({ error: `DB cleanup failed: ${dbErr.message}` }), { status: 500 });
     }

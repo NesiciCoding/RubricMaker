@@ -8,6 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const KEEP_COUNT = 7;
 const PROFILE_PAGE_SIZE = 1000;
@@ -21,15 +22,11 @@ serve(async (req) => {
 
     // Supabase Cron passes the service role key as the bearer token.
     const authHeader = req.headers.get('Authorization') ?? '';
-    if (authHeader !== `Bearer ${serviceKey}`) {
+    if (!secretsMatch(authHeader, `Bearer ${serviceKey}`)) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
-    const admin = createClient(
-        supabaseUrl,
-        serviceKey,
-        { auth: { autoRefreshToken: false, persistSession: false } },
-    );
+    const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
     let profiles: Array<{ id: string }>;
     try {
@@ -87,10 +84,7 @@ async function fetchAllOwnerProfiles(admin: ReturnType<typeof createClient>): Pr
     return all;
 }
 
-async function pruneOldBackups(
-    admin: ReturnType<typeof createClient>,
-    userId: string,
-): Promise<void> {
+async function pruneOldBackups(admin: ReturnType<typeof createClient>, userId: string): Promise<void> {
     const { data: files, error } = await admin.storage.from('backups').list(userId, {
         sortBy: { column: 'name', order: 'desc' },
     });

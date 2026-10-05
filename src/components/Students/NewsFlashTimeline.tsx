@@ -4,6 +4,7 @@ import { FileText, BookOpen, Video, ExternalLink, Layers, ListChecks, ChevronDow
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import type { NewsFlash, NewsFlashKind } from '../../types';
+import { safeHref } from '../../utils/safeUrl';
 
 const KIND_ICONS: Record<NewsFlashKind, React.ReactNode> = {
     article: <FileText size={15} />,
@@ -118,9 +119,9 @@ export default function NewsFlashTimeline({ studentId, flashes, readFlashIds, on
                                                 : t('newsFlashes.read_article')}
                                         </span>
                                     )}
-                                    {flash.url && (
+                                    {safeHref(flash.url) && (
                                         <a
-                                            href={flash.url}
+                                            href={safeHref(flash.url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-xs"

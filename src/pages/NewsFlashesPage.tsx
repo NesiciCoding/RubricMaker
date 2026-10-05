@@ -24,6 +24,7 @@ import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
+import { safeHref } from '../utils/safeUrl';
 
 const EMPTY_CONTENT_HTML = '<p></p>';
 
@@ -117,7 +118,7 @@ export default function NewsFlashesPage() {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
             content: isContentEmpty ? undefined : draft.content,
-            url: draft.url.trim() || undefined,
+            url: safeHref(draft.url),
             kind: draft.kind,
             tags: draft.tags
                 .split(',')
@@ -229,10 +230,14 @@ export default function NewsFlashesPage() {
                                             </div>
                                             <div className="text-muted text-xs" style={{ marginTop: 8 }}>
                                                 {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
-                                                {flash.url && (
+                                                {safeHref(flash.url) && (
                                                     <>
                                                         {' · '}
-                                                        <a href={flash.url} target="_blank" rel="noopener noreferrer">
+                                                        <a
+                                                            href={safeHref(flash.url)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
                                                             <ExternalLink
                                                                 size={11}
                                                                 style={{ verticalAlign: 'middle', marginRight: 3 }}
