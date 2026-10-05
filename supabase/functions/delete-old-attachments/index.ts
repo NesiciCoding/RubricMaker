@@ -8,6 +8,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
 
 const BATCH_SIZE = 100;
+// Candidates are fetched wider than the batch so rows the guard rejects cannot crowd out the rest.
+const CANDIDATE_SIZE = 100000;
 
 serve(async (req) => {
     // Supabase Cron passes the service role key as the bearer token.
@@ -23,28 +25,28 @@ serve(async (req) => {
         { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
-    const { data: rows, error: fetchErr } = await admin.rpc('get_overdue_attachments', {
-        batch_size: BATCH_SIZE,
+    const { data: candidates, error: fetchErr } = await admin.rpc('get_overdue_attachments', {
+        batch_size: CANDIDATE_SIZE,
     });
     if (fetchErr) {
         return new Response(JSON.stringify({ error: fetchErr.message }), { status: 500 });
     }
-    if (!rows?.length) {
-        return new Response(JSON.stringify({ deleted: 0 }), { status: 200 });
+    // Ids and paths are chosen by the uploader: only files in the owner's own folder are purged. Any
+    // other overdue row is left in place and counted, so it can be looked at.
+    const all = (candidates ?? []) as PurgeRow[];
+    const rows = all.filter(isPurgeableRow).slice(0, BATCH_SIZE);
+    const skipped = all.length - all.filter(isPurgeableRow).length;
+    if (!rows.length) {
+        return new Response(JSON.stringify({ deleted: 0, skipped }), { status: 200 });
     }
 
-    // Ids and paths are chosen by the uploader: only files in the owner's own folder are removed from
-    // storage; any other overdue row loses its metadata only.
-    const purgeable = (rows as PurgeRow[]).filter(isPurgeableRow);
-    const paths = purgeable.map((r) => r.storage_path);
-    const ids   = (rows as PurgeRow[]).map((r) => r.id);
+    const paths = rows.map((r) => r.storage_path);
+    const ids   = rows.map((r) => r.id);
 
     // Storage API — this is the only way to delete; direct SQL is blocked.
-    if (paths.length > 0) {
-        const { error: storageErr } = await admin.storage.from('attachments').remove(paths);
-        if (storageErr) {
-            return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), { status: 500 });
-        }
+    const { error: storageErr } = await admin.storage.from('attachments').remove(paths);
+    if (storageErr) {
+        return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), { status: 500 });
     }
 
     const { error: dbErr } = await admin
@@ -55,5 +57,5 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: `DB cleanup failed: ${dbErr.message}` }), { status: 500 });
     }
 
-    return new Response(JSON.stringify({ deleted: ids.length }), { status: 200 });
+    return new Response(JSON.stringify({ deleted: ids.length, skipped }), { status: 200 });
 });

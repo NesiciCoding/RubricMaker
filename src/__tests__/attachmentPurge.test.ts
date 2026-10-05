@@ -9,8 +9,9 @@ const OWNER = '123e4567-e89b-42d3-a456-426614174000';
 const OTHER = '99999999-e89b-42d3-a456-426614174000';
 
 describe('isPurgeableRow', () => {
-    it('accepts a normal row: the path is <owner>/<id-like name>', () => {
+    it('accepts a normal row: the path is <owner>/<id-like name>, optionally with one extension', () => {
         expect(isPurgeableRow({ id: 'abc_DEF-123', owner_id: OWNER, storage_path: `${OWNER}/abc_DEF-123` })).toBe(true);
+        expect(isPurgeableRow({ id: 'abc', owner_id: OWNER, storage_path: `${OWNER}/abc.pdf` })).toBe(true);
     });
 
     it('rejects ids with quotes, separators or control characters', () => {
@@ -26,6 +27,9 @@ describe('isPurgeableRow', () => {
             `/${OWNER}/a`,
             `${OTHER}/a`,
             `${OWNER}/a%2e%2e`,
+            `${OWNER}/a..b`,
+            `${OWNER}/.hidden`,
+            `${OWNER}/a.`,
             `${OWNER}/`,
             `backups/${OWNER}/a`,
         ]) {
@@ -81,6 +85,11 @@ printf '200'
         const calls = runScript(`good_1|${OWNER}/good_1|${OWNER}\n`);
         expect(calls).toContain(`/storage/v1/object/attachments/${OWNER}/good_1`);
         expect(calls).toContain("DELETE FROM public.attachments WHERE id IN ('good_1')");
+    });
+
+    it('purges a file stored with an extension', () => {
+        const calls = runScript(`doc_1|${OWNER}/doc_1.pdf|${OWNER}\n`);
+        expect(calls).toContain(`/storage/v1/object/attachments/${OWNER}/doc_1.pdf`);
     });
 
     it('skips a row whose id or path is unsafe even if the database returns it', () => {

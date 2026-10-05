@@ -18,7 +18,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { EssayAssignment, EssayAssignmentContent } from '../../types';
 import type { SyncResult } from './types';
-import { hasConfiguredProject, hostOf, isAllowedSupabaseUrl } from './trustedSupabaseUrl';
+import { carryOverLegacySession, hasConfiguredProject, hostOf, isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 
 export type FetchContentResult =
     | { ok: true; data: EssayAssignmentContent }
@@ -53,6 +53,8 @@ export class EssayAdapter {
         this.supabaseUrl = supabaseUrl;
         this.supabaseAnonKey = supabaseAnonKey;
         this.studentEmailKey = `rm_student_email:${assignmentKey}`;
+        const storageKey = `rm_student_auth:${hostOf(supabaseUrl)}:${assignmentKey}`;
+        carryOverLegacySession(`rm_student_auth:${assignmentKey}`, storageKey, supabaseUrl);
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
             // Persist session so OAuth callbacks survive the page redirect.
             // Uses an isolated, per-assignment storageKey to avoid conflicting with the
@@ -61,7 +63,7 @@ export class EssayAdapter {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
-                storageKey: `rm_student_auth:${hostOf(supabaseUrl)}:${assignmentKey}`,
+                storageKey,
             },
         });
         // No custom storageKey → reads the default Supabase token written by the portal login. That key

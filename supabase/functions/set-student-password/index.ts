@@ -77,14 +77,21 @@ serve(async (req) => {
     if (!validatePassword(body.password)) return json({ error: 'password must be at least 8 characters' }, 400);
     const password = body.password;
 
+    // Every attempt is recorded before any work, so failed attempts count towards the limit too.
     const since = new Date(Date.now() - 60_000).toISOString();
     const { count: recentCalls } = await admin
         .from('audit_logs')
         .select('id', { count: 'exact', head: true })
         .eq('actor_id', teacher.id)
-        .eq('action', 'set_student_password')
+        .eq('action', 'set_student_password_attempt')
         .gte('created_at', since);
     if ((recentCalls ?? 0) >= RATE_LIMIT_PER_MINUTE) return json({ error: 'Too many requests' }, 429);
+    const { error: attemptErr } = await admin.from('audit_logs').insert({
+        actor_id: teacher.id,
+        category: 'admin',
+        action: 'set_student_password_attempt',
+    });
+    if (attemptErr) return json({ error: 'Could not record the request' }, 500);
 
     const pattern = escapeLikePattern(studentEmail);
 

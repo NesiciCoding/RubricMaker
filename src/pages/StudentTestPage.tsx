@@ -161,11 +161,8 @@ export default function StudentTestPage() {
         };
     }, [code]);
 
-    const hasDb = !!(
-        assignment?.supabaseUrl &&
-        assignment?.supabaseAnonKey &&
-        isAllowedSupabaseUrl(assignment.supabaseUrl)
-    );
+    const urlAllowed = useMemo(() => isAllowedSupabaseUrl(assignment?.supabaseUrl), [assignment?.supabaseUrl]);
+    const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey && urlAllowed);
     /* v8 ignore next -- code is always defined for the /test/:code route */
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
 
@@ -174,7 +171,7 @@ export default function StudentTestPage() {
     // two can never collide. Stable for the component's lifetime.
     const adapter = useMemo<TestAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
-        if (!isAllowedSupabaseUrl(assignment.supabaseUrl)) return null;
+        if (!urlAllowed) return null;
         const a = new TestAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
         initClientLogger(a.getClient(), { role: 'student' });
         return a;

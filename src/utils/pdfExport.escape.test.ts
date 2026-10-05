@@ -70,4 +70,16 @@ describe('printHtml sanitisation', () => {
         expect(body.innerHTML).not.toContain('javascript:');
         expect(body.querySelector('style')).not.toBeNull();
     });
+
+    it('keeps the markup the answer sheets and reports rely on: data-URL images, styled boxes, tables and style blocks', () => {
+        const qr = 'data:image/png;base64,iVBORw0KGgo=';
+        void printHtml(
+            `<style>.print-page{page-break-after:always}</style><table style="width:100%"><thead><tr><td style="height:10mm;position:relative"><div style="position:absolute;left:5mm;top:3mm;width:4mm;height:4mm;background:#000"></div><img src="${qr}" style="position:absolute;left:1mm"></td></tr></thead><tbody><tr><td><div class="print-page">A</div></td></tr></tbody></table>`
+        );
+        const body = document.querySelector('iframe')!.contentDocument!.body;
+        expect(body.querySelector('img')?.getAttribute('src')).toBe(qr);
+        expect(body.querySelector('div[style*="position:absolute"]')).not.toBeNull();
+        expect(body.querySelector('style')?.textContent).toContain('page-break-after');
+        expect(body.querySelector('.print-page')?.textContent).toBe('A');
+    });
 });

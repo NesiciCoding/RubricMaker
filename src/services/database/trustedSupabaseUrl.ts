@@ -31,3 +31,18 @@ export function isAllowedSupabaseUrl(url: string | undefined): boolean {
 export function hostOf(url: string): string {
     return new URL(url).host;
 }
+
+/**
+ * Student sessions used to be stored under a key without the host. Carry an existing one over so a student
+ * mid-assignment keeps the same identity after an update, but only for the project this device is
+ * configured for, since the old key never recorded which host issued the session.
+ */
+export function carryOverLegacySession(legacyKey: string, newKey: string, url: string): void {
+    try {
+        if (!hasConfiguredProject() || !isAllowedSupabaseUrl(url)) return;
+        const legacy = localStorage.getItem(legacyKey);
+        if (legacy && localStorage.getItem(newKey) === null) localStorage.setItem(newKey, legacy);
+    } catch {
+        /* storage unavailable: the student simply signs in again */
+    }
+}

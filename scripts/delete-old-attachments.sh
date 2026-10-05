@@ -8,7 +8,7 @@
 # Attachment ids and storage paths are chosen by whoever uploaded the file, so they are never trusted:
 # only rows whose id is a plain name and whose path is "<owner uuid>/<plain name>" are selected, and the
 # same check runs again in bash before anything is put into a URL or SQL statement. Overdue rows that
-# fail the check are removed from the database only, without touching storage.
+# fail the check are left untouched and reported, so an operator can look at them.
 #
 # Usage (run from the project root):
 #   ./scripts/delete-old-attachments.sh
@@ -33,7 +33,7 @@ BUCKET="attachments"
 
 NAME_RE='^[A-Za-z0-9_-]{1,64}$'
 UUID_RE='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
-PATH_RE="^${UUID_RE}/[A-Za-z0-9_-]{1,64}\$"
+PATH_RE="^${UUID_RE}/[A-Za-z0-9_-]{1,64}(\\.[A-Za-z0-9]{1,10})?\$"
 VALID_SQL="id ~ '${NAME_RE}' AND storage_path ~ '${PATH_RE}' AND split_part(storage_path, '/', 1) = owner_id::text"
 
 log() { echo "[$(date -Iseconds)] $*"; }
@@ -44,12 +44,15 @@ psql_exec() {
 
 log "Starting attachment cleanup..."
 
-# Overdue rows that fail validation cannot be addressed safely in storage: drop the DB row only.
-psql_exec -c "DELETE FROM public.attachments WHERE id IN (SELECT id FROM public.get_overdue_attachments(100) WHERE NOT (${VALID_SQL}));" >/dev/null
+# Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
+SKIPPED=$(psql_exec -At -c "SELECT count(*) FROM public.get_overdue_attachments(100000) WHERE NOT (${VALID_SQL});" 2>/dev/null || true)
+if [[ -n "$SKIPPED" && "$SKIPPED" != "0" ]]; then
+    log "Warning: ${SKIPPED} overdue row(s) have an unexpected id or storage path and were left in place"
+fi
 
 # Fetch overdue attachment rows (id | storage_path | owner) from the DB helper function.
 ROWS=$(psql_exec -At -F'|' \
-    -c "SELECT id, storage_path, owner_id FROM public.get_overdue_attachments(100) WHERE ${VALID_SQL};" 2>/dev/null)
+    -c "SELECT id, storage_path, owner_id FROM public.get_overdue_attachments(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
 
 if [[ -z "$ROWS" ]]; then
     log "No overdue attachments found."

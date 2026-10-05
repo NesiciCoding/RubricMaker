@@ -4,7 +4,11 @@
 export type Decision = { ok: true } | { ok: false; status: number; error: string };
 
 const DENY_CALLER: Decision = { ok: false, status: 403, error: 'Only teachers can set student passwords' };
-const DENY_TARGET: Decision = { ok: false, status: 403, error: 'That account cannot be managed here' };
+const DENY_TARGET: Decision = {
+    ok: false,
+    status: 403,
+    error: 'That account cannot be managed here. If it belongs to this student, ask an administrator to check its role.',
+};
 
 export function authorizeCaller(caller: { isAnonymous: boolean; role: string | null }): Decision {
     if (caller.isAnonymous) return DENY_CALLER;

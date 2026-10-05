@@ -15,7 +15,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { ProctorEvent, TestAnswer, TestAssignmentContent, StaircaseStep } from '../../types';
 import type { SyncResult } from './types';
-import { hostOf, isAllowedSupabaseUrl } from './trustedSupabaseUrl';
+import { carryOverLegacySession, hostOf, isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 import type { NextPlacementQuestionResult } from '../../utils/placementGenerator';
 
 export type NextPlacementQuestionOutcome =
@@ -73,12 +73,10 @@ export class TestAdapter {
         if (!isAllowedSupabaseUrl(supabaseUrl)) throw new Error('Untrusted Supabase URL');
         this.supabaseUrl = supabaseUrl;
         this.supabaseAnonKey = supabaseAnonKey;
+        const storageKey = `rm_student_test_auth:${hostOf(supabaseUrl)}`;
+        carryOverLegacySession('rm_student_test_auth', storageKey, supabaseUrl);
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                storageKey: `rm_student_test_auth:${hostOf(supabaseUrl)}`,
-            },
+            auth: { persistSession: true, autoRefreshToken: true, storageKey },
         });
     }
 
