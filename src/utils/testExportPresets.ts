@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from './csvOptions';
 import type { Student, StudentTest, Test } from '../types';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
@@ -71,5 +72,5 @@ export function buildTestResultsCsv(
         return row;
     });
 
-    return Papa.unparse(rows, { escapeFormulae: true });
+    return Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
 }

@@ -22,6 +22,12 @@ describe('CSV exports escape formulae', () => {
         expect(row).toBe('"\'=HYPERLINK(""x"")","\'@sum",5,plain');
     });
 
+    it('also escapes a formula that continues over several lines', () => {
+        const csv = Papa.unparse([{ comment: '=1+1\nsecond line', ok: 'fine\n=not first' }], CSV_UNPARSE_OPTIONS);
+        expect(csv).toContain('"\'=1+1\nsecond line"');
+        expect(csv).toContain('"fine\n=not first"');
+    });
+
     it('is passed to every Papa.unparse call in the app', () => {
         const offenders: string[] = [];
         for (const file of sourceFiles(path.resolve(__dirname, '..'))) {
@@ -29,7 +35,7 @@ describe('CSV exports escape formulae', () => {
             lines.forEach((line, i) => {
                 if (!/\.unparse\(/.test(line)) return;
                 const call = lines.slice(i, i + 30).join('\n');
-                if (!/CSV_UNPARSE_OPTIONS|escapeFormulae/.test(call)) offenders.push(`${file}:${i + 1}`);
+                if (!/CSV_UNPARSE_OPTIONS/.test(call)) offenders.push(`${file}:${i + 1}`);
             });
         }
         expect(offenders).toEqual([]);
