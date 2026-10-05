@@ -14,6 +14,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
+import { isLocalMode } from './store/storage';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
 // page — lazy so its ~800KB isn't parsed on every load. No default export, so re-wrap it.
@@ -143,9 +144,20 @@ export default function App() {
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>
                         {t('studentPortal.no_linked_account_detail')}
                     </p>
-                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
-                        {t('studentPortal.sign_out')}
-                    </button>
+                    {isLocalMode() ? (
+                        // Local mode has no account to sign out of, and the role lives in local settings;
+                        // without this the role switch is a one-way lock-out (#623).
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => updateSettings({ userRole: 'teacher' })}
+                        >
+                            {t('studentPortal.switch_back_to_teacher')}
+                        </button>
+                    ) : (
+                        <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
+                            {t('studentPortal.sign_out')}
+                        </button>
+                    )}
                 </div>
             );
         }

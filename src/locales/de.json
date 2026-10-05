@@ -493,7 +493,11 @@
         "admin_err_current": "Aktuelles Passwort ist falsch.",
         "admin_password_saved": "Admin-Passwort gespeichert",
         "admin_password_removed": "Admin-Passwort entfernt",
-        "templates_empty": "Noch keine Vorlagen hochgeladen. Klicken Sie auf <1>Vorlage hochladen</1>, um eine hinzuzufügen."
+        "templates_empty": "Noch keine Vorlagen hochgeladen. Klicken Sie auf <1>Vorlage hochladen</1>, um eine hinzuzufügen.",
+        "switch_to_student_title": "Zur Rolle Schüler/in wechseln?",
+        "switch_to_student_message": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu deinem Konto passt. Lehrkraft-Seiten bleiben ausgeblendet, solange du diese Rolle hast.",
+        "switch_to_student_message_local": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu der in deinen Einstellungen passt; ohne Treffer erscheint der Hinweis „Kein Schülerkonto verknüpft“. Von dort kannst du zur Lehrkraft-Rolle zurückwechseln. Deine Daten bleiben erhalten.",
+        "switch_to_student_confirm": "Zu Schüler/in wechseln"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -2241,7 +2245,8 @@
         "toggle_theme": "Thema wechseln",
         "tab_empty_assignments": "Du hast derzeit keine Aufgaben.",
         "tab_empty_progress": "Noch keine Fortschrittsdaten — sie erscheinen, sobald deine Arbeit bewertet wurde.",
-        "brand_name": "Rubric Maker"
+        "brand_name": "Rubric Maker",
+        "switch_back_to_teacher": "Zurück zur Lehrkraft-Rolle"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",

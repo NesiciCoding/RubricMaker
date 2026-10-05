@@ -493,7 +493,11 @@
         "admin_err_current": "Huidig wachtwoord is onjuist.",
         "admin_password_saved": "Beheerderswachtwoord opgeslagen",
         "admin_password_removed": "Beheerderswachtwoord verwijderd",
-        "templates_empty": "Nog geen sjablonen geüpload. Klik op <1>Sjabloon uploaden</1> om er een toe te voegen."
+        "templates_empty": "Nog geen sjablonen geüpload. Klik op <1>Sjabloon uploaden</1> om er een toe te voegen.",
+        "switch_to_student_title": "Overschakelen naar de rol Leerling?",
+        "switch_to_student_message": "De app toont dan alleen het leerlingenportaal van de leerling met hetzelfde e-mailadres als je account. Docentpagina's blijven verborgen zolang je deze rol hebt.",
+        "switch_to_student_message_local": "De app toont dan alleen het leerlingenportaal van de leerling met het e-mailadres uit je instellingen; zonder overeenkomst zie je het scherm 'Geen leerlingaccount gekoppeld'. Vanaf dat scherm kun je terug naar docent. Je gegevens blijven behouden.",
+        "switch_to_student_confirm": "Naar Leerling"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -2241,7 +2245,8 @@
         "toggle_theme": "Thema wisselen",
         "tab_empty_assignments": "Je hebt op dit moment geen opdrachten.",
         "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld.",
-        "brand_name": "Rubric Maker"
+        "brand_name": "Rubric Maker",
+        "switch_back_to_teacher": "Terug naar docent"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
