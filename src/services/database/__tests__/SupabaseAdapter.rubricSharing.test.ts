@@ -58,24 +58,25 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(await adapterWithClient(client).fetchRubricShares('r1')).toEqual([]);
     });
 
-    it('lookupUserByEmail lowercases and trims the email before querying', async () => {
-        const client = makeClient({ data: { id: 'u2', display_name: 'Bob' }, error: null });
-        const connected = adapterWithClient(client);
+    it('lookupUserByEmail calls the lookup RPC with a trimmed, lowercased address', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: [{ id: 'u2', display_name: 'Bob' }], error: null });
+        const connected = adapterWithClient({ ...makeClient({ data: null, error: null }), rpc });
 
         const result = await connected.lookupUserByEmail('  Bob@Example.com  ');
 
-        const builder = client.from.mock.results[0].value;
-        expect(builder.eq).toHaveBeenCalledWith('email', 'bob@example.com');
+        expect(rpc).toHaveBeenCalledWith('find_profile_by_email', { p_email: 'bob@example.com' });
         expect(result).toEqual({ userId: 'u2', displayName: 'Bob' });
     });
 
     it('lookupUserByEmail returns null when no account matches', async () => {
-        const client = makeClient({ data: null, error: null });
-        expect(await adapterWithClient(client).lookupUserByEmail('nobody@x.com')).toBeNull();
+        const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+        const connected = adapterWithClient({ ...makeClient({ data: null, error: null }), rpc });
+        expect(await connected.lookupUserByEmail('nobody@x.com')).toBeNull();
     });
 
     it('shareRubricWithEmail returns notFound when the email has no account', async () => {
-        const client = makeClient({ data: null, error: null });
+        const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+        const client = { ...makeClient({ data: null, error: null }), rpc };
         const result = await adapterWithClient(client).shareRubricWithEmail('r1', 'nobody@x.com', 'read');
 
         expect(result).toEqual({ success: false, notFound: true, error: 'No account found for nobody@x.com' });

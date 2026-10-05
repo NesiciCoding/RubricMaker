@@ -987,10 +987,13 @@ class StorageSyncService {
         if (!this.adapter.isConnected()) return { success: false, error: 'Not connected' };
         this.setStatus('syncing');
         try {
-            const ups = [
+            // Grade rows are only accepted for students that already exist server-side.
+            await Promise.all([
                 ...state.rubrics.map((r) => this.adapter.upsertRubric(r)),
                 ...state.classes.map((c) => this.adapter.upsertClass(c)),
                 ...state.students.map((s) => this.adapter.upsertStudent(s)),
+            ]);
+            const ups = [
                 ...state.studentRubrics.map((sr) =>
                     this.feedbackAudioSync.prepareForPush(sr).then((p) => this.adapter.upsertStudentRubric(p))
                 ),
