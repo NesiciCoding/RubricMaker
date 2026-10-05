@@ -62,6 +62,8 @@ BEGIN
     RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';
   END IF;
 
+  PERFORM pg_advisory_xact_lock(hashtextextended('profile_lookup:' || v_uid::text, 0));
+
   IF (
     SELECT count(*) FROM public.audit_logs a
     WHERE a.actor_id = v_uid AND a.action = 'profile_lookup' AND a.created_at > now() - interval '10 minutes'

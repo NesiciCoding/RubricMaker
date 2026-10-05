@@ -988,11 +988,13 @@ class StorageSyncService {
         this.setStatus('syncing');
         try {
             // Grade rows are only accepted for students that already exist server-side.
-            await Promise.all([
-                ...state.rubrics.map((r) => this.adapter.upsertRubric(r)),
-                ...state.classes.map((c) => this.adapter.upsertClass(c)),
-                ...state.students.map((s) => this.adapter.upsertStudent(s)),
-            ]);
+            const prereqFailure = (
+                await Promise.all([
+                    ...state.rubrics.map((r) => this.adapter.upsertRubric(r)),
+                    ...state.classes.map((c) => this.adapter.upsertClass(c)),
+                    ...state.students.map((s) => this.adapter.upsertStudent(s)),
+                ])
+            ).find((r) => !r.success);
             const ups = [
                 ...state.studentRubrics.map((sr) =>
                     this.feedbackAudioSync.prepareForPush(sr).then((p) => this.adapter.upsertStudentRubric(p))
@@ -1039,6 +1041,11 @@ class StorageSyncService {
                 if (ss.recordings?.length) {
                     await this.recordingSync.pushSessionRecordings(ss.recordings, ss.id);
                 }
+            }
+
+            if (prereqFailure) {
+                this.setStatus('error');
+                return { success: false, error: prereqFailure.error };
             }
 
             const now = new Date().toISOString();

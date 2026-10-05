@@ -82,6 +82,13 @@ describe('SupabaseAdapter rubric sharing methods', () => {
         expect(result).toEqual({ success: false, notFound: true, error: 'No account found for nobody@x.com' });
     });
 
+    it('shareRubricWithEmail surfaces a refused lookup instead of reporting notFound', async () => {
+        const rpc = vi.fn().mockResolvedValue({ data: null, error: { message: 'Too many lookups, try again later' } });
+        const client = { ...makeClient({ data: null, error: null }), rpc };
+        const result = await adapterWithClient(client).shareRubricWithEmail('r1', 'bob@example.com', 'read');
+        expect(result).toEqual({ success: false, error: 'Too many lookups, try again later' });
+    });
+
     it('shareRubricWithEmail shares with the resolved user id when the email matches', async () => {
         const client = adapterWithClient(makeClient({ data: null, error: null }));
         const lookupSpy = vi.spyOn(client, 'lookupUserByEmail').mockResolvedValue({ userId: 'u2', displayName: 'Bob' });
