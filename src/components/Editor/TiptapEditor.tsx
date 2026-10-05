@@ -28,6 +28,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
         editorProps: {
             attributes: {
                 class: 'tiptap-editor-content',
+                ...(placeholder ? { 'aria-label': placeholder } : {}),
             },
         },
     });
