@@ -215,21 +215,21 @@ The easiest way to run the full stack. Requires [Docker](https://docs.docker.com
 **Your own laptop or school LAN:**
 
 ```bash
-cp .env.docker.example .env   # defaults work as-is for localhost
+./scripts/generate-docker-secrets.sh   # creates .env with random secrets (needs openssl)
 docker-compose up -d --build
 ```
 
 Open [http://localhost:8080](http://localhost:8080). To make it accessible to other teachers on the network, set `SITE_URL=http://<your-ip>:8080` in `.env` first.
 
+`docker-compose.yml` no longer ships default secrets: it refuses to start until `POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`, `SERVICE_ROLE_KEY` and `JWT_JWKS` are set. **Upgrading an existing installation:** keep your current `.env` and run the script once. It only fills values that are empty (for an old `.env` that is `JWT_JWKS`, derived from your existing `JWT_SECRET`) and never changes the rest. If your `.env` still contains the old public demo values the script warns about it; rotating them on an existing database needs extra steps (the Postgres roles keep the password they were created with), so do not expose such an installation to the internet.
+
 **VPS with a domain name (HTTPS):**
 
 ```bash
-cp .env.docker.example .env
+./scripts/generate-docker-secrets.sh   # random JWT_SECRET, POSTGRES_PASSWORD and API keys
 # Edit .env:
 #   DOMAIN=rubricmaker.school.nl
 #   SITE_URL=https://rubricmaker.school.nl
-#   JWT_SECRET=<random 64-char string>   ← change this!
-#   POSTGRES_PASSWORD=<strong password>  ← change this!
 docker-compose --profile https up -d --build
 ```
 
