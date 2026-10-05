@@ -53,6 +53,17 @@ jwt() {
 changed=0
 
 if [[ -z "$(get POSTGRES_PASSWORD)" ]]; then
+    # Postgres only applies POSTGRES_PASSWORD the first time a data volume is created, so a new value would
+    # lock every service out of an existing database.
+    if command -v docker >/dev/null 2>&1; then
+        existing_volume="$(docker volume ls -q 2>/dev/null | grep -E '(^|_)db-data$' | head -1 || true)"
+        if [[ -n "$existing_volume" ]]; then
+            echo "An existing database volume (${existing_volume}) was found, but POSTGRES_PASSWORD is empty in ${ENV_FILE}." >&2
+            echo "The database keeps the password it was first created with (the old default was 'postgres')." >&2
+            echo "Set POSTGRES_PASSWORD in ${ENV_FILE} to that password and run this script again." >&2
+            exit 1
+        fi
+    fi
     set_var POSTGRES_PASSWORD "$(openssl rand -hex 16)"
     changed=1
 fi

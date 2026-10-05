@@ -40,8 +40,18 @@ describe('docker-compose secrets', () => {
 describe('scripts/generate-docker-secrets.sh', () => {
     const script = path.join(root, 'scripts', 'generate-docker-secrets.sh');
 
+    // A real docker on a developer machine could report an existing database volume, so it is stubbed out.
+    function noVolumesBin() {
+        const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-nodocker-'));
+        fs.writeFileSync(path.join(bin, 'docker'), '#!/bin/bash\nexit 0\n', { mode: 0o755 });
+        return bin;
+    }
+
     function run(envFile: string) {
-        execFileSync('bash', [script], { env: { ...process.env, ENV_FILE: envFile }, stdio: 'pipe' });
+        execFileSync('bash', [script], {
+            env: { ...process.env, PATH: `${noVolumesBin()}:${process.env.PATH}`, ENV_FILE: envFile },
+            stdio: 'pipe',
+        });
         return Object.fromEntries(
             fs
                 .readFileSync(envFile, 'utf8')
@@ -81,5 +91,22 @@ describe('scripts/generate-docker-secrets.sh', () => {
         const first = run(envFile);
         const second = run(envFile);
         expect(second).toEqual(first);
+    });
+
+    it('refuses to invent a database password when a database volume already exists', () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-secrets-'));
+        const bin = path.join(dir, 'bin');
+        fs.mkdirSync(bin);
+        fs.writeFileSync(path.join(bin, 'docker'), '#!/bin/bash\necho rubricmaker_db-data\n', { mode: 0o755 });
+        const envFile = path.join(dir, '.env');
+        fs.writeFileSync(envFile, 'POSTGRES_PASSWORD=\nJWT_SECRET=\n');
+
+        expect(() =>
+            execFileSync('bash', [script], {
+                env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ENV_FILE: envFile },
+                stdio: 'pipe',
+            })
+        ).toThrow();
+        expect(fs.readFileSync(envFile, 'utf8')).toBe('POSTGRES_PASSWORD=\nJWT_SECRET=\n');
     });
 });
