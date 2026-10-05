@@ -4084,6 +4084,7 @@
         "linked_test": "Test",
         "linked_rubric": "Rubrique",
         "open_link": "Ouvrir le lien",
+        "error_invalid_url": "Saisissez un lien commençant par http://, https:// ou mailto:",
         "read_receipt_count": "{{read}} sur {{total}} lu(s)",
         "read_receipt_none": "Personne n'a encore lu ceci",
         "unread_label": "Non lu",

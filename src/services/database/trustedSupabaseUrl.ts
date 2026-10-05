@@ -5,10 +5,24 @@ import { loadSupabaseConfig } from './supabaseConfig';
 
 function originOf(url: string): string | null {
     try {
-        return new URL(url).origin;
+        const parsed = new URL(url);
+        const local =
+            parsed.protocol === 'http:' && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1');
+        return parsed.protocol === 'https:' || local ? parsed.origin : null;
     } catch {
         return null;
     }
+}
+
+// The student pages build short-code assignments from the environment URL first and the stored one second,
+// so a link for either project is accepted.
+function configuredOrigins(): string[] {
+    const origins: string[] = [];
+    const stored = loadSupabaseConfig();
+    if (stored) origins.push(originOf(stored.supabaseUrl) ?? '');
+    const envUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    if (envUrl) origins.push(originOf(envUrl) ?? '');
+    return origins.filter(Boolean);
 }
 
 export function hasConfiguredProject(): boolean {
@@ -23,9 +37,8 @@ export function isAllowedSupabaseUrl(url: string | undefined): boolean {
     if (!url) return false;
     const target = originOf(url);
     if (!target) return false;
-    const configured = loadSupabaseConfig();
-    if (!configured) return true;
-    return target === originOf(configured.supabaseUrl);
+    if (!loadSupabaseConfig()) return true;
+    return configuredOrigins().includes(target);
 }
 
 export function hostOf(url: string): string {

@@ -34,7 +34,7 @@ BUCKET="attachments"
 NAME_RE='^[A-Za-z0-9_-]{1,64}$'
 UUID_RE='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 PATH_RE="^${UUID_RE}/[A-Za-z0-9_-]{1,64}(\\.[A-Za-z0-9]{1,10})?\$"
-VALID_SQL="id ~ '${NAME_RE}' AND storage_path ~ '${PATH_RE}' AND split_part(storage_path, '/', 1) = owner_id::text"
+VALID_SQL="id ~ '${NAME_RE}' AND storage_path ~ '${PATH_RE}' AND lower(split_part(storage_path, '/', 1)) = owner_id::text"
 
 log() { echo "[$(date -Iseconds)] $*"; }
 
@@ -64,7 +64,7 @@ DELETED_IDS=()
 while IFS='|' read -r id path owner; do
     [[ -z "$id" || -z "$path" ]] && continue
 
-    if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "${path%%/*}" != "$owner" ]]; then
+    if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "$(printf '%s' "${path%%/*}" | tr 'A-F' 'a-f')" != "$owner" ]]; then
         log "Warning: skipping a row that failed validation"
         continue
     fi

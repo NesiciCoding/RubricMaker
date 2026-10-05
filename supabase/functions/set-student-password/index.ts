@@ -48,14 +48,12 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Unauthorized' }, 401);
 
-    const admin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
-    const { data: { user: teacher }, error: authErr } = await admin.auth.getUser(
-        authHeader.replace('Bearer ', ''),
-    );
+    const {
+        data: { user: teacher },
+        error: authErr,
+    } = await admin.auth.getUser(authHeader.replace('Bearer ', ''));
     if (authErr || !teacher) return json({ error: 'Invalid or expired token' }, 401);
 
     const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', teacher.id).maybeSingle();
@@ -65,33 +63,36 @@ serve(async (req) => {
     });
     if (!callerDecision.ok) return json({ error: callerDecision.error }, callerDecision.status);
 
-    let body: { studentEmail?: unknown; password?: unknown };
+    let body: { studentEmail?: unknown; password?: unknown } | null;
     try {
         body = await req.json();
     } catch {
         return json({ error: 'Invalid request body' }, 400);
     }
+    if (!body || typeof body !== 'object') return json({ error: 'Invalid request body' }, 400);
 
     const studentEmail = normalizeStudentEmail(body.studentEmail);
     if (!studentEmail) return json({ error: 'Missing or invalid field: studentEmail' }, 400);
     if (!validatePassword(body.password)) return json({ error: 'password must be at least 8 characters' }, 400);
     const password = body.password;
 
-    // Every attempt is recorded before any work, so failed attempts count towards the limit too.
-    const since = new Date(Date.now() - 60_000).toISOString();
-    const { count: recentCalls } = await admin
-        .from('audit_logs')
-        .select('id', { count: 'exact', head: true })
-        .eq('actor_id', teacher.id)
-        .eq('action', 'set_student_password_attempt')
-        .gte('created_at', since);
-    if ((recentCalls ?? 0) >= RATE_LIMIT_PER_MINUTE) return json({ error: 'Too many requests' }, 429);
+    // The attempt is recorded first and counted afterwards, so concurrent requests each see the others'
+    // rows and failed attempts count towards the limit too.
     const { error: attemptErr } = await admin.from('audit_logs').insert({
         actor_id: teacher.id,
         category: 'admin',
         action: 'set_student_password_attempt',
     });
     if (attemptErr) return json({ error: 'Could not record the request' }, 500);
+    const since = new Date(Date.now() - 60_000).toISOString();
+    const { count: recentCalls, error: countErr } = await admin
+        .from('audit_logs')
+        .select('id', { count: 'exact', head: true })
+        .eq('actor_id', teacher.id)
+        .eq('action', 'set_student_password_attempt')
+        .gte('created_at', since);
+    if (countErr) return json({ error: 'Could not record the request' }, 500);
+    if ((recentCalls ?? 0) > RATE_LIMIT_PER_MINUTE) return json({ error: 'Too many requests' }, 429);
 
     const pattern = escapeLikePattern(studentEmail);
 
@@ -108,11 +109,7 @@ serve(async (req) => {
         return json({ error: 'This email does not match a student in your roster' }, 403);
     }
 
-    const { data: existingProfile } = await admin
-        .from('profiles')
-        .select('id, role')
-        .ilike('email', pattern)
-        .limit(2);
+    const { data: existingProfile } = await admin.from('profiles').select('id, role').ilike('email', pattern).limit(2);
     if ((existingProfile ?? []).length > 1) return json({ error: 'That account cannot be managed here' }, 403);
 
     const target = existingProfile?.[0] ?? null;
@@ -120,6 +117,10 @@ serve(async (req) => {
     if (!targetDecision.ok) return json({ error: targetDecision.error }, targetDecision.status);
 
     if (target) {
+        const { data: authTarget } = await admin.auth.admin.getUserById(target.id);
+        if (authTarget?.user?.email?.toLowerCase() !== studentEmail) {
+            return json({ error: 'That account cannot be managed here' }, 403);
+        }
         const { error: updateErr } = await admin.auth.admin.updateUserById(target.id, { password });
         if (updateErr) return json({ error: updateErr.message }, 500);
     } else {

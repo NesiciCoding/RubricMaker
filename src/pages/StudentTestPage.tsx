@@ -444,8 +444,8 @@ export default function StudentTestPage() {
         assignmentKey: assignment?.teacherKey ?? '',
         enabled: !!assignment && !submitted,
         getSnapshot,
-        supabaseUrl: assignment?.supabaseUrl,
-        supabaseAnonKey: assignment?.supabaseAnonKey,
+        supabaseUrl: hasDb ? assignment?.supabaseUrl : undefined,
+        supabaseAnonKey: hasDb ? assignment?.supabaseAnonKey : undefined,
         onNudge: (message) => showToast(message, 'info'),
     });
 

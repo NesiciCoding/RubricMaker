@@ -21,7 +21,9 @@ EXAMPLE_FILE="${ROOT_DIR}/.env.docker.example"
 
 command -v openssl >/dev/null 2>&1 || { echo "openssl is required" >&2; exit 1; }
 
+umask 077
 [[ -f "$ENV_FILE" ]] || cp "$EXAMPLE_FILE" "$ENV_FILE"
+chmod 600 "$ENV_FILE"
 
 b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
 
@@ -56,7 +58,12 @@ if [[ -z "$(get POSTGRES_PASSWORD)" ]]; then
     # Postgres only applies POSTGRES_PASSWORD the first time a data volume is created, so a new value would
     # lock every service out of an existing database.
     if command -v docker >/dev/null 2>&1; then
-        existing_volume="$(docker volume ls -q 2>/dev/null | grep -E '(^|_)db-data$' | head -1 || true)"
+        if ! volumes="$(docker volume ls -q 2>/dev/null)"; then
+            echo "Could not list Docker volumes, so an existing database cannot be ruled out." >&2
+            echo "Start Docker (or set POSTGRES_PASSWORD in ${ENV_FILE} yourself) and run this script again." >&2
+            exit 1
+        fi
+        existing_volume="$(printf '%s\n' "$volumes" | grep -E '(^|_)db-data$' | head -1 || true)"
         if [[ -n "$existing_volume" ]]; then
             echo "An existing database volume (${existing_volume}) was found, but POSTGRES_PASSWORD is empty in ${ENV_FILE}." >&2
             echo "The database keeps the password it was first created with (the old default was 'postgres')." >&2

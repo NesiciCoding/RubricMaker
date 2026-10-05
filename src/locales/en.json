@@ -4082,6 +4082,7 @@
         "linked_test": "Test",
         "linked_rubric": "Rubric",
         "open_link": "Open link",
+        "error_invalid_url": "Enter a link that starts with http://, https:// or mailto:",
         "read_receipt_count": "{{read}} of {{total}} read",
         "read_receipt_none": "No one has read this yet",
         "unread_label": "Unread",

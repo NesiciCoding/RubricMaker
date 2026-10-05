@@ -19,6 +19,7 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { useToast } from '../hooks/useToast';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
@@ -64,6 +65,7 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
     const tour = usePageTourState('news');
     const {
         students: allStudents,
@@ -113,6 +115,10 @@ export default function NewsFlashesPage() {
     function handleSave() {
         /* v8 ignore next -- the Save button is disabled while the title is empty */
         if (!draft || !draft.title.trim()) return;
+        if (draft.url.trim() && !safeHref(draft.url)) {
+            showToast(t('newsFlashes.error_invalid_url'), 'error');
+            return;
+        }
         const isContentEmpty = htmlToPlainText(draft.content).length === 0;
         const payload = {
             title: draft.title.trim(),

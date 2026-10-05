@@ -109,4 +109,28 @@ describe('scripts/generate-docker-secrets.sh', () => {
         ).toThrow();
         expect(fs.readFileSync(envFile, 'utf8')).toBe('POSTGRES_PASSWORD=\nJWT_SECRET=\n');
     });
+
+    it('stops when Docker cannot be queried instead of assuming there is no database volume', () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-secrets-'));
+        const bin = path.join(dir, 'bin');
+        fs.mkdirSync(bin);
+        fs.writeFileSync(path.join(bin, 'docker'), '#!/bin/bash\nexit 1\n', { mode: 0o755 });
+        const envFile = path.join(dir, '.env');
+        fs.writeFileSync(envFile, 'POSTGRES_PASSWORD=\nJWT_SECRET=\n');
+
+        expect(() =>
+            execFileSync('bash', [script], {
+                env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ENV_FILE: envFile },
+                stdio: 'pipe',
+            })
+        ).toThrow();
+        expect(fs.readFileSync(envFile, 'utf8')).toBe('POSTGRES_PASSWORD=\nJWT_SECRET=\n');
+    });
+
+    it('keeps the generated file readable by its owner only', () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-secrets-'));
+        const envFile = path.join(dir, '.env');
+        run(envFile);
+        expect(fs.statSync(envFile).mode & 0o077).toBe(0);
+    });
 });

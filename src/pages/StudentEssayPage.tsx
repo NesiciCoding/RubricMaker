@@ -385,8 +385,8 @@ export default function StudentEssayPage() {
         assignmentKey: resolvedStudentId ? `${assignment?.teacherKey ?? ''}:${resolvedStudentId}` : '',
         enabled: !!assignment && hasDb && !submitted && !!studentUserId && !!resolvedStudentId,
         getSnapshot,
-        supabaseUrl: assignment?.supabaseUrl,
-        supabaseAnonKey: assignment?.supabaseAnonKey,
+        supabaseUrl: hasDb ? assignment?.supabaseUrl : undefined,
+        supabaseAnonKey: hasDb ? assignment?.supabaseAnonKey : undefined,
         onNudge: (message) => showToast(message, 'info'),
     });
 
