@@ -301,7 +301,7 @@ async function signInViaMagicLink(page: Page, actionLink: string): Promise<void>
  * the Postgres superuser and disabling the trigger for one UPDATE is the only
  * deterministic way to promote an arbitrary test user.
  */
-function promoteToAdmin(email: string): void {
+export function promoteToAdmin(email: string): void {
     const sql = `
         ALTER TABLE public.profiles DISABLE TRIGGER enforce_role_protection;
         UPDATE public.profiles SET role = 'admin' WHERE email = '${email.replace(/'/g, "''")}';

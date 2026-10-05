@@ -2404,16 +2404,11 @@ export class SupabaseAdapter {
     }
 
     async lookupUserByEmail(email: string): Promise<{ userId: string; displayName?: string } | null> {
-        const { data } = await this.db()
-            .from('profiles')
-            .select('id, display_name')
-            .eq('email', email.trim().toLowerCase())
-            .maybeSingle();
-        if (!data) return null;
-        return {
-            userId: (data as { id: string; display_name?: string }).id,
-            displayName: (data as { id: string; display_name?: string }).display_name ?? undefined,
-        };
+        const { data, error } = await this.db().rpc('find_profile_by_email', { p_email: email.trim().toLowerCase() });
+        if (error) throw new Error(error.message);
+        const row = (data as { id: string; display_name: string | null }[] | null)?.[0];
+        if (!row) return null;
+        return { userId: row.id, displayName: row.display_name ?? undefined };
     }
 
     async shareRubricWithEmail(
@@ -2421,7 +2416,12 @@ export class SupabaseAdapter {
         email: string,
         mode: 'read' | 'edit'
     ): Promise<SyncResult & { notFound?: boolean }> {
-        const user = await this.lookupUserByEmail(email);
+        let user: { userId: string; displayName?: string } | null;
+        try {
+            user = await this.lookupUserByEmail(email);
+        } catch (e) {
+            return { success: false, error: e instanceof Error ? e.message : String(e) };
+        }
         if (!user) return { success: false, notFound: true, error: `No account found for ${email}` };
         return this.shareRubric(rubricId, user.userId, mode);
     }
