@@ -172,6 +172,8 @@ export default function StudentPortalPage() {
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    // Feedback-only grades stay readable as feedback but must not leak into any score-derived view.
+    const scoredStudentRubrics = useMemo(() => studentRubrics.filter((sr) => !sr.feedbackOnly), [studentRubrics]);
     const {
         saveRubricSelfAssessment,
         fetchMyTestAssignments,
@@ -292,32 +294,37 @@ export default function StudentPortalPage() {
         }[];
     }, [student, studentRubrics, rubrics, gradeScales, settings, i18n.language]);
 
+    const scoredHistory = useMemo(() => history.filter((h) => !h.sr.feedbackOnly), [history]);
+
     const cefrProgress = useMemo(() => {
         if (!student) return [];
-        return aggregateCefrProgress(history);
-    }, [student, history]);
+        return aggregateCefrProgress(scoredHistory);
+    }, [student, scoredHistory]);
 
     // Per-rubric radars a student can pick between, plus one "combined" view averaging
     // scores across rubrics wherever a criterion title recurs (e.g. shared skill categories
     // across rubric templates) — the two views the roadmap calls "combined and separated".
     const rubricRadarOptions = useMemo(() => {
         const seen = new Map<string, string>();
-        for (const h of history) {
+        for (const h of scoredHistory) {
             if (h.rubric.criteria.length >= 3 && !seen.has(h.sr.rubricId)) {
                 seen.set(h.sr.rubricId, h.rubric.name);
             }
         }
         return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
-    }, [history]);
+    }, [scoredHistory]);
 
-    const combinedRadarData = useMemo((): CriterionRadarDataPoint[] => buildTitleAveragedRadarData(history), [history]);
+    const combinedRadarData = useMemo(
+        (): CriterionRadarDataPoint[] => buildTitleAveragedRadarData(scoredHistory),
+        [scoredHistory]
+    );
 
     const selectedRadarData = useMemo((): CriterionRadarDataPoint[] => {
         if (radarRubricId === 'combined') return combinedRadarData;
-        const rows = history.filter((h) => h.sr.rubricId === radarRubricId);
+        const rows = scoredHistory.filter((h) => h.sr.rubricId === radarRubricId);
         if (rows.length === 0) return [];
         return buildTitleAveragedRadarData(rows);
-    }, [radarRubricId, history, combinedRadarData]);
+    }, [radarRubricId, scoredHistory, combinedRadarData]);
 
     const selfAssess = selfAssessments.filter((sa) => sa.studentId === studentId);
 
@@ -349,19 +356,21 @@ export default function StudentPortalPage() {
     const studentCefrOverview = useMemo(
         () =>
             student
-                ? getCefrStudentOverview(student.id, studentRubrics, rubrics, selfAssessments, analysisResults)
+                ? getCefrStudentOverview(student.id, scoredStudentRubrics, rubrics, selfAssessments, analysisResults)
                 : null,
-        [student, studentRubrics, rubrics, selfAssessments, analysisResults]
+        [student, scoredStudentRubrics, rubrics, selfAssessments, analysisResults]
     );
 
     const cohortAverages = useMemo(
         () =>
             buildCohortAverages(
                 cohortStudents.map(
-                    (s) => getCefrStudentOverview(s.id, studentRubrics, rubrics, selfAssessments, analysisResults).cells
+                    (s) =>
+                        getCefrStudentOverview(s.id, scoredStudentRubrics, rubrics, selfAssessments, analysisResults)
+                            .cells
                 )
             ),
-        [cohortStudents, studentRubrics, rubrics, selfAssessments, analysisResults]
+        [cohortStudents, scoredStudentRubrics, rubrics, selfAssessments, analysisResults]
     );
 
     // Excludes notHandedIn/isPeerReview entries, matching the `history` filter above — a rubric
@@ -399,19 +408,26 @@ export default function StudentPortalPage() {
         () =>
             student
                 ? [
-                      ...getCriterionInterventionFlags(student.id, studentRubrics, rubrics),
-                      ...getCefrSkillInterventionFlags(student.id, studentRubrics, rubrics),
+                      ...getCriterionInterventionFlags(student.id, scoredStudentRubrics, rubrics),
+                      ...getCefrSkillInterventionFlags(student.id, scoredStudentRubrics, rubrics),
                   ].sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
                 : [],
-        [student, studentRubrics, rubrics]
+        [student, scoredStudentRubrics, rubrics]
     );
 
     const grammarRecommendations = useMemo(
         () =>
             student
-                ? getGrammarRecommendations(student.id, studentRubrics, rubrics, studentTests, tests, flashcardDecks)
+                ? getGrammarRecommendations(
+                      student.id,
+                      scoredStudentRubrics,
+                      rubrics,
+                      studentTests,
+                      tests,
+                      flashcardDecks
+                  )
                 : [],
-        [student, studentRubrics, rubrics, studentTests, tests, flashcardDecks]
+        [student, scoredStudentRubrics, rubrics, studentTests, tests, flashcardDecks]
     );
 
     if (!student) {
@@ -433,7 +449,8 @@ export default function StudentPortalPage() {
         );
     }
 
-    const avgScore = history.length > 0 ? history.reduce((acc, h) => acc + h.score, 0) / history.length : null;
+    const avgScore =
+        scoredHistory.length > 0 ? scoredHistory.reduce((acc, h) => acc + h.score, 0) / scoredHistory.length : null;
     const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${student.id}`;
 
     const dbConfig = loadSupabaseConfig();
@@ -623,7 +640,7 @@ export default function StudentPortalPage() {
         // Assignments always has the "My flashcards" authoring section (Phase 41.4).
         assignments: true,
         feedback: true,
-        progress: history.length > 1 || cefrProgress.length > 0 || hasRadar || hasLearningPath,
+        progress: scoredHistory.length > 1 || cefrProgress.length > 0 || hasRadar || hasLearningPath,
     };
 
     const isTeacherPreview = settings.userRole !== 'student';
@@ -829,10 +846,10 @@ export default function StudentPortalPage() {
                 )}
 
                 {/* Grade history chart */}
-                {history.length > 1 && isTab('progress') && (
+                {scoredHistory.length > 1 && isTab('progress') && (
                     <Section id="portal-section-grades" title={t('studentPortal.grade_history')}>
                         <Suspense fallback={<div style={{ height: 200 }} />}>
-                            <PortalGradeHistoryChart history={history} />
+                            <PortalGradeHistoryChart history={scoredHistory} />
                         </Suspense>
                     </Section>
                 )}
@@ -1280,16 +1297,22 @@ export default function StudentPortalPage() {
                                                 {h.dateStr}
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                                                {h.summary.modifiedPercentage.toFixed(1)}%
+                                        {h.sr.feedbackOnly ? (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {t('studentPortal.grade_withheld')}
                                             </div>
-                                            {h.summary.letterGrade && (
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                    {h.summary.letterGrade}
+                                        ) : (
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
+                                                    {h.summary.modifiedPercentage.toFixed(1)}%
                                                 </div>
-                                            )}
-                                        </div>
+                                                {h.summary.letterGrade && (
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                        {h.summary.letterGrade}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     {h.sr.overallComment && (
                                         <div
