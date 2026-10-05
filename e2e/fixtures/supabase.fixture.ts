@@ -310,6 +310,11 @@ export function promoteToAdmin(email: string): void {
     execFileSync('psql', [DB_URL, '-v', 'ON_ERROR_STOP=1', '-c', sql], { stdio: 'pipe' });
 }
 
+/** Run SQL as the Postgres superuser (bypasses RLS, like pg_cron jobs) and return psql's unaligned output. */
+export function querySql(sql: string): string {
+    return execFileSync('psql', [DB_URL, '-v', 'ON_ERROR_STOP=1', '-tA', '-c', sql], { encoding: 'utf8' }).trim();
+}
+
 /** Delete a test user by email using the service-role admin API. */
 async function deleteTestUser(email: string): Promise<void> {
     try {
