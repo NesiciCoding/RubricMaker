@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Download, BookOpen, Users, Gauge, Map, Layers } from 'lucide-react';
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
@@ -95,7 +96,7 @@ export default function VocabularyDashboardPage() {
             [t('vocabProfile.csv_column_definition')]: r.definition,
             [t('vocabProfile.csv_column_source')]: t(`vocabProfile.csv_source_${r.source}`),
         }));
-        const csv = Papa.unparse(csvRows);
+        const csv = Papa.unparse(csvRows, CSV_UNPARSE_OPTIONS);
         const suffix = band ?? t('vocabProfile.csv_band_all');
         const filename = `${t('vocabProfile.csv_filename')}_${suffix}.csv`;
         saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);

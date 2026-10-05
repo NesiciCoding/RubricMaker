@@ -8,6 +8,7 @@ import { aggregateFrameworkScores } from '../utils/frameworkAggregator';
 import BloomsPyramidChart from '../components/Statistics/BloomsPyramidChart';
 import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import PageTour from '../components/Tour/PageTour';
@@ -623,7 +624,7 @@ export default function StatisticsPage() {
             });
             return base;
         });
-        const csv = Papa.unparse(rows);
+        const csv = Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
         const filename = `${t('statistics.csv_filename')}_${sanitizeFilename(rubric.name)}.csv`;
         saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
     }

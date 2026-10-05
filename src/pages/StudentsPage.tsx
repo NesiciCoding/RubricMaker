@@ -30,6 +30,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import CsvImportModal from '../components/Students/CsvImportModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
@@ -686,7 +687,7 @@ export default function StudentsPage() {
 
     function exportCSV() {
         const rows = filteredStudents.map((s) => ({ name: s.name, email: s.email ?? '' }));
-        const csv = Papa.unparse(rows);
+        const csv = Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
         saveAs(new Blob([csv], { type: 'text/csv' }), 'students.csv');
     }
 
