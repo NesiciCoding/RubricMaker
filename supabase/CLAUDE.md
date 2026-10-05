@@ -43,6 +43,12 @@ When adding a table, always:
 
 The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by policies that referenced the same table in a subquery. Avoid circular policy references.
 
+## Student identity and write-path guards
+
+- `get_my_student_ids()` (and the sibling `get_my_*_as_student()` helpers) match roster emails against the confirmed email in `auth.users` via `get_my_verified_email()` (migration 076), not the editable `profiles.email`. If the project auto-confirms signups (`GOTRUE_MAILER_AUTOCONFIRM` / `enable_confirmations = false`), an address is "confirmed" without proof of ownership, so keep email confirmation on for any deployment that holds real student data.
+- Guard triggers (076): `profiles.email`/`id` are not client-updatable, `rubrics.owner_id` can only be changed by the owner, a student may only flip `messages.read_by_student`, and `attachments.updated_at` is set by the server on insert. They only constrain requests carrying a user JWT, so service-role and edge-function writes are unaffected.
+- `handle_new_user()` only grants the student role from roster rows owned by a teacher or admin profile.
+
 ## Storage buckets
 
 - `attachments` — file attachments for grading (DOCX, PDF, images), `003_storage_buckets.sql`

@@ -1,0 +1,109 @@
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { isPurgeableRow } from '../../supabase/functions/_shared/attachmentPurgeGuard';
+
+const OWNER = '123e4567-e89b-42d3-a456-426614174000';
+const OTHER = '99999999-e89b-42d3-a456-426614174000';
+
+describe('isPurgeableRow', () => {
+    it('accepts a normal row: the path is <owner>/<id-like name>, optionally with one extension', () => {
+        expect(isPurgeableRow({ id: 'abc_DEF-123', owner_id: OWNER, storage_path: `${OWNER}/abc_DEF-123` })).toBe(true);
+        expect(isPurgeableRow({ id: 'abc', owner_id: OWNER, storage_path: `${OWNER}/abc.pdf` })).toBe(true);
+    });
+
+    it('rejects ids with quotes, separators or control characters', () => {
+        for (const id of ["x'); DROP TABLE attachments;--", 'a|b', 'a\nb', 'a b', '', 'x'.repeat(65)]) {
+            expect(isPurgeableRow({ id, owner_id: OWNER, storage_path: `${OWNER}/ok` })).toBe(false);
+        }
+    });
+
+    it("rejects paths that leave the owner's folder or are not plain names", () => {
+        for (const storage_path of [
+            `${OWNER}/../backups/file`,
+            `${OWNER}/a/b`,
+            `/${OWNER}/a`,
+            `${OTHER}/a`,
+            `${OWNER}/a%2e%2e`,
+            `${OWNER}/a..b`,
+            `${OWNER}/.hidden`,
+            `${OWNER}/a.`,
+            `${OWNER}/`,
+            `backups/${OWNER}/a`,
+        ]) {
+            expect(isPurgeableRow({ id: 'ok', owner_id: OWNER, storage_path })).toBe(false);
+        }
+    });
+});
+
+describe('scripts/delete-old-attachments.sh', () => {
+    const script = path.resolve(__dirname, '..', '..', 'scripts', 'delete-old-attachments.sh');
+
+    function runScript(rows: string) {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-purge-'));
+        const log = path.join(dir, 'calls.log');
+        const bin = path.join(dir, 'bin');
+        fs.mkdirSync(bin);
+        fs.writeFileSync(
+            path.join(bin, 'docker-compose'),
+            `#!/bin/bash
+printf 'DC %s\\n' "$*" >> "${log}"
+if [[ "$*" == *"SELECT id, storage_path"* ]]; then printf '%s' "$STUB_ROWS"; fi
+`,
+            { mode: 0o755 }
+        );
+        fs.writeFileSync(
+            path.join(bin, 'curl'),
+            `#!/bin/bash
+printf 'CURL %s\\n' "$*" >> "${log}"
+printf '200'
+`,
+            { mode: 0o755 }
+        );
+        execFileSync('bash', [script], {
+            env: {
+                ...process.env,
+                PATH: `${bin}:${process.env.PATH}`,
+                SERVICE_ROLE_KEY: 'test-key',
+                SITE_URL: 'http://stub.local',
+                STUB_ROWS: rows,
+            },
+            stdio: 'pipe',
+        });
+        return fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '';
+    }
+
+    it('selects only rows that pass the same validation in SQL, so odd values never reach the shell', () => {
+        const calls = runScript('');
+        expect(calls).toContain('split_part(storage_path');
+        expect(calls).toContain('^[A-Za-z0-9_-]{1,64}$');
+    });
+
+    it('deletes a valid row through the storage API and then the database', () => {
+        const calls = runScript(`good_1|${OWNER}/good_1|${OWNER}\n`);
+        expect(calls).toContain(`/storage/v1/object/attachments/${OWNER}/good_1`);
+        expect(calls).toContain("DELETE FROM public.attachments WHERE id IN ('good_1')");
+    });
+
+    it('purges a file stored with an extension', () => {
+        const calls = runScript(`doc_1|${OWNER}/doc_1.pdf|${OWNER}\n`);
+        expect(calls).toContain(`/storage/v1/object/attachments/${OWNER}/doc_1.pdf`);
+    });
+
+    it('skips a row whose id or path is unsafe even if the database returns it', () => {
+        const calls = runScript(
+            [
+                `x');DROP TABLE a;--|${OWNER}/y|${OWNER}`,
+                `evil|${OWNER}/../backups/x|${OWNER}`,
+                `ok|${OWNER}/ok|${OWNER}`,
+            ].join('\n') + '\n'
+        );
+        const storageCalls = calls.split('\n').filter((line) => line.startsWith('CURL'));
+        expect(calls).not.toContain('DROP TABLE');
+        expect(storageCalls).toHaveLength(1);
+        expect(storageCalls[0]).not.toContain('..');
+        expect(calls).toContain("WHERE id IN ('ok')");
+    });
+});

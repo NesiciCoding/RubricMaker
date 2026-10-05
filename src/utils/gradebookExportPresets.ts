@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { CSV_UNPARSE_OPTIONS } from './csvOptions';
 
 export type GradebookPresetId = 'generic' | 'magister' | 'somtoday';
 
@@ -25,7 +26,7 @@ export function buildGradebookPresetCsv(preset: GradebookPresetId, rows: Gradebo
                 Naam: r.studentName,
                 Cijfer: toDutchGrade(r.percentage),
             })),
-            { escapeFormulae: true }
+            CSV_UNPARSE_OPTIONS
         );
     }
     if (preset === 'somtoday') {
@@ -35,7 +36,7 @@ export function buildGradebookPresetCsv(preset: GradebookPresetId, rows: Gradebo
                 Leerlingnummer: r.studentNumber,
                 Resultaat: toDutchGrade(r.percentage),
             })),
-            { escapeFormulae: true }
+            CSV_UNPARSE_OPTIONS
         );
     }
     return null;

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { saveAs } from 'file-saver';
+import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { storageSync } from '../services/database';
 import PageTour from '../components/Tour/PageTour';
@@ -465,7 +466,7 @@ export default function ExportPage() {
         });
 
         const Papa = await import('papaparse');
-        const csv = Papa.unparse(data);
+        const csv = Papa.unparse(data, CSV_UNPARSE_OPTIONS);
         saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(rubric.name)}_grades.csv`);
         logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });
     }

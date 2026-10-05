@@ -9,7 +9,10 @@ export function encodeUrlSafeBase64(input: string): string {
 }
 
 /** Decodes a string produced by {@link encodeUrlSafeBase64}. Also accepts plain base64. */
+export const MAX_SHARE_CODE_LENGTH = 4_000_000;
+
 export function decodeUrlSafeBase64(code: string): string {
+    if (code.length > MAX_SHARE_CODE_LENGTH) throw new Error('Share code too large');
     let base64 = code.trim().replace(/-/g, '+').replace(/_/g, '/');
     while (base64.length % 4 !== 0) base64 += '=';
     return decodeURIComponent(atob(base64));

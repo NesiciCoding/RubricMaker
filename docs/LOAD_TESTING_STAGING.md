@@ -67,7 +67,7 @@ For a VM mirroring this repo's compose:
 
 ```bash
 git clone <repo> && cd RubricMaker
-cp .env.docker.example .env      # set real POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY
+./scripts/generate-docker-secrets.sh   # creates .env with real POSTGRES_PASSWORD, JWT_SECRET, ANON_KEY, SERVICE_ROLE_KEY
 docker compose up -d             # db_migrate applies all migrations automatically
 ```
 
