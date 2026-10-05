@@ -36,6 +36,7 @@ import { isGeneratorTest, type NextPlacementQuestionResult } from '../utils/plac
 import { renderClozeSegments, parseHotTextFragments } from '../utils/clozeParse';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { TestAdapter } from '../services/database/TestAdapter';
+import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseCode';
 import { autoScoreResponse } from '../utils/testCalc';
@@ -160,7 +161,11 @@ export default function StudentTestPage() {
         };
     }, [code]);
 
-    const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
+    const hasDb = !!(
+        assignment?.supabaseUrl &&
+        assignment?.supabaseAnonKey &&
+        isAllowedSupabaseUrl(assignment.supabaseUrl)
+    );
     /* v8 ignore next -- code is always defined for the /test/:code route */
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
 
@@ -169,6 +174,7 @@ export default function StudentTestPage() {
     // two can never collide. Stable for the component's lifetime.
     const adapter = useMemo<TestAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
+        if (!isAllowedSupabaseUrl(assignment.supabaseUrl)) return null;
         const a = new TestAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey);
         initClientLogger(a.getClient(), { role: 'student' });
         return a;

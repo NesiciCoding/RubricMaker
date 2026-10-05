@@ -18,6 +18,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { EssayAssignment, EssayAssignmentContent } from '../../types';
 import type { SyncResult } from './types';
+import { hasConfiguredProject, hostOf, isAllowedSupabaseUrl } from './trustedSupabaseUrl';
 
 export type FetchContentResult =
     | { ok: true; data: EssayAssignmentContent }
@@ -41,26 +42,33 @@ export class EssayAdapter {
      * Reads the portal session if the student logged in via the student portal before
      * entering SEB. No custom storageKey so it shares the token with the portal app.
      */
-    private portalClient: SupabaseClient;
+    private portalClient: SupabaseClient | null;
     private supabaseUrl: string;
     private supabaseAnonKey: string;
     private studentEmailKey: string;
 
     /** @param assignmentKey Scopes the session/email storage to one essay assignment (its teacherKey). */
     constructor(supabaseUrl: string, supabaseAnonKey: string, assignmentKey: string) {
+        if (!isAllowedSupabaseUrl(supabaseUrl)) throw new Error('Untrusted Supabase URL');
         this.supabaseUrl = supabaseUrl;
         this.supabaseAnonKey = supabaseAnonKey;
         this.studentEmailKey = `rm_student_email:${assignmentKey}`;
         this.client = createClient(supabaseUrl, supabaseAnonKey, {
             // Persist session so OAuth callbacks survive the page redirect.
             // Uses an isolated, per-assignment storageKey to avoid conflicting with the
-            // teacher's session and with sessions from other essay assignments.
-            auth: { persistSession: true, autoRefreshToken: true, storageKey: `rm_student_auth:${assignmentKey}` },
+            // teacher's session and with sessions from other essay assignments. The host is part of
+            // the key so a session issued by one project is never read by a client aimed at another.
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                storageKey: `rm_student_auth:${hostOf(supabaseUrl)}:${assignmentKey}`,
+            },
         });
-        // No custom storageKey → reads the default Supabase token written by the portal login.
-        this.portalClient = createClient(supabaseUrl, supabaseAnonKey, {
-            auth: { persistSession: true, autoRefreshToken: true },
-        });
+        // No custom storageKey → reads the default Supabase token written by the portal login. That key
+        // is derived from the URL, so it is only opened on a device configured for this very project.
+        this.portalClient = hasConfiguredProject()
+            ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } })
+            : null;
     }
 
     /** The isolated client used for student auth — for diagnostics (e.g. clientLogger). */
@@ -81,7 +89,10 @@ export class EssayAdapter {
             {
                 data: { session: portal },
             },
-        ] = await Promise.all([this.client.auth.getSession(), this.portalClient.auth.getSession()]);
+        ] = await Promise.all([
+            this.client.auth.getSession(),
+            this.portalClient ? this.portalClient.auth.getSession() : { data: { session: null } },
+        ]);
 
         // Prefer a verified (email-carrying) session from either client over an anonymous one.
         // This ensures a stale anonymous rm_student_auth token never masks a valid portal login.
@@ -99,6 +110,7 @@ export class EssayAdapter {
     }
 
     private async isStudentRole(userId: string): Promise<boolean> {
+        if (!this.portalClient) return false;
         const { data, error } = await this.portalClient.from('profiles').select('role').eq('id', userId).single();
         return !error && data?.role === 'student';
     }
@@ -215,12 +227,12 @@ export class EssayAdapter {
 
         let response: Response;
         try {
-            response = await fetch(`${assignment.supabaseUrl}/functions/v1/submit-essay`, {
+            response = await fetch(`${this.supabaseUrl}/functions/v1/submit-essay`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
-                    apikey: assignment.supabaseAnonKey ?? '',
+                    apikey: this.supabaseAnonKey,
                 },
                 body: JSON.stringify({
                     assignmentId: assignment.teacherKey,

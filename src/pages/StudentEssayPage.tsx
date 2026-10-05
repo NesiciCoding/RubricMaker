@@ -29,6 +29,7 @@ import { nanoid } from '../utils/nanoid';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
 import type { EssayAssignmentContent, EssaySubmission } from '../types';
 import { EssayAdapter } from '../services/database/EssayAdapter';
+import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
@@ -253,9 +254,14 @@ export default function StudentEssayPage() {
 
     // Determine if this assignment uses Supabase DB submission.
     // useMemo keeps the adapter instance stable for the component's lifetime.
-    const hasDb = !!(assignment?.supabaseUrl && assignment?.supabaseAnonKey);
+    const hasDb = !!(
+        assignment?.supabaseUrl &&
+        assignment?.supabaseAnonKey &&
+        isAllowedSupabaseUrl(assignment.supabaseUrl)
+    );
     const adapter = useMemo<EssayAdapter | null>(() => {
         if (!assignment?.supabaseUrl || !assignment?.supabaseAnonKey) return null;
+        if (!isAllowedSupabaseUrl(assignment.supabaseUrl)) return null;
         const a = new EssayAdapter(assignment.supabaseUrl, assignment.supabaseAnonKey, assignment.teacherKey);
         initClientLogger(a.getClient(), { role: 'student' });
         return a;
