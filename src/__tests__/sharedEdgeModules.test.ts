@@ -7,6 +7,7 @@ import * as sharedRouting from '../../supabase/functions/_shared/placementRoutin
 import * as sharedStaircase from '../../supabase/functions/_shared/placementStaircase.ts';
 import * as sharedShuffle from '../../supabase/functions/_shared/seededShuffle.ts';
 import * as sharedPasswordGuard from '../../supabase/functions/_shared/studentPasswordGuard.ts';
+import * as sharedPurgeGuard from '../../supabase/functions/_shared/attachmentPurgeGuard.ts';
 import * as testCalc from '../utils/testCalc';
 import * as clozeParse from '../utils/clozeParse';
 import * as placementRouting from '../utils/placementRouting';
@@ -30,6 +31,7 @@ const SHARED_MODULES = {
     placementStaircase: sharedStaircase,
     seededShuffle: sharedShuffle,
     studentPasswordGuard: sharedPasswordGuard,
+    attachmentPurgeGuard: sharedPurgeGuard,
 };
 
 const EDGE_FUNCTION_IMPORTS: Record<string, (keyof typeof SHARED_MODULES)[]> = {

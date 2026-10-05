@@ -5,6 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
 
 const BATCH_SIZE = 100;
 
@@ -32,13 +33,18 @@ serve(async (req) => {
         return new Response(JSON.stringify({ deleted: 0 }), { status: 200 });
     }
 
-    const paths = rows.map((r: { storage_path: string }) => r.storage_path);
-    const ids   = rows.map((r: { id: string }) => r.id);
+    // Ids and paths are chosen by the uploader: only files in the owner's own folder are removed from
+    // storage; any other overdue row loses its metadata only.
+    const purgeable = (rows as PurgeRow[]).filter(isPurgeableRow);
+    const paths = purgeable.map((r) => r.storage_path);
+    const ids   = (rows as PurgeRow[]).map((r) => r.id);
 
     // Storage API — this is the only way to delete; direct SQL is blocked.
-    const { error: storageErr } = await admin.storage.from('attachments').remove(paths);
-    if (storageErr) {
-        return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), { status: 500 });
+    if (paths.length > 0) {
+        const { error: storageErr } = await admin.storage.from('attachments').remove(paths);
+        if (storageErr) {
+            return new Response(JSON.stringify({ error: `Storage removal failed: ${storageErr.message}` }), { status: 500 });
+        }
     }
 
     const { error: dbErr } = await admin
