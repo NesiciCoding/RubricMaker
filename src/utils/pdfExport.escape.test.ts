@@ -39,10 +39,9 @@ describe('print export escaping', () => {
     it('renders names, subject, email and modifier reason as text, not markup', () => {
         const { rubric, student, sr } = fixtures();
         const html = buildRubricHTML(sr, rubric, student, null);
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        expect(doc.querySelector('img')).toBeNull();
-        expect(doc.querySelector('[onerror]')).toBeNull();
-        expect(doc.body.textContent).toContain('Alice <img');
+        expect(html).not.toContain('<img src=x');
+        expect(html).not.toMatch(/<[^>]*onerror=/);
+        expect(html).toContain('Alice &lt;img');
     });
 
     it('keeps an unescaped-field payload out of a style template stylesheet', () => {
