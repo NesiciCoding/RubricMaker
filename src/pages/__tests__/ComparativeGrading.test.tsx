@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ComparativeGradingDefault from '../ComparativeGrading';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { Class, Rubric, Student, AppSettings } from '../../types';
+import type { Class, Rubric, Student, StudentRubric, AppSettings } from '../../types';
 
 const mockRubric: Rubric = {
     id: 'r1',
@@ -45,6 +45,7 @@ const mockSettings: AppSettings = {
 };
 
 const mockSaveStudentRubric = vi.fn();
+const mockDeleteStudentRubric = vi.fn();
 const mockAddComparativeMatchup = vi.fn();
 const mockUpdateRubric = vi.fn();
 const mockNavigate = vi.fn();
@@ -54,7 +55,7 @@ const mockNavigate = vi.fn();
 const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudentA, mockStudentB];
 const mockClassesArr = [mockClassA];
-const mockStudentRubricsArr: never[] = [];
+const mockStudentRubricsArr: StudentRubric[] = [];
 const mockAttachmentsArr: never[] = [];
 const mockComparativeMatchupsArr: never[] = [];
 
@@ -66,6 +67,7 @@ const mockAppValue = {
     attachments: mockAttachmentsArr,
     comparativeMatchups: mockComparativeMatchupsArr,
     saveStudentRubric: mockSaveStudentRubric,
+    deleteStudentRubric: mockDeleteStudentRubric,
     addComparativeMatchup: mockAddComparativeMatchup,
     updateRubric: mockUpdateRubric,
     gradeScales: [],
@@ -114,6 +116,7 @@ describe('ComparativeGrading', () => {
 
     beforeEach(() => {
         mockSaveStudentRubric.mockClear();
+        mockDeleteStudentRubric.mockClear();
         mockAddComparativeMatchup.mockClear();
         mockUpdateRubric.mockClear();
         mockNavigate.mockClear();
@@ -146,6 +149,69 @@ describe('ComparativeGrading', () => {
         fireEvent.click(screen.getByText('comparativeGrading.action_equal'));
         fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
         expect(mockSaveStudentRubric).toHaveBeenCalledTimes(2);
+    });
+
+    describe('existing grade records (#618)', () => {
+        const graded = (id: string, studentId: string, levelId: string): StudentRubric => ({
+            id,
+            rubricId: 'r1',
+            studentId,
+            entries: [{ criterionId: 'c1', levelId, comment: '', checkedSubItems: [] }],
+            overallComment: '',
+            isPeerReview: false,
+            gradedAt: '2024-02-01T00:00:00Z',
+        });
+        afterEach(() => {
+            mockStudentRubricsArr.length = 0;
+        });
+
+        it("loads both students' existing grades and saves onto the same record ids", () => {
+            mockStudentRubricsArr.push(graded('sr-alice', 's1', 'l1'), graded('sr-bob', 's2', 'l2'));
+            renderAt('/grade-comparative/c1/r1');
+            // Pre-loaded: Alice is on Excellent (90-100), Bob on Good (70-89), not 0 pts.
+            expect(screen.queryByText(/^0 pts/)).not.toBeInTheDocument();
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            const savedIds = mockSaveStudentRubric.mock.calls.map(([sr]) => sr.id).sort();
+            expect(savedIds).toEqual(['sr-alice', 'sr-bob']);
+        });
+
+        it('reuses the records it just created when the same pair comes up again', () => {
+            renderAt('/grade-comparative/c1/r1');
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            const idsFor = (studentId: string) =>
+                new Set(
+                    mockSaveStudentRubric.mock.calls.filter(([sr]) => sr.studentId === studentId).map(([sr]) => sr.id)
+                );
+            expect(mockSaveStudentRubric).toHaveBeenCalledTimes(4);
+            expect(idsFor('s1').size).toBe(1);
+            expect(idsFor('s2').size).toBe(1);
+        });
+
+        it('adds entries for criteria created after an existing grade was saved', () => {
+            const old = { ...graded('sr-alice', 's1', 'l1'), entries: [] };
+            mockStudentRubricsArr.push(old, graded('sr-bob', 's2', 'l2'));
+            renderAt('/grade-comparative/c1/r1');
+            fireEvent.click(screen.getByText('comparativeGrading.action_equal'));
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            const alice = mockSaveStudentRubric.mock.calls.map(([sr]) => sr).find((sr) => sr.id === 'sr-alice');
+            expect(alice.entries).toEqual([expect.objectContaining({ criterionId: 'c1', levelId: 'l2' })]);
+        });
+
+        it('flags duplicate records and keeps only the one shown', () => {
+            mockStudentRubricsArr.push(
+                graded('sr-alice', 's1', 'l1'),
+                graded('sr-bob', 's2', 'l2'),
+                graded('sr-bob-dup', 's2', 'l1')
+            );
+            renderAt('/grade-comparative/c1/r1');
+            expect(screen.getAllByRole('status').map((el) => el.textContent)).toContainEqual(
+                expect.stringContaining('comparativeGrading.duplicate_records:{"count":2}')
+            );
+            fireEvent.click(screen.getByText('comparativeGrading.duplicate_records_keep'));
+            expect(mockDeleteStudentRubric).toHaveBeenCalledTimes(1);
+            expect(mockDeleteStudentRubric).toHaveBeenCalledWith('sr-bob-dup', 'student');
+        });
     });
 
     it('renders the combined-classes session scope', () => {

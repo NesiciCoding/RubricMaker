@@ -189,7 +189,14 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const navigate = useNavigate();
     const { students } = useStudents();
     const { classes } = useClasses();
-    const { studentRubrics, attachments, saveStudentRubric, comparativeMatchups, addComparativeMatchup } = useGrading();
+    const {
+        studentRubrics,
+        attachments,
+        saveStudentRubric,
+        deleteStudentRubric,
+        comparativeMatchups,
+        addComparativeMatchup,
+    } = useGrading();
 
     const { rubrics, gradeScales, updateRubric } = useAuthoring();
     const { settings } = useSettings();
@@ -270,12 +277,35 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         if (srA || srB) setIsDirty(true);
     }, [srA, srB]);
 
+    // Older sessions appended a second record per matchup (#618); flag those and let the teacher keep
+    // the one on screen. The rest are soft-deleted, so they stay restorable from Admin → Archive.
+    const otherRecords = (sr: (typeof studentRubrics)[0]) =>
+        studentRubrics.filter((o) => o.rubricId === sr.rubricId && o.studentId === sr.studentId && o.id !== sr.id);
+    const keepOnlyShownRecord = (sr: (typeof studentRubrics)[0]) =>
+        otherRecords(sr).forEach((o) => deleteStudentRubric(o.id, 'student'));
+
     function getEmptySR(studentId: string) {
         // v8 ignore next 1 -- only reachable once the rubric-not-found state has been ruled out
         if (!rubric) throw new Error('No rubric');
         const existing = studentRubrics.find((sr) => sr.rubricId === rubric.id && sr.studentId === studentId);
         if (existing) return existing;
         return getBlankSR(studentId);
+    }
+
+    // A grade saved before a criterion was added has no entry for it; the compare buttons and level
+    // selects only update existing entries, so add the missing ones (existing entries are kept).
+    function withAllCriteria(sr: (typeof studentRubrics)[0]) {
+        // v8 ignore next 1 -- only reachable once the rubric-not-found state has been ruled out
+        if (!rubric) return sr;
+        const missing = rubric.criteria.filter((c) => !sr.entries.some((e) => e.criterionId === c.id));
+        if (missing.length === 0) return sr;
+        return {
+            ...sr,
+            entries: [
+                ...sr.entries,
+                ...missing.map((c) => ({ criterionId: c.id, levelId: null, comment: '', checkedSubItems: [] })),
+            ],
+        };
     }
 
     function getBlankSR(studentId: string) {
@@ -304,7 +334,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     function pickNextMatchup(
         anchorId: string | null,
         keepSrA?: (typeof studentRubrics)[0] | null,
-        matchupsOverride?: ComparativeMatchup[]
+        matchupsOverride?: ComparativeMatchup[],
+        justSaved: (typeof studentRubrics)[0][] = []
     ) {
         // v8 ignore next 1 -- the session (and this callback) only runs with 2+ class students
         if (classStudents.length < 2) return;
@@ -320,11 +351,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
         setStudentA(a);
         setStudentB(b);
-        // Use the already-saved SR when keeping the same anchor so scores aren't wiped.
-        // For a new anchor, always start blank so the previous student's scores don't persist.
-        const anchorChanged = a.id !== anchorId;
-        setSrA(keepSrA !== undefined ? keepSrA : anchorChanged ? getBlankSR(a.id) : getEmptySR(a.id));
-        setSrB(getBlankSR(b.id));
+        // Always edit the student's existing grade record (same lookup as GradeStudent) so a
+        // matchup updates it instead of appending a duplicate (#618). justSaved covers the pair
+        // saved in this same call, whose dispatch hasn't reached studentRubrics yet.
+        const loadSR = (id: string) => withAllCriteria(justSaved.find((sr) => sr.studentId === id) ?? getEmptySR(id));
+        // The pair helper can move the anchor; a kept record must belong to the new Student A.
+        setSrA(keepSrA && keepSrA.studentId === a.id ? keepSrA : loadSR(a.id));
+        setSrB(loadSR(b.id));
         setIsDirty(false);
     }
 
@@ -349,7 +382,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         setIsDirty(false);
 
         // pickNextMatchup handles per-student eligibility and sets sessionDone when done.
-        pickNextMatchup(studentA.id, savedSrA, [...rubricMatchups, justCompleted]);
+        pickNextMatchup(studentA.id, savedSrA, [...rubricMatchups, justCompleted], [savedSrA, savedSrB]);
     }
 
     function compareCriterion(criterionId: string, comparison: 'A_BETTER' | 'EQUAL' | 'B_BETTER') {
@@ -631,6 +664,19 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student A */}
                         <div style={{ flex: 1 }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
+                            {otherRecords(srA).length > 0 && (
+                                <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
+                                    {t('comparativeGrading.duplicate_records', { count: otherRecords(srA).length + 1 })}{' '}
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        title={t('comparativeGrading.duplicate_records_keep_hint')}
+                                        onClick={() => keepOnlyShownRecord(srA)}
+                                    >
+                                        {t('comparativeGrading.duplicate_records_keep')}
+                                    </button>
+                                </div>
+                            )}
                             <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumA?.gradeColor }}>
                                 {sumA?.rawScore} pts ({sumA?.modifiedPercentage.toFixed(1)}%)
                             </div>
@@ -706,6 +752,19 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student B */}
                         <div style={{ flex: 1, textAlign: 'right' }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
+                            {otherRecords(srB).length > 0 && (
+                                <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
+                                    {t('comparativeGrading.duplicate_records', { count: otherRecords(srB).length + 1 })}{' '}
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost btn-sm"
+                                        title={t('comparativeGrading.duplicate_records_keep_hint')}
+                                        onClick={() => keepOnlyShownRecord(srB)}
+                                    >
+                                        {t('comparativeGrading.duplicate_records_keep')}
+                                    </button>
+                                </div>
+                            )}
                             <div className="text-muted text-sm" style={{ fontWeight: 'bold', color: sumB?.gradeColor }}>
                                 {sumB?.rawScore} pts ({sumB?.modifiedPercentage.toFixed(1)}%)
                             </div>
