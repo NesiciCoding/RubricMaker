@@ -647,7 +647,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student A */}
                         <div style={{ flex: 1 }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
-                            {srA && otherRecords(srA).length > 0 && (
+                            {otherRecords(srA).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srA).length + 1 })}{' '}
                                     <button
@@ -735,7 +735,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student B */}
                         <div style={{ flex: 1, textAlign: 'right' }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
-                            {srB && otherRecords(srB).length > 0 && (
+                            {otherRecords(srB).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srB).length + 1 })}{' '}
                                     <button
