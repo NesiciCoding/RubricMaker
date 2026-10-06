@@ -141,9 +141,17 @@ export class StudentEssayPage {
         return this.page.getByText(/must be opened in safe exam browser/i);
     }
 
-    /** Inline submission error (DB mode failure with fallback code) */
+    /** Inline submission error (DB mode failure, or an earlier hand-in already exists) */
     submissionErrorMessage(): Locator {
-        return this.page.getByText(/submission failed/i);
+        return this.page.getByRole('alert').filter({ hasText: /has not been sent yet|already handed in/i });
+    }
+
+    retrySubmitButton(): Locator {
+        return this.page.getByRole('button', { name: 'Retry' });
+    }
+
+    copyBackupCodeButton(): Locator {
+        return this.page.getByRole('button', { name: /copy backup code/i });
     }
 }
 

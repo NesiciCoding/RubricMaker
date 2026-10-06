@@ -285,7 +285,7 @@ test.describe('Short-code essay flow (integration)', () => {
             // A fresh context is a NEW anonymous user, but the UNIQUE
             // (assignment_id, student_email) index (migrations 022/024) rejects a
             // second hand-in for the same email — submit-essay returns 409 and the
-            // page falls back to the inline error + backup code.
+            // page reports the existing hand-in (this text was not saved) rather than success.
             const secondContext = await browser.newContext();
             try {
                 const secondPage = await secondContext.newPage();
@@ -298,6 +298,7 @@ test.describe('Short-code essay flow (integration)', () => {
                 await essay2.typeInEditor('Second submission.');
                 await essay2.submitButton().click();
                 await expect(essay2.submissionErrorMessage()).toBeVisible({ timeout: 10_000 });
+                await expect(essay2.dbSuccessBanner()).not.toBeVisible();
             } finally {
                 await secondContext.close();
             }
