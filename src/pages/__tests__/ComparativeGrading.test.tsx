@@ -188,6 +188,16 @@ describe('ComparativeGrading', () => {
             expect(idsFor('s2').size).toBe(1);
         });
 
+        it('adds entries for criteria created after an existing grade was saved', () => {
+            const old = { ...graded('sr-alice', 's1', 'l1'), entries: [] };
+            mockStudentRubricsArr.push(old, graded('sr-bob', 's2', 'l2'));
+            renderAt('/grade-comparative/c1/r1');
+            fireEvent.click(screen.getByText('comparativeGrading.action_equal'));
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            const alice = mockSaveStudentRubric.mock.calls.map(([sr]) => sr).find((sr) => sr.id === 'sr-alice');
+            expect(alice.entries).toEqual([expect.objectContaining({ criterionId: 'c1', levelId: 'l2' })]);
+        });
+
         it('flags duplicate records and keeps only the one shown', () => {
             mockStudentRubricsArr.push(
                 graded('sr-alice', 's1', 'l1'),

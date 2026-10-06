@@ -292,6 +292,22 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         return getBlankSR(studentId);
     }
 
+    // A grade saved before a criterion was added has no entry for it; the compare buttons and level
+    // selects only update existing entries, so add the missing ones (existing entries are kept).
+    function withAllCriteria(sr: (typeof studentRubrics)[0]) {
+        // v8 ignore next 1 -- only reachable once the rubric-not-found state has been ruled out
+        if (!rubric) return sr;
+        const missing = rubric.criteria.filter((c) => !sr.entries.some((e) => e.criterionId === c.id));
+        if (missing.length === 0) return sr;
+        return {
+            ...sr,
+            entries: [
+                ...sr.entries,
+                ...missing.map((c) => ({ criterionId: c.id, levelId: null, comment: '', checkedSubItems: [] })),
+            ],
+        };
+    }
+
     function getBlankSR(studentId: string) {
         // v8 ignore next 1 -- only reachable once the rubric-not-found state has been ruled out
         if (!rubric) throw new Error('No rubric');
@@ -338,8 +354,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         // Always edit the student's existing grade record (same lookup as GradeStudent) so a
         // matchup updates it instead of appending a duplicate (#618). justSaved covers the pair
         // saved in this same call, whose dispatch hasn't reached studentRubrics yet.
-        const loadSR = (id: string) => justSaved.find((sr) => sr.studentId === id) ?? getEmptySR(id);
-        setSrA(keepSrA !== undefined ? keepSrA : loadSR(a.id));
+        const loadSR = (id: string) => withAllCriteria(justSaved.find((sr) => sr.studentId === id) ?? getEmptySR(id));
+        // The pair helper can move the anchor; a kept record must belong to the new Student A.
+        setSrA(keepSrA && keepSrA.studentId === a.id ? keepSrA : loadSR(a.id));
         setSrB(loadSR(b.id));
         setIsDirty(false);
     }
