@@ -2991,7 +2991,8 @@
         "submission_code_label": "Inzendcode",
         "submit_failed": "Je essay is nog niet verstuurd. Het staat nog op dit apparaat — controleer je verbinding en klik op Opnieuw proberen. We proberen het ook automatisch opnieuw zodra je weer online bent.",
         "retry_submit": "Opnieuw proberen",
-        "copy_backup_code": "Back-upcode kopiëren"
+        "copy_backup_code": "Back-upcode kopiëren",
+        "already_submitted": "Je hebt dit essay al ingeleverd, dus deze versie is niet verstuurd. Ze staat nog op dit apparaat — vraag je docent als je opnieuw moet inleveren."
     },
     "editor": {
         "switchToCompactView": "Compact weergave",

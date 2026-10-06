@@ -129,4 +129,16 @@ describe('StudentEssayPage — failed DB submission (#608)', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(localStorage.getItem(draftKey)).toBeNull();
     });
+
+    it('reports an existing hand-in instead of claiming success when the first attempt gets a 409', async () => {
+        mockSubmitEssay.mockResolvedValue({ success: false, error: 'You have already submitted this assignment' });
+        await renderAndWrite();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+        expect(await screen.findByRole('alert')).toHaveTextContent('essay.already_submitted');
+        expect(screen.queryByText('essay.submitted_title_db')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'essay.retry_submit' })).not.toBeInTheDocument();
+        expect(localStorage.getItem(draftKey)).toBe('my precious essay');
+    });
 });

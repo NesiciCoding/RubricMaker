@@ -2991,7 +2991,8 @@
         "submission_code_label": "Código de entrega",
         "submit_failed": "Tu redacción aún no se ha enviado. Sigue guardada en este dispositivo: comprueba tu conexión y pulsa Reintentar. También lo reintentaremos automáticamente cuando vuelvas a estar en línea.",
         "retry_submit": "Reintentar",
-        "copy_backup_code": "Copiar código de respaldo"
+        "copy_backup_code": "Copiar código de respaldo",
+        "already_submitted": "Ya entregaste esta redacción, así que esta versión no se envió. Sigue guardada en este dispositivo: pregunta a tu docente si necesitas entregarla de nuevo."
     },
     "editor": {
         "switchToCompactView": "Vista compacta",

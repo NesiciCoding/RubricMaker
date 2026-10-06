@@ -315,6 +315,10 @@ export default function StudentEssayPage() {
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    // An "already submitted" (409) on a first attempt means an earlier hand-in exists and THIS text was not
+    // saved; only after one of our own failed attempts can a 409 mean that attempt landed after all.
+    const [alreadyHandedIn, setAlreadyHandedIn] = useState(false);
+    const failedAttemptRef = useRef(false);
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
     // Timer — initialised from the URL (legacy) or from resolved content (short code).
@@ -440,10 +444,12 @@ export default function StudentEssayPage() {
                 wordCount
             );
             setSubmitting(false);
-            // A 409 means an earlier attempt landed but its response was lost — that is a success.
-            if (!result.success && !isAlreadySubmitted(result.error)) {
+            const duplicate = !result.success && isAlreadySubmitted(result.error);
+            if (!result.success && !(duplicate && failedAttemptRef.current)) {
                 // Keep the draft and the editable form; the backup code is only a secondary escape hatch.
-                setSubmitError(t('essay.submit_failed'));
+                if (!duplicate) failedAttemptRef.current = true;
+                setAlreadyHandedIn(duplicate);
+                setSubmitError(t(duplicate ? 'essay.already_submitted' : 'essay.submit_failed'));
                 setSubmissionCode(legacyCode);
                 logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
                 return;
@@ -495,11 +501,11 @@ export default function StudentEssayPage() {
 
     // A failed DB hand-in is retried as soon as connectivity returns.
     useEffect(() => {
-        if (!submitError || submitted) return;
+        if (!submitError || submitted || alreadyHandedIn) return;
         const onOnline = () => void handleSubmitRef.current();
         window.addEventListener('online', onOnline);
         return () => window.removeEventListener('online', onOnline);
-    }, [submitError, submitted]);
+    }, [submitError, submitted, alreadyHandedIn]);
 
     // Countdown — auto-submit when time runs out
     useEffect(() => {
@@ -872,14 +878,16 @@ export default function StudentEssayPage() {
                             <div style={{ flex: 1 }}>
                                 <div>{submitError}</div>
                                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-primary btn-sm"
-                                        onClick={() => void handleSubmit()}
-                                        disabled={submitting}
-                                    >
-                                        {t('essay.retry_submit')}
-                                    </button>
+                                    {!alreadyHandedIn && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary btn-sm"
+                                            onClick={() => void handleSubmit()}
+                                            disabled={submitting}
+                                        >
+                                            {t('essay.retry_submit')}
+                                        </button>
+                                    )}
                                     <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
                                         <Copy size={14} /> {copied ? t('essay.copied') : t('essay.copy_backup_code')}
                                     </button>
