@@ -300,7 +300,7 @@ test.describe('Essay page — DB mode (mocked Supabase)', () => {
         await expect(essay.dbSuccessBanner()).toBeVisible({ timeout: 10_000 });
     });
 
-    test('failed DB submission shows fallback submission code', async ({ page }) => {
+    test('failed DB submission keeps the draft and offers Retry and the backup code (#608)', async ({ page }) => {
         const code = buildEssayCode({ supabaseUrl: MOCK_SUPABASE_URL, supabaseAnonKey: MOCK_ANON_KEY });
         await mockSupabaseAuth(page);
         await mockSubmitEssay(page, { fail: true });
@@ -316,8 +316,12 @@ test.describe('Essay page — DB mode (mocked Supabase)', () => {
         await essay.submitButton().click();
 
         await expect(essay.submissionErrorMessage()).toBeVisible({ timeout: 10_000 });
-        // Fallback code should still be provided so student isn't stuck
-        await expect(essay.submissionCodeArea()).toBeVisible({ timeout: 5_000 });
+        // Not handed in: no success card, the editor and Submit stay, and Retry/backup code are offered.
+        await expect(essay.dbSuccessBanner()).not.toBeVisible();
+        await expect(essay.editor()).toBeVisible();
+        await expect(essay.submitButton()).toBeVisible();
+        await expect(essay.retrySubmitButton()).toBeVisible();
+        await expect(essay.copyBackupCodeButton()).toBeVisible();
     });
 });
 
