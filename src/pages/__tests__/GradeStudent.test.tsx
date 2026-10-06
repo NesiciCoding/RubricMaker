@@ -196,6 +196,43 @@ describe('GradeStudent', () => {
         expect(anchorBox.checked).toBe(true);
     });
 
+    function tickFeedbackOnlyAndAnchor() {
+        fireEvent.click(screen.getByLabelText('gradeStudent.feedback_only_label'));
+        const anchorLabel = Array.from(document.querySelectorAll('label')).find((l) =>
+            l.textContent?.includes('gradeStudent.mark_as_anchor')
+        );
+        fireEvent.click(anchorLabel!.querySelector('input[type="checkbox"]')!);
+    }
+
+    it('persists feedback-only and anchor flags on Save & Next (#606)', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
+        tickFeedbackOnlyAndAnchor();
+        fireEvent.click(screen.getAllByTitle('Next: Bob')[0]);
+        expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+            expect.objectContaining({ feedbackOnly: true, isAnchor: true })
+        );
+    });
+
+    it('persists feedback-only and anchor flags on Ctrl+S (#606)', () => {
+        renderPage();
+        tickFeedbackOnlyAndAnchor();
+        fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+        expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+            expect.objectContaining({ feedbackOnly: true, isAnchor: true })
+        );
+    });
+
+    it('persists feedback-only and anchor flags on Not handed in (#606)', () => {
+        renderPage();
+        tickFeedbackOnlyAndAnchor();
+        fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
+        fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
+        expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+            expect.objectContaining({ notHandedIn: true, feedbackOnly: true, isAnchor: true })
+        );
+    });
+
     it('edits the overall comment', () => {
         renderPage();
         const editors = screen.getAllByTestId('tiptap-mock');

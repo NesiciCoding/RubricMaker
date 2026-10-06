@@ -351,6 +351,23 @@ describe('StudentPortalPage', () => {
         mockAppValue.studentRubrics = emptyArr;
     });
 
+    it('masks feedback-only grades: no average, no percentage/letter, but feedback stays visible (#606)', () => {
+        const hidden = [
+            { ...mockGradedStudentRubric, feedbackOnly: true },
+            { ...mockGradedStudentRubric2, feedbackOnly: true },
+        ];
+        mockAppValue.studentRubrics = hidden;
+        renderAt('s1');
+        expect(screen.queryByText('studentPortal.stat_average')).not.toBeInTheDocument();
+        switchTab('progress');
+        expect(screen.queryByText('studentPortal.grade_history')).not.toBeInTheDocument();
+        switchTab('feedback');
+        expect(screen.getAllByText('studentPortal.grade_withheld')).toHaveLength(2);
+        expect(screen.queryByText(/%$/)).not.toBeInTheDocument();
+        expect(screen.getByText('Well done!')).toBeInTheDocument();
+        mockAppValue.studentRubrics = emptyArr;
+    });
+
     it('renders peer reviews section when peer reviews exist', () => {
         mockAppValue.peerReviews = mockPeerReviewsArr;
         renderAt('s1');

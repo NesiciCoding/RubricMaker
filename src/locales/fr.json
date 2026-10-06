@@ -2241,7 +2241,8 @@
         "toggle_theme": "Changer de thème",
         "tab_empty_assignments": "Vous n'avez aucun devoir pour le moment.",
         "tab_empty_progress": "Aucune donnée de progression pour l'instant — elle apparaîtra une fois votre travail noté.",
-        "brand_name": "Rubric Maker"
+        "brand_name": "Rubric Maker",
+        "grade_withheld": "Commentaires uniquement — note pas encore publiée"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
