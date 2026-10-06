@@ -260,6 +260,8 @@ Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sen
 ./scripts/restore.sh backups/20260515_120000
 ```
 
+Backups hold data only; the restore target must be a running stack migrated to at least the same version (`docker-compose up -d` runs the migrations). The restore runs in one transaction and stops on the first error. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md#backup-and-restore).
+
 **Updating to a new version:**
 
 ```bash

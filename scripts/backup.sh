@@ -7,12 +7,19 @@
 #
 # Restoring a backup:
 #   ./scripts/restore.sh backups/20260515_120000
+#
+# The database part is data only (rows of the public, auth and storage schemas). Tables, GRANTs,
+# RLS policies, triggers and the realtime publication come from the migrations the target stack
+# runs (db_migrate), so a restore never has to recreate them — see restore.sh.
+#
+# DB_EXEC overrides how pg_dump/psql reach the database (default: the compose `db` service).
 
 set -euo pipefail
 
 BACKUP_ROOT="${1:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUT="$BACKUP_ROOT/$TIMESTAMP"
+DB_EXEC="${DB_EXEC:-docker-compose exec -T db}"
 
 mkdir -p "$OUT"
 
@@ -21,10 +28,17 @@ echo ""
 
 # ── Database ──────────────────────────────────────────────────────────────────
 echo "▶  Dumping database..."
-docker-compose exec -T db \
-    pg_dump -U supabase_admin --no-owner --no-acl postgres \
-    > "$OUT/database.sql"
-echo "   ✓ database.sql ($(du -sh "$OUT/database.sql" | cut -f1))"
+# Migration bookkeeping stays with the stack; restore.sh compares it instead of loading it.
+$DB_EXEC pg_dump -U supabase_admin --data-only --disable-triggers \
+    --schema=public --schema=auth --schema=storage \
+    --exclude-table=public._migrations \
+    --exclude-table=auth.schema_migrations \
+    --exclude-table=storage.migrations \
+    postgres > "$OUT/data.sql"
+$DB_EXEC psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -tA \
+    -c "SELECT name FROM public._migrations ORDER BY name" > "$OUT/migrations.txt"
+echo "2" > "$OUT/FORMAT"
+echo "   ✓ data.sql ($(du -sh "$OUT/data.sql" | cut -f1)), $(wc -l < "$OUT/migrations.txt" | tr -d ' ') migrations recorded"
 
 # ── Storage (uploaded attachments and DOCX templates) ─────────────────────────
 echo "▶  Archiving uploaded files..."
