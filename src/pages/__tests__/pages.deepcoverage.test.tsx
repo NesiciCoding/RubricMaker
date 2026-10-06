@@ -405,6 +405,19 @@ describe('StudentFeedbackPage — valid feedback code', () => {
         expect(screen.getByText('Criterion 1')).toBeInTheDocument();
     });
 
+    it('hides percentage, letter and raw points for a feedback-only grade (#606)', () => {
+        const code = encodeFeedbackCode({
+            sr: { ...mockSr, feedbackOnly: true },
+            rubric: mockRubric,
+            student: mockStudent,
+            scale: mockGradeScale,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(screen.queryByText(/pts$/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/%$/)).not.toBeInTheDocument();
+        expect(screen.getByText('Good work overall')).toBeInTheDocument();
+    });
+
     it('renders overall comment', () => {
         renderPage(<StudentFeedbackPage />, `/feedback/${validCode}`, '/feedback/:code');
         expect(screen.getByText('Good work overall')).toBeInTheDocument();

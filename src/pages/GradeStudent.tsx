@@ -320,7 +320,7 @@ export default function GradeStudent() {
         });
         setIsDirty(false);
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId]);
+    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, feedbackOnly, isAnchor]);
 
     const handleNotHandedIn = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
@@ -341,7 +341,7 @@ export default function GradeStudent() {
         } else {
             navigate(-1);
         }
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t]);
+    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t, feedbackOnly, isAnchor]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {

@@ -2246,6 +2246,7 @@
         "tab_empty_assignments": "Je hebt op dit moment geen opdrachten.",
         "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld.",
         "brand_name": "Rubric Maker",
+        "grade_withheld": "Alleen feedback — cijfer nog niet vrijgegeven",
         "switch_back_to_teacher": "Terug naar docent"
     },
     "selfAssess": {

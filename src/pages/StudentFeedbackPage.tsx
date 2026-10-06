@@ -107,9 +107,11 @@ export default function StudentFeedbackPage() {
                                     {summary.modifiedPercentage.toFixed(1)}%
                                 </div>
                             )}
-                            <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: 2 }}>
-                                {summary.rawScore} / {summary.maxRawScore} pts
-                            </div>
+                            {showGrade && (
+                                <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: 2 }}>
+                                    {summary.rawScore} / {summary.maxRawScore} pts
+                                </div>
+                            )}
                         </div>
                     </div>
 

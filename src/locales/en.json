@@ -2246,6 +2246,7 @@
         "tab_empty_assignments": "You have no assignments right now.",
         "tab_empty_progress": "No progress data yet — it appears here once your work is graded.",
         "brand_name": "Rubric Maker",
+        "grade_withheld": "Feedback only — grade not released yet",
         "switch_back_to_teacher": "Switch back to teacher"
     },
     "selfAssess": {
