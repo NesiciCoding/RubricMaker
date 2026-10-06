@@ -141,4 +141,39 @@ describe('StudentEssayPage — failed DB submission (#608)', () => {
         expect(screen.queryByRole('button', { name: 'essay.retry_submit' })).not.toBeInTheDocument();
         expect(localStorage.getItem(draftKey)).toBe('my precious essay');
     });
+
+    it('does not confirm a 409 retry when the draft was edited after the failed attempt', async () => {
+        mockSubmitEssay.mockResolvedValueOnce({ success: false, error: 'Network error' });
+        mockSubmitEssay.mockResolvedValueOnce({
+            success: false,
+            error: 'You have already submitted this assignment',
+        });
+        await renderAndWrite();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+        fireEvent.change(screen.getByTestId('essay-editor'), { target: { value: 'my edited essay' } });
+        await act(async () => {
+            fireEvent.click(await screen.findByRole('button', { name: 'essay.retry_submit' }));
+        });
+        expect(screen.getByRole('alert')).toHaveTextContent('essay.already_submitted');
+        expect(screen.queryByText('essay.submitted_title_db')).not.toBeInTheDocument();
+        expect(localStorage.getItem(draftKey)).toBe('my edited essay');
+    });
+
+    it('says the draft was not kept when saving it locally fails', async () => {
+        mockSubmitEssay.mockResolvedValue({ success: false, error: 'Network error' });
+        await renderAndWrite();
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota', 'QuotaExceededError');
+        });
+        try {
+            await act(async () => {
+                fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+            });
+            expect(await screen.findByRole('alert')).toHaveTextContent('essay.submit_failed_unsaved');
+        } finally {
+            setItem.mockRestore();
+        }
+    });
 });

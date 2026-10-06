@@ -2992,7 +2992,8 @@
         "submit_failed": "Your essay has not been sent yet. It is still saved on this device — check your connection and press Retry. We will also retry automatically when you are back online.",
         "retry_submit": "Retry",
         "copy_backup_code": "Copy backup code",
-        "already_submitted": "You have already handed in this essay, so this version was not sent. It is still saved on this device — ask your teacher if you need to hand in again."
+        "already_submitted": "You have already handed in this essay, so this version was not sent. It is still saved on this device — ask your teacher if you need to hand in again.",
+        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry."
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",

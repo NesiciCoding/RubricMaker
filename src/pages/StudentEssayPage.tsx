@@ -315,10 +315,11 @@ export default function StudentEssayPage() {
     const [copied, setCopied] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
-    // An "already submitted" (409) on a first attempt means an earlier hand-in exists and THIS text was not
-    // saved; only after one of our own failed attempts can a 409 mean that attempt landed after all.
+    // An "already submitted" (409) means some hand-in exists, not that it holds THIS text. It counts as
+    // success only when the exact text of one of our own failed attempts is being retried, since that
+    // attempt may have landed with its response lost. Any other 409 means this text was not saved.
     const [alreadyHandedIn, setAlreadyHandedIn] = useState(false);
-    const failedAttemptRef = useRef(false);
+    const failedAttemptHtmlRef = useRef<string | null>(null);
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
     // Timer — initialised from the URL (legacy) or from resolved content (short code).
@@ -397,10 +398,12 @@ export default function StudentEssayPage() {
 
     const handleSubmit = useCallback(async () => {
         if (!assignment) return;
+        let draftStored = true;
         try {
             localStorage.setItem(draftKey, html);
         } catch {
-            // Quota exceeded — non-fatal, the draft is just a local backup.
+            // Quota exceeded: the editor holds the only copy, which the failure message must say.
+            draftStored = false;
         }
         if (timerRef.current) clearInterval(timerRef.current);
 
@@ -445,11 +448,19 @@ export default function StudentEssayPage() {
             );
             setSubmitting(false);
             const duplicate = !result.success && isAlreadySubmitted(result.error);
-            if (!result.success && !(duplicate && failedAttemptRef.current)) {
+            if (!result.success && !(duplicate && failedAttemptHtmlRef.current === html)) {
                 // Keep the draft and the editable form; the backup code is only a secondary escape hatch.
-                if (!duplicate) failedAttemptRef.current = true;
+                if (!duplicate) failedAttemptHtmlRef.current = html;
                 setAlreadyHandedIn(duplicate);
-                setSubmitError(t(duplicate ? 'essay.already_submitted' : 'essay.submit_failed'));
+                setSubmitError(
+                    t(
+                        duplicate
+                            ? 'essay.already_submitted'
+                            : draftStored
+                              ? 'essay.submit_failed'
+                              : 'essay.submit_failed_unsaved'
+                    )
+                );
                 setSubmissionCode(legacyCode);
                 logEvent('error', 'essay_submit_error', { teacherKey: assignment.teacherKey }, 'error');
                 return;
@@ -546,6 +557,13 @@ export default function StudentEssayPage() {
             setTimeout(() => setCopied(false), 2500);
         }
     }, [submissionCode, isInSEB, sebQuitUrl]);
+
+    // The failure panel's copy must not quit SEB like the post-submit copy does: Retry is still pending.
+    const handleCopyBackup = useCallback(() => {
+        copyText(submissionCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+    }, [submissionCode]);
 
     // ── Guard: invalid link ───────────────────────────────────────────────────
     if (!assignment) {
@@ -888,7 +906,11 @@ export default function StudentEssayPage() {
                                             {t('essay.retry_submit')}
                                         </button>
                                     )}
-                                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopy}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={handleCopyBackup}
+                                    >
                                         <Copy size={14} /> {copied ? t('essay.copied') : t('essay.copy_backup_code')}
                                     </button>
                                 </div>

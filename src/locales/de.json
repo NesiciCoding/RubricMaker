@@ -2992,7 +2992,8 @@
         "submit_failed": "Dein Aufsatz wurde noch nicht gesendet. Er ist weiterhin auf diesem Gerät gespeichert — prüfe deine Verbindung und klicke auf Erneut versuchen. Sobald du wieder online bist, versuchen wir es auch automatisch erneut.",
         "retry_submit": "Erneut versuchen",
         "copy_backup_code": "Sicherungscode kopieren",
-        "already_submitted": "Du hast diesen Aufsatz bereits abgegeben, daher wurde diese Fassung nicht gesendet. Sie ist weiterhin auf diesem Gerät gespeichert – frag deine Lehrkraft, falls du erneut abgeben musst."
+        "already_submitted": "Du hast diesen Aufsatz bereits abgegeben, daher wurde diese Fassung nicht gesendet. Sie ist weiterhin auf diesem Gerät gespeichert – frag deine Lehrkraft, falls du erneut abgeben musst.",
+        "submit_failed_unsaved": "Dein Aufsatz wurde noch nicht gesendet, und dieses Gerät konnte keine Kopie speichern. Kopiere den Sicherungscode, bevor du diese Seite verlässt, und klicke dann auf Erneut versuchen."
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",
