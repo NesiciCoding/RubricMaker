@@ -493,7 +493,11 @@
         "admin_err_current": "La contraseña actual es incorrecta.",
         "admin_password_saved": "Contraseña de administrador guardada",
         "admin_password_removed": "Contraseña de administrador eliminada",
-        "templates_empty": "Aún no hay plantillas subidas. Haz clic en <1>Subir plantilla</1> para añadir una."
+        "templates_empty": "Aún no hay plantillas subidas. Haz clic en <1>Subir plantilla</1> para añadir una.",
+        "switch_to_student_title": "¿Cambiar al rol de alumno?",
+        "switch_to_student_message": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con tu cuenta. Las páginas de docente quedan ocultas mientras tengas este rol.",
+        "switch_to_student_message_local": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con el de tu configuración; si no hay coincidencia, verás la pantalla «No hay cuenta de alumno vinculada». Desde esa pantalla puedes volver al rol de docente. Tus datos no se modifican.",
+        "switch_to_student_confirm": "Cambiar a alumno"
     },
     "navigation": {
         "dashboard": "Panel",
@@ -2245,7 +2249,8 @@
         "tab_empty_assignments": "No tienes tareas por ahora.",
         "tab_empty_progress": "Aún no hay datos de progreso: aparecerán cuando se califique tu trabajo.",
         "brand_name": "Rubric Maker",
-        "grade_withheld": "Solo comentarios — calificación aún no publicada"
+        "grade_withheld": "Solo comentarios — calificación aún no publicada",
+        "switch_back_to_teacher": "Volver al rol de docente"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",

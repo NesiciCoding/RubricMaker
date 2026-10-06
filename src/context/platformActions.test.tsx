@@ -189,6 +189,8 @@ describe('platform actions', () => {
         vi.mocked(storageSync.getCurrentUserId).mockReturnValue(null);
         vi.mocked(storage.importFullBackup).mockReturnValue(true);
         vi.mocked(storage.loadPendingQueue).mockReturnValue([]);
+        vi.mocked(storageSync.isConnected).mockReturnValue(false);
+        vi.mocked(storage.isLocalMode).mockReturnValue(false);
     });
 
     it('connectDatabase configures, hydrates, and merges fresh data into state', async () => {
@@ -441,6 +443,8 @@ describe('platform actions', () => {
         });
         expect(storageSync.signOut).toHaveBeenCalled();
         expect(platform!.showLanding).toBe(false);
+        // Local mode is the only copy of the data — sign-out must never wipe it (#623).
+        expect(storage.clearLocalData).not.toHaveBeenCalled();
         vi.mocked(storage.isLocalMode).mockReturnValue(false);
         localStorage.removeItem('rm_local_mode');
     });
@@ -561,6 +565,7 @@ describe('platform actions', () => {
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
         };
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
 
         await act(async () => {
             await result.current.signOutFromDatabase();
@@ -570,8 +575,20 @@ describe('platform actions', () => {
         expect(result.current.showLanding).toBe(true);
     });
 
+    it('signOutFromDatabase keeps local data when no cloud session is connected (#623)', async () => {
+        const { result } = renderHook(() => usePlatform(), { wrapper });
+        await act(async () => {
+            await result.current.signOutFromDatabase();
+        });
+        expect(storage.clearLocalData).not.toHaveBeenCalled();
+    });
+
     it('signOutFromDatabase warns when the pending queue is not empty', async () => {
         const { result } = renderHook(() => usePlatform(), { wrapper });
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
+        };
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
         vi.mocked(storage.loadPendingQueue).mockReturnValue([
             { id: '1', entity: 'rubric', action: 'upsert', payload: {}, queuedAt: '2024-01-01' },
         ]);

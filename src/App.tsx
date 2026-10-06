@@ -14,6 +14,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
+import { isLocalMode } from './store/storage';
 import { RemountOnParam } from './components/ui/RemountOnParam';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
@@ -121,7 +122,10 @@ export default function App() {
 
     // Student portal: explicit 'student' role OR email matches a student record for any
     // non-admin user (handles first-time sign-ins before the DB trigger can assign the role).
-    if (settings.userRole === 'student' || (linkedStudent !== null && settings.userRole !== 'admin')) {
+    // Local mode has no sign-in, so there the role setting alone decides (#623).
+    const autoLinkStudent =
+        linkedStudent !== null && settings.userRole !== 'admin' && !(isLocalMode() && settings.userRole === 'teacher');
+    if (settings.userRole === 'student' || autoLinkStudent) {
         if (!linkedStudent) {
             return (
                 <div
@@ -144,9 +148,20 @@ export default function App() {
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>
                         {t('studentPortal.no_linked_account_detail')}
                     </p>
-                    <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
-                        {t('studentPortal.sign_out')}
-                    </button>
+                    {isLocalMode() ? (
+                        // Local mode has no account to sign out of, and the role lives in local settings;
+                        // without this the role switch is a one-way lock-out (#623).
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => updateSettings({ userRole: 'teacher' })}
+                        >
+                            {t('studentPortal.switch_back_to_teacher')}
+                        </button>
+                    ) : (
+                        <button className="btn btn-secondary btn-sm" onClick={signOutFromDatabase}>
+                            {t('studentPortal.sign_out')}
+                        </button>
+                    )}
                 </div>
             );
         }

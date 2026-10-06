@@ -493,7 +493,11 @@
         "admin_err_current": "Le mot de passe actuel est incorrect.",
         "admin_password_saved": "Mot de passe administrateur enregistré",
         "admin_password_removed": "Mot de passe administrateur supprimé",
-        "templates_empty": "Aucun modèle téléversé pour l'instant. Cliquez sur <1>Téléverser un modèle</1> pour en ajouter un."
+        "templates_empty": "Aucun modèle téléversé pour l'instant. Cliquez sur <1>Téléverser un modèle</1> pour en ajouter un.",
+        "switch_to_student_title": "Passer au rôle Élève ?",
+        "switch_to_student_message": "L'application n'affichera que le portail élève de l'élève dont l'e-mail correspond à votre compte. Les pages enseignant restent masquées tant que vous avez ce rôle.",
+        "switch_to_student_message_local": "L'application n'affichera que le portail élève de l'élève dont l'e-mail correspond à celui de vos paramètres ; sans correspondance, vous verrez l'écran « Aucun compte élève associé ». Vous pourrez revenir au rôle enseignant depuis cet écran. Vos données ne sont pas modifiées.",
+        "switch_to_student_confirm": "Passer en Élève"
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -2245,7 +2249,8 @@
         "tab_empty_assignments": "Vous n'avez aucun devoir pour le moment.",
         "tab_empty_progress": "Aucune donnée de progression pour l'instant — elle apparaîtra une fois votre travail noté.",
         "brand_name": "Rubric Maker",
-        "grade_withheld": "Commentaires uniquement — note pas encore publiée"
+        "grade_withheld": "Commentaires uniquement — note pas encore publiée",
+        "switch_back_to_teacher": "Revenir au rôle enseignant"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",

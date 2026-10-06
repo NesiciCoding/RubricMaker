@@ -493,7 +493,11 @@
         "admin_err_current": "Current password is incorrect.",
         "admin_password_saved": "Admin password saved",
         "admin_password_removed": "Admin password removed",
-        "templates_empty": "No templates uploaded yet. Click <1>Upload Template</1> to add one."
+        "templates_empty": "No templates uploaded yet. Click <1>Upload Template</1> to add one.",
+        "switch_to_student_title": "Switch to the Student role?",
+        "switch_to_student_message": "The app will only show the student portal for the student whose email matches your account. Teacher pages stay hidden while you have this role.",
+        "switch_to_student_message_local": "The app will only show the student portal for the student whose email matches the one in your settings; without a match you will see a 'No student account linked' screen. You can switch back to teacher from that screen. Your data is not affected.",
+        "switch_to_student_confirm": "Switch to Student"
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -2245,7 +2249,8 @@
         "tab_empty_assignments": "You have no assignments right now.",
         "tab_empty_progress": "No progress data yet — it appears here once your work is graded.",
         "brand_name": "Rubric Maker",
-        "grade_withheld": "Feedback only — grade not released yet"
+        "grade_withheld": "Feedback only — grade not released yet",
+        "switch_back_to_teacher": "Switch back to teacher"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",

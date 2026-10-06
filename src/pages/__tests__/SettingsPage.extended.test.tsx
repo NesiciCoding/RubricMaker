@@ -1,6 +1,6 @@
 import React from 'react';
 import { screen, fireEvent, within, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, GradeScale, StandardMasteryTarget } from '../../types';
@@ -95,8 +95,10 @@ vi.mock('file-saver', () => ({
     saveAs: (...args: unknown[]) => mockSaveAs(...args),
 }));
 
+let mockLocalMode = false;
 vi.mock('../../store/storage', () => ({
     exportFullBackup: (...args: Parameters<typeof mockExportFullBackup>) => mockExportFullBackup(...args),
+    isLocalMode: () => mockLocalMode,
 }));
 
 vi.mock('../../utils/pinHash', () => ({
@@ -160,6 +162,33 @@ describe('SettingsPage extended', () => {
         mockSettings.language = 'nl';
         renderPage();
         expect(mockChangeLanguage).toHaveBeenCalledWith('nl');
+    });
+
+    describe('switching to the Student role (#623)', () => {
+        afterEach(() => {
+            mockLocalMode = false;
+        });
+
+        it('asks for confirmation and does nothing when cancelled', async () => {
+            mockSettings.userRole = 'teacher';
+            renderPage();
+            fireEvent.click(findButtonByText('settings.role_student_label'));
+            expect(await screen.findByText('settings.switch_to_student_title')).toBeInTheDocument();
+            expect(screen.getByText('settings.switch_to_student_message')).toBeInTheDocument();
+            fireEvent.click(findButtonByText('common.cancel'));
+            await waitFor(() => expect(screen.queryByText('settings.switch_to_student_title')).not.toBeInTheDocument());
+            expect(mockUpdateSettings).not.toHaveBeenCalledWith({ userRole: 'student' });
+        });
+
+        it('switches after confirming and explains the way back in local mode', async () => {
+            mockSettings.userRole = 'teacher';
+            mockLocalMode = true;
+            renderPage();
+            fireEvent.click(findButtonByText('settings.role_student_label'));
+            expect(await screen.findByText('settings.switch_to_student_message_local')).toBeInTheDocument();
+            fireEvent.click(findButtonByText('settings.switch_to_student_confirm'));
+            await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ userRole: 'student' }));
+        });
     });
 
     describe('PIN-gated admin role switch', () => {

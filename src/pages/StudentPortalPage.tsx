@@ -79,6 +79,7 @@ import type {
     NewsFlashRead,
     InterventionFlag,
 } from '../types';
+import { isLocalMode } from '../store/storage';
 
 function scrollToSection(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -723,6 +724,16 @@ export default function StudentPortalPage() {
                         >
                             {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                         </button>
+                        {settings.userRole === 'student' && isLocalMode() && (
+                            // The local-mode role switch must be reversible from the portal too (#623).
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => updateSettings({ userRole: 'teacher' })}
+                            >
+                                {t('studentPortal.switch_back_to_teacher')}
+                            </button>
+                        )}
                         <button
                             type="button"
                             className="btn btn-ghost btn-sm"

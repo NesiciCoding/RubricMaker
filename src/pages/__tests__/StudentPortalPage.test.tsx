@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -328,6 +328,20 @@ describe('StudentPortalPage', () => {
         // Progress tab shows its empty state when there are no grades.
         switchTab('progress');
         expect(screen.getByText('studentPortal.tab_empty_progress')).toBeInTheDocument();
+    });
+
+    it('offers a way back to the teacher role only in local mode (#623)', () => {
+        renderAt('s1');
+        expect(screen.queryByText('studentPortal.switch_back_to_teacher')).not.toBeInTheDocument();
+        cleanup();
+        localStorage.setItem('rm_local_mode', 'true');
+        try {
+            renderAt('s1');
+            fireEvent.click(screen.getByText('studentPortal.switch_back_to_teacher'));
+            expect(mockUpdateSettings).toHaveBeenCalledWith({ userRole: 'teacher' });
+        } finally {
+            localStorage.removeItem('rm_local_mode');
+        }
     });
 
     it('calls fetchMyEssayAssignments on mount', () => {

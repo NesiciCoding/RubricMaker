@@ -34,6 +34,9 @@ import Topbar from '../components/Layout/Topbar';
 import { usePlatform } from '../context/AppContext';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { isLocalMode } from '../store/storage';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
 import { exportFullBackup } from '../store/storage';
@@ -126,6 +129,7 @@ export default function SettingsPage() {
     const { importBackup } = usePlatform();
 
     const { showToast } = useToast();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const dbStatus = useDbStatus();
 
     // ─── Role state ─────────────────────────────────────────────────────────────
@@ -183,8 +187,20 @@ export default function SettingsPage() {
 
     // ─── Role switch helpers ─────────────────────────────────────────────────────
 
-    function requestRoleSwitch(newRole: UserRole) {
+    async function requestRoleSwitch(newRole: UserRole) {
         if (newRole === role) return;
+        if (
+            newRole === 'student' &&
+            !(await confirm({
+                title: t('settings.switch_to_student_title'),
+                message: t(
+                    isLocalMode() ? 'settings.switch_to_student_message_local' : 'settings.switch_to_student_message'
+                ),
+                confirmLabel: t('settings.switch_to_student_confirm'),
+            }))
+        ) {
+            return;
+        }
         if (newRole === 'admin' && settings.adminPin) {
             setPendingRole(newRole);
             setPinInput('');
@@ -412,6 +428,7 @@ export default function SettingsPage() {
     return (
         <>
             <PageTour {...tour.tourProps} />
+            <ConfirmDialog {...confirmDialogProps} />
             <Topbar
                 title={t('settings.title')}
                 actions={

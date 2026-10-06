@@ -173,16 +173,19 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
     };
     const signOutFromDatabase = async () => {
         const { storageSync } = await loadDb();
+        // In local mode (or a session that never connected) localStorage is the only copy,
+        // so it must survive a sign-out (#623). Read before signOut() drops the connection.
+        const cloudBacked = !isLocalMode() && storageSync.isConnected();
         await storageSync.signOut();
         clearAuditLogger();
         // Shared-device hygiene: wipe this account's data from localStorage so the
         // next person to open the app on this browser doesn't see it. Only safe when
         // everything has actually reached Supabase — a non-empty pending queue means
         // wiping would lose edits that exist nowhere else yet.
-        if (loadPendingQueue().length === 0) {
+        if (cloudBacked && loadPendingQueue().length === 0) {
             clearLocalData();
             dispatch({ type: 'SET_ALL', payload: loadStore() });
-        } else {
+        } else if (cloudBacked) {
             showToast(t('toast.signout_pending_writes'), 'warning');
         }
         if (!isLocalMode()) {
