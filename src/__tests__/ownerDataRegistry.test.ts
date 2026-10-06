@@ -63,6 +63,10 @@ describe('owner data registry (owner_data_tables)', () => {
         }
     });
 
+    it('drives account erasure from the same registry (#642)', () => {
+        expect(latestBody('erase_my_data')).toContain('public.owner_data_tables()');
+    });
+
     it('drives export_owner_backup instead of a hand-written table list', () => {
         const body = latestBody('export_owner_backup');
         expect(body).toContain('public.owner_data_tables()');

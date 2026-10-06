@@ -2865,7 +2865,13 @@
         "connect_sync_anon": "Conectar y sincronizar (anónimo)",
         "configured": "Supabase configurado: inicia sesión arriba",
         "connect_failed": "Error de conexión: revisa la URL y la clave",
-        "connected_ok": "Conectado a la base de datos"
+        "connected_ok": "Conectado a la base de datos",
+        "delete_all_db_button": "Eliminar todos mis datos de la base de datos",
+        "delete_all_db_title": "¿Eliminar todos tus datos de la base de datos?",
+        "delete_all_db_message": "Esto elimina de forma permanente todo lo que te pertenece en la base de datos: rúbricas, clases, alumnos, calificaciones, pruebas, redacciones, mensajes y sus archivos, grabaciones, escaneos y copias de seguridad nocturnas. No se puede deshacer. La copia de este dispositivo no se ve afectada.",
+        "delete_all_db_confirm": "Eliminar todo",
+        "delete_all_db_success": "Se eliminaron todos tus datos de la base de datos.",
+        "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador."
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",

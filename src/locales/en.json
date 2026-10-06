@@ -2865,7 +2865,13 @@
         "connect_sync_anon": "Connect & Sync (anonymous)",
         "configured": "Supabase configured — sign in above",
         "connect_failed": "Connection failed — check URL and key",
-        "connected_ok": "Connected to database"
+        "connected_ok": "Connected to database",
+        "delete_all_db_button": "Delete all my database data",
+        "delete_all_db_title": "Delete all your database data?",
+        "delete_all_db_message": "This permanently deletes everything you own in the database — rubrics, classes, students, grades, tests, essays, messages and their files, recordings, scans and nightly backups. It cannot be undone. The copy on this device is not affected.",
+        "delete_all_db_confirm": "Delete everything",
+        "delete_all_db_success": "All your database data was deleted.",
+        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator."
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",

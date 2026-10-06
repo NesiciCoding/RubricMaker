@@ -40,7 +40,7 @@ When adding a table, always:
 1. Enable RLS: `ALTER TABLE foo ENABLE ROW LEVEL SECURITY;`
 2. Add ownership policies for SELECT, INSERT, UPDATE, DELETE.
 3. Do not rely on application-level auth checks alone.
-4. Register it in `owner_data_tables()` (latest definition: `079_owner_data_registry.sql`, redefine it in a new migration) with its key and owner predicate, or add it to `NOT_OWNER_DATA` in `src/__tests__/ownerDataRegistry.test.ts` if it is account/org-level. The registry drives `export_owner_backup()` (nightly backups) and account erasure; the test fails until the new table is in one of the two.
+4. Register it in `owner_data_tables()` (latest definition: `079_owner_data_registry.sql`, redefine it in a new migration) with its key and owner predicate, or add it to `NOT_OWNER_DATA` in `src/__tests__/ownerDataRegistry.test.ts` if it is account/org-level. The registry drives `export_owner_backup()` (nightly backups) and `erase_my_data()` (Admin → Database → "Delete all my database data", migration 080, which removes storage first via `my_storage_objects()`); the test fails until the new table is in one of the two.
 
 The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by policies that referenced the same table in a subquery. Avoid circular policy references.
 

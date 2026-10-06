@@ -2940,7 +2940,13 @@
         "connect_sync_anon": "Connecter et synchroniser (anonyme)",
         "configured": "Supabase configuré — connectez-vous ci-dessus",
         "connect_failed": "Échec de la connexion — vérifiez l'URL et la clé",
-        "connected_ok": "Connecté à la base de données"
+        "connected_ok": "Connecté à la base de données",
+        "delete_all_db_button": "Supprimer toutes mes données de la base",
+        "delete_all_db_title": "Supprimer toutes vos données de la base ?",
+        "delete_all_db_message": "Cela supprime définitivement tout ce qui vous appartient dans la base : grilles, classes, élèves, notes, tests, rédactions, messages et leurs fichiers, enregistrements, scans et sauvegardes nocturnes. Cette action est irréversible. La copie sur cet appareil n'est pas modifiée.",
+        "delete_all_db_confirm": "Tout supprimer",
+        "delete_all_db_success": "Toutes vos données de la base ont été supprimées.",
+        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur."
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",

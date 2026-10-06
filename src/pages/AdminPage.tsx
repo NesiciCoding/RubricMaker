@@ -450,6 +450,8 @@ function DatabaseTab() {
     } = usePlatform();
 
     const { showToast } = useToast();
+    // Named apart from window.confirm, which the pull button below still uses.
+    const { confirm: confirmDialog, dialogProps: confirmDialogProps } = useConfirm();
     const dbStatus = useDbStatus();
 
     const existingConfig = loadSupabaseConfig();
@@ -1166,20 +1168,25 @@ function DatabaseTab() {
                                 className="btn btn-ghost btn-sm"
                                 style={{ color: 'var(--red)', fontSize: '0.8rem' }}
                                 onClick={async () => {
-                                    if (
-                                        !confirm(
-                                            'This will permanently delete ALL your data from the database. Your local data is not affected. Continue?'
-                                        )
-                                    )
-                                        return;
+                                    const ok = await confirmDialog({
+                                        title: t('admin.delete_all_db_title'),
+                                        message: t('admin.delete_all_db_message'),
+                                        confirmLabel: t('admin.delete_all_db_confirm'),
+                                        danger: true,
+                                    });
+                                    if (!ok) return;
                                     const result = await storageSync.adapter.deleteAllMyData();
-                                    showToast(
-                                        result.success ? 'All database data deleted' : `Error: ${result.error}`,
-                                        result.success ? 'success' : 'error'
-                                    );
+                                    if (result.success) showToast(t('admin.delete_all_db_success'), 'success');
+                                    else
+                                        showToast(
+                                            t('admin.delete_all_db_failed', {
+                                                items: result.failed.join(', ') || result.error,
+                                            }),
+                                            'error'
+                                        );
                                 }}
                             >
-                                <Trash2 size={13} aria-hidden="true" /> Delete all my database data
+                                <Trash2 size={13} aria-hidden="true" /> {t('admin.delete_all_db_button')}
                             </button>
                         </div>
                     </div>
@@ -1306,6 +1313,7 @@ function DatabaseTab() {
                     </div>
                 )}
             </div>
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }

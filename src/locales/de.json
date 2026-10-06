@@ -2940,7 +2940,13 @@
         "connect_sync_anon": "Verbinden & synchronisieren (anonym)",
         "configured": "Supabase konfiguriert — melden Sie sich oben an",
         "connect_failed": "Verbindung fehlgeschlagen — URL und Schlüssel prüfen",
-        "connected_ok": "Mit Datenbank verbunden"
+        "connected_ok": "Mit Datenbank verbunden",
+        "delete_all_db_button": "Alle meine Datenbankdaten löschen",
+        "delete_all_db_title": "Alle deine Datenbankdaten löschen?",
+        "delete_all_db_message": "Damit wird alles, was dir in der Datenbank gehört, endgültig gelöscht – Raster, Klassen, Schüler/innen, Noten, Tests, Aufsätze, Nachrichten samt Dateien, Aufnahmen, Scans und nächtliche Sicherungen. Das kann nicht rückgängig gemacht werden. Die Kopie auf diesem Gerät bleibt erhalten.",
+        "delete_all_db_confirm": "Alles löschen",
+        "delete_all_db_success": "Alle deine Datenbankdaten wurden gelöscht.",
+        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuche es erneut oder wende dich an deine Administration."
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",

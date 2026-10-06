@@ -2865,7 +2865,13 @@
         "connect_sync_anon": "Verbinden & synchroniseren (anoniem)",
         "configured": "Supabase geconfigureerd — meld je hierboven aan",
         "connect_failed": "Verbinding mislukt — controleer URL en sleutel",
-        "connected_ok": "Verbonden met database"
+        "connected_ok": "Verbonden met database",
+        "delete_all_db_button": "Al mijn databasegegevens verwijderen",
+        "delete_all_db_title": "Al je databasegegevens verwijderen?",
+        "delete_all_db_message": "Hiermee verwijder je definitief alles wat je in de database hebt: rubrics, klassen, leerlingen, cijfers, toetsen, essays, berichten en hun bestanden, opnames, scans en nachtelijke back-ups. Dit kan niet ongedaan worden gemaakt. De kopie op dit apparaat blijft behouden.",
+        "delete_all_db_confirm": "Alles verwijderen",
+        "delete_all_db_success": "Al je databasegegevens zijn verwijderd.",
+        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder."
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
