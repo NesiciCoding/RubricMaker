@@ -122,7 +122,10 @@ export default function App() {
 
     // Student portal: explicit 'student' role OR email matches a student record for any
     // non-admin user (handles first-time sign-ins before the DB trigger can assign the role).
-    if (settings.userRole === 'student' || (linkedStudent !== null && settings.userRole !== 'admin')) {
+    // Local mode has no sign-in, so there the role setting alone decides (#623).
+    const autoLinkStudent =
+        linkedStudent !== null && settings.userRole !== 'admin' && !(isLocalMode() && settings.userRole === 'teacher');
+    if (settings.userRole === 'student' || autoLinkStudent) {
         if (!linkedStudent) {
             return (
                 <div
