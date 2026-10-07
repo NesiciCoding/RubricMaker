@@ -10,6 +10,7 @@ import type { StudentRubric, ScoreEntry } from '../types';
 import Topbar from '../components/Layout/Topbar';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { useConfirm } from '../hooks/useConfirm';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 
 export default function PeerReviewView() {
@@ -33,18 +34,8 @@ export default function PeerReviewView() {
     const [entry, setEntry] = useState<StudentRubric | null>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const [activeRound, setActiveRound] = useState(1);
-
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
 
     const existingRounds = peerReviews.filter((pr) => pr.rubricId === rubricId && pr.studentId === studentId);
     const maxRound = existingRounds.reduce((max, pr) => Math.max(max, pr.round ?? 1), 0);
@@ -267,6 +258,7 @@ export default function PeerReviewView() {
                 </div>
             </div>
             <ConfirmDialog {...confirmDialogProps} />
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

@@ -958,6 +958,9 @@ function GradingTab() {
                     {t('docs.gr_interface_intro_prefix')} <strong>{t('docs.gr_interface_save_next')}</strong>{' '}
                     {t('docs.gr_interface_intro_suffix')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {t('docs.gr_unsaved_note')}
+                </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_scoring_title')}
                 </h3>
