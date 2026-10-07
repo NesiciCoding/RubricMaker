@@ -1,11 +1,12 @@
 #!/bin/bash
-# RubricMaker — delete old attachments (storage files + DB rows)
+# RubricMaker — delete old attachments and scans (storage files + DB rows)
 #
 # Removes attachment files and metadata rows that have aged past the owner's
-# school retention period (default: 7 years for users not linked to a school).
+# school retention period (default: 7 years for users not linked to a school),
+# and handwriting scans older than the current academic year.
 # Uses the Storage HTTP API — direct SQL deletion is blocked by Supabase.
 #
-# Attachment ids and storage paths are chosen by whoever uploaded the file, so they are never trusted:
+# Ids and storage paths are chosen by whoever uploaded the file, so they are never trusted:
 # only rows whose id is a plain name and whose path is "<owner uuid>/<plain name>" are selected, and the
 # same check runs again in bash before anything is put into a URL or SQL statement. Overdue rows that
 # fail the check are left untouched and reported, so an operator can look at them.
@@ -29,7 +30,6 @@ fi
 
 STORAGE_URL="${SITE_URL:-http://localhost:8000}"
 SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:?SERVICE_ROLE_KEY is not set in .env}"
-BUCKET="attachments"
 
 NAME_RE='^[A-Za-z0-9_-]{1,64}$'
 UUID_RE='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
@@ -42,58 +42,68 @@ psql_exec() {
     docker-compose -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
 }
 
-log "Starting attachment cleanup..."
+# purge <label> <overdue-fn> <bucket> <table>
+# Deletes up to 100 overdue files via the Storage HTTP API, then their metadata rows.
+purge() {
+    local label="$1" fn="$2" bucket="$3" table="$4"
+    log "Starting ${label} cleanup..."
 
-# Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
-SKIPPED=$(psql_exec -At -c "SELECT count(*) FROM public.get_overdue_attachments(100000) WHERE NOT (${VALID_SQL});" 2>/dev/null || true)
-if [[ -n "$SKIPPED" && "$SKIPPED" != "0" ]]; then
-    log "Warning: ${SKIPPED} overdue row(s) have an unexpected id or storage path and were left in place"
-fi
-
-# Fetch overdue attachment rows (id | storage_path | owner) from the DB helper function.
-ROWS=$(psql_exec -At -F'|' \
-    -c "SELECT id, storage_path, owner_id FROM public.get_overdue_attachments(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
-
-if [[ -z "$ROWS" ]]; then
-    log "No overdue attachments found."
-    exit 0
-fi
-
-DELETED_IDS=()
-
-while IFS='|' read -r id path owner; do
-    [[ -z "$id" || -z "$path" ]] && continue
-
-    if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "$(printf '%s' "${path%%/*}" | tr 'A-F' 'a-f')" != "$owner" ]]; then
-        log "Warning: skipping a row that failed validation"
-        continue
+    # Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
+    local skipped rows
+    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (${VALID_SQL});" 2>/dev/null || true)
+    if [[ -n "$skipped" && "$skipped" != "0" ]]; then
+        log "Warning: ${skipped} overdue ${label} row(s) have an unexpected id or storage path and were left in place"
     fi
 
-    # Delete the file via the Storage HTTP API.
-    # Errors are logged but do not stop processing — a missing file is harmless
-    # and we still want to clean up the DB row.
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X DELETE \
-        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-        "${STORAGE_URL}/storage/v1/object/${BUCKET}/${path}")
+    # Fetch overdue rows (id | storage_path | owner) from the DB helper function.
+    rows=$(psql_exec -At -F'|' \
+        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
 
-    if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "404" ]]; then
-        # 404 means already gone — treat as success and clean up the DB row.
-        DELETED_IDS+=("$id")
-    else
-        log "Warning: storage DELETE returned HTTP ${HTTP_STATUS} for path '${path}'"
+    if [[ -z "$rows" ]]; then
+        log "No overdue ${label} found."
+        return 0
     fi
-done <<< "$ROWS"
 
-if [[ ${#DELETED_IDS[@]} -eq 0 ]]; then
-    log "No files successfully deleted."
-    exit 0
-fi
+    local deleted_ids=() id path owner http_status
+    while IFS='|' read -r id path owner; do
+        [[ -z "$id" || -z "$path" ]] && continue
 
-# Build a quoted, comma-separated list for the SQL IN clause. Every id passed NAME_RE above.
-ID_LIST=$(printf "'%s'," "${DELETED_IDS[@]}")
-ID_LIST="${ID_LIST%,}"  # strip trailing comma
+        if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "$(printf '%s' "${path%%/*}" | tr 'A-F' 'a-f')" != "$owner" ]]; then
+            log "Warning: skipping a row that failed validation"
+            continue
+        fi
 
-psql_exec -c "DELETE FROM public.attachments WHERE id IN (${ID_LIST});" >/dev/null
+        # Delete the file via the Storage HTTP API.
+        # Errors are logged but do not stop processing — a missing file is harmless
+        # and we still want to clean up the DB row.
+        http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            "${STORAGE_URL}/storage/v1/object/${bucket}/${path}")
 
-log "Done. Deleted ${#DELETED_IDS[@]} attachment(s)."
+        if [[ "$http_status" == "200" || "$http_status" == "404" ]]; then
+            # 404 means already gone — treat as success and clean up the DB row.
+            deleted_ids+=("$id")
+        else
+            log "Warning: storage DELETE returned HTTP ${http_status} for path '${path}'"
+        fi
+    done <<< "$rows"
+
+    if [[ ${#deleted_ids[@]} -eq 0 ]]; then
+        log "No ${label} files successfully deleted."
+        return 0
+    fi
+
+    # Build a quoted, comma-separated list for the SQL IN clause. Every id passed NAME_RE above.
+    local id_list
+    id_list=$(printf "'%s'," "${deleted_ids[@]}")
+    id_list="${id_list%,}"  # strip trailing comma
+
+    psql_exec -c "DELETE FROM public.${table} WHERE id IN (${id_list});" >/dev/null
+
+    log "Done. Deleted ${#deleted_ids[@]} ${label} file(s)."
+}
+
+purge "attachment" get_overdue_attachments attachments attachments
+# Handwriting scans: one-academic-year cap (get_overdue_scans, migrations 074/082).
+purge "scan" get_overdue_scans scans scan_metadata

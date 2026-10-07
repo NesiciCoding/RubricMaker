@@ -63,7 +63,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `essays` — essay submission files, `008_essay_tables.sql`
 - `recordings` — speaking-assessment audio recordings, `034_recordings_storage.sql`
 - `feedback-audio` — per-criterion voice-feedback audio, kept out of `student_rubrics.data` jsonb (perf, issue #275); the `ScoreEntry` holds only `audioStoragePath`. `069_feedback_audio_storage.sql`. Students get a long-TTL signed URL minted by the teacher at `/feedback/:code` share-link generation time (no anonymous bucket access).
-- `scans` — scanned handwriting images (Phase 33), private, 15 MB, images only; `074_scans_storage.sql`. Kept for one academic year — `get_overdue_scans()` (same migration) lists path-bearing scans older than a year for a nightly cloud sweep, mirroring `get_overdue_attachments()`
+- `scans` — scanned handwriting images (Phase 33), private, 15 MB, images only; `074_scans_storage.sql`. Kept for one academic year — `get_overdue_scans()` (same migration) lists path-bearing scans older than a year, mirroring `get_overdue_attachments()`; `082_scans_sweep_guard.sql` skips rows whose `school_year` has no leading four-digit year so one bad value can't abort the query. Swept nightly by the same `delete-old-attachments` function / `scripts/delete-old-attachments.sh` as attachments
 - `backups` — nightly per-owner data dumps (JSON), `048_nightly_backup.sql`
 
 Access is controlled via storage policies that match `auth.uid()` to the uploader.
@@ -81,7 +81,7 @@ Current functions:
 - `next-placement-question` — server-authoritative question picker for a generator-engine placement test (roadmap 27.1): scores the previous answer, updates level/Elo state (per-item, on `question_bank_items` — same no-whole-blob-race approach `submit-test` now also uses via `update_test_question_elo()`), applies any pending teacher level nudge (roadmap 27.2, `placement_sessions.override_direction`), and picks the next question live from the bank
 - `notify-student-graded` — emails a student when a teacher saves a grade, if the student has an email on file and SMTP is configured
 - `set-student-password` — lets a teacher set/reset a student's login password, as a fallback when school email filters block Supabase's OTP mail
-- `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period
+- `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period, and for handwriting scans older than the current academic year (`get_overdue_scans()`)
 - `nightly-backup` — run nightly via Supabase Cron (or a self-hosted scheduler hitting the function URL); dumps each teacher/admin's rows via `export_owner_backup()` into the `backups` bucket. The bundled Docker Compose stack has no functions runtime, so self-hosted deployments use `scripts/backup.sh` instead — see the README's "Nightly cloud backup" section
 
 ### Edge function rules

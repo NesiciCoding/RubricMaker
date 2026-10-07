@@ -41,7 +41,7 @@ describe('isPurgeableRow', () => {
 describe('scripts/delete-old-attachments.sh', () => {
     const script = path.resolve(__dirname, '..', '..', 'scripts', 'delete-old-attachments.sh');
 
-    function runScript(rows: string) {
+    function runScript(rows: string, scanRows = '') {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-purge-'));
         const log = path.join(dir, 'calls.log');
         const bin = path.join(dir, 'bin');
@@ -50,7 +50,8 @@ describe('scripts/delete-old-attachments.sh', () => {
             path.join(bin, 'docker-compose'),
             `#!/bin/bash
 printf 'DC %s\\n' "$*" >> "${log}"
-if [[ "$*" == *"SELECT id, storage_path"* ]]; then printf '%s' "$STUB_ROWS"; fi
+if [[ "$*" == *"SELECT id, storage_path"*"get_overdue_attachments"* ]]; then printf '%s' "$STUB_ROWS"; fi
+if [[ "$*" == *"SELECT id, storage_path"*"get_overdue_scans"* ]]; then printf '%s' "$STUB_SCAN_ROWS"; fi
 `,
             { mode: 0o755 }
         );
@@ -69,6 +70,7 @@ printf '200'
                 SERVICE_ROLE_KEY: 'test-key',
                 SITE_URL: 'http://stub.local',
                 STUB_ROWS: rows,
+                STUB_SCAN_ROWS: scanRows,
             },
             stdio: 'pipe',
         });
@@ -105,5 +107,19 @@ printf '200'
         expect(storageCalls).toHaveLength(1);
         expect(storageCalls[0]).not.toContain('..');
         expect(calls).toContain("WHERE id IN ('ok')");
+    });
+
+    it('also purges overdue scans from the scans bucket and scan_metadata', () => {
+        const calls = runScript('', `scan_1|${OWNER}/scan_1.jpg|${OWNER}\n`);
+        expect(calls).toContain('get_overdue_scans(');
+        expect(calls).toContain(`/storage/v1/object/scans/${OWNER}/scan_1.jpg`);
+        expect(calls).toContain("DELETE FROM public.scan_metadata WHERE id IN ('scan_1')");
+        expect(calls).not.toContain('DELETE FROM public.attachments');
+    });
+
+    it('runs each sweep independently and skips an unsafe scan row', () => {
+        const calls = runScript(`good_1|${OWNER}/good_1|${OWNER}\n`, `scan_2|${OTHER}/../x|${OTHER}\n`);
+        expect(calls).toContain("DELETE FROM public.attachments WHERE id IN ('good_1')");
+        expect(calls).not.toContain('DELETE FROM public.scan_metadata');
     });
 });
