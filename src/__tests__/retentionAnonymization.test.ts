@@ -11,7 +11,10 @@ function latestDefinition(name: string): { file: string; body: string } {
         .sort();
     for (const file of files.reverse()) {
         const sql = readFileSync(resolve(dir, file), 'utf8');
-        const start = sql.lastIndexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
+        const start = Math.max(
+            sql.lastIndexOf(`CREATE OR REPLACE FUNCTION public.${name}(`),
+            sql.lastIndexOf(`CREATE FUNCTION public.${name}(`)
+        );
         if (start === -1) continue;
         return { file, body: sql.slice(start, sql.indexOf('$$;', start)) };
     }
@@ -39,6 +42,13 @@ describe('retention anonymization job', () => {
     it('records each run in audit_logs and isolates per-student failures', () => {
         expect(body).toContain('INSERT INTO public.audit_logs');
         expect(body).toMatch(/EXCEPTION WHEN others/);
+    });
+
+    it('leaves students with an unreadable grade date alone and counts only rows it changed', () => {
+        expect(body).toContain('has_unreadable_date');
+        expect(body).toContain("'skipped_unreadable_date'");
+        expect(body).toMatch(/v_count := v_count \+ public\.anonymize_student\(/);
+        expect(latestDefinition('anonymize_student').body).toContain('GET DIAGNOSTICS');
     });
 
     it('bumps updatedAt so a stale device cannot sync the original name back', () => {

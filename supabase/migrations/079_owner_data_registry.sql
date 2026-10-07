@@ -4,8 +4,8 @@
 -- standard_mastery_targets were dropped again by later versions, and messages,
 -- test_assignments, recording_metadata, scan_metadata, rubric_shares, class_members and the
 -- marketplace tables were never included, so a restore from the nightly snapshot silently
--- lacked them. The table list now lives in owner_data_tables(); the backup (and the
--- account-erase function) iterate it, and src/__tests__/ownerDataRegistry.test.ts fails when
+-- lacked them. The table list now lives in owner_data_tables(); the backup iterates it, and
+-- src/__tests__/ownerDataRegistry.test.ts fails when
 -- a migration adds a public table that is neither registered here nor allow-listed there.
 --
 -- Deliberately NOT registered (account/org-level or compliance data, not a teacher's content):
@@ -70,9 +70,12 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.owner_data_tables() FROM PUBLIC, anon, authenticated;
 
 -- ── 2. Backup driven by the registry ────────────────────────────────────────────
+-- STABLE: every per-table query reads the calling statement's snapshot, so a concurrent write
+-- between two tables (a rubric and its version, say) cannot produce an inconsistent snapshot.
 CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
