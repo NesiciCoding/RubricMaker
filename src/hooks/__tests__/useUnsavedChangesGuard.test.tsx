@@ -56,6 +56,29 @@ function SaveAndNextHarness() {
     );
 }
 
+function SamePathBypassHarness() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { allowNavigation } = useUnsavedChangesGuard(true);
+    return (
+        <div>
+            <span>
+                at:{location.pathname}
+                {location.search}
+            </span>
+            <button
+                onClick={() => {
+                    allowNavigation();
+                    navigate('/?tab=2');
+                }}
+            >
+                same-path
+            </button>
+            <Link to="/other">leave</Link>
+        </div>
+    );
+}
+
 describe('useUnsavedChangesGuard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -130,5 +153,15 @@ describe('useUnsavedChangesGuard', () => {
         fireEvent.click(screen.getByText('save-and-next'));
         await waitFor(() => expect(screen.getByText('path:/next')).toBeInTheDocument());
         expect(mockConfirm).not.toHaveBeenCalled();
+    });
+
+    it('consumes the bypass on a same-pathname navigation so a later exit still prompts', async () => {
+        mockConfirm.mockResolvedValue(false);
+        renderWithRouter(<SamePathBypassHarness />);
+        fireEvent.click(screen.getByText('same-path'));
+        await waitFor(() => expect(screen.getByText('at:/?tab=2')).toBeInTheDocument());
+        fireEvent.click(screen.getByRole('link', { name: 'leave' }));
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('at:/?tab=2')).toBeInTheDocument();
     });
 });

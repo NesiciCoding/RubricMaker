@@ -124,6 +124,7 @@ export default function PeerReviewView() {
     };
 
     const handleOverallCommentChange = (html: string) => {
+        setIsDirty(true);
         /* v8 ignore next -- provably dead: entry is never null once the form renders */
         setEntry((prev) => (prev ? { ...prev, overallComment: html } : null));
     };

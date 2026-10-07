@@ -22,10 +22,15 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
         bypassRef.current = false;
     }, [pathname]);
 
-    const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) =>
-            !bypassRef.current && isDirty && currentLocation.pathname !== nextLocation.pathname
-    );
+    // The bypass is one-shot: it covers the navigation it was set for, even when that navigation
+    // keeps the pathname (e.g. navigate(-1) back to the same grading route).
+    const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+        if (bypassRef.current) {
+            bypassRef.current = false;
+            return false;
+        }
+        return isDirty && currentLocation.pathname !== nextLocation.pathname;
+    });
 
     const allowNavigation = useCallback(() => {
         bypassRef.current = true;
