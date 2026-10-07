@@ -72,6 +72,20 @@ describe('StorageSync.hydrate partial failure', () => {
         expect(data).not.toHaveProperty('settings');
     });
 
+    it('skips the comment bank when legacy snippets fail to load, but keeps an empty-snippet merge', async () => {
+        stubAllFetches();
+        const bank = [{ id: 'cb1', text: 'Nice' }];
+        vi.spyOn(adapter, 'fetchCommentBank').mockResolvedValue(bank as never);
+        vi.spyOn(adapter, 'fetchCommentSnippets').mockRejectedValue(new Error('snippets down'));
+
+        const failed = await storageSync.hydrate();
+        expect(failed.data).not.toHaveProperty('commentBank');
+
+        vi.spyOn(adapter, 'fetchCommentSnippets').mockResolvedValue([]);
+        const ok = await storageSync.hydrate();
+        expect(ok.data?.commentBank).toEqual(bank);
+    });
+
     it('still reports success when nothing failed', async () => {
         stubAllFetches();
         const { data, error } = await storageSync.hydrate();

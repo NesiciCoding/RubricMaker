@@ -753,7 +753,10 @@ class StorageSyncService {
             // also pushed to `comment_bank` (fire-and-forget, idempotent upsert) so they
             // become real rows — otherwise they'd stay purely in-memory (recomputed every
             // hydrate) and could never be marked shared-with-department.
-            const mergedCommentBank = commentBank && mergeLegacyCommentSnippets(commentSnippets ?? [], commentBank);
+            // Needs both fetches: without the snippets, the bank would lack the lifted items and
+            // the merge would delete their local copies — so a failure in either skips commentBank.
+            const mergedCommentBank =
+                commentBank && commentSnippets && mergeLegacyCommentSnippets(commentSnippets, commentBank);
             if (mergedCommentBank && commentBank && mergedCommentBank !== commentBank) {
                 const existingIds = new Set(commentBank.map((item) => item.id));
                 mergedCommentBank
