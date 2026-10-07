@@ -2,10 +2,13 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const lib = path.resolve(__dirname, '..', '..', 'scripts', 'lib', 'storage-paths.sh');
+const libDir = path.resolve(__dirname, '..', '..', 'scripts', 'lib');
 
 function call(fn: string, ...args: string[]) {
-    return spawnSync('bash', ['-c', 'source "$0"; "$@"', lib, fn, ...args], { encoding: 'utf8' });
+    return spawnSync('bash', ['-c', 'source ./storage-paths.sh; "$@"', 'bash', fn, ...args], {
+        cwd: libDir,
+        encoding: 'utf8',
+    });
 }
 
 describe('scripts/lib/storage-paths.sh (#640)', () => {
