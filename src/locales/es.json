@@ -2526,7 +2526,11 @@
         "selected": "seleccionados",
         "report_card_success": "Generados {{count}} boletín(es).",
         "rubric_students_section_title": "Alumnos",
-        "select_test": "Seleccionar examen"
+        "select_test": "Seleccionar examen",
+        "bulk_nhi_confirm_title": "¿Marcar como no entregado?",
+        "bulk_nhi_confirm_message": "¿Marcar {{count}} calificación(es) seleccionada(s) como no entregada(s)? Quedarán fuera de las estadísticas, el panel y el portal del alumno.",
+        "bulk_nhi_done": "{{count}} calificación(es) marcada(s) como no entregada(s)",
+        "bulk_comment_done": "Comentario añadido a {{count}} calificación(es)"
     },
     "reportCard": {
         "title": "Boletín",
