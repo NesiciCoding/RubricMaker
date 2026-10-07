@@ -335,22 +335,39 @@ export default function StudentEssayPage() {
     // After the student authenticates, fetch full assignment content from the edge function.
     // For legacy links this is a no-op (content already in URL, resolvedContent pre-filled).
     // For short-code links this is the only way to get title, prompt, limits, etc.
+    // A failed (non-expired) load must never fall through to an editor without the prompt, word
+    // limits or timer, so it shows an error with Retry instead (loadAttempt re-runs the fetch).
+    const [loadError, setLoadError] = useState(false);
+    const [loadAttempt, setLoadAttempt] = useState(0);
     useEffect(() => {
         if (!studentUserId || !hasDb || !adapter || contentReady) return;
-        adapter.fetchAssignmentContent(assignment!.teacherKey).then((result) => {
-            if (result.ok) {
-                setResolvedContent(result.data);
-                // Start timer if the assignment has a time limit and it hasn't started yet.
-                if (result.data.timeLimitMinutes && secondsLeft === null) {
-                    const stored = sessionStorage.getItem(timerKey);
-                    setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
+        let cancelled = false;
+        setLoadError(false);
+        adapter
+            .fetchAssignmentContent(assignment!.teacherKey)
+            .then((result) => {
+                if (cancelled) return;
+                if (result.ok) {
+                    setResolvedContent(result.data);
+                    // Start timer if the assignment has a time limit and it hasn't started yet.
+                    if (result.data.timeLimitMinutes && secondsLeft === null) {
+                        const stored = sessionStorage.getItem(timerKey);
+                        setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
+                    }
+                } else if (result.reason === 'expired') {
+                    setContentExpired(true);
+                    setResolvedContent(null);
+                } else {
+                    setLoadError(true);
                 }
-            } else {
-                if (result.reason === 'expired') setContentExpired(true);
-                setResolvedContent(null);
-            }
-        });
-    }, [studentUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+            })
+            .catch(() => {
+                if (!cancelled) setLoadError(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [studentUserId, loadAttempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Set document title once we have the resolved title
     useEffect(() => {
@@ -626,6 +643,30 @@ export default function StudentEssayPage() {
                     setStudentEmail(email);
                 }}
             />
+        );
+    }
+
+    // ── Guard: assignment content failed to load ─────────────────────────────
+    if (hasDb && studentUserId && !contentReady && loadError) {
+        return (
+            <div
+                style={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'var(--bg)',
+                    padding: 24,
+                }}
+            >
+                <div role="alert" style={{ maxWidth: 480, textAlign: 'center' }}>
+                    <h2 style={{ marginBottom: 8, color: 'var(--text)' }}>{t('essay.load_error_title')}</h2>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>{t('essay.load_error')}</p>
+                    <button className="btn btn-primary" onClick={() => setLoadAttempt((n) => n + 1)}>
+                        {t('essay.load_retry')}
+                    </button>
+                </div>
+            </div>
         );
     }
 

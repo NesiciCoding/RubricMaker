@@ -3010,7 +3010,10 @@
         "retry_submit": "Réessayer",
         "copy_backup_code": "Copier le code de secours",
         "already_submitted": "Tu as déjà rendu cette rédaction, donc cette version n'a pas été envoyée. Elle est toujours enregistrée sur cet appareil — demande à ton enseignant si tu dois la rendre à nouveau.",
-        "submit_failed_unsaved": "Ta rédaction n'a pas encore été envoyée et cet appareil n'a pas pu en garder une copie. Copie le code de secours avant de quitter cette page, puis clique sur Réessayer."
+        "submit_failed_unsaved": "Ta rédaction n'a pas encore été envoyée et cet appareil n'a pas pu en garder une copie. Copie le code de secours avant de quitter cette page, puis clique sur Réessayer.",
+        "load_error_title": "Impossible de charger ce devoir",
+        "load_error": "Le devoir n'a pas pu être chargé. Vérifie ta connexion internet et réessaie. Si le problème persiste, demande un nouveau lien à ton professeur.",
+        "load_retry": "Réessayer"
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
