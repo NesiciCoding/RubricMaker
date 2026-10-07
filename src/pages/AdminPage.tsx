@@ -1721,10 +1721,12 @@ function AuditTab() {
 
 // ─── Archive tab ─────────────────────────────────────────────────────────────
 
-function ArchiveTab() {
+export function ArchiveTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const { archivedStudents, restoreStudent, anonymizeStudent, students } = useStudents();
+    const { archivedStudents, restoreStudent, anonymizeStudent, eraseStudent, students } = useStudents();
+    const { showToast } = useToast();
+    const [erasingId, setErasingId] = useState<string | null>(null);
     const { classes } = useClasses();
     const { deletedStudentRubrics, restoreStudentRubric } = useGrading();
 
@@ -1741,6 +1743,33 @@ function ArchiveTab() {
         });
         if (!ok) return;
         anonymizeStudent(id);
+    }
+
+    async function handleErase(id: string, name: string) {
+        const ok = await confirm({
+            title: t('admin.erase_confirm_title'),
+            message: t('admin.erase_confirm', { name }),
+            confirmLabel: t('admin.erase_btn'),
+        });
+        if (!ok) return;
+        setErasingId(id);
+        try {
+            const result = await eraseStudent(id);
+            if (!result.success) {
+                showToast(
+                    result.error === 'offline'
+                        ? t('admin.erase_offline')
+                        : t('admin.erase_failed', { error: result.error ?? t('common.unknown_error') }),
+                    'error'
+                );
+            } else if (result.leftoverFiles > 0) {
+                showToast(t('admin.erase_partial', { n: result.leftoverFiles }), 'warning');
+            } else {
+                showToast(t('admin.erase_success'), 'success');
+            }
+        } finally {
+            setErasingId(null);
+        }
     }
 
     if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
@@ -1830,7 +1859,14 @@ function ArchiveTab() {
                                         )}
                                     </td>
                                     <td style={{ color: 'var(--text-muted)' }}>{classMap.get(s.classId) ?? '—'}</td>
-                                    <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                    <td
+                                        style={{
+                                            display: 'flex',
+                                            gap: 6,
+                                            justifyContent: 'flex-end',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
                                         {!s.anonymizedAt && (
                                             <>
                                                 <button
@@ -1850,6 +1886,16 @@ function ArchiveTab() {
                                                 </button>
                                             </>
                                         )}
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ color: 'var(--red, #ef4444)' }}
+                                            disabled={erasingId !== null}
+                                            onClick={() => handleErase(s.id, s.name)}
+                                            title={t('admin.erase_btn')}
+                                        >
+                                            <Trash2 size={14} />{' '}
+                                            {erasingId === s.id ? t('admin.erase_in_progress') : t('admin.erase_btn')}
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

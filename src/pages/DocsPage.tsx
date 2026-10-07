@@ -1828,6 +1828,7 @@ function DataTab() {
                         t('docs.da_admin_item_data'),
                         t('docs.da_admin_item_retention'),
                         t('docs.da_admin_item_audit'),
+                        t('docs.da_admin_item_archive'),
                     ]}
                 />
             </FeatureSection>

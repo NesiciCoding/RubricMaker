@@ -2774,7 +2774,7 @@
         "tab_audit": "Auditlog",
         "tab_archive": "Archief",
         "archive_empty": "Geen gearchiveerde leerlingen.",
-        "archive_desc": "Gearchiveerde leerlingen zijn verwijderd uit klassenlijsten, maar hun cijfers blijven bewaard. Anonimiseer om persoonlijke gegevens te wissen.",
+        "archive_desc": "Gearchiveerde leerlingen zijn verwijderd uit klassenlijsten, maar hun cijfers blijven bewaard. Anonimiseer om persoonlijke gegevens te wissen. Definitief wissen verwijdert de leerling met alle gekoppelde gegevens.",
         "deleted_grades_title": "Onlangs verwijderde cijfers",
         "deleted_grades_desc": "Cijfers die door een docent zijn verwijderd op de beoordelingspagina. Herstel om ze weer actief te gebruiken.",
         "deleted_grades_col_rubric": "Rubriek",
@@ -2882,7 +2882,15 @@
         "delete_all_db_message": "Hiermee verwijder je definitief alles wat je in de database hebt: rubrics, klassen, leerlingen, cijfers, toetsen, essays, berichten en hun bestanden, opnames, scans en nachtelijke back-ups. Dit kan niet ongedaan worden gemaakt. De kopie op dit apparaat blijft behouden.",
         "delete_all_db_confirm": "Alles verwijderen",
         "delete_all_db_success": "Al je databasegegevens zijn verwijderd.",
-        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder."
+        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder.",
+        "erase_btn": "Definitief wissen",
+        "erase_in_progress": "Bezig met wissen…",
+        "erase_confirm_title": "Leerling definitief wissen?",
+        "erase_confirm": "{{name}} en alles wat aan deze leerling gekoppeld is definitief verwijderen — cijfers en feedback (ook die van andere docenten voor deze leerling), gesproken feedback, essays, toetsantwoorden, berichten, bijlagen, scans, zelfbeoordelingen en opnames — van dit apparaat en uit de database. Dit kan niet ongedaan worden gemaakt. Kopieën in eerdere back-ups blijven bestaan.",
+        "erase_success": "De leerling en alle gegevens zijn gewist.",
+        "erase_partial": "De leerling is gewist. {{n}} bestand(en) in de opslagmap van een andere docent konden hier niet worden verwijderd; ze staan in het auditlogboek voor een beheerder.",
+        "erase_offline": "Maak verbinding met de database om deze leerling te wissen, zodat er niets achterblijft op de server.",
+        "erase_failed": "De leerling kon niet worden gewist: {{error}}"
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -3745,7 +3753,8 @@
         "rb_tests_visual_editors_body": "Foutverbetering, sleutelwoordtransformatie, invullen met woordenbank en zinnen bouwen bewerk je zonder speciale syntaxis te typen: markeer fouten en juiste fragmenten door woorden in de tekst te selecteren, voeg geaccepteerde antwoorden toe als kaarten met chips en voeg afleiders toe als chips. Liever typen of plakken? Elke editor heeft een knop 'Bewerk als tekst' die de ruwe syntaxis toont; beide weergaven bewerken dezelfde gegevens.",
         "rb_tests_a4_preview_label": "A4-voorbeeld:",
         "rb_tests_a4_preview_body": "Klik in de toetsbouwer op 'A4-voorbeeld' om naast je vragen een live voorbeeld van de afgedrukte leerlingenversie te openen. Zet 'Antwoordmodel' aan om de juiste antwoorden te zien, verberg de puntwaarden, zoom of druk de pagina af. Bewerk koptekst, instructies en voettekst direct op de pagina — ze worden met de toets opgeslagen en staan ook op de export van het toetsboekje.",
-        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief."
+        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief.",
+        "da_admin_item_archive": "Tabblad Archief — gearchiveerde leerlingen herstellen, anonimiseren of definitief wissen (recht op vergetelheid): alle cijfers, feedback, essays, toetsantwoorden, berichten, bijlagen, scans en opnames van de leerling worden van het apparaat en uit de database verwijderd. Nachtelijke cloudback-ups bewaren de 7 recentste momentopnames per docent, dus een gewiste leerling verdwijnt daar binnen 7 dagen uit; zelf gemaakte JSON-exports en serverback-ups moet je met de hand verwijderen. Het eigen inlogaccount van de leerling, als die er een had, verwijdert een beheerder apart in Supabase Auth."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

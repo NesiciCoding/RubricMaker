@@ -42,6 +42,7 @@ const versionStore = vi.hoisted(() => new Map<string, RubricVersion[]>());
 vi.mock('../store/storage', () => ({
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
+    isLocalMode: vi.fn(() => true),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],
@@ -112,6 +113,7 @@ vi.mock('../store/storage', () => ({
     saveStandardMasteryTargets: vi.fn(),
     saveTests: vi.fn(),
     saveStudentTests: vi.fn(),
+    saveComparativeMatchups: vi.fn(),
     onStorageQuotaExceeded: vi.fn(),
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
@@ -822,6 +824,31 @@ describe('domain action creators', () => {
         });
         expect(result.current.students[0].name).toMatch(/^Student-/);
         expect(result.current.students[0].anonymizedAt).toBeDefined();
+    });
+
+    it('erases a student and every record linked to them in local mode (#644)', async () => {
+        const { result } = renderHook(() => ({ roster: useRoster(), grading: useRoster() }), { wrapper });
+        let alice = '';
+        let bob = '';
+        act(() => {
+            alice = result.current.roster.addStudent({ name: 'Alice', classId: 'c1' }).id;
+            bob = result.current.roster.addStudent({ name: 'Bob', classId: 'c1' }).id;
+        });
+        act(() => {
+            result.current.grading.createGroupStudentRubrics('r-any', [alice, bob]);
+        });
+        act(() => {
+            result.current.roster.deleteStudent(alice);
+        });
+
+        let outcome: { success: boolean; leftoverFiles: number } | undefined;
+        await act(async () => {
+            outcome = await result.current.roster.eraseStudent(alice);
+        });
+        expect(outcome).toEqual({ success: true, leftoverFiles: 0 });
+        expect(result.current.roster.archivedStudents).toHaveLength(0);
+        expect(result.current.roster.students.map((s) => s.id)).toEqual([bob]);
+        expect(result.current.grading.studentRubrics.map((sr) => sr.studentId)).toEqual([bob]);
     });
 
     it('creates student rubrics with empty entries when the rubric is unknown', () => {

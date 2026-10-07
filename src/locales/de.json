@@ -2849,7 +2849,7 @@
         "tab_audit": "Prüfprotokoll",
         "tab_archive": "Archiv",
         "archive_empty": "Keine archivierten Schüler.",
-        "archive_desc": "Archivierte Schüler werden aus den Klassenlisten entfernt, ihre Noten bleiben jedoch erhalten. Anonymisieren, um personenbezogene Daten zu löschen.",
+        "archive_desc": "Archivierte Schüler werden aus den Klassenlisten entfernt, ihre Noten bleiben jedoch erhalten. Anonymisieren, um personenbezogene Daten zu löschen. Endgültig löschen entfernt den Schüler mit allen verknüpften Daten.",
         "deleted_grades_title": "Kürzlich gelöschte Noten",
         "deleted_grades_desc": "Noten, die von einer Lehrkraft auf der Bewertungsseite gelöscht wurden. Wiederherstellen, um sie wieder aktiv zu nutzen.",
         "deleted_grades_col_rubric": "Rubrik",
@@ -2957,7 +2957,15 @@
         "delete_all_db_message": "Damit wird alles, was Ihnen in der Datenbank gehört, endgültig gelöscht – Raster, Klassen, Schüler/innen, Noten, Tests, Aufsätze, Nachrichten samt Dateien, Aufnahmen, Scans und nächtliche Sicherungen. Das kann nicht rückgängig gemacht werden. Die Kopie auf diesem Gerät bleibt erhalten.",
         "delete_all_db_confirm": "Alles löschen",
         "delete_all_db_success": "Alle Ihre Datenbankdaten wurden gelöscht.",
-        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration."
+        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration.",
+        "erase_btn": "Endgültig löschen",
+        "erase_in_progress": "Wird gelöscht…",
+        "erase_confirm_title": "Schüler endgültig löschen?",
+        "erase_confirm": "{{name}} und alles, was mit dieser Person verknüpft ist, endgültig löschen — Noten und Feedback (auch die anderer Lehrkräfte für diese Person), Sprachfeedback, Aufsätze, Testantworten, Nachrichten, Anhänge, Scans, Selbsteinschätzungen und Aufnahmen — von diesem Gerät und aus der Datenbank. Das kann nicht rückgängig gemacht werden. Kopien in früheren Sicherungen bleiben bestehen.",
+        "erase_success": "Der Schüler und alle Daten wurden gelöscht.",
+        "erase_partial": "Der Schüler wurde gelöscht. {{n}} Datei(en) im Speicherordner einer anderen Lehrkraft konnten hier nicht entfernt werden; sie stehen für einen Administrator im Audit-Log.",
+        "erase_offline": "Verbinde dich mit der Datenbank, um diesen Schüler zu löschen, damit auf dem Server nichts zurückbleibt.",
+        "erase_failed": "Der Schüler konnte nicht gelöscht werden: {{error}}"
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
@@ -3745,7 +3753,8 @@
         "rb_tests_visual_editors_body": "Fragen zu Fehlerkorrektur, Schlüsselwort-Umformung, Lückentext mit Wortbank und Satzbau bearbeiten Sie ohne spezielle Syntax: Markieren Sie Fehler und richtige Fragmente, indem Sie Wörter im Text auswählen, fügen Sie akzeptierte Antworten als Karten mit Chips hinzu und Ablenker als Chips. Lieber tippen oder einfügen? Jeder Editor hat eine Schaltfläche „Als Text bearbeiten“, die die Rohsyntax zeigt; beide Ansichten bearbeiten dieselben Daten.",
         "rb_tests_a4_preview_label": "A4-Vorschau:",
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
-        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen."
+        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
+        "da_admin_item_archive": "Tab Archiv — archivierte Schüler wiederherstellen, anonymisieren oder endgültig löschen (Recht auf Löschung): alle Noten, Feedbacks, Aufsätze, Testantworten, Nachrichten, Anhänge, Scans und Aufnahmen des Schülers werden vom Gerät und aus der Datenbank gelöscht. Nächtliche Cloud-Sicherungen behalten die 7 neuesten Stände pro Lehrkraft, ein gelöschter Schüler verschwindet daraus also binnen 7 Tagen; selbst erstellte JSON-Exporte und Server-Sicherungen musst du von Hand löschen. Das eigene Anmeldekonto des Schülers, falls vorhanden, entfernt ein Administrator separat in Supabase Auth."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

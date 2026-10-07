@@ -2774,7 +2774,7 @@
         "tab_audit": "Audit Log",
         "tab_archive": "Archive",
         "archive_empty": "No archived students.",
-        "archive_desc": "Archived students are removed from class rosters but their grades are preserved. Anonymize to erase personal data.",
+        "archive_desc": "Archived students are removed from class rosters but their grades are preserved. Anonymize to erase personal data. Erase permanently deletes the student and all linked data.",
         "deleted_grades_title": "Recently deleted grades",
         "deleted_grades_desc": "Grades deleted by a teacher from the grading page. Restore to bring them back into active use.",
         "deleted_grades_col_rubric": "Rubric",
@@ -2882,7 +2882,15 @@
         "delete_all_db_message": "This permanently deletes everything you own in the database — rubrics, classes, students, grades, tests, essays, messages and their files, recordings, scans and nightly backups. It cannot be undone. The copy on this device is not affected.",
         "delete_all_db_confirm": "Delete everything",
         "delete_all_db_success": "All your database data was deleted.",
-        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator."
+        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator.",
+        "erase_btn": "Erase permanently",
+        "erase_in_progress": "Erasing…",
+        "erase_confirm_title": "Erase student permanently?",
+        "erase_confirm": "Permanently delete {{name}} and everything linked to them — grades and feedback (including other teachers' grades for this student), voice feedback, essays, test answers, messages, attachments, scans, self-assessments and recordings — from this device and the database. This cannot be undone. Copies in earlier backups are not affected.",
+        "erase_success": "The student and all their data were erased.",
+        "erase_partial": "The student was erased. {{n}} file(s) in another teacher's storage folder could not be removed here; they are listed in the audit log for an administrator.",
+        "erase_offline": "Connect to the database to erase this student, so nothing is left behind on the server.",
+        "erase_failed": "The student could not be erased: {{error}}"
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -3743,7 +3751,8 @@
         "rb_tests_visual_editors_body": "Error correction, key word transformation, word-bank fill-in and sentence builder questions are edited without typing special syntax: mark error and correct fragments by selecting words in the passage, add accepted answers as cards with chips, and add distractor tiles as chips. Prefer typing or pasting? Each editor has an \"Edit as text\" button that shows the raw syntax; both views edit the same data.",
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
-        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive."
+        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "da_admin_item_archive": "Archive tab — restore archived students, anonymize them, or erase them permanently (right to erasure): every grade, feedback, essay, test answer, message, attachment, scan and recording linked to the student is deleted from the device and the database. Nightly cloud backups keep each teacher's 7 most recent snapshots, so an erased student disappears from them within 7 days; JSON exports and server backups you made yourself must be deleted by hand. The student's own sign-in account, if they had one, is removed separately by an administrator in Supabase Auth."
     },
     "studentProfile": {
         "tab_overview": "Overview",

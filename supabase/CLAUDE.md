@@ -41,6 +41,7 @@ When adding a table, always:
 2. Add ownership policies for SELECT, INSERT, UPDATE, DELETE.
 3. Do not rely on application-level auth checks alone.
 4. Register it in `owner_data_tables()` (latest definition: `079_owner_data_registry.sql`, redefine it in a new migration) with its key and owner predicate, or add it to `NOT_OWNER_DATA` in `src/__tests__/ownerDataRegistry.test.ts` if it is account/org-level. The registry drives `export_owner_backup()` (nightly backups) and `erase_my_data()` (Admin → Database → "Delete all my database data", migration 080, which removes storage first via `my_storage_objects()`); the test fails until the new table is in one of the two.
+5. If the table links rows to a student (a `student_id` column, a `studentId` in `data`, or a parent row that has one), register it in `student_data_tables()` (latest definition: `084_erase_student.sql`) with its student predicate and owner predicate, children before the parents their predicates look up. It drives `erase_student()` (Admin → Archive → "Erase permanently"); `src/__tests__/studentDataRegistry.test.ts` fails when a table with a `student_id` column is missing. If the table holds a file path, add the bucket to `student_storage_objects()` too.
 
 The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by policies that referenced the same table in a subquery. Avoid circular policy references.
 
@@ -51,6 +52,12 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `handle_new_user()` only grants the student role from roster rows owned by a teacher or admin profile.
 - Profile reads (077): admins read every profile; teachers read their own row, non-student profiles in a school they belong to (`school_members`), and colleagues they share a rubric or class with (`is_collaborator()`). Look up a colleague by email with the `find_profile_by_email(text)` RPC (exact match, teacher/admin results only, logged to `audit_logs` and capped at 30 per caller per 10 minutes) — never by querying `profiles.email` directly.
 - Grade rows (077): `student_rubrics` inserts/updates require a teacher/admin who owns the student or is an `editor` on the student's class (`can_grade_student()`), so the student row must exist server-side first (`pushAll` upserts students before grades). The portal only shows a student rows whose grader passes the same check.
+
+## Student erasure
+
+- `erase_student(p_student_id, p_storage_failures)` (084) deletes every row keyed to one student, walking `student_data_tables()`; `student_storage_objects(p_student_id)` lists their files (attachments, scans, recordings, essays, voice feedback) for the client to remove through the Storage API first (`SupabaseAdapter.eraseStudentData`). Only the student's teacher (`students.owner_id`) may erase them; that includes grades other teachers gave the student in a shared class. When the student row was never synced, only the caller's own rows go.
+- Files Storage RLS won't let the teacher delete (voice feedback in another grader's folder) are passed in `p_storage_failures` and recorded in the `audit_logs` row (`action = 'erase_student'`, counts only — nothing identifying) for an operator to remove.
+- Not covered: the student's own `auth.users`/`profiles` login account (an admin deletes it in Supabase Auth), and copies in earlier backups — nightly snapshots keep the 7 most recent per teacher, so an erased student ages out within 7 days; JSON exports and `scripts/backup.sh` dumps must be deleted by hand.
 
 ## Retention job
 
