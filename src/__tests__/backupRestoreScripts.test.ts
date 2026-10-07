@@ -20,6 +20,13 @@ describe('backup/restore scripts', () => {
         expect(restore).toMatch(/set -euo pipefail/);
     });
 
+    it('refuses a backup without its uploaded files before touching the database', () => {
+        const check = restore.indexOf('missing storage.tar.gz');
+        expect(check).toBeGreaterThan(-1);
+        expect(check).toBeLessThan(restore.indexOf('--single-transaction'));
+        expect(restore).not.toContain('No storage.tar.gz found, skipping');
+    });
+
     it('never drops a schema and refuses a backup taken on newer migrations', () => {
         expect(restore).not.toMatch(/DROP SCHEMA/i);
         expect(restore).toContain('missing migrations');

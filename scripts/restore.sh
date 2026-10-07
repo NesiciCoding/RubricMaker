@@ -36,6 +36,13 @@ if [ "$(cat "$BACKUP_DIR/FORMAT" 2>/dev/null)" != "2" ] || [ ! -f "$BACKUP_DIR/d
     exit 1
 fi
 
+# The database rows include storage.objects metadata; loading them without the files would leave
+# references to uploads that no longer exist, so an incomplete backup is refused up front.
+if [ ! -f "$BACKUP_DIR/storage.tar.gz" ]; then
+    echo "Error: $BACKUP_DIR is missing storage.tar.gz (the uploaded files). Nothing was changed."
+    exit 1
+fi
+
 psql_db() {
     $DB_EXEC psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 "$@"
 }
@@ -77,17 +84,13 @@ SQL
 echo "   ✓ Database restored"
 
 # ── Storage ───────────────────────────────────────────────────────────────────
-if [ -f "$BACKUP_DIR/storage.tar.gz" ]; then
-    echo "▶  Restoring uploaded files..."
-    docker run --rm \
-        -v rubricmaker_storage-data:/data \
-        -i alpine \
-        sh -c "rm -rf /data/* && tar xzf - -C /" \
-        < "$BACKUP_DIR/storage.tar.gz"
-    echo "   ✓ Storage restored"
-else
-    echo "   ⚠  No storage.tar.gz found, skipping"
-fi
+echo "▶  Restoring uploaded files..."
+docker run --rm \
+    -v rubricmaker_storage-data:/data \
+    -i alpine \
+    sh -c "rm -rf /data/* && tar xzf - -C /" \
+    < "$BACKUP_DIR/storage.tar.gz"
+echo "   ✓ Storage restored"
 
 echo ""
 echo "✓ Restore complete. Restart the app if it was running:"

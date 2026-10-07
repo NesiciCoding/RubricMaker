@@ -22,6 +22,8 @@ A backup directory contains:
 | `storage.tar.gz` | The uploaded files (`rubricmaker_storage-data` volume)                                        |
 | `FORMAT`         | `2`                                                                                           |
 
+`restore.sh` refuses a backup that is missing any of these files.
+
 Tables, GRANTs, RLS policies, triggers (such as the one on `auth.users` that creates profiles) and the realtime publication are **not** in the backup: they come from the migrations the stack runs. A restore therefore never recreates them, and the REST API keeps its `anon`/`authenticated`/`service_role` permissions.
 
 To restore, onto the same server or a new one:
