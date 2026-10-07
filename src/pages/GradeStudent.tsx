@@ -206,6 +206,12 @@ export default function GradeStudent() {
         students: { id: string; name: string }[];
     } | null>(null);
     const [saved, setSaved] = useState(false);
+    // Cleared on unmount so navigating away within 2 s doesn't set state on a dead page.
+    React.useEffect(() => {
+        if (!saved) return;
+        const id = setTimeout(() => setSaved(false), 2000);
+        return () => clearTimeout(id);
+    }, [saved]);
     const [isDirty, setIsDirty] = useState(false);
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
@@ -262,7 +268,6 @@ export default function GradeStudent() {
         });
         setSaved(true);
         setIsDirty(false);
-        setTimeout(() => setSaved(false), 2000);
 
         // Fire-and-forget grade notification if the teacher has opted in
         if (settings.notifyStudentsOnGrade && student && studentId) {

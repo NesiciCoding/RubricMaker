@@ -53,6 +53,7 @@ describe('StorageSync.hydrate partial failure', () => {
 
         expect(error).toMatch(/1 collection/);
         expect(storageSync.getStatus()).toBe('error');
+        expect(storageSync.getHydrateProgress()).toBeNull();
         expect(data).not.toHaveProperty('rubrics');
         expect(data?.tests).toEqual([{ id: 't1' }]);
 

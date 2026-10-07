@@ -60,14 +60,20 @@ test.describe('startup — offline with Supabase configured', () => {
 
 test.describe('startup — Supabase hydration timeout', () => {
     test('falls through to localStorage cache after 8 s hydration timeout', async ({ supabasePage: page }) => {
+        test.setTimeout(60_000);
         // supabasePage fixture already signed in.
         const timeoutRubric = buildRubric({ id: 'timeout-cache-rubric', name: 'Timeout Cache Rubric' });
         await addRubricToCache(page, timeoutRubric);
 
         // Delay all Supabase REST calls by 10 s — longer than our 8 s hydration timeout.
         // Route handlers run in Node, so the browser waits until the delay resolves.
+        // `release` lets the test end the delay early: the browser's per-host connection
+        // limit queues the ~34 hydrate requests in batches, so waiting out every 10 s delay
+        // would take far longer than the test needs.
+        let release!: () => void;
+        const released = new Promise<void>((resolve) => (release = resolve));
         await page.route(`${SUPABASE_URL}/rest/v1/**`, async (route) => {
-            await new Promise<void>((resolve) => setTimeout(resolve, 10_000));
+            await Promise.race([new Promise<void>((resolve) => setTimeout(resolve, 10_000)), released]);
             await route.abort();
         });
 
@@ -86,8 +92,16 @@ test.describe('startup — Supabase hydration timeout', () => {
         await page.evaluate(() => { window.location.hash = '/rubrics'; });
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
-        // Warning toast for failed load must appear.
-        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 5_000 });
+        // The pull is still running in the background (not dropped), so the progress
+        // indicator stays up instead of an immediate failure toast.
+        await expect(page.getByText('Loading your data from the cloud')).toBeVisible();
+
+        // Once the requests fail, the late hydrate reports it and the indicator clears;
+        // local data is kept.
+        release();
+        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText('Loading your data from the cloud')).toBeHidden();
+        await expect(page.getByText('Timeout Cache Rubric')).toBeVisible();
     });
 });
 

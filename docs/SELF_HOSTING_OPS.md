@@ -6,22 +6,34 @@ This document covers day-two operations for self-hosted RubricMaker deployments:
 
 ## Backup and Restore
 
-### PostgreSQL dump (recommended)
+### Scripts (recommended, tested procedure)
 
 ```bash
-# Dump all data
-docker-compose exec db pg_dump -U supabase_admin -d postgres -Fc -f /tmp/rubricmaker.dump
-docker cp $(docker-compose ps -q db):/tmp/rubricmaker.dump ./backups/rubricmaker-$(date +%Y%m%d).dump
-
-# Restore into a clean stack
-docker-compose down
-docker volume rm rubricmaker_db-data   # destroys existing data
-docker-compose up -d db
-sleep 10
-docker cp ./backups/rubricmaker-YYYYMMDD.dump $(docker-compose ps -q db):/tmp/restore.dump
-docker-compose exec db pg_restore -U supabase_admin -d postgres /tmp/restore.dump
-docker-compose up -d
+./scripts/backup.sh                          # → ./backups/YYYYMMDD_HHMMSS/
+./scripts/restore.sh backups/YYYYMMDD_HHMMSS
 ```
+
+A backup directory contains:
+
+| File             | Contents                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `data.sql`       | Rows of the `public`, `auth` and `storage` schemas (`pg_dump --data-only --disable-triggers`) |
+| `migrations.txt` | The migrations applied when the backup was taken                                              |
+| `storage.tar.gz` | The uploaded files (`rubricmaker_storage-data` volume)                                        |
+| `FORMAT`         | `2`                                                                                           |
+
+`restore.sh` refuses a backup that is missing any of these files.
+
+Tables, GRANTs, RLS policies, triggers (such as the one on `auth.users` that creates profiles) and the realtime publication are **not** in the backup: they come from the migrations the stack runs. A restore therefore never recreates them, and the REST API keeps its `anon`/`authenticated`/`service_role` permissions.
+
+To restore, onto the same server or a new one:
+
+1. Start the stack at the same or a newer app version (`docker-compose up -d`). This runs `db_migrate`.
+2. Run `./scripts/restore.sh <backup-dir>`. It refuses if the stack lacks a migration the backup was taken with.
+3. The script empties and reloads all tables in a single transaction with `ON_ERROR_STOP`. Any error rolls everything back and the script exits non-zero, so you never end up with a half-restored database.
+4. Run `docker-compose restart app`.
+
+Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) are refused. Replaying them dropped every GRANT. Take a new backup with the current script.
 
 ### Volume snapshot (faster, filesystem-level)
 
