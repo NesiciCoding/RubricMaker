@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Upload, X, Database, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Upload, X, Database, Loader2, AlertCircle } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { useAuthoring, useClasses, usePlatform, useStudents } from '../../context/AppContext';
 
 export default function MigrationPrompt() {
+    const { t } = useTranslation();
     const { students } = useStudents();
     const { classes } = useClasses();
 
@@ -11,58 +13,108 @@ export default function MigrationPrompt() {
     const { showMigrationPrompt, dismissMigrationPrompt } = usePlatform();
 
     const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     if (!showMigrationPrompt) return null;
 
     const counts = [
-        rubrics.length > 0 && `${rubrics.length} rubric${rubrics.length !== 1 ? 's' : ''}`,
-        students.length > 0 && `${students.length} student${students.length !== 1 ? 's' : ''}`,
-        classes.length > 0 && `${classes.length} class${classes.length !== 1 ? 'es' : ''}`,
+        rubrics.length > 0 && t('migration.count_rubrics', { n: rubrics.length }),
+        students.length > 0 && t('migration.count_students', { n: students.length }),
+        classes.length > 0 && t('migration.count_classes', { n: classes.length }),
     ].filter(Boolean) as string[];
 
     async function handleUpload() {
         setUploading(true);
-        await dismissMigrationPrompt(true);
-        setUploading(false);
+        setUploadError(null);
+        try {
+            const result = await dismissMigrationPrompt(true);
+            if (!result.success) setUploadError(result.error ?? t('common.unknown_error'));
+        } finally {
+            setUploading(false);
+        }
+    }
+
+    function handleSkip() {
+        if (!uploading) void dismissMigrationPrompt(false);
     }
 
     return (
-        <Modal titleId="migration-title" onClose={() => dismissMigrationPrompt(false)} maxWidth={480}>
+        <Modal titleId="migration-title" onClose={handleSkip} maxWidth={480}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <h2 id="migration-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
-                    Upload local data to your account?
+                    {t('migration.title')}
                 </h2>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ background: '#eff6ff', borderRadius: 10, padding: 10, flexShrink: 0 }}>
-                        <Database size={22} style={{ color: '#3b82f6' }} />
+                    <div
+                        style={{
+                            background: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+                            borderRadius: 10,
+                            padding: 10,
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Database size={22} style={{ color: 'var(--accent)' }} aria-hidden="true" />
                     </div>
                     <div>
                         <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6 }}>
-                            We found local data in your browser: <strong>{counts.join(', ')}</strong>.
+                            {t('migration.found_local')} <strong>{counts.join(', ')}</strong>
                         </p>
-                        <p style={{ margin: '8px 0 0', fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
-                            Would you like to upload it to your account so it's available across devices? This won't
-                            delete anything locally.
+                        <p
+                            style={{
+                                margin: '8px 0 0',
+                                fontSize: '0.85rem',
+                                color: 'var(--text-muted)',
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            {t('migration.explain')}
                         </p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                    <button
-                        className="btn btn-ghost btn-sm"
-                        disabled={uploading}
-                        onClick={() => dismissMigrationPrompt(false)}
+                {uploadError && (
+                    <div
+                        role="alert"
+                        style={{
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'flex-start',
+                            padding: '10px 12px',
+                            borderRadius: 8,
+                            background: 'color-mix(in srgb, var(--red) 10%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--red) 30%, transparent)',
+                            fontSize: '0.85rem',
+                            color: 'var(--text)',
+                        }}
                     >
-                        <X size={14} /> Skip for now
+                        <AlertCircle size={16} style={{ color: 'var(--red)', flexShrink: 0 }} aria-hidden="true" />
+                        <div>
+                            <div>{t('migration.upload_failed')}</div>
+                            <div style={{ color: 'var(--text-muted)', marginTop: 4, overflowWrap: 'anywhere' }}>
+                                {uploadError}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <button className="btn btn-ghost btn-sm" disabled={uploading} onClick={handleSkip}>
+                        <X size={14} aria-hidden="true" /> {t('migration.skip')}
                     </button>
                     <button className="btn btn-primary btn-sm" disabled={uploading} onClick={handleUpload}>
                         {uploading ? (
                             <>
-                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Uploading…
+                                <Loader2
+                                    size={14}
+                                    style={{ animation: 'spin 1s linear infinite' }}
+                                    aria-hidden="true"
+                                />{' '}
+                                {t('migration.uploading')}
                             </>
                         ) : (
                             <>
-                                <Upload size={14} /> Upload to account
+                                <Upload size={14} aria-hidden="true" />{' '}
+                                {uploadError ? t('migration.retry') : t('migration.upload')}
                             </>
                         )}
                     </button>

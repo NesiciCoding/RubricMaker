@@ -30,6 +30,10 @@ import {
     saveAnalysisResults,
     exportStore,
     exportFullBackup,
+    markMigrationPending,
+    isMigrationPending,
+    skipMigrationForSession,
+    isMigrationSkippedForSession,
     importFullBackup,
     updateDefaultFormat,
     DEFAULT_GRADE_SCALES,
@@ -1162,5 +1166,28 @@ describe('saveStudentRubricsCache', () => {
         expect(stored().map((s) => s.id)).toEqual(['newest', 'new']);
         expect(warn).toHaveBeenCalled();
         vi.restoreAllMocks();
+    });
+});
+
+describe('migration flags (#636)', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+    });
+
+    it('tracks never-uploaded local data until the migration is done', () => {
+        expect(isMigrationPending()).toBe(false);
+        markMigrationPending();
+        expect(isMigrationPending()).toBe(true);
+        markMigrationDone();
+        expect(isMigrationPending()).toBe(false);
+        expect(localStorage.getItem('rm_migration_done')).toBe('true');
+    });
+
+    it('scopes Skip for now to the browser session', () => {
+        expect(isMigrationSkippedForSession()).toBe(false);
+        skipMigrationForSession();
+        expect(isMigrationSkippedForSession()).toBe(true);
+        expect(localStorage.getItem('rm_migration_done')).toBeNull();
     });
 });

@@ -9,6 +9,8 @@ import {
     loadPendingQueue,
     loadStore,
     markMigrationDone,
+    isMigrationPending,
+    skipMigrationForSession,
     setLocalMode,
 } from '../../store/storage';
 import { mergeStoreData } from '../../utils/syncMerge';
@@ -157,10 +159,25 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         saveSupabaseConfig(config);
         return (await loadDb()).storageSync.initAuth(config);
     };
-    const dismissMigrationPrompt = async (upload: boolean) => {
-        setShowMigrationPrompt(false);
+    // Only a successful upload ends the migration: a failed push keeps the prompt open (the
+    // caller shows the error) and "Skip for now" lasts for this session only.
+    const dismissMigrationPrompt = async (upload: boolean): Promise<SyncResult> => {
+        if (!upload) {
+            skipMigrationForSession();
+            setShowMigrationPrompt(false);
+            return { success: true };
+        }
+        let result: SyncResult;
+        try {
+            result = await (await loadDb()).storageSync.pushAll(getState());
+        } catch (e) {
+            result = { success: false, error: e instanceof Error ? e.message : String(e) };
+        }
+        if (!result.success) return result;
         markMigrationDone();
-        if (upload) await (await loadDb()).storageSync.pushAll(getState());
+        setShowMigrationPrompt(false);
+        showToast(t('migration.upload_success'), 'success');
+        return result;
     };
     const signInWithGoogle = async (): Promise<{ error?: string }> => {
         return (await loadDb()).storageSync.signInWithGoogle();
@@ -182,11 +199,14 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         // next person to open the app on this browser doesn't see it. Only safe when
         // everything has actually reached Supabase — a non-empty pending queue means
         // wiping would lose edits that exist nowhere else yet.
-        if (cloudBacked && loadPendingQueue().length === 0) {
+        // Local data that was never uploaded (migration skipped or failed) isn't in the pending
+        // queue either, so it is kept too.
+        const unmigrated = isMigrationPending();
+        if (cloudBacked && loadPendingQueue().length === 0 && !unmigrated) {
             clearLocalData();
             dispatch({ type: 'SET_ALL', payload: loadStore() });
         } else if (cloudBacked) {
-            showToast(t('toast.signout_pending_writes'), 'warning');
+            showToast(t(unmigrated ? 'toast.signout_unmigrated_local' : 'toast.signout_pending_writes'), 'warning');
         }
         if (!isLocalMode()) {
             setLandingState('show');

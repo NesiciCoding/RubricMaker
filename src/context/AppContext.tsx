@@ -34,6 +34,8 @@ import {
     loadCachedStudentRubrics,
     onStorageQuotaExceeded,
     sanitizeClassYears,
+    markMigrationPending,
+    isMigrationSkippedForSession,
 } from '../store/storage';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
 import { mergeStoreData } from '../utils/syncMerge';
@@ -266,7 +268,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
                             const s = initialStateRef.current;
                             if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                                setShowMigrationPrompt(true);
+                                markMigrationPending();
+                                if (!isMigrationSkippedForSession()) setShowMigrationPrompt(true);
                             }
                         }
                     })

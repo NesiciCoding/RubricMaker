@@ -82,6 +82,10 @@ vi.mock('../store/storage', () => ({
     MIGRATION_DONE_KEY: 'rm_migration_done',
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
+    markMigrationPending: vi.fn(),
+    isMigrationPending: vi.fn(() => false),
+    skipMigrationForSession: vi.fn(),
+    isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(() => loadStoreValue.current ?? mockEmptyState()),
     loadPendingQueue: vi.fn(() => []),
     loadCachedStudentRubrics: vi.fn(async () => []),
@@ -467,6 +471,53 @@ describe('AppContext startup effects', () => {
             expect(storage.saveStudents).toHaveBeenCalled();
         } finally {
             loadStoreValue.current = null;
+        }
+    });
+
+    it('marks local data as pending but keeps the prompt hidden after Skip for now this session (#636)', async () => {
+        // Guard against the offline test above leaving navigator.onLine false.
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        const supabaseConfig = await import('../services/database/supabaseConfig');
+        vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(CONFIG);
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: {
+                isConnected: Mock;
+                getCurrentUserId: Mock;
+                configure: Mock;
+                setToastFn: Mock;
+                hydrate: Mock;
+                hydratePartial: Mock;
+                hasSession: Mock;
+                initAuth: Mock;
+                didWipeLocalData: Mock;
+                disconnect: Mock;
+                pushAll: Mock;
+                pushOne: Mock;
+                pushMany: Mock;
+                onAuthChange: Mock;
+                onNetworkReconnect: Mock;
+                onRealtimeChange: Mock;
+                adapter: { getClient: Mock };
+            };
+        };
+        vi.mocked(storageSync.hasSession).mockReturnValue(true);
+        const fresh = { ...mockEmptyState(), students: [{ id: 's1', name: 'Sync', classId: 'c1' }] };
+        vi.mocked(storageSync.hydrate).mockResolvedValue({ data: fresh, error: null });
+        const withLocalData = {
+            ...mockEmptyState(),
+            rubrics: [{ id: 'r1', name: 'Local', criteria: [] }],
+        } as unknown as StoreData;
+        loadStoreValue.current = withLocalData;
+        vi.mocked(storage.isMigrationSkippedForSession).mockReturnValue(true);
+        try {
+            const { getPlatform } = renderProvider();
+            // The startup flow ends with a dynamic import (flushToLocalStorage ->
+            // mediaStore), which settles after plain act() — poll until the prompt lands.
+            await waitFor(() => expect(storage.markMigrationPending).toHaveBeenCalled(), { timeout: 3000 });
+            expect(getPlatform().showMigrationPrompt).toBe(false);
+        } finally {
+            loadStoreValue.current = null;
+            vi.mocked(storage.isMigrationSkippedForSession).mockReturnValue(false);
         }
     });
 

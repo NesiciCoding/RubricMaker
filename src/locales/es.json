@@ -2009,7 +2009,8 @@
         "sync_flushed": "De vuelta en línea — todos los cambios sincronizados.",
         "copy_paste_failed": "Error al copiar/pegar. Por favor, inténtalo de nuevo.",
         "sync_offline_cache": "Estás sin conexión — usando datos almacenados en caché local.",
-        "signout_pending_writes": "Algunos cambios aún no se han sincronizado — tus datos locales se han conservado para no perder nada."
+        "signout_pending_writes": "Algunos cambios aún no se han sincronizado — tus datos locales se han conservado para no perder nada.",
+        "signout_unmigrated_local": "Tus datos locales nunca se subieron a tu cuenta, así que se han conservado en este dispositivo. Vuelve a iniciar sesión y elige Subir a la cuenta para sincronizarlos."
     },
     "pwa": {
         "update_available_title": "Actualización disponible",
@@ -3193,7 +3194,7 @@
         "gs_mode_offline_title": "Sin conexión / Local",
         "gs_mode_offline_desc": "Todos los datos en el localStorage del navegador. Nada se envía a un servidor. Funciona en cualquier alojamiento estático.",
         "gs_mode_cloud_title": "Sincronización en la nube",
-        "gs_mode_cloud_desc": "Conecta un proyecto Supabase (autoalojado o supabase.com) para acceso y compartición entre varios dispositivos. Cierra sesión desde la parte inferior de la barra lateral.",
+        "gs_mode_cloud_desc": "Conecta un proyecto Supabase (autoalojado o supabase.com) para acceso y compartición entre varios dispositivos. Cierra sesión desde la parte inferior de la barra lateral. Si este navegador ya tiene datos cuando inicias sesión por primera vez, se te pedirá subirlos a tu cuenta; Ahora no lo vuelve a preguntar en la siguiente sesión, y los datos que nunca se subieron se quedan en este dispositivo al cerrar sesión.",
         "gs_mode_docker_title": "Docker (pila completa)",
         "gs_mode_docker_desc": "docker-compose up inicia el frontend + Supabase + Caddy (HTTPS). Recomendado para centros educativos.",
         "gs_themes_title": "Temas y apariencia",
@@ -4307,5 +4308,19 @@
         "col_average": "Media de la clase",
         "col_weak": "Persistentemente débil",
         "col_declining": "En descenso"
+    },
+    "migration": {
+        "title": "¿Subir los datos locales a tu cuenta?",
+        "found_local": "Hemos encontrado datos locales en este navegador:",
+        "count_rubrics": "rúbricas: {{n}}",
+        "count_students": "alumnos: {{n}}",
+        "count_classes": "clases: {{n}}",
+        "explain": "Súbelos a tu cuenta para tenerlos en tus otros dispositivos. No se borra nada de este navegador. Si lo omites, te lo volveremos a preguntar la próxima vez.",
+        "skip": "Ahora no",
+        "upload": "Subir a la cuenta",
+        "uploading": "Subiendo…",
+        "retry": "Reintentar",
+        "upload_failed": "La subida ha fallado, así que todavía no se ha movido nada a tu cuenta. Tus datos siguen en este navegador.",
+        "upload_success": "Tus datos locales se han subido a tu cuenta."
     }
 }

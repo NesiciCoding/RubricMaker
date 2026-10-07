@@ -15,7 +15,9 @@ import { storageSync } from '../../services/database';
 
 // ─── Hoisted mock refs ────────────────────────────────────────────────────────
 
-const mockDismissMigrationPrompt = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+const mockDismissMigrationPrompt = vi.hoisted(() =>
+    vi.fn((_upload: boolean): Promise<{ success: boolean; error?: string }> => Promise.resolve({ success: true }))
+);
 
 // ─── Shared mocks ─────────────────────────────────────────────────────────────
 
@@ -663,22 +665,22 @@ describe('MigrationPrompt', () => {
 
     it('shows the upload prompt heading', () => {
         render(<MigrationPrompt />);
-        expect(screen.getByText(/upload local data/i)).toBeInTheDocument();
+        expect(screen.getByText('migration.title')).toBeInTheDocument();
     });
 
     it('renders the Skip for now button', () => {
         render(<MigrationPrompt />);
-        expect(screen.getByRole('button', { name: /skip for now/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /migration\.skip/ })).toBeInTheDocument();
     });
 
     it('renders the Upload to account button', () => {
         render(<MigrationPrompt />);
-        expect(screen.getByRole('button', { name: /upload to account/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /migration\.upload$/ })).toBeInTheDocument();
     });
 
     it('clicking Skip calls dismissMigrationPrompt(false)', () => {
         render(<MigrationPrompt />);
-        fireEvent.click(screen.getByRole('button', { name: /skip for now/i }));
+        fireEvent.click(screen.getByRole('button', { name: /migration\.skip/ }));
         expect(mockDismissMigrationPrompt).toHaveBeenCalledWith(false);
     });
 
@@ -694,31 +696,35 @@ describe('MigrationPrompt', () => {
         expect(mockDismissMigrationPrompt).toHaveBeenCalledWith(false);
     });
 
-    it('shows singular counts when there is one rubric, student, and class', () => {
-        mockRubrics = [{}];
-        mockStudents = [{}];
+    it('lists only the collections that have local data', () => {
+        mockRubrics = [{}, {}];
+        mockStudents = [];
         mockClasses = [{}];
         render(<MigrationPrompt />);
-        expect(screen.getByText(/1 rubric/)).toBeInTheDocument();
-        expect(screen.getByText(/1 student/)).toBeInTheDocument();
-        expect(screen.getByText(/1 class/)).toBeInTheDocument();
-    });
-
-    it('pluralizes counts when there are multiple rubrics, students, and classes', () => {
-        mockRubrics = [{}, {}];
-        mockStudents = [{}, {}, {}];
-        mockClasses = [{}, {}];
-        render(<MigrationPrompt />);
-        expect(screen.getByText(/2 rubrics/)).toBeInTheDocument();
-        expect(screen.getByText(/3 students/)).toBeInTheDocument();
-        expect(screen.getByText(/2 classes/)).toBeInTheDocument();
+        expect(screen.getByText('migration.count_rubrics, migration.count_classes')).toBeInTheDocument();
     });
 
     it('clicking Upload calls dismissMigrationPrompt(true)', async () => {
         render(<MigrationPrompt />);
-        fireEvent.click(screen.getByRole('button', { name: /upload to account/i }));
+        fireEvent.click(screen.getByRole('button', { name: /migration\.upload$/ }));
         await waitFor(() => {
             expect(mockDismissMigrationPrompt).toHaveBeenCalledWith(true);
         });
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('keeps the prompt open with the error and a retry button when the upload fails (#636)', async () => {
+        mockDismissMigrationPrompt.mockResolvedValueOnce({ success: false, error: 'new row violates RLS' });
+        render(<MigrationPrompt />);
+        fireEvent.click(screen.getByRole('button', { name: /migration\.upload$/ }));
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('migration.upload_failed');
+        expect(alert).toHaveTextContent('new row violates RLS');
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /migration\.retry/ }));
+        await waitFor(() => expect(mockDismissMigrationPrompt).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     });
 });
