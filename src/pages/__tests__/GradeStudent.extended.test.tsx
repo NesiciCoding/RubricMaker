@@ -178,6 +178,8 @@ describe('GradeStudent extended', () => {
             target: { value: 'points' },
         });
         fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
+        // The footer shows the offset applied to the points, so points and percentage reconcile (#674).
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(0 + 5)');
         fireEvent.change(screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder'), {
             target: { value: 'Late penalty' },
         });

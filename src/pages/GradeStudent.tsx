@@ -2112,7 +2112,13 @@ export default function GradeStudent() {
                             </span>
                         )}
                         <span className="text-muted text-sm">
-                            {summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
+                            {summary.modifiedPoints !== summary.rawScore && (
+                                <span title={t('gradeStudent.points_before_modifier')}>
+                                    ({summary.rawScore} {summary.modifiedPoints > summary.rawScore ? '+' : '−'}{' '}
+                                    {Math.abs(summary.modifiedPoints - summary.rawScore)}){' '}
+                                </span>
+                            )}
+                            {summary.modifiedPoints} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria}{' '}
