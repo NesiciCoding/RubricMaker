@@ -778,6 +778,8 @@ export default function StudentPortalPage() {
                     ariaLabel={t('studentPortal.section_nav_label')}
                     value={activeTab}
                     onChange={setActiveTab}
+                    wrap
+                    minTargetHeight={44}
                     options={[
                         { value: 'home', label: t('studentPortal.tab_home'), icon: <Home size={14} /> },
                         {
