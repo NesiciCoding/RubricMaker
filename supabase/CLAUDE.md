@@ -51,6 +51,10 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - Profile reads (077): admins read every profile; teachers read their own row, non-student profiles in a school they belong to (`school_members`), and colleagues they share a rubric or class with (`is_collaborator()`). Look up a colleague by email with the `find_profile_by_email(text)` RPC (exact match, teacher/admin results only, logged to `audit_logs` and capped at 30 per caller per 10 minutes) — never by querying `profiles.email` directly.
 - Grade rows (077): `student_rubrics` inserts/updates require a teacher/admin who owns the student or is an `editor` on the student's class (`can_grade_student()`), so the student row must exist server-side first (`pushAll` upserts students before grades). The portal only shows a student rows whose grader passes the same check.
 
+## Retention job
+
+- `anonymize_overdue_students()` runs nightly at 02:00 via pg_cron (scheduled in 038, rewritten in 078). It anonymizes students whose latest `student_rubrics.gradedAt` (any grader) is older than their teacher's school `retention_years`; a teacher's school comes from `profiles.school_id` or `school_members`. Students with a grade whose `gradedAt` cannot be parsed are skipped rather than anonymized. Each run writes one `audit_logs` row (`action = 'retention_anonymize'`, with `anonymized`/`failed`/`skipped_unreadable_date` counts). `e2e/specs/49-retention-anonymization.spec.ts` and `src/__tests__/retentionAnonymization.test.ts` guard it — keep them passing when touching `students`/`student_rubrics` columns.
+
 ## Storage buckets
 
 - `attachments` — file attachments for grading (DOCX, PDF, images), `003_storage_buckets.sql`
