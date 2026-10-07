@@ -51,6 +51,36 @@ RubricMaker's Settings → Database tab can export all data as JSON. This is not
 
 ---
 
+## Migrating from Supabase Cloud
+
+`scripts/export-cloud.sh` and `scripts/import-cloud.sh` move a Supabase Cloud project to this self-hosted stack: users, all application rows **and the files in Storage** (attachments, export templates, essays, recordings, voice feedback, scans, backups).
+
+1. **On your laptop** (needs `pg_dump`/`psql` matching the cloud Postgres version, and `curl`):
+
+    ```bash
+    ./scripts/export-cloud.sh
+    ```
+
+    It asks for the Session-pooler connection string (Dashboard → Project Settings → Database), then for the project URL and the `service_role` key (Dashboard → Project Settings → API) so it can download every Storage object. The result is `./cloud-export/<timestamp>/` with `auth-data.sql`, `public-data.sql`, `storage/<bucket>/…` and `storage-manifest.tsv`. It contains real student data and the folder is created readable only by you. Failed downloads, and object names with a tab or line break, are counted at the end — re-run, or fetch those files from the Dashboard.
+
+2. **Copy the folder to the server** (e.g. `rsync -avz cloud-export/<timestamp> rubricmaker@your-vps:~/cloud-export/`).
+
+3. **On the server**, with the stack up and migrations applied to a fresh database:
+
+    ```bash
+    ./scripts/import-cloud.sh ~/cloud-export/<timestamp>
+    ```
+
+    It loads the rows, then uploads every file through the Storage API at `STORAGE_URL` (default: `SITE_URL` from `.env`) with `SERVICE_ROLE_KEY` from `.env`, and finishes with a verification:
+    - files per bucket in the export vs. on this instance;
+    - per table (`attachments`, `export_templates`, `essay_submissions`, `recording_metadata`, `scan_metadata`), how many rows point at a file that is not in storage, with the first few paths.
+
+    Voice-feedback audio is referenced from inside grade records, so it is covered by the per-bucket counts only.
+
+If uploads fail (wrong `SITE_URL`, storage not running), fix the cause and run `./scripts/import-cloud.sh <dir> --storage-only` — uploads are idempotent. `--verify-only` prints the check again; `--skip-storage` imports rows only. Exports made with `--skip-storage`, or with the older script, have no files: the rows import, but every file they reference returns 404 until the objects are copied.
+
+---
+
 ## Upgrade Path
 
 RubricMaker's `docker-compose.yml` pins image versions. To upgrade:
