@@ -1647,7 +1647,12 @@
         "quick_comments_label": "Rapide",
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
         "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
-        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)"
+        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)",
+        "nhi_confirm_title": "Marquer comme non rendu ?",
+        "nhi_confirm_message": "{{name}} a déjà une note pour cette grille. Marquer le travail comme non rendu le retire des statistiques, du tableau de bord et du portail élève. Les scores sont conservés et vous pouvez annuler depuis le bandeau de la page de correction.",
+        "nhi_confirm_action": "Marquer comme non rendu",
+        "nhi_banner": "Marqué comme non rendu — ce travail est exclu des statistiques, du tableau de bord et du portail élève. Noter et enregistrer retire cette marque.",
+        "nhi_undo": "Annuler « non rendu »"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -3745,7 +3750,8 @@
         "rb_tests_visual_editors_body": "Les questions de correction d'erreurs, de transformation avec mot clé, de texte à trous avec banque de mots et de construction de phrases se modifient sans saisir de syntaxe spéciale : marquez les fragments erronés et corrects en sélectionnant des mots du texte, ajoutez les réponses acceptées sous forme de cartes avec des pastilles, et les distracteurs sous forme de pastilles. Vous préférez saisir ou coller du texte ? Chaque éditeur propose un bouton « Modifier en texte » qui affiche la syntaxe brute ; les deux vues modifient les mêmes données.",
         "rb_tests_a4_preview_label": "Aperçu A4 :",
         "rb_tests_a4_preview_body": "Cliquez sur « Aperçu A4 » dans le créateur de tests pour ouvrir, à côté de vos questions, un aperçu en direct de la copie imprimée de l'élève. Activez « Corrigé » pour voir les bonnes réponses, masquez les points, zoomez ou imprimez la page. Modifiez l'en-tête, les consignes et le pied de page directement sur la page : ils sont enregistrés avec le test et figurent aussi dans l'export du livret d'examen.",
-        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver."
+        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver.",
+        "gr_scoring_item_nhi": "Non rendu (menu des réglages) : marque le travail comme manquant et l'exclut des statistiques, du tableau de bord et du portail élève. Si l'élève a déjà une note, une confirmation est demandée et le commentaire général existant est conservé. Un bandeau sur la page de correction permet d'annuler la marque ; noter et enregistrer le travail rendu en retard retire la marque automatiquement."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

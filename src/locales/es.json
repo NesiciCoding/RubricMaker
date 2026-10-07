@@ -1647,7 +1647,12 @@
         "quick_comments_label": "Rápido",
         "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
         "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
-        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)",
+        "nhi_confirm_title": "¿Marcar como no entregado?",
+        "nhi_confirm_message": "{{name}} ya tiene una calificación para esta rúbrica. Marcar el trabajo como no entregado lo excluye de las estadísticas, el panel y el portal del alumno. Las puntuaciones se conservan y puedes deshacerlo desde el aviso de la página de calificación.",
+        "nhi_confirm_action": "Marcar como no entregado",
+        "nhi_banner": "Marcado como no entregado: este trabajo no cuenta en las estadísticas, el panel ni el portal del alumno. Calificar y guardar quita la marca.",
+        "nhi_undo": "Deshacer «no entregado»"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -3745,7 +3750,8 @@
         "rb_tests_visual_editors_body": "Las preguntas de corrección de errores, transformación con palabra clave, rellenar con banco de palabras y construcción de frases se editan sin escribir sintaxis especial: marque fragmentos erróneos y correctos seleccionando palabras del texto, añada las respuestas aceptadas como tarjetas con fichas y los distractores como fichas. ¿Prefiere escribir o pegar? Cada editor tiene un botón «Editar como texto» que muestra la sintaxis en bruto; ambas vistas editan los mismos datos.",
         "rb_tests_a4_preview_label": "Vista previa A4:",
         "rb_tests_a4_preview_body": "Haga clic en «Vista previa A4» en el creador de pruebas para abrir, junto a sus preguntas, una vista previa en directo de la hoja impresa del alumnado. Active «Clave de respuestas» para ver las respuestas correctas, oculte los puntos, haga zoom o imprima la página. Edite el encabezado, las instrucciones y el pie directamente en la página: se guardan con la prueba y también aparecen en la exportación del cuadernillo de examen.",
-        "gr_comparative_existing_note": "La calificación existente de cada alumno se carga en la sesión, y guardar una comparación actualiza esa calificación en lugar de crear otra. Si un alumno ya tiene más de una calificación para la rúbrica, la sesión lo indica y permite conservar solo la mostrada; las demás se pueden restaurar desde Admin → Archivo."
+        "gr_comparative_existing_note": "La calificación existente de cada alumno se carga en la sesión, y guardar una comparación actualiza esa calificación en lugar de crear otra. Si un alumno ya tiene más de una calificación para la rúbrica, la sesión lo indica y permite conservar solo la mostrada; las demás se pueden restaurar desde Admin → Archivo.",
+        "gr_scoring_item_nhi": "No entregado (menú de ajustes): marca el trabajo como ausente y lo excluye de las estadísticas, el panel y el portal del alumno. Si el alumno ya tiene una calificación, se pide confirmación y se conserva el comentario general existente. Un aviso en la página de calificación permite deshacer la marca; calificar y guardar el trabajo tardío quita la marca automáticamente."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

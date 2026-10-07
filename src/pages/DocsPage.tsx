@@ -967,6 +967,7 @@ function GradingTab() {
                         t('docs.gr_scoring_item_slider'),
                         t('docs.gr_scoring_item_subitems'),
                         t('docs.gr_scoring_item_modifiers'),
+                        t('docs.gr_scoring_item_nhi'),
                     ]}
                 />
 

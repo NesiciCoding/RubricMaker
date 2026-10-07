@@ -1647,7 +1647,12 @@
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
-        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
+        "nhi_confirm_title": "Als nicht abgegeben markieren?",
+        "nhi_confirm_message": "{{name}} hat für dieses Raster bereits eine Bewertung. Wenn Sie die Arbeit als nicht abgegeben markieren, fällt sie aus Statistiken, Dashboard und Schülerportal heraus. Die Punkte bleiben erhalten, und Sie können dies über den Hinweis auf der Bewertungsseite rückgängig machen.",
+        "nhi_confirm_action": "Als nicht abgegeben markieren",
+        "nhi_banner": "Als nicht abgegeben markiert — diese Arbeit zählt nicht in Statistiken, Dashboard und Schülerportal. Bewerten und Speichern hebt die Markierung auf.",
+        "nhi_undo": "„Nicht abgegeben“ rückgängig machen"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -3745,7 +3750,8 @@
         "rb_tests_visual_editors_body": "Fragen zu Fehlerkorrektur, Schlüsselwort-Umformung, Lückentext mit Wortbank und Satzbau bearbeiten Sie ohne spezielle Syntax: Markieren Sie Fehler und richtige Fragmente, indem Sie Wörter im Text auswählen, fügen Sie akzeptierte Antworten als Karten mit Chips hinzu und Ablenker als Chips. Lieber tippen oder einfügen? Jeder Editor hat eine Schaltfläche „Als Text bearbeiten“, die die Rohsyntax zeigt; beide Ansichten bearbeiten dieselben Daten.",
         "rb_tests_a4_preview_label": "A4-Vorschau:",
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
-        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen."
+        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
+        "gr_scoring_item_nhi": "Nicht abgegeben (Zahnradmenü): markiert die Arbeit als fehlend und lässt sie in Statistiken, Dashboard und Schülerportal außen vor. Hat die Person bereits eine Bewertung, wird um Bestätigung gebeten, und ein vorhandener Gesamtkommentar bleibt erhalten. Ein Hinweis auf der Bewertungsseite macht die Markierung rückgängig; die verspätete Arbeit bewerten und speichern hebt die Markierung automatisch auf."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
