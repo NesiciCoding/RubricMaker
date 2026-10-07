@@ -91,12 +91,14 @@ test.describe('migration 079 owner data registry', () => {
             headers: svc,
             body: JSON.stringify({ email, password: 'Erase-Test-1!', email_confirm: true }),
         });
+        expect(created.ok).toBe(true);
         const eraserId = ((await created.json()) as { id: string }).id;
         const login = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
             body: JSON.stringify({ email, password: 'Erase-Test-1!' }),
         });
+        expect(login.ok).toBe(true);
         const token = ((await login.json()) as { access_token: string }).access_token;
         try {
             const mine = `r-erase-${uniq()}`;
