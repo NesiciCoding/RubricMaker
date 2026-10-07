@@ -590,10 +590,7 @@ export class SupabaseAdapter {
             .select('data')
             .eq('owner_id', this.uid())
             .order('created_at', { ascending: false });
-        if (error) {
-            console.error('fetchRubrics', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as Rubric);
     }
 
@@ -660,10 +657,7 @@ export class SupabaseAdapter {
 
     async fetchClasses(): Promise<Class[]> {
         const { data, error } = await this.db().from('classes').select('data');
-        if (error) {
-            console.error('fetchClasses', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as Class);
     }
 
@@ -688,10 +682,7 @@ export class SupabaseAdapter {
 
     async fetchStudents(): Promise<Student[]> {
         const { data, error } = await this.db().from('students').select('data');
-        if (error) {
-            console.error('fetchStudents', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as Student);
     }
 
@@ -736,15 +727,10 @@ export class SupabaseAdapter {
     }
 
     async fetchStudentRubrics(): Promise<StudentRubric[]> {
-        try {
-            const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-                this.db().from('student_rubrics').select('data').eq('is_peer_review', false).order('id')
-            );
-            return rows.map((r) => r.data);
-        } catch (error) {
-            console.error('fetchStudentRubrics', error);
-            return [];
-        }
+        const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
+            this.db().from('student_rubrics').select('data').eq('is_peer_review', false).order('id')
+        );
+        return rows.map((r) => r.data);
     }
 
     async upsertStudentRubric(sr: StudentRubric): Promise<SyncResult> {
@@ -792,15 +778,10 @@ export class SupabaseAdapter {
     // ── Peer Reviews ──────────────────────────────────────────────────────────
 
     async fetchPeerReviews(): Promise<StudentRubric[]> {
-        try {
-            const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
-                this.db().from('student_rubrics').select('data').eq('is_peer_review', true).order('id')
-            );
-            return rows.map((r) => r.data);
-        } catch (error) {
-            console.error('fetchPeerReviews', error);
-            return [];
-        }
+        const rows = await this.fetchPaged<{ data: StudentRubric }>(() =>
+            this.db().from('student_rubrics').select('data').eq('is_peer_review', true).order('id')
+        );
+        return rows.map((r) => r.data);
     }
 
     async upsertPeerReview(sr: StudentRubric): Promise<SyncResult> {
@@ -826,10 +807,7 @@ export class SupabaseAdapter {
 
     async fetchAttachments(): Promise<Array<Omit<Attachment, 'dataUrl'> & { storagePath?: string }>> {
         const { data, error } = await this.db().from('attachments').select('data, storage_path');
-        if (error) {
-            console.error('fetchAttachments', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => ({ ...(r.data as Omit<Attachment, 'dataUrl'>), storagePath: r.storage_path }));
     }
 
@@ -879,10 +857,7 @@ export class SupabaseAdapter {
 
     async fetchGradeScales(): Promise<GradeScale[]> {
         const { data, error } = await this.db().from('grade_scales').select('data');
-        if (error) {
-            console.error('fetchGradeScales', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as GradeScale);
     }
 
@@ -910,10 +885,7 @@ export class SupabaseAdapter {
 
     async fetchCommentSnippets(): Promise<CommentSnippet[]> {
         const { data, error } = await this.db().from('comment_snippets').select('data');
-        if (error) {
-            console.error('fetchCommentSnippets', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as CommentSnippet);
     }
 
@@ -939,10 +911,7 @@ export class SupabaseAdapter {
         // fetchSchoolSharedCommentBank(), and an unscoped select here would let those
         // same rows leak into "my comment bank" with owner-only edit/delete controls.
         const { data, error } = await this.db().from('comment_bank').select('data').eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchCommentBank', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as CommentBankItem);
     }
 
@@ -971,10 +940,7 @@ export class SupabaseAdapter {
 
     async fetchQuestionBank(): Promise<QuestionBankItem[]> {
         const { data, error } = await this.db().from('question_bank_items').select('data').eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchQuestionBank', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as QuestionBankItem);
     }
 
@@ -1000,10 +966,7 @@ export class SupabaseAdapter {
 
     async fetchDocumentComments(): Promise<DocumentComment[]> {
         const { data, error } = await this.db().from('document_comments').select('data').eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchDocumentComments', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as DocumentComment);
     }
 
@@ -1033,10 +996,7 @@ export class SupabaseAdapter {
             .from('notification_dismissals')
             .select('data')
             .eq('owner_id', this.uid());
-        if (error) {
-            console.error('fetchNotificationDismissals', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as NotificationDismissal);
     }
 
@@ -1067,11 +1027,6 @@ export class SupabaseAdapter {
 
     async fetchComparativeMatchups(): Promise<ComparativeMatchup[]> {
         const { data, error } = await this.db().from('comparative_matchups').select('data').eq('owner_id', this.uid());
-        // Unlike most fetchX methods here, this one must not swallow the error into an empty
-        // array: mergeCollection() would then read that as "the remote truly has none" and
-        // delete every local (non-pending) matchup, silently wiping the comparison history
-        // this feature exists to persist. Throwing lets the caller's existing hydrate-failure
-        // fallback (keep local state, don't merge) do its job instead.
         if (error) throw error;
         return (data ?? []).map((r) => r.data as ComparativeMatchup);
     }
@@ -1097,10 +1052,7 @@ export class SupabaseAdapter {
 
     async fetchExportTemplates(): Promise<Array<Omit<ExportTemplate, 'dataUrl'> & { storagePath?: string }>> {
         const { data, error } = await this.db().from('export_templates').select('data, storage_path');
-        if (error) {
-            console.error('fetchExportTemplates', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => ({
             ...(r.data as Omit<ExportTemplate, 'dataUrl'>),
             storagePath: r.storage_path,
@@ -1152,10 +1104,7 @@ export class SupabaseAdapter {
 
     async fetchFavoriteStandards(): Promise<LinkedStandard[]> {
         const { data, error } = await this.db().from('favorite_standards').select('data');
-        if (error) {
-            console.error('fetchFavoriteStandards', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as LinkedStandard);
     }
 
@@ -1184,10 +1133,7 @@ export class SupabaseAdapter {
 
     async fetchSelfAssessments(): Promise<SelfAssessment[]> {
         const { data, error } = await this.db().from('self_assessments').select('data');
-        if (error) {
-            console.error('fetchSelfAssessments', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as SelfAssessment);
     }
 
@@ -1214,10 +1160,7 @@ export class SupabaseAdapter {
 
     async fetchSpeakingSessions(): Promise<SpeakingSession[]> {
         const { data, error } = await this.db().from('speaking_sessions').select('data');
-        if (error) {
-            console.error('fetchSpeakingSessions', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as SpeakingSession);
     }
 
@@ -1404,10 +1347,7 @@ export class SupabaseAdapter {
 
     async fetchTests(): Promise<Test[]> {
         const { data, error } = await this.db().from('tests').select('data');
-        if (error) {
-            console.error('fetchTests', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as Test);
     }
 
@@ -1432,10 +1372,7 @@ export class SupabaseAdapter {
 
     async fetchStudentTests(): Promise<StudentTest[]> {
         const { data, error } = await this.db().from('student_tests').select('data');
-        if (error) {
-            console.error('fetchStudentTests', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as StudentTest);
     }
 
@@ -1674,8 +1611,8 @@ export class SupabaseAdapter {
                 'id, student_id, context_type, context_id, context_label, sender, body, created_at, read_by_teacher, read_by_student'
             )
             .order('created_at', { ascending: true });
-        if (error || !data) return [];
-        return data.map(SupabaseAdapter.rowToMessage);
+        if (error) throw error;
+        return (data ?? []).map(SupabaseAdapter.rowToMessage);
     }
 
     /** Teacher sends a reply or starts a new thread. */
@@ -1747,10 +1684,7 @@ export class SupabaseAdapter {
 
     async fetchFlashcardDecks(): Promise<FlashcardDeck[]> {
         const { data, error } = await this.db().from('flashcard_decks').select('data');
-        if (error) {
-            console.error('fetchFlashcardDecks', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as FlashcardDeck);
     }
 
@@ -1796,10 +1730,7 @@ export class SupabaseAdapter {
 
     async fetchStandardMasteryTargets(): Promise<StandardMasteryTarget[]> {
         const { data, error } = await this.db().from('standard_mastery_targets').select('data');
-        if (error) {
-            console.error('fetchStandardMasteryTargets', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as StandardMasteryTarget);
     }
 
@@ -1821,10 +1752,7 @@ export class SupabaseAdapter {
 
     async fetchFlashcardAssignments(): Promise<FlashcardAssignment[]> {
         const { data, error } = await this.db().from('flashcard_assignments').select('data');
-        if (error) {
-            console.error('fetchFlashcardAssignments', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as FlashcardAssignment);
     }
 
@@ -1855,10 +1783,7 @@ export class SupabaseAdapter {
 
     async fetchFlashcardReviews(): Promise<FlashcardReview[]> {
         const { data, error } = await this.db().from('flashcard_reviews').select('data');
-        if (error) {
-            console.error('fetchFlashcardReviews', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as FlashcardReview);
     }
 
@@ -1919,19 +1844,13 @@ export class SupabaseAdapter {
 
     async fetchNewsFlashReads(): Promise<NewsFlashRead[]> {
         const { data, error } = await this.db().from('news_flash_reads').select('data');
-        if (error) {
-            console.error('fetchNewsFlashReads', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as NewsFlashRead);
     }
 
     async fetchNewsFlashes(): Promise<NewsFlash[]> {
         const { data, error } = await this.db().from('news_flashes').select('data');
-        if (error) {
-            console.error('fetchNewsFlashes', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as NewsFlash);
     }
 
@@ -1979,10 +1898,7 @@ export class SupabaseAdapter {
 
     async fetchAnalysisResults(): Promise<DocumentAnalysisResult[]> {
         const { data, error } = await this.db().from('analysis_results').select('data');
-        if (error) {
-            console.error('fetchAnalysisResults', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as DocumentAnalysisResult);
     }
 
@@ -2009,10 +1925,7 @@ export class SupabaseAdapter {
 
     async fetchEssayTemplates(): Promise<EssayTemplate[]> {
         const { data, error } = await this.db().from('essay_templates').select('data');
-        if (error) {
-            console.error('fetchEssayTemplates', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as EssayTemplate);
     }
 
@@ -2032,10 +1945,7 @@ export class SupabaseAdapter {
 
     async fetchEssayBatchAssignments(): Promise<EssayAssignment[]> {
         const { data, error } = await this.db().from('essay_batch_assignments').select('data');
-        if (error) {
-            console.error('fetchEssayBatchAssignments', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as EssayAssignment);
     }
 
@@ -2059,10 +1969,7 @@ export class SupabaseAdapter {
 
     async fetchEssayOfflineSubmissions(): Promise<EssaySubmission[]> {
         const { data, error } = await this.db().from('essay_offline_submissions').select('data');
-        if (error) {
-            console.error('fetchEssayOfflineSubmissions', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as EssaySubmission);
     }
 
@@ -2086,10 +1993,7 @@ export class SupabaseAdapter {
 
     async fetchUserTemplates(): Promise<UserTemplate[]> {
         const { data, error } = await this.db().from('user_templates').select('data');
-        if (error) {
-            console.error('fetchUserTemplates', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as UserTemplate);
     }
 
@@ -2107,10 +2011,7 @@ export class SupabaseAdapter {
 
     async fetchGradingTasks(): Promise<GradingTask[]> {
         const { data, error } = await this.db().from('grading_tasks').select('data');
-        if (error) {
-            console.error('fetchGradingTasks', error);
-            return [];
-        }
+        if (error) throw error;
         return (data ?? []).map((r) => r.data as GradingTask);
     }
 
@@ -2342,8 +2243,8 @@ export class SupabaseAdapter {
             .from('user_settings')
             .select('settings')
             .eq('user_id', this.uid())
-            .single();
-        if (error) return null;
+            .maybeSingle();
+        if (error) throw error;
         return (data?.settings as AppSettings) ?? null;
     }
 

@@ -56,6 +56,24 @@ import type {
 const LAST_SYNC_KEY = 'rm_last_sync_at';
 const OWNER_KEY = 'rm_owner_uid';
 
+// Settles each hydrate fetch on its own: a failed fetch yields undefined (and records its error)
+// rather than rejecting the whole wave. Never substitute [] — mergeStoreData reads an empty array
+// as "the remote has none" and deletes every local non-pending record, whereas an undefined
+// collection is skipped and local data is kept.
+function skipFailed<T extends readonly unknown[] | []>(
+    errors: unknown[],
+    fetches: T
+): Promise<{ -readonly [K in keyof T]: Awaited<T[K]> | undefined }> {
+    return Promise.all(
+        fetches.map((p) =>
+            Promise.resolve(p).catch((e: unknown) => {
+                errors.push(e);
+                return undefined;
+            })
+        )
+    ) as Promise<{ -readonly [K in keyof T]: Awaited<T[K]> | undefined }>;
+}
+
 class StorageSyncService {
     readonly adapter = new SupabaseAdapter();
     private attachmentSync: AttachmentSync = new AttachmentSync(this.adapter);
@@ -630,6 +648,7 @@ class StorageSyncService {
     private async _hydrateImpl(gen: number): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         if (!this.adapter.isConnected()) return { data: null };
         this.setStatus('syncing');
+        const fetchErrors: unknown[] = [];
         try {
             const [
                 rubrics,
@@ -656,7 +675,7 @@ class StorageSyncService {
                 attachments,
                 settings,
                 profileFull,
-            ] = await Promise.all([
+            ] = await skipFailed(fetchErrors, [
                 this.adapter.fetchRubrics(),
                 this.adapter.fetchClasses(),
                 this.adapter.fetchStudents(),
@@ -689,7 +708,7 @@ class StorageSyncService {
             // carry an embedded `versions` array in their jsonb row. Lift it into the
             // dedicated per-rubric version store on first sight and strip it here so it
             // never re-enters app state.
-            const migratedRubrics = rubrics.map(migrateLegacyRubricVersions);
+            const migratedRubrics = rubrics?.map(migrateLegacyRubricVersions);
 
             // Back-compat read path (comment-bank consolidation): any pre-existing
             // `comment_snippets` rows get lifted into `commentBank` on every hydrate —
@@ -699,8 +718,8 @@ class StorageSyncService {
             // also pushed to `comment_bank` (fire-and-forget, idempotent upsert) so they
             // become real rows — otherwise they'd stay purely in-memory (recomputed every
             // hydrate) and could never be marked shared-with-department.
-            const mergedCommentBank = mergeLegacyCommentSnippets(commentSnippets, commentBank);
-            if (mergedCommentBank !== commentBank) {
+            const mergedCommentBank = commentBank && mergeLegacyCommentSnippets(commentSnippets ?? [], commentBank);
+            if (mergedCommentBank && commentBank && mergedCommentBank !== commentBank) {
                 const existingIds = new Set(commentBank.map((item) => item.id));
                 mergedCommentBank
                     .filter((item) => !existingIds.has(item.id))
@@ -722,35 +741,35 @@ class StorageSyncService {
                 documentComments,
                 notificationDismissals,
                 comparativeMatchups,
-            ] = await Promise.all([
-                this.adapter.fetchFlashcardDecks().catch(() => []),
-                this.adapter.fetchFlashcardAssignments().catch(() => []),
-                this.adapter.fetchFlashcardReviews().catch(() => []),
-                this.adapter.fetchStandardMasteryTargets().catch(() => []),
-                this.adapter.fetchNewsFlashes().catch(() => []),
-                this.adapter.fetchNewsFlashReads().catch(() => []),
-                this.adapter.fetchQuestionBank().catch(() => []),
-                this.adapter.fetchDocumentComments().catch(() => []),
-                this.adapter.fetchNotificationDismissals().catch(() => []),
-                // Not caught into [] like its siblings above — see fetchComparativeMatchups'
-                // own comment: an empty result here is indistinguishable from "no matchups
-                // exist" and would wipe local comparison history on merge. Left uncaught, a
-                // failure here rejects this whole Promise.all and falls through to the
-                // outer try/catch below, which safely keeps local state instead.
+            ] = await skipFailed(fetchErrors, [
+                this.adapter.fetchFlashcardDecks(),
+                this.adapter.fetchFlashcardAssignments(),
+                this.adapter.fetchFlashcardReviews(),
+                this.adapter.fetchStandardMasteryTargets(),
+                this.adapter.fetchNewsFlashes(),
+                this.adapter.fetchNewsFlashReads(),
+                this.adapter.fetchQuestionBank(),
+                this.adapter.fetchDocumentComments(),
+                this.adapter.fetchNotificationDismissals(),
                 this.adapter.fetchComparativeMatchups(),
             ]);
 
             // The profile.role is authoritative; always override whatever userRole
             // is stored in user_settings so the DB is the single source of truth.
             // If the profile has no school_id the user needs to complete onboarding.
-            let mergedSettings = profileFull?.role
-                ? {
-                      ...DEFAULT_SETTINGS,
-                      ...(settings ?? {}),
-                      userRole: profileFull.role,
-                      ...(profileFull.email ? { userEmail: profileFull.email } : {}),
-                  }
-                : (settings ?? undefined);
+            // A failed settings fetch (undefined) keeps local settings rather than resetting
+            // them to defaults; null means the user genuinely has no settings row yet.
+            let mergedSettings =
+                settings === undefined
+                    ? undefined
+                    : profileFull?.role
+                      ? {
+                            ...DEFAULT_SETTINGS,
+                            ...(settings ?? {}),
+                            userRole: profileFull.role,
+                            ...(profileFull.email ? { userEmail: profileFull.email } : {}),
+                        }
+                      : (settings ?? undefined);
 
             if (mergedSettings && profileFull) {
                 if (profileFull.role === 'student') {
@@ -780,12 +799,12 @@ class StorageSyncService {
 
             const result: Partial<StoreData> = {
                 rubrics: migratedRubrics,
-                classes: classes.length > 0 ? classes : undefined,
+                classes: classes?.length ? classes : undefined,
                 students,
                 studentRubrics,
                 peerReviews,
-                gradeScales: gradeScales.length > 0 ? gradeScales : undefined,
-                commentBank: mergedCommentBank.length > 0 ? mergedCommentBank : undefined,
+                gradeScales: gradeScales?.length ? gradeScales : undefined,
+                commentBank: mergedCommentBank?.length ? mergedCommentBank : undefined,
                 exportTemplates,
                 favoriteStandards,
                 selfAssessments,
@@ -821,6 +840,17 @@ class StorageSyncService {
             // Final generation check: all async work (including post-profile fetches)
             // is complete. Only write side effects if this hydration is still active.
             if (gen !== this.hydrationGeneration) return { data: null };
+            if (fetchErrors.length > 0) {
+                console.error('[sync] hydrate: some collections failed to load', fetchErrors);
+                logEvent(
+                    'sync',
+                    'hydrate',
+                    { failedCollections: fetchErrors.length, error: String(fetchErrors[0]) },
+                    'error'
+                );
+                this.setStatus('error');
+                return { data: result, error: `${fetchErrors.length} collection(s) failed to load` };
+            }
             const now = new Date().toISOString();
             this.lastSyncAt = now;
             localStorage.setItem(LAST_SYNC_KEY, now);
