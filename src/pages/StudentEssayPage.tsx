@@ -32,6 +32,8 @@ import { EssayAdapter } from '../services/database/EssayAdapter';
 import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { isAlreadySubmitted } from '../utils/testSubmitOutbox';
+import { useDeadlineCountdown } from '../hooks/useDeadlineCountdown';
+import { clearTestTimer } from '../store/storage';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
 const TIMER_KEY_PREFIX = 'rm_essay_timer_';
@@ -322,15 +324,14 @@ export default function StudentEssayPage() {
     const failedAttemptHtmlRef = useRef<string | null>(null);
     const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
-    // Timer — initialised from the URL (legacy) or from resolved content (short code).
-    const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
-        const minutes = legacyAssignment?.timeLimitMinutes ?? null;
-        if (!minutes) return null;
-        const stored = sessionStorage.getItem(timerKey);
-        if (stored) return Math.max(0, parseInt(stored, 10));
-        return minutes * 60;
+    // Timer — the time limit comes from the URL (legacy) or from resolved content (short code); the
+    // countdown runs on a persisted wall-clock deadline and auto-submits when it passes.
+    const secondsLeft = useDeadlineCountdown({
+        durationMinutes: resolvedContent?.timeLimitMinutes || null,
+        storageKey: timerKey,
+        stopped: submitted,
+        onTimeUp: () => void handleSubmitRef.current(),
     });
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // After the student authenticates, fetch full assignment content from the edge function.
     // For legacy links this is a no-op (content already in URL, resolvedContent pre-filled).
@@ -340,11 +341,6 @@ export default function StudentEssayPage() {
         adapter.fetchAssignmentContent(assignment!.teacherKey).then((result) => {
             if (result.ok) {
                 setResolvedContent(result.data);
-                // Start timer if the assignment has a time limit and it hasn't started yet.
-                if (result.data.timeLimitMinutes && secondsLeft === null) {
-                    const stored = sessionStorage.getItem(timerKey);
-                    setSecondsLeft(stored ? Math.max(0, parseInt(stored, 10)) : result.data.timeLimitMinutes * 60);
-                }
             } else {
                 if (result.reason === 'expired') setContentExpired(true);
                 setResolvedContent(null);
@@ -405,8 +401,6 @@ export default function StudentEssayPage() {
             // Quota exceeded: the editor holds the only copy, which the failure message must say.
             draftStored = false;
         }
-        if (timerRef.current) clearInterval(timerRef.current);
-
         const submissionId = nanoid();
         const wordCount = countWords(html);
         const now = new Date().toISOString();
@@ -481,6 +475,8 @@ export default function StudentEssayPage() {
 
         setSubmissionCode(legacyCode);
         localStorage.removeItem(draftKey);
+        // A handed-in essay must not auto-submit again from its stored deadline after a reload.
+        clearTestTimer(timerKey);
         setSubmitted(true);
         if (isInSEB) {
             copyText(legacyCode);
@@ -517,26 +513,6 @@ export default function StudentEssayPage() {
         window.addEventListener('online', onOnline);
         return () => window.removeEventListener('online', onOnline);
     }, [submitError, submitted, alreadyHandedIn]);
-
-    // Countdown — auto-submit when time runs out
-    useEffect(() => {
-        if (secondsLeft === null || secondsLeft <= 0 || submitted) return;
-        timerRef.current = setInterval(() => {
-            setSecondsLeft((prev) => {
-                if (prev === null) return null;
-                const next = prev - 1;
-                sessionStorage.setItem(timerKey, String(next));
-                if (next <= 0) {
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    void handleSubmitRef.current();
-                }
-                return next;
-            });
-        }, 1000);
-        return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
-        };
-    }, [secondsLeft === null, submitted]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Disable right-click in SEB
     useEffect(() => {
