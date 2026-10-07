@@ -439,9 +439,57 @@ describe('exportFullBackup', () => {
         expect(data).toHaveProperty('classes');
         expect(data).toHaveProperty('settings');
     });
+
+    it('leaves out identity and credential settings (#633)', () => {
+        saveSettings({
+            ...makeSettings(),
+            theme: 'light',
+            userRole: 'admin',
+            userEmail: 'me@school.nl',
+            adminPin: '1234',
+            standardsApiKey: 'secret',
+            schoolId: 'school-1',
+        });
+        const { settings } = JSON.parse(exportFullBackup());
+        expect(settings.theme).toBe('light');
+        for (const key of ['userRole', 'userEmail', 'adminPin', 'standardsApiKey', 'schoolId']) {
+            expect(settings).not.toHaveProperty(key);
+        }
+    });
 });
 
 describe('importFullBackup', () => {
+    it('never changes role, PIN, email, school or API key, but restores other settings (#633)', () => {
+        saveSettings({
+            ...makeSettings(),
+            theme: 'dark',
+            userRole: 'admin',
+            userEmail: 'me@school.nl',
+            adminPin: '1234',
+            standardsApiKey: 'mine',
+        });
+        const ok = importFullBackup(
+            JSON.stringify({
+                settings: {
+                    ...makeSettings(),
+                    theme: 'light',
+                    userRole: 'student',
+                    userEmail: 'someone@else.nl',
+                    standardsApiKey: 'theirs',
+                    schoolId: 'other-school',
+                },
+            })
+        );
+        expect(ok).toBe(true);
+        const { settings } = loadStore();
+        expect(settings.theme).toBe('light');
+        expect(settings.userRole).toBe('admin');
+        expect(settings.userEmail).toBe('me@school.nl');
+        expect(settings.adminPin).toBe('1234');
+        expect(settings.standardsApiKey).toBe('mine');
+        expect(settings.schoolId).toBeUndefined();
+    });
+
     it('restores data from valid JSON', () => {
         saveRubrics([makeRubric('r1')]);
         const backup = exportFullBackup();

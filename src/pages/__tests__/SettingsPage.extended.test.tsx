@@ -371,6 +371,30 @@ describe('SettingsPage extended', () => {
             expect(mockShowToast).toHaveBeenCalledWith('toast.import_success', 'success');
         });
 
+        it('lists the settings a restore changes and says the role in the backup is ignored (#633)', async () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Administration'));
+            const theme = mockSettings.theme === 'dark' ? 'light' : 'dark';
+            await importBackupFile(JSON.stringify({ settings: { ...mockSettings, theme, userRole: 'student' } }));
+
+            const dialog = await screen.findByRole('dialog');
+            const section = within(dialog).getByRole('region', { name: 'settings.backup_preview_settings_title' });
+            expect(within(section).getByText('theme')).toBeInTheDocument();
+            expect(within(section).getByText(`: ${mockSettings.theme} → ${theme}`)).toBeInTheDocument();
+            expect(within(section).queryByText('userRole')).toBeNull();
+            expect(within(section).getByText('settings.backup_preview_protected_ignored')).toBeInTheDocument();
+        });
+
+        it('says no settings change when the backup has none', async () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Administration'));
+            await importBackupFile('{"rubrics":[]}');
+
+            const dialog = await screen.findByRole('dialog');
+            expect(within(dialog).getByText('settings.backup_preview_settings_none')).toBeInTheDocument();
+            expect(within(dialog).getByText('settings.backup_preview_protected_note')).toBeInTheDocument();
+        });
+
         it('shows an error toast for invalid or non-object backup files', async () => {
             renderPage();
             fireEvent.click(screen.getByText('Administration'));
