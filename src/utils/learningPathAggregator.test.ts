@@ -331,6 +331,41 @@ describe('getCefrSkillInterventionFlags', () => {
         expect(getCefrSkillInterventionFlags('s1', srs, [rubric])).toHaveLength(0);
     });
 
+    it('flags 3 consecutive lows on a multi-criterion rubric (#696)', () => {
+        // 3 criteria at 40/100 each = 40% overall. Dividing by one criterion's max reported 120%.
+        const multi = mkRubric('rm', [mkCriterion('m1', 100), mkCriterion('m2', 100), mkCriterion('m3', 100)], {
+            cefrSkill: 'writing',
+            cefrTargetLevel: 'B1',
+        });
+        const low = { m1: 40, m2: 40, m3: 40 };
+        const srs = [
+            mkSR('a', 'rm', 's1', low, '2024-01-01'),
+            mkSR('b', 'rm', 's1', low, '2024-01-02'),
+            mkSR('c', 'rm', 's1', low, '2024-01-03'),
+        ];
+        const flags = getCefrSkillInterventionFlags('s1', srs, [multi]);
+        expect(flags).toHaveLength(1);
+        expect(flags[0].scores.map((p) => Math.round(p))).toEqual([40, 40, 40]);
+        // Matches the per-criterion flags for the same data.
+        expect(getCriterionInterventionFlags('s1', srs, [multi])).toHaveLength(3);
+    });
+
+    it('never reports a score above 100% (#696)', () => {
+        const multi = mkRubric('rm', [mkCriterion('m1', 100), mkCriterion('m2', 100)], {
+            cefrTargetLevel: 'B1',
+        });
+        const srs = ['a', 'b', 'c'].map((id, i) => mkSR(id, 'rm', 's1', { m1: 20, m2: 20 }, `2024-01-0${i + 1}`));
+        const flags = getCefrSkillInterventionFlags('s1', srs, [multi]);
+        expect(flags[0].scores.every((p) => p <= 100)).toBe(true);
+        expect(Math.round(flags[0].scores[0])).toBe(20);
+    });
+
+    it('skips rubrics whose criteria have no points', () => {
+        const zero = mkRubric('rz', [mkCriterion('z1', 0)], { cefrTargetLevel: 'B1' });
+        const srs = ['a', 'b', 'c'].map((id, i) => mkSR(id, 'rz', 's1', { z1: 0 }, `2024-01-0${i + 1}`));
+        expect(getCefrSkillInterventionFlags('s1', srs, [zero])).toHaveLength(0);
+    });
+
     it('defaults skill to writing when rubric.cefrSkill is unset', () => {
         const noSkillRubric = mkRubric('r3', [c1], { cefrTargetLevel: 'B1' });
         const srs = [
