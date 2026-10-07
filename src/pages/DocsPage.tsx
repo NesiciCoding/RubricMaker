@@ -991,6 +991,9 @@ function GradingTab() {
                     {t('docs.gr_mobile_body_prefix')} <strong>{t('docs.gr_mobile_stepper')}</strong>{' '}
                     {t('docs.gr_mobile_body_suffix')}
                 </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_mobile_swipe')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_feedback_title')}

@@ -1647,7 +1647,10 @@
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
-        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "swipe_confirm_title": "Save and go to the next student?",
+        "swipe_confirm_message": "You swiped left. Save this grade and continue with {{name}}?",
+        "swipe_confirm_action": "Save & next"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -3743,7 +3746,8 @@
         "rb_tests_visual_editors_body": "Error correction, key word transformation, word-bank fill-in and sentence builder questions are edited without typing special syntax: mark error and correct fragments by selecting words in the passage, add accepted answers as cards with chips, and add distractor tiles as chips. Prefer typing or pasting? Each editor has an \"Edit as text\" button that shows the raw syntax; both views edit the same data.",
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
-        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive."
+        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "gr_mobile_swipe": "Swiping left on an empty part of the grading page offers to save and move to the next student; confirm to continue. Swipes that start on a slider, the − / + stepper, a text field or a scrollable table never count, so dragging a score can't jump to the next student."
     },
     "studentProfile": {
         "tab_overview": "Overview",

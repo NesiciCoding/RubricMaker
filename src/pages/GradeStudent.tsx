@@ -48,6 +48,8 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useConfirm } from '../hooks/useConfirm';
+import { isLeftSwipe, isSwipeSafeTarget } from '../utils/swipeGesture';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
@@ -221,6 +223,7 @@ export default function GradeStudent() {
     const gradingTourSteps = useMemo(() => getGradingTourSteps(t), [t]);
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -453,19 +456,27 @@ export default function GradeStudent() {
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
-        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        touchStartRef.current = isSwipeSafeTarget(e.target, e.currentTarget)
+            ? { x: touch.clientX, y: touch.clientY }
+            : null;
     }, []);
 
     const handleTouchEnd = useCallback(
-        (e: React.TouchEvent) => {
-            if (!touchStartRef.current || !nextStudent) return;
-            const touch = e.changedTouches[0];
-            const dx = touchStartRef.current.x - touch.clientX;
-            const dy = Math.abs(touchStartRef.current.y - touch.clientY);
+        async (e: React.TouchEvent) => {
+            const start = touchStartRef.current;
             touchStartRef.current = null;
-            if (dx > 80 && dy < 60) handleSaveAndNext();
+            if (!start || !nextStudent) return;
+            const touch = e.changedTouches[0];
+            if (!isLeftSwipe(start, { x: touch.clientX, y: touch.clientY })) return;
+            const go = await confirmSwipe({
+                title: t('gradeStudent.swipe_confirm_title'),
+                message: t('gradeStudent.swipe_confirm_message', { name: nextStudent.name }),
+                confirmLabel: t('gradeStudent.swipe_confirm_action'),
+                cancelLabel: t('common.cancel'),
+            });
+            if (go) handleSaveAndNext();
         },
-        [nextStudent, handleSaveAndNext]
+        [nextStudent, handleSaveAndNext, confirmSwipe, t]
     );
 
     const anchorSR = useMemo(() => {
@@ -2208,6 +2219,7 @@ export default function GradeStudent() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...swipeConfirmProps} />
         </>
     );
 }

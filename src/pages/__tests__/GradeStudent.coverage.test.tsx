@@ -671,13 +671,42 @@ describe('GradeStudent coverage', () => {
     });
 
     // ---------- Touch gestures ----------
-    it('swipes right to save and advance', () => {
+    it('swipes left from a safe area, confirms, then saves and advances (#666)', async () => {
         renderPage();
         const page = pageContent();
         fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
         fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
-        expect(mockSaveStudentRubric).toHaveBeenCalled();
+        expect(await screen.findByText(/gradeStudent.swipe_confirm_title/)).toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByText(/gradeStudent.swipe_confirm_action/));
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+    });
+
+    it('does not save when the swipe confirmation is cancelled', async () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
+        fireEvent.click(await screen.findByText(/common.cancel/));
+        await waitFor(() => expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument());
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('never treats dragging a control (points slider, stepper, text) as a swipe (#666)', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
+        const page = pageContent();
+        const controls = Array.from(page.querySelectorAll('input, textarea, button, .touch-stepper')).slice(0, 5);
+        expect(controls.length).toBeGreaterThan(0);
+        for (const control of controls) {
+            fireEvent.touchStart(control, { touches: [{ clientX: 200, clientY: 100 }] });
+            fireEvent.touchEnd(control, { changedTouches: [{ clientX: 20, clientY: 100 }] });
+        }
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
     });
 
     it('ignores touch end without a matching start', () => {
