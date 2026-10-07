@@ -60,6 +60,7 @@ test.describe('startup — offline with Supabase configured', () => {
 
 test.describe('startup — Supabase hydration timeout', () => {
     test('falls through to localStorage cache after 8 s hydration timeout', async ({ supabasePage: page }) => {
+        test.setTimeout(60_000);
         // supabasePage fixture already signed in.
         const timeoutRubric = buildRubric({ id: 'timeout-cache-rubric', name: 'Timeout Cache Rubric' });
         await addRubricToCache(page, timeoutRubric);
@@ -86,8 +87,15 @@ test.describe('startup — Supabase hydration timeout', () => {
         await page.evaluate(() => { window.location.hash = '/rubrics'; });
         await expect(page.getByText('Timeout Cache Rubric')).toBeVisible({ timeout: 5_000 });
 
-        // Warning toast for failed load must appear.
-        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 5_000 });
+        // The pull is still running in the background (not dropped), so the progress
+        // indicator stays up instead of an immediate failure toast.
+        await expect(page.getByText('Loading your data from the cloud')).toBeVisible();
+
+        // Once the delayed requests finally fail (two sequential 10 s waves), the late
+        // hydrate reports the failure and the indicator clears; local data is kept.
+        await expect(page.getByText('Could not load your cloud data')).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByText('Loading your data from the cloud')).toBeHidden();
+        await expect(page.getByText('Timeout Cache Rubric')).toBeVisible();
     });
 });
 
