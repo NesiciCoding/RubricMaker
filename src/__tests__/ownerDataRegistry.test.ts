@@ -10,7 +10,7 @@ const migrations = readdirSync(dir)
 
 // Account- or org-level tables that are deliberately not part of a teacher's own data
 // (mirrors the comment in 079_owner_data_registry.sql). Adding a table here is a decision:
-// it will be missing from nightly backups and from "Delete all my database data".
+// it will be missing from nightly backups.
 const NOT_OWNER_DATA = ['profiles', 'schools', 'school_members', 'audit_logs', 'client_logs', 'site_config'];
 
 function publicTables(): Set<string> {
