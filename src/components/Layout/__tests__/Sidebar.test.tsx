@@ -9,6 +9,7 @@ import Sidebar from '../Sidebar';
 let mockUserRole: string = 'user';
 let mockNotificationCount = 0;
 let mockModerationCount = 0;
+const mockSignOut = vi.fn();
 
 const makeAppContextMock = (): Partial<StoreData> => ({
     settings: { userRole: mockUserRole } as AppSettings,
@@ -45,7 +46,7 @@ vi.mock('../../../context/AppContext', () => ({
     useEssays: () => makeAppContextMock(),
     useFlashcards: () => makeAppContextMock(),
     useSettings: () => makeAppContextMock(),
-    usePlatform: () => makeAppContextMock(),
+    usePlatform: () => ({ signOutFromDatabase: mockSignOut }),
 }));
 
 // Sidebar reads data via the selector store; route selectors to the same mock value.
@@ -180,6 +181,20 @@ describe('Sidebar', () => {
         fireEvent.click(screen.getByText('go'));
         // navigating to a new location triggers the effect again
         expect(onMobileClose.mock.calls.length).toBeGreaterThan(callsAfterMount);
+    });
+
+    it('signs out from the footer, but hides the button in local mode', () => {
+        renderSidebar();
+        fireEvent.click(screen.getByText('admin.sign_out'));
+        expect(mockSignOut).toHaveBeenCalled();
+
+        localStorage.setItem('rm_local_mode', 'true');
+        try {
+            renderSidebar();
+            expect(screen.getAllByText('admin.sign_out')).toHaveLength(1);
+        } finally {
+            localStorage.removeItem('rm_local_mode');
+        }
     });
 
     it('applies mobile-open styling when the drawer is open', () => {

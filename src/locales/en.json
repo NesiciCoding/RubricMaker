@@ -3185,7 +3185,7 @@
         "gs_mode_offline_title": "Offline / Local",
         "gs_mode_offline_desc": "All data in browser localStorage. Nothing sent to a server. Works on any static host.",
         "gs_mode_cloud_title": "Cloud sync",
-        "gs_mode_cloud_desc": "Connect a Supabase project (self-hosted or supabase.com) for multi-device access and sharing.",
+        "gs_mode_cloud_desc": "Connect a Supabase project (self-hosted or supabase.com) for multi-device access and sharing. Sign out from the bottom of the sidebar.",
         "gs_mode_docker_title": "Docker (full stack)",
         "gs_mode_docker_desc": "docker-compose up spins up the frontend + Supabase + Caddy (HTTPS). Recommended for schools.",
         "gs_themes_title": "Themes & appearance",

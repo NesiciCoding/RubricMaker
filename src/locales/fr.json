@@ -3185,7 +3185,7 @@
         "gs_mode_offline_title": "Hors ligne / Local",
         "gs_mode_offline_desc": "Toutes les données dans le localStorage du navigateur. Rien n'est envoyé à un serveur. Fonctionne sur n'importe quel hébergement statique.",
         "gs_mode_cloud_title": "Synchronisation cloud",
-        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils.",
+        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils. Déconnectez-vous en bas de la barre latérale.",
         "gs_mode_docker_title": "Docker (pile complète)",
         "gs_mode_docker_desc": "docker-compose up démarre le frontend + Supabase + Caddy (HTTPS). Recommandé pour les établissements.",
         "gs_themes_title": "Thèmes & apparence",

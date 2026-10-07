@@ -26,12 +26,15 @@ import {
     Newspaper,
     Library,
     Bell,
+    LogOut,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStoreSelector } from '../../context/useStore';
 import { getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 import { usePageTourRegistry } from '../../context/TourContext';
+import { usePlatform } from '../../context/AppContext';
+import { isLocalMode } from '../../store/storage';
 
 interface SidebarProps {
     mobileOpen?: boolean;
@@ -59,6 +62,7 @@ interface Domain {
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     const { t } = useTranslation();
     const { hasPageTour, startPageTour } = usePageTourRegistry();
+    const { signOutFromDatabase } = usePlatform();
     const {
         students: allStudents,
         studentRubrics: allStudentRubrics,
@@ -306,6 +310,20 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             <Shield size={16} aria-hidden="true" />
                             Privacy & AVG
                         </NavLink>
+                        {!isLocalMode() && (
+                            <button
+                                type="button"
+                                className="nav-item"
+                                style={{ background: 'none', border: 'none', width: '100%', textAlign: 'start' }}
+                                onClick={() => {
+                                    onMobileClose?.();
+                                    void signOutFromDatabase();
+                                }}
+                            >
+                                <LogOut size={16} aria-hidden="true" />
+                                {t('admin.sign_out')}
+                            </button>
+                        )}
                     </div>
                 </div>
             </aside>
