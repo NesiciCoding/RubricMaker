@@ -401,12 +401,12 @@ export default function GradeStudent() {
 
             const criteriaCount = rubric.criteria.length;
 
-            if (e.key === 'Tab') {
+            // Tab stays native so keyboard users can reach every control (#671). Once a criterion is
+            // addressed (letter key, click or focus), the arrow keys move between criteria.
+            if (focusedCriterionIdx !== null && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
-                setFocusedCriterionIdx((prev) => {
-                    if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
-                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
-                });
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                setFocusedCriterionIdx((focusedCriterionIdx + step + criteriaCount) % criteriaCount);
                 return;
             }
 
@@ -959,6 +959,7 @@ export default function GradeStudent() {
                                     ref={(el) => {
                                         criterionCardsRef.current[criterionIndex] = el;
                                     }}
+                                    onFocus={() => setFocusedCriterionIdx(criterionIndex)}
                                 >
                                     {/* Criterion header */}
                                     <div
@@ -2048,7 +2049,7 @@ export default function GradeStudent() {
                             {[
                                 { key: '1 – 5', desc: t('gradeStudent.shortcut_level') },
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
-                                { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
+                                { key: '↑ / ↓', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
                                 { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
