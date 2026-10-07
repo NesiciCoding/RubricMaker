@@ -3745,7 +3745,8 @@
         "rb_tests_visual_editors_body": "Les questions de correction d'erreurs, de transformation avec mot clé, de texte à trous avec banque de mots et de construction de phrases se modifient sans saisir de syntaxe spéciale : marquez les fragments erronés et corrects en sélectionnant des mots du texte, ajoutez les réponses acceptées sous forme de cartes avec des pastilles, et les distracteurs sous forme de pastilles. Vous préférez saisir ou coller du texte ? Chaque éditeur propose un bouton « Modifier en texte » qui affiche la syntaxe brute ; les deux vues modifient les mêmes données.",
         "rb_tests_a4_preview_label": "Aperçu A4 :",
         "rb_tests_a4_preview_body": "Cliquez sur « Aperçu A4 » dans le créateur de tests pour ouvrir, à côté de vos questions, un aperçu en direct de la copie imprimée de l'élève. Activez « Corrigé » pour voir les bonnes réponses, masquez les points, zoomez ou imprimez la page. Modifiez l'en-tête, les consignes et le pied de page directement sur la page : ils sont enregistrés avec le test et figurent aussi dans l'export du livret d'examen.",
-        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver."
+        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver.",
+        "rb_import_export_item_docx": "Import depuis Word ou PDF : téléversez un tableau de grille en .docx ou .pdf (critères en lignes, niveaux en colonnes). Les points suivent l'en-tête — p. ex. « Bien (3 pts) » ou « Faible (1-2 pts) » — ou, sans points, les noms des niveaux : un tableau Insuffisant → Excellent donne le plus de points à Excellent. Un pourcentage à côté d'un critère (« Contenu 40 % ») devient sa pondération. L'aperçu affiche les points de chaque niveau et la pondération de chaque critère, avec un avertissement pour tout ce qui a dû être deviné ; vérifiez-les avant de cliquer sur Créer la grille."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -4227,7 +4228,25 @@
         "col_criterion": "Critère",
         "none_detected": "Aucune structure de grille détectée. Essayez un autre fichier.",
         "try_another": "Essayer un autre fichier",
-        "create": "Créer la grille"
+        "create": "Créer la grille",
+        "weight_value": "Pondération {{weight}} %",
+        "points_value": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "warn_no_table": "Aucun tableau trouvé dans le document. Vérifiez que votre grille utilise une mise en page en tableau.",
+        "warn_no_pdf_text": "Impossible d'extraire du texte du PDF. Le fichier est peut-être une image (numérisation).",
+        "warn_no_structure": "Aucune structure de grille n'a été détectée dans le document.",
+        "warn_no_levels": "Un tableau a été trouvé, mais les colonnes de niveaux n'ont pas été détectées.",
+        "warn_no_criteria": "Un tableau a été trouvé, mais aucun critère n'a pu être extrait.",
+        "warn_one_criterion": "Un seul critère a été détecté — le document n'est peut-être pas une grille standard.",
+        "warn_one_level": "Un seul niveau a été détecté — les colonnes n'ont peut-être pas été lues correctement.",
+        "warn_invalid_json": "Format JSON non valide : la liste des critères est absente.",
+        "warn_json_failed": "Impossible de lire le JSON : {{message}}",
+        "warn_order_guessed": "Impossible de savoir si les colonnes de niveaux vont du meilleur au plus faible ou l'inverse. Les points supposent que la première colonne est la plus haute — vérifiez-les ci-dessous.",
+        "warn_points_partial": "Seuls certains en-têtes de niveau indiquent des points ; les autres niveaux ont reçu des points estimés.",
+        "warn_merged_row": "La ligne « {{title}} » s'étend sur plusieurs colonnes (un titre ?) et a été ignorée.",
+        "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
+        "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
+        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."
     },
     "standardsPicker": {
         "title": "Associer une norme",

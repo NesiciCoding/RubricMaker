@@ -5,6 +5,8 @@ import {
     detectTableFromLines,
     buildParsedRubric,
     extractTableFromHtml,
+    parseLevelHeader,
+    parseCriterionCell,
 } from './rubricImport';
 
 // Mock dynamic imports
@@ -87,7 +89,7 @@ describe('rubricImport', () => {
             const result = await parseJsonToRubric(file);
 
             expect(result.confidence).toBe('low');
-            expect(result.warnings).toContain('Invalid JSON format: missing criteria array.');
+            expect(result.warnings).toContainEqual({ key: 'importRubric.warn_invalid_json' });
         });
 
         it('uses filename as fallback name if name is missing in JSON', async () => {
@@ -257,7 +259,7 @@ describe('rubricImport', () => {
 
             expect(result.criteria).toHaveLength(0);
             expect(result.confidence).toBe('low');
-            expect(result.warnings[0]).toContain('No table found');
+            expect(result.warnings[0].key).toBe('importRubric.warn_no_table');
         });
     });
 
@@ -291,7 +293,7 @@ describe('rubricImport', () => {
             const result = await parsePdfToRubric(file);
 
             expect(result.criteria).toHaveLength(0);
-            expect(result.warnings[0]).toContain('Could not extract any text');
+            expect(result.warnings[0].key).toBe('importRubric.warn_no_pdf_text');
         });
 
         it('skips blank lines assembled from whitespace-only text items', async () => {
@@ -419,7 +421,7 @@ describe('buildParsedRubric edge cases', () => {
         const { buildParsedRubric } = await import('./rubricImport');
         const result = buildParsedRubric({ headers: ['Criterion'], rows: [['C1']] }, 'test');
         expect(result.criteria).toHaveLength(0);
-        expect(result.warnings).toContain('Found a table but could not detect level columns.');
+        expect(result.warnings).toContainEqual({ key: 'importRubric.warn_no_levels' });
     });
 
     it('skips rows with no cells at all', async () => {
@@ -476,7 +478,7 @@ describe('buildParsedRubric edge cases', () => {
             'test'
         );
         expect(result.criteria.length).toBe(0);
-        expect(result.warnings).toContain('Table found but no criteria could be extracted.');
+        expect(result.warnings).toContainEqual({ key: 'importRubric.warn_no_criteria' });
     });
 });
 
@@ -719,7 +721,10 @@ describe('parseJsonToRubric — edge case branches', () => {
         } as unknown as File;
         const result = await parseJsonToRubric(file);
         expect(result.criteria).toHaveLength(0);
-        expect(result.warnings[0]).toContain('plain string failure');
+        expect(result.warnings[0]).toEqual({
+            key: 'importRubric.warn_json_failed',
+            params: { message: 'plain string failure' },
+        });
     });
 
     it('deep-clones subItems with linkedStandards inside levels', async () => {
@@ -751,5 +756,224 @@ describe('parseJsonToRubric — edge case branches', () => {
         expect(level.subItems[0].linkedStandards).toHaveLength(1);
         expect(level.subItems[0].linkedStandards![0].guid).toBe('si-std1');
         expect(level.subItems[1].linkedStandards).toBeUndefined();
+    });
+});
+
+// ─── Points, order and weights (#654) ─────────────────────────────────────────
+
+describe('buildParsedRubric — level order, header points and weights', () => {
+    const pts = (r: ReturnType<typeof buildParsedRubric>, ci = 0) =>
+        r.criteria[ci].levels.map((l) => [l.label, l.minPoints, l.maxPoints]);
+
+    it('gives the best level the most points in an ascending Poor-to-Excellent table', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Poor', 'Fair', 'Good', 'Excellent'],
+                rows: [
+                    ['Content', 'a', 'b', 'c', 'd'],
+                    ['Language', 'a', 'b', 'c', 'd'],
+                    ['Structure', 'a', 'b', 'c', 'd'],
+                ],
+            },
+            't'
+        );
+        expect(pts(r)).toEqual([
+            ['Poor', 1, 1],
+            ['Fair', 2, 2],
+            ['Good', 3, 3],
+            ['Excellent', 4, 4],
+        ]);
+        expect(r.confidence).toBe('high');
+        expect(r.warnings).toEqual([]);
+    });
+
+    it('keeps descending tables highest-first', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['Criterion', 'Excellent', 'Good', 'Poor'],
+                rows: [
+                    ['A', 'x', 'y', 'z'],
+                    ['B', 'x', 'y', 'z'],
+                ],
+            },
+            't'
+        );
+        expect(pts(r).map((p) => p[1])).toEqual([3, 2, 1]);
+    });
+
+    it('honours point values and ranges stated in the header', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Excellent (4 pts)', 'Good (3 pts)', 'Weak (1-2 pts)'],
+                rows: [
+                    ['Content 40%', 'a', 'b', 'c'],
+                    ['Language 60%', 'a', 'b', 'c'],
+                ],
+            },
+            't'
+        );
+        expect(pts(r)).toEqual([
+            ['Excellent', 4, 4],
+            ['Good', 3, 3],
+            ['Weak', 1, 2],
+        ]);
+        expect(r.criteria.map((c) => [c.title, c.weight])).toEqual([
+            ['Content', 40],
+            ['Language', 60],
+        ]);
+        expect(r.confidence).toBe('high');
+    });
+
+    it('treats numeric headers as points', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', '1', '2', '3'],
+                rows: [
+                    ['A', 'x', 'y', 'z'],
+                    ['B', 'x', 'y', 'z'],
+                ],
+            },
+            't'
+        );
+        expect(pts(r).map((p) => p[2])).toEqual([1, 2, 3]);
+    });
+
+    it('orders numbered level names', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Level 1', 'Level 2', 'Level 3'],
+                rows: [
+                    ['A', 'x', 'y', 'z'],
+                    ['B', 'x', 'y', 'z'],
+                ],
+            },
+            't'
+        );
+        expect(pts(r).map((p) => p[1])).toEqual([1, 2, 3]);
+    });
+
+    it('splits equal weights so they sum to 100', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Good', 'Poor'],
+                rows: [
+                    ['A', 'x', 'y'],
+                    ['B', 'x', 'y'],
+                    ['C', 'x', 'y'],
+                ],
+            },
+            't'
+        );
+        expect(r.criteria.map((c) => c.weight).reduce((a, b) => a + b, 0)).toBe(100);
+    });
+
+    it('scales stated weights that do not add up to 100 and warns', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Good', 'Poor'],
+                rows: [
+                    ['A (30%)', 'x', 'y'],
+                    ['B (30%)', 'x', 'y'],
+                ],
+            },
+            't'
+        );
+        expect(r.criteria.map((c) => c.weight)).toEqual([50, 50]);
+        expect(r.warnings).toContainEqual({ key: 'importRubric.warn_weights_scaled', params: { total: 60 } });
+    });
+
+    it('splits the remaining weight over criteria without one', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Good', 'Poor'],
+                rows: [
+                    ['A 50%', 'x', 'y'],
+                    ['B', 'x', 'y'],
+                    ['C', 'x', 'y'],
+                ],
+            },
+            't'
+        );
+        expect(r.criteria.map((c) => c.weight)).toEqual([50, 25, 25]);
+        expect(r.warnings).toContainEqual({ key: 'importRubric.warn_weights_partial', params: { remaining: 50 } });
+    });
+
+    it('skips a merged colspan row with a warning instead of creating a criterion', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Excellent', 'Good', 'Poor'],
+                rows: [['Section 1: Writing'], ['Content', 'a', 'b', 'c'], ['Language', 'a', 'b', 'c']],
+            },
+            't'
+        );
+        expect(r.criteria.map((c) => c.title)).toEqual(['Content', 'Language']);
+        expect(r.warnings).toContainEqual({
+            key: 'importRubric.warn_merged_row',
+            params: { title: 'Section 1: Writing' },
+        });
+        expect(r.confidence).toBe('medium');
+    });
+
+    it('lowers confidence and warns when a row has the wrong number of cells', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Excellent', 'Good', 'Poor'],
+                rows: [
+                    ['A', 'x', 'y'],
+                    ['B', 'x', 'y', 'z'],
+                ],
+            },
+            't'
+        );
+        expect(r.confidence).toBe('medium');
+        expect(r.warnings).toContainEqual({
+            key: 'importRubric.warn_cell_count',
+            params: { title: 'A', found: 2, expected: 3 },
+        });
+    });
+
+    it('lowers confidence when the level order cannot be determined', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Alpha', 'Beta'],
+                rows: [
+                    ['A', 'x', 'y'],
+                    ['B', 'x', 'y'],
+                ],
+            },
+            't'
+        );
+        expect(r.confidence).toBe('medium');
+        expect(r.warnings).toContainEqual({ key: 'importRubric.warn_order_guessed' });
+        expect(pts(r).map((p) => p[1])).toEqual([2, 1]);
+    });
+
+    it('warns when only some headers state points', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Excellent (5 pts)', 'Good', 'Poor'],
+                rows: [
+                    ['A', 'x', 'y', 'z'],
+                    ['B', 'x', 'y', 'z'],
+                ],
+            },
+            't'
+        );
+        expect(r.warnings).toContainEqual({ key: 'importRubric.warn_points_partial' });
+        expect(pts(r)[0]).toEqual(['Excellent', 5, 5]);
+    });
+});
+
+describe('parseLevelHeader / parseCriterionCell', () => {
+    it('parses point suffixes in several forms', () => {
+        expect(parseLevelHeader('Good 3p')).toEqual({ label: 'Good', points: { min: 3, max: 3 } });
+        expect(parseLevelHeader('Weak (1–2 points)')).toEqual({ label: 'Weak', points: { min: 1, max: 2 } });
+        expect(parseLevelHeader('2.5')).toEqual({ label: '2.5', points: { min: 2.5, max: 2.5 } });
+        expect(parseLevelHeader('Proficient')).toEqual({ label: 'Proficient', points: null });
+    });
+
+    it('parses criterion weights', () => {
+        expect(parseCriterionCell('Content (40%)')).toEqual({ title: 'Content', weight: 40 });
+        expect(parseCriterionCell('Language')).toEqual({ title: 'Language', weight: null });
     });
 });
