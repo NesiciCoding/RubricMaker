@@ -1647,7 +1647,9 @@
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
-        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
+        "voice_storage_full": "Der Speicher dieses Geräts ist fast voll, daher kann keine Sprachaufnahme gespeichert werden. Verbinden Sie sich zuerst mit der Cloud oder entfernen Sie alte Aufnahmen.",
+        "voice_storage_low": "Der Speicher ist fast voll — diese Aufnahme stoppt automatisch nach {{seconds}} Sekunden."
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -2009,7 +2011,8 @@
         "sync_flushed": "Wieder online — alle Änderungen synchronisiert.",
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet.",
-        "signout_pending_writes": "Einige Änderungen wurden noch nicht synchronisiert — Ihre lokalen Daten wurden beibehalten, damit nichts verloren geht."
+        "signout_pending_writes": "Einige Änderungen wurden noch nicht synchronisiert — Ihre lokalen Daten wurden beibehalten, damit nichts verloren geht.",
+        "voice_feedback_dropped": "Die Bewertungen wurden gespeichert, aber {{count}} Sprachaufnahme(n) passten nicht in den Speicher dieses Geräts und gehen beim Neuladen verloren. Verbinden Sie sich mit der Cloud oder entfernen Sie alte Aufnahmen, um sie zu behalten."
     },
     "pwa": {
         "update_available_title": "Update verfügbar",
@@ -3745,7 +3748,8 @@
         "rb_tests_visual_editors_body": "Fragen zu Fehlerkorrektur, Schlüsselwort-Umformung, Lückentext mit Wortbank und Satzbau bearbeiten Sie ohne spezielle Syntax: Markieren Sie Fehler und richtige Fragmente, indem Sie Wörter im Text auswählen, fügen Sie akzeptierte Antworten als Karten mit Chips hinzu und Ablenker als Chips. Lieber tippen oder einfügen? Jeder Editor hat eine Schaltfläche „Als Text bearbeiten“, die die Rohsyntax zeigt; beide Ansichten bearbeiten dieselben Daten.",
         "rb_tests_a4_preview_label": "A4-Vorschau:",
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
-        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen."
+        "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
+        "gr_feedback_item_audio_storage": "Aufgenommenes Sprachfeedback — ohne Cloud-Verbindung werden Aufnahmen im Browser gespeichert, der etwa 5 MB fasst. Wird der Platz knapp, stoppt eine Aufnahme automatisch, auf einem vollen Gerät startet keine, und wenn Aufnahmen weggelassen werden müssen, um Bewertungen zu speichern, erhalten Sie eine Warnung."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

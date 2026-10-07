@@ -48,6 +48,9 @@ vi.mock('../../hooks/useMediaRecorder', () => ({
     }),
 }));
 
+const mockShowToast = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: dbState.isConnected, userId: dbState.userId }),
 }));
@@ -720,6 +723,40 @@ describe('GradeStudent coverage', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
         fireEvent.click(screen.getByText('gradeStudent.audio_record'));
         expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+    });
+
+    describe('voice feedback near the local storage quota (#678)', () => {
+        afterEach(() => {
+            localStorage.removeItem('test-filler');
+            mockShowToast.mockClear();
+            vi.useRealTimers();
+        });
+
+        it('refuses to start and warns when there is no room left offline', () => {
+            localStorage.setItem('test-filler', 'x'.repeat(4_950_000));
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
+        });
+
+        it('warns and stops the recording automatically when space runs short', () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            vi.useFakeTimers();
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+            expect(mockShowToast).toHaveBeenCalledWith(
+                expect.stringContaining('gradeStudent.voice_storage_low'),
+                'warning'
+            );
+            act(() => {
+                vi.advanceTimersByTime(120_000);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
     });
 
     it('stops, encodes, and saves recorded audio', async () => {

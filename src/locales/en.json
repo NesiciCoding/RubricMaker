@@ -1647,7 +1647,9 @@
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
-        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "voice_storage_full": "This device's storage is nearly full, so a voice recording can't be saved. Connect to the cloud or remove old recordings first.",
+        "voice_storage_low": "Storage is nearly full — this recording stops automatically after {{seconds}} seconds."
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -2009,7 +2011,8 @@
         "sync_flushed": "Back online — all changes synced.",
         "copy_paste_failed": "Copy/paste failed. Please try again.",
         "sync_offline_cache": "You're offline — using locally cached data.",
-        "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost."
+        "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost.",
+        "voice_feedback_dropped": "Grades were saved, but {{count}} voice recording(s) did not fit in this device's storage and will be lost on reload. Connect to the cloud or remove old recordings to keep them."
     },
     "pwa": {
         "update_available_title": "Update available",
@@ -3743,7 +3746,8 @@
         "rb_tests_visual_editors_body": "Error correction, key word transformation, word-bank fill-in and sentence builder questions are edited without typing special syntax: mark error and correct fragments by selecting words in the passage, add accepted answers as cards with chips, and add distractor tiles as chips. Prefer typing or pasting? Each editor has an \"Edit as text\" button that shows the raw syntax; both views edit the same data.",
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
-        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive."
+        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "gr_feedback_item_audio_storage": "Recorded voice feedback — without a cloud connection recordings are stored in the browser, which holds about 5 MB. When space runs low a recording stops automatically, a full device refuses to start one, and if recordings ever have to be left out to save grades you get a warning."
     },
     "studentProfile": {
         "tab_overview": "Overview",
