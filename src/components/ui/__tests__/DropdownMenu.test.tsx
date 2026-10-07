@@ -13,6 +13,10 @@ function Harness() {
             </button>
             <DropdownMenu open={open} onClose={() => setOpen(false)} anchorRef={anchorRef} ariaLabel="Actions">
                 <button role="menuitem">First</button>
+                <button role="menuitem" disabled>
+                    Disabled
+                </button>
+                <button role="menuitem">Last</button>
             </DropdownMenu>
         </div>
     );
@@ -30,7 +34,7 @@ describe('DropdownMenu', () => {
     it('stays open for clicks inside the menu and closes on an outside pointer-down', () => {
         render(<Harness />);
         fireEvent.click(screen.getByText('Toggle'));
-        fireEvent.mouseDown(screen.getByRole('menuitem'));
+        fireEvent.mouseDown(screen.getByText('First'));
         expect(screen.getByRole('menu')).toBeInTheDocument();
         fireEvent.mouseDown(document.body);
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -60,5 +64,30 @@ describe('DropdownMenu', () => {
         expect(screen.getByRole('menu')).toBeInTheDocument();
         fireEvent(window, new Event('resize'));
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+
+    it('focuses the first item on open and moves between enabled items with the arrow keys', () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByText('Toggle'));
+        const menu = screen.getByRole('menu');
+        expect(document.activeElement).toBe(screen.getByText('First'));
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(screen.getByText('Last'));
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        expect(document.activeElement).toBe(screen.getByText('First'));
+        fireEvent.keyDown(menu, { key: 'ArrowUp' });
+        expect(document.activeElement).toBe(screen.getByText('Last'));
+        fireEvent.keyDown(menu, { key: 'Home' });
+        expect(document.activeElement).toBe(screen.getByText('First'));
+        fireEvent.keyDown(menu, { key: 'End' });
+        expect(document.activeElement).toBe(screen.getByText('Last'));
+    });
+
+    it('closes on Tab and hands focus back to the anchor', () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByText('Toggle'));
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'Tab' });
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(screen.getByText('Toggle'));
     });
 });
