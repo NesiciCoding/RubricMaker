@@ -68,7 +68,7 @@ const mockGradedStudentRubric: StudentRubric = {
 
 const mockGradedStudentRubric2: StudentRubric = {
     id: 'sr2',
-    rubricId: 'r1',
+    rubricId: 'r1b',
     studentId: 's1',
     entries: [
         { criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '' },
@@ -131,7 +131,11 @@ const mockPeerReview: StudentRubric = {
     isPeerReview: true,
 };
 
-const mockRubricsWithCriteriaArr = [mockRubricWithCriteria];
+const mockRubricsWithCriteriaArr = [
+    mockRubricWithCriteria,
+    { ...mockRubricWithCriteria, id: 'r1b', name: 'Essay Rubric (rewrite)' },
+    { ...mockRubricWithCriteria, id: 'r1c', name: 'Essay Rubric (final)' },
+];
 const mockGradedStudentRubricsArr = [mockGradedStudentRubric, mockGradedStudentRubric2];
 const mockPeerReviewsArr = [mockPeerReview];
 const mockSaveRubricSelfAssessment = vi.fn();
@@ -163,7 +167,7 @@ const mockSecondMarkerEntry: StudentRubric = {
 // flag from getCriterionInterventionFlags, which is enough to make hasLearningPath true.
 const mockLowScoreStreakArr: StudentRubric[] = [1, 2, 3].map((n) => ({
     id: `sr-flag-${n}`,
-    rubricId: 'r1',
+    rubricId: ['r1', 'r1b', 'r1c'][n - 1],
     studentId: 's1',
     entries: [{ criterionId: 'c1', levelId: null, overridePoints: 30, checkedSubItems: [], comment: '' }],
     overallComment: '',
@@ -578,11 +582,11 @@ describe('StudentPortalPage', () => {
         mockAppValue.studentRubrics = emptyArr;
     });
 
-    it('aggregates every graded attempt of a rubric in the per-rubric radar view, not just the first', async () => {
+    it('counts one grade per rubric in the per-rubric radar view, even with duplicate records', async () => {
         // Two StudentRubric records (sr1, sr2) both grade rubric r1's "Content" criterion at
-        // different levels (l1: 90pts, l2: 70pts out of a 100-point max) — the per-rubric
-        // radar must average both attempts (→ 80%), not just sr1's alone (→ 90%, the bug).
-        mockAppValue.studentRubrics = mockGradedStudentRubricsArr;
+        // different levels (l1: 90pts, l2: 70pts out of a 100-point max). Only one live record
+        // per student and rubric counts — the one GradeStudent opens (sr1 → 90%), #646.
+        mockAppValue.studentRubrics = [mockGradedStudentRubric, { ...mockGradedStudentRubric2, rubricId: 'r1' }];
         renderAt('s1');
         switchTab('progress');
         await screen.findAllByText('studentPortal.my_progress');
@@ -594,7 +598,7 @@ describe('StudentPortalPage', () => {
             avg: number;
         }[];
         const content = radarData.find((d) => d.name === 'Content');
-        expect(content?.avg).toBe(80);
+        expect(content?.avg).toBe(90);
         mockAppValue.studentRubrics = emptyArr;
     });
 

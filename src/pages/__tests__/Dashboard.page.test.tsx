@@ -89,6 +89,7 @@ function makeStore(): Record<string, unknown> {
     });
     const lowGradeB = sr({
         id: 'sr-b',
+        rubricId: 'r2',
         studentId: 's1',
         entries: [{ criterionId: 'c1', levelId: null, overridePoints: 5, checkedSubItems: [], comment: '' }],
         gradedAt: '2026-06-17T00:00:00Z',
@@ -109,12 +110,14 @@ function makeStore(): Record<string, unknown> {
     });
     const completed = sr({
         id: 'sr-e',
+        rubricId: 'r2',
         studentId: 's2',
         entries: [{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }],
         gradedAt: '2026-06-20T00:00:00Z',
     });
     const incomplete = sr({
         id: 'sr-f',
+        rubricId: 'r4',
         studentId: 's2',
         entries: [{ criterionId: 'c1', levelId: null, checkedSubItems: [], comment: '' }],
         gradedAt: '2026-06-21T00:00:00Z',
@@ -624,8 +627,9 @@ describe('Dashboard page', () => {
         expect(screen.getAllByText(/Updated/).length).toBeGreaterThan(0);
         expect(screen.getAllByText('dashboard.action_resume').length).toBeGreaterThan(0);
         expect(screen.getAllByText('dashboard.action_open').length).toBeGreaterThan(0);
-        // Ghost student/rubric fallbacks render the placeholder name.
-        expect(screen.getByText('?')).toBeInTheDocument();
+        // Grades of missing students or deleted rubrics are not live, so no placeholder rows (#646).
+        expect(screen.queryByText('?')).not.toBeInTheDocument();
+        expect(screen.queryByText(/r-missing/)).not.toBeInTheDocument();
     });
 
     it('resumes grading and opens rubric from recent activity', async () => {

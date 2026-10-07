@@ -25,6 +25,7 @@ import { useAuthoring, useEssays, useFlashcards } from '../context/AppContext';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
 import { getGrammarRecommendations } from '../utils/learningPathAggregator';
 import { nanoid } from '../utils/nanoid';
@@ -126,7 +127,10 @@ export default function Dashboard() {
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const studentRubrics = useMemo(
+        () => liveStudentRubrics(allStudentRubrics, students, rubrics),
+        [allStudentRubrics, students, rubrics]
+    );
     // Actions stay on the domain contexts (they are identity-stable; the contexts keep
     // this page subscribed to the roster domain only for the two derived slices above).
     const { deleteUserTemplate } = useAuthoring();
