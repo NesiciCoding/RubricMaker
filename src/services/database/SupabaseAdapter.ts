@@ -2642,63 +2642,38 @@ export class SupabaseAdapter {
 
     // ── Account deletion ──────────────────────────────────────────────────────
 
-    async deleteAllMyData(): Promise<SyncResult> {
-        const uid = this.uid();
+    /**
+     * Erases every row and storage object the signed-in user owns (#642). Storage goes first:
+     * essay files are found through essay_assignments rows that erase_my_data() removes, so a
+     * storage failure stops before any rows are touched and a retry can still find everything.
+     * `failed` names each bucket or table that could not be cleared.
+     */
+    async deleteAllMyData(): Promise<SyncResult & { failed: string[] }> {
         const db = this.db();
-        const tables = [
-            'rubrics',
-            'rubric_versions',
-            'classes',
-            'students',
-            'student_rubrics',
-            'attachments',
-            'grade_scales',
-            'comment_snippets',
-            'comment_bank',
-            'export_templates',
-            'favorite_standards',
-            'self_assessments',
-            'speaking_sessions',
-            'recording_metadata',
-            'analysis_results',
-            'tests',
-            'student_tests',
-            'user_settings',
-            'essay_templates',
-            'essay_assignments',
-            'flashcard_decks',
-            'flashcard_assignments',
-            'flashcard_reviews',
-            'news_flashes',
-            'news_flash_reads',
-        ];
-        for (const table of tables) {
-            const col = table === 'student_rubrics' ? 'grader_id' : table === 'user_settings' ? 'user_id' : 'owner_id';
-            await db.from(table).delete().eq(col, uid);
+        const { data: objects, error: listError } = await db.rpc('my_storage_objects');
+        if (listError) return { success: false, error: listError.message, failed: ['storage'] };
+
+        const byBucket = new Map<string, string[]>();
+        for (const o of (objects ?? []) as { bucket_id: string; name: string }[]) {
+            byBucket.set(o.bucket_id, [...(byBucket.get(o.bucket_id) ?? []), o.name]);
         }
-        // Remove storage objects
-        try {
-            const { data: attFiles } = await db.storage.from('attachments').list(uid);
-            if (attFiles?.length) await db.storage.from('attachments').remove(attFiles.map((f) => `${uid}/${f.name}`));
-            const { data: tplFiles } = await db.storage.from('export-templates').list(uid);
-            if (tplFiles?.length)
-                await db.storage.from('export-templates').remove(tplFiles.map((f) => `${uid}/${f.name}`));
-            const { data: recFiles } = await db.storage.from('recordings').list(uid);
-            if (recFiles?.length) await db.storage.from('recordings').remove(recFiles.map((f) => `${uid}/${f.name}`));
-            // essay_assignments cascade-deletes essay_submissions rows via FK;
-            // remove the essay files from storage folder-per-assignment
-            const { data: assignments } = await db.from('essay_assignments').select('id').eq('owner_id', uid);
-            if (assignments?.length) {
-                for (const a of assignments) {
-                    const { data: essayFiles } = await db.storage.from('essays').list(a.id);
-                    if (essayFiles?.length) {
-                        await db.storage.from('essays').remove(essayFiles.map((f) => `${a.id}/${f.name}`));
-                    }
+        const failed: string[] = [];
+        for (const [bucket, paths] of byBucket) {
+            for (let i = 0; i < paths.length; i += 100) {
+                const chunk = paths.slice(i, i + 100);
+                const { data, error } = await db.storage.from(bucket).remove(chunk);
+                // Storage RLS skips objects it won't delete without raising, so compare counts too.
+                if (error || (data?.length ?? 0) < chunk.length) {
+                    failed.push(`storage:${bucket}`);
+                    break;
                 }
             }
-        } catch {
-            /* ignore */
         }
-        return { success: true };
+        if (failed.length > 0) return { success: false, error: failed.join(', '), failed };
+
+        const { data: erased, error: eraseError } = await db.rpc('erase_my_data');
+        if (eraseError) return { success: false, error: eraseError.message, failed: ['database'] };
+        failed.push(...Object.keys((erased as { errors?: Record<string, string> } | null)?.errors ?? {}));
+        return failed.length > 0 ? { success: false, error: failed.join(', '), failed } : { success: true, failed };
     }
 }

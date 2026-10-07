@@ -1,9 +1,17 @@
 /**
- * Supabase integration test for migration 079: export_owner_backup covers every owner table (#631).
+ * Supabase integration tests for migrations 079/080: export_owner_backup covers every owner table (#631),
+ * and erase_my_data removes exactly the caller's rows (#642).
  *
  * Requires a running local Supabase stack (npm run db:start, npm run e2e:supabase).
  */
-import { test, expect, SUPABASE_URL, SUPABASE_SERVICE_KEY, querySql } from '../fixtures/supabase.fixture';
+import {
+    test,
+    expect,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_KEY,
+    querySql,
+} from '../fixtures/supabase.fixture';
 
 const svc = {
     'Content-Type': 'application/json',
@@ -73,6 +81,49 @@ test.describe('migration 079 owner data registry', () => {
         expect(snapshot.messages).toHaveLength(1);
         for (const key of ['standard_mastery_targets', 'test_assignments', 'recording_metadata', 'scan_metadata']) {
             expect(snapshot[key]).toEqual([]);
+        }
+    });
+
+    test("erase_my_data deletes the caller's rows and nothing else", async () => {
+        const email = `erase-${uniq()}@example.com`;
+        const created = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+            method: 'POST',
+            headers: svc,
+            body: JSON.stringify({ email, password: 'Erase-Test-1!', email_confirm: true }),
+        });
+        expect(created.ok).toBe(true);
+        const eraserId = ((await created.json()) as { id: string }).id;
+        const login = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY },
+            body: JSON.stringify({ email, password: 'Erase-Test-1!' }),
+        });
+        expect(login.ok).toBe(true);
+        const token = ((await login.json()) as { access_token: string }).access_token;
+        try {
+            const mine = `r-erase-${uniq()}`;
+            const theirs = `r-keep-${uniq()}`;
+            await svcInsert('rubrics', { id: mine, owner_id: eraserId, data: { id: mine } });
+            await svcInsert('rubric_versions', { id: `v-${mine}`, rubric_id: mine, owner_id: eraserId, data: {} });
+            await svcInsert('rubrics', { id: theirs, owner_id: ownerId, data: { id: theirs } });
+
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/erase_my_data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${token}`,
+                },
+                body: '{}',
+            });
+            expect(res.ok).toBe(true);
+            const body = (await res.json()) as { deleted: Record<string, number>; errors: Record<string, string> };
+            expect(body.errors).toEqual({});
+            expect(body.deleted.rubrics).toBe(1);
+            expect(body.deleted.rubric_versions).toBe(1);
+            expect(querySql(`SELECT count(*) FROM public.rubrics WHERE id IN ('${mine}', '${theirs}')`)).toBe('1');
+        } finally {
+            await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${eraserId}`, { method: 'DELETE', headers: svc });
         }
     });
 });
