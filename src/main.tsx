@@ -9,6 +9,7 @@ import { i18nReady } from './i18n';
 import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
+import { HydrationProgress } from './components/ui/HydrationProgress';
 
 setupPwaUpdatePrompt();
 
@@ -180,6 +181,7 @@ function renderApp() {
                 <RouterProvider router={router} />
             </Suspense>
             <UpdateAvailableToast />
+            <HydrationProgress />
         </React.StrictMode>
     );
 }

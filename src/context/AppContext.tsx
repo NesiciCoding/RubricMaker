@@ -232,6 +232,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     }
                     const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                     if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                    // A slow hydrate is still running (delivered via onLateHydrate, merged into current
+                    // state) — drop the previous owner's in-memory data now rather than merging into it.
+                    if (!fresh && storageSync.didWipeLocalData()) applyHydrated(loadStore(), true);
                     if (fresh) {
                         // After an owner switch the in-memory state still holds the previous
                         // user's data — merge against the freshly wiped store instead.
@@ -338,6 +341,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         // quota error — non-fatal on reconnect
                     }
                 };
+                // A login/connect hydrate that outlived its timeout let the user into the app on
+                // local data; merge the cloud snapshot in as soon as it lands.
+                unsubs.push(
+                    storageSync.onLateHydrate(async ({ data, error }) => {
+                        if (error) showToast(t('toast.sync_load_failed'), 'warning');
+                        if (data) await applyFresh(data);
+                    })
+                );
                 unsubs.push(
                     storageSync.onNetworkReconnect(async () => {
                         if (!storageSync.isConnected()) return;
@@ -397,6 +408,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         storageSync.setToastFn(showToast);
                         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
+                        if (!fresh && storageSync.didWipeLocalData()) applyHydrated(loadStore(), true);
                         if (fresh) {
                             const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                             const merged = mergeStoreData(base, fresh, loadPendingQueue());
