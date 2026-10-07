@@ -496,6 +496,27 @@ describe('Dashboard page', () => {
         expect(screen.getByText('dashboard.needs_grading_empty')).toBeInTheDocument();
     });
 
+    it('keeps an essay out of the queue when any live duplicate record is graded', async () => {
+        const base = makeStore();
+        store = {
+            ...base,
+            studentRubrics: [
+                sr({ id: 'sr-dup-open', rubricId: 'r5', studentId: 's1', gradedAt: undefined }),
+                sr({ id: 'sr-dup-graded', rubricId: 'r5', studentId: 's1', gradedAt: '2026-06-26T00:00:00Z' }),
+            ],
+            essaySubmissions: [
+                submission({
+                    id: 'e-dup',
+                    assignmentRubricId: 'r5',
+                    assignmentStudentId: 's1',
+                    submittedAt: '2026-06-25T00:00:00Z',
+                }),
+            ],
+        };
+        await renderPage();
+        expect(screen.getByText('dashboard.needs_grading_empty')).toBeInTheDocument();
+    });
+
     it('covers every time-ago bucket in the needs-grading list', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-06-28T12:00:00.000Z'));

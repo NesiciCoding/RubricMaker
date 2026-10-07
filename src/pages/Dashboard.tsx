@@ -260,9 +260,13 @@ export default function Dashboard() {
         >();
         for (const sub of essaySubmissions) {
             const key = `${sub.assignmentRubricId}_${sub.assignmentStudentId}`;
-            const alreadyGraded = studentRubrics.some(
+            // Any live graded record counts, not just the deduplicated one analytics uses.
+            const alreadyGraded = allStudentRubrics.some(
                 (sr) =>
-                    sr.rubricId === sub.assignmentRubricId && sr.studentId === sub.assignmentStudentId && sr.gradedAt
+                    !sr.deletedAt &&
+                    sr.rubricId === sub.assignmentRubricId &&
+                    sr.studentId === sub.assignmentStudentId &&
+                    sr.gradedAt
             );
             if (alreadyGraded) continue;
             const rubric = rubrics.find((r) => r.id === sub.assignmentRubricId);
@@ -281,7 +285,7 @@ export default function Dashboard() {
             });
         }
         return Array.from(byKey.values()).sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
-    }, [essaySubmissions, studentRubrics, rubrics, students, classes]);
+    }, [essaySubmissions, allStudentRubrics, rubrics, students, classes]);
 
     // "This week" trend counts feeding the stat-card badges — real counts, not fabricated percentages
     const weeklyTrends = useMemo(
