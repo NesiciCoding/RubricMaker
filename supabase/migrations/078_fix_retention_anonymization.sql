@@ -11,6 +11,8 @@
 --   * resolves a teacher's school from profiles.school_id OR school_members;
 --   * stamps data.updatedAt so last-write-wins sync on a teacher's device cannot push the
 --     pre-anonymization record back over it;
+--   * skips (and counts) students with a grade whose gradedAt cannot be parsed, since their
+--     latest grade date is unknown;
 --   * isolates per-student failures and records every run in audit_logs.
 
 -- ── 1. Lenient timestamp cast ───────────────────────────────────────────────────
@@ -31,8 +33,11 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.try_timestamptz(text) FROM PUBLIC, anon, authenticated;
 
 -- ── 2. Anonymize one student ────────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION public.anonymize_student(p_student_id text, p_owner_id uuid)
-RETURNS void
+-- Returns the number of rows changed (0 when already anonymized), so the job counts real work.
+-- The return type changes from void, which CREATE OR REPLACE cannot do.
+DROP FUNCTION IF EXISTS public.anonymize_student(text, uuid);
+CREATE FUNCTION public.anonymize_student(p_student_id text, p_owner_id uuid)
+RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -40,6 +45,7 @@ AS $$
 DECLARE
   v_token text := substring(encode(sha256(p_student_id::bytea), 'hex'), 1, 8);
   v_now   text := to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+  v_rows  integer;
 BEGIN
   UPDATE public.students
   SET data = data || jsonb_build_object(
@@ -52,6 +58,8 @@ BEGIN
   WHERE id = p_student_id
     AND owner_id = p_owner_id
     AND (data->>'anonymizedAt') IS NULL;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  RETURN v_rows;
 END;
 $$;
 
@@ -68,16 +76,26 @@ DECLARE
   v_student    RECORD;
   v_count      integer := 0;
   v_failed     integer := 0;
+  v_skipped    integer := 0;
   v_last_error text;
 BEGIN
   FOR v_student IN
+    -- school_members is UNIQUE (profile_id) since 018, so each owner resolves to at most one school.
     WITH owner_school AS (
       SELECT p.id AS owner_id, COALESCE(p.school_id, sm.school_id) AS school_id
       FROM public.profiles p
       LEFT JOIN public.school_members sm ON sm.profile_id = p.id
       WHERE COALESCE(p.school_id, sm.school_id) IS NOT NULL
     )
-    SELECT s.id, s.owner_id
+    SELECT s.id, s.owner_id,
+      -- A grade whose gradedAt cannot be read has an unknown age, so the student is not provably
+      -- past retention; leave them for review instead of anonymizing.
+      EXISTS (
+        SELECT 1 FROM public.student_rubrics sr
+        WHERE sr.student_id = s.id
+          AND sr.data->>'gradedAt' IS NOT NULL
+          AND public.try_timestamptz(sr.data->>'gradedAt') IS NULL
+      ) AS has_unreadable_date
     FROM public.students s
     JOIN owner_school os ON os.owner_id = s.owner_id
     JOIN public.schools sc ON sc.id = os.school_id
@@ -88,9 +106,12 @@ BEGIN
         WHERE sr.student_id = s.id
       ) < now() - make_interval(years => sc.retention_years)
   LOOP
+    IF v_student.has_unreadable_date THEN
+      v_skipped := v_skipped + 1;
+      CONTINUE;
+    END IF;
     BEGIN
-      PERFORM public.anonymize_student(v_student.id, v_student.owner_id);
-      v_count := v_count + 1;
+      v_count := v_count + public.anonymize_student(v_student.id, v_student.owner_id);
     EXCEPTION WHEN others THEN
       v_failed := v_failed + 1;
       v_last_error := SQLERRM;
@@ -101,7 +122,9 @@ BEGIN
   INSERT INTO public.audit_logs (actor_id, category, action, entity_type, details)
   VALUES (
     NULL, 'admin', 'retention_anonymize', 'student',
-    jsonb_build_object('anonymized', v_count, 'failed', v_failed, 'last_error', v_last_error)
+    jsonb_build_object(
+      'anonymized', v_count, 'failed', v_failed, 'skipped_unreadable_date', v_skipped, 'last_error', v_last_error
+    )
   );
 
   RETURN v_count;

@@ -54,7 +54,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 
 ## Retention job
 
-- `anonymize_overdue_students()` runs nightly at 02:00 via pg_cron (scheduled in 038, rewritten in 078). It anonymizes students whose latest `student_rubrics.gradedAt` (any grader) is older than their teacher's school `retention_years`; a teacher's school comes from `profiles.school_id` or `school_members`. Each run writes one `audit_logs` row (`action = 'retention_anonymize'`, with `anonymized`/`failed` counts). `e2e/specs/49-retention-anonymization.spec.ts` and `src/__tests__/retentionAnonymization.test.ts` guard it — keep them passing when touching `students`/`student_rubrics` columns.
+- `anonymize_overdue_students()` runs nightly at 02:00 via pg_cron (scheduled in 038, rewritten in 078). It anonymizes students whose latest `student_rubrics.gradedAt` (any grader) is older than their teacher's school `retention_years`; a teacher's school comes from `profiles.school_id` or `school_members`. Students with a grade whose `gradedAt` cannot be parsed are skipped rather than anonymized. Each run writes one `audit_logs` row (`action = 'retention_anonymize'`, with `anonymized`/`failed`/`skipped_unreadable_date` counts). `e2e/specs/49-retention-anonymization.spec.ts` and `src/__tests__/retentionAnonymization.test.ts` guard it — keep them passing when touching `students`/`student_rubrics` columns.
 
 ## Storage buckets
 
