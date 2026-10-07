@@ -4244,6 +4244,7 @@
         "warn_order_guessed": "Niet duidelijk of de niveaukolommen van hoog naar laag lopen of andersom. De punten gaan ervan uit dat de eerste kolom de hoogste is — controleer ze hieronder.",
         "warn_points_partial": "Alleen sommige niveaukoppen noemen punten; de andere niveaus kregen geschatte punten.",
         "warn_merged_row": "Rij \"{{title}}\" beslaat meerdere kolommen (een kopje?) en is overgeslagen.",
+        "warn_untitled_row": "Een rij met niveautekst maar zonder criteriumtitel (een samengevoegde cel?) is overgeslagen.",
         "warn_cell_count": "Rij \"{{title}}\" heeft {{found}} niveaucellen maar de kop heeft {{expected}} niveaus — controleer de beschrijvingen.",
         "warn_weights_scaled": "De wegingen van de criteria telden op tot {{total}}% en zijn omgerekend naar 100%.",
         "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld."

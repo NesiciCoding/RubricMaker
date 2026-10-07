@@ -4244,6 +4244,7 @@
         "warn_order_guessed": "Es ist nicht erkennbar, ob die Stufenspalten von der besten zur schwächsten laufen oder umgekehrt. Die Punkte gehen davon aus, dass die erste Spalte die höchste ist — prüfen Sie sie unten.",
         "warn_points_partial": "Nur einige Stufenüberschriften nennen Punkte; die übrigen Stufen haben geschätzte Punkte erhalten.",
         "warn_merged_row": "Die Zeile „{{title}}“ erstreckt sich über mehrere Spalten (eine Überschrift?) und wurde übersprungen.",
+        "warn_untitled_row": "Eine Zeile mit Stufentext, aber ohne Kriteriumstitel (eine verbundene Zelle?), wurde übersprungen.",
         "warn_cell_count": "Die Zeile „{{title}}“ hat {{found}} Stufenzellen, die Kopfzeile aber {{expected}} Stufen — prüfen Sie die Beschreibungen.",
         "warn_weights_scaled": "Die Gewichtungen der Kriterien ergaben zusammen {{total}} % und wurden auf 100 % umgerechnet.",
         "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt."

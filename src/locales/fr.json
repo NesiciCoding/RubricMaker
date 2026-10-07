@@ -4244,6 +4244,7 @@
         "warn_order_guessed": "Impossible de savoir si les colonnes de niveaux vont du meilleur au plus faible ou l'inverse. Les points supposent que la première colonne est la plus haute — vérifiez-les ci-dessous.",
         "warn_points_partial": "Seuls certains en-têtes de niveau indiquent des points ; les autres niveaux ont reçu des points estimés.",
         "warn_merged_row": "La ligne « {{title}} » s'étend sur plusieurs colonnes (un titre ?) et a été ignorée.",
+        "warn_untitled_row": "Une ligne avec du texte de niveau mais sans titre de critère (une cellule fusionnée ?) a été ignorée.",
         "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
         "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
         "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."

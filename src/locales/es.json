@@ -4244,6 +4244,7 @@
         "warn_order_guessed": "No se pudo saber si las columnas de niveles van de mejor a peor o al revés. Los puntos suponen que la primera columna es la más alta; revíselos abajo.",
         "warn_points_partial": "Solo algunos encabezados de nivel indican puntos; los demás niveles recibieron puntos estimados.",
         "warn_merged_row": "La fila «{{title}}» ocupa varias columnas (¿un título?) y se omitió.",
+        "warn_untitled_row": "Se omitió una fila con texto de nivel pero sin título de criterio (¿una celda combinada?).",
         "warn_cell_count": "La fila «{{title}}» tiene {{found}} celdas de nivel, pero el encabezado tiene {{expected}} niveles; revise sus descripciones.",
         "warn_weights_scaled": "Los pesos de los criterios sumaban {{total}} % y se ajustaron al 100 %.",
         "warn_weights_partial": "Solo algunos criterios indican un peso; el {{remaining}} % restante se repartió entre los demás."

@@ -914,6 +914,23 @@ describe('buildParsedRubric — level order, header points and weights', () => {
         expect(r.confidence).toBe('medium');
     });
 
+    it('warns instead of silently dropping a row whose criterion title cell is empty', () => {
+        const r = buildParsedRubric(
+            {
+                headers: ['', 'Excellent', 'Good', 'Poor'],
+                rows: [
+                    ['Content', 'a', 'b', 'c'],
+                    ['', 'orphan a', 'orphan b', 'orphan c'],
+                    ['', '', '', ''],
+                ],
+            },
+            't'
+        );
+        expect(r.criteria.map((c) => c.title)).toEqual(['Content']);
+        expect(r.warnings.filter((w) => w.key === 'importRubric.warn_untitled_row')).toHaveLength(1);
+        expect(r.confidence).toBe('medium');
+    });
+
     it('lowers confidence and warns when a row has the wrong number of cells', () => {
         const r = buildParsedRubric(
             {
@@ -967,6 +984,8 @@ describe('buildParsedRubric — level order, header points and weights', () => {
 describe('parseLevelHeader / parseCriterionCell', () => {
     it('parses point suffixes in several forms', () => {
         expect(parseLevelHeader('Good 3p')).toEqual({ label: 'Good', points: { min: 3, max: 3 } });
+        expect(parseLevelHeader('Zwak (1-2 pnt)')).toEqual({ label: 'Zwak', points: { min: 1, max: 2 } });
+        expect(parseLevelHeader('Gut (3 P.)')).toEqual({ label: 'Gut', points: { min: 3, max: 3 } });
         expect(parseLevelHeader('Weak (1–2 points)')).toEqual({ label: 'Weak', points: { min: 1, max: 2 } });
         expect(parseLevelHeader('2.5')).toEqual({ label: '2.5', points: { min: 2.5, max: 2.5 } });
         expect(parseLevelHeader('Proficient')).toEqual({ label: 'Proficient', points: null });

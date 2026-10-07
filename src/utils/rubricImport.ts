@@ -227,7 +227,7 @@ function levelRank(label: string): number | null {
 }
 
 const HEADER_POINTS_RE =
-    /\(?\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]|to)?\s*(\d+(?:[.,]\d+)?)?\s*(?:pts?|points?|punten|pt|p)\b\.?\s*\)?/i;
+    /\(?\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]|to)?\s*(\d+(?:[.,]\d+)?)?\s*(?:pts?|points?|punten|pnt|pt|p)\b\.?\s*\)?/i;
 const BARE_NUMBER_RE = /^\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]\s*(\d+(?:[.,]\d+)?))?\s*$/;
 const WEIGHT_RE = /\(?\s*(\d+(?:[.,]\d+)?)\s*%\s*\)?/;
 
@@ -316,7 +316,15 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
     const parsedRows: { title: string; weight: number | null; row: string[] }[] = [];
 
     for (const row of raw.rows) {
-        if (row.length === 0 || !row[0]) continue;
+        if (row.length === 0) continue;
+        if (!row[0]) {
+            // An empty title cell (often a vertically merged one) — level text would be lost silently.
+            if (row.some((c) => c.trim().length > 0)) {
+                warnings.push({ key: 'importRubric.warn_untitled_row' });
+                mismatched = true;
+            }
+            continue;
+        }
         const filled = row.filter((c) => c.trim().length > 0).length;
         if (total >= 2 && filled === 1) {
             // A merged (colspan) row such as a section heading — not a criterion.
