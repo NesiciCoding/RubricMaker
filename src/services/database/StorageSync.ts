@@ -69,6 +69,8 @@ class StorageSyncService {
     private toastFn: ((msg: string, type?: 'success' | 'error' | 'info' | 'warning') => void) | null = null;
     private reconnectListeners: Set<() => void> = new Set();
     private realtimeListeners: Set<(tables: string[]) => void> = new Set();
+    private lateHydrateListeners: Set<(result: { data: Partial<StoreData> | null; error?: string }) => void> =
+        new Set();
     private pendingRealtimeTables: Set<string> = new Set();
     private networkListenerActive = false;
     private flushInProgress = false;
@@ -157,6 +159,10 @@ class StorageSyncService {
     getStatus(): SyncStatus {
         return this.status;
     }
+    /** Fetch progress of the in-flight full hydrate, or null when none is running. */
+    getHydrateProgress(): { done: number; total: number } | null {
+        return this.hydrateProgress;
+    }
     getLastSyncAt(): string | null {
         return this.lastSyncAt;
     }
@@ -201,6 +207,12 @@ class StorageSyncService {
 
     private notifyReconnect() {
         this.reconnectListeners.forEach((cb) => cb());
+    }
+
+    /** Receives the result of a hydrate() that outlived its timeout (see hydrate()). */
+    onLateHydrate(cb: (result: { data: Partial<StoreData> | null; error?: string }) => void): () => void {
+        this.lateHydrateListeners.add(cb);
+        return () => this.lateHydrateListeners.delete(cb);
     }
 
     /**
@@ -600,35 +612,57 @@ class StorageSyncService {
     // ── Hydration (DB → app state) ────────────────────────────────────────────
 
     private static readonly HYDRATE_TIMEOUT_MS = 8000;
+    // Number of fetches tracked across both hydrate waves — a unit test pins done === total.
+    static readonly HYDRATE_FETCH_COUNT = 34;
     private hydrationGeneration = 0;
+    private hydrateProgress: { done: number; total: number } | null = null;
 
     async hydrate(): Promise<{ data: Partial<StoreData> | null; error?: string }> {
         const gen = ++this.hydrationGeneration;
+        const impl = this._hydrateImpl(gen);
         let timer: ReturnType<typeof setTimeout> | undefined;
-        const timeout = new Promise<{ data: null; error?: string }>((resolve) => {
-            timer = setTimeout(() => {
-                // Only act if this is still the active generation; a newer hydrate()
-                // call could have started between when this timer was set and when it fires.
-                if (gen !== this.hydrationGeneration) {
-                    resolve({ data: null });
-                    return;
-                }
-                // Supersede the in-flight impl so its late completion is discarded,
-                // then settle the status to match the warning toast that AppContext shows.
-                this.hydrationGeneration++;
-                this.setStatus('error');
-                resolve({ data: null, error: 'timeout' });
-            }, StorageSyncService.HYDRATE_TIMEOUT_MS);
+        const timeout = new Promise<null>((resolve) => {
+            timer = setTimeout(() => resolve(null), StorageSyncService.HYDRATE_TIMEOUT_MS);
         });
         try {
-            return await Promise.race([this._hydrateImpl(gen), timeout]);
+            const result = await Promise.race([impl, timeout]);
+            if (result) return result;
         } finally {
             clearTimeout(timer);
         }
+        // A large account on a cold cache (fresh private window) can take longer than the
+        // timeout. Don't drop that pull: let the caller enter the app on local data and hand
+        // the cloud snapshot to onLateHydrate listeners when it lands. The status stays
+        // 'syncing' (and the progress indicator up) until then.
+        void impl.then((late) => {
+            if (gen === this.hydrationGeneration) this.lateHydrateListeners.forEach((cb) => cb(late));
+        });
+        return { data: null };
+    }
+
+    private trackHydrate<T extends readonly unknown[] | []>(
+        gen: number,
+        fetches: T
+    ): Promise<{ -readonly [K in keyof T]: Awaited<T[K]> }> {
+        fetches.forEach((p) =>
+            Promise.resolve(p).then(
+                () => {
+                    if (gen !== this.hydrationGeneration || !this.hydrateProgress) return;
+                    this.hydrateProgress = { ...this.hydrateProgress, done: this.hydrateProgress.done + 1 };
+                    this.notifyListeners();
+                },
+                () => {}
+            )
+        );
+        return Promise.all(fetches);
     }
 
     private async _hydrateImpl(gen: number): Promise<{ data: Partial<StoreData> | null; error?: string }> {
-        if (!this.adapter.isConnected()) return { data: null };
+        if (!this.adapter.isConnected()) {
+            this.hydrateProgress = null;
+            return { data: null };
+        }
+        this.hydrateProgress = { done: 0, total: StorageSyncService.HYDRATE_FETCH_COUNT };
         this.setStatus('syncing');
         try {
             const [
@@ -656,7 +690,7 @@ class StorageSyncService {
                 attachments,
                 settings,
                 profileFull,
-            ] = await Promise.all([
+            ] = await this.trackHydrate(gen, [
                 this.adapter.fetchRubrics(),
                 this.adapter.fetchClasses(),
                 this.adapter.fetchStudents(),
@@ -722,7 +756,7 @@ class StorageSyncService {
                 documentComments,
                 notificationDismissals,
                 comparativeMatchups,
-            ] = await Promise.all([
+            ] = await this.trackHydrate(gen, [
                 this.adapter.fetchFlashcardDecks().catch(() => []),
                 this.adapter.fetchFlashcardAssignments().catch(() => []),
                 this.adapter.fetchFlashcardReviews().catch(() => []),
@@ -824,13 +858,17 @@ class StorageSyncService {
             const now = new Date().toISOString();
             this.lastSyncAt = now;
             localStorage.setItem(LAST_SYNC_KEY, now);
+            this.hydrateProgress = null;
             this.setStatus('idle');
 
             return { data: result };
         } catch (e) {
             console.error('[sync] hydrate failed', e);
             logEvent('sync', 'hydrate', { error: String(e) }, 'error');
-            if (gen === this.hydrationGeneration) this.setStatus('error');
+            if (gen === this.hydrationGeneration) {
+                this.hydrateProgress = null;
+                this.setStatus('error');
+            }
             return { data: null, error: String(e) };
         }
     }

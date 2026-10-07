@@ -15,6 +15,7 @@ vi.mock('../hooks/useToast', () => ({
 // Captured callbacks so tests can drive the async effect handlers exactly like Supabase would.
 const authHandlers = vi.hoisted(() => [] as Array<(user: unknown) => void>);
 const reconnectHandlers = vi.hoisted(() => [] as Array<() => void>);
+const lateHydrateHandlers = vi.hoisted(() => [] as Array<(r: { data: unknown; error?: string }) => Promise<void>>);
 const realtimeHandlers = vi.hoisted(() => [] as Array<(tables: string[]) => void>);
 
 const loadStoreValue = vi.hoisted(() => ({ current: null as ReturnType<typeof mockEmptyState> | null }));
@@ -141,6 +142,10 @@ vi.mock('../services/database', () => ({
             realtimeHandlers.push(handler);
             return () => {};
         }),
+        onLateHydrate: vi.fn((handler: (r: { data: unknown; error?: string }) => Promise<void>) => {
+            lateHydrateHandlers.push(handler);
+            return () => {};
+        }),
         onAuthChange: vi.fn((handler: (user: unknown) => void) => {
             authHandlers.push(handler);
             return () => {};
@@ -193,6 +198,7 @@ describe('AppContext startup effects', () => {
         authHandlers.length = 0;
         reconnectHandlers.length = 0;
         realtimeHandlers.length = 0;
+        lateHydrateHandlers.length = 0;
         localStorage.clear();
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: {
@@ -694,6 +700,22 @@ describe('AppContext startup effects', () => {
         });
         expect(storageSync.hydrate).toHaveBeenCalled();
         expect(storage.saveRubrics).toHaveBeenCalled();
+    });
+
+    it('merges a hydrate that outlived its timeout once it lands, and warns if it failed', async () => {
+        renderProvider();
+        await act(async () => {});
+
+        const fresh = { ...mockEmptyState(), rubrics: [{ id: 'r-late', name: 'Late', criteria: [] }] };
+        await act(async () => {
+            await Promise.all(lateHydrateHandlers.map((h) => h({ data: fresh })));
+        });
+        expect(storage.saveRubrics).toHaveBeenCalled();
+
+        await act(async () => {
+            await Promise.all(lateHydrateHandlers.map((h) => h({ data: null, error: 'boom' })));
+        });
+        expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'warning');
     });
 
     it('ignores reconnect events while disconnected', async () => {
@@ -1384,6 +1406,7 @@ describe('AppContext edge paths', () => {
         authHandlers.length = 0;
         reconnectHandlers.length = 0;
         realtimeHandlers.length = 0;
+        lateHydrateHandlers.length = 0;
         localStorage.clear();
         document.getElementById('app-gfont')?.remove();
         const { storageSync } = (await import('../services/database')) as unknown as {
