@@ -123,3 +123,59 @@ export function summarizeImport(rows: MatchedImportRow[], students: Student[], s
 
     return { created, updated, transferred, removed };
 }
+
+const normaliseHeader = (h: string) =>
+    h
+        .toLowerCase()
+        .replace(/[_\-.]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const FIRST_NAME_HEADERS = [
+    'first name',
+    'firstname',
+    'first',
+    'given name',
+    'givenname',
+    'forename',
+    'voornaam',
+    'roepnaam',
+];
+const LAST_NAME_HEADERS = ['last name', 'lastname', 'last', 'surname', 'family name', 'familyname', 'achternaam'];
+const FULL_NAME_HEADERS = [
+    'name',
+    'full name',
+    'fullname',
+    'student name',
+    'student',
+    'pupil',
+    'naam',
+    'volledige naam',
+    'leerling',
+    'leerlingnaam',
+];
+
+/**
+ * Suggests a column mapping for a generic student CSV. Full name only matches a header that *is* a
+ * full-name header, never one that merely contains "name" (First name, Last name, Username), and
+ * first + last name columns win over a full-name column when both are present.
+ */
+export function autoMapCsvHeaders(headers: string[]): CsvColumnMap {
+    const norm = headers.map(normaliseHeader);
+    const find = (exact: string[], contains: string[] = []) => {
+        const i = norm.findIndex((h) => exact.includes(h));
+        if (i !== -1) return headers[i];
+        const j = norm.findIndex((h) => contains.some((c) => h.includes(c)));
+        return j !== -1 ? headers[j] : '';
+    };
+    const firstName = find(FIRST_NAME_HEADERS, ['first name', 'given name', 'voornaam', 'roepnaam']);
+    const lastName = find(LAST_NAME_HEADERS, ['last name', 'surname', 'family name', 'achternaam']);
+    const fullName = firstName && lastName ? '' : find(FULL_NAME_HEADERS, ['full name', 'volledige naam']);
+    return {
+        fullName,
+        firstName,
+        lastName,
+        email: find(['email', 'e mail', 'mail', 'email address'], ['email', 'e mail']),
+        className: find(['class', 'klas', 'group', 'course', 'groep'], ['class', 'course', 'group', 'klas', 'groep']),
+    };
+}

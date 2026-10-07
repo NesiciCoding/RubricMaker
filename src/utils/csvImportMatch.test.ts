@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchCsvRows, summarizeImport } from './csvImportMatch';
+import { autoMapCsvHeaders, matchCsvRows, summarizeImport } from './csvImportMatch';
 import type { Class, Student } from '../types';
 
 const mapping = { fullName: 'Name', firstName: '', lastName: '', email: 'Email', className: 'Class' };
@@ -67,5 +67,72 @@ describe('matchCsvRows + summarizeImport', () => {
             'c1'
         );
         expect(rows).toHaveLength(1);
+    });
+});
+
+describe('autoMapCsvHeaders (#682)', () => {
+    it('maps First name + Last name to first/last, not to the full-name column', () => {
+        expect(autoMapCsvHeaders(['First name', 'Last name', 'Email', 'Class'])).toEqual({
+            fullName: '',
+            firstName: 'First name',
+            lastName: 'Last name',
+            email: 'Email',
+            className: 'Class',
+        });
+    });
+
+    it('handles reversed order, underscores and surname/given-name variants', () => {
+        expect(autoMapCsvHeaders(['Last name', 'First name'])).toMatchObject({
+            firstName: 'First name',
+            lastName: 'Last name',
+            fullName: '',
+        });
+        expect(autoMapCsvHeaders(['given_name', 'surname'])).toMatchObject({
+            firstName: 'given_name',
+            lastName: 'surname',
+        });
+        expect(autoMapCsvHeaders(['Roepnaam', 'Achternaam', 'Klas'])).toMatchObject({
+            firstName: 'Roepnaam',
+            lastName: 'Achternaam',
+            className: 'Klas',
+        });
+    });
+
+    it('never treats Username as the student name', () => {
+        expect(autoMapCsvHeaders(['Username', 'First name', 'Last name'])).toMatchObject({
+            fullName: '',
+            firstName: 'First name',
+            lastName: 'Last name',
+        });
+        expect(autoMapCsvHeaders(['Username', 'Email']).fullName).toBe('');
+    });
+
+    it('maps a single full-name column such as Name or Student name', () => {
+        expect(autoMapCsvHeaders(['Name', 'E-mail']).fullName).toBe('Name');
+        expect(autoMapCsvHeaders(['Student name', 'Group'])).toMatchObject({
+            fullName: 'Student name',
+            className: 'Group',
+        });
+        expect(autoMapCsvHeaders(['Full Name']).fullName).toBe('Full Name');
+    });
+
+    it('prefers first + last over a full-name column when both exist', () => {
+        expect(autoMapCsvHeaders(['Name', 'First name', 'Last name'])).toMatchObject({
+            fullName: '',
+            firstName: 'First name',
+            lastName: 'Last name',
+        });
+    });
+
+    it('imports First name + Last name rows as full names end to end', () => {
+        const mapping = autoMapCsvHeaders(['First name', 'Last name', 'Email', 'Class']);
+        const rows = matchCsvRows(
+            [{ 'First name': 'Anna', 'Last name': 'Jansen', Email: 'a@x.nl', Class: 'HAVO 4A' }],
+            mapping,
+            [],
+            [],
+            ''
+        );
+        expect(rows[0].name).toBe('Anna Jansen');
     });
 });
