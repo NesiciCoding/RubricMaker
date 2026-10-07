@@ -2957,7 +2957,10 @@
         "delete_all_db_message": "Damit wird alles, was Ihnen in der Datenbank gehört, endgültig gelöscht – Raster, Klassen, Schüler/innen, Noten, Tests, Aufsätze, Nachrichten samt Dateien, Aufnahmen, Scans und nächtliche Sicherungen. Das kann nicht rückgängig gemacht werden. Die Kopie auf diesem Gerät bleibt erhalten.",
         "delete_all_db_confirm": "Alles löschen",
         "delete_all_db_success": "Alle Ihre Datenbankdaten wurden gelöscht.",
-        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration."
+        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration.",
+        "audit_col_actor": "Ausgeführt von",
+        "audit_col_details": "Details",
+        "audit_actor_system": "System"
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
@@ -3647,7 +3650,7 @@
         "da_admin_item_integrations": "Tab Integrationen — Standards-API-Schlüssel.",
         "da_admin_item_data": "Tab Daten — Schülerdaten anonymisieren, Massenlöschung, Compliance-Tools.",
         "da_admin_item_retention": "Tab Aufbewahrung — automatische Datenaufbewahrungsrichtlinien pro Schule festlegen.",
-        "da_admin_item_audit": "Tab Auditprotokoll — filterbares, paginiertes Protokoll von Rollenänderungen, Bewertungsspeicherungen, Exporten und Authentifizierungsereignissen; Admins sehen alle Einträge, Lehrer sehen ihre eigenen. Einträge werden 3 Jahre (Admin), 1 Jahr (Bewertung), 1 Monat (Export/Auth) aufbewahrt und dann automatisch gelöscht.",
+        "da_admin_item_audit": "Registerkarte Audit-Protokoll — filterbares, seitenweises Protokoll, wer was getan hat, mit Details: Rollenänderungen, Schulmitgliedschaft und Schuländerungen, Freigabe von Rastern/Klassen, Änderungen der Website-Einstellungen, Passwort-Zurücksetzungen, „Alle meine Datenbankdaten löschen“, gespeicherte Bewertungen und Exporte. Sensible Änderungen protokolliert die Datenbank selbst, nur wenn die Änderung tatsächlich wirksam wurde. Admins sehen alle Einträge, Lehrkräfte nur ihre eigenen. Aufbewahrung: 3 Jahre (Admin), 1 Jahr (Noten), 1 Monat (Export/Anmeldung), danach automatische Löschung.",
         "da_settings_title": "Einstellungen",
         "da_settings_item_theme": "Theme — Dunkel / Hell, Akzentfarbwähler, 8 schnelle Voreinstellungen, oder wähle ein benanntes Theme-Bundle (Academy, Nature, Midnight, Warm, Slate, Rose), das mit einem Klick Schriftart, Akzent und Exportfarbe festlegt.",
         "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest.",

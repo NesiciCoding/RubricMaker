@@ -2957,7 +2957,10 @@
         "delete_all_db_message": "Cela supprime définitivement tout ce qui vous appartient dans la base : grilles, classes, élèves, notes, tests, rédactions, messages et leurs fichiers, enregistrements, scans et sauvegardes nocturnes. Cette action est irréversible. La copie sur cet appareil n'est pas modifiée.",
         "delete_all_db_confirm": "Tout supprimer",
         "delete_all_db_success": "Toutes vos données de la base ont été supprimées.",
-        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur."
+        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur.",
+        "audit_col_actor": "Auteur",
+        "audit_col_details": "Détails",
+        "audit_actor_system": "Système"
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",
@@ -3647,7 +3650,7 @@
         "da_admin_item_integrations": "Onglet Intégrations — clé API Standards.",
         "da_admin_item_data": "Onglet Données — anonymiser les données des élèves, suppression en masse, outils de conformité.",
         "da_admin_item_retention": "Onglet Conservation — définir des politiques de conservation des données automatiques par établissement.",
-        "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé des changements de rôle, enregistrements de notes, exports et événements d'authentification ; les administrateurs voient toutes les entrées, les enseignants voient les leurs. Les entrées sont conservées 3 ans (admin), 1 an (note), 1 mois (export/auth) puis automatiquement purgées.",
+        "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé indiquant qui a fait quoi, avec les détails : changements de rôle, adhésion et modifications d'école, partage de grilles/classes, modifications des paramètres du site, réinitialisations de mot de passe, « Supprimer toutes mes données », notes enregistrées et exports. Les changements sensibles sont enregistrés par la base de données elle-même, uniquement s'ils ont réellement eu lieu. Les admins voient toutes les entrées, les enseignants les leurs. Conservation : 3 ans (admin), 1 an (notes), 1 mois (export/authentification), puis suppression automatique.",
         "da_settings_title": "Paramètres",
         "da_settings_item_theme": "Thème — sombre / clair, sélecteur de couleur d'accent, 8 préréglages rapides, ou choisissez un ensemble de thème nommé (Academy, Nature, Midnight, Warm, Slate, Rose) qui définit en un clic la police, l'accent et la couleur d'export.",
         "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut.",
