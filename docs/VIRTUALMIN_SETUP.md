@@ -11,8 +11,8 @@ This guide covers everything needed to host RubricMaker on a VPS managed by **Vi
 3. [Create the Virtual Server in Virtualmin](#3-create-the-virtual-server-in-virtualmin)
 4. [Enable SSL with Let's Encrypt](#4-enable-ssl-with-lets-encrypt)
 5. [Web Server Configuration](#5-web-server-configuration)
-   - [Apache (default)](#51-apache-default)
-   - [Nginx (alternative)](#52-nginx-alternative)
+    - [Apache (default)](#51-apache-default)
+    - [Nginx (alternative)](#52-nginx-alternative)
 6. [Node.js for Building (optional)](#6-nodejs-for-building-optional)
 7. [Environment Variables](#7-environment-variables)
 8. [First Deployment](#8-first-deployment)
@@ -26,11 +26,13 @@ This guide covers everything needed to host RubricMaker on a VPS managed by **Vi
 ## 1. Prerequisites
 
 ### On your local machine
+
 - Git, Node.js 22+, npm
 - SSH key pair (for deploying without a password)
 - Access to the GitHub repository secrets (for CI/CD)
 
 ### On the VPS
+
 - A fresh VPS with at least **1 GB RAM / 1 vCPU / 10 GB disk**  
   (Ubuntu 22.04 LTS or Debian 12 recommended — both are well-tested with Virtualmin)
 - **Virtualmin GPL** already installed. If not, run the official installer:
@@ -40,20 +42,20 @@ wget -O install.sh https://software.virtualmin.com/gpl/scripts/virtualmin-instal
 sudo sh install.sh
 ```
 
-  The installer takes 5–10 minutes. Access the control panel at `https://YOUR_VPS_IP:10000`.
+The installer takes 5–10 minutes. Access the control panel at `https://YOUR_VPS_IP:10000`.
 
 ---
 
 ## 2. VPS & Virtualmin Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 1 GB | 2 GB |
-| vCPU | 1 | 2 |
-| Disk | 10 GB | 20 GB |
-| OS | Ubuntu 22.04 / Debian 12 | Ubuntu 22.04 LTS |
-| Virtualmin | GPL | GPL or Pro |
-| Web server | Apache 2.4 | Apache 2.4 or Nginx 1.24+ |
+| Component  | Minimum                  | Recommended               |
+| ---------- | ------------------------ | ------------------------- |
+| RAM        | 1 GB                     | 2 GB                      |
+| vCPU       | 1                        | 2                         |
+| Disk       | 10 GB                    | 20 GB                     |
+| OS         | Ubuntu 22.04 / Debian 12 | Ubuntu 22.04 LTS          |
+| Virtualmin | GPL                      | GPL or Pro                |
+| Web server | Apache 2.4               | Apache 2.4 or Nginx 1.24+ |
 
 RubricMaker stores all data in the browser's **localStorage** by default; the Supabase integration is optional. This means the server only needs to serve static files — no database or backend server is required on the VPS.
 
@@ -69,13 +71,14 @@ Open `https://YOUR_VPS_IP:10000` in a browser and log in as root (or your sudo u
 
 1. In the left sidebar click **Create Virtual Server**.
 2. Fill in the form:
-   - **Domain name:** `rubricmaker.example.com` (replace with your actual domain)
-   - **Administration password:** Choose a strong password (this becomes the Unix user's password)
-   - **Administration username:** leave as auto-generated, e.g. `rubricmaker`
-   - Leave **Create home directory**, **Create Apache website**, **Setup DNS zone**, and **Create mailbox for admin** ticked.
+    - **Domain name:** `rubricmaker.example.com` (replace with your actual domain)
+    - **Administration password:** Choose a strong password (this becomes the Unix user's password)
+    - **Administration username:** leave as auto-generated, e.g. `rubricmaker`
+    - Leave **Create home directory**, **Create Apache website**, **Setup DNS zone**, and **Create mailbox for admin** ticked.
 3. Click **Create Server**.
 
 Virtualmin creates:
+
 - Unix user: `rubricmaker`
 - Home directory: `/home/rubricmaker/`
 - Web root: **`/home/rubricmaker/public_html/`**
@@ -152,10 +155,10 @@ sudo systemctl reload nginx
 
 You have two build strategies:
 
-| Strategy | Where the build runs | When to use |
-|----------|---------------------|-------------|
-| **Local build + rsync** | Your laptop | Simplest; no Node on server needed |
-| **Server-side build** | VPS | Useful if CI/CD deploys source code instead of built artefacts |
+| Strategy                | Where the build runs | When to use                                                    |
+| ----------------------- | -------------------- | -------------------------------------------------------------- |
+| **Local build + rsync** | Your laptop          | Simplest; no Node on server needed                             |
+| **Server-side build**   | VPS                  | Useful if CI/CD deploys source code instead of built artefacts |
 
 ### Option A — Local build (recommended)
 
@@ -190,9 +193,9 @@ cp -r dist/* /home/rubricmaker/public_html/
 
 RubricMaker has two **optional** build-time environment variables. The app is fully functional without them — users can enter their own Supabase credentials in the Settings page.
 
-| Variable | Purpose |
-|----------|---------|
-| `VITE_SUPABASE_URL` | Pre-fills the Supabase URL in Settings |
+| Variable                 | Purpose                                     |
+| ------------------------ | ------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Pre-fills the Supabase URL in Settings      |
 | `VITE_SUPABASE_ANON_KEY` | Pre-fills the Supabase anon key in Settings |
 
 ### Setting them for a local build
@@ -205,6 +208,7 @@ cp .env.example .env
 ```
 
 `.env.example`:
+
 ```
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
@@ -220,14 +224,14 @@ npm run build
 
 Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
 
-| Secret name | Value |
-|-------------|-------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key |
-| `VPS_USER` | Virtualmin Unix username, e.g. `rubricmaker` |
-| `VPS_HOST` | Your VPS IP address or hostname |
-| `VPS_DOMAIN` | Your domain, e.g. `rubricmaker.example.com` |
-| `VPS_SSH_KEY` | Private SSH key (see §9.1) |
+| Secret name              | Value                                        |
+| ------------------------ | -------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Your Supabase project URL                    |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key              |
+| `VPS_USER`               | Virtualmin Unix username, e.g. `rubricmaker` |
+| `VPS_HOST`               | Your VPS IP address or hostname              |
+| `VPS_DOMAIN`             | Your domain, e.g. `rubricmaker.example.com`  |
+| `VPS_SSH_KEY`            | Private SSH key (see §9.1)                   |
 
 ---
 
@@ -275,6 +279,7 @@ chmod +x deploy.sh
 ```
 
 The script will:
+
 1. Run `npm run build` to produce `dist/`
 2. Rsync `dist/` → `/home/rubricmaker/public_html/` on the VPS (with `--delete` to clean stale files)
 
@@ -339,6 +344,7 @@ VITE_SUPABASE_ANON_KEY = eyJ...                     (optional)
 Push any commit to `main`, or go to **Actions → Deploy to VPS → Run workflow**.
 
 The workflow:
+
 1. Checks out the repository
 2. Installs Node 22 + npm dependencies
 3. Runs `npm run build` with Supabase env vars injected
@@ -375,10 +381,10 @@ Apply all migrations using the Supabase CLI:
 ```bash
 npx supabase login
 npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase db push
+npx supabase db push --include-all
 ```
 
-This applies every file in `supabase/migrations/` in order. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
+This applies every file in `supabase/migrations/` in order. Keep `--include-all` on every later push too: one early migration (`20260617093844_delete_old_attachments_fn.sql`) has a timestamp version that sorts after all the numbered `NNN_` files, so once it is applied the CLI otherwise refuses newer numbered migrations as being older than the last remote version. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
 
 If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially.
 
@@ -481,12 +487,12 @@ Vite hashes asset filenames by default (e.g. `index-abc123.js`), so browsers fet
 
 ## File Reference
 
-| File | Purpose |
-|------|---------|
-| `deploy.sh` | Local build + rsync deploy script |
-| `deploy/.htaccess` | Apache SPA config, security headers, caching |
-| `deploy/apache-virtualmin.conf` | Apache `<Directory>` block (vhost alternative to `.htaccess`) |
-| `deploy/nginx-virtualmin.conf` | Nginx server block for Virtualmin Nginx stacks |
-| `.github/workflows/deploy-vps.yml` | GitHub Actions CI/CD pipeline |
-| `.env.example` | Template for local environment variables |
-| `supabase/migrations/` | Database schema SQL files |
+| File                               | Purpose                                                       |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `deploy.sh`                        | Local build + rsync deploy script                             |
+| `deploy/.htaccess`                 | Apache SPA config, security headers, caching                  |
+| `deploy/apache-virtualmin.conf`    | Apache `<Directory>` block (vhost alternative to `.htaccess`) |
+| `deploy/nginx-virtualmin.conf`     | Nginx server block for Virtualmin Nginx stacks                |
+| `.github/workflows/deploy-vps.yml` | GitHub Actions CI/CD pipeline                                 |
+| `.env.example`                     | Template for local environment variables                      |
+| `supabase/migrations/`             | Database schema SQL files                                     |
