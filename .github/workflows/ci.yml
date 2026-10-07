@@ -74,6 +74,18 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      # nginx -t with the same image the Dockerfile ships, for the dev and prod (compose) configs.
+      # The compose service names the prod config proxies to are mapped to localhost so they resolve.
+      - name: Validate nginx configs
+        run: |
+          for conf in docker/nginx.conf docker/nginx.prod.conf; do
+            echo "nginx -t: $conf"
+            docker run --rm \
+              --add-host rest:127.0.0.1 --add-host auth:127.0.0.1 --add-host storage:127.0.0.1 \
+              -v "$PWD/$conf:/etc/nginx/conf.d/default.conf:ro" \
+              nginx:alpine nginx -t
+          done
+
       - name: Test with coverage
         run: npm run coverage
 
