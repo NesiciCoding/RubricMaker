@@ -127,11 +127,15 @@ export default function RubricPreviewPage() {
                         </div>
 
                         {/* Levels grid */}
+                        {/* Levels wrap onto extra rows on narrow screens instead of being clipped; the 1px
+                            gap over the tinted background draws the cell borders for any wrap. */}
                         <div
                             style={{
                                 display: 'grid',
-                                gridTemplateColumns: `repeat(${criterion.levels?.length ?? 4}, 1fr)`,
-                                gap: 0,
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                                gap: 1,
+                                background: '#e2e8f0',
+                                borderTop: '1px solid #e2e8f0',
                             }}
                         >
                             {(criterion.levels ?? []).map((level, li) => (
@@ -139,10 +143,8 @@ export default function RubricPreviewPage() {
                                     key={level.id ?? li}
                                     style={{
                                         padding: '14px 16px',
-                                        borderRight:
-                                            /* v8 ignore next -- the body only renders when levels is defined, so the ?? 1 never fires */
-                                            li < (criterion.levels?.length ?? 1) - 1 ? '1px solid #e2e8f0' : 'none',
-                                        borderTop: '1px solid #e2e8f0',
+                                        background: '#fff',
+                                        minWidth: 0,
                                     }}
                                 >
                                     <div
@@ -161,6 +163,7 @@ export default function RubricPreviewPage() {
                                                     color: '#94a3b8',
                                                     fontSize: '0.75rem',
                                                     marginLeft: 6,
+                                                    whiteSpace: 'nowrap',
                                                 }}
                                             >
                                                 {level.minPoints === level.maxPoints
