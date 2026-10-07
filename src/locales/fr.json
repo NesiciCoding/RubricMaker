@@ -2836,7 +2836,8 @@
         "role_student_desc": "Consultez vos notes et réalisez vos devoirs de rédaction.",
         "done_body": "Votre école est configurée. Vous pouvez maintenant créer des grilles et noter vos élèves.",
         "student_done_body": "Votre compte est configuré en tant qu'élève. Vous serez redirigé vers votre portail une fois que votre enseignant aura lié votre adresse e-mail scolaire à un profil d'élève.",
-        "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer."
+        "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer.",
+        "error_last_admin": "Vous êtes le seul administrateur et ne pouvez donc pas passer en Élève. Nommez d'abord un autre utilisateur administrateur, ou continuez en tant qu'administrateur."
     },
     "admin": {
         "title": "Tableau de bord administrateur",
@@ -2957,7 +2958,10 @@
         "delete_all_db_message": "Cela supprime définitivement tout ce qui vous appartient dans la base : grilles, classes, élèves, notes, tests, rédactions, messages et leurs fichiers, enregistrements, scans et sauvegardes nocturnes. Cette action est irréversible. La copie sur cet appareil n'est pas modifiée.",
         "delete_all_db_confirm": "Tout supprimer",
         "delete_all_db_success": "Toutes vos données de la base ont été supprimées.",
-        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur."
+        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur.",
+        "role_change_confirm_title": "Modifier le rôle ?",
+        "role_change_confirm": "Changer le rôle de {{name}} en {{role}} ? Cela modifie immédiatement ce que cette personne peut voir et faire.",
+        "role_last_admin": "C'est le dernier administrateur. Nommez d'abord un autre utilisateur administrateur."
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",
@@ -3641,7 +3645,7 @@
         "da_admin_title": "Panneau d'administration",
         "da_admin_intro_prefix": "Accessible sur",
         "da_admin_intro_suffix": "pour les utilisateurs ayant le rôle administrateur.",
-        "da_admin_item_users": "Onglet Utilisateurs — attribuer des rôles (admin, enseignant, élève), inviter des collègues.",
+        "da_admin_item_users": "Onglet Utilisateurs — attribuer des rôles (admin, enseignant, élève), inviter des collègues. Les changements de rôle demandent une confirmation et le dernier administrateur ne peut pas être rétrogradé — nommez d'abord quelqu'un d'autre. Si plus aucun administrateur ne peut se connecter, un opérateur du serveur peut en rétablir un (voir le guide d'exploitation auto-hébergée).",
         "da_admin_item_schools": "Onglet Établissements — gérer les noms d'établissement et l'image de marque.",
         "da_admin_item_database": "Onglet Base de données — configurer la connexion Supabase, envoyer/récupérer des données, gérer le partage.",
         "da_admin_item_integrations": "Onglet Intégrations — clé API Standards.",

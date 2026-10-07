@@ -3,6 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
+import { isLastAdminError } from '../utils/roleChangeError';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Users,
@@ -55,9 +56,10 @@ type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retenti
 
 // ─── Users tab ───────────────────────────────────────────────────────────────
 
-function UsersTab() {
+export function UsersTab() {
     const { t } = useTranslation();
     const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = usePlatform();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -88,11 +90,21 @@ function UsersTab() {
         };
     }, [fetchAllUsers, dbStatus.isConnected]);
 
-    async function handleRoleChange(userId: string, newRole: 'admin' | 'teacher' | 'student') {
-        setSaving(userId);
-        const result = await updateUserRole(userId, newRole);
+    async function handleRoleChange(user: DbUser, newRole: 'admin' | 'teacher' | 'student') {
+        const ok = await confirm({
+            title: t('admin.role_change_confirm_title'),
+            message: t('admin.role_change_confirm', {
+                name: user.displayName ?? user.email ?? '—',
+                role: t(`admin.role_${newRole}`),
+            }),
+        });
+        if (!ok) return;
+        setSaving(user.id);
+        const result = await updateUserRole(user.id, newRole);
         if (result.success) {
-            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+            setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u)));
+        } else if (isLastAdminError(result.error)) {
+            showToast(t('admin.role_last_admin'), 'error');
         } else {
             showToast(result.error ?? t('common.unknown_error'), 'error');
         }
@@ -153,7 +165,7 @@ function UsersTab() {
                                         value={u.role}
                                         disabled={u.id === currentUserId}
                                         onChange={(e) =>
-                                            handleRoleChange(u.id, e.target.value as 'admin' | 'teacher' | 'student')
+                                            handleRoleChange(u, e.target.value as 'admin' | 'teacher' | 'student')
                                         }
                                     >
                                         <option value="admin">{t('admin.role_admin')}</option>
@@ -166,6 +178,7 @@ function UsersTab() {
                     ))}
                 </tbody>
             </table>
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }

@@ -2761,7 +2761,8 @@
         "error_name_required": "Voer een schoolnaam in.",
         "error_id_required": "Voer een school-ID in.",
         "error_create": "School aanmaken mislukt: {{error}}",
-        "error_join": "Aansluiten bij school mislukt: {{error}}"
+        "error_join": "Aansluiten bij school mislukt: {{error}}",
+        "error_last_admin": "Je bent de enige beheerder en kunt daarom niet naar Leerling wisselen. Maak eerst een andere gebruiker beheerder, of ga verder als beheerder."
     },
     "admin": {
         "title": "Beheerdashboard",
@@ -2882,7 +2883,10 @@
         "delete_all_db_message": "Hiermee verwijder je definitief alles wat je in de database hebt: rubrics, klassen, leerlingen, cijfers, toetsen, essays, berichten en hun bestanden, opnames, scans en nachtelijke back-ups. Dit kan niet ongedaan worden gemaakt. De kopie op dit apparaat blijft behouden.",
         "delete_all_db_confirm": "Alles verwijderen",
         "delete_all_db_success": "Al je databasegegevens zijn verwijderd.",
-        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder."
+        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder.",
+        "role_change_confirm_title": "Rol wijzigen?",
+        "role_change_confirm": "De rol van {{name}} wijzigen naar {{role}}? Dit verandert direct wat deze persoon kan zien en doen.",
+        "role_last_admin": "Dit is de laatste beheerder. Maak eerst een andere gebruiker beheerder."
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -3641,7 +3645,7 @@
         "da_admin_title": "Adminpaneel",
         "da_admin_intro_prefix": "Toegankelijk op",
         "da_admin_intro_suffix": "voor gebruikers met de adminrol.",
-        "da_admin_item_users": "Tabblad Gebruikers — wijs rollen toe (admin, docent, leerling), nodig collega's uit.",
+        "da_admin_item_users": "Tabblad Gebruikers — wijs rollen toe (admin, docent, leerling), nodig collega's uit. Rolwijzigingen vragen om bevestiging en de laatste beheerder kan niet worden gedegradeerd — maak eerst iemand anders beheerder. Kan geen enkele beheerder meer inloggen, dan kan een serverbeheerder er een herstellen (zie de handleiding voor zelf hosten).",
         "da_admin_item_schools": "Tabblad Scholen — beheer schoolnamen en branding.",
         "da_admin_item_database": "Tabblad Database — configureer Supabase-verbinding, push/pull gegevens, beheer delen.",
         "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel.",

@@ -2761,7 +2761,8 @@
         "error_name_required": "Por favor, introduce el nombre de la escuela.",
         "error_id_required": "Por favor, introduce el ID de la escuela.",
         "error_create": "No se pudo crear la escuela: {{error}}",
-        "error_join": "No se pudo unir a la escuela: {{error}}"
+        "error_join": "No se pudo unir a la escuela: {{error}}",
+        "error_last_admin": "Eres el único administrador, así que no puedes cambiar a Alumno. Primero nombra administrador a otro usuario o continúa como administrador."
     },
     "admin": {
         "title": "Panel de Administración",
@@ -2882,7 +2883,10 @@
         "delete_all_db_message": "Esto elimina de forma permanente todo lo que te pertenece en la base de datos: rúbricas, clases, alumnos, calificaciones, pruebas, redacciones, mensajes y sus archivos, grabaciones, escaneos y copias de seguridad nocturnas. No se puede deshacer. La copia de este dispositivo no se ve afectada.",
         "delete_all_db_confirm": "Eliminar todo",
         "delete_all_db_success": "Se eliminaron todos tus datos de la base de datos.",
-        "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador."
+        "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador.",
+        "role_change_confirm_title": "¿Cambiar el rol?",
+        "role_change_confirm": "¿Cambiar el rol de {{name}} a {{role}}? Esto cambia de inmediato lo que puede ver y hacer.",
+        "role_last_admin": "Es el último administrador. Primero nombra administrador a otro usuario."
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -3641,7 +3645,7 @@
         "da_admin_title": "Panel de administración",
         "da_admin_intro_prefix": "Accesible en",
         "da_admin_intro_suffix": "para usuarios con el rol de administrador.",
-        "da_admin_item_users": "Pestaña Usuarios — asignar roles (admin, profesor, alumno), invitar a colegas.",
+        "da_admin_item_users": "Pestaña Usuarios — asignar roles (admin, profesor, alumno), invitar a colegas. Los cambios de rol piden confirmación y el último administrador no puede ser degradado: primero nombra a otra persona. Si ya ningún administrador puede iniciar sesión, un operador del servidor puede restaurar uno (consulta la guía de operación autoalojada).",
         "da_admin_item_schools": "Pestaña Centros — gestionar nombres de centros e identidad visual.",
         "da_admin_item_database": "Pestaña Base de datos — configurar la conexión a Supabase, enviar/recibir datos, gestionar la compartición.",
         "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards.",

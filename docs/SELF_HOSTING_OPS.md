@@ -174,3 +174,32 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 | pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                           |
 | High memory usage             | Check `docker stats`; add connection pooling if `db` has many idle connections                |
 | RLS errors in app             | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations  |
+| No admin can sign in          | See "Admin recovery" below                                                                    |
+
+---
+
+## Admin recovery
+
+Roles live in `public.profiles.role` (`admin`, `teacher`, `student`). Inside the app, role changes are guarded by the `protect_role_changes()` trigger: only an admin can change another user's role, and the last admin cannot be demoted (Admin → Users and Onboarding both refuse it). Since migration `083_role_repair_last_admin.sql`, the same trigger lets an **operator** change any role: a direct database connection (Supabase Studio SQL editor, `psql`) or a request made with the service-role key.
+
+To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: `docker-compose exec db psql -U supabase_admin -d postgres`):
+
+```sql
+-- Find the account
+SELECT id, email, display_name, role FROM public.profiles WHERE email ILIKE 'teacher@school.example';
+
+-- Promote it
+UPDATE public.profiles SET role = 'admin' WHERE email ILIKE 'teacher@school.example';
+```
+
+The user gets admin rights after reloading the app (or signing out and back in).
+
+**Deployments that have not applied migration 083 yet** still reject the update with "Only admins can change roles". Apply the migrations first (`docker-compose up -d db_migrate`, or `supabase db push`). If that is not possible, wrap the update in a transaction that disables the trigger for that one statement:
+
+```sql
+BEGIN;
+ALTER TABLE public.profiles DISABLE TRIGGER enforce_role_protection;
+UPDATE public.profiles SET role = 'admin' WHERE email ILIKE 'teacher@school.example';
+ALTER TABLE public.profiles ENABLE TRIGGER enforce_role_protection;
+COMMIT;
+```
