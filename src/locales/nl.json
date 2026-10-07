@@ -2655,7 +2655,9 @@
         "evidence_title": "Vaardigheidsbewijs",
         "evidence_subtitle": "Welke beoordelingen bijdroegen aan elke vaardigheid en niveau, en waarom dit als behaald of in ontwikkeling is gemarkeerd.",
         "rationale_achieved": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — behaald",
-        "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling"
+        "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling",
+        "working_toward": "Werkt toe naar {{level}} — nog niet behaald",
+        "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel)."
     },
     "learningPath": {
         "page_title": "Leerpad",
@@ -3745,7 +3747,8 @@
         "rb_tests_visual_editors_body": "Foutverbetering, sleutelwoordtransformatie, invullen met woordenbank en zinnen bouwen bewerk je zonder speciale syntaxis te typen: markeer fouten en juiste fragmenten door woorden in de tekst te selecteren, voeg geaccepteerde antwoorden toe als kaarten met chips en voeg afleiders toe als chips. Liever typen of plakken? Elke editor heeft een knop 'Bewerk als tekst' die de ruwe syntaxis toont; beide weergaven bewerken dezelfde gegevens.",
         "rb_tests_a4_preview_label": "A4-voorbeeld:",
         "rb_tests_a4_preview_body": "Klik in de toetsbouwer op 'A4-voorbeeld' om naast je vragen een live voorbeeld van de afgedrukte leerlingenversie te openen. Zet 'Antwoordmodel' aan om de juiste antwoorden te zien, verberg de puntwaarden, zoom of druk de pagina af. Bewerk koptekst, instructies en voettekst direct op de pagina — ze worden met de toets opgeslagen en staan ook op de export van het toetsboekje.",
-        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief."
+        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief.",
+        "ce_overview_item_achieved": "Behaald vs. werkt toe naar: een niveau telt pas als behaald wanneer het gemiddelde van de leerling de behaaldrempel van de rubric haalt. Daaronder tonen de leerlingenlijst, het CEFR-overzicht en het dashboard het niveau als gestippeld label (\"werkt toe naar\"), en de klaskaarten tellen alleen behaalde niveaus."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
