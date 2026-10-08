@@ -49,7 +49,7 @@ const peerReviews: StudentRubric[] = [];
 
 const mockAppValue = {
     rubrics: [mockRubric],
-    students: [mockStudent],
+    students: [mockStudent, { id: 'peer1', name: 'Bram', classId: 'c1' }],
     classes: [mockClass],
     studentRubrics: [],
     peerReviews,
@@ -123,6 +123,8 @@ describe('PeerReviewView coverage', () => {
         mockSavePeerReview.mockClear();
         mockNavigate.mockClear();
         peerReviews.length = 0;
+        mockAppValue.peerReviews = peerReviews;
+        mockAppValue.rubrics = [mockRubric];
         const mod = await import('../PeerReviewView');
         PeerReviewViewComp = mod.default;
     });
@@ -266,5 +268,61 @@ describe('PeerReviewView coverage', () => {
                 ],
             })
         );
+    });
+
+    describe('unsaved edits are never dropped silently (#613)', () => {
+        it('treats an overall-comment edit as unsaved and confirms before switching rounds', async () => {
+            peerReviews.push(existingReview({ id: 'pr3', round: 2, overallComment: 'round two' }));
+            renderAt('r1', 's1');
+            const overall = () => screen.getAllByTestId('tiptap-mock')[1];
+            fireEvent.change(overall(), { target: { value: 'my draft' } });
+
+            fireEvent.click(screen.getByText('peerReview.round_n:{"n":2}'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('common.cancel'));
+            });
+            expect(overall()).toHaveValue('my draft');
+        });
+
+        it('confirms before adding a round over unsaved edits', async () => {
+            renderAt('r1', 's1');
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.click(screen.getByText('+ peerReview.add_round'));
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+            await act(async () => {
+                fireEvent.click(screen.getByText('common.cancel'));
+            });
+            expect(screen.queryByText('peerReview.round_n:{"n":2}')).not.toBeInTheDocument();
+            expect(screen.getByText('Excellent').closest('button')).toHaveAttribute('aria-pressed', 'true');
+        });
+
+        it('keeps edits when an unrelated peer review changes in the store', () => {
+            renderAt('r1', 's1');
+            const editors = () => screen.getAllByTestId('tiptap-mock');
+            fireEvent.change(editors()[1], { target: { value: 'my draft' } });
+            mockAppValue.peerReviews = [existingReview({ id: 'other', studentId: 's9' })];
+            fireEvent.change(editors()[0], { target: { value: 'criterion note' } });
+            expect(editors()[1]).toHaveValue('my draft');
+        });
+    });
+
+    describe('header and level cards', () => {
+        it('names the student for a self-review and both students for a peer review', () => {
+            const { unmount } = renderAt('r1', 's1');
+            expect(screen.getByText('peerReview.title_self:{"name":"Alice"}')).toBeInTheDocument();
+            unmount();
+            renderAt('r1', 's1', '?reviewerId=peer1');
+            expect(
+                screen.getByText('peerReview.title_peer:{"reviewer":"Bram","reviewed":"Alice"}')
+            ).toBeInTheDocument();
+        });
+
+        it('renders level cards as toggle buttons reachable by keyboard', () => {
+            renderAt('r1', 's1');
+            const card = screen.getByRole('button', { name: /Good/ });
+            expect(card).toHaveAttribute('aria-pressed', 'false');
+            fireEvent.click(card);
+            expect(card).toHaveAttribute('aria-pressed', 'true');
+        });
     });
 });
