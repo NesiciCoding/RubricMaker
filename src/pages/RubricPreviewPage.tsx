@@ -163,7 +163,9 @@ export default function RubricPreviewPage() {
                                                     color: '#94a3b8',
                                                     fontSize: '0.75rem',
                                                     marginLeft: 6,
-                                                    whiteSpace: 'nowrap',
+                                                    display: 'inline-block',
+                                                    maxWidth: '100%',
+                                                    overflowWrap: 'anywhere',
                                                 }}
                                             >
                                                 {level.minPoints === level.maxPoints
