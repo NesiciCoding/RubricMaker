@@ -44,29 +44,32 @@ psql_exec() {
     docker-compose -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
 }
 
-# purge <label> <overdue-fn> <bucket> <table>
-# Deletes up to 100 overdue files via the Storage HTTP API, then their metadata rows, plus up to 100
-# overdue rows that have no file.
-purge() {
-    local label="$1" fn="$2" bucket="$3" table="$4"
-    log "Starting ${label} cleanup..."
+BATCH_SIZE=100
+# Every prior-year scan becomes overdue on the same night, so batches repeat until the backlog is gone.
+# The cap only bounds a run that keeps finding full batches.
+MAX_ROUNDS=200
 
-    # Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
-    local skipped rows
-    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (coalesce(${VALID_SQL}, false) OR ${NO_FILE_SQL});" 2>/dev/null || true)
-    if [[ -n "$skipped" && "$skipped" != "0" ]]; then
-        log "Warning: ${skipped} overdue ${label} row(s) have an unexpected id or storage path and were left in place"
-    fi
+# purge_batch <overdue-fn> <bucket> <table>
+# Deletes up to BATCH_SIZE overdue files via the Storage HTTP API, then their metadata rows, plus up to
+# BATCH_SIZE overdue rows that have no file. Sets BATCH_DELETED, and BATCH_FULL=1 when either query
+# returned a full batch (so more rows may be waiting).
+purge_batch() {
+    local fn="$1" bucket="$2" table="$3"
+    BATCH_DELETED=0
+    BATCH_FULL=0
 
     # Fetch overdue rows (id | storage_path | owner) from the DB helper function.
+    local rows no_file_rows
     rows=$(psql_exec -At -F'|' \
-        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
+        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
+    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
 
-    local no_file_rows
-    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT 100;" 2>/dev/null)
+    if [[ $(printf '%s' "$rows" | grep -c . || true) -ge $BATCH_SIZE \
+        || $(printf '%s' "$no_file_rows" | grep -c . || true) -ge $BATCH_SIZE ]]; then
+        BATCH_FULL=1
+    fi
 
     if [[ -z "$rows" && -z "$no_file_rows" ]]; then
-        log "No overdue ${label} found."
         return 0
     fi
 
@@ -105,7 +108,6 @@ purge() {
     done <<< "$rows"
 
     if [[ ${#deleted_ids[@]} -eq 0 ]]; then
-        log "No ${label} rows deleted."
         return 0
     fi
 
@@ -115,8 +117,36 @@ purge() {
     id_list="${id_list%,}"  # strip trailing comma
 
     psql_exec -c "DELETE FROM public.${table} WHERE id IN (${id_list});" >/dev/null
+    BATCH_DELETED=${#deleted_ids[@]}
+}
 
-    log "Done. Deleted ${#deleted_ids[@]} ${label} row(s)."
+# purge <label> <overdue-fn> <bucket> <table>
+purge() {
+    local label="$1" fn="$2" bucket="$3" table="$4"
+    log "Starting ${label} cleanup..."
+
+    # Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
+    local skipped
+    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (coalesce(${VALID_SQL}, false) OR ${NO_FILE_SQL});" 2>/dev/null || true)
+    if [[ -n "$skipped" && "$skipped" != "0" ]]; then
+        log "Warning: ${skipped} overdue ${label} row(s) have an unexpected id or storage path and were left in place"
+    fi
+
+    local round total=0
+    for (( round = 1; round <= MAX_ROUNDS; round++ )); do
+        purge_batch "$fn" "$bucket" "$table"
+        total=$((total + BATCH_DELETED))
+        # A round without progress (e.g. every storage DELETE failed) would fetch the same rows again.
+        if [[ $BATCH_FULL -eq 0 || $BATCH_DELETED -eq 0 ]]; then
+            break
+        fi
+    done
+
+    if [[ $total -eq 0 ]]; then
+        log "No overdue ${label} deleted."
+    else
+        log "Done. Deleted ${total} ${label} row(s)."
+    fi
 }
 
 purge "attachment" get_overdue_attachments attachments attachments

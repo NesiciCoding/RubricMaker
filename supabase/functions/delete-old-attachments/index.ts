@@ -12,6 +12,9 @@ import { secretsMatch } from '../_shared/secureCompare.ts';
 const BATCH_SIZE = 100;
 // Candidates are fetched wider than the batch so rows the guard rejects cannot crowd out the rest.
 const CANDIDATE_SIZE = 100000;
+// Every prior-year scan becomes overdue on the same night, so each target keeps deleting batches until
+// it is done or this budget runs out (both targets together stay inside the edge runtime's 150 s limit).
+const TIME_BUDGET_MS = 50_000;
 
 interface PurgeTarget {
     rpc: string;
@@ -40,23 +43,28 @@ async function purge(admin: SupabaseClient, target: PurgeTarget): Promise<PurgeR
     const purgeable = all.filter(isPurgeableRow);
     const metadataOnly = all.filter(isMetadataOnlyRow);
     const skipped = all.length - purgeable.length - metadataOnly.length;
-    const rows = purgeable.slice(0, BATCH_SIZE);
-    const rowsWithoutFile = metadataOnly.slice(0, BATCH_SIZE);
-    if (!rows.length && !rowsWithoutFile.length) return { deleted: 0, skipped };
+    const deadline = Date.now() + TIME_BUDGET_MS;
+    let deleted = 0;
 
-    if (rows.length) {
-        // Storage API — this is the only way to delete; direct SQL is blocked.
-        const { error: storageErr } = await admin.storage
-            .from(target.bucket)
-            .remove(rows.map((r) => r.storage_path as string));
-        if (storageErr) return { deleted: 0, skipped, error: `Storage removal failed: ${storageErr.message}` };
+    for (let i = 0; i < Math.max(purgeable.length, metadataOnly.length) && Date.now() < deadline; i += BATCH_SIZE) {
+        const rows = purgeable.slice(i, i + BATCH_SIZE);
+        const rowsWithoutFile = metadataOnly.slice(i, i + BATCH_SIZE);
+
+        if (rows.length) {
+            // Storage API — this is the only way to delete; direct SQL is blocked.
+            const { error: storageErr } = await admin.storage
+                .from(target.bucket)
+                .remove(rows.map((r) => r.storage_path as string));
+            if (storageErr) return { deleted, skipped, error: `Storage removal failed: ${storageErr.message}` };
+        }
+
+        const ids = [...rows, ...rowsWithoutFile].map((r) => r.id);
+        const { error: dbErr } = await admin.from(target.table).delete().in('id', ids);
+        if (dbErr) return { deleted, skipped, error: `DB cleanup failed: ${dbErr.message}` };
+        deleted += ids.length;
     }
 
-    const ids = [...rows, ...rowsWithoutFile].map((r) => r.id);
-    const { error: dbErr } = await admin.from(target.table).delete().in('id', ids);
-    if (dbErr) return { deleted: 0, skipped, error: `DB cleanup failed: ${dbErr.message}` };
-
-    return { deleted: ids.length, skipped };
+    return { deleted, skipped };
 }
 
 serve(async (req) => {

@@ -57,7 +57,7 @@ describe('isMetadataOnlyRow', () => {
 describe('scripts/delete-old-attachments.sh', () => {
     const script = path.resolve(__dirname, '..', '..', 'scripts', 'delete-old-attachments.sh');
 
-    function runScript(rows: string, scanRows = '', scanRowsWithoutFile = '') {
+    function runScript(rows: string, scanRows = '', scanRowsWithoutFile = '', extraEnv: Record<string, string> = {}) {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-purge-'));
         const log = path.join(dir, 'calls.log');
         const bin = path.join(dir, 'bin');
@@ -68,7 +68,10 @@ describe('scripts/delete-old-attachments.sh', () => {
 printf 'DC %s\\n' "$*" >> "${log}"
 if [[ "$*" == *"SELECT id, storage_path"*"get_overdue_attachments"* ]]; then printf '%s' "$STUB_ROWS"; fi
 if [[ "$*" == *"SELECT id, storage_path"*"get_overdue_scans"* ]]; then printf '%s' "$STUB_SCAN_ROWS"; fi
-if [[ "$*" == *"SELECT id FROM"*"get_overdue_scans"*"storage_path IS NULL"* ]]; then printf '%s' "$STUB_SCAN_NO_FILE"; fi
+if [[ "$*" == *"SELECT id FROM"*"get_overdue_scans"*"storage_path IS NULL"* ]]; then
+    n=$(( $(cat "${dir}/no-file-calls" 2>/dev/null || echo 0) + 1 )); echo "$n" > "${dir}/no-file-calls"
+    if [[ $n -eq 1 ]]; then printf '%s' "$STUB_SCAN_NO_FILE"; elif [[ $n -eq 2 ]]; then printf '%s' "\${STUB_SCAN_NO_FILE_2:-}"; fi
+fi
 `,
             { mode: 0o755 }
         );
@@ -76,7 +79,7 @@ if [[ "$*" == *"SELECT id FROM"*"get_overdue_scans"*"storage_path IS NULL"* ]]; 
             path.join(bin, 'curl'),
             `#!/bin/bash
 printf 'CURL %s\\n' "$*" >> "${log}"
-printf '200'
+printf '%s' "\${STUB_HTTP:-200}"
 `,
             { mode: 0o755 }
         );
@@ -89,6 +92,7 @@ printf '200'
                 STUB_ROWS: rows,
                 STUB_SCAN_ROWS: scanRows,
                 STUB_SCAN_NO_FILE: scanRowsWithoutFile,
+                ...extraEnv,
             },
             stdio: 'pipe',
         });
@@ -150,6 +154,22 @@ printf '200'
     it('skips a text-only row whose id is unsafe even if the database returns it', () => {
         const calls = runScript('', '', "x');DROP TABLE a;--\n");
         expect(calls).not.toContain('DROP TABLE');
+        expect(calls).not.toContain('DELETE FROM public.scan_metadata');
+    });
+
+    it('keeps deleting batches while a full batch comes back', () => {
+        const fullBatch = Array.from({ length: 100 }, (_, i) => `txt_${i}`).join('\n') + '\n';
+        const calls = runScript('', '', fullBatch, { STUB_SCAN_NO_FILE_2: 'txt_last\n' });
+        const deletes = calls.split('\n').filter((line) => line.includes('DELETE FROM public.scan_metadata'));
+        expect(deletes).toHaveLength(2);
+        expect(deletes[0]).toContain("'txt_99'");
+        expect(deletes[1]).toContain("IN ('txt_last')");
+    });
+
+    it('stops after a full batch in which nothing could be deleted', () => {
+        const fullBatch = Array.from({ length: 100 }, (_, i) => `f_${i}|${OWNER}/f_${i}|${OWNER}`).join('\n') + '\n';
+        const calls = runScript('', fullBatch, '', { STUB_HTTP: '500' });
+        expect(calls.split('\n').filter((line) => line.startsWith('CURL'))).toHaveLength(100);
         expect(calls).not.toContain('DELETE FROM public.scan_metadata');
     });
 
