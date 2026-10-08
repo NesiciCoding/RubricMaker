@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useAssessment, useAuthoring, useEssays, useGrading, useStudents } from '../context/AppContext';
 import { useOverdueStudents } from './useOverdueStudents';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
-import { DEFAULT_MODERATION_THRESHOLD_POINTS, getModerationQueue } from '../utils/coGradingModerationQueue';
+import { DEFAULT_MODERATION_THRESHOLD_PERCENT, getModerationQueue } from '../utils/coGradingModerationQueue';
 import type { NotificationDismissalType } from '../types';
 
 /**
@@ -130,7 +130,7 @@ export function useNotificationFeed(): UseNotificationFeedResult {
             studentRubrics,
             peerReviews,
             students,
-            DEFAULT_MODERATION_THRESHOLD_POINTS
+            DEFAULT_MODERATION_THRESHOLD_PERCENT
         );
         return queue
             .filter(

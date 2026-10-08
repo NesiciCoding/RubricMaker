@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useStoreSelector } from '../../context/useStore';
-import { getModerationQueue } from '../../utils/coGradingModerationQueue';
+import { DEFAULT_MODERATION_THRESHOLD_PERCENT, getModerationQueue } from '../../utils/coGradingModerationQueue';
 import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 import { usePageTourRegistry } from '../../context/TourContext';
 import { usePlatform } from '../../context/AppContext';
@@ -89,7 +89,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
     // left undefined here (falls back to the "not a known student id" heuristic) since
     // fetching the school directory is async and page-specific — good enough for a count.
     const moderationPendingCount = React.useMemo(
-        () => getModerationQueue(rubrics, studentRubrics, peerReviews, students, 2).length,
+        () =>
+            getModerationQueue(rubrics, studentRubrics, peerReviews, students, DEFAULT_MODERATION_THRESHOLD_PERCENT)
+                .length,
         [rubrics, studentRubrics, peerReviews, students]
     );
 
