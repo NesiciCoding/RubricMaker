@@ -107,7 +107,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // quota hit there isn't data loss and shouldn't alarm the user.
     useEffect(() => {
         onStorageQuotaExceeded(() => {
-            if (isOffline()) showToast(t('toast.storage_full'), 'error');
+            // Fired from the reducer's storage write, i.e. while AppProvider renders; a toast
+            // there is a setState on ToastProvider during another component's render.
+            queueMicrotask(() => {
+                if (isOffline()) showToast(t('toast.storage_full'), 'error');
+            });
         });
     }, [showToast, t]);
 

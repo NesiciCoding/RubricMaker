@@ -2474,7 +2474,10 @@
         "comment_author_you": "Du",
         "comment_author_teacher": "Lehrkraft",
         "comments_empty": "Noch keine Kommentare. Wähle Text im Dokument oben aus, um einen hinzuzufügen.",
-        "loading_preview": "Vorschau wird geladen…"
+        "loading_preview": "Vorschau wird geladen…",
+        "size_limit_hint": "bis zu {{limit}} pro Datei",
+        "too_large": "„{{name}}“ wurde nicht hinzugefügt: Die Datei ist größer als das Limit von {{limit}}.",
+        "too_large_local_hint": "Ohne Datenbankverbindung werden Dateien in diesem Browser gespeichert, der wenig Platz hat. Verbinden Sie sich mit einer Datenbank, um größere Dateien anzuhängen."
     },
     "exportPage": {
         "rubric_section_title": "Rubrik-Export",
@@ -3349,7 +3352,7 @@
         "gr_feedback_item_comment_bank": "Kommentarbank — füge wiederverwendbare Schnipsel nach Tag ein. Baue die Bank über die Seite Kommentarbank auf.",
         "gr_feedback_item_voice": "Sprachbewertung — diktiere Kommentare freihändig über die Spracherkennungs-API des Browsers.",
         "gr_feedback_item_notes": "Notizen pro Kriterium zusätzlich zum allgemeinen Feedbackfeld.",
-        "gr_feedback_item_attachments": "Dateianhänge — lade Belegdateien (Bilder, PDFs) pro bewerteter Rubrik hoch.",
+        "gr_feedback_item_attachments": "Dateianhänge — lade Nachweisdateien (Bilder, PDFs) pro bewertetem Raster hoch. Mit Datenbankverbindung sind Dateien bis 50 MB möglich; ohne Verbindung werden sie in diesem Browser gespeichert und sind auf 2 MB pro Datei begrenzt, größere Dateien werden mit einer Meldung abgelehnt.",
         "gr_document_view_title": "Dokumentenansicht",
         "gr_document_view_body": "Aufsatzabgaben und hochgeladene Word-Anhänge (.docx) werden sowohl bei der Einzel- als auch bei der vergleichenden Bewertung über dieselbe paginierte, formatierte Dokumentenansicht dargestellt — kein roher HTML-Dump und kein abweichender Word-Viewer mehr. Bei .docx-Dateien wechselt ein Schalter „Wie gesendet anzeigen“ zur Originaldatei-Darstellung, falls die formatierte Konvertierung Layoutdetails verliert.",
         "gr_document_comments_body": "Wähle Text in dieser Dokumentenansicht aus, um einen Inline-Kommentar zu hinterlassen, der direkt an der betreffenden Textstelle verankert ist. Kommentare erscheinen in einer Seitenleiste unter dem Dokument — erledige oder lösche sie nach Bedarf. Dies ist ein Anmerkungswerkzeug für die Lehrkraft; Schüler sehen diese Kommentare nicht und können nicht darauf antworten.",
