@@ -366,6 +366,21 @@ describe('getCefrSkillInterventionFlags', () => {
         expect(getCefrSkillInterventionFlags('s1', srs, [zero])).toHaveLength(0);
     });
 
+    it('scores a total-points rubric against its configured maximum even when criteria have no points', () => {
+        const total = mkRubric('rt', [mkCriterion('t1', 0)], {
+            cefrTargetLevel: 'B1',
+            scoringMode: 'total-points',
+            totalMaxPoints: 100,
+        });
+        const srs = ['a', 'b', 'c'].map((id, i) => ({
+            ...mkSR(id, 'rt', 's1', {}, `2024-01-0${i + 1}`),
+            entries: [{ criterionId: 't1', levelId: null, overridePoints: 20, checkedSubItems: [], comment: '' }],
+        }));
+        const flags = getCefrSkillInterventionFlags('s1', srs, [total]);
+        expect(flags).toHaveLength(1);
+        expect(flags[0].scores.map((p) => Math.round(p))).toEqual([20, 20, 20]);
+    });
+
     it('defaults skill to writing when rubric.cefrSkill is unset', () => {
         const noSkillRubric = mkRubric('r3', [c1], { cefrTargetLevel: 'B1' });
         const srs = [
