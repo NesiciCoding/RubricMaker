@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildReconciledEntries, getModerationQueue, isSecondMarkerEntry } from './coGradingModerationQueue';
+import {
+    buildReconciledEntries,
+    getModerationQueue,
+    isSecondMarkerEntry,
+    markModerationResolved,
+} from './coGradingModerationQueue';
 import type { Rubric, Student, StudentRubric } from '../types';
 
 const rubric: Rubric = {
@@ -100,6 +105,20 @@ describe('isSecondMarkerEntry', () => {
 });
 
 describe('getModerationQueue', () => {
+    it('measures the disagreement as a percentage of the rubric maximum (#609)', () => {
+        // Baseline 8 vs second marker 0 on a 10-point rubric: 8 points = 80%.
+        const [item] = getModerationQueue([rubric], [baseline()], [secondMarker('l2')], students, 80);
+        expect(item.deltaPercent).toBe(80);
+        expect(getModerationQueue([rubric], [baseline()], [secondMarker('l2')], students, 81)).toHaveLength(0);
+    });
+
+    it('skips second-marker reviews that were already resolved', () => {
+        const resolved = markModerationResolved(secondMarker('l2'), 'kept-baseline');
+        expect(resolved.moderationResolution).toBe('kept-baseline');
+        expect(resolved.moderationResolvedAt).toEqual(expect.any(String));
+        expect(getModerationQueue([rubric], [baseline()], [resolved], students, 1)).toHaveLength(0);
+    });
+
     it('flags a student when the two markers disagree above the threshold', () => {
         const queue = getModerationQueue([rubric], [baseline()], [secondMarker('l2')], students, 1);
         expect(queue).toHaveLength(1);

@@ -9,13 +9,18 @@ import ReconcileModal from '../components/Modals/ReconcileModal';
 import { usePlatform } from '../context/AppContext';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useConfirm } from '../hooks/useConfirm';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import {
     buildReconciledEntries,
-    DEFAULT_MODERATION_THRESHOLD_POINTS,
+    DEFAULT_MODERATION_THRESHOLD_PERCENT,
     getModerationQueue,
+    markModerationResolved,
     ModerationQueueItem,
 } from '../utils/coGradingModerationQueue';
+import { calcGradeSummary } from '../utils/gradeCalc';
 import type { DbUser } from '../services/database';
+import type { StudentRubric } from '../types';
 
 export default function ModerationQueuePage() {
     const { t } = useTranslation();
@@ -26,22 +31,25 @@ export default function ModerationQueuePage() {
         studentRubrics: allStudentRubrics,
         rubrics,
         peerReviews,
+        gradeScales,
         settings,
     } = useStoreSelector((s) => ({
         students: s.students,
         studentRubrics: s.studentRubrics,
         rubrics: s.rubrics,
         peerReviews: s.peerReviews,
+        gradeScales: s.gradeScales,
         settings: s.settings,
     }));
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
-    const { saveStudentRubric, deletePeerReview } = useStoreActions();
+    const { saveStudentRubric, savePeerReview } = useStoreActions();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { fetchSchoolMembers } = usePlatform();
 
     const dbStatus = useDbStatus();
-    const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_POINTS);
+    const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_PERCENT);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     const [reconcileTargetId, setReconcileTargetId] = useState<string | null>(null);
 
@@ -89,27 +97,60 @@ export default function ModerationQueuePage() {
         return Math.floor((Date.now() - new Date(item.secondMarkerEntry.gradedAt).getTime()) / 86_400_000);
     }
 
-    function resolveKeepBaseline(secondMarkerEntryId: string) {
-        deletePeerReview(secondMarkerEntryId);
+    function formatGrade(sr: StudentRubric): string {
+        const rubric = rubrics.find((r) => r.id === sr.rubricId);
+        /* v8 ignore next -- getModerationQueue skips items whose rubric is missing */
+        if (!rubric) return '—';
+        const scaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
+        const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0] ?? null);
+        const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
+        const pct = `${summary.modifiedPercentage.toFixed(0)}%`;
+        return scale ? `${summary.letterGrade} (${pct})` : pct;
     }
 
-    function resolveAcceptSecondMarker(baselineId: string, secondMarkerEntryId: string) {
-        const secondMarker = peerReviews.find((pr) => pr.id === secondMarkerEntryId);
-        const baseline = studentRubrics.find((sr) => sr.id === baselineId);
-        /* v8 ignore next -- the queue item guarantees both exist when this button renders */
-        if (!secondMarker || !baseline) return;
-        saveStudentRubric({
-            ...baseline,
-            entries: secondMarker.entries,
-            overallComment: secondMarker.overallComment,
-            globalModifier: secondMarker.globalModifier,
+    function acceptedGrade(item: ModerationQueueItem): StudentRubric {
+        return {
+            ...item.baseline,
+            entries: item.secondMarkerEntry.entries,
+            overallComment: item.secondMarkerEntry.overallComment,
+            globalModifier: item.secondMarkerEntry.globalModifier,
+        };
+    }
+
+    async function resolveKeepBaseline(item: ModerationQueueItem, studentName: string) {
+        const ok = await confirm({
+            title: t('coGrading.confirm_keep_title'),
+            message: t('coGrading.confirm_keep_message', {
+                student: studentName,
+                grade: formatGrade(item.baseline),
+            }),
+            confirmLabel: t('coGrading.action_keep_baseline'),
+            danger: false,
         });
-        deletePeerReview(secondMarkerEntryId);
+        if (!ok) return;
+        savePeerReview(markModerationResolved(item.secondMarkerEntry, 'kept-baseline'));
+    }
+
+    async function resolveAcceptSecondMarker(item: ModerationQueueItem, studentName: string) {
+        const accepted = acceptedGrade(item);
+        const ok = await confirm({
+            title: t('coGrading.confirm_accept_title'),
+            message: t('coGrading.confirm_accept_message', {
+                student: studentName,
+                before: formatGrade(item.baseline),
+                after: formatGrade(accepted),
+            }),
+            confirmLabel: t('coGrading.action_accept_second_marker'),
+            danger: false,
+        });
+        if (!ok) return;
+        saveStudentRubric(accepted);
+        savePeerReview(markModerationResolved(item.secondMarkerEntry, 'accepted-second-marker'));
     }
 
     function resolveReconcile(item: ModerationQueueItem) {
         saveStudentRubric({ ...item.baseline, entries: buildReconciledEntries(item) });
-        deletePeerReview(item.secondMarkerEntry.id);
+        savePeerReview(markModerationResolved(item.secondMarkerEntry, 'reconciled'));
         setReconcileTargetId(null);
     }
 
@@ -131,7 +172,8 @@ export default function ModerationQueuePage() {
                         id="moderation-threshold"
                         type="number"
                         min={0}
-                        step={0.5}
+                        max={100}
+                        step={1}
                         value={threshold}
                         onChange={(e) => setThreshold(Number(e.target.value) || 0)}
                     />
@@ -187,7 +229,10 @@ export default function ModerationQueuePage() {
                                                 </span>
                                             )}
                                             <span className="badge badge-orange">
-                                                {t('coGrading.delta_badge', { delta: item.totalAbsDelta.toFixed(1) })}
+                                                {t('coGrading.delta_badge', {
+                                                    delta: item.totalAbsDelta.toFixed(1),
+                                                    percent: item.deltaPercent.toFixed(0),
+                                                })}
                                             </span>
                                         </div>
                                     </div>
@@ -254,7 +299,7 @@ export default function ModerationQueuePage() {
                                         <button
                                             type="button"
                                             className="btn btn-secondary btn-sm"
-                                            onClick={() => resolveKeepBaseline(item.secondMarkerEntry.id)}
+                                            onClick={() => resolveKeepBaseline(item, student?.name ?? item.studentId)}
                                         >
                                             {t('coGrading.action_keep_baseline')}
                                         </button>
@@ -262,7 +307,7 @@ export default function ModerationQueuePage() {
                                             type="button"
                                             className="btn btn-secondary btn-sm"
                                             onClick={() =>
-                                                resolveAcceptSecondMarker(item.baseline.id, item.secondMarkerEntry.id)
+                                                resolveAcceptSecondMarker(item, student?.name ?? item.studentId)
                                             }
                                         >
                                             {t('coGrading.action_accept_second_marker')}
@@ -282,6 +327,7 @@ export default function ModerationQueuePage() {
                 )}
             </div>
 
+            <ConfirmDialog {...confirmDialogProps} />
             {reconcileTarget && (
                 <ReconcileModal
                     item={reconcileTarget}

@@ -50,7 +50,7 @@ import {
     getGrammarRecommendations,
 } from '../utils/learningPathAggregator';
 import {
-    DEFAULT_MODERATION_THRESHOLD_POINTS,
+    DEFAULT_MODERATION_THRESHOLD_PERCENT,
     getModerationQueue,
     isSecondMarkerEntry,
 } from '../utils/coGradingModerationQueue';
@@ -346,7 +346,7 @@ export default function StudentPortalPage() {
                       studentRubrics,
                       peerReviews,
                       students,
-                      DEFAULT_MODERATION_THRESHOLD_POINTS
+                      DEFAULT_MODERATION_THRESHOLD_PERCENT
                   ).filter((item) => item.studentId === student.id)
                 : [],
         [student, rubrics, studentRubrics, peerReviews, students]
