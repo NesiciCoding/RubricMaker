@@ -264,7 +264,7 @@ export default function GradeStudent() {
     const handleSave = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
-        const toSave = clearNotHandedInIfScored(sr, cannedNhiComment);
+        const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
             ...toSave,
@@ -303,6 +303,7 @@ export default function GradeStudent() {
         student,
         studentId,
         cannedNhiComment,
+        existingSR,
     ]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
@@ -334,7 +335,7 @@ export default function GradeStudent() {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
         saveStudentRubric({
-            ...clearNotHandedInIfScored(sr, cannedNhiComment),
+            ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -342,7 +343,18 @@ export default function GradeStudent() {
         });
         setIsDirty(false);
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, feedbackOnly, isAnchor, cannedNhiComment]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        feedbackOnly,
+        isAnchor,
+        cannedNhiComment,
+        existingSR,
+    ]);
 
     const handleNotHandedIn = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */

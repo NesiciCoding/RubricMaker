@@ -28,6 +28,7 @@ describe('hasAnyScore', () => {
         expect(hasAnyScore(scored({ overridePoints: 0 }))).toBe(true);
         expect(hasAnyScore(scored({ subItemScores: { a: 1 } }))).toBe(true);
         expect(hasAnyScore(scored({ checkedSubItems: ['a'] }))).toBe(true);
+        expect(hasAnyScore(scored({ singlePointOutcome: 'meets' }))).toBe(true);
     });
 });
 
@@ -56,5 +57,16 @@ describe('markNotHandedIn / clearNotHandedIn', () => {
         expect(clearNotHandedInIfScored(graded, CANNED)).toMatchObject({ notHandedIn: false, overallComment: '' });
         const plain = scored({ levelId: 'l1' });
         expect(clearNotHandedInIfScored(plain, CANNED)).toBe(plain);
+    });
+
+    it('keeps a confirmed mark when the scores it was saved with are unchanged', () => {
+        const savedNhi = sr({ notHandedIn: true, overallComment: CANNED, entries: scored({ levelId: 'l1' }).entries });
+        const feedbackEdit = { ...savedNhi, overallComment: `${CANNED} — see me` };
+        expect(clearNotHandedInIfScored(feedbackEdit, CANNED, savedNhi)).toBe(feedbackEdit);
+        const rescored = { ...savedNhi, entries: scored({ levelId: 'l2' }).entries };
+        expect(clearNotHandedInIfScored(rescored, CANNED, savedNhi)).toMatchObject({ notHandedIn: false });
+        const unscoredSaved = sr({ notHandedIn: true, overallComment: CANNED });
+        const lateWork = { ...unscoredSaved, entries: scored({ levelId: 'l1' }).entries };
+        expect(clearNotHandedInIfScored(lateWork, CANNED, unscoredSaved)).toMatchObject({ notHandedIn: false });
     });
 });
