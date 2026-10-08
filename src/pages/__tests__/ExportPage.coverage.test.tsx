@@ -817,14 +817,12 @@ describe('ExportPage coverage', () => {
 
     it('bulk ops skip unselected students and normalize comment spacers', async () => {
         const saveStudentRubric = vi.fn();
-        appOverrides = {
-            studentRubrics: [
-                mockSr,
-                baseSr({ id: 'sr2', studentId: 's2', overallComment: '' }),
-                baseSr({ id: 'sr3', studentId: 's3', overallComment: 'Well done ' }),
-            ],
-            saveStudentRubric,
-        };
+        const studentRubrics = [
+            mockSr,
+            baseSr({ id: 'sr2', studentId: 's2', overallComment: '', gradedAt: '2024-01-12T08:00:00Z' }),
+            baseSr({ id: 'sr3', studentId: 's3', overallComment: 'Well done ' }),
+        ];
+        appOverrides = { studentRubrics, saveStudentRubric };
         renderPage();
         openSection('exportPage.rubric_students_section_title');
         fireEvent.click(screen.getByLabelText('Alice'));
@@ -841,9 +839,14 @@ describe('ExportPage coverage', () => {
         fireEvent.click(screen.getByText('exportPage.bulk_nhi'));
         expect(await screen.findByText('exportPage.bulk_nhi_confirm_message:{"count":2}')).toBeInTheDocument();
         fireEvent.click(within(screen.getByRole('dialog')).getByText('exportPage.bulk_nhi'));
-        await waitFor(() =>
-            expect(saveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }))
-        );
+        await waitFor(() => expect(saveStudentRubric).toHaveBeenCalledTimes(4));
+        const originalDates = new Map(studentRubrics.map((sr) => [sr.id, sr.gradedAt]));
+        const nhiSaves = saveStudentRubric.mock.calls.slice(2).map(([saved]) => saved as StudentRubric);
+        expect(nhiSaves.map((sr) => sr.id).sort()).toEqual([mockSr.id, 'sr2'].sort());
+        for (const saved of nhiSaves) {
+            expect(saved.notHandedIn).toBe(true);
+            expect(saved.gradedAt).toBe(originalDates.get(saved.id));
+        }
         expect(mockShowToast).toHaveBeenCalledWith('exportPage.bulk_nhi_done:{"count":2}', 'success');
     });
 
