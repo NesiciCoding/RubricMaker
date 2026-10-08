@@ -2459,7 +2459,10 @@
         "comment_author_you": "Jij",
         "comment_author_teacher": "Docent",
         "comments_empty": "Nog geen opmerkingen. Selecteer tekst in het document hierboven om er een toe te voegen.",
-        "loading_preview": "Voorbeeld laden…"
+        "loading_preview": "Voorbeeld laden…",
+        "size_limit_hint": "tot {{limit}} per bestand",
+        "too_large": "\"{{name}}\" is niet toegevoegd: het is groter dan de limiet van {{limit}}.",
+        "too_large_local_hint": "Zonder databaseverbinding worden bestanden in deze browser opgeslagen, waar weinig ruimte is. Maak verbinding met een database om grotere bestanden toe te voegen."
     },
     "exportPage": {
         "rubric_section_title": "Rubriekexport",
@@ -3334,7 +3337,7 @@
         "gr_feedback_item_comment_bank": "Opmerkingenbank — voeg herbruikbare snippets per tag in. Bouw de bank op vanaf de pagina Opmerkingenbank.",
         "gr_feedback_item_voice": "Spraakbeoordeling — dicteer opmerkingen handsfree met de spraakherkenning-API van de browser.",
         "gr_feedback_item_notes": "Opmerkingen per criterium naast het algemene feedbackveld.",
-        "gr_feedback_item_attachments": "Bijlagen — upload bewijsbestanden (afbeeldingen, PDF's) per beoordeelde rubriek.",
+        "gr_feedback_item_attachments": "Bijlagen — upload bewijsbestanden (afbeeldingen, pdf's) per beoordeelde rubric. Met een databaseverbinding mogen bestanden tot 50 MB zijn; zonder verbinding worden ze in deze browser bewaard en is de limiet 2 MB per bestand, en grotere bestanden worden met een melding geweigerd.",
         "gr_document_view_title": "Documentweergave",
         "gr_document_view_body": "Essayinzendingen en geüploade Word-bijlagen (.docx) worden weergegeven in dezelfde opgemaakte, gepagineerde documentweergave, zowel bij individuele als vergelijkende beoordeling — geen rauwe HTML-dump of afwijkende Word-viewer meer. Voor .docx-bestanden schakelt een knop \"Weergeven zoals verzonden\" over naar de originele bestandsweergave als de opgemaakte conversie lay-outdetails verliest.",
         "gr_document_comments_body": "Selecteer tekst in die documentweergave om een inline opmerking te plaatsen, direct verankerd aan de passage waar hij over gaat. Opmerkingen verschijnen in een zijbalk onder het document — handel ze af of verwijder ze naar wens. Dit is een beoordelingstool voor de docent; leerlingen zien deze opmerkingen niet en kunnen er niet op reageren.",

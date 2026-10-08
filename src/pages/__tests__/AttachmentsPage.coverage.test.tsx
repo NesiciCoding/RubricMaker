@@ -70,6 +70,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => mockAppValue,
 }));
 
+const mockDbStatus = vi.hoisted(() => ({ isConnected: false }));
+vi.mock('../../hooks/useDbStatus', () => ({
+    useDbStatus: () => mockDbStatus,
+}));
+
 vi.mock('../../utils/fileToDataUrl', () => ({
     fileToDataUrl: mockFileToDataUrl,
 }));
@@ -227,5 +232,40 @@ describe('AttachmentsPage coverage', () => {
         fireEvent.click(screen.getByLabelText('Delete attachment'));
         fireEvent.click(screen.getByText('common.confirm'));
         await waitFor(() => expect(mockDeleteAttachment).toHaveBeenCalledWith('a1'));
+    });
+
+    describe('file size limit (#635)', () => {
+        const bigFile = () => {
+            const file = new File(['x'], 'scan.pdf', { type: 'application/pdf' });
+            Object.defineProperty(file, 'size', { value: 4 * 1024 * 1024 });
+            return file;
+        };
+
+        it('rejects a file too large for local storage with an inline message', async () => {
+            mockDbStatus.isConnected = false;
+            const { container } = renderPage();
+            const small = new File(['a'], 'note.txt', { type: 'text/plain' });
+            fireEvent.change(container.querySelector('input[type="file"]')!, {
+                target: { files: [bigFile(), small] },
+            });
+            expect(screen.getByRole('alert')).toHaveTextContent('attachments.too_large');
+            expect(screen.getByRole('alert')).toHaveTextContent('scan.pdf');
+            expect(screen.getByText('attachments.too_large_local_hint')).toBeInTheDocument();
+            await waitFor(() =>
+                expect(mockAddAttachment).toHaveBeenCalledWith(expect.objectContaining({ name: 'note.txt' }))
+            );
+            expect(mockAddAttachment).toHaveBeenCalledTimes(1);
+        });
+
+        it('accepts the same file when connected to a database', async () => {
+            mockDbStatus.isConnected = true;
+            const { container } = renderPage();
+            fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [bigFile()] } });
+            await waitFor(() =>
+                expect(mockAddAttachment).toHaveBeenCalledWith(expect.objectContaining({ name: 'scan.pdf' }))
+            );
+            expect(screen.queryByRole('alert')).toBeNull();
+            mockDbStatus.isConnected = false;
+        });
     });
 });

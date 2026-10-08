@@ -1810,7 +1810,7 @@ describe('AppContext edge paths', () => {
         expect(vi.mocked(storage.loadStore).mock.calls.length).toBeGreaterThan(loadStoreCalls);
     });
 
-    it('notifies the user when a quota-exceeded write lands while offline', () => {
+    it('notifies the user when a quota-exceeded write lands while offline', async () => {
         const originalOnLine = navigator.onLine;
         Object.defineProperty(navigator, 'onLine', { configurable: true, value: false });
         try {
@@ -1818,6 +1818,9 @@ describe('AppContext edge paths', () => {
             const handler = vi.mocked(storage.onStorageQuotaExceeded).mock.calls[0]?.[0];
             expect(handler).toBeDefined();
             act(() => handler!());
+            // Deferred out of the reducer's render pass (#635).
+            expect(mockShowToast).not.toHaveBeenCalled();
+            await act(async () => {});
             expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'error');
         } finally {
             Object.defineProperty(navigator, 'onLine', { configurable: true, value: originalOnLine });
@@ -1852,7 +1855,7 @@ describe('AppContext edge paths', () => {
         try {
             renderProvider();
             const handler = vi.mocked(storage.onStorageQuotaExceeded).mock.calls[0]?.[0];
-            act(() => handler!());
+            await act(async () => handler!());
             expect(mockShowToast).not.toHaveBeenCalled();
         } finally {
             Object.defineProperty(navigator, 'onLine', { configurable: true, value: originalOnLine });
