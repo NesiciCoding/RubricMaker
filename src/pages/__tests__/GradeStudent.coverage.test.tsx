@@ -894,13 +894,14 @@ describe('GradeStudent coverage', () => {
         // sub-item slider + base-points slider (sub-items render first)
         const sliders = screen.getAllByRole('slider');
         expect(sliders.length).toBeGreaterThan(1);
-        fireEvent.click(screen.getByText('Sub A')); // bubbles through the sub-item row stopPropagation
-        // click the sub-items container itself (its own stopPropagation handler)
-        const levelBtn = screen.getByText('Excellent').closest('button') as HTMLElement;
-        const subContainer = Array.from(levelBtn.querySelectorAll('div')).find((d) =>
+        // Clicks inside the card's sub-item controls never toggle the level (#616).
+        fireEvent.click(screen.getByText('Sub A'));
+        const card = screen.getByText('Excellent').closest('.level-btn') as HTMLElement;
+        const subContainer = Array.from(card.querySelectorAll('div')).find((d) =>
             d.textContent?.includes('Sub A')
         ) as HTMLElement;
         fireEvent.click(subContainer);
+        expect(screen.getByRole('button', { name: /Excellent/, pressed: true })).toBeInTheDocument();
         fireEvent.change(sliders[0], { target: { value: '1.5' } });
         fireEvent.change(sliders[1], { target: { value: '95' } });
         // sub-item stepper (first) then base-points stepper (last)
@@ -919,6 +920,26 @@ describe('GradeStudent coverage', () => {
                 ]),
             })
         );
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('renders level cards without nested buttons, selectable by header or card padding (#616)', () => {
+        mockRubricsArr[0] = subItemsRubric;
+        renderPage();
+        const header = screen.getByRole('button', { name: /Excellent/ });
+        expect(header).toHaveAttribute('aria-pressed', 'false');
+        const card = header.closest('.level-btn') as HTMLElement;
+        expect(card.tagName).toBe('DIV');
+        expect(card).toHaveAttribute('role', 'group');
+
+        fireEvent.click(header);
+        expect(header).toHaveAttribute('aria-pressed', 'true');
+        // Sliders and steppers now render inside the card, but never inside a button.
+        expect(document.querySelector('button button, button input')).toBeNull();
+
+        // Clicking the card's own padding toggles it too, as the whole card used to be a button.
+        fireEvent.click(card);
+        expect(header).toHaveAttribute('aria-pressed', 'false');
         mockRubricsArr[0] = mockRubric;
     });
 

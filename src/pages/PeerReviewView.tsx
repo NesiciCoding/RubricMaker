@@ -220,13 +220,19 @@ export default function PeerReviewView() {
 
                             <div className="grid-3" style={{ gap: 12, marginBottom: 16 }}>
                                 {criterion.levels.map((level) => (
-                                    <div
+                                    <button
                                         key={level.id}
+                                        type="button"
+                                        aria-pressed={score?.levelId === level.id}
                                         className={`card selectable ${score?.levelId === level.id ? 'active' : ''}`}
                                         onClick={() => updateScore(criterion.id, level.id)}
                                         style={{
                                             padding: 12,
                                             cursor: 'pointer',
+                                            textAlign: 'left',
+                                            width: '100%',
+                                            color: 'inherit',
+                                            font: 'inherit',
                                             border:
                                                 score?.levelId === level.id
                                                     ? '2px solid var(--accent)'
@@ -241,7 +247,7 @@ export default function PeerReviewView() {
                                             {level.label}
                                         </div>
                                         <div className="text-muted text-xs">{level.description}</div>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
 
