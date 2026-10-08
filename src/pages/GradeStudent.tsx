@@ -222,6 +222,20 @@ export default function GradeStudent() {
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
+    // A deep link can mount before hydration merges this student's saved grade into state.
+    // Adopt that record when it arrives; if the teacher already started editing, keep their
+    // edits but write them to the real record's id so a save can't add a blank duplicate.
+    React.useEffect(() => {
+        if (!existingSR || !sr || sr.id === existingSR.id) return;
+        if (isDirty) {
+            setSr({ ...sr, id: existingSR.id });
+            return;
+        }
+        setSr(existingSR);
+        setFeedbackOnly(existingSR.feedbackOnly ?? false);
+        setIsAnchor(existingSR.isAnchor ?? false);
+    }, [existingSR, sr, isDirty]);
+
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
     React.useEffect(() => {
