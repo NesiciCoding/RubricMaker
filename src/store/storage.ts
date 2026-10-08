@@ -1878,3 +1878,23 @@ export function saveTimerDeadline(timerKey: string, endsAt: number): void {
         // ignore — the countdown still runs from memory for this session
     }
 }
+
+const TIMER_RECEIPT_SUFFIX = '_handedIn';
+
+/** Marks a timed attempt as handed in: its deadline is dropped and the receipt kept, so a reload neither restarts nor re-submits it. */
+export function completeTimedAttempt(timerKey: string, receipt: string): void {
+    clearTestTimer(timerKey);
+    try {
+        localStorage.setItem(timerKey + TIMER_RECEIPT_SUFFIX, receipt);
+    } catch {
+        // ignore — without the marker a reload starts the attempt over, as before
+    }
+}
+
+export function loadTimedAttemptReceipt(timerKey: string): string | null {
+    try {
+        return localStorage.getItem(timerKey + TIMER_RECEIPT_SUFFIX);
+    } catch {
+        return null;
+    }
+}

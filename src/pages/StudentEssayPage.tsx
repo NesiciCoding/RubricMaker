@@ -33,7 +33,7 @@ import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { useDeadlineCountdown } from '../hooks/useDeadlineCountdown';
-import { clearTestTimer } from '../store/storage';
+import { completeTimedAttempt, loadTimedAttemptReceipt } from '../store/storage';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
 const TIMER_KEY_PREFIX = 'rm_essay_timer_';
@@ -273,7 +273,6 @@ export default function StudentEssayPage() {
     const isInSEB = /SEB/i.test(navigator.userAgent);
     const sebQuitUrl = `${window.location.origin}/#/seb-done`;
     const draftKey = DRAFT_KEY_PREFIX + (code ?? '');
-    const timerKey = TIMER_KEY_PREFIX + (code ?? '');
 
     // Auth state (only used in DB mode)
     const [studentUserId, setStudentUserId] = useState<string | null>(null);
@@ -303,6 +302,11 @@ export default function StudentEssayPage() {
             : undefined
     );
     const contentReady = resolvedContent !== undefined;
+    // Short codes are shared by a class, so the deadline is kept per student; it is only created once
+    // the content (and with it the student) has resolved, because the time limit comes from there too.
+    const timerKey =
+        TIMER_KEY_PREFIX + (code ?? '') + (resolvedContent?.studentId ? `:${resolvedContent.studentId}` : '');
+    const handedInReceipt = useMemo(() => loadTimedAttemptReceipt(timerKey), [timerKey]);
 
     const [html, setHtml] = useState<string>(() => localStorage.getItem(draftKey) ?? '');
     const [draftRestored, setDraftRestored] = useState<boolean>(() => !!localStorage.getItem(draftKey));
@@ -327,11 +331,19 @@ export default function StudentEssayPage() {
     // Timer — the time limit comes from the URL (legacy) or from resolved content (short code); the
     // countdown runs on a persisted wall-clock deadline and auto-submits when it passes.
     const secondsLeft = useDeadlineCountdown({
-        durationMinutes: resolvedContent?.timeLimitMinutes || null,
+        durationMinutes: handedInReceipt ? null : resolvedContent?.timeLimitMinutes || null,
         storageKey: timerKey,
-        stopped: submitted,
+        // Paused while a hand-in is in flight; if that fails, an already-passed deadline still fires.
+        stopped: submitted || submitting,
         onTimeUp: () => void handleSubmitRef.current(),
     });
+    const timed = secondsLeft !== null;
+    useEffect(() => {
+        if (!handedInReceipt) return;
+        setSubmissionCode(handedInReceipt);
+        setSubmitted(true);
+    }, [handedInReceipt]);
+    const submittingRef = useRef(false);
 
     // After the student authenticates, fetch full assignment content from the edge function.
     // For legacy links this is a no-op (content already in URL, resolvedContent pre-filled).
@@ -430,16 +442,15 @@ export default function StudentEssayPage() {
 
         // DB path: upload to Supabase Storage + insert submission row
         if (hasDb && adapter && studentUserId && studentEmail) {
+            if (submittingRef.current) return;
+            submittingRef.current = true;
             setSubmitting(true);
             setSubmitError('');
-            const result = await adapter.submitEssay(
-                assignment,
-                submissionId,
-                html,
-                studentEmail,
-                studentUserId,
-                wordCount
-            );
+            const result = await adapter
+                .submitEssay(assignment, submissionId, html, studentEmail, studentUserId, wordCount)
+                .finally(() => {
+                    submittingRef.current = false;
+                });
             setSubmitting(false);
             const duplicate = !result.success && isAlreadySubmitted(result.error);
             if (!result.success && !(duplicate && failedAttemptHtmlRef.current === html)) {
@@ -475,8 +486,8 @@ export default function StudentEssayPage() {
 
         setSubmissionCode(legacyCode);
         localStorage.removeItem(draftKey);
-        // A handed-in essay must not auto-submit again from its stored deadline after a reload.
-        clearTestTimer(timerKey);
+        // A handed-in timed essay must not restart its countdown or auto-submit again after a reload.
+        if (timed) completeTimedAttempt(timerKey, legacyCode);
         setSubmitted(true);
         if (isInSEB) {
             copyText(legacyCode);
@@ -497,6 +508,8 @@ export default function StudentEssayPage() {
         resolvedContent,
         telemetry,
         t,
+        timed,
+        timerKey,
     ]);
 
     // Keep a stable ref to handleSubmit so the timer interval always calls the latest version,
