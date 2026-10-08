@@ -34,11 +34,16 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "
 record_sql=$(mktemp)
 trap 'rm -f "$record_sql"' EXIT
 
-# Glob into an array (no word splitting, so paths with spaces survive); C collation sorts it bytewise.
-LC_COLLATE=C
-shopt -s nullglob
-migrations=("$MIGRATIONS_DIR"/*.sql)
-shopt -u nullglob
+# Glob (no word splitting, so paths with spaces survive) sorted bytewise; LC_ALL=C is scoped to the
+# subshell so it overrides any inherited LC_ALL without changing the locale psql runs with.
+migrations=()
+while IFS= read -r -d '' f; do
+    migrations+=("$f")
+done < <(
+    LC_ALL=C
+    shopt -s nullglob
+    for f in "$MIGRATIONS_DIR"/*.sql; do printf '%s\0' "$f"; done
+)
 
 for f in "${migrations[@]}"; do
     name=$(basename "$f")
