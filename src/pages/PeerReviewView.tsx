@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -34,6 +34,7 @@ export default function PeerReviewView() {
     const [isSaved, setIsSaved] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [activeRound, setActiveRound] = useState(1);
+    const loadedKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -59,6 +60,12 @@ export default function PeerReviewView() {
                 (pr.round ?? 1) === activeRound &&
                 (pr.gradedBy ?? pr.studentId) === reviewerId
         );
+        // Re-seed only when the review being shown changes. A peerReviews update for the same
+        // review (another round saved, a sync) must not wipe edits or regenerate a blank draft.
+        const key = `${rubricId}|${studentId}|${activeRound}|${reviewerId}`;
+        if (loadedKeyRef.current === key && (isDirty || !existing)) return;
+        if (loadedKeyRef.current !== key) setIsDirty(false);
+        loadedKeyRef.current = key;
         if (existing) {
             setEntry({ ...existing });
         } else {
@@ -80,7 +87,7 @@ export default function PeerReviewView() {
                 gradedBy: reviewerId,
             });
         }
-    }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId]);
+    }, [rubricId, studentId, rubric, student, peerReviews, activeRound, reviewerId, isDirty]);
 
     if (!rubric || !student || !entry) {
         return (
@@ -103,9 +110,15 @@ export default function PeerReviewView() {
         setTimeout(() => setIsSaved(false), 2000);
     };
 
-    const addRound = () => {
-        const next = maxRound + 1;
-        setActiveRound(next);
+    const confirmDiscardUnsaved = () =>
+        confirm({
+            title: t('peerReview.unsaved_round_switch_title'),
+            message: t('peerReview.unsaved_round_switch_message'),
+        });
+
+    const addRound = async () => {
+        if (isDirty && !(await confirmDiscardUnsaved())) return;
+        setActiveRound(maxRound + 1);
     };
 
     const updateScore = (criterionId: string, levelId: string) => {
@@ -133,15 +146,22 @@ export default function PeerReviewView() {
     };
 
     const handleOverallCommentChange = (html: string) => {
+        setIsDirty(true);
         /* v8 ignore next -- provably dead: entry is never null once the form renders */
         setEntry((prev) => (prev ? { ...prev, overallComment: html } : null));
     };
+
+    const reviewer = students.find((s) => s.id === reviewerId);
+    const title =
+        reviewerId === studentId
+            ? t('peerReview.title_self', { name: student.name })
+            : t('peerReview.title_peer', { reviewer: reviewer?.name ?? reviewerId, reviewed: student.name });
 
     return (
         <>
             <PageTour {...tour.tourProps} />
             <Topbar
-                title={`${t('rubricList.grade_students')} - ${student.name}`}
+                title={title}
                 actions={
                     <div style={{ display: 'flex', gap: 8 }}>
                         <button className="btn btn-ghost btn-sm" onClick={tour.start}>
@@ -188,15 +208,9 @@ export default function PeerReviewView() {
                             <button
                                 key={round}
                                 className={`btn ${activeRound === round ? 'btn-primary' : 'btn-secondary'}`}
+                                aria-pressed={activeRound === round}
                                 onClick={async () => {
-                                    if (
-                                        isDirty &&
-                                        !(await confirm({
-                                            title: t('peerReview.unsaved_round_switch_title'),
-                                            message: t('peerReview.unsaved_round_switch_message'),
-                                        }))
-                                    )
-                                        return;
+                                    if (round === activeRound || (isDirty && !(await confirmDiscardUnsaved()))) return;
                                     setActiveRound(round);
                                 }}
                             >
@@ -248,6 +262,7 @@ export default function PeerReviewView() {
                             <div className="form-group">
                                 <label className="text-xs">{t('gradeStudent.comment_placeholder')}</label>
                                 <TiptapEditor
+                                    key={entry.id}
                                     content={score?.comment || ''}
                                     onChange={(html) => updateComment(criterion.id, html)}
                                     placeholder={t('gradeStudent.comment_placeholder')}
@@ -260,6 +275,7 @@ export default function PeerReviewView() {
                 <div className="card">
                     <h3 style={{ marginBottom: 16 }}>{t('gradeStudent.overall_comment_label')}</h3>
                     <TiptapEditor
+                        key={entry.id}
                         content={entry.overallComment}
                         onChange={handleOverallCommentChange}
                         placeholder={t('gradeStudent.overall_comment_placeholder')}

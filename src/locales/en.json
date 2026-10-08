@@ -1813,7 +1813,9 @@
         "add_round": "Add round",
         "view_analytics": "View analytics",
         "unsaved_round_switch_title": "Switch round?",
-        "unsaved_round_switch_message": "Unsaved changes will be lost. Continue?"
+        "unsaved_round_switch_message": "Unsaved changes will be lost. Continue?",
+        "title_self": "Self-review: {{name}}",
+        "title_peer": "Peer review: {{reviewer}} reviewing {{reviewed}}"
     },
     "coGrading": {
         "action_co_grade": "Co-grade",
@@ -3348,7 +3350,7 @@
         "gr_delete_title": "Deleting a grade",
         "gr_delete_body": "The trash icon on a student's grading page removes that grade (with a confirmation first). For a group-graded submission you're asked whether to remove just that student's copy or the whole group's shared grade. Deleted grades aren't gone for good — a teacher/admin can restore them from Admin → Archive → Recently deleted grades.",
         "gr_peer_title": "Peer review & self-assessment",
-        "gr_peer_item_peer_review": "Peer Review — share a URL with a student to review a classmate's work.",
+        "gr_peer_item_peer_review": "Peer Review — share a URL with a student to review a classmate's work. The page title names the reviewer and the reviewed student (or says Self-review when there is no reviewer in the link). Switching or adding a round with unsaved changes asks before discarding them.",
         "gr_peer_item_self_assess": "Self-Assessment — students rate themselves against CEFR Can-Do statements. Results are stored alongside teacher scores.",
         "gr_peer_item_analytics": "Peer Review Analytics (/peer-analytics/:rubricId) — open from the Peer Review screen to see consistency scores comparing peer grades to your baseline, a feedback heatmap of which criteria get the most comments, and round-over-round trends. Reviews are matched to reviewers via their student ID; older records without one are shown as \"Anonymous reviewer\".",
         "gr_cograding_title": "Co-grading & moderation",
