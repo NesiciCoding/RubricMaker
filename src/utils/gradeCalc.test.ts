@@ -847,6 +847,18 @@ describe('gradeCalc utilities', () => {
             expect(pct.modifiedPoints).toBe(180);
         });
 
+        it('moves points and percentage by the same share of the max on an unevenly weighted rubric', () => {
+            const weighted = criteria.map((c, i) => ({ ...c, weight: i === 0 ? 90 : 10 }));
+            const entries = sr().entries.map((e, i) => ({ ...e, overridePoints: i === 0 ? 90 : 0 }));
+            const s = calcGradeSummary({ ...sr({ type: 'points', value: 10, reason: '' }), entries }, weighted, null);
+            expect(s.percentage).toBeCloseTo(81);
+            expect(s.modifiedPercentage).toBeCloseTo(86);
+            expect(s.modifiedPoints - s.rawScore).toBe(10);
+            expect(((s.modifiedPoints - s.rawScore) / s.configuredMaxPoints) * 100).toBeCloseTo(
+                s.modifiedPercentage - s.percentage
+            );
+        });
+
         it('clamps modified points to 0…max', () => {
             expect(calcGradeSummary(sr({ type: 'points', value: 50, reason: '' }), criteria, null).modifiedPoints).toBe(
                 200

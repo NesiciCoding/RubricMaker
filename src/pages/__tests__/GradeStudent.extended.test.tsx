@@ -191,6 +191,19 @@ describe('GradeStudent extended', () => {
         );
     });
 
+    it('rounds the modifier offset shown in the footer', () => {
+        mockStudentRubricsArr = [
+            {
+                ...existingSR,
+                entries: [{ criterionId: 'c1', levelId: null, overridePoints: 80.7, comment: '', checkedSubItems: [] }],
+                globalModifier: { type: 'points', value: 0.1, reason: '' },
+            },
+        ] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(80.7 + 0.1)');
+    });
+
     it('saves and advances with Ctrl+S', () => {
         renderPage();
         fireEvent.keyDown(window, { key: 's', ctrlKey: true });
