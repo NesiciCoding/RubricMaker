@@ -3225,7 +3225,7 @@
         "rb_builder_views_suffix": ".",
         "rb_scoring_modes_title": "Bewertungsmodi",
         "rb_scoring_modes_item_total": "Gesamtpunkte — Rohpunktzahl aus allen Kriteriumstufen.",
-        "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt.",
+        "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt. Kriterien mit 0 Punkten zählen im Durchschnitt nicht mit.",
         "rb_scoring_modes_item_single": "Einpunkt-Rubrik — eine Stufe pro Kriterium (erfüllt / erfüllt nicht); Bestehen/Nichtbestehen-Logik.",
         "rb_level_options_title": "Stufenoptionen",
         "rb_level_options_item_checklist": "Unterpunkt-Checklisten innerhalb einer Stufe (Schüler müssen bestimmte Punkte erfüllen).",
