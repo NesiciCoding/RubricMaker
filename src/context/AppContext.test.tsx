@@ -1,5 +1,5 @@
 import React, { ReactNode, useLayoutEffect, useRef } from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../test-utils/renderWithProviders';
 import {
@@ -633,20 +633,22 @@ describe('AppContext', () => {
             });
         }
 
-        it('shows the storage_full toast when the quota is exceeded while offline/disconnected', () => {
+        it('shows the storage_full toast when the quota is exceeded while offline/disconnected', async () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(false);
             renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
 
-            expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'error');
+            // Deferred so the toast never updates ToastProvider during AppProvider's render (#635).
+            await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'error'));
         });
 
-        it('stays silent when the quota is exceeded while connected — Supabase already has the real data', () => {
+        it('stays silent when the quota is exceeded while connected — Supabase already has the real data', async () => {
             vi.mocked(storageSync.isConnected).mockReturnValue(true);
             renderHook(() => useSettings(), { wrapper });
 
             triggerQuotaExceeded();
+            await Promise.resolve();
 
             expect(mockShowToast).not.toHaveBeenCalled();
         });
