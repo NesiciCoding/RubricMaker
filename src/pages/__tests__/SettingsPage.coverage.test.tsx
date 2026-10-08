@@ -380,6 +380,42 @@ describe('SettingsPage coverage', () => {
             expect(colors.some((gs) => gs.ranges[0].color === '#00ff00')).toBe(true);
         });
 
+        it('refuses to delete the only range that starts at 0%', () => {
+            mockGradeScalesArr[0] = {
+                ...mockGradeScale,
+                ranges: [
+                    { min: 0, max: 49, label: 'F', color: '#ef4444' },
+                    { min: 50, max: 100, label: 'P', color: '#22c55e' },
+                ],
+            };
+            renderPage();
+            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+
+            const table = screen.getByRole('table');
+            fireEvent.click(within(table).getAllByRole('button', { name: 'common.delete' })[0]);
+            expect(mockShowToast).toHaveBeenCalledWith('settings.alert_scale_needs_floor', 'error');
+            expect(mockUpdateGradeScale).not.toHaveBeenCalled();
+            expect(screen.queryByText('settings.scale_no_floor_warning')).not.toBeInTheDocument();
+        });
+
+        it('warns when no range starts at 0% and moves the lowest range down to 0', () => {
+            mockGradeScalesArr[0] = {
+                ...mockGradeScale,
+                ranges: [
+                    { min: 50, max: 100, label: 'P', color: '#22c55e' },
+                    { min: 10, max: 49, label: 'F', color: '#ef4444' },
+                ],
+            };
+            renderPage();
+            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+
+            expect(screen.getByText('settings.scale_no_floor_warning')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('settings.action_fix_scale_floor'));
+            expect(mockGradeScalesArr[0].ranges.map((r) => r.min)).toEqual([50, 0]);
+        });
+
         it('clears the editing state when deleting the scale being edited', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
