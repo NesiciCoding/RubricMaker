@@ -34,7 +34,13 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "
 record_sql=$(mktemp)
 trap 'rm -f "$record_sql"' EXIT
 
-for f in $(ls "$MIGRATIONS_DIR"/*.sql | LC_ALL=C sort); do
+# Glob into an array (no word splitting, so paths with spaces survive); C collation sorts it bytewise.
+LC_COLLATE=C
+shopt -s nullglob
+migrations=("$MIGRATIONS_DIR"/*.sql)
+shopt -u nullglob
+
+for f in "${migrations[@]}"; do
     name=$(basename "$f")
     # File names become SQL string literals: double any single quote.
     literal="'${name//\'/\'\'}'"
