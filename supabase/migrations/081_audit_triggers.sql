@@ -216,5 +216,11 @@ $$;
 
 DROP TRIGGER IF EXISTS audit_site_config_change ON public.site_config;
 CREATE TRIGGER audit_site_config_change
-  AFTER INSERT OR UPDATE OR DELETE ON public.site_config
+  AFTER INSERT OR DELETE ON public.site_config
   FOR EACH ROW EXECUTE FUNCTION public.audit_site_config_change();
+
+DROP TRIGGER IF EXISTS audit_site_config_update ON public.site_config;
+CREATE TRIGGER audit_site_config_update
+  AFTER UPDATE ON public.site_config
+  FOR EACH ROW WHEN (OLD.* IS DISTINCT FROM NEW.*)
+  EXECUTE FUNCTION public.audit_site_config_change();
