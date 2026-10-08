@@ -54,6 +54,7 @@ import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../store/stora
 import {
     LOW_STORAGE_RECORDING_SECONDS,
     MIN_RECORDING_SECONDS,
+    unsavedAudioChars,
     voiceRecordingBudgetSeconds,
 } from '../utils/voiceFeedbackBudget';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
@@ -495,24 +496,35 @@ export default function GradeStudent() {
     const startAudioRecording = useCallback(
         (criterionId: string) => {
             if (audioRecorder.recordingKey && audioRecorder.recordingKey !== criterionId) return;
+            let budget: number | null = null;
             if (isOffline()) {
-                const budget = voiceRecordingBudgetSeconds(localStorageUsedChars(), LOCAL_STORAGE_QUOTA_CHARS);
+                const used = localStorageUsedChars();
+                if (used === null) {
+                    showToast(t('gradeStudent.voice_storage_unavailable'), 'warning');
+                    return;
+                }
+                budget = voiceRecordingBudgetSeconds(
+                    used + unsavedAudioChars(sr?.entries ?? [], existingSR?.entries),
+                    LOCAL_STORAGE_QUOTA_CHARS
+                );
                 if (budget < MIN_RECORDING_SECONDS) {
                     showToast(t('gradeStudent.voice_storage_full'), 'warning');
                     return;
                 }
                 if (budget < LOW_STORAGE_RECORDING_SECONDS) {
                     showToast(t('gradeStudent.voice_storage_low', { seconds: budget }), 'warning');
-                    recordingLimitRef.current = setTimeout(
-                        () => stopAudioRecordingRef.current(criterionId),
-                        budget * 1000
-                    );
                 }
             }
-            // getUserMedia denial surfaces as hook error state — silently ignored here, as before
-            void audioRecorder.start({ key: criterionId });
+            // getUserMedia denial surfaces as hook error state — silently ignored here, as before.
+            // The limit starts once recording does: a stop() while getUserMedia is pending is a no-op.
+            void audioRecorder.start({ key: criterionId }).then((started) => {
+                if (!started || budget === null) return;
+                if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+                const limit = budget;
+                recordingLimitRef.current = setTimeout(() => stopAudioRecordingRef.current(criterionId), limit * 1000);
+            });
         },
-        [audioRecorder, showToast, t]
+        [audioRecorder, showToast, t, sr?.entries, existingSR?.entries]
     );
 
     const stopAudioRecording = useCallback(

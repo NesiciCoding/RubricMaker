@@ -1649,7 +1649,8 @@
         "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
         "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)",
         "voice_storage_full": "El almacenamiento de este dispositivo está casi lleno, así que no se puede guardar una grabación de voz. Conéctate a la nube o elimina grabaciones antiguas primero.",
-        "voice_storage_low": "El almacenamiento está casi lleno: esta grabación se detendrá automáticamente tras {{seconds}} segundos."
+        "voice_storage_low": "El almacenamiento está casi lleno: esta grabación se detendrá automáticamente tras {{seconds}} segundos.",
+        "voice_storage_unavailable": "No se puede leer el almacenamiento de este dispositivo, así que una grabación de voz no se puede guardar sin conexión. Conéctate a la nube para grabar."
     },
     "rubricBuilder": {
         "action_back": "Volver",

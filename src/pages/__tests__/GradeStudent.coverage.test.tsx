@@ -4,6 +4,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { storageSync } from '../../services/database';
+import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../../store/storage';
+import {
+    LOW_STORAGE_RECORDING_SECONDS,
+    MIN_RECORDING_SECONDS,
+    voiceRecordingBudgetSeconds,
+} from '../../utils/voiceFeedbackBudget';
 import type {
     AppSettings,
     Attachment,
@@ -741,21 +747,96 @@ describe('GradeStudent coverage', () => {
             expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
         });
 
-        it('warns and stops the recording automatically when space runs short', () => {
+        const startRecording = async () => {
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+        };
+        const expectedBudget = () =>
+            voiceRecordingBudgetSeconds(localStorageUsedChars() ?? 0, LOCAL_STORAGE_QUOTA_CHARS);
+
+        it('warns and stops the recording at the calculated budget when space runs short', async () => {
             localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            const budget = expectedBudget();
+            expect(budget).toBeLessThan(LOW_STORAGE_RECORDING_SECONDS);
             vi.useFakeTimers();
             renderPage();
-            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
-            fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            await startRecording();
             expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
             expect(mockShowToast).toHaveBeenCalledWith(
                 expect.stringContaining('gradeStudent.voice_storage_low'),
                 'warning'
             );
             act(() => {
-                vi.advanceTimersByTime(120_000);
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
             });
             expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('caps every offline recording at its budget, without a warning when there is room', async () => {
+            const budget = expectedBudget();
+            expect(budget).toBeGreaterThanOrEqual(LOW_STORAGE_RECORDING_SECONDS);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            expect(mockShowToast).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('sets no limit when the recorder fails to start', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            recorderState.start.mockResolvedValueOnce(false);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            act(() => {
+                vi.advanceTimersByTime(3_600_000);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+        });
+
+        it('refuses to record when local storage cannot be read', async () => {
+            localStorage.setItem('test-filler', 'x');
+            renderPage();
+            const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+                throw new Error('denied');
+            });
+            await startRecording();
+            keySpy.mockRestore();
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_unavailable', 'warning');
+        });
+
+        it('counts recordings that are not saved yet against the budget', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_700_000));
+            expect(expectedBudget()).toBeGreaterThanOrEqual(MIN_RECORDING_SECONDS);
+            fileToDataUrlMock.mockResolvedValue('data:audio/webm;base64,' + 'A'.repeat(1_300_000));
+            recorderState.recordingKey = 'c1';
+            recorderState.stop.mockResolvedValueOnce({ blob: new Blob(['x']), mimeType: 'audio/webm' });
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            recorderState.recordingKey = null;
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_stop'));
+            });
+            await waitFor(() => expect(screen.getByText('gradeStudent.audio_record')).toBeInTheDocument());
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
         });
     });
 

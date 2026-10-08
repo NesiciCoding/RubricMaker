@@ -952,8 +952,8 @@ export function onVoiceFeedbackDropped(handler: (count: number) => void): void {
 /** Rough localStorage quota in UTF-16 characters; browsers allow about 5M per origin. */
 export const LOCAL_STORAGE_QUOTA_CHARS = 5_000_000;
 
-/** Characters currently stored in localStorage (keys + values), the unit the quota is counted in. */
-export function localStorageUsedChars(): number {
+/** Characters currently stored in localStorage (keys + values), the unit the quota is counted in; null when it can't be read. */
+export function localStorageUsedChars(): number | null {
     let used = 0;
     try {
         for (let i = 0; i < localStorage.length; i++) {
@@ -963,7 +963,7 @@ export function localStorageUsedChars(): number {
             used += key.length + (localStorage.getItem(key)?.length ?? 0);
         }
     } catch {
-        return 0;
+        return null;
     }
     return used;
 }

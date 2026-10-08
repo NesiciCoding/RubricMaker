@@ -1649,7 +1649,8 @@
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
         "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
         "voice_storage_full": "This device's storage is nearly full, so a voice recording can't be saved. Connect to the cloud or remove old recordings first.",
-        "voice_storage_low": "Storage is nearly full — this recording stops automatically after {{seconds}} seconds."
+        "voice_storage_low": "Storage is nearly full — this recording stops automatically after {{seconds}} seconds.",
+        "voice_storage_unavailable": "This device's storage can't be read, so a voice recording can't be saved offline. Connect to the cloud to record."
     },
     "rubricBuilder": {
         "action_back": "Back",

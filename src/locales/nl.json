@@ -1649,7 +1649,8 @@
         "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)",
         "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)",
         "voice_storage_full": "De opslag van dit apparaat is bijna vol, dus een spraakopname kan niet worden bewaard. Maak eerst verbinding met de cloud of verwijder oude opnames.",
-        "voice_storage_low": "De opslag is bijna vol — deze opname stopt automatisch na {{seconds}} seconden."
+        "voice_storage_low": "De opslag is bijna vol — deze opname stopt automatisch na {{seconds}} seconden.",
+        "voice_storage_unavailable": "De opslag van dit apparaat kan niet worden gelezen, dus een spraakopname kan offline niet worden bewaard. Maak verbinding met de cloud om op te nemen."
     },
     "rubricBuilder": {
         "action_back": "Terug",

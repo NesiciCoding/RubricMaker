@@ -1649,7 +1649,8 @@
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
         "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
         "voice_storage_full": "Der Speicher dieses Geräts ist fast voll, daher kann keine Sprachaufnahme gespeichert werden. Verbinden Sie sich zuerst mit der Cloud oder entfernen Sie alte Aufnahmen.",
-        "voice_storage_low": "Der Speicher ist fast voll — diese Aufnahme stoppt automatisch nach {{seconds}} Sekunden."
+        "voice_storage_low": "Der Speicher ist fast voll — diese Aufnahme stoppt automatisch nach {{seconds}} Sekunden.",
+        "voice_storage_unavailable": "Der Speicher dieses Geräts kann nicht gelesen werden, daher kann eine Sprachaufnahme offline nicht gespeichert werden. Verbinden Sie sich mit der Cloud, um aufzunehmen."
     },
     "rubricBuilder": {
         "action_back": "Zurück",

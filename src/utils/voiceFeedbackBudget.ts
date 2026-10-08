@@ -5,6 +5,18 @@ export const MIN_RECORDING_SECONDS = 10;
 /** Below this many seconds of headroom the teacher is warned and the recording is capped. */
 export const LOW_STORAGE_RECORDING_SECONDS = 120;
 
+/** Characters of recorded audio held in the grading form that the stored copy doesn't contain yet. */
+export function unsavedAudioChars(
+    entries: readonly { audioDataUrl?: string }[],
+    savedEntries: readonly { audioDataUrl?: string }[] = []
+): number {
+    const saved = new Set(savedEntries.map((e) => e.audioDataUrl));
+    return entries.reduce(
+        (sum, e) => sum + (e.audioDataUrl && !saved.has(e.audioDataUrl) ? e.audioDataUrl.length : 0),
+        0
+    );
+}
+
 /**
  * Seconds of voice feedback that still fit in localStorage, keeping 20% of the free space for the
  * grade record itself and other writes.

@@ -655,6 +655,15 @@ describe('pending sync queue', () => {
         expect(LOCAL_STORAGE_QUOTA_CHARS).toBeGreaterThan(0);
     });
 
+    it('localStorageUsedChars reports null when storage cannot be read', () => {
+        localStorage.setItem('ab', 'cdef');
+        const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+            throw new Error('denied');
+        });
+        expect(localStorageUsedChars()).toBeNull();
+        keySpy.mockRestore();
+    });
+
     it('stripAudioForOfflineCache passes rubrics without any audio through unchanged', () => {
         const srs: StudentRubric[] = [
             { id: 'sr1', rubricId: 'r1', studentId: 's1', entries: [], overallComment: '', isPeerReview: false },
