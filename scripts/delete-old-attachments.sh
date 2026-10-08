@@ -35,6 +35,8 @@ NAME_RE='^[A-Za-z0-9_-]{1,64}$'
 UUID_RE='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 PATH_RE="^${UUID_RE}/[A-Za-z0-9_-]{1,64}(\\.[A-Za-z0-9]{1,10})?\$"
 VALID_SQL="id ~ '${NAME_RE}' AND storage_path ~ '${PATH_RE}' AND lower(split_part(storage_path, '/', 1)) = owner_id::text"
+# Rows with no stored file (text-only scans): only the metadata row is deleted.
+NO_FILE_SQL="storage_path IS NULL AND id ~ '${NAME_RE}'"
 
 log() { echo "[$(date -Iseconds)] $*"; }
 
@@ -43,14 +45,15 @@ psql_exec() {
 }
 
 # purge <label> <overdue-fn> <bucket> <table>
-# Deletes up to 100 overdue files via the Storage HTTP API, then their metadata rows.
+# Deletes up to 100 overdue files via the Storage HTTP API, then their metadata rows, plus up to 100
+# overdue rows that have no file.
 purge() {
     local label="$1" fn="$2" bucket="$3" table="$4"
     log "Starting ${label} cleanup..."
 
     # Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
     local skipped rows
-    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (${VALID_SQL});" 2>/dev/null || true)
+    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (coalesce(${VALID_SQL}, false) OR ${NO_FILE_SQL});" 2>/dev/null || true)
     if [[ -n "$skipped" && "$skipped" != "0" ]]; then
         log "Warning: ${skipped} overdue ${label} row(s) have an unexpected id or storage path and were left in place"
     fi
@@ -59,12 +62,24 @@ purge() {
     rows=$(psql_exec -At -F'|' \
         -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
 
-    if [[ -z "$rows" ]]; then
+    local no_file_rows
+    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT 100;" 2>/dev/null)
+
+    if [[ -z "$rows" && -z "$no_file_rows" ]]; then
         log "No overdue ${label} found."
         return 0
     fi
 
     local deleted_ids=() id path owner http_status
+    while IFS= read -r id; do
+        [[ -z "$id" ]] && continue
+        if [[ ! "$id" =~ $NAME_RE ]]; then
+            log "Warning: skipping a row that failed validation"
+            continue
+        fi
+        deleted_ids+=("$id")
+    done <<< "$no_file_rows"
+
     while IFS='|' read -r id path owner; do
         [[ -z "$id" || -z "$path" ]] && continue
 
@@ -90,7 +105,7 @@ purge() {
     done <<< "$rows"
 
     if [[ ${#deleted_ids[@]} -eq 0 ]]; then
-        log "No ${label} files successfully deleted."
+        log "No ${label} rows deleted."
         return 0
     fi
 
@@ -101,7 +116,7 @@ purge() {
 
     psql_exec -c "DELETE FROM public.${table} WHERE id IN (${id_list});" >/dev/null
 
-    log "Done. Deleted ${#deleted_ids[@]} ${label} file(s)."
+    log "Done. Deleted ${#deleted_ids[@]} ${label} row(s)."
 }
 
 purge "attachment" get_overdue_attachments attachments attachments

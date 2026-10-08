@@ -6,7 +6,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
+import { isMetadataOnlyRow, isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
 import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const BATCH_SIZE = 100;
@@ -38,15 +38,21 @@ async function purge(admin: SupabaseClient, target: PurgeTarget): Promise<PurgeR
     // other overdue row is left in place and counted, so it can be looked at.
     const all = (candidates ?? []) as PurgeRow[];
     const purgeable = all.filter(isPurgeableRow);
-    const skipped = all.length - purgeable.length;
+    const metadataOnly = all.filter(isMetadataOnlyRow);
+    const skipped = all.length - purgeable.length - metadataOnly.length;
     const rows = purgeable.slice(0, BATCH_SIZE);
-    if (!rows.length) return { deleted: 0, skipped };
+    const rowsWithoutFile = metadataOnly.slice(0, BATCH_SIZE);
+    if (!rows.length && !rowsWithoutFile.length) return { deleted: 0, skipped };
 
-    // Storage API — this is the only way to delete; direct SQL is blocked.
-    const { error: storageErr } = await admin.storage.from(target.bucket).remove(rows.map((r) => r.storage_path));
-    if (storageErr) return { deleted: 0, skipped, error: `Storage removal failed: ${storageErr.message}` };
+    if (rows.length) {
+        // Storage API — this is the only way to delete; direct SQL is blocked.
+        const { error: storageErr } = await admin.storage
+            .from(target.bucket)
+            .remove(rows.map((r) => r.storage_path as string));
+        if (storageErr) return { deleted: 0, skipped, error: `Storage removal failed: ${storageErr.message}` };
+    }
 
-    const ids = rows.map((r) => r.id);
+    const ids = [...rows, ...rowsWithoutFile].map((r) => r.id);
     const { error: dbErr } = await admin.from(target.table).delete().in('id', ids);
     if (dbErr) return { deleted: 0, skipped, error: `DB cleanup failed: ${dbErr.message}` };
 
