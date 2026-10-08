@@ -497,7 +497,10 @@
         "switch_to_student_title": "Overschakelen naar de rol Leerling?",
         "switch_to_student_message": "De app toont dan alleen het leerlingenportaal van de leerling met hetzelfde e-mailadres als je account. Docentpagina's blijven verborgen zolang je deze rol hebt.",
         "switch_to_student_message_local": "De app toont dan alleen het leerlingenportaal van de leerling met het e-mailadres uit je instellingen; zonder overeenkomst zie je het scherm 'Geen leerlingaccount gekoppeld'. Vanaf dat scherm kun je terug naar docent. Je gegevens blijven behouden.",
-        "switch_to_student_confirm": "Naar Leerling"
+        "switch_to_student_confirm": "Naar Leerling",
+        "scale_no_floor_warning": "Geen bereik begint bij 0%, dus lage scores krijgen geen cijfer (getoond als —).",
+        "action_fix_scale_floor": "Laat het laagste bereik bij 0% beginnen",
+        "alert_scale_needs_floor": "Een cijferschaal heeft een bereik nodig dat bij 0% begint. Zet eerst het minimum van een ander bereik op 0."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1630,7 +1633,7 @@
         "shortcuts_title": "Sneltoetsen",
         "shortcut_level": "Selecteer niveau voor gefocust criterium",
         "shortcut_tab": "Ga naar volgend / vorig criterium",
-        "shortcut_save": "Opslaan & ga naar volgende leerling",
+        "shortcut_save": "Opslaan (blijf bij deze leerling)",
         "shortcut_help": "Toon dit overzicht",
         "shortcut_esc": "Criterium-focus wissen",
         "action_print": "Afdrukken",
@@ -1647,7 +1650,13 @@
         "quick_comments_label": "Snel",
         "quick_comments_empty": "Sla opmerkingen op in de bank voor snelle invoegingen hier.",
         "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)",
-        "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)"
+        "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)",
+        "confirm_nothing_scored_title": "Geen criteria beoordeeld",
+        "confirm_nothing_scored_message": "Je hebt voor geen enkel criterium een niveau gekozen. Als je nu opslaat, krijgt deze leerling een beoordeling van 0%. Toch opslaan?",
+        "confirm_nothing_scored_save": "Opslaan als 0%",
+        "skipped_nothing_scored": "Er is niets beoordeeld, dus {{name}} is overgeslagen zonder een cijfer op te slaan.",
+        "all_students_graded": "Alle leerlingen zijn beoordeeld voor deze rubric.",
+        "shortcut_save_next": "Opslaan & ga naar volgende leerling"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -3225,7 +3234,7 @@
         "rb_builder_views_suffix": ".",
         "rb_scoring_modes_title": "Beoordelingsmodi",
         "rb_scoring_modes_item_total": "Totaalpunten — ruwe score van alle criteriumniveaus.",
-        "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde.",
+        "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde. Criteria van 0 punten tellen niet mee in het gemiddelde.",
         "rb_scoring_modes_item_single": "Eenpunts-rubriek — één niveau per criterium (voldoet / voldoet niet); slaag/zak-logica.",
         "rb_level_options_title": "Niveau-opties",
         "rb_level_options_item_checklist": "Subitem-checklists binnen een niveau (leerlingen moeten specifieke items afronden).",
@@ -3650,7 +3659,7 @@
         "da_admin_item_audit": "Tabblad Auditlogboek — filterbaar, gepagineerd logboek van rolwijzigingen, cijferopslag, exports en authenticatiegebeurtenissen; admins zien alle vermeldingen, docenten zien hun eigen vermeldingen. Vermeldingen worden 3 jaar bewaard (admin), 1 jaar (cijfer), 1 maand (export/auth) en daarna automatisch verwijderd.",
         "da_settings_title": "Instellingen",
         "da_settings_item_theme": "Thema — donker / licht, accentkleurkiezer, 8 snelle voorinstellingen, of kies een benoemde themabundel (Academy, Nature, Midnight, Warm, Slate, Rose) die met één klik lettertype, accent en exportkleur instelt.",
-        "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in.",
+        "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in. Elke schaal heeft een bereik nodig dat bij 0% begint, zodat elke score een cijfer krijgt.",
         "da_settings_item_lang": "Taal — Engels, Nederlands, Frans, Duits, Spaans.",
         "da_settings_item_tour": "Geleide rondleiding — start de onboarding-rondleiding opnieuw.",
         "da_settings_item_backup": "Backup / herstel — download of upload de volledige dataset-JSON.",
@@ -3704,7 +3713,7 @@
         "gr_layout_title": "Kaart- en rasterweergave",
         "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
-        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
+        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op en blijft bij de leerling, Ctrl+Enter slaat op en gaat naar de volgende leerling, en ? toont alle sneltoetsen. Opslaan & volgende vervangt de pagina in je geschiedenis, zodat Terug je terugbrengt naar waar je begon. Als de laatste onbeoordeelde leerling is opgeslagen, zie je de melding 'Alle leerlingen zijn beoordeeld'. Opslaan zonder beoordeeld criterium vraagt eerst om bevestiging; Opslaan & volgende bij een onbeoordeelde leerling zonder scores slaat die leerling over zonder cijfer.",
         "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
         "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set.",
         "es_focus_title": "Focusmodus voor leerlingen",

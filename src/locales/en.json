@@ -497,7 +497,10 @@
         "switch_to_student_title": "Switch to the Student role?",
         "switch_to_student_message": "The app will only show the student portal for the student whose email matches your account. Teacher pages stay hidden while you have this role.",
         "switch_to_student_message_local": "The app will only show the student portal for the student whose email matches the one in your settings; without a match you will see a 'No student account linked' screen. You can switch back to teacher from that screen. Your data is not affected.",
-        "switch_to_student_confirm": "Switch to Student"
+        "switch_to_student_confirm": "Switch to Student",
+        "scale_no_floor_warning": "No range starts at 0%, so low scores get no grade (shown as —).",
+        "action_fix_scale_floor": "Start the lowest range at 0%",
+        "alert_scale_needs_floor": "A grade scale needs a range that starts at 0%. Set another range's minimum to 0 first."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1630,7 +1633,7 @@
         "shortcuts_title": "Keyboard Shortcuts",
         "shortcut_level": "Select level for focused criterion",
         "shortcut_tab": "Move to next / previous criterion",
-        "shortcut_save": "Save & advance to next student",
+        "shortcut_save": "Save (stay on this student)",
         "shortcut_help": "Show this overlay",
         "shortcut_esc": "Clear criterion focus",
         "action_print": "Print",
@@ -1647,7 +1650,13 @@
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
-        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "confirm_nothing_scored_title": "No criteria scored",
+        "confirm_nothing_scored_message": "You haven't chosen a level for any criterion. Saving now records a graded 0% result for this student. Save anyway?",
+        "confirm_nothing_scored_save": "Save as 0%",
+        "skipped_nothing_scored": "Nothing was scored, so {{name}} was skipped without saving a grade.",
+        "all_students_graded": "All students are graded for this rubric.",
+        "shortcut_save_next": "Save & advance to next student"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -3225,7 +3234,7 @@
         "rb_builder_views_suffix": "at any time using the toggle in the toolbar.",
         "rb_scoring_modes_title": "Scoring modes",
         "rb_scoring_modes_item_total": "Total Points — raw score from all criteria levels.",
-        "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average.",
+        "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average. Criteria worth 0 points are left out of the average.",
         "rb_scoring_modes_item_single": "Single-Point Rubric — one level per criterion (meets / does not meet); pass/fail logic.",
         "rb_level_options_title": "Level options",
         "rb_level_options_item_checklist": "Sub-item checklists within a level (students must complete specific items).",
@@ -3648,7 +3657,7 @@
         "da_admin_item_audit": "Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
         "da_settings_title": "Settings",
         "da_settings_item_theme": "Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.",
-        "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",
+        "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default. Every scale needs a range that starts at 0% so that every score gets a grade.",
         "da_settings_item_lang": "Language — English, Dutch, French, German, Spanish.",
         "da_settings_item_tour": "Guided tour — restart the onboarding walkthrough.",
         "da_settings_item_backup": "Backup / restore — download or upload the full dataset JSON.",
@@ -3702,7 +3711,7 @@
         "gr_layout_title": "Card & grid layouts",
         "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
-        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
+        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves and stays on the student, Ctrl+Enter saves and moves to the next student, and ? lists every shortcut. Save & Next replaces the page in your history, so Back returns to where you started grading. When the last ungraded student is saved you see an 'All students are graded' message. Saving with no criterion scored asks first; Save & Next on an ungraded student with nothing scored skips them without creating a grade.",
         "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
         "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar.",
         "es_focus_title": "Student focus mode",

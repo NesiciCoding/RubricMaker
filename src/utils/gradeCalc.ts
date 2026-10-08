@@ -17,12 +17,23 @@ export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFor
     return format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
 }
 
+function clamp(value: number, min: number, max: number): number {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(max, Math.max(min, value));
+}
+
+/** A criterion's weight, treating NaN, infinite and negative weights as 0. */
+export function effectiveWeight(criterion: RubricCriterion): number {
+    return Number.isFinite(criterion.weight) && criterion.weight > 0 ? criterion.weight : 0;
+}
+
 /**
  * Points earned for a single criterion entry.
- * Priority: overridePoints > sub-items sum + selected range points > level midpoint
+ * Priority: overridePoints > sub-items sum + selected range points > level minimum
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
-    if (entry.overridePoints !== undefined) return entry.overridePoints;
+    // Overrides arrive unclamped from imports and co-grade reconciliation, not just the UI.
+    if (entry.overridePoints !== undefined) return clamp(entry.overridePoints, 0, criterionMaxPoints(criterion));
     // Single-point rubric outcome: meets/exceeds = full points, not-yet = 0
     if (entry.singlePointOutcome !== undefined) {
         if (entry.singlePointOutcome === 'not-yet') return 0;
@@ -54,12 +65,25 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
 
     const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
 
-    // If criterion has sub-items: combined sub-item total + range points, capped at selected level's maxPoints
-    // If no sub-items at all: just range points (bounded by the level range)
+    // Both branches bound by the selected level's range: a selectedPoints left over from a
+    // previously selected level must not score below the new level's minimum.
     if (hasAnySubItems) {
-        return Math.min(subItemTotal + rangePoints, level.maxPoints);
+        return clamp(subItemTotal + rangePoints, level.minPoints, level.maxPoints);
     }
-    return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));
+    return clamp(rangePoints, level.minPoints, level.maxPoints);
+}
+
+/**
+ * Merge a patch into a score entry. Choosing a different level drops the points picked
+ * within the old level's range, so the card and the total never disagree.
+ */
+export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): ScoreEntry {
+    const next = { ...entry, ...patch };
+    if ('levelId' in patch && patch.levelId !== entry.levelId) {
+        if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
+        if (!('subItemScores' in patch)) next.subItemScores = undefined;
+    }
+    return next;
 }
 
 /** Raw sum of selected level points (honouring sub-items and ranges) */
@@ -98,17 +122,16 @@ export function criterionPercentage(entry: ScoreEntry | undefined, criterion: Ru
 
 /** Weighted score as percentage 0–100 */
 export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriterion[]): number {
-    const totalWeight = criteria.reduce((s, c) => s + c.weight, 0);
+    // A criterion nobody can score on (max 0) must not dilute the others through its weight.
+    const scorable = criteria.filter((c) => criterionMaxPoints(c) > 0);
+    const totalWeight = scorable.reduce((s, c) => s + effectiveWeight(c), 0);
     if (totalWeight === 0) return calcPercentage(entries, criteria);
 
     let weightedSum = 0;
-    for (const criterion of criteria) {
+    for (const criterion of scorable) {
         const entry = entries.find((e) => e.criterionId === criterion.id);
-        const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-        if (maxPoints === 0) continue;
-
         const pts = entry ? calcEntryPoints(entry, criterion) : 0;
-        weightedSum += (pts / maxPoints) * criterion.weight;
+        weightedSum += (pts / criterionMaxPoints(criterion)) * effectiveWeight(criterion);
     }
     return (weightedSum / totalWeight) * 100;
 }
@@ -158,6 +181,11 @@ function matchRange(percentage: number, scale: GradeScale): GradeRange | undefin
     return sortedRangesDesc(scale).find((r) => percentage >= r.min);
 }
 
+/** Whether some range starts at 0%, so every score maps to a grade. */
+export function hasFloorRange(ranges: GradeRange[]): boolean {
+    return ranges.some((r) => r.min <= 0);
+}
+
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.label ?? '—';
 }
@@ -167,6 +195,11 @@ export function calcGradeColor(percentage: number, scale: GradeScale): string {
 }
 
 // ─── Student Rubric Summary ───────────────────────────────────────────────────
+
+/** Whether a teacher has scored this entry (a level, an override or a single-point outcome). */
+export function isEntryScored(entry: ScoreEntry): boolean {
+    return !!entry.levelId || entry.overridePoints !== undefined || entry.singlePointOutcome !== undefined;
+}
 
 export interface GradeSummary {
     rawScore: number;
@@ -193,17 +226,19 @@ export function calcGradeSummary(
     const configuredMax =
         rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints > 0 ? rubric.totalMaxPoints : calculatedMax;
 
-    const pct =
+    // totalMaxPoints can be configured below the raw maximum, which would push past 100%.
+    const pct = clamp(
         rubric?.scoringMode === 'total-points'
             ? configuredMax > 0
                 ? (raw / configuredMax) * 100
                 : 0
-            : calcWeightedScore(sr.entries, criteria);
+            : calcWeightedScore(sr.entries, criteria),
+        0,
+        100
+    );
 
     const modified = applyModifier(pct, sr.globalModifier);
-    const gradedCount = sr.entries.filter(
-        (e) => e.levelId !== null || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
-    ).length;
+    const gradedCount = sr.entries.filter(isEntryScored).length;
 
     return {
         rawScore: raw,

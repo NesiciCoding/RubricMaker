@@ -19,7 +19,7 @@ import { getComparativeTourSteps } from '../data/TutorialSteps';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry } from '../types';
@@ -429,13 +429,17 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         setSrA({
             ...srA,
             entries: srA.entries.map((e) =>
-                e.criterionId === criterionId ? { ...e, levelId: sortedLevels[idxA].id, overridePoints: undefined } : e
+                e.criterionId === criterionId
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined })
+                    : e
             ),
         });
         setSrB({
             ...srB,
             entries: srB.entries.map((e) =>
-                e.criterionId === criterionId ? { ...e, levelId: sortedLevels[idxB].id, overridePoints: undefined } : e
+                e.criterionId === criterionId
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined })
+                    : e
             ),
         });
     }
@@ -452,7 +456,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                 if (!prev) return prev;
                 return {
                     ...prev,
-                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e)),
+                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e)),
                 };
             });
         },

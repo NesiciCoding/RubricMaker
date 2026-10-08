@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -114,6 +114,11 @@ vi.mock('react-router-dom', async () => {
     return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const mockShowToast = vi.fn();
+vi.mock('../../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: false }),
 }));
@@ -155,6 +160,9 @@ describe('GradeStudent', () => {
         mockSaveStudentRubric.mockClear();
         mockUpdateSettings.mockClear();
         mockNavigate.mockClear();
+        mockShowToast.mockClear();
+        mockStudentRubricsArr.length = 0;
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
         const mod = await import('../GradeStudent');
         GradeStudentComp = mod.default;
     });
@@ -216,6 +224,7 @@ describe('GradeStudent', () => {
 
     it('persists feedback-only and anchor flags on Ctrl+S (#606)', () => {
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         tickFeedbackOnlyAndAnchor();
         fireEvent.keyDown(window, { key: 's', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
@@ -247,7 +256,7 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
         fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('toggles to the grid layout and selects a level cell', () => {
@@ -280,7 +289,131 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getByTitle('Next: Bob'));
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+    });
+
+    describe('saving with nothing scored (#620)', () => {
+        it('asks before saving a blank grade and saves only on confirm', async () => {
+            renderPage();
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            const dialog = await screen.findByRole('dialog');
+            expect(within(dialog).getByText('gradeStudent.confirm_nothing_scored_message')).toBeInTheDocument();
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+
+            fireEvent.click(within(dialog).getByText('gradeStudent.confirm_nothing_scored_save'));
+            await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
+        });
+
+        it('does not save when the confirmation is cancelled', async () => {
+            renderPage();
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            const dialog = await screen.findByRole('dialog');
+            fireEvent.click(within(dialog).getByText('common.cancel'));
+            await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        });
+
+        it('skips an ungraded student on Save & Next without creating a grade', () => {
+            renderPage();
+            fireEvent.click(screen.getByTitle('Next: Bob'));
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith(
+                expect.stringContaining('gradeStudent.skipped_nothing_scored'),
+                'info'
+            );
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
+
+        it('saves without asking when only a comment was written', () => {
+            renderPage();
+            const editors = screen.getAllByTestId('tiptap-mock');
+            fireEvent.change(editors[editors.length - 1], { target: { value: 'See me after class' } });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+        });
+    });
+
+    describe('keyboard save shortcuts (#624)', () => {
+        it('Ctrl+S saves and stays on the student', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).not.toHaveBeenCalled();
+        });
+
+        it('Ctrl+Enter saves and advances, replacing the history entry', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
+
+        it('announces when the last ungraded student is saved', () => {
+            (mockStudentRubricsArr as unknown[]).push({
+                id: 'sr-bob',
+                rubricId: 'r1',
+                studentId: 's2',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+            });
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+        });
+
+        it('does not announce completion while other students are ungraded', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+        });
+    });
+
+    describe('grade that hydrates after mount (#643)', () => {
+        const hydrated = {
+            id: 'sr-real',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '', selectedPoints: 80 }],
+            overallComment: 'Real feedback',
+            isPeerReview: false,
+            gradedAt: '2026-01-01T00:00:00Z',
+        };
+
+        it('adopts the saved grade instead of saving a blank duplicate', () => {
+            renderPage();
+            // The store hands out a new array when hydration merges records.
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            // Any re-render picks up the newly merged record.
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    overallComment: 'Real feedback',
+                    entries: [expect.objectContaining({ levelId: 'l2', selectedPoints: 80 })],
+                })
+            );
+        });
+
+        it('keeps the teacher edits but writes to the existing record id when already editing', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            // The store hands out a new array when hydration merges records.
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    entries: [expect.objectContaining({ levelId: 'l1' })],
+                })
+            );
+        });
     });
 
     it('opens the keyboard shortcuts panel via the "?" key', () => {

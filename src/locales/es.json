@@ -497,7 +497,10 @@
         "switch_to_student_title": "¿Cambiar al rol de alumno?",
         "switch_to_student_message": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con tu cuenta. Las páginas de docente quedan ocultas mientras tengas este rol.",
         "switch_to_student_message_local": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con el de tu configuración; si no hay coincidencia, verás la pantalla «No hay cuenta de alumno vinculada». Desde esa pantalla puedes volver al rol de docente. Tus datos no se modifican.",
-        "switch_to_student_confirm": "Cambiar a alumno"
+        "switch_to_student_confirm": "Cambiar a alumno",
+        "scale_no_floor_warning": "Ningún rango empieza en 0 %, así que las puntuaciones bajas no reciben nota (se muestra —).",
+        "action_fix_scale_floor": "Hacer que el rango más bajo empiece en 0 %",
+        "alert_scale_needs_floor": "Una escala de notas necesita un rango que empiece en 0 %. Pon primero el mínimo de otro rango en 0."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -1630,7 +1633,7 @@
         "shortcuts_title": "Atajos de Teclado",
         "shortcut_level": "Seleccionar nivel para el criterio enfocado",
         "shortcut_tab": "Mover al criterio siguiente / anterior",
-        "shortcut_save": "Guardar y avanzar al siguiente estudiante",
+        "shortcut_save": "Guardar (quedarse en este estudiante)",
         "shortcut_help": "Mostrar este panel",
         "shortcut_esc": "Quitar foco del criterio",
         "action_print": "Imprimir",
@@ -1647,7 +1650,13 @@
         "quick_comments_label": "Rápido",
         "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
         "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
-        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)",
+        "confirm_nothing_scored_title": "Ningún criterio puntuado",
+        "confirm_nothing_scored_message": "No has elegido un nivel para ningún criterio. Guardar ahora registra un resultado calificado de 0 % para este estudiante. ¿Guardar de todos modos?",
+        "confirm_nothing_scored_save": "Guardar como 0 %",
+        "skipped_nothing_scored": "No se puntuó nada, así que se omitió a {{name}} sin guardar una nota.",
+        "all_students_graded": "Todos los estudiantes están calificados para esta rúbrica.",
+        "shortcut_save_next": "Guardar y avanzar al siguiente estudiante"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -3225,7 +3234,7 @@
         "rb_builder_views_suffix": "usando el interruptor de la barra de herramientas.",
         "rb_scoring_modes_title": "Modos de puntuación",
         "rb_scoring_modes_item_total": "Puntos totales — puntuación bruta de todos los niveles de criterios.",
-        "rb_scoring_modes_item_weighted": "Porcentaje ponderado — cada criterio tiene una ponderación (%). La nota final es el promedio ponderado.",
+        "rb_scoring_modes_item_weighted": "Porcentaje ponderado — cada criterio tiene una ponderación (%). La nota final es el promedio ponderado. Los criterios de 0 puntos no cuentan en el promedio.",
         "rb_scoring_modes_item_single": "Rúbrica de un solo punto — un nivel por criterio (cumple / no cumple); lógica de aprobado/no aprobado.",
         "rb_level_options_title": "Opciones de nivel",
         "rb_level_options_item_checklist": "Listas de verificación de subelementos dentro de un nivel (los alumnos deben completar elementos específicos).",
@@ -3650,7 +3659,7 @@
         "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de cambios de rol, guardados de calificaciones, exportaciones y eventos de autenticación; los administradores ven todas las entradas, los profesores ven las suyas. Las entradas se conservan 3 años (admin), 1 año (calificación), 1 mes (exportación/autenticación) y luego se purgan automáticamente.",
         "da_settings_title": "Configuración",
         "da_settings_item_theme": "Tema — oscuro / claro, selector de color de acento, 8 ajustes rápidos predefinidos, o elige un paquete de tema con nombre (Academy, Nature, Midnight, Warm, Slate, Rose) que establece con un clic la tipografía, el acento y el color de exportación.",
-        "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
+        "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada. Cada escala necesita un rango que empiece en 0 % para que toda puntuación reciba una nota.",
         "da_settings_item_lang": "Idioma — inglés, neerlandés, francés, alemán, español.",
         "da_settings_item_tour": "Recorrido guiado — reiniciar el recorrido de incorporación.",
         "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos.",
@@ -3704,7 +3713,7 @@
         "gr_layout_title": "Diseños de tarjeta y cuadrícula",
         "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
         "gr_keyboard_title": "Atajos de teclado",
-        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
+        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda y se queda en el estudiante, Ctrl+Intro guarda y pasa al siguiente estudiante, y ? muestra todos los atajos. Guardar y siguiente reemplaza la página en tu historial, así que Atrás te devuelve a donde empezaste a calificar. Al guardar el último estudiante sin calificar verás el mensaje «Todos los estudiantes están calificados». Guardar sin ningún criterio puntuado pide confirmación primero; Guardar y siguiente en un estudiante sin calificar y sin puntuación lo omite sin crear una nota.",
         "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante.",
         "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo.",
         "es_focus_title": "Modo de concentración del estudiante",

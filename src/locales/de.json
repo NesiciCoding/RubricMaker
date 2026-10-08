@@ -497,7 +497,10 @@
         "switch_to_student_title": "Zur Rolle Schüler/in wechseln?",
         "switch_to_student_message": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu deinem Konto passt. Lehrkraft-Seiten bleiben ausgeblendet, solange du diese Rolle hast.",
         "switch_to_student_message_local": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu der in deinen Einstellungen passt; ohne Treffer erscheint der Hinweis „Kein Schülerkonto verknüpft“. Von dort kannst du zur Lehrkraft-Rolle zurückwechseln. Deine Daten bleiben erhalten.",
-        "switch_to_student_confirm": "Zu Schüler/in wechseln"
+        "switch_to_student_confirm": "Zu Schüler/in wechseln",
+        "scale_no_floor_warning": "Kein Bereich beginnt bei 0 %, daher erhalten niedrige Ergebnisse keine Note (angezeigt als —).",
+        "action_fix_scale_floor": "Niedrigsten Bereich bei 0 % beginnen lassen",
+        "alert_scale_needs_floor": "Eine Notenskala braucht einen Bereich, der bei 0 % beginnt. Setzen Sie zuerst das Minimum eines anderen Bereichs auf 0."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1630,7 +1633,7 @@
         "shortcuts_title": "Tastaturkürzel",
         "shortcut_level": "Stufe für fokussiertes Kriterium auswählen",
         "shortcut_tab": "Zum nächsten / vorherigen Kriterium",
-        "shortcut_save": "Speichern & zum nächsten Schüler",
+        "shortcut_save": "Speichern (bei diesem Schüler bleiben)",
         "shortcut_help": "Diese Übersicht anzeigen",
         "shortcut_esc": "Kriteriumsfokus aufheben",
         "action_print": "Drucken",
@@ -1647,7 +1650,13 @@
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
-        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
+        "confirm_nothing_scored_title": "Keine Kriterien bewertet",
+        "confirm_nothing_scored_message": "Sie haben für kein Kriterium eine Stufe gewählt. Wenn Sie jetzt speichern, erhält dieser Schüler ein bewertetes Ergebnis von 0 %. Trotzdem speichern?",
+        "confirm_nothing_scored_save": "Als 0 % speichern",
+        "skipped_nothing_scored": "Es wurde nichts bewertet, daher wurde {{name}} ohne gespeicherte Note übersprungen.",
+        "all_students_graded": "Alle Schüler sind für dieses Raster bewertet.",
+        "shortcut_save_next": "Speichern & zum nächsten Schüler"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -3225,7 +3234,7 @@
         "rb_builder_views_suffix": ".",
         "rb_scoring_modes_title": "Bewertungsmodi",
         "rb_scoring_modes_item_total": "Gesamtpunkte — Rohpunktzahl aus allen Kriteriumstufen.",
-        "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt.",
+        "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt. Kriterien mit 0 Punkten zählen im Durchschnitt nicht mit.",
         "rb_scoring_modes_item_single": "Einpunkt-Rubrik — eine Stufe pro Kriterium (erfüllt / erfüllt nicht); Bestehen/Nichtbestehen-Logik.",
         "rb_level_options_title": "Stufenoptionen",
         "rb_level_options_item_checklist": "Unterpunkt-Checklisten innerhalb einer Stufe (Schüler müssen bestimmte Punkte erfüllen).",
@@ -3650,7 +3659,7 @@
         "da_admin_item_audit": "Tab Auditprotokoll — filterbares, paginiertes Protokoll von Rollenänderungen, Bewertungsspeicherungen, Exporten und Authentifizierungsereignissen; Admins sehen alle Einträge, Lehrer sehen ihre eigenen. Einträge werden 3 Jahre (Admin), 1 Jahr (Bewertung), 1 Monat (Export/Auth) aufbewahrt und dann automatisch gelöscht.",
         "da_settings_title": "Einstellungen",
         "da_settings_item_theme": "Theme — Dunkel / Hell, Akzentfarbwähler, 8 schnelle Voreinstellungen, oder wähle ein benanntes Theme-Bundle (Academy, Nature, Midnight, Warm, Slate, Rose), das mit einem Klick Schriftart, Akzent und Exportfarbe festlegt.",
-        "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest.",
+        "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest. Jede Skala braucht einen Bereich ab 0 %, damit jedes Ergebnis eine Note erhält.",
         "da_settings_item_lang": "Sprache — Englisch, Niederländisch, Französisch, Deutsch, Spanisch.",
         "da_settings_item_tour": "Geführte Tour — die Einführungstour neu starten.",
         "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen.",
@@ -3704,7 +3713,7 @@
         "gr_layout_title": "Karten- und Rasteransicht",
         "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
         "gr_keyboard_title": "Tastaturkürzel",
-        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
+        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert und bleibt beim Schüler, Strg+Enter speichert und wechselt zum nächsten Schüler, und ? listet alle Kürzel auf. Speichern & Weiter ersetzt die Seite im Verlauf, sodass Zurück Sie dorthin bringt, wo Sie mit dem Bewerten begonnen haben. Wenn der letzte unbewertete Schüler gespeichert ist, erscheint die Meldung „Alle Schüler sind bewertet“. Speichern ohne bewertetes Kriterium fragt zuerst nach; Speichern & Weiter bei einem unbewerteten Schüler ohne Bewertung überspringt ihn, ohne eine Note anzulegen.",
         "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich.",
         "ce_flashcards_item_fields": "Vokabelkarten können eine Phonetik (Aussprache/IPA) und Wortart enthalten — direkt im Deck-Editor eingegeben oder als optionale 4. und 5. Spalte importiert. Lernende sehen sie beim Lernen auf der Karte, zusammen mit einer Fortschrittsleiste und einer Seitenleiste mit der Wortliste des Decks.",
         "es_focus_title": "Fokusmodus für Lernende",
