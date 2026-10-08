@@ -19,7 +19,7 @@ export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFor
 
 /**
  * Points earned for a single criterion entry.
- * Priority: overridePoints > sub-items sum + selected range points > level midpoint
+ * Priority: overridePoints > sub-items sum + selected range points > level minimum
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
     if (entry.overridePoints !== undefined) return entry.overridePoints;
@@ -54,12 +54,25 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
 
     const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
 
-    // If criterion has sub-items: combined sub-item total + range points, capped at selected level's maxPoints
-    // If no sub-items at all: just range points (bounded by the level range)
+    // Both branches stay inside the selected level's range: a selectedPoints left over from a
+    // previously selected level must not score below the new level's minimum.
     if (hasAnySubItems) {
-        return Math.min(subItemTotal + rangePoints, level.maxPoints);
+        return Math.max(level.minPoints, Math.min(subItemTotal + rangePoints, level.maxPoints));
     }
     return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));
+}
+
+/**
+ * Merge a patch into a score entry. Choosing a different level drops the points picked
+ * within the old level's range, so the card and the total never disagree.
+ */
+export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): ScoreEntry {
+    const next = { ...entry, ...patch };
+    if ('levelId' in patch && patch.levelId !== entry.levelId) {
+        if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
+        if (!('subItemScores' in patch)) next.subItemScores = undefined;
+    }
+    return next;
 }
 
 /** Raw sum of selected level points (honouring sub-items and ranges) */
