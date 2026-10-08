@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { autoMapCsvHeaders, matchCsvRows, summarizeImport } from './csvImportMatch';
+import { autoMapCsvHeaders, extractCsvName, matchCsvRows, summarizeImport } from './csvImportMatch';
 import type { Class, Student } from '../types';
 
 const mapping = { fullName: 'Name', firstName: '', lastName: '', email: 'Email', className: 'Class' };
@@ -122,6 +122,41 @@ describe('autoMapCsvHeaders (#682)', () => {
             firstName: 'First name',
             lastName: 'Last name',
         });
+    });
+
+    it('ignores parent and guardian columns when picking the student name and email', () => {
+        expect(autoMapCsvHeaders(['Student name', 'Parent first name', 'Parent last name', 'Guardian email'])).toEqual({
+            fullName: 'Student name',
+            firstName: '',
+            lastName: '',
+            email: '',
+            className: '',
+        });
+        expect(autoMapCsvHeaders(['Ouder voornaam', 'Leerling'])).toMatchObject({
+            fullName: 'Leerling',
+            firstName: '',
+        });
+    });
+
+    it('falls back to the full-name column for rows missing a first or last name', () => {
+        const headers = ['Name', 'First name', 'Last name'];
+        const mapping = autoMapCsvHeaders(headers);
+        expect(mapping.fullNameFallback).toBe('Name');
+        expect(extractCsvName({ Name: 'Anna Jansen', 'First name': 'Anna', 'Last name': '' }, mapping)).toBe(
+            'Anna Jansen'
+        );
+        expect(extractCsvName({ Name: 'A. Jansen', 'First name': 'Anna', 'Last name': 'Jansen' }, mapping)).toBe(
+            'Anna Jansen'
+        );
+        expect(extractCsvName({ Name: '', 'First name': 'Anna', 'Last name': '' }, mapping)).toBe('Anna');
+        const rows = matchCsvRows(
+            [{ Name: 'Anna Jansen', 'First name': 'Anna', 'Last name': '' }],
+            mapping,
+            [],
+            [],
+            'class-1'
+        );
+        expect(rows[0].name).toBe('Anna Jansen');
     });
 
     it('imports First name + Last name rows as full names end to end', () => {

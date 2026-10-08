@@ -7,8 +7,10 @@ import Modal from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import {
     autoMapCsvHeaders,
+    extractCsvName,
     matchCsvRows,
     summarizeImport,
+    type CsvColumnMap,
     type ImportSummary,
     type MatchedImportRow,
 } from '../../utils/csvImportMatch';
@@ -19,13 +21,7 @@ interface Props {
     onSuccess: () => void;
 }
 
-type ColumnMap = {
-    fullName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    className: string;
-};
+type ColumnMap = CsvColumnMap;
 
 type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
@@ -129,16 +125,8 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
     const getPreviewRows = () => {
         return parsedData.slice(0, 3).map((row) => {
-            let name: string;
-            if (mapping.fullName && row[mapping.fullName]) {
-                name = row[mapping.fullName];
-            } else {
-                const f = mapping.firstName && row[mapping.firstName] ? row[mapping.firstName] : '';
-                const l = mapping.lastName && row[mapping.lastName] ? row[mapping.lastName] : '';
-                name = [f, l].filter(Boolean).join(' ');
-            }
             return {
-                name: name.trim(),
+                name: extractCsvName(row, mapping),
                 email: mapping.email && row[mapping.email] ? row[mapping.email].trim() : '',
                 className:
                     mapping.className && row[mapping.className]
