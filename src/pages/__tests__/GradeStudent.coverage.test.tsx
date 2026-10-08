@@ -709,6 +709,22 @@ describe('GradeStudent coverage', () => {
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
+    it('ignores multi-touch and an endpoint from a different finger (#666)', () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, {
+            touches: [
+                { identifier: 1, clientX: 200, clientY: 100 },
+                { identifier: 2, clientX: 220, clientY: 100 },
+            ],
+        });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        fireEvent.touchStart(page, { touches: [{ identifier: 1, clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+    });
+
     it('ignores touch end without a matching start', () => {
         renderPage();
         const page = pageContent();

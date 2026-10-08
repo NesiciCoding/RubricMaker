@@ -222,7 +222,7 @@ export default function GradeStudent() {
     const [tourRun, setTourRun] = useState(false);
     const gradingTourSteps = useMemo(() => getGradingTourSteps(t), [t]);
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
     const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
     // Ensure that if we loaded this student, the global active class defaults to their class
@@ -455,10 +455,12 @@ export default function GradeStudent() {
     }, [isDirty]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        const touch = e.touches[0];
-        touchStartRef.current = isSwipeSafeTarget(e.target, e.currentTarget)
-            ? { x: touch.clientX, y: touch.clientY }
-            : null;
+        // A second finger cancels the gesture: start and end could otherwise come from different touches.
+        const touch = e.touches.length === 1 ? e.touches[0] : null;
+        touchStartRef.current =
+            touch && isSwipeSafeTarget(e.target, e.currentTarget)
+                ? { id: touch.identifier, x: touch.clientX, y: touch.clientY }
+                : null;
     }, []);
 
     const handleTouchEnd = useCallback(
@@ -466,8 +468,8 @@ export default function GradeStudent() {
             const start = touchStartRef.current;
             touchStartRef.current = null;
             if (!start || !nextStudent) return;
-            const touch = e.changedTouches[0];
-            if (!isLeftSwipe(start, { x: touch.clientX, y: touch.clientY })) return;
+            const touch = Array.from(e.changedTouches).find((ct) => ct.identifier === start.id);
+            if (!touch || !isLeftSwipe(start, { x: touch.clientX, y: touch.clientY })) return;
             const go = await confirmSwipe({
                 title: t('gradeStudent.swipe_confirm_title'),
                 message: t('gradeStudent.swipe_confirm_message', { name: nextStudent.name }),
