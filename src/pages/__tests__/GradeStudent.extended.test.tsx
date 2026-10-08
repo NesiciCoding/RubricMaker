@@ -189,11 +189,12 @@ describe('GradeStudent extended', () => {
         );
     });
 
-    it('saves and advances with Ctrl+S', () => {
+    it('saves and advances with Ctrl+Enter', () => {
         renderPage();
-        fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+        fireEvent.click(screen.getAllByText('Excellent')[0]);
+        fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('closes the shortcuts panel with Escape and navigates criteria with Tab', () => {

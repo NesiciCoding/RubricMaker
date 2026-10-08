@@ -48,6 +48,7 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
@@ -187,6 +188,7 @@ export default function GradeStudent() {
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
     const audioRecorder = useMediaRecorder();
+    const { showToast } = useToast();
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [scanForCrit, setScanForCrit] = useState<string | null>(null);
@@ -290,8 +292,8 @@ export default function GradeStudent() {
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
-    const nextStudent = useMemo(() => {
-        if (!student) return null;
+    const { nextStudent, hasOtherUngraded } = useMemo(() => {
+        if (!student) return { nextStudent: null, hasOtherUngraded: false };
         let eligible: typeof students;
         if (navScope === 'current-class') {
             eligible = students.filter((s) => s.classId === student.classId);
@@ -306,11 +308,10 @@ export default function GradeStudent() {
         const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
         const currentIndex = sorted.findIndex((s) => s.id === studentId);
         const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
-        return (
-            after.find((s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)) ??
-            after[0] ??
-            null
+        const nextUngraded = after.find(
+            (s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)
         );
+        return { nextStudent: nextUngraded ?? after[0] ?? null, hasOtherUngraded: !!nextUngraded };
     }, [student, students, classes, studentId, studentRubrics, rubricId, navScope]);
 
     const handleSaveAndNext = useCallback(() => {
@@ -324,8 +325,24 @@ export default function GradeStudent() {
             gradedAt: new Date().toISOString(),
         });
         setIsDirty(false);
-        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, feedbackOnly, isAnchor]);
+        // Grading the last ungraded student ends the loop; Save & Next then only wraps round.
+        if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
+        // Replace rather than push history so the topbar Back returns to where grading started.
+        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        feedbackOnly,
+        isAnchor,
+        existingSR,
+        hasOtherUngraded,
+        showToast,
+        t,
+    ]);
 
     const handleNotHandedIn = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
@@ -342,7 +359,7 @@ export default function GradeStudent() {
         saveStudentRubric(nhiSR);
         setIsDirty(false);
         if (nextStudent) {
-            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
         } else {
             navigate(-1);
         }
@@ -380,6 +397,12 @@ export default function GradeStudent() {
             const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
 
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 if (nextStudent) handleSaveAndNext();
                 else handleSave();
@@ -2050,6 +2073,7 @@ export default function GradeStudent() {
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
                                 { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
+                                { key: 'Ctrl+Enter', desc: t('gradeStudent.shortcut_save_next') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
                                 { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
                             ].map(({ key, desc }) => (

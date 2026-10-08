@@ -114,6 +114,11 @@ vi.mock('react-router-dom', async () => {
     return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const mockShowToast = vi.fn();
+vi.mock('../../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
+}));
+
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: false }),
 }));
@@ -154,6 +159,7 @@ describe('GradeStudent', () => {
         Element.prototype.scrollIntoView = vi.fn();
         mockSaveStudentRubric.mockClear();
         mockUpdateSettings.mockClear();
+        mockShowToast.mockClear();
         mockNavigate.mockClear();
         const mod = await import('../GradeStudent');
         GradeStudentComp = mod.default;
@@ -247,7 +253,7 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
         fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('toggles to the grid layout and selects a level cell', () => {
@@ -280,7 +286,51 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getByTitle('Next: Bob'));
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+    });
+
+    describe('keyboard save shortcuts (#624)', () => {
+        it('Ctrl+S saves and stays on the student', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).not.toHaveBeenCalled();
+        });
+
+        it('Ctrl+Enter saves and advances, replacing the history entry', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
+
+        it('announces when Save & Next grades the last ungraded student', () => {
+            (mockStudentRubricsArr as unknown[]).push({
+                id: 'sr-bob',
+                rubricId: 'r1',
+                studentId: 's2',
+                entries: [],
+                overallComment: '',
+                isPeerReview: false,
+            });
+            try {
+                renderPage();
+                fireEvent.click(screen.getByText('Excellent'));
+                fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+                expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+            } finally {
+                mockStudentRubricsArr.length = 0;
+            }
+        });
+
+        it('does not announce completion while other students are ungraded', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+            expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+        });
     });
 
     it('opens the keyboard shortcuts panel via the "?" key', () => {

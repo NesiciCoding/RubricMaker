@@ -677,7 +677,7 @@ describe('GradeStudent coverage', () => {
         fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
         fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('ignores touch end without a matching start', () => {
