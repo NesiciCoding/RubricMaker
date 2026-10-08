@@ -81,6 +81,9 @@ import type {
 } from '../types';
 import { isLocalMode } from '../store/storage';
 
+// Sections scroll to just below the sticky tab bar, whose height grows when the tabs wrap on phones.
+const SECTION_SCROLL_MARGIN = 'calc(var(--portal-nav-h, 62px) + 8px)';
+
 function scrollToSection(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -197,6 +200,19 @@ export default function StudentPortalPage() {
     const [portalQuery, setPortalQuery] = useState('');
     const [openSelfAssessId, setOpenSelfAssessId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<PortalTab>('home');
+    const [navEl, setNavEl] = useState<HTMLElement | null>(null);
+    const [navHeight, setNavHeight] = useState<number | null>(null);
+    useEffect(() => {
+        if (!navEl) return;
+        const measure = () => setNavHeight(navEl.offsetHeight || null);
+        measure();
+        const Observer = (globalThis as { ResizeObserver?: new (callback: () => void) => ResizeObserver })
+            .ResizeObserver;
+        if (!Observer) return;
+        const observer = new Observer(measure);
+        observer.observe(navEl);
+        return () => observer.disconnect();
+    }, [navEl]);
     const isTab = (tab: PortalTab) => activeTab === tab;
     // Switch to the tab that owns a section, then scroll it into view (used by search).
     const goToSection = (sectionId: string) => {
@@ -653,7 +669,16 @@ export default function StudentPortalPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 60 }}>
+        <div
+            style={
+                {
+                    minHeight: '100vh',
+                    background: 'var(--bg)',
+                    paddingBottom: 60,
+                    ...(navHeight ? { '--portal-nav-h': `${navHeight}px` } : {}),
+                } as React.CSSProperties
+            }
+        >
             <PageTour steps={tourSteps} run={tourRun} onFinish={() => {}} onEvent={handleTourCallback} />
             {isTeacherPreview && (
                 <div
@@ -762,6 +787,7 @@ export default function StudentPortalPage() {
             </div>
 
             <nav
+                ref={setNavEl}
                 aria-label={t('studentPortal.section_nav_label')}
                 style={{
                     position: 'sticky',
@@ -833,7 +859,7 @@ export default function StudentPortalPage() {
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                             gap: 12,
-                            scrollMarginTop: 70,
+                            scrollMarginTop: SECTION_SCROLL_MARGIN,
                         }}
                     >
                         <StatCard
@@ -1995,7 +2021,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
                 border: '1px solid var(--border)',
                 borderRadius: 12,
                 padding: '18px 20px',
-                scrollMarginTop: 70,
+                scrollMarginTop: SECTION_SCROLL_MARGIN,
             }}
         >
             <h2
