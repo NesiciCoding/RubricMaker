@@ -402,8 +402,12 @@ export default function GradeStudent() {
             const criteriaCount = rubric.criteria.length;
 
             // Tab stays native so keyboard users can reach every control (#671). Once a criterion is
-            // addressed (letter key, click or focus), the arrow keys move between criteria.
-            if (focusedCriterionIdx !== null && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            // addressed (letter key, click or focus), the arrow keys move between criteria — but only
+            // while focus is on the page or inside a criterion card, so they still scroll from e.g. Save.
+            const active = document.activeElement;
+            const arrowsNavigate =
+                !active || active === document.body || criterionCardsRef.current.some((card) => card?.contains(active));
+            if (focusedCriterionIdx !== null && arrowsNavigate && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
                 const step = e.key === 'ArrowDown' ? 1 : -1;
                 setFocusedCriterionIdx((focusedCriterionIdx + step + criteriaCount) % criteriaCount);

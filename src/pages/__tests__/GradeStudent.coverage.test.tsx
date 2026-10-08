@@ -634,6 +634,22 @@ describe('GradeStudent coverage', () => {
         expect(down.defaultPrevented).toBe(false);
     });
 
+    it('arrow keys keep scrolling once focus leaves the criterion cards (#671)', () => {
+        mockRubricsArr[0] = twoCriteriaRubric;
+        renderPage();
+        fireEvent.keyDown(window, { key: 'a' });
+        const save = screen.getAllByText('gradeStudent.action_save')[0].closest('button') as HTMLElement;
+        save.focus();
+        const down = createEvent.keyDown(save, { key: 'ArrowDown' });
+        fireEvent(save, down);
+        expect(down.defaultPrevented).toBe(false);
+        (document.activeElement as HTMLElement | null)?.blur();
+        const onPage = createEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent(window, onPage);
+        expect(onPage.defaultPrevented).toBe(true);
+        mockRubricsArr[0] = mockRubric;
+    });
+
     it('focusing a control inside a criterion card makes it the focused criterion', () => {
         mockRubricsArr[0] = twoCriteriaRubric;
         renderPage();
