@@ -2660,7 +2660,9 @@
         "evidence_title": "Skill Evidence",
         "evidence_subtitle": "Which assessments contributed to each skill and level, and why it's marked achieved or developing.",
         "rationale_achieved": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — achieved",
-        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing"
+        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing",
+        "working_toward": "Working toward {{level}} — not achieved yet",
+        "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold)."
     },
     "learningPath": {
         "page_title": "Learning Path",
@@ -3749,6 +3751,7 @@
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
         "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",
         "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
     },
