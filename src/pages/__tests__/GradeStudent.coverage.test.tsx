@@ -943,6 +943,17 @@ describe('GradeStudent coverage', () => {
         mockRubricsArr[0] = mockRubric;
     });
 
+    it('lets Tab leave a focused level button instead of cycling criteria (#616)', () => {
+        mockRubricsArr[0] = subItemsRubric;
+        renderPage();
+        const header = screen.getByRole('button', { name: /Excellent/ });
+        header.focus();
+        // fireEvent returns false when the handler called preventDefault().
+        expect(fireEvent.keyDown(header, { key: 'Tab' })).toBe(true);
+        expect(fireEvent.keyDown(document.body, { key: 'Tab' })).toBe(false);
+        mockRubricsArr[0] = mockRubric;
+    });
+
     it('shows base-points slider for equal min/max levels without sub-items', () => {
         mockRubricsArr[0] = subItemsRubric;
         renderPage();

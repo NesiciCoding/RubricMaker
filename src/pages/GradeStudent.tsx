@@ -402,6 +402,9 @@ export default function GradeStudent() {
             const criteriaCount = rubric.criteria.length;
 
             if (e.key === 'Tab') {
+                // Native Tab must keep moving between controls (level buttons, sliders, actions);
+                // criterion cycling only takes over when no control has focus.
+                if (target instanceof Element && target.closest('button, a[href], [tabindex]')) return;
                 e.preventDefault();
                 setFocusedCriterionIdx((prev) => {
                     if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
