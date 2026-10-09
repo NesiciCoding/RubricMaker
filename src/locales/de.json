@@ -2530,7 +2530,11 @@
         "selected": "ausgewählt",
         "report_card_success": "{{count}} Zeugnis(se) erstellt.",
         "rubric_students_section_title": "Schüler",
-        "select_test": "Test auswählen"
+        "select_test": "Test auswählen",
+        "bulk_nhi_confirm_title": "Als nicht abgegeben markieren?",
+        "bulk_nhi_confirm_message": "{{count}} ausgewählte Bewertung(en) als nicht abgegeben markieren? Sie fallen dann aus Statistiken, Dashboard und Schülerportal heraus.",
+        "bulk_nhi_done": "{{count}} Bewertung(en) als nicht abgegeben markiert",
+        "bulk_comment_done": "Kommentar zu {{count}} Bewertung(en) hinzugefügt"
     },
     "reportCard": {
         "title": "Zeugnis",
@@ -2659,7 +2663,9 @@
         "evidence_title": "Kompetenznachweise",
         "evidence_subtitle": "Welche Bewertungen zu jeder Kompetenz und Stufe beigetragen haben und warum sie als erreicht oder im Aufbau markiert ist.",
         "rationale_achieved": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — erreicht",
-        "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau"
+        "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau",
+        "working_toward": "Arbeitet auf {{level}} hin — noch nicht erreicht",
+        "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle)."
     },
     "learningPath": {
         "page_title": "Lernpfad",
@@ -3751,6 +3757,7 @@
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
         "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
         "gr_mobile_swipe": "Ein Wisch nach links auf einem leeren Bereich der Bewertungsseite bietet an, zu speichern und zur nächsten Person zu wechseln; bestätigen Sie, um fortzufahren. Wischgesten, die auf einem Schieberegler, den − / +-Tasten, einem Textfeld oder einer scrollbaren Tabelle beginnen, zählen nie — das Ziehen einer Punktzahl springt also nicht zur nächsten Person.",
+        "ce_overview_item_achieved": "Erreicht vs. arbeitet darauf hin: Ein Niveau gilt erst als erreicht, wenn der Durchschnitt der Person die Erreichungsschwelle des Rasters erreicht. Darunter zeigen die Schülerliste, die GER-Übersicht und das Dashboard das Niveau als gestricheltes Abzeichen („arbeitet darauf hin“), und Klassenkarten zählen nur erreichte Niveaus.",
         "gr_unsaved_note": "Wenn Sie eine Bewertungsseite mit nicht gespeicherten Änderungen verlassen — über die Seitenleiste, die Zurück-Schaltfläche oder durch Schließen des Tabs —, werden Sie zuerst um Bestätigung gebeten. Vergleichendes Bewerten und Peer-Review funktionieren genauso. Speichern, Speichern & Weiter und Nicht abgegeben speichern vorher und fragen daher nicht.",
         "rb_import_export_item_docx": "Import aus Word oder PDF: Laden Sie eine Rastertabelle als .docx oder .pdf hoch (Kriterien in Zeilen, Stufen in Spalten). Die Punkte folgen der Kopfzeile — z. B. „Gut (3 P.)“ oder „Schwach (1-2 P.)“ — oder, ohne Punkte, den Stufennamen, sodass eine Tabelle von Mangelhaft → Ausgezeichnet die meisten Punkte an Ausgezeichnet vergibt. Prozentangaben neben einem Kriterium („Inhalt 40 %“) werden zu dessen Gewichtung. Die Vorschau zeigt die Punkte jeder Stufe und die Gewichtung jedes Kriteriums sowie eine Warnung für alles Geschätzte; prüfen Sie sie, bevor Sie auf Rubric erstellen klicken."
     },

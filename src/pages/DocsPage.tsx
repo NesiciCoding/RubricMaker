@@ -1435,6 +1435,7 @@ function CefrTab() {
                         t('docs.ce_overview_item_whole_class'),
                         t('docs.ce_overview_item_summary_cards'),
                         t('docs.ce_overview_item_per_student'),
+                        t('docs.ce_overview_item_achieved'),
                         t('docs.ce_overview_item_progress'),
                         t('docs.ce_overview_item_evidence'),
                     ]}
