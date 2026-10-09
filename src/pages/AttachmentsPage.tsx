@@ -8,6 +8,8 @@ import { useAuthoring, useClasses, useGrading, useStudents } from '../context/Ap
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
+import { attachmentMaxBytes, formatFileSize } from '../utils/attachmentLimits';
+import { useDbStatus } from '../hooks/useDbStatus';
 
 export default function AttachmentsPage() {
     const { t } = useTranslation();
@@ -24,11 +26,19 @@ export default function AttachmentsPage() {
     const [selectedClassId, setSelectedClassId] = useState('');
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const fileRef = useRef<HTMLInputElement>(null);
+    const dbStatus = useDbStatus();
+    const maxBytes = attachmentMaxBytes(dbStatus.isConnected);
+    const [rejected, setRejected] = useState<{ names: string[]; maxBytes: number; local: boolean } | null>(null);
 
     const handleFiles = useCallback(
         (files: FileList | null) => {
             if (!files) return;
-            Array.from(files).forEach(async (file) => {
+            const all = Array.from(files);
+            // Rejected up front: an oversized file used to appear in the list and then vanish
+            // because the localStorage write behind it failed.
+            const tooLarge = all.filter((f) => f.size > maxBytes).map((f) => f.name);
+            setRejected(tooLarge.length > 0 ? { names: tooLarge, maxBytes, local: !dbStatus.isConnected } : null);
+            all.filter((f) => f.size <= maxBytes).forEach(async (file) => {
                 try {
                     addAttachment({
                         name: file.name,
@@ -43,7 +53,7 @@ export default function AttachmentsPage() {
                 }
             });
         },
-        [addAttachment, selectedRubricId, selectedStudentId]
+        [addAttachment, selectedRubricId, selectedStudentId, maxBytes, dbStatus.isConnected]
     );
 
     function downloadAttachment(att: (typeof attachments)[0]) {
@@ -51,12 +61,6 @@ export default function AttachmentsPage() {
         a.href = att.dataUrl;
         a.download = att.name;
         a.click();
-    }
-
-    function formatSize(bytes: number) {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
     }
 
     return (
@@ -91,7 +95,8 @@ export default function AttachmentsPage() {
                     <Upload size={28} style={{ margin: '0 auto 10px', display: 'block' }} />
                     <p style={{ fontWeight: 600 }}>{t('attachments.drop_zone_title')}</p>
                     <p className="text-xs text-muted" style={{ marginTop: 6 }}>
-                        {t('attachments.drop_zone_subtitle')}
+                        {t('attachments.drop_zone_subtitle')} ·{' '}
+                        {t('attachments.size_limit_hint', { limit: formatFileSize(maxBytes) })}
                     </p>
                     <div
                         style={{
@@ -174,6 +179,24 @@ export default function AttachmentsPage() {
                         </div>
                     )}
                 </div>
+                {rejected && (
+                    <div
+                        role="alert"
+                        className="card"
+                        style={{ marginBottom: 16, borderColor: 'var(--red)', color: 'var(--text)' }}
+                    >
+                        {rejected.names.map((name) => (
+                            <p key={name} style={{ margin: '2px 0' }}>
+                                {t('attachments.too_large', { name, limit: formatFileSize(rejected.maxBytes) })}
+                            </p>
+                        ))}
+                        {rejected.local && (
+                            <p className="text-xs text-muted" style={{ margin: '6px 0 0' }}>
+                                {t('attachments.too_large_local_hint')}
+                            </p>
+                        )}
+                    </div>
+                )}
                 <input
                     ref={fileRef}
                     type="file"
@@ -220,7 +243,7 @@ export default function AttachmentsPage() {
                                                 {att.mimeType.split('/')[1] ?? att.mimeType}
                                             </span>
                                         </td>
-                                        <td className="text-muted text-sm">{formatSize(att.size)}</td>
+                                        <td className="text-muted text-sm">{formatFileSize(att.size)}</td>
                                         <td>
                                             {linkedRubric ? (
                                                 <span className="badge badge-purple">

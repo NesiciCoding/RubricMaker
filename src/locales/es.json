@@ -2482,7 +2482,10 @@
         "comment_author_you": "Tú",
         "comment_author_teacher": "Profesor",
         "comments_empty": "Aún no hay comentarios. Selecciona texto en el documento de arriba para añadir uno.",
-        "loading_preview": "Cargando vista previa…"
+        "loading_preview": "Cargando vista previa…",
+        "size_limit_hint": "hasta {{limit}} por archivo",
+        "too_large": "«{{name}}» no se añadió: supera el límite de {{limit}}.",
+        "too_large_local_hint": "Sin conexión a una base de datos, los archivos se guardan en este navegador, que tiene poco espacio. Conéctate a una base de datos para adjuntar archivos más grandes."
     },
     "exportPage": {
         "rubric_section_title": "Exportación de Rúbrica",
@@ -3381,7 +3384,7 @@
         "gr_feedback_item_comment_bank": "Banco de comentarios — inserta fragmentos reutilizables por etiqueta. Crea el banco desde la página Banco de comentarios.",
         "gr_feedback_item_voice": "Calificación por voz — dicta comentarios con las manos libres usando la API de reconocimiento de voz del navegador.",
         "gr_feedback_item_notes": "Notas por criterio además del campo de retroalimentación general.",
-        "gr_feedback_item_attachments": "Archivos adjuntos — sube archivos de evidencia (imágenes, PDF) por rúbrica calificada.",
+        "gr_feedback_item_attachments": "Archivos adjuntos — sube archivos de evidencia (imágenes, PDF) por rúbrica calificada. Con conexión a una base de datos los archivos pueden ocupar hasta 50 MB; sin ella se guardan en este navegador con un límite de 2 MB cada uno, y los archivos más grandes se rechazan con un mensaje.",
         "gr_document_view_title": "Vista de documento",
         "gr_document_view_body": "Las entregas de ensayos y los archivos Word (.docx) adjuntos se muestran ahora en la misma vista de documento paginada y con formato, tanto en la calificación individual como en la comparativa — sin más volcados de HTML sin formato ni un visor de Word inconsistente. Para archivos .docx, un interruptor \"Ver como se envió\" cambia a la representación del archivo original si la conversión con formato pierde detalles de diseño.",
         "gr_document_comments_body": "Selecciona texto en esa vista de documento para dejar un comentario en línea, anclado directamente al pasaje al que se refiere. Los comentarios aparecen en una barra lateral debajo del documento — resuélvelos o elimínalos según sea necesario. Es una herramienta de anotación del lado del profesor; los estudiantes no ven ni pueden responder a estos comentarios.",

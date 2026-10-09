@@ -2482,7 +2482,10 @@
         "comment_author_you": "Vous",
         "comment_author_teacher": "Enseignant",
         "comments_empty": "Aucun commentaire pour l'instant. Sélectionnez du texte dans le document ci-dessus pour en ajouter un.",
-        "loading_preview": "Chargement de l'aperçu…"
+        "loading_preview": "Chargement de l'aperçu…",
+        "size_limit_hint": "jusqu'à {{limit}} par fichier",
+        "too_large": "« {{name}} » n'a pas été ajouté : il dépasse la limite de {{limit}}.",
+        "too_large_local_hint": "Sans connexion à une base de données, les fichiers sont stockés dans ce navigateur, qui a peu d'espace. Connectez-vous à une base de données pour joindre des fichiers plus volumineux."
     },
     "exportPage": {
         "rubric_section_title": "Export de rubrique",
@@ -3381,7 +3384,7 @@
         "gr_feedback_item_comment_bank": "Banque de commentaires — insérez des extraits réutilisables par étiquette. Constituez la banque depuis la page Banque de commentaires.",
         "gr_feedback_item_voice": "Notation vocale — dictez des commentaires mains libres à l'aide de l'API de reconnaissance vocale du navigateur.",
         "gr_feedback_item_notes": "Notes par critère en plus du champ de feedback global.",
-        "gr_feedback_item_attachments": "Pièces jointes — téléchargez des fichiers justificatifs (images, PDF) par rubrique notée.",
+        "gr_feedback_item_attachments": "Pièces jointes — téléversez des fichiers justificatifs (images, PDF) par grille notée. Les fichiers peuvent atteindre 50 Mo avec une connexion à une base de données ; sans connexion, ils sont conservés dans ce navigateur et limités à 2 Mo chacun, et les fichiers plus volumineux sont refusés avec un message.",
         "gr_document_view_title": "Vue du document",
         "gr_document_view_body": "Les copies d'essai et les pièces jointes Word (.docx) importées s'affichent désormais dans la même vue de document paginée et mise en forme, en notation individuelle comme comparative — fini le dump HTML brut ou la visionneuse Word incohérente. Pour les fichiers .docx, un bouton « Afficher tel qu'envoyé » bascule vers le rendu du fichier original si la conversion mise en forme perd des détails de mise en page.",
         "gr_document_comments_body": "Sélectionnez du texte dans cette vue de document pour laisser un commentaire en ligne, ancré directement sur le passage concerné. Les commentaires s'affichent dans une barre latérale sous le document — résolvez-les ou supprimez-les selon les besoins. Il s'agit d'un outil d'annotation côté enseignant ; les élèves ne voient pas ces commentaires et ne peuvent pas y répondre.",
