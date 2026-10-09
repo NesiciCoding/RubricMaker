@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 vi.mock('react-i18next', () => ({
@@ -30,6 +30,7 @@ vi.mock('../../hooks/useLiveSessionTelemetry', () => ({
 vi.mock('../../services/logging/clientLogger', () => ({ initClientLogger: vi.fn(), logEvent: vi.fn() }));
 
 const mockSubmitEssay = vi.fn();
+let mockTimeLimit: number | null = null;
 vi.mock('../../services/database/EssayAdapter', () => ({
     EssayAdapter: class {
         getClient() {
@@ -48,7 +49,7 @@ vi.mock('../../services/database/EssayAdapter', () => ({
                     prompt: null,
                     minWords: null,
                     maxWords: null,
-                    timeLimitMinutes: null,
+                    timeLimitMinutes: mockTimeLimit,
                     requireSEB: false,
                     expiresAt: null,
                     readOnlyAfterSubmit: false,
@@ -175,5 +176,46 @@ describe('StudentEssayPage — failed DB submission (#608)', () => {
         } finally {
             setItem.mockRestore();
         }
+    });
+});
+
+describe('StudentEssayPage — timed short-code essays (#717)', () => {
+    const deadlineKey = `rm_essay_timer_${code}:s1_endsAt`;
+    beforeEach(() => {
+        localStorage.clear();
+        localStorage.setItem(
+            'rm_supabase_config',
+            JSON.stringify({ supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon' })
+        );
+        mockSubmitEssay.mockReset();
+        mockTimeLimit = 30;
+    });
+    afterEach(() => {
+        mockTimeLimit = null;
+    });
+
+    it('keeps the deadline per student, since a short code is shared by the class', async () => {
+        await renderAndWrite();
+        await waitFor(() => expect(localStorage.getItem(deadlineKey)).not.toBeNull());
+        expect(localStorage.getItem(`rm_essay_timer_${code}_endsAt`)).toBeNull();
+    });
+
+    it('does not let the deadline start a second hand-in while one is pending, but fires if it fails', async () => {
+        localStorage.setItem(deadlineKey, String(Date.now() + 300));
+        let settle: (result: { success: boolean; error?: string }) => void = () => {};
+        mockSubmitEssay.mockImplementationOnce(() => new Promise((resolve) => (settle = resolve)));
+        mockSubmitEssay.mockResolvedValue({ success: false, error: 'Network error' });
+        await renderAndWrite();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 1300));
+        });
+        expect(mockSubmitEssay).toHaveBeenCalledTimes(1);
+        await act(async () => {
+            settle({ success: false, error: 'Network error' });
+        });
+        await waitFor(() => expect(mockSubmitEssay).toHaveBeenCalledTimes(2), { timeout: 3000 });
     });
 });
