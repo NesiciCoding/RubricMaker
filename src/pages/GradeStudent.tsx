@@ -62,6 +62,8 @@ import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
 
+const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
+
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
@@ -2111,7 +2113,15 @@ export default function GradeStudent() {
                             </span>
                         )}
                         <span className="text-muted text-sm">
-                            {summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
+                            {summary.modifiedPoints !== summary.rawScore && (
+                                <span title={t('gradeStudent.points_before_modifier')}>
+                                    ({formatPoints(summary.rawScore)}{' '}
+                                    {summary.modifiedPoints > summary.rawScore ? '+' : '−'}{' '}
+                                    {formatPoints(Math.abs(summary.modifiedPoints - summary.rawScore))}){' '}
+                                </span>
+                            )}
+                            {formatPoints(summary.modifiedPoints)} / {formatPoints(summary.configuredMaxPoints)}{' '}
+                            {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria}{' '}

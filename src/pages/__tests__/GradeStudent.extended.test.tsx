@@ -178,6 +178,8 @@ describe('GradeStudent extended', () => {
             target: { value: 'points' },
         });
         fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
+        // The footer shows the offset applied to the points, so points and percentage reconcile (#674).
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(0 + 5)');
         fireEvent.change(screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder'), {
             target: { value: 'Late penalty' },
         });
@@ -187,6 +189,19 @@ describe('GradeStudent extended', () => {
                 globalModifier: { type: 'points', value: 5, reason: 'Late penalty' },
             })
         );
+    });
+
+    it('rounds the modifier offset shown in the footer', () => {
+        mockStudentRubricsArr = [
+            {
+                ...existingSR,
+                entries: [{ criterionId: 'c1', levelId: null, overridePoints: 80.7, comment: '', checkedSubItems: [] }],
+                globalModifier: { type: 'points', value: 0.1, reason: '' },
+            },
+        ] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(80.7 + 0.1)');
     });
 
     it('saves and advances with Ctrl+S', () => {

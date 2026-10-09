@@ -1647,7 +1647,8 @@
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
-        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
+        "points_before_modifier": "Punkte vor der Anpassung"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -3325,7 +3326,7 @@
         "gr_scoring_item_select": "Klicke auf eine Stufenzelle, um sie auszuwählen. Klicke erneut, um die Auswahl aufzuheben.",
         "gr_scoring_item_slider": "Verwende für Punktbereiche den Schieberegler, um einen Wert innerhalb des zulässigen Bereichs zu wählen.",
         "gr_scoring_item_subitems": "Schalte Unterpunkte innerhalb einer Stufe mit Kontrollkästchen um.",
-        "gr_scoring_item_modifiers": "Wende Bewertungsmodifikatoren (%-Bonus, Punktabzug, Stufenanpassung) mit einer Begründung an.",
+        "gr_scoring_item_modifiers": "Wende einen Bewertungsmodifikator (Prozent-Bonus oder -Abzug oder eine Punktkorrektur) mit einer Begründung an. Eine Punktkorrektur bezieht sich auf das Maximum des Rasters: +10 Punkte bei einem 200-Punkte-Raster ergeben +5 %.",
         "gr_mobile_title": "Mobile Bewertung",
         "gr_mobile_body_prefix": "Auf Telefonen und iPad im Hochformat ist die Bewertungsansicht touch-optimiert. Punktbereich- und Unterpunkt-Schieberegler erhalten einen",
         "gr_mobile_stepper": "− / +",
@@ -3924,7 +3925,7 @@
     },
     "help": {
         "score_modifier_title": "Notenanpassungen",
-        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10%) oder Punkte (z. B. +5). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
+        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10% addiert 10 Prozentpunkte) oder Punkte (z. B. +5 addiert 5 Punkte zur Gesamtpunktzahl des Rasters, bei 200 Punkten also 2,5 %). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
         "lww_title": "Wie die Synchronisierung Konflikte löst",
         "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "proctoring_title": "Aufsichtsmeldungen",

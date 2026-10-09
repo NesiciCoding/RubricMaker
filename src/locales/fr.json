@@ -1647,7 +1647,8 @@
         "quick_comments_label": "Rapide",
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
         "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
-        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)"
+        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)",
+        "points_before_modifier": "Points avant le modificateur"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -3325,7 +3326,7 @@
         "gr_scoring_item_select": "Cliquez sur n'importe quelle cellule de niveau pour la sélectionner. Cliquez à nouveau pour la désélectionner.",
         "gr_scoring_item_slider": "Pour les plages de points, utilisez le curseur pour choisir une valeur dans la plage autorisée.",
         "gr_scoring_item_subitems": "Basculez les sous-éléments dans un niveau avec des cases à cocher.",
-        "gr_scoring_item_modifiers": "Appliquez des modificateurs de score (bonus en %, déduction de points, ajustement de niveau) avec une raison.",
+        "gr_scoring_item_modifiers": "Appliquez un modificateur de score (bonus ou déduction en %, ou correction en points) avec une raison. Une correction en points se rapporte au maximum de la grille : +10 points sur une grille de 200 points ajoutent 5 %.",
         "gr_mobile_title": "Notation mobile",
         "gr_mobile_body_prefix": "Sur téléphones et iPad en mode portrait, la vue de notation est optimisée pour le tactile. Les curseurs de plage de points et de sous-éléments gagnent un",
         "gr_mobile_stepper": "− / +",
@@ -3924,7 +3925,7 @@
     },
     "help": {
         "score_modifier_title": "Modificateurs de note",
-        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
+        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10 % ajoute 10 points de pourcentage) ou des points (ex. +5 ajoute 5 points au total de la grille, soit 2,5 % sur une grille de 200 points). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
         "lww_title": "Comment la synchronisation résout les conflits",
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",

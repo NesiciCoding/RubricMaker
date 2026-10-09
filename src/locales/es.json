@@ -1647,7 +1647,8 @@
         "quick_comments_label": "Rápido",
         "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
         "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
-        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)",
+        "points_before_modifier": "Puntos antes del modificador"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -3325,7 +3326,7 @@
         "gr_scoring_item_select": "Haz clic en cualquier celda de nivel para seleccionarla. Haz clic de nuevo para deseleccionarla.",
         "gr_scoring_item_slider": "Para rangos de puntos, usa el deslizador para elegir un valor dentro del rango permitido.",
         "gr_scoring_item_subitems": "Activa los subelementos dentro de un nivel con casillas de verificación.",
-        "gr_scoring_item_modifiers": "Aplica modificadores de puntuación (bonificación en %, deducción de puntos, ajuste de nivel) con un motivo.",
+        "gr_scoring_item_modifiers": "Aplica un modificador de puntuación (bonificación o deducción en %, o un ajuste en puntos) con un motivo. Un ajuste en puntos cuenta sobre el máximo de la rúbrica: +10 puntos en una rúbrica de 200 puntos suman un 5 %.",
         "gr_mobile_title": "Calificación móvil",
         "gr_mobile_body_prefix": "En teléfonos y iPad en modo vertical, la vista de calificación está optimizada para el tacto. Los deslizadores de rango de puntos y subelementos obtienen un",
         "gr_mobile_stepper": "− / +",
@@ -3924,7 +3925,7 @@
     },
     "help": {
         "score_modifier_title": "Modificadores de nota",
-        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10%) o puntos (p. ej. +5). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
+        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10% suma 10 puntos porcentuales) o puntos (p. ej. +5 suma 5 puntos al total de la rúbrica, es decir, un 2,5 % en una rúbrica de 200 puntos). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
         "lww_title": "Cómo resuelve conflictos la sincronización",
         "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
         "proctoring_title": "Alertas de supervisión",
