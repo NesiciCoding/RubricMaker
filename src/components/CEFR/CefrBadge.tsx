@@ -11,6 +11,10 @@ interface Props {
     label?: string;
     /** Show the matching Cambridge exam short label (e.g. "FCE") next to the badge */
     showCambridgeLabel?: boolean;
+    /** Not achieved yet — the student is working toward this level. Rendered as an outlined badge. */
+    developing?: boolean;
+    /** Tooltip / accessible description, e.g. "Working toward B1". */
+    title?: string;
     style?: React.CSSProperties;
 }
 
@@ -20,18 +24,29 @@ const SIZE_MAP = {
     lg: { fontSize: 14, padding: '4px 12px', borderRadius: 6, fontWeight: 700 },
 };
 
-export default function CefrBadge({ level, size = 'md', showLabel, label, showCambridgeLabel, style }: Props) {
+export default function CefrBadge({
+    level,
+    size = 'md',
+    showLabel,
+    label,
+    showCambridgeLabel,
+    developing,
+    title,
+    style,
+}: Props) {
     const color = CEFR_LEVEL_COLORS[level];
     const sizeStyle = SIZE_MAP[size];
     const cambridgeExam = showCambridgeLabel ? cambridgeExamForLevel(level) : null;
 
     return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...style }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...style }} title={title}>
             <span
+                data-developing={developing ? 'true' : undefined}
                 style={{
                     ...sizeStyle,
-                    background: color,
-                    color: '#fff',
+                    background: developing ? 'transparent' : color,
+                    color: developing ? color : '#fff',
+                    border: developing ? `1.5px dashed ${color}` : '1.5px solid transparent',
                     display: 'inline-block',
                     letterSpacing: '0.03em',
                     whiteSpace: 'nowrap',
