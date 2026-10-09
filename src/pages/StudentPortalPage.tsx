@@ -61,6 +61,7 @@ import { loadSupabaseConfig } from '../services/database';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { computeDeckInsights } from '../utils/flashcardInsights';
 import { searchPortal } from '../utils/portalSearch';
+import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
 import StudentDecksSection from '../components/Students/StudentDecksSection';
@@ -170,9 +171,13 @@ export default function StudentPortalPage() {
         flashcardReviews: s.flashcardReviews,
         settings: s.settings,
     }));
-    // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
+    // The roster domain hooks filtered soft-deleted rows; keep that behavior here. Rubrics aren't
+    // required to be live: a student's portal may only hold the grade's rubric snapshot.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const studentRubrics = useMemo(
+        () => liveStudentRubrics(allStudentRubrics, students),
+        [allStudentRubrics, students]
+    );
     // Feedback-only grades stay readable as feedback but must not leak into any score-derived view.
     const scoredStudentRubrics = useMemo(() => studentRubrics.filter((sr) => !sr.feedbackOnly), [studentRubrics]);
     const {
