@@ -1647,7 +1647,19 @@
         "quick_comments_label": "Snel",
         "quick_comments_empty": "Sla opmerkingen op in de bank voor snelle invoegingen hier.",
         "shortcut_chord": "Selecteer een criterium en kies dan het niveau (akkoord)",
-        "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)"
+        "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)",
+        "voice_storage_full": "De opslag van dit apparaat is bijna vol, dus een spraakopname kan niet worden bewaard. Maak eerst verbinding met de cloud of verwijder oude opnames.",
+        "voice_storage_low": "De opslag is bijna vol — deze opname stopt automatisch na {{seconds}} seconden.",
+        "voice_storage_unavailable": "De opslag van dit apparaat kan niet worden gelezen, dus een spraakopname kan offline niet worden bewaard. Maak verbinding met de cloud om op te nemen.",
+        "swipe_confirm_title": "Opslaan en naar de volgende leerling?",
+        "swipe_confirm_message": "Je veegde naar links. Dit cijfer opslaan en verdergaan met {{name}}?",
+        "swipe_confirm_action": "Opslaan & volgende",
+        "nhi_confirm_title": "Markeren als niet ingeleverd?",
+        "nhi_confirm_message": "{{name}} heeft al een cijfer voor deze rubric. Als je het werk als niet ingeleverd markeert, telt het niet meer mee in statistieken, het dashboard en het leerlingportaal. De scores blijven bewaard en je kunt dit ongedaan maken via de melding op de beoordelingspagina.",
+        "nhi_confirm_action": "Markeren als niet ingeleverd",
+        "nhi_banner": "Gemarkeerd als niet ingeleverd — dit werk telt niet mee in statistieken, het dashboard en het leerlingportaal. Een cijfer geven en opslaan haalt de markering weg.",
+        "nhi_undo": "Niet ingeleverd ongedaan maken",
+        "points_before_modifier": "Punten vóór de aanpassing"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -2010,7 +2022,8 @@
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
         "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt.",
         "signout_pending_writes": "Sommige wijzigingen zijn nog niet gesynchroniseerd — je lokale gegevens zijn bewaard zodat niets verloren gaat.",
-        "signout_unmigrated_local": "Je lokale gegevens zijn nooit naar je account geüpload en zijn daarom op dit apparaat bewaard. Log opnieuw in en kies Uploaden naar account om ze te synchroniseren."
+        "signout_unmigrated_local": "Je lokale gegevens zijn nooit naar je account geüpload en zijn daarom op dit apparaat bewaard. Log opnieuw in en kies Uploaden naar account om ze te synchroniseren.",
+        "voice_feedback_dropped": "De cijfers zijn opgeslagen, maar {{count}} spraakopname(n) pasten niet in de opslag van dit apparaat en gaan verloren bij herladen. Maak verbinding met de cloud of verwijder oude opnames om ze te bewaren."
     },
     "pwa": {
         "update_available_title": "Update beschikbaar",
@@ -2527,7 +2540,11 @@
         "selected": "geselecteerd",
         "report_card_success": "{{count}} rapport(en) gegenereerd.",
         "rubric_students_section_title": "Leerlingen",
-        "select_test": "Selecteer toets"
+        "select_test": "Selecteer toets",
+        "bulk_nhi_confirm_title": "Markeren als niet ingeleverd?",
+        "bulk_nhi_confirm_message": "{{count}} geselecteerde beoordeling(en) markeren als niet ingeleverd? Ze tellen dan niet mee in statistieken, het dashboard en het leerlingportaal.",
+        "bulk_nhi_done": "{{count}} beoordeling(en) gemarkeerd als niet ingeleverd",
+        "bulk_comment_done": "Opmerking toegevoegd aan {{count}} beoordeling(en)"
     },
     "reportCard": {
         "title": "Rapport",
@@ -2656,7 +2673,9 @@
         "evidence_title": "Vaardigheidsbewijs",
         "evidence_subtitle": "Welke beoordelingen bijdroegen aan elke vaardigheid en niveau, en waarom dit als behaald of in ontwikkeling is gemarkeerd.",
         "rationale_achieved": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — behaald",
-        "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling"
+        "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling",
+        "working_toward": "Werkt toe naar {{level}} — nog niet behaald",
+        "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel)."
     },
     "learningPath": {
         "page_title": "Leerpad",
@@ -2883,7 +2902,10 @@
         "delete_all_db_message": "Hiermee verwijder je definitief alles wat je in de database hebt: rubrics, klassen, leerlingen, cijfers, toetsen, essays, berichten en hun bestanden, opnames, scans en nachtelijke back-ups. Dit kan niet ongedaan worden gemaakt. De kopie op dit apparaat blijft behouden.",
         "delete_all_db_confirm": "Alles verwijderen",
         "delete_all_db_success": "Al je databasegegevens zijn verwijderd.",
-        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder."
+        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder.",
+        "audit_col_actor": "Uitgevoerd door",
+        "audit_col_details": "Details",
+        "audit_actor_system": "Systeem"
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -3011,7 +3033,10 @@
         "retry_submit": "Opnieuw proberen",
         "copy_backup_code": "Back-upcode kopiëren",
         "already_submitted": "Je hebt dit essay al ingeleverd, dus deze versie is niet verstuurd. Ze staat nog op dit apparaat — vraag je docent als je opnieuw moet inleveren.",
-        "submit_failed_unsaved": "Je essay is nog niet verstuurd en dit apparaat kon geen kopie bewaren. Kopieer de back-upcode voordat je deze pagina verlaat en klik daarna op Opnieuw proberen."
+        "submit_failed_unsaved": "Je essay is nog niet verstuurd en dit apparaat kon geen kopie bewaren. Kopieer de back-upcode voordat je deze pagina verlaat en klik daarna op Opnieuw proberen.",
+        "load_error_title": "Deze opdracht kon niet worden geladen",
+        "load_error": "De opdracht kon niet worden geladen. Controleer je internetverbinding en probeer het opnieuw. Blijft het misgaan, vraag je docent dan om een nieuwe link.",
+        "load_retry": "Opnieuw proberen"
     },
     "editor": {
         "switchToCompactView": "Compact weergave",
@@ -3326,7 +3351,7 @@
         "gr_scoring_item_select": "Klik op een niveaucel om deze te selecteren. Klik opnieuw om te deselecteren.",
         "gr_scoring_item_slider": "Voor puntbereiken gebruik je de schuifregelaar om een waarde binnen het toegestane bereik te kiezen.",
         "gr_scoring_item_subitems": "Schakel subitems binnen een niveau met selectievakjes.",
-        "gr_scoring_item_modifiers": "Pas scoremodificaties toe (%-bonus, puntaftrek, niveau-aanpassing) met een reden.",
+        "gr_scoring_item_modifiers": "Pas een scoremodificatie toe (procentuele bonus of aftrek, of een puntencorrectie) met een reden. Een puntencorrectie telt tegen het maximum van de rubric: +10 punten op een rubric van 200 punten is 5% extra.",
         "gr_mobile_title": "Mobiel beoordelen",
         "gr_mobile_body_prefix": "Op telefoons en iPad in portretstand is het beoordelingsscherm aanraak-geoptimaliseerd. Puntbereik- en subitemschuifregelaars krijgen een",
         "gr_mobile_stepper": "− / +",
@@ -3648,7 +3673,7 @@
         "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel.",
         "da_admin_item_data": "Tabblad Gegevens — anonimiseer leerlinggegevens, bulkverwijdering, compliancetools.",
         "da_admin_item_retention": "Tabblad Bewaartermijn — stel automatisch gegevensbewaarbeleid per school in.",
-        "da_admin_item_audit": "Tabblad Auditlogboek — filterbaar, gepagineerd logboek van rolwijzigingen, cijferopslag, exports en authenticatiegebeurtenissen; admins zien alle vermeldingen, docenten zien hun eigen vermeldingen. Vermeldingen worden 3 jaar bewaard (admin), 1 jaar (cijfer), 1 maand (export/auth) en daarna automatisch verwijderd.",
+        "da_admin_item_audit": "Tabblad Auditlog — filterbaar logboek per pagina met wie wat deed, inclusief details: rolwijzigingen, schoollidmaatschap en schoolwijzigingen, delen van rubrics/klassen, wijzigingen in site-instellingen, wachtwoordresets, \"Al mijn databasegegevens verwijderen\", opgeslagen cijfers en exports. Gevoelige wijzigingen worden door de database zelf vastgelegd, alleen als de wijziging echt is doorgevoerd. Beheerders zien alle regels, docenten alleen hun eigen. Regels worden 3 jaar (beheer), 1 jaar (cijfers) of 1 maand (export/inloggen) bewaard en daarna automatisch verwijderd.",
         "da_settings_title": "Instellingen",
         "da_settings_item_theme": "Thema — donker / licht, accentkleurkiezer, 8 snelle voorinstellingen, of kies een benoemde themabundel (Academy, Nature, Midnight, Warm, Slate, Rose) die met één klik lettertype, accent en exportkleur instelt.",
         "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in.",
@@ -3705,7 +3730,7 @@
         "gr_layout_title": "Kaart- en rasterweergave",
         "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
-        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
+        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Is een criterium geselecteerd, dan wisselen ↑ / ↓ tussen criteria (Tab en Shift+Tab gaan zoals gewoonlijk langs alle knoppen en velden), Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
         "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
         "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set.",
         "es_focus_title": "Focusmodus voor leerlingen",
@@ -3746,7 +3771,13 @@
         "rb_tests_visual_editors_body": "Foutverbetering, sleutelwoordtransformatie, invullen met woordenbank en zinnen bouwen bewerk je zonder speciale syntaxis te typen: markeer fouten en juiste fragmenten door woorden in de tekst te selecteren, voeg geaccepteerde antwoorden toe als kaarten met chips en voeg afleiders toe als chips. Liever typen of plakken? Elke editor heeft een knop 'Bewerk als tekst' die de ruwe syntaxis toont; beide weergaven bewerken dezelfde gegevens.",
         "rb_tests_a4_preview_label": "A4-voorbeeld:",
         "rb_tests_a4_preview_body": "Klik in de toetsbouwer op 'A4-voorbeeld' om naast je vragen een live voorbeeld van de afgedrukte leerlingenversie te openen. Zet 'Antwoordmodel' aan om de juiste antwoorden te zien, verberg de puntwaarden, zoom of druk de pagina af. Bewerk koptekst, instructies en voettekst direct op de pagina — ze worden met de toets opgeslagen en staan ook op de export van het toetsboekje.",
-        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief."
+        "gr_comparative_existing_note": "De bestaande beoordeling van elke leerling wordt in de sessie geladen, en een vergelijking opslaan werkt die beoordeling bij in plaats van een tweede aan te maken. Heeft een leerling al meer dan één beoordeling voor de rubric, dan meldt de sessie dat en kun je alleen de getoonde bewaren; de andere kun je herstellen via Beheer → Archief.",
+        "gr_feedback_item_audio_storage": "Opgenomen gesproken feedback — zonder cloudverbinding worden opnames in de browser bewaard, die ongeveer 5 MB kan bevatten. Raakt de ruimte op, dan stopt een opname automatisch, op een vol apparaat start er geen, en als opnames moeten worden weggelaten om cijfers op te slaan, krijg je een waarschuwing.",
+        "gr_mobile_swipe": "Naar links vegen op een leeg deel van de beoordelingspagina biedt aan om op te slaan en naar de volgende leerling te gaan; bevestig om door te gaan. Vegen die op een schuifregelaar, de − / + knoppen, een tekstveld of een scrollbare tabel beginnen tellen nooit, dus een score verslepen springt niet naar de volgende leerling.",
+        "gr_scoring_item_nhi": "Niet ingeleverd (tandwielmenu): markeert het werk als ontbrekend en laat het buiten statistieken, het dashboard en het leerlingportaal. Heeft de leerling al een cijfer, dan wordt om bevestiging gevraagd en blijft een bestaande algemene opmerking staan. Een melding op de beoordelingspagina biedt \"Niet ingeleverd ongedaan maken\"; het te late werk beoordelen en opslaan haalt de markering automatisch weg.",
+        "ce_overview_item_achieved": "Behaald vs. werkt toe naar: een niveau telt pas als behaald wanneer het gemiddelde van de leerling de behaaldrempel van de rubric haalt. Daaronder tonen de leerlingenlijst, het CEFR-overzicht en het dashboard het niveau als gestippeld label (\"werkt toe naar\"), en de klaskaarten tellen alleen behaalde niveaus.",
+        "gr_unsaved_note": "Verlaat je een beoordelingspagina met niet-opgeslagen wijzigingen — via de zijbalk, de knop Terug of door het tabblad te sluiten — dan wordt eerst om bevestiging gevraagd. Vergelijkend beoordelen en peer review werken hetzelfde. Opslaan, Opslaan & volgende en Niet ingeleverd slaan eerst op en vragen dus niets.",
+        "rb_import_export_item_docx": "Importeren uit Word of pdf: upload een rubrictabel als .docx of .pdf (criteria in rijen, niveaus in kolommen). De punten volgen de kop — bijv. \"Goed (3 pnt)\" of \"Zwak (1-2 pnt)\" — of, zonder punten, de niveaunamen, zodat een tabel van Onvoldoende → Uitstekend de meeste punten aan Uitstekend geeft. Percentages naast een criterium (\"Inhoud 40%\") worden de weging. Het voorbeeld toont de punten van elk niveau en de weging van elk criterium, plus een waarschuwing voor alles wat geschat moest worden; controleer ze voordat je op Rubric maken klikt."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -3923,7 +3954,7 @@
     },
     "help": {
         "score_modifier_title": "Cijferaanpassingen",
-        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
+        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10% telt 10 procentpunten op) of punten (bijv. +5 telt 5 punten op bij het totaal van de rubric, dus op een rubric van 200 punten is dat 2,5%). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
         "lww_title": "Hoe synchronisatie conflicten oplost",
         "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
         "proctoring_title": "Toezichtsmeldingen",
@@ -4228,7 +4259,26 @@
         "col_criterion": "Criterium",
         "none_detected": "Geen rubricstructuur gedetecteerd. Probeer een ander bestand.",
         "try_another": "Ander bestand proberen",
-        "create": "Rubric maken"
+        "create": "Rubric maken",
+        "weight_value": "Weging {{weight}}%",
+        "points_value": "{{points}} pnt",
+        "points_range": "{{min}}–{{max}} pnt",
+        "warn_no_table": "Geen tabel gevonden in het document. Zorg dat je rubric een tabelopmaak gebruikt.",
+        "warn_no_pdf_text": "Er kon geen tekst uit de pdf worden gehaald. Mogelijk is het een gescand (beeld)bestand.",
+        "warn_no_structure": "Er is geen rubrictabel herkend in het document.",
+        "warn_no_levels": "Er is een tabel gevonden, maar de niveaukolommen zijn niet herkend.",
+        "warn_no_criteria": "Er is een tabel gevonden, maar er konden geen criteria uit worden gehaald.",
+        "warn_one_criterion": "Er is maar één criterium gevonden — het document is misschien geen standaardrubric.",
+        "warn_one_level": "Er is maar één niveau gevonden — de kolommen zijn mogelijk niet goed gelezen.",
+        "warn_invalid_json": "Ongeldig JSON-formaat: de lijst met criteria ontbreekt.",
+        "warn_json_failed": "JSON kon niet worden gelezen: {{message}}",
+        "warn_order_guessed": "Niet duidelijk of de niveaukolommen van hoog naar laag lopen of andersom. De punten gaan ervan uit dat de eerste kolom de hoogste is — controleer ze hieronder.",
+        "warn_points_partial": "Alleen sommige niveaukoppen noemen punten; de andere niveaus kregen geschatte punten.",
+        "warn_merged_row": "Rij \"{{title}}\" beslaat meerdere kolommen (een kopje?) en is overgeslagen.",
+        "warn_untitled_row": "Een rij met niveautekst maar zonder criteriumtitel (een samengevoegde cel?) is overgeslagen.",
+        "warn_cell_count": "Rij \"{{title}}\" heeft {{found}} niveaucellen maar de kop heeft {{expected}} niveaus — controleer de beschrijvingen.",
+        "warn_weights_scaled": "De wegingen van de criteria telden op tot {{total}}% en zijn omgerekend naar 100%.",
+        "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld."
     },
     "standardsPicker": {
         "title": "Standaard koppelen",

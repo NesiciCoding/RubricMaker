@@ -21,16 +21,35 @@ import { calcGradeSummary, criterionMaxPoints } from './gradeCalc';
 import { autoScoreResponse, calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { estimatePlacement, type PlacementPathStep } from './placementResult';
 
-/** Highest level with data for one skill, preferring 'achieved' over 'developing' over 'not_started'. */
-export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
+export interface CefrLevelStatus {
+    level: CefrLevel;
+    /** False when the student is only working toward `level` (developing / below threshold). */
+    achieved: boolean;
+}
+
+const highest = (cells: CefrCellData[]): CefrLevel =>
+    cells.reduce<CefrLevel>(
+        (best, c) => (cefrLevelOrdinal(c.level) > cefrLevelOrdinal(best) ? c.level : best),
+        cells[0].level
+    );
+
+/**
+ * One skill's level: the highest achieved level, or — when nothing is achieved yet — the highest
+ * attempted level flagged `achieved: false` so callers can show it as "working toward".
+ */
+export function skillLevelStatus(cells: CefrCellData[], skill: CefrSkill): CefrLevelStatus | null {
     const skillCells = cells.filter((c) => c.skill === skill && ((c.rubricCount ?? 0) > 0 || c.totalDescriptors > 0));
     if (skillCells.length === 0) return null;
     const achieved = skillCells.filter((c) => c.state === 'achieved');
-    const pool = achieved.length > 0 ? achieved : skillCells;
-    return pool.reduce<CefrLevel>(
-        (best, c) => (cefrLevelOrdinal(c.level) > cefrLevelOrdinal(best) ? c.level : best),
-        pool[0].level
-    );
+    return achieved.length > 0
+        ? { level: highest(achieved), achieved: true }
+        : { level: highest(skillCells), achieved: false };
+}
+
+/** Highest achieved level for one skill; null when the student hasn't achieved any level in it. */
+export function highestLevelForSkill(cells: CefrCellData[], skill: CefrSkill): CefrLevel | null {
+    const status = skillLevelStatus(cells, skill);
+    return status?.achieved ? status.level : null;
 }
 
 /**
@@ -57,14 +76,23 @@ export function modeSkillLevel(cellsList: CefrCellData[][], skill: CefrSkill): C
     return best;
 }
 
-/** Lowest of each skill's highest achieved/developing level — surfaces the weakest skill first. */
+/**
+ * Overall level: the lowest achieved level across the skills with data (weakest skill first). If any
+ * of those skills has nothing achieved yet, the student is only working toward the lowest such level.
+ */
+export function overallLevelStatus(cells: CefrCellData[], skills: CefrSkill[] = CEFR_SKILLS): CefrLevelStatus | null {
+    const statuses = skills.map((sk) => skillLevelStatus(cells, sk)).filter((s): s is CefrLevelStatus => s !== null);
+    if (statuses.length === 0) return null;
+    const pending = statuses.filter((s) => !s.achieved);
+    const pool = pending.length > 0 ? pending : statuses;
+    const lowest = pool.reduce((worst, s) => (cefrLevelOrdinal(s.level) < cefrLevelOrdinal(worst.level) ? s : worst));
+    return { level: lowest.level, achieved: pending.length === 0 };
+}
+
+/** Overall achieved level (see overallLevelStatus); null unless every skill with data has an achieved level. */
 export function overallLevel(cells: CefrCellData[], skills: CefrSkill[] = CEFR_SKILLS): CefrLevel | null {
-    const perSkill = skills.map((sk) => highestLevelForSkill(cells, sk)).filter((l): l is CefrLevel => l !== null);
-    if (perSkill.length === 0) return null;
-    return perSkill.reduce<CefrLevel>(
-        (worst, l) => (cefrLevelOrdinal(l) < cefrLevelOrdinal(worst) ? l : worst),
-        perSkill[0]
-    );
+    const status = overallLevelStatus(cells, skills);
+    return status?.achieved ? status.level : null;
 }
 
 export interface CefrProgressEntry {

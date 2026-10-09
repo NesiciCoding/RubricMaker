@@ -54,6 +54,13 @@ describe('applyModifier — property tests', () => {
             }),
             { numRuns: 500 }
         );
+        fc.assert(
+            fc.property(finiteFloat(-500, 500), modifierArb, finiteFloat(1, 1000), (score, modifier, max) => {
+                const result = applyModifier(score, modifier, max);
+                return Number.isFinite(result) && result >= 0 && result <= 100;
+            }),
+            { numRuns: 500 }
+        );
     });
 
     it('without a modifier, output equals input (no clamping applied)', () => {

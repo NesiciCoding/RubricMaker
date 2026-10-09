@@ -1693,6 +1693,8 @@ export interface AuditRow {
     entity_id: string | null;
     details: Record<string, unknown> | null;
     created_at: string;
+    /** Embedded actor profile (audit_logs.actor_id → profiles), when the reader may see it. */
+    actor?: { display_name: string | null; email: string | null } | null;
 }
 
 export type ActivityKind = 'rubric' | 'test' | 'essay';

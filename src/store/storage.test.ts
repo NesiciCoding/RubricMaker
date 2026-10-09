@@ -44,6 +44,9 @@ import {
     saveTestTimer,
     clearTestTimer,
     onStorageQuotaExceeded,
+    onVoiceFeedbackDropped,
+    localStorageUsedChars,
+    LOCAL_STORAGE_QUOTA_CHARS,
     clearLocalData,
     loadRubricVersions,
     upsertRubricVersion,
@@ -608,6 +611,61 @@ describe('pending sync queue', () => {
 
         setItemSpy.mockRestore();
         onStorageQuotaExceeded(() => {});
+    });
+
+    it('saveStudentRubrics reports how many recordings were dropped to fit the quota (#678)', () => {
+        const dropped = vi.fn();
+        const quota = vi.fn();
+        onVoiceFeedbackDropped(dropped);
+        onStorageQuotaExceeded(quota);
+        const realSetItem = Storage.prototype.setItem;
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage,
+            key: string,
+            value: string
+        ) {
+            if (value.includes('data:audio')) throw new DOMException('quota exceeded', 'QuotaExceededError');
+            realSetItem.call(this, key, value);
+        });
+        const entry = (audio?: string) => ({
+            criterionId: 'c',
+            levelId: 'l',
+            comment: '',
+            checkedSubItems: [],
+            audioDataUrl: audio,
+        });
+        saveStudentRubrics([
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [entry('data:audio/webm;base64,AAA'), entry('data:audio/webm;base64,BBB')],
+                overallComment: '',
+                isPeerReview: false,
+            },
+            { id: 'sr2', rubricId: 'r1', studentId: 's2', entries: [entry()], overallComment: '', isPeerReview: false },
+        ]);
+        expect(dropped).toHaveBeenCalledWith(2);
+        expect(quota).not.toHaveBeenCalled();
+        setItemSpy.mockRestore();
+        onVoiceFeedbackDropped(() => {});
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('localStorageUsedChars counts keys and values', () => {
+        localStorage.clear();
+        localStorage.setItem('ab', 'cdef');
+        expect(localStorageUsedChars()).toBe(6);
+        expect(LOCAL_STORAGE_QUOTA_CHARS).toBeGreaterThan(0);
+    });
+
+    it('localStorageUsedChars reports null when storage cannot be read', () => {
+        localStorage.setItem('ab', 'cdef');
+        const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+            throw new Error('denied');
+        });
+        expect(localStorageUsedChars()).toBeNull();
+        keySpy.mockRestore();
     });
 
     it('stripAudioForOfflineCache passes rubrics without any audio through unchanged', () => {

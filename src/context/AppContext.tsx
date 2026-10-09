@@ -33,6 +33,7 @@ import {
     loadPendingQueue,
     loadCachedStudentRubrics,
     onStorageQuotaExceeded,
+    onVoiceFeedbackDropped,
     sanitizeClassYears,
     markMigrationPending,
     isMigrationSkippedForSession,
@@ -115,6 +116,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         onStorageQuotaExceeded(() => {
             if (isOffline()) showToast(t('toast.storage_full'), 'error');
+        });
+        onVoiceFeedbackDropped((count) => {
+            if (isOffline()) showToast(t('toast.voice_feedback_dropped', { count }), 'warning');
         });
     }, [showToast, t]);
 

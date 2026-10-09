@@ -1,11 +1,12 @@
 #!/bin/bash
-# RubricMaker — delete old attachments (storage files + DB rows)
+# RubricMaker — delete old attachments and scans (storage files + DB rows)
 #
 # Removes attachment files and metadata rows that have aged past the owner's
-# school retention period (default: 7 years for users not linked to a school).
+# school retention period (default: 7 years for users not linked to a school),
+# and handwriting scans older than the current academic year.
 # Uses the Storage HTTP API — direct SQL deletion is blocked by Supabase.
 #
-# Attachment ids and storage paths are chosen by whoever uploaded the file, so they are never trusted:
+# Ids and storage paths are chosen by whoever uploaded the file, so they are never trusted:
 # only rows whose id is a plain name and whose path is "<owner uuid>/<plain name>" are selected, and the
 # same check runs again in bash before anything is put into a URL or SQL statement. Overdue rows that
 # fail the check are left untouched and reported, so an operator can look at them.
@@ -29,12 +30,13 @@ fi
 
 STORAGE_URL="${SITE_URL:-http://localhost:8000}"
 SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:?SERVICE_ROLE_KEY is not set in .env}"
-BUCKET="attachments"
 
 NAME_RE='^[A-Za-z0-9_-]{1,64}$'
 UUID_RE='[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
 PATH_RE="^${UUID_RE}/[A-Za-z0-9_-]{1,64}(\\.[A-Za-z0-9]{1,10})?\$"
 VALID_SQL="id ~ '${NAME_RE}' AND storage_path ~ '${PATH_RE}' AND lower(split_part(storage_path, '/', 1)) = owner_id::text"
+# Rows with no stored file (text-only scans): only the metadata row is deleted.
+NO_FILE_SQL="storage_path IS NULL AND id ~ '${NAME_RE}'"
 
 log() { echo "[$(date -Iseconds)] $*"; }
 
@@ -42,58 +44,111 @@ psql_exec() {
     docker-compose -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
 }
 
-log "Starting attachment cleanup..."
+BATCH_SIZE=100
+# Every prior-year scan becomes overdue on the same night, so batches repeat until the backlog is gone.
+# The cap only bounds a run that keeps finding full batches.
+MAX_ROUNDS=200
 
-# Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
-SKIPPED=$(psql_exec -At -c "SELECT count(*) FROM public.get_overdue_attachments(100000) WHERE NOT (${VALID_SQL});" 2>/dev/null || true)
-if [[ -n "$SKIPPED" && "$SKIPPED" != "0" ]]; then
-    log "Warning: ${SKIPPED} overdue row(s) have an unexpected id or storage path and were left in place"
-fi
+# purge_batch <overdue-fn> <bucket> <table>
+# Deletes up to BATCH_SIZE overdue files via the Storage HTTP API, then their metadata rows, plus up to
+# BATCH_SIZE overdue rows that have no file. Sets BATCH_DELETED, and BATCH_FULL=1 when either query
+# returned a full batch (so more rows may be waiting).
+purge_batch() {
+    local fn="$1" bucket="$2" table="$3"
+    BATCH_DELETED=0
+    BATCH_FULL=0
 
-# Fetch overdue attachment rows (id | storage_path | owner) from the DB helper function.
-ROWS=$(psql_exec -At -F'|' \
-    -c "SELECT id, storage_path, owner_id FROM public.get_overdue_attachments(100000) WHERE ${VALID_SQL} LIMIT 100;" 2>/dev/null)
+    # Fetch overdue rows (id | storage_path | owner) from the DB helper function.
+    local rows no_file_rows
+    rows=$(psql_exec -At -F'|' \
+        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
+    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
 
-if [[ -z "$ROWS" ]]; then
-    log "No overdue attachments found."
-    exit 0
-fi
-
-DELETED_IDS=()
-
-while IFS='|' read -r id path owner; do
-    [[ -z "$id" || -z "$path" ]] && continue
-
-    if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "$(printf '%s' "${path%%/*}" | tr 'A-F' 'a-f')" != "$owner" ]]; then
-        log "Warning: skipping a row that failed validation"
-        continue
+    if [[ $(printf '%s' "$rows" | grep -c . || true) -ge $BATCH_SIZE \
+        || $(printf '%s' "$no_file_rows" | grep -c . || true) -ge $BATCH_SIZE ]]; then
+        BATCH_FULL=1
     fi
 
-    # Delete the file via the Storage HTTP API.
-    # Errors are logged but do not stop processing — a missing file is harmless
-    # and we still want to clean up the DB row.
-    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-        -X DELETE \
-        -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
-        "${STORAGE_URL}/storage/v1/object/${BUCKET}/${path}")
+    if [[ -z "$rows" && -z "$no_file_rows" ]]; then
+        return 0
+    fi
 
-    if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "404" ]]; then
-        # 404 means already gone — treat as success and clean up the DB row.
-        DELETED_IDS+=("$id")
+    local deleted_ids=() id path owner http_status
+    while IFS= read -r id; do
+        [[ -z "$id" ]] && continue
+        if [[ ! "$id" =~ $NAME_RE ]]; then
+            log "Warning: skipping a row that failed validation"
+            continue
+        fi
+        deleted_ids+=("$id")
+    done <<< "$no_file_rows"
+
+    while IFS='|' read -r id path owner; do
+        [[ -z "$id" || -z "$path" ]] && continue
+
+        if [[ ! "$id" =~ $NAME_RE || ! "$path" =~ $PATH_RE || "$(printf '%s' "${path%%/*}" | tr 'A-F' 'a-f')" != "$owner" ]]; then
+            log "Warning: skipping a row that failed validation"
+            continue
+        fi
+
+        # Delete the file via the Storage HTTP API.
+        # Errors are logged but do not stop processing — a missing file is harmless
+        # and we still want to clean up the DB row.
+        http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X DELETE \
+            -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            "${STORAGE_URL}/storage/v1/object/${bucket}/${path}")
+
+        if [[ "$http_status" == "200" || "$http_status" == "404" ]]; then
+            # 404 means already gone — treat as success and clean up the DB row.
+            deleted_ids+=("$id")
+        else
+            log "Warning: storage DELETE returned HTTP ${http_status} for path '${path}'"
+        fi
+    done <<< "$rows"
+
+    if [[ ${#deleted_ids[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    # Build a quoted, comma-separated list for the SQL IN clause. Every id passed NAME_RE above.
+    local id_list
+    id_list=$(printf "'%s'," "${deleted_ids[@]}")
+    id_list="${id_list%,}"  # strip trailing comma
+
+    psql_exec -c "DELETE FROM public.${table} WHERE id IN (${id_list});" >/dev/null
+    BATCH_DELETED=${#deleted_ids[@]}
+}
+
+# purge <label> <overdue-fn> <bucket> <table>
+purge() {
+    local label="$1" fn="$2" bucket="$3" table="$4"
+    log "Starting ${label} cleanup..."
+
+    # Candidates are filtered before the batch limit, so rows that fail validation cannot crowd out the rest.
+    local skipped
+    skipped=$(psql_exec -At -c "SELECT count(*) FROM public.${fn}(100000) WHERE NOT (coalesce(${VALID_SQL}, false) OR ${NO_FILE_SQL});" 2>/dev/null || true)
+    if [[ -n "$skipped" && "$skipped" != "0" ]]; then
+        log "Warning: ${skipped} overdue ${label} row(s) have an unexpected id or storage path and were left in place"
+    fi
+
+    local round total=0
+    for (( round = 1; round <= MAX_ROUNDS; round++ )); do
+        purge_batch "$fn" "$bucket" "$table"
+        total=$((total + BATCH_DELETED))
+        # A round without progress (e.g. every storage DELETE failed) would fetch the same rows again.
+        if [[ $BATCH_FULL -eq 0 || $BATCH_DELETED -eq 0 ]]; then
+            break
+        fi
+    done
+
+    if [[ $total -eq 0 ]]; then
+        log "No overdue ${label} deleted."
     else
-        log "Warning: storage DELETE returned HTTP ${HTTP_STATUS} for path '${path}'"
+        log "Done. Deleted ${total} ${label} row(s)."
     fi
-done <<< "$ROWS"
+}
 
-if [[ ${#DELETED_IDS[@]} -eq 0 ]]; then
-    log "No files successfully deleted."
-    exit 0
-fi
-
-# Build a quoted, comma-separated list for the SQL IN clause. Every id passed NAME_RE above.
-ID_LIST=$(printf "'%s'," "${DELETED_IDS[@]}")
-ID_LIST="${ID_LIST%,}"  # strip trailing comma
-
-psql_exec -c "DELETE FROM public.attachments WHERE id IN (${ID_LIST});" >/dev/null
-
-log "Done. Deleted ${#DELETED_IDS[@]} attachment(s)."
+purge "attachment" get_overdue_attachments attachments attachments
+# Handwriting scans: one-academic-year cap (get_overdue_scans, migrations 074/082).
+purge "scan" get_overdue_scans scans scan_metadata

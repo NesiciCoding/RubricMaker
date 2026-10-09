@@ -939,6 +939,35 @@ export function onStorageQuotaExceeded(handler: () => void): void {
     quotaExceededHandler = handler;
 }
 
+let audioDroppedHandler: ((count: number) => void) | null = null;
+
+/**
+ * Registers a callback fired when grades were saved but their voice-feedback recordings had to be
+ * left out to fit the localStorage quota; `count` is the number of recordings dropped.
+ */
+export function onVoiceFeedbackDropped(handler: (count: number) => void): void {
+    audioDroppedHandler = handler;
+}
+
+/** Rough localStorage quota in UTF-16 characters; browsers allow about 5M per origin. */
+export const LOCAL_STORAGE_QUOTA_CHARS = 5_000_000;
+
+/** Characters currently stored in localStorage (keys + values), the unit the quota is counted in; null when it can't be read. */
+export function localStorageUsedChars(): number | null {
+    let used = 0;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            /* v8 ignore next -- key(i) is non-null for every i below length */
+            if (key === null) continue;
+            used += key.length + (localStorage.getItem(key)?.length ?? 0);
+        }
+    } catch {
+        return null;
+    }
+    return used;
+}
+
 function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
@@ -1208,6 +1237,8 @@ export function saveStudentRubrics(srs: StudentRubric[]) {
         try {
             localStorage.setItem(KEYS.studentRubrics, JSON.stringify(stripAudioForOfflineCache(srs)));
             console.warn('[storage] rm_student_rubrics exceeded quota with audio; retried without it');
+            const dropped = srs.reduce((n, sr) => n + sr.entries.filter((e) => e.audioDataUrl).length, 0);
+            if (dropped > 0) audioDroppedHandler?.(dropped);
         } catch (e2) {
             console.error(
                 '[storage] write failed even after stripping audio (quota exceeded?):',
@@ -1890,7 +1921,53 @@ export function saveTestTimer(timerKey: string, seconds: number): void {
 export function clearTestTimer(timerKey: string): void {
     try {
         sessionStorage.removeItem(timerKey);
+        localStorage.removeItem(timerKey + TIMER_DEADLINE_SUFFIX);
     } catch {
         // ignore
+    }
+}
+
+const TIMER_DEADLINE_SUFFIX = '_endsAt';
+
+/**
+ * Absolute deadline (epoch ms) of a timed test/essay. Kept in localStorage — unlike the legacy
+ * remaining-seconds value in sessionStorage — so closing and reopening the link keeps the deadline.
+ */
+export function loadTimerDeadline(timerKey: string): number | null {
+    try {
+        const raw = localStorage.getItem(timerKey + TIMER_DEADLINE_SUFFIX);
+        if (!raw) return null;
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveTimerDeadline(timerKey: string, endsAt: number): void {
+    try {
+        localStorage.setItem(timerKey + TIMER_DEADLINE_SUFFIX, String(endsAt));
+    } catch {
+        // ignore — the countdown still runs from memory for this session
+    }
+}
+
+const TIMER_RECEIPT_SUFFIX = '_handedIn';
+
+/** Marks a timed attempt as handed in: its deadline is dropped and the receipt kept, so a reload neither restarts nor re-submits it. */
+export function completeTimedAttempt(timerKey: string, receipt: string): void {
+    clearTestTimer(timerKey);
+    try {
+        localStorage.setItem(timerKey + TIMER_RECEIPT_SUFFIX, receipt);
+    } catch {
+        // ignore — without the marker a reload starts the attempt over, as before
+    }
+}
+
+export function loadTimedAttemptReceipt(timerKey: string): string | null {
+    try {
+        return localStorage.getItem(timerKey + TIMER_RECEIPT_SUFFIX);
+    } catch {
+        return null;
     }
 }

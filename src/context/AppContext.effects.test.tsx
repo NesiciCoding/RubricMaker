@@ -95,6 +95,7 @@ vi.mock('../store/storage', () => ({
     setLocalMode: vi.fn(),
     isLocalMode: vi.fn(() => false),
     onStorageQuotaExceeded: vi.fn(),
+    onVoiceFeedbackDropped: vi.fn(),
     exportStore: vi.fn((s) => s),
     loadRubricVersions: vi.fn(() => []),
     upsertRubricVersion: vi.fn(() => ({ versions: [], evictedIds: [] })),
