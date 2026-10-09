@@ -722,6 +722,8 @@ export interface ScoreEntry {
     audioStoragePath?: string;
 }
 
+export type ModerationResolution = 'kept-baseline' | 'accepted-second-marker' | 'reconciled';
+
 export interface StudentRubric {
     id: string;
     rubricId: string;
@@ -743,6 +745,10 @@ export interface StudentRubric {
     isAnchor?: boolean;
     /** Peer review round number (1-based); undefined means single/legacy round */
     round?: number;
+    /** Second-marker grades only: how the moderation dispute was settled. Resolved reviews are
+     * kept for the record and drop out of the moderation queue. */
+    moderationResolution?: ModerationResolution;
+    moderationResolvedAt?: string;
     /** Student's own level selection per criterion (rubric-level self-assessment) */
     selfAssessmentLevels?: Record<string, string | null>;
     /** Free text student self-reflection for this rubric grade */

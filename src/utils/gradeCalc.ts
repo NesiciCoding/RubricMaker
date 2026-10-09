@@ -113,14 +113,15 @@ export function criterionPercentage(entry: ScoreEntry | undefined, criterion: Ru
 
 /** Weighted score as percentage 0–100 */
 export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriterion[]): number {
-    const totalWeight = criteria.reduce((s, c) => s + effectiveWeight(c), 0);
+    // A criterion nobody can score on (max 0) must not dilute the others through its weight.
+    const scorable = criteria.filter((c) => criterionMaxPoints(c) > 0);
+    const totalWeight = scorable.reduce((s, c) => s + effectiveWeight(c), 0);
     if (totalWeight === 0) return calcPercentage(entries, criteria);
 
     let weightedSum = 0;
-    for (const criterion of criteria) {
+    for (const criterion of scorable) {
         const entry = entries.find((e) => e.criterionId === criterion.id);
-        const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-        if (maxPoints === 0) continue;
+        const maxPoints = criterionMaxPoints(criterion);
 
         const pts = entry ? calcEntryPoints(entry, criterion) : 0;
         weightedSum += (pts / maxPoints) * effectiveWeight(criterion);
