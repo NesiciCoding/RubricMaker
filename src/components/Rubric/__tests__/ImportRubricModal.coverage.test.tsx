@@ -52,7 +52,7 @@ const parsed: ParsedRubric = {
     subject: 'English',
     description: '',
     confidence: 'high',
-    warnings: ['Some cells were empty and skipped'],
+    warnings: [{ key: 'importRubric.warn_one_level' }],
     criteria: [
         {
             id: 'c1',
@@ -122,7 +122,7 @@ describe('ImportRubricModal coverage', () => {
         expect(screen.getByText(/2 levels detected/)).toBeInTheDocument();
         // high confidence → no edit hint
         expect(screen.queryByText(' You can edit all fields after importing.')).not.toBeInTheDocument();
-        expect(screen.getByText('Some cells were empty and skipped')).toBeInTheDocument();
+        expect(screen.getByText(/Only one level was detected/)).toBeInTheDocument();
         expect((screen.getByPlaceholderText('e.g. Essay Rubric') as HTMLInputElement).value).toBe('My Rubric');
         expect((screen.getByPlaceholderText('e.g. English') as HTMLInputElement).value).toBe('English');
         // table preview with description fallback

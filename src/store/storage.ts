@@ -1848,7 +1848,53 @@ export function saveTestTimer(timerKey: string, seconds: number): void {
 export function clearTestTimer(timerKey: string): void {
     try {
         sessionStorage.removeItem(timerKey);
+        localStorage.removeItem(timerKey + TIMER_DEADLINE_SUFFIX);
     } catch {
         // ignore
+    }
+}
+
+const TIMER_DEADLINE_SUFFIX = '_endsAt';
+
+/**
+ * Absolute deadline (epoch ms) of a timed test/essay. Kept in localStorage — unlike the legacy
+ * remaining-seconds value in sessionStorage — so closing and reopening the link keeps the deadline.
+ */
+export function loadTimerDeadline(timerKey: string): number | null {
+    try {
+        const raw = localStorage.getItem(timerKey + TIMER_DEADLINE_SUFFIX);
+        if (!raw) return null;
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveTimerDeadline(timerKey: string, endsAt: number): void {
+    try {
+        localStorage.setItem(timerKey + TIMER_DEADLINE_SUFFIX, String(endsAt));
+    } catch {
+        // ignore — the countdown still runs from memory for this session
+    }
+}
+
+const TIMER_RECEIPT_SUFFIX = '_handedIn';
+
+/** Marks a timed attempt as handed in: its deadline is dropped and the receipt kept, so a reload neither restarts nor re-submits it. */
+export function completeTimedAttempt(timerKey: string, receipt: string): void {
+    clearTestTimer(timerKey);
+    try {
+        localStorage.setItem(timerKey + TIMER_RECEIPT_SUFFIX, receipt);
+    } catch {
+        // ignore — without the marker a reload starts the attempt over, as before
+    }
+}
+
+export function loadTimedAttemptReceipt(timerKey: string): string | null {
+    try {
+        return localStorage.getItem(timerKey + TIMER_RECEIPT_SUFFIX);
+    } catch {
+        return null;
     }
 }

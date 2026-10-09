@@ -218,12 +218,16 @@ describe('ImportRubricModal', () => {
     });
 
     it('shows warnings from parsed rubric', async () => {
-        mockParseJson.mockResolvedValue({ ...parsedRubric, confidence: 'medium', warnings: ['Column count mismatch'] });
+        mockParseJson.mockResolvedValue({
+            ...parsedRubric,
+            confidence: 'medium',
+            warnings: [{ key: 'importRubric.warn_one_level' }],
+        });
         render(<ImportRubricModal onClose={vi.fn()} onImport={vi.fn()} />);
         const input = document.querySelector('input[type="file"]') as HTMLInputElement;
         simulateFileInput(input, makeFile('rubric.json', 'application/json'));
         await waitFor(() => {
-            expect(screen.getByText(/Column count mismatch/i)).toBeInTheDocument();
+            expect(screen.getByText(/Only one level was detected/)).toBeInTheDocument();
         });
     });
 
