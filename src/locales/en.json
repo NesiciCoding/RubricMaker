@@ -3749,7 +3749,8 @@
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
-        "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically."
+        "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
+        "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -4231,7 +4232,26 @@
         "col_criterion": "Criterion",
         "none_detected": "No rubric structure detected. Try a different file.",
         "try_another": "Try Another File",
-        "create": "Create Rubric"
+        "create": "Create Rubric",
+        "weight_value": "Weight {{weight}}%",
+        "points_value": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "warn_no_table": "No table found in document. Make sure your rubric uses a table layout.",
+        "warn_no_pdf_text": "Could not extract any text from PDF. The file may be image-based (scanned).",
+        "warn_no_structure": "Could not detect a rubric table structure in the document.",
+        "warn_no_levels": "Found a table but could not detect level columns.",
+        "warn_no_criteria": "Table found but no criteria could be extracted.",
+        "warn_one_criterion": "Only one criterion was detected — the document may not be a standard rubric.",
+        "warn_one_level": "Only one level was detected — columns may not have been parsed correctly.",
+        "warn_invalid_json": "Invalid JSON format: missing criteria array.",
+        "warn_json_failed": "Failed to parse JSON: {{message}}",
+        "warn_order_guessed": "Could not tell whether the level columns run from best to worst or the other way round. Points assume the first column is the highest — check them below.",
+        "warn_points_partial": "Only some level headers state points; the other levels got estimated points.",
+        "warn_merged_row": "Row \"{{title}}\" spans several columns (a heading?) and was skipped.",
+        "warn_untitled_row": "A row with level text but no criterion title (a merged cell?) was skipped.",
+        "warn_cell_count": "Row \"{{title}}\" has {{found}} level cells but the header has {{expected}} levels — check its descriptions.",
+        "warn_weights_scaled": "Criterion weights added up to {{total}}% and were scaled to 100%.",
+        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others."
     },
     "standardsPicker": {
         "title": "Link Standard",
