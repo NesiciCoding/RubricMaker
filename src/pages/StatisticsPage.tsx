@@ -48,6 +48,7 @@ import { buildEloProgress } from '../utils/eloProgressAggregator';
 import { compareClasses, buildMultiClassTrend, getInsights } from '../utils/classComparisonAggregator';
 import { ChartSkeleton } from '../components/ui/Skeleton';
 import { STATS_PRESETS, type PresetChartPoint } from '../utils/statsChartPresets';
+import { liveStudentRubrics, rubricGradesInScope } from '../utils/liveStudentRubrics';
 
 const STUDENT_COLORS = ['var(--purple)', 'var(--green)', 'var(--yellow)', 'var(--red)'];
 
@@ -103,7 +104,10 @@ export default function StatisticsPage() {
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const studentRubrics = useMemo(
+        () => liveStudentRubrics(allStudentRubrics, students),
+        [allStudentRubrics, students]
+    );
     const { updateSettings } = useSettings();
 
     const { t, i18n } = useTranslation();
@@ -210,56 +214,39 @@ export default function StatisticsPage() {
 
     const nhiCount = useMemo(() => {
         if (!rubric) return 0;
-        return studentRubrics.filter((sr) => sr.rubricId === rubric.id && sr.notHandedIn).length;
-    }, [rubric, studentRubrics]);
+        return rubricGradesInScope(studentRubrics, rubric.id, students, { classId: selectedClassId }).filter(
+            (sr) => sr.notHandedIn
+        ).length;
+    }, [rubric, studentRubrics, students, selectedClassId]);
+
+    const filteredRubricStudentRubrics = useMemo(() => {
+        if (!rubric) return [];
+        return rubricGradesInScope(studentRubrics, rubric.id, students, {
+            classId: selectedClassId,
+            excludeNotHandedIn: excludeNHI,
+        });
+    }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
 
     const summaries = useMemo(() => {
         if (!rubric) return [];
-        return studentRubrics
-            .filter((sr) => {
-                if (sr.rubricId !== rubric.id) return false;
-                if (excludeNHI && sr.notHandedIn) return false;
-                if (selectedClassId === 'all') return true;
-                const student = students.find((s) => s.id === sr.studentId);
-                return student?.classId === selectedClassId;
-            })
-            .map((sr) => calcGradeSummary(sr, rubric.criteria, scale, rubric));
-    }, [rubric, studentRubrics, scale, selectedClassId, students, excludeNHI]);
+        return filteredRubricStudentRubrics.map((sr) => calcGradeSummary(sr, rubric.criteria, scale, rubric));
+    }, [rubric, filteredRubricStudentRubrics, scale]);
 
     const stats = useMemo(() => calcClassStats(summaries, scale), [summaries, scale]);
 
     const criterionStats = useMemo(() => {
         if (!rubric) return [];
         return rubric.criteria.map((c) => {
-            const scores = studentRubrics
-                .filter((sr) => {
-                    if (sr.rubricId !== rubric.id) return false;
-                    if (excludeNHI && sr.notHandedIn) return false;
-                    if (selectedClassId === 'all') return true;
-                    const student = students.find((s) => s.id === sr.studentId);
-                    return student?.classId === selectedClassId;
-                })
-                .map((sr) => {
-                    const entry = sr.entries.find((e) => e.criterionId === c.id);
-                    if (!entry) return 0;
-                    return calcEntryPoints(entry, c);
-                });
+            const scores = filteredRubricStudentRubrics.map((sr) => {
+                const entry = sr.entries.find((e) => e.criterionId === c.id);
+                if (!entry) return 0;
+                return calcEntryPoints(entry, c);
+            });
             const max = criterionMaxPointsOrOne(c);
             const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
             return { name: c.title, avg: parseFloat(((avg / max) * 100).toFixed(1)), max };
         });
-    }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
-
-    const filteredRubricStudentRubrics = useMemo(() => {
-        if (!rubric) return [];
-        return studentRubrics.filter((sr) => {
-            if (sr.rubricId !== rubric.id) return false;
-            if (excludeNHI && sr.notHandedIn) return false;
-            if (selectedClassId === 'all') return true;
-            const student = students.find((s) => s.id === sr.studentId);
-            return student?.classId === selectedClassId;
-        });
-    }, [rubric, studentRubrics, selectedClassId, students, excludeNHI]);
+    }, [rubric, filteredRubricStudentRubrics]);
 
     const bloomsData = useMemo(() => {
         const inCriteria = rubric?.criteria.some((c) =>
@@ -396,14 +383,7 @@ export default function StatisticsPage() {
 
     const tableData = useMemo(() => {
         if (!rubric) return [];
-        const data = studentRubrics
-            .filter((sr) => {
-                if (sr.rubricId !== rubric.id) return false;
-                if (excludeNHI && sr.notHandedIn) return false;
-                if (selectedClassId === 'all') return true;
-                const student = students.find((s) => s.id === sr.studentId);
-                return student?.classId === selectedClassId;
-            })
+        const data = filteredRubricStudentRubrics
             .map((sr) => {
                 const student = students.find((s) => s.id === sr.studentId);
                 const r = sr.rubricSnapshot || rubric;
@@ -415,7 +395,7 @@ export default function StatisticsPage() {
             );
 
         return data.sort((a, b) => a.student.name.toLowerCase().localeCompare(b.student.name.toLowerCase()));
-    }, [rubric, studentRubrics, students, scale, selectedClassId, excludeNHI]);
+    }, [rubric, filteredRubricStudentRubrics, students, scale]);
 
     const heatmapScores = useMemo(() => {
         if (!rubric) return {};
