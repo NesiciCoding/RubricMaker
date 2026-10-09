@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
@@ -44,6 +44,10 @@ export default function ModerationQueuePage() {
     // The roster domain hooks filtered soft-deleted rows; keep that behavior here.
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const latestStudentRubrics = useRef(studentRubrics);
+    useEffect(() => {
+        latestStudentRubrics.current = studentRubrics;
+    }, [studentRubrics]);
     const { saveStudentRubric, savePeerReview } = useStoreActions();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { fetchSchoolMembers } = usePlatform();
@@ -98,7 +102,7 @@ export default function ModerationQueuePage() {
     }
 
     function formatGrade(sr: StudentRubric): string {
-        const rubric = rubrics.find((r) => r.id === sr.rubricId);
+        const rubric = sr.rubricSnapshot ?? rubrics.find((r) => r.id === sr.rubricId);
         /* v8 ignore next -- getModerationQueue skips items whose rubric is missing */
         if (!rubric) return '—';
         const scaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
@@ -108,9 +112,9 @@ export default function ModerationQueuePage() {
         return scale ? `${summary.letterGrade} (${pct})` : pct;
     }
 
-    function acceptedGrade(item: ModerationQueueItem): StudentRubric {
+    function acceptedGrade(item: ModerationQueueItem, baseline: StudentRubric = item.baseline): StudentRubric {
         return {
-            ...item.baseline,
+            ...baseline,
             entries: item.secondMarkerEntry.entries,
             overallComment: item.secondMarkerEntry.overallComment,
             globalModifier: item.secondMarkerEntry.globalModifier,
@@ -144,7 +148,9 @@ export default function ModerationQueuePage() {
             danger: false,
         });
         if (!ok) return;
-        saveStudentRubric(accepted);
+        // A sync can land while the dialog is open; build on the live baseline so its other fields aren't reverted.
+        const liveBaseline = latestStudentRubrics.current.find((sr) => sr.id === item.baseline.id) ?? item.baseline;
+        saveStudentRubric(acceptedGrade(item, liveBaseline));
         savePeerReview(markModerationResolved(item.secondMarkerEntry, 'accepted-second-marker'));
     }
 

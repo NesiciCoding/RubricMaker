@@ -291,6 +291,85 @@ describe('ModerationQueuePage coverage', () => {
         );
     });
 
+    it('shows the confirmation grade from the rubric snapshot the baseline was graded with', async () => {
+        const level = (maxPoints: number) => ({
+            id: 'l1',
+            label: 'Good',
+            minPoints: 0,
+            maxPoints,
+            description: '',
+            subItems: [],
+        });
+        const liveRubric: Rubric = {
+            id: 'r1',
+            name: 'Essay Rubric',
+            subject: 'writing',
+            description: '',
+            criteria: [{ id: 'c1', title: 'Argument', description: '', weight: 100, levels: [level(10)] }],
+            gradeScaleId: 'gs1',
+            format: DEFAULT_FORMAT,
+            attachmentIds: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            totalMaxPoints: 10,
+            scoringMode: 'weighted-percentage',
+        };
+        state.rubrics = [liveRubric];
+        const queued = item('sm1', 'col1', daysAgo(10));
+        mocks.getModerationQueue.mockReturnValue([
+            {
+                ...queued,
+                baseline: {
+                    ...queued.baseline,
+                    entries: [
+                        { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 4 },
+                    ],
+                    rubricSnapshot: {
+                        ...liveRubric,
+                        criteria: [{ ...liveRubric.criteria[0], levels: [level(4)] }],
+                    },
+                },
+            },
+        ]);
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        await waitFor(() => expect(mocks.getModerationQueue).toHaveBeenCalled());
+
+        fireEvent.click(screen.getByText('coGrading.action_keep_baseline'));
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/coGrading.confirm_keep_message/)).toHaveTextContent('"grade":"100%"');
+    });
+
+    it('accepts onto the live baseline when it changed while the dialog was open', async () => {
+        const baselineSr: StudentRubric = {
+            id: 'b1',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [],
+            overallComment: 'Baseline',
+            isPeerReview: false,
+        };
+        state.studentRubrics = [baselineSr];
+        const queued = item('sm1', 'col1', daysAgo(10));
+        mocks.getModerationQueue.mockReturnValue([{ ...queued, baseline: baselineSr }]);
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        await waitFor(() => expect(mocks.getModerationQueue).toHaveBeenCalled());
+
+        fireEvent.click(screen.getByText('coGrading.action_accept_second_marker'));
+        const dialog = await screen.findByRole('dialog');
+
+        // A sync lands while the dialog is open; any re-render picks up the new store state.
+        state.studentRubrics = [{ ...baselineSr, feedbackOnly: true }];
+        fireEvent.change(screen.getByLabelText('coGrading.threshold_label'), { target: { value: '5' } });
+
+        fireEvent.click(within(dialog).getByText('coGrading.action_accept_second_marker'));
+        await waitFor(() => expect(mocks.saveStudentRubric).toHaveBeenCalled());
+        expect(mocks.saveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'b1', feedbackOnly: true, overallComment: '' })
+        );
+    });
+
     it('reconciles the baseline via the modal and cancels', async () => {
         mocks.buildReconciledEntries.mockReturnValue([{ criterionId: 'c1', points: 3 }]);
         mocks.getModerationQueue.mockReturnValue([item('sm1', 'col1', daysAgo(10))]);

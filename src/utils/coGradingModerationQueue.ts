@@ -89,8 +89,11 @@ export function getModerationQueue(
             });
         }
 
-        const maxRaw = calcMaxRawScore(rubric.criteria);
-        const deltaPercent = maxRaw > 0 ? (totalAbsDelta / maxRaw) * 100 : 0;
+        const maxPoints =
+            rubric.scoringMode === 'total-points' && rubric.totalMaxPoints > 0
+                ? rubric.totalMaxPoints
+                : calcMaxRawScore(rubric.criteria);
+        const deltaPercent = maxPoints > 0 ? (totalAbsDelta / maxPoints) * 100 : 0;
         if (deltaPercent >= thresholdPercent) {
             queue.push({
                 rubricId: secondMarkerEntry.rubricId,
