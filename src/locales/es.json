@@ -3277,7 +3277,7 @@
         "rb_builder_views_suffix": "usando el interruptor de la barra de herramientas.",
         "rb_scoring_modes_title": "Modos de puntuación",
         "rb_scoring_modes_item_total": "Puntos totales — puntuación bruta de todos los niveles de criterios.",
-        "rb_scoring_modes_item_weighted": "Porcentaje ponderado — cada criterio tiene una ponderación (%). La nota final es el promedio ponderado.",
+        "rb_scoring_modes_item_weighted": "Porcentaje ponderado — cada criterio tiene una ponderación (%). La nota final es el promedio ponderado. Los criterios de 0 puntos no cuentan en el promedio.",
         "rb_scoring_modes_item_single": "Rúbrica de un solo punto — un nivel por criterio (cumple / no cumple); lógica de aprobado/no aprobado.",
         "rb_level_options_title": "Opciones de nivel",
         "rb_level_options_item_checklist": "Listas de verificación de subelementos dentro de un nivel (los alumnos deben completar elementos específicos).",

@@ -3277,7 +3277,7 @@
         "rb_builder_views_suffix": "at any time using the toggle in the toolbar.",
         "rb_scoring_modes_title": "Scoring modes",
         "rb_scoring_modes_item_total": "Total Points — raw score from all criteria levels.",
-        "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average.",
+        "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average. Criteria worth 0 points are left out of the average.",
         "rb_scoring_modes_item_single": "Single-Point Rubric — one level per criterion (meets / does not meet); pass/fail logic.",
         "rb_level_options_title": "Level options",
         "rb_level_options_item_checklist": "Sub-item checklists within a level (students must complete specific items).",

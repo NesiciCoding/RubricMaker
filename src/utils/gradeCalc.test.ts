@@ -478,7 +478,7 @@ describe('gradeCalc utilities', () => {
     });
 
     describe('calcWeightedScore — maxPoints === 0 branch', () => {
-        it('skips criteria where all level maxPoints are 0', () => {
+        it('excludes criteria where all level maxPoints are 0 from score and weight', () => {
             const criteria: RubricCriterion[] = [
                 {
                     id: 'c1',
@@ -500,10 +500,8 @@ describe('gradeCalc utilities', () => {
                 { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 5 },
                 { criterionId: 'c2', levelId: 'l2', checkedSubItems: [], comment: '' },
             ];
-            // Only c1 contributes: 5/10 * 50 = 25; totalWeight is 100 but only c1's weight=50 matters
-            // calcWeightedScore: weightedSum = (5/10)*50 = 25; totalWeight = 100
-            // Result: (25/100)*100 = 25
-            expect(calcWeightedScore(entries, criteria)).toBe(25);
+            // c2's weight must not dilute c1: 5/10 on the only scorable criterion is 50% (#647).
+            expect(calcWeightedScore(entries, criteria)).toBe(50);
         });
     });
 
