@@ -6,6 +6,8 @@ export type CsvColumnMap = {
     lastName: string;
     email: string;
     className: string;
+    /** A full-name column kept aside when first + last name win, for rows where one of them is blank. */
+    fullNameFallback?: string;
 };
 
 export interface MatchedImportRow {
@@ -18,10 +20,18 @@ export interface MatchedImportRow {
     matchedStudent: Student | null;
 }
 
-function extractName(row: Record<string, string>, mapping: CsvColumnMap): string {
-    if (mapping.fullName && row[mapping.fullName]) return String(row[mapping.fullName]).trim();
-    const f = mapping.firstName && row[mapping.firstName] ? String(row[mapping.firstName]).trim() : '';
-    const l = mapping.lastName && row[mapping.lastName] ? String(row[mapping.lastName]).trim() : '';
+const cell = (row: Record<string, string>, column: string | undefined) =>
+    column && row[column] ? String(row[column]).trim() : '';
+
+export function extractCsvName(row: Record<string, string>, mapping: CsvColumnMap): string {
+    const full = cell(row, mapping.fullName);
+    if (full) return full;
+    const f = cell(row, mapping.firstName);
+    const l = cell(row, mapping.lastName);
+    if (!f || !l) {
+        const fallback = cell(row, mapping.fullNameFallback);
+        if (fallback) return fallback;
+    }
     return [f, l].filter(Boolean).join(' ');
 }
 
@@ -41,7 +51,7 @@ export function matchCsvRows(
     const rows: MatchedImportRow[] = [];
 
     for (const row of parsedData) {
-        const name = extractName(row, mapping);
+        const name = extractCsvName(row, mapping);
         if (!name) continue;
 
         const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
@@ -122,4 +132,79 @@ export function summarizeImport(rows: MatchedImportRow[], students: Student[], s
         : 0;
 
     return { created, updated, transferred, removed };
+}
+
+const normaliseHeader = (h: string) =>
+    h
+        .toLowerCase()
+        .replace(/[_\-.]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const FIRST_NAME_HEADERS = [
+    'first name',
+    'firstname',
+    'first',
+    'given name',
+    'givenname',
+    'forename',
+    'voornaam',
+    'roepnaam',
+];
+const LAST_NAME_HEADERS = ['last name', 'lastname', 'last', 'surname', 'family name', 'familyname', 'achternaam'];
+// Columns about someone other than the student (Parent first name, Guardian email, …) are never auto-mapped.
+const OTHER_PERSON_WORDS = [
+    'parent',
+    'guardian',
+    'mother',
+    'father',
+    'contact',
+    'teacher',
+    'ouder',
+    'verzorger',
+    'moeder',
+    'vader',
+    'docent',
+    'mentor',
+];
+
+const FULL_NAME_HEADERS = [
+    'name',
+    'full name',
+    'fullname',
+    'student name',
+    'student',
+    'pupil',
+    'naam',
+    'volledige naam',
+    'leerling',
+    'leerlingnaam',
+];
+
+/**
+ * Suggests a column mapping for a generic student CSV. Full name only matches a header that *is* a
+ * full-name header, never one that merely contains "name" (First name, Last name, Username), and
+ * first + last name columns win over a full-name column when both are present.
+ */
+export function autoMapCsvHeaders(headers: string[]): CsvColumnMap {
+    const norm = headers.map(normaliseHeader);
+    const isOtherPerson = (h: string) => h.split(' ').some((w) => OTHER_PERSON_WORDS.includes(w));
+    const find = (exact: string[], contains: string[] = []) => {
+        const i = norm.findIndex((h) => exact.includes(h));
+        if (i !== -1) return headers[i];
+        const j = norm.findIndex((h) => !isOtherPerson(h) && contains.some((c) => h.includes(c)));
+        return j !== -1 ? headers[j] : '';
+    };
+    const firstName = find(FIRST_NAME_HEADERS, ['first name', 'given name', 'voornaam', 'roepnaam']);
+    const lastName = find(LAST_NAME_HEADERS, ['last name', 'surname', 'family name', 'achternaam']);
+    const fullNameColumn = find(FULL_NAME_HEADERS, ['full name', 'volledige naam']);
+    const separate = Boolean(firstName && lastName);
+    return {
+        fullName: separate ? '' : fullNameColumn,
+        firstName,
+        lastName,
+        ...(separate && fullNameColumn ? { fullNameFallback: fullNameColumn } : {}),
+        email: find(['email', 'e mail', 'mail', 'email address'], ['email', 'e mail']),
+        className: find(['class', 'klas', 'group', 'course', 'groep'], ['class', 'course', 'group', 'klas', 'groep']),
+    };
 }

@@ -1647,7 +1647,8 @@
         "quick_comments_label": "Schnell",
         "quick_comments_empty": "Speichern Sie Kommentare in der Bank, um hier schnelle Einfügungen zu erhalten.",
         "shortcut_chord": "Kriterium ansteuern, dann Stufe wählen (Akkord)",
-        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)"
+        "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
+        "points_before_modifier": "Punkte vor der Anpassung"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -2526,7 +2527,11 @@
         "selected": "ausgewählt",
         "report_card_success": "{{count}} Zeugnis(se) erstellt.",
         "rubric_students_section_title": "Schüler",
-        "select_test": "Test auswählen"
+        "select_test": "Test auswählen",
+        "bulk_nhi_confirm_title": "Als nicht abgegeben markieren?",
+        "bulk_nhi_confirm_message": "{{count}} ausgewählte Bewertung(en) als nicht abgegeben markieren? Sie fallen dann aus Statistiken, Dashboard und Schülerportal heraus.",
+        "bulk_nhi_done": "{{count}} Bewertung(en) als nicht abgegeben markiert",
+        "bulk_comment_done": "Kommentar zu {{count}} Bewertung(en) hinzugefügt"
     },
     "reportCard": {
         "title": "Zeugnis",
@@ -2655,7 +2660,9 @@
         "evidence_title": "Kompetenznachweise",
         "evidence_subtitle": "Welche Bewertungen zu jeder Kompetenz und Stufe beigetragen haben und warum sie als erreicht oder im Aufbau markiert ist.",
         "rationale_achieved": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — erreicht",
-        "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau"
+        "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau",
+        "working_toward": "Arbeitet auf {{level}} hin — noch nicht erreicht",
+        "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle)."
     },
     "learningPath": {
         "page_title": "Lernpfad",
@@ -3333,7 +3340,7 @@
         "gr_scoring_item_select": "Klicke auf eine Stufenzelle, um sie auszuwählen. Klicke erneut, um die Auswahl aufzuheben.",
         "gr_scoring_item_slider": "Verwende für Punktbereiche den Schieberegler, um einen Wert innerhalb des zulässigen Bereichs zu wählen.",
         "gr_scoring_item_subitems": "Schalte Unterpunkte innerhalb einer Stufe mit Kontrollkästchen um.",
-        "gr_scoring_item_modifiers": "Wende Bewertungsmodifikatoren (%-Bonus, Punktabzug, Stufenanpassung) mit einer Begründung an.",
+        "gr_scoring_item_modifiers": "Wende einen Bewertungsmodifikator (Prozent-Bonus oder -Abzug oder eine Punktkorrektur) mit einer Begründung an. Eine Punktkorrektur bezieht sich auf das Maximum des Rasters: +10 Punkte bei einem 200-Punkte-Raster ergeben +5 %.",
         "gr_mobile_title": "Mobile Bewertung",
         "gr_mobile_body_prefix": "Auf Telefonen und iPad im Hochformat ist die Bewertungsansicht touch-optimiert. Punktbereich- und Unterpunkt-Schieberegler erhalten einen",
         "gr_mobile_stepper": "− / +",
@@ -3712,7 +3719,7 @@
         "gr_layout_title": "Karten- und Rasteransicht",
         "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
         "gr_keyboard_title": "Tastaturkürzel",
-        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
+        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Ist ein Kriterium ausgewählt, wechseln ↑ / ↓ zwischen Kriterien (Tab und Umschalt+Tab gehen wie gewohnt durch alle Schaltflächen und Felder), Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
         "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich.",
         "ce_flashcards_item_fields": "Vokabelkarten können eine Phonetik (Aussprache/IPA) und Wortart enthalten — direkt im Deck-Editor eingegeben oder als optionale 4. und 5. Spalte importiert. Lernende sehen sie beim Lernen auf der Karte, zusammen mit einer Fortschrittsleiste und einer Seitenleiste mit der Wortliste des Decks.",
         "es_focus_title": "Fokusmodus für Lernende",
@@ -3755,6 +3762,7 @@
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
         "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
         "da_admin_item_archive": "Tab Archiv — archivierte Schüler wiederherstellen, anonymisieren oder endgültig löschen (Recht auf Löschung): alle Noten, Feedbacks, Aufsätze, Testantworten, Nachrichten, Anhänge, Scans und Aufnahmen des Schülers werden vom Gerät und aus der Datenbank gelöscht. Nächtliche Cloud-Sicherungen behalten die 7 neuesten Stände pro Lehrkraft, ein gelöschter Schüler verschwindet daraus also binnen 7 Tagen; selbst erstellte JSON-Exporte und Server-Sicherungen musst du von Hand löschen. Das eigene Anmeldekonto des Schülers, falls vorhanden, entfernt ein Administrator separat in Supabase Auth.",
+        "ce_overview_item_achieved": "Erreicht vs. arbeitet darauf hin: Ein Niveau gilt erst als erreicht, wenn der Durchschnitt der Person die Erreichungsschwelle des Rasters erreicht. Darunter zeigen die Schülerliste, die GER-Übersicht und das Dashboard das Niveau als gestricheltes Abzeichen („arbeitet darauf hin“), und Klassenkarten zählen nur erreichte Niveaus.",
         "gr_unsaved_note": "Wenn Sie eine Bewertungsseite mit nicht gespeicherten Änderungen verlassen — über die Seitenleiste, die Zurück-Schaltfläche oder durch Schließen des Tabs —, werden Sie zuerst um Bestätigung gebeten. Vergleichendes Bewerten und Peer-Review funktionieren genauso. Speichern, Speichern & Weiter und Nicht abgegeben speichern vorher und fragen daher nicht.",
         "rb_import_export_item_docx": "Import aus Word oder PDF: Laden Sie eine Rastertabelle als .docx oder .pdf hoch (Kriterien in Zeilen, Stufen in Spalten). Die Punkte folgen der Kopfzeile — z. B. „Gut (3 P.)“ oder „Schwach (1-2 P.)“ — oder, ohne Punkte, den Stufennamen, sodass eine Tabelle von Mangelhaft → Ausgezeichnet die meisten Punkte an Ausgezeichnet vergibt. Prozentangaben neben einem Kriterium („Inhalt 40 %“) werden zu dessen Gewichtung. Die Vorschau zeigt die Punkte jeder Stufe und die Gewichtung jedes Kriteriums sowie eine Warnung für alles Geschätzte; prüfen Sie sie, bevor Sie auf Rubric erstellen klicken."
     },
@@ -3933,7 +3941,7 @@
     },
     "help": {
         "score_modifier_title": "Notenanpassungen",
-        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10%) oder Punkte (z. B. +5). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
+        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10% addiert 10 Prozentpunkte) oder Punkte (z. B. +5 addiert 5 Punkte zur Gesamtpunktzahl des Rasters, bei 200 Punkten also 2,5 %). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
         "lww_title": "Wie die Synchronisierung Konflikte löst",
         "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "proctoring_title": "Aufsichtsmeldungen",

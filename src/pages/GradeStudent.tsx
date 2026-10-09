@@ -62,6 +62,8 @@ import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
 
+const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
+
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
     const { rubricId, studentId } = useParams();
@@ -405,12 +407,16 @@ export default function GradeStudent() {
 
             const criteriaCount = rubric.criteria.length;
 
-            if (e.key === 'Tab') {
+            // Tab stays native so keyboard users can reach every control (#671). Once a criterion is
+            // addressed (letter key, click or focus), the arrow keys move between criteria — but only
+            // while focus is on the page or inside a criterion card, so they still scroll from e.g. Save.
+            const active = document.activeElement;
+            const arrowsNavigate =
+                !active || active === document.body || criterionCardsRef.current.some((card) => card?.contains(active));
+            if (focusedCriterionIdx !== null && arrowsNavigate && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
-                setFocusedCriterionIdx((prev) => {
-                    if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
-                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
-                });
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                setFocusedCriterionIdx((focusedCriterionIdx + step + criteriaCount) % criteriaCount);
                 return;
             }
 
@@ -951,6 +957,7 @@ export default function GradeStudent() {
                                     ref={(el) => {
                                         criterionCardsRef.current[criterionIndex] = el;
                                     }}
+                                    onFocus={() => setFocusedCriterionIdx(criterionIndex)}
                                 >
                                     {/* Criterion header */}
                                     <div
@@ -2042,7 +2049,7 @@ export default function GradeStudent() {
                             {[
                                 { key: '1 – 5', desc: t('gradeStudent.shortcut_level') },
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
-                                { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
+                                { key: '↑ / ↓', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
                                 { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
@@ -2106,7 +2113,15 @@ export default function GradeStudent() {
                             </span>
                         )}
                         <span className="text-muted text-sm">
-                            {summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
+                            {summary.modifiedPoints !== summary.rawScore && (
+                                <span title={t('gradeStudent.points_before_modifier')}>
+                                    ({formatPoints(summary.rawScore)}{' '}
+                                    {summary.modifiedPoints > summary.rawScore ? '+' : '−'}{' '}
+                                    {formatPoints(Math.abs(summary.modifiedPoints - summary.rawScore))}){' '}
+                                </span>
+                            )}
+                            {formatPoints(summary.modifiedPoints)} / {formatPoints(summary.configuredMaxPoints)}{' '}
+                            {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria}{' '}
