@@ -33,7 +33,11 @@ export function effectiveWeight(criterion: RubricCriterion): number {
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
     // Overrides arrive unclamped from imports and co-grade reconciliation, not just the UI.
-    if (entry.overridePoints !== undefined) return clamp(entry.overridePoints, 0, criterionMaxPoints(criterion));
+    if (entry.overridePoints !== undefined) {
+        // Criteria without point levels take free-form points (total-points rubrics), so only a real maximum caps them.
+        const max = criterionMaxPoints(criterion);
+        return clamp(entry.overridePoints, 0, max > 0 ? max : Infinity);
+    }
     // Single-point rubric outcome: meets/exceeds = full points, not-yet = 0
     if (entry.singlePointOutcome !== undefined) {
         if (entry.singlePointOutcome === 'not-yet') return 0;

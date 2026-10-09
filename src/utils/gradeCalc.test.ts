@@ -858,6 +858,12 @@ describe('gradeCalc utilities', () => {
             expect(calcEntryPoints(entry({ overridePoints: NaN }), tenPoint)).toBe(0);
         });
 
+        it('leaves overrides on criteria without point levels uncapped above 0', () => {
+            const freePoints: RubricCriterion = { ...tenPoint, levels: [] };
+            expect(calcEntryPoints(entry({ overridePoints: 20 }), freePoints)).toBe(20);
+            expect(calcEntryPoints(entry({ overridePoints: -5 }), freePoints)).toBe(0);
+        });
+
         it('treats NaN and negative weights as 0', () => {
             expect(effectiveWeight({ ...tenPoint, weight: NaN })).toBe(0);
             expect(effectiveWeight({ ...tenPoint, weight: -3 })).toBe(0);
