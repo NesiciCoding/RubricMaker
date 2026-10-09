@@ -28,7 +28,7 @@ export default function AttachmentsPage() {
     const fileRef = useRef<HTMLInputElement>(null);
     const dbStatus = useDbStatus();
     const maxBytes = attachmentMaxBytes(dbStatus.isConnected);
-    const [tooLarge, setTooLarge] = useState<string[]>([]);
+    const [rejected, setRejected] = useState<{ names: string[]; maxBytes: number; local: boolean } | null>(null);
 
     const handleFiles = useCallback(
         (files: FileList | null) => {
@@ -36,7 +36,8 @@ export default function AttachmentsPage() {
             const all = Array.from(files);
             // Rejected up front: an oversized file used to appear in the list and then vanish
             // because the localStorage write behind it failed.
-            setTooLarge(all.filter((f) => f.size > maxBytes).map((f) => f.name));
+            const tooLarge = all.filter((f) => f.size > maxBytes).map((f) => f.name);
+            setRejected(tooLarge.length > 0 ? { names: tooLarge, maxBytes, local: !dbStatus.isConnected } : null);
             all.filter((f) => f.size <= maxBytes).forEach(async (file) => {
                 try {
                     addAttachment({
@@ -52,7 +53,7 @@ export default function AttachmentsPage() {
                 }
             });
         },
-        [addAttachment, selectedRubricId, selectedStudentId, maxBytes]
+        [addAttachment, selectedRubricId, selectedStudentId, maxBytes, dbStatus.isConnected]
     );
 
     function downloadAttachment(att: (typeof attachments)[0]) {
@@ -178,18 +179,18 @@ export default function AttachmentsPage() {
                         </div>
                     )}
                 </div>
-                {tooLarge.length > 0 && (
+                {rejected && (
                     <div
                         role="alert"
                         className="card"
                         style={{ marginBottom: 16, borderColor: 'var(--red)', color: 'var(--text)' }}
                     >
-                        {tooLarge.map((name) => (
+                        {rejected.names.map((name) => (
                             <p key={name} style={{ margin: '2px 0' }}>
-                                {t('attachments.too_large', { name, limit: formatFileSize(maxBytes) })}
+                                {t('attachments.too_large', { name, limit: formatFileSize(rejected.maxBytes) })}
                             </p>
                         ))}
-                        {!dbStatus.isConnected && (
+                        {rejected.local && (
                             <p className="text-xs text-muted" style={{ margin: '6px 0 0' }}>
                                 {t('attachments.too_large_local_hint')}
                             </p>

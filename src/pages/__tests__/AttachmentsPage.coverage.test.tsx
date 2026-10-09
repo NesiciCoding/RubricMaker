@@ -257,6 +257,19 @@ describe('AttachmentsPage coverage', () => {
             expect(mockAddAttachment).toHaveBeenCalledTimes(1);
         });
 
+        it('keeps the rejection message on the limit that rejected the file after connecting', () => {
+            mockDbStatus.isConnected = false;
+            const { container } = renderPage();
+            fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [bigFile()] } });
+
+            mockDbStatus.isConnected = true;
+            selectRubric();
+
+            expect(screen.getByRole('alert')).toHaveTextContent('"limit":"2.0 MB"');
+            expect(screen.getByText('attachments.too_large_local_hint')).toBeInTheDocument();
+            mockDbStatus.isConnected = false;
+        });
+
         it('accepts the same file when connected to a database', async () => {
             mockDbStatus.isConnected = true;
             const { container } = renderPage();
