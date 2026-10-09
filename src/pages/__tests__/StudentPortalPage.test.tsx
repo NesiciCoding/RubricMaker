@@ -308,6 +308,17 @@ describe('StudentPortalPage', () => {
         StudentPortalPageComp = mod.default;
     });
 
+    it('offsets section scrolling by the measured height of the sticky tab bar', () => {
+        const heightSpy = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(110);
+        renderAt('s1');
+        heightSpy.mockRestore();
+        const nav = screen.getByRole('navigation', { name: 'studentPortal.section_nav_label' });
+        expect((nav.parentElement as HTMLElement).style.getPropertyValue('--portal-nav-h')).toBe('110px');
+        expect(document.getElementById('portal-section-top')!.style.scrollMarginTop).toBe(
+            'calc(var(--portal-nav-h, 62px) + 8px)'
+        );
+    });
+
     it('shows the not-found state for an unknown student', () => {
         renderAt('unknown');
         expect(screen.getByText('studentPortal.not_found')).toBeInTheDocument();
