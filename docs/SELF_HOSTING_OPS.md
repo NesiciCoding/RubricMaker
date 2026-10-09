@@ -49,6 +49,15 @@ docker-compose start db
 
 RubricMaker's Settings → Database tab can export all data as JSON. This is not a replacement for pg_dump but is useful for migrating between accounts or taking a quick snapshot before a risky change.
 
+### Backups and erased students
+
+Admin → Archive → **Erase permanently** removes a student and everything linked to them from the database and Storage (migration `084_erase_student.sql`). Copies made before the erasure are not touched:
+
+- **Nightly cloud snapshots** (`nightly-backup`, `backups` bucket) keep each teacher's 7 most recent snapshots, so an erased student is gone from them after 7 days.
+- **`scripts/backup.sh` dumps and app JSON exports** are kept until you delete them. Rotate or prune them according to your school's retention policy, and do not restore an old dump over a database where students have since been erased without erasing them again.
+- The student's own sign-in account (if they used the portal) lives in Supabase Auth; delete it under Authentication → Users.
+- Files the teacher could not remove (voice feedback another grader recorded) are listed in the `audit_logs` row with `action = 'erase_student'`; delete them from Storage as an operator.
+
 ---
 
 ## Migrating from Supabase Cloud
