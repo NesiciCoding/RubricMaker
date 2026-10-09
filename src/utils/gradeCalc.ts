@@ -71,6 +71,7 @@ export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): 
     if ('levelId' in patch && patch.levelId !== entry.levelId) {
         if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
         if (!('subItemScores' in patch)) next.subItemScores = undefined;
+        if (!('checkedSubItems' in patch)) next.checkedSubItems = [];
     }
     return next;
 }

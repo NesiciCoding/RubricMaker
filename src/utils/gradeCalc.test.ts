@@ -483,6 +483,17 @@ describe('gradeCalc utilities', () => {
             expect(next.comment).toBe('keep');
         });
 
+        it('drops ticked sub-item checkboxes so switching back does not restore their points', () => {
+            const ticked: ScoreEntry = { ...base, checkedSubItems: ['s1'] };
+            const away = patchScoreEntry(ticked, { levelId: 'excellent' });
+            expect(away.checkedSubItems).toEqual([]);
+            expect(patchScoreEntry(away, { levelId: 'good' }).checkedSubItems).toEqual([]);
+            expect(patchScoreEntry(ticked, { levelId: 'good' }).checkedSubItems).toEqual(['s1']);
+            expect(patchScoreEntry(ticked, { levelId: 'excellent', checkedSubItems: ['s2'] }).checkedSubItems).toEqual([
+                's2',
+            ]);
+        });
+
         it('keeps points when the level is unchanged or the patch sets them', () => {
             expect(patchScoreEntry(base, { levelId: 'good' }).selectedPoints).toBe(85);
             expect(patchScoreEntry(base, { selectedPoints: 80 }).selectedPoints).toBe(80);
