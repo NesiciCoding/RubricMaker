@@ -1,10 +1,20 @@
 // Generated from src/context/AppContext.tsx by the domain-split refactor.
 import React, { createContext, useMemo, ReactNode } from 'react';
-import { AppContextValue, StoreActionsCtx, useContextOrThrow } from '../storeCore';
+import {
+    AppContextValue,
+    StoreActionsCtx,
+    StudentEraseResult,
+    flushToLocalStorage,
+    isOffline,
+    useContextOrThrow,
+} from '../storeCore';
 import type { Attachment, Class, ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../../types';
 import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
+import { loadSupabaseConfig } from '../../services/database/supabaseConfig';
+import { isLocalMode, loadPendingQueue, removePendingWrites } from '../../store/storage';
+import { eraseStudentFromStore, pendingWritesForStudent } from '../../utils/eraseStudent';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 
 export type RosterValue = Pick<
@@ -21,6 +31,7 @@ export type RosterValue = Pick<
     | 'deleteStudent'
     | 'restoreStudent'
     | 'anonymizeStudent'
+    | 'eraseStudent'
     | 'addClass'
     | 'updateClass'
     | 'deleteClass'
@@ -52,6 +63,7 @@ export type StudentsValue = Pick<
     | 'deleteStudent'
     | 'restoreStudent'
     | 'anonymizeStudent'
+    | 'eraseStudent'
     | 'setStudentPassword'
 >;
 
@@ -98,6 +110,7 @@ export type RosterActions = Pick<
     | 'deleteAttachment'
     | 'setStudentPassword'
     | 'anonymizeStudent'
+    | 'eraseStudent'
     | 'addComparativeMatchup'
 >;
 
@@ -241,6 +254,30 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         // connected, so a manual loadDb/pushOne here would only risk drifting from it.
         dispatch({ type: 'ANONYMIZE_STUDENT', id });
     };
+    // Right to erasure (#644). With a database the server erases first (rows and files); only
+    // then is local state purged, so a failed erase can be retried and nothing reappears on the
+    // next hydrate. The offline caches are rewritten too — they still hold the student otherwise.
+    const eraseStudent = async (id: string): Promise<StudentEraseResult> => {
+        let leftoverFiles = 0;
+        let erasedRemotely = false;
+        if (!isLocalMode() && loadSupabaseConfig()) {
+            const { storageSync } = await loadDb();
+            if (!storageSync.isConnected()) return { success: false, error: 'offline', leftoverFiles };
+            const result = await storageSync.adapter.eraseStudentData(id);
+            if (!result.success) return { success: false, error: result.error, leftoverFiles };
+            leftoverFiles = result.leftoverFiles.length;
+            erasedRemotely = true;
+        }
+        const { next, changed, recordingIds, attachmentIds } = eraseStudentFromStore(getState(), id);
+        if (erasedRemotely) removePendingWrites(pendingWritesForStudent(loadPendingQueue(), id, attachmentIds));
+        dispatch({ type: 'ERASE_STUDENT', id });
+        if (!isOffline()) await flushToLocalStorage(next, changed);
+        if (recordingIds.length > 0) {
+            const { deleteBlob } = await import('../../services/mediaStore');
+            await Promise.all(recordingIds.map((rid) => deleteBlob(rid).catch(() => undefined)));
+        }
+        return { success: true, leftoverFiles };
+    };
     return {
         addStudent,
         updateStudent,
@@ -260,6 +297,7 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
         deleteAttachment,
         setStudentPassword,
         anonymizeStudent,
+        eraseStudent,
         addComparativeMatchup,
     };
 }
@@ -295,6 +333,7 @@ export function useRosterValue(
             deleteStudent: actions.deleteStudent,
             restoreStudent: actions.restoreStudent,
             anonymizeStudent: actions.anonymizeStudent,
+            eraseStudent: actions.eraseStudent,
             setStudentPassword: actions.setStudentPassword,
         }),
         [activeStudents, archivedStudents, actions]

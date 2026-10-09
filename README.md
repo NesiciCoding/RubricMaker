@@ -262,6 +262,8 @@ Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sen
 
 Backups hold data only; the restore target must be a running stack migrated to at least the same version (`docker-compose up -d` runs the migrations). The restore runs in one transaction and stops on the first error. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md#backup-and-restore).
 
+**Moving from Supabase Cloud:** `./scripts/export-cloud.sh` (on your laptop) dumps users, rows and every Storage file; `./scripts/import-cloud.sh <export-dir>` (on the server) loads them, compares file counts per bucket, and checks that each attachment, export template, essay, recording and scan row finds its file. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md#migrating-from-supabase-cloud).
+
 **Updating to a new version:**
 
 ```bash
@@ -438,6 +440,8 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 | `src/utils/testExportPresets.ts`                                          | Whole-class test results CSV: one row per student, overall score plus per-question and per-skill accuracy columns                                                                                                                   |
 | `src/utils/icsExport.ts`                                                  | Builds a minimal `.ics` calendar file from assignment deadlines                                                                                                                                                                     |
 | `src/utils/messageThreads.ts`                                             | Groups flat student/teacher `Message` rows into threads by student + context                                                                                                                                                        |
+| `src/utils/eraseStudent.ts`                                               | Right to erasure: removes a student and every record keyed to them from local state (the client side of `erase_student()`, migration 084)                                                                                           |
+| `src/utils/backupSettings.ts`                                             | Settings → Backup: keeps role, account email, admin PIN, school and API keys out of exports and restores, and diffs the settings a restore would change                                                                             |
 | `src/utils/roleChangeError.ts`                                            | Recognises the last-admin error raised by `protect_role_changes()` so Admin → Users and Onboarding can show a translated message                                                                                                    |
 | `src/services/standardsApi.ts`                                            | Common Standards Project API (CCSS, NGSS)                                                                                                                                                                                           |
 | `src/services/wordnetPack.ts`                                             | Optional offline definitions: downloads the Open English WordNet pack (`public/wordnet/`, built by `scripts/build-wordnet-pack.mjs`, CC BY 4.0) after confirmation and stores it in IndexedDB                                       |

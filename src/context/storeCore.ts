@@ -80,8 +80,12 @@ import {
     upsertRubricVersion,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
+import { eraseStudentFromStore } from '../utils/eraseStudent';
 import { getDb, loadDb } from '../services/database/lazyDb';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
+
+/** Outcome of erasing a student (#644); leftoverFiles counts files recorded in the audit log for an operator. */
+export type StudentEraseResult = SyncResult & { leftoverFiles: number };
 import { STRESS_TEST_LOGGING_ENABLED, logEvent } from '../services/logging/clientLogger';
 export type { StoreData } from '../store/storage';
 
@@ -116,6 +120,7 @@ export type Action =
     | { type: 'RESTORE_STUDENT_RUBRIC'; id: string }
     | { type: 'SAVE_RUBRIC_SELF_ASSESSMENT'; id: string; levels: Record<string, string | null>; reflection: string }
     | { type: 'ANONYMIZE_STUDENT'; id: string }
+    | { type: 'ERASE_STUDENT'; id: string }
     | { type: 'ADD_ATTACHMENT'; payload: Attachment }
     | { type: 'DELETE_ATTACHMENT'; id: string }
     | { type: 'ADD_GRADE_SCALE'; payload: GradeScale }
@@ -283,6 +288,17 @@ export function reducer(state: StoreData, action: Action): StoreData {
             });
             if (isOffline()) saveStudents(next);
             return { ...state, students: next };
+        }
+        case 'ERASE_STUDENT': {
+            const { next, changed } = eraseStudentFromStore(state, action.id);
+            if (isOffline()) {
+                for (const key of changed) {
+                    // COLLECTION_SAVERS writes grades to the cloud snapshot cache; offline they live here.
+                    if (key === 'studentRubrics') saveStudentRubrics(next.studentRubrics);
+                    else void COLLECTION_SAVERS[key]?.(next);
+                }
+            }
+            return next;
         }
         case 'ADD_CLASS': {
             const next = [...state.classes, { ...action.payload, updatedAt: new Date().toISOString() }];
@@ -1053,8 +1069,9 @@ export interface AppContextValue extends StoreData {
         schoolId: string,
         profileId: string
     ) => Promise<Awaited<ReturnType<StorageSyncInstance['removeSchoolMember']>>>;
-    // Student anonymization
+    // Student anonymization / erasure
     anonymizeStudent: (id: string) => void;
+    eraseStudent: (id: string) => Promise<StudentEraseResult>;
     // Essay assignments (teacher side)
     saveEssayAssignment: (a: EssayAssignment) => Promise<SyncResult>;
     setStudentPassword: (studentEmail: string, password: string) => Promise<SyncResult>;
@@ -1107,7 +1124,7 @@ export interface AppContextValue extends StoreData {
     showMigrationPrompt: boolean;
     enterLocalMode: () => void;
     connectForOAuth: (config: DatabaseConfig) => Promise<boolean>;
-    dismissMigrationPrompt: (upload: boolean) => Promise<void>;
+    dismissMigrationPrompt: (upload: boolean) => Promise<SyncResult>;
     signInWithGoogle: () => Promise<{ error?: string }>;
     signInWithMicrosoftPersonal: () => Promise<{ error?: string }>;
     signInWithAzureAD: () => Promise<{ error?: string }>;

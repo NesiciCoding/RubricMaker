@@ -42,6 +42,7 @@ const versionStore = vi.hoisted(() => new Map<string, RubricVersion[]>());
 vi.mock('../store/storage', () => ({
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
+    isLocalMode: vi.fn(() => true),
     loadStore: vi.fn(() => ({
         rubrics: [],
         students: [],
@@ -112,11 +113,13 @@ vi.mock('../store/storage', () => ({
     saveStandardMasteryTargets: vi.fn(),
     saveTests: vi.fn(),
     saveStudentTests: vi.fn(),
+    saveComparativeMatchups: vi.fn(),
     onStorageQuotaExceeded: vi.fn(),
     onVoiceFeedbackDropped: vi.fn(),
     exportStore: vi.fn((s) => s),
     importFullBackup: vi.fn(() => true),
     loadPendingQueue: vi.fn(() => []),
+    removePendingWrites: vi.fn(),
     loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     loadRubricVersions: vi.fn((rubricId: string) => versionStore.get(rubricId) ?? []),
@@ -823,6 +826,67 @@ describe('domain action creators', () => {
         });
         expect(result.current.students[0].name).toMatch(/^Student-/);
         expect(result.current.students[0].anonymizedAt).toBeDefined();
+    });
+
+    it('erases a student and every record linked to them in local mode (#644)', async () => {
+        const { result } = renderHook(() => ({ roster: useRoster(), grading: useRoster() }), { wrapper });
+        let alice = '';
+        let bob = '';
+        act(() => {
+            alice = result.current.roster.addStudent({ name: 'Alice', classId: 'c1' }).id;
+            bob = result.current.roster.addStudent({ name: 'Bob', classId: 'c1' }).id;
+        });
+        act(() => {
+            result.current.grading.createGroupStudentRubrics('r-any', [alice, bob]);
+        });
+        act(() => {
+            result.current.roster.deleteStudent(alice);
+        });
+
+        let outcome: { success: boolean; leftoverFiles: number } | undefined;
+        await act(async () => {
+            outcome = await result.current.roster.eraseStudent(alice);
+        });
+        expect(outcome).toEqual({ success: true, leftoverFiles: 0 });
+        expect(result.current.roster.archivedStudents).toHaveLength(0);
+        expect(result.current.roster.students.map((s) => s.id)).toEqual([bob]);
+        expect(result.current.grading.studentRubrics.map((sr) => sr.studentId)).toEqual([bob]);
+    });
+
+    it('drops queued sync writes for the student only after the server erase succeeds (#644)', async () => {
+        const { storageSync } = await import('../services/database');
+        const eraseStudentData = vi.fn().mockResolvedValueOnce({ success: false, error: 'boom', failed: [] });
+        (storageSync.adapter as unknown as Record<string, unknown>).eraseStudentData = eraseStudentData;
+        const queue = [
+            { id: 'w1', entity: 'studentRubric', action: 'upsert', payload: { studentId: 'gone' }, queuedAt: '' },
+            { id: 'k1', entity: 'studentRubric', action: 'upsert', payload: { studentId: 'kept' }, queuedAt: '' },
+        ] as storage.PendingWrite[];
+        vi.mocked(storage.loadPendingQueue).mockReturnValue(queue);
+        vi.mocked(storage.isLocalMode).mockReturnValue(false);
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
+        localStorage.setItem(
+            'rm_supabase_config',
+            JSON.stringify({ supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'k' })
+        );
+        try {
+            const { result } = renderHook(() => useRoster(), { wrapper });
+
+            await act(async () => {
+                await result.current.eraseStudent('gone');
+            });
+            expect(storage.removePendingWrites).not.toHaveBeenCalled();
+
+            eraseStudentData.mockResolvedValueOnce({ success: true, failed: [], leftoverFiles: [] });
+            await act(async () => {
+                await result.current.eraseStudent('gone');
+            });
+            expect(storage.removePendingWrites).toHaveBeenCalledWith(['w1']);
+        } finally {
+            localStorage.removeItem('rm_supabase_config');
+            vi.mocked(storage.isLocalMode).mockReturnValue(true);
+            vi.mocked(storageSync.isConnected).mockReturnValue(false);
+            vi.mocked(storage.loadPendingQueue).mockReturnValue([]);
+        }
     });
 
     it('creates student rubrics with empty entries when the rubric is unknown', () => {
