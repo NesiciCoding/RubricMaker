@@ -5885,7 +5885,9 @@ REVOKE EXECUTE ON FUNCTION public.student_storage_objects(text) FROM PUBLIC, ano
 GRANT EXECUTE ON FUNCTION public.student_storage_objects(text) TO authenticated;
 
 -- ── 4. Erase the rows ───────────────────────────────────────────────────────────
--- Each table is its own subtransaction: one failure is reported, the rest still go.
+-- Each table is its own subtransaction. The first failure stops the run: the registry deletes
+-- children before the parents their filters look up (students last), so carrying on would orphan
+-- the failed table's rows and drop the scope a retry needs. Later tables are reported as skipped.
 -- p_storage_failures lists files the client could not remove (e.g. voice feedback another
 -- grader recorded, which Storage RLS keeps in that grader's folder); they are written to the
 -- audit log so an operator can delete them — the rows that located them are gone afterwards.
@@ -5902,12 +5904,17 @@ DECLARE
   v_n       bigint;
   v_deleted jsonb := '{}'::jsonb;
   v_errors  jsonb := '{}'::jsonb;
+  v_failed  boolean := false;
 BEGIN
   FOR r IN
     SELECT t.key, t.table_name, t.student_filter, t.owner_filter
     FROM public.student_data_tables() WITH ORDINALITY AS t(key, table_name, student_filter, owner_filter, pos)
     ORDER BY t.pos
   LOOP
+    IF v_failed THEN
+      v_errors := v_errors || jsonb_build_object(r.key, 'skipped');
+      CONTINUE;
+    END IF;
     BEGIN
       EXECUTE format(
         'DELETE FROM public.%I WHERE (%s) AND ($3 OR (%s))',
@@ -5917,6 +5924,7 @@ BEGIN
       v_deleted := v_deleted || jsonb_build_object(r.key, v_n);
     EXCEPTION WHEN others THEN
       v_errors := v_errors || jsonb_build_object(r.key, SQLERRM);
+      v_failed := true;
     END;
   END LOOP;
 

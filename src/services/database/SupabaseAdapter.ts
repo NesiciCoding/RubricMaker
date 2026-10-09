@@ -2617,7 +2617,9 @@ export class SupabaseAdapter {
             p_storage_failures: leftoverFiles,
         });
         if (eraseError) return { success: false, error: eraseError.message, failed: ['database'], leftoverFiles };
-        const failed = Object.keys((erased as { errors?: Record<string, string> } | null)?.errors ?? {});
+        const errors = (erased as { errors?: Record<string, string> } | null)?.errors ?? {};
+        // erase_student() stops at the first failing table and marks the rest 'skipped'.
+        const failed = Object.keys(errors).filter((table) => errors[table] !== 'skipped');
         return failed.length > 0
             ? { success: false, error: failed.join(', '), failed, leftoverFiles }
             : { success: true, failed, leftoverFiles };

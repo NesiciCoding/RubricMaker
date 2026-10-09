@@ -2964,7 +2964,7 @@
         "erase_confirm": "{{name}} und alles, was mit dieser Person verknüpft ist, endgültig löschen — Noten und Feedback (auch die anderer Lehrkräfte für diese Person), Sprachfeedback, Aufsätze, Testantworten, Nachrichten, Anhänge, Scans, Selbsteinschätzungen und Aufnahmen — von diesem Gerät und aus der Datenbank. Das kann nicht rückgängig gemacht werden. Kopien in früheren Sicherungen bleiben bestehen.",
         "erase_success": "Der Schüler und alle Daten wurden gelöscht.",
         "erase_partial": "Der Schüler wurde gelöscht. {{n}} Datei(en) im Speicherordner einer anderen Lehrkraft konnten hier nicht entfernt werden; sie stehen für einen Administrator im Audit-Log.",
-        "erase_offline": "Verbinde dich mit der Datenbank, um diesen Schüler zu löschen, damit auf dem Server nichts zurückbleibt.",
+        "erase_offline": "Verbinden Sie sich mit der Datenbank, um diesen Schüler zu löschen, damit auf dem Server nichts zurückbleibt.",
         "erase_failed": "Der Schüler konnte nicht gelöscht werden: {{error}}"
     },
     "essay": {

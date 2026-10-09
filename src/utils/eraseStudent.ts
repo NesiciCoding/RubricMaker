@@ -1,4 +1,4 @@
-import type { StoreData } from '../store/storage';
+import type { PendingWrite, StoreData } from '../store/storage';
 
 type ListKey = { [K in keyof StoreData]: StoreData[K] extends readonly unknown[] ? K : never }[keyof StoreData];
 type Item<K extends ListKey> = StoreData[K] extends readonly (infer T)[] ? T : never;
@@ -9,6 +9,8 @@ export interface StudentErasure {
     changed: Set<keyof StoreData>;
     /** IndexedDB media blob ids (speaking recordings) that belonged to the student. */
     recordingIds: string[];
+    /** Attachment ids that belonged to the student — document comments hang off these. */
+    attachmentIds: Set<string>;
 }
 
 /**
@@ -52,5 +54,26 @@ export function eraseStudentFromStore(state: StoreData, studentId: string): Stud
     drop('newsFlashReads', (r) => r.studentId === studentId);
     drop('comparativeMatchups', (m) => m.studentAId === studentId || m.studentBId === studentId);
 
-    return { next, changed, recordingIds };
+    return { next, changed, recordingIds, attachmentIds: erasedAttachmentIds };
+}
+
+const STUDENT_LINK_FIELDS = ['studentId', 'assignmentStudentId', 'ownerStudentId', 'studentAId', 'studentBId'];
+
+/**
+ * Ids of queued sync writes that belong to an erased student. Flushing them after erasure would
+ * push the student's records (and their free text) straight back to the server.
+ */
+export function pendingWritesForStudent(
+    queue: PendingWrite[],
+    studentId: string,
+    attachmentIds: ReadonlySet<string>
+): string[] {
+    return queue
+        .filter((op) => {
+            const payload = (op.payload ?? {}) as Record<string, unknown>;
+            if (op.entity === 'student') return (op.entityId ?? payload.id) === studentId;
+            if (op.entity === 'documentComment') return attachmentIds.has(payload.attachmentId as string);
+            return STUDENT_LINK_FIELDS.some((field) => payload[field] === studentId);
+        })
+        .map((op) => op.id);
 }

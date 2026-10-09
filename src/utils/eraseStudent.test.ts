@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { StoreData } from '../store/storage';
-import { eraseStudentFromStore } from './eraseStudent';
+import type { PendingWrite, StoreData } from '../store/storage';
+import { eraseStudentFromStore, pendingWritesForStudent } from './eraseStudent';
 
 function store(overrides: Partial<StoreData>): StoreData {
     const empty = {
@@ -115,5 +115,42 @@ describe('eraseStudentFromStore (#644)', () => {
         const { next, changed } = eraseStudentFromStore(state, 'nobody');
         expect(changed.size).toBe(0);
         expect(next.students).toBe(state.students);
+    });
+});
+
+describe('pendingWritesForStudent', () => {
+    const op = (id: string, entity: string, payload: unknown, entityId?: string): PendingWrite => ({
+        id,
+        entity,
+        action: 'upsert',
+        payload,
+        entityId,
+        queuedAt: '2026-10-09T00:00:00.000Z',
+    });
+
+    it('selects every queued write that would push the erased student back', () => {
+        const queue = [
+            op('w1', 'student', { id: 's1', name: 'Alice' }, 's1'),
+            op('w2', 'studentRubric', { id: 'sr1', studentId: 's1' }, 'sr1'),
+            op('w3', 'essayBatchAssignment', { teacherKey: 't', studentId: 's1' }, 't:s1'),
+            op('w4', 'essayOfflineSubmission', { id: 'es1', assignmentStudentId: 's1' }, 'es1'),
+            op('w5', 'flashcardDeck', { id: 'd1', ownerStudentId: 's1' }, 'd1'),
+            op('w6', 'comparativeMatchup', { id: 'm1', studentAId: 's2', studentBId: 's1' }, 'm1'),
+            op('w7', 'documentComment', { id: 'dc1', attachmentId: 'a1' }, 'dc1'),
+            op('k1', 'student', { id: 's2', name: 'Bob' }, 's2'),
+            op('k2', 'studentRubric', { id: 'sr2', studentId: 's2' }, 'sr2'),
+            op('k3', 'documentComment', { id: 'dc2', attachmentId: 'a2' }, 'dc2'),
+            op('k4', 'rubric', { id: 'r1' }, 'r1'),
+            op('k5', 'class', null, 'c1'),
+        ];
+        expect(pendingWritesForStudent(queue, 's1', new Set(['a1']))).toEqual([
+            'w1',
+            'w2',
+            'w3',
+            'w4',
+            'w5',
+            'w6',
+            'w7',
+        ]);
     });
 });

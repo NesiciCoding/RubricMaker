@@ -91,6 +91,12 @@ describe('SupabaseAdapter.eraseStudentData', () => {
             success: false,
             failed: ['messages'],
         });
+        const stopped = makeClient({ eraseErrors: { messages: 'permission denied', students: 'skipped' } });
+        expect(await adapterWithClient(stopped.client).eraseStudentData('s1')).toMatchObject({
+            success: false,
+            error: 'messages',
+            failed: ['messages'],
+        });
         const failing = makeClient({ eraseError: { message: 'boom' } });
         expect(await adapterWithClient(failing.client).eraseStudentData('s1')).toMatchObject({
             success: false,

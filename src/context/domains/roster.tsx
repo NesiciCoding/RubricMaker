@@ -13,8 +13,8 @@ import { StoreData } from '../../store/storage';
 import { nanoid } from '../../utils/nanoid';
 import { loadDb } from '../../services/database/lazyDb';
 import { loadSupabaseConfig } from '../../services/database/supabaseConfig';
-import { isLocalMode } from '../../store/storage';
-import { eraseStudentFromStore } from '../../utils/eraseStudent';
+import { isLocalMode, loadPendingQueue, removePendingWrites } from '../../store/storage';
+import { eraseStudentFromStore, pendingWritesForStudent } from '../../utils/eraseStudent';
 import { logAuditEvent } from '../../services/database/AuditLogger';
 
 export type RosterValue = Pick<
@@ -259,14 +259,17 @@ export function createRosterActions(ctx: StoreActionsCtx): RosterActions {
     // next hydrate. The offline caches are rewritten too — they still hold the student otherwise.
     const eraseStudent = async (id: string): Promise<StudentEraseResult> => {
         let leftoverFiles = 0;
+        let erasedRemotely = false;
         if (!isLocalMode() && loadSupabaseConfig()) {
             const { storageSync } = await loadDb();
             if (!storageSync.isConnected()) return { success: false, error: 'offline', leftoverFiles };
             const result = await storageSync.adapter.eraseStudentData(id);
             if (!result.success) return { success: false, error: result.error, leftoverFiles };
             leftoverFiles = result.leftoverFiles.length;
+            erasedRemotely = true;
         }
-        const { next, changed, recordingIds } = eraseStudentFromStore(getState(), id);
+        const { next, changed, recordingIds, attachmentIds } = eraseStudentFromStore(getState(), id);
+        if (erasedRemotely) removePendingWrites(pendingWritesForStudent(loadPendingQueue(), id, attachmentIds));
         dispatch({ type: 'ERASE_STUDENT', id });
         if (!isOffline()) await flushToLocalStorage(next, changed);
         if (recordingIds.length > 0) {
