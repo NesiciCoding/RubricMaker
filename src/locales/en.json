@@ -1651,7 +1651,8 @@
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
-        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "points_before_modifier": "Points before the modifier"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -2530,7 +2531,11 @@
         "selected": "selected",
         "report_card_success": "Generated {{count}} report card(s).",
         "rubric_students_section_title": "Students",
-        "select_test": "Select test"
+        "select_test": "Select test",
+        "bulk_nhi_confirm_title": "Mark as not handed in?",
+        "bulk_nhi_confirm_message": "Mark {{count}} selected grade(s) as not handed in? They are left out of statistics, the dashboard and the student portal.",
+        "bulk_nhi_done": "Marked {{count}} grade(s) as not handed in",
+        "bulk_comment_done": "Added the comment to {{count}} grade(s)"
     },
     "reportCard": {
         "title": "Report Card",
@@ -2659,7 +2664,9 @@
         "evidence_title": "Skill Evidence",
         "evidence_subtitle": "Which assessments contributed to each skill and level, and why it's marked achieved or developing.",
         "rationale_achieved": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — achieved",
-        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing"
+        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing",
+        "working_toward": "Working toward {{level}} — not achieved yet",
+        "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold)."
     },
     "learningPath": {
         "page_title": "Learning Path",
@@ -3327,7 +3334,7 @@
         "gr_scoring_item_select": "Click any level cell to select it. Click again to deselect.",
         "gr_scoring_item_slider": "For point ranges, use the slider to choose a value within the allowed range.",
         "gr_scoring_item_subitems": "Toggle sub-items inside a level with checkboxes.",
-        "gr_scoring_item_modifiers": "Apply score modifiers (% bonus, point deduction, level adjustment) with a reason.",
+        "gr_scoring_item_modifiers": "Apply a score modifier (percentage bonus or deduction, or a points offset) with a reason. A points offset counts against the rubric's maximum: +10 points on a 200-point rubric adds 5%.",
         "gr_mobile_title": "Mobile grading",
         "gr_mobile_body_prefix": "On phones and iPad portrait the grading view is touch-optimised. Point-range and sub-item sliders gain a",
         "gr_mobile_stepper": "− / +",
@@ -3706,7 +3713,7 @@
         "gr_layout_title": "Card & grid layouts",
         "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
-        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
+        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Once a criterion is selected, ↑ / ↓ move between criteria (Tab and Shift+Tab move through every button and field as usual), Ctrl+S saves (and advances), and ? lists every shortcut.",
         "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
         "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar.",
         "es_focus_title": "Student focus mode",
@@ -3747,7 +3754,10 @@
         "rb_tests_visual_editors_body": "Error correction, key word transformation, word-bank fill-in and sentence builder questions are edited without typing special syntax: mark error and correct fragments by selecting words in the passage, add accepted answers as cards with chips, and add distractor tiles as chips. Prefer typing or pasting? Each editor has an \"Edit as text\" button that shows the raw syntax; both views edit the same data.",
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
-        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive."
+        "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
+        "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",
+        "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -3924,7 +3934,7 @@
     },
     "help": {
         "score_modifier_title": "Score Modifiers",
-        "score_modifier_body": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log.",
+        "score_modifier_body": "Add a global adjustment to the final score. Choose percentage (e.g. +10% adds 10 percentage points) or points (e.g. +5 adds 5 points to the rubric total, so on a 200-point rubric it adds 2.5%). Enter a reason so it appears in the exported report and audit log.",
         "lww_title": "How sync resolves conflicts",
         "lww_body": "When the same record is edited on two devices, the most recent change wins (last-write-wins). Edits you make while offline are protected and are never overwritten by older cloud data until they have synced.",
         "proctoring_title": "Proctoring flags",
@@ -4229,7 +4239,26 @@
         "col_criterion": "Criterion",
         "none_detected": "No rubric structure detected. Try a different file.",
         "try_another": "Try Another File",
-        "create": "Create Rubric"
+        "create": "Create Rubric",
+        "weight_value": "Weight {{weight}}%",
+        "points_value": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "warn_no_table": "No table found in document. Make sure your rubric uses a table layout.",
+        "warn_no_pdf_text": "Could not extract any text from PDF. The file may be image-based (scanned).",
+        "warn_no_structure": "Could not detect a rubric table structure in the document.",
+        "warn_no_levels": "Found a table but could not detect level columns.",
+        "warn_no_criteria": "Table found but no criteria could be extracted.",
+        "warn_one_criterion": "Only one criterion was detected — the document may not be a standard rubric.",
+        "warn_one_level": "Only one level was detected — columns may not have been parsed correctly.",
+        "warn_invalid_json": "Invalid JSON format: missing criteria array.",
+        "warn_json_failed": "Failed to parse JSON: {{message}}",
+        "warn_order_guessed": "Could not tell whether the level columns run from best to worst or the other way round. Points assume the first column is the highest — check them below.",
+        "warn_points_partial": "Only some level headers state points; the other levels got estimated points.",
+        "warn_merged_row": "Row \"{{title}}\" spans several columns (a heading?) and was skipped.",
+        "warn_untitled_row": "A row with level text but no criterion title (a merged cell?) was skipped.",
+        "warn_cell_count": "Row \"{{title}}\" has {{found}} level cells but the header has {{expected}} levels — check its descriptions.",
+        "warn_weights_scaled": "Criterion weights added up to {{total}}% and were scaled to 100%.",
+        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others."
     },
     "standardsPicker": {
         "title": "Link Standard",

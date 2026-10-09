@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import {
     DEFAULT_FORMAT,
     type Rubric,
@@ -251,14 +251,10 @@ vi.mock('../../store/storage', () => ({
     importFullBackup: vi.fn(() => true),
 }));
 
+// A data router, so pages using useBlocker (unsaved-changes guard) can render.
 function renderPage(el: React.ReactElement, route = '/', path = '/') {
-    return render(
-        <MemoryRouter initialEntries={[route]}>
-            <Routes>
-                <Route path={path} element={el} />
-            </Routes>
-        </MemoryRouter>
-    );
+    const router = createMemoryRouter([{ path, element: el }], { initialEntries: [route] });
+    return render(<RouterProvider router={router} />);
 }
 
 // ─── RubricPreviewPage — valid code ──────────────────────────────────────────

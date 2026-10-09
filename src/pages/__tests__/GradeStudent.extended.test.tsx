@@ -178,6 +178,8 @@ describe('GradeStudent extended', () => {
             target: { value: 'points' },
         });
         fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
+        // The footer shows the offset applied to the points, so points and percentage reconcile (#674).
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(0 + 5)');
         fireEvent.change(screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder'), {
             target: { value: 'Late penalty' },
         });
@@ -189,6 +191,19 @@ describe('GradeStudent extended', () => {
         );
     });
 
+    it('rounds the modifier offset shown in the footer', () => {
+        mockStudentRubricsArr = [
+            {
+                ...existingSR,
+                entries: [{ criterionId: 'c1', levelId: null, overridePoints: 80.7, comment: '', checkedSubItems: [] }],
+                globalModifier: { type: 'points', value: 0.1, reason: '' },
+            },
+        ] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(80.7 + 0.1)');
+    });
+
     it('saves and advances with Ctrl+S', () => {
         renderPage();
         fireEvent.click(screen.getAllByText('Excellent')[0]);
@@ -197,15 +212,15 @@ describe('GradeStudent extended', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
     });
 
-    it('closes the shortcuts panel with Escape and navigates criteria with Tab', () => {
+    it('closes the shortcuts panel with Escape and addresses criteria by letter', () => {
         renderPage();
         fireEvent.keyDown(window, { key: '?' });
         expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
 
-        // Tab focuses criterion 0; a number key then picks its level.
-        fireEvent.keyDown(window, { key: 'Tab' });
+        // The letter A focuses criterion 0; a number key then picks its level.
+        fireEvent.keyDown(window, { key: 'a' });
         fireEvent.keyDown(window, { key: '2' });
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
