@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { useUnsavedChangesGuard } from '../useUnsavedChangesGuard';
 
@@ -32,6 +32,49 @@ function Harness({ isDirty }: { isDirty: boolean }) {
         <div>
             <span>path:{location.pathname}</span>
             <Link to="/other">navigate</Link>
+        </div>
+    );
+}
+
+function SaveAndNextHarness() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { allowNavigation } = useUnsavedChangesGuard(location.pathname === '/');
+    return (
+        <div>
+            <span>path:{location.pathname}</span>
+            <button
+                onClick={() => {
+                    allowNavigation();
+                    navigate('/next');
+                }}
+            >
+                save-and-next
+            </button>
+            <Link to="/">home</Link>
+        </div>
+    );
+}
+
+function SamePathBypassHarness() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { allowNavigation } = useUnsavedChangesGuard(true);
+    return (
+        <div>
+            <span>
+                at:{location.pathname}
+                {location.search}
+            </span>
+            <button
+                onClick={() => {
+                    allowNavigation();
+                    navigate('/?tab=2');
+                }}
+            >
+                same-path
+            </button>
+            <Link to="/other">leave</Link>
         </div>
     );
 }
@@ -103,5 +146,22 @@ describe('useUnsavedChangesGuard', () => {
         const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
         window.dispatchEvent(event);
         expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('lets a save-then-navigate through without prompting, once', async () => {
+        renderWithRouter(<SaveAndNextHarness />);
+        fireEvent.click(screen.getByText('save-and-next'));
+        await waitFor(() => expect(screen.getByText('path:/next')).toBeInTheDocument());
+        expect(mockConfirm).not.toHaveBeenCalled();
+    });
+
+    it('consumes the bypass on a same-pathname navigation so a later exit still prompts', async () => {
+        mockConfirm.mockResolvedValue(false);
+        renderWithRouter(<SamePathBypassHarness />);
+        fireEvent.click(screen.getByText('same-path'));
+        await waitFor(() => expect(screen.getByText('at:/?tab=2')).toBeInTheDocument());
+        fireEvent.click(screen.getByRole('link', { name: 'leave' }));
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('at:/?tab=2')).toBeInTheDocument();
     });
 });
