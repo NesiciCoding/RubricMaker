@@ -49,6 +49,7 @@ import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
@@ -61,6 +62,8 @@ import { loadSupabaseConfig, storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
+
+const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -215,6 +218,7 @@ export default function GradeStudent() {
         return () => clearTimeout(id);
     }, [saved]);
     const [isDirty, setIsDirty] = useState(false);
+    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty);
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
     const [gradingView, setGradingView] = useState<'cards' | 'grid'>('cards');
@@ -327,6 +331,7 @@ export default function GradeStudent() {
         setIsDirty(false);
         // Grading the last ungraded student ends the loop; Save & Next then only wraps round.
         if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
+        allowNavigation();
         // Replace rather than push history so the topbar Back returns to where grading started.
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
@@ -342,6 +347,7 @@ export default function GradeStudent() {
         hasOtherUngraded,
         showToast,
         t,
+        allowNavigation,
     ]);
 
     const handleNotHandedIn = useCallback(() => {
@@ -358,12 +364,13 @@ export default function GradeStudent() {
         };
         saveStudentRubric(nhiSR);
         setIsDirty(false);
+        allowNavigation();
         if (nextStudent) {
             navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
         } else {
             navigate(-1);
         }
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t, feedbackOnly, isAnchor]);
+    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t, feedbackOnly, isAnchor, allowNavigation]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -424,12 +431,16 @@ export default function GradeStudent() {
 
             const criteriaCount = rubric.criteria.length;
 
-            if (e.key === 'Tab') {
+            // Tab stays native so keyboard users can reach every control (#671). Once a criterion is
+            // addressed (letter key, click or focus), the arrow keys move between criteria — but only
+            // while focus is on the page or inside a criterion card, so they still scroll from e.g. Save.
+            const active = document.activeElement;
+            const arrowsNavigate =
+                !active || active === document.body || criterionCardsRef.current.some((card) => card?.contains(active));
+            if (focusedCriterionIdx !== null && arrowsNavigate && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
-                setFocusedCriterionIdx((prev) => {
-                    if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
-                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
-                });
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                setFocusedCriterionIdx((focusedCriterionIdx + step + criteriaCount) % criteriaCount);
                 return;
             }
 
@@ -461,18 +472,6 @@ export default function GradeStudent() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleSave, handleSaveAndNext, nextStudent, rubric, sr, focusedCriterionIdx, updateEntry]);
-
-    // Warn on unsaved changes
-    React.useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = ''; // Required for Chrome
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
@@ -982,6 +981,7 @@ export default function GradeStudent() {
                                     ref={(el) => {
                                         criterionCardsRef.current[criterionIndex] = el;
                                     }}
+                                    onFocus={() => setFocusedCriterionIdx(criterionIndex)}
                                 >
                                     {/* Criterion header */}
                                     <div
@@ -1922,6 +1922,7 @@ export default function GradeStudent() {
                     onConfirm={() => {
                         deleteStudentRubric(existingSR.id, 'student');
                         setShowDeleteGrade(false);
+                        allowNavigation();
                         navigate(-1);
                     }}
                 />
@@ -1965,6 +1966,7 @@ export default function GradeStudent() {
                                 onClick={() => {
                                     deleteStudentRubric(existingSR.id, deleteGradeScope);
                                     setShowDeleteGrade(false);
+                                    allowNavigation();
                                     navigate(-1);
                                 }}
                             >
@@ -2071,7 +2073,7 @@ export default function GradeStudent() {
                             {[
                                 { key: '1 – 5', desc: t('gradeStudent.shortcut_level') },
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
-                                { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
+                                { key: '↑ / ↓', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
                                 { key: 'Ctrl+Enter', desc: t('gradeStudent.shortcut_save_next') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
@@ -2136,7 +2138,15 @@ export default function GradeStudent() {
                             </span>
                         )}
                         <span className="text-muted text-sm">
-                            {summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
+                            {summary.modifiedPoints !== summary.rawScore && (
+                                <span title={t('gradeStudent.points_before_modifier')}>
+                                    ({formatPoints(summary.rawScore)}{' '}
+                                    {summary.modifiedPoints > summary.rawScore ? '+' : '−'}{' '}
+                                    {formatPoints(Math.abs(summary.modifiedPoints - summary.rawScore))}){' '}
+                                </span>
+                            )}
+                            {formatPoints(summary.modifiedPoints)} / {formatPoints(summary.configuredMaxPoints)}{' '}
+                            {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria}{' '}
@@ -2232,6 +2242,7 @@ export default function GradeStudent() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }
