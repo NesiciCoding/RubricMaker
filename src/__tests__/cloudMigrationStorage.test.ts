@@ -27,5 +27,9 @@ describe('scripts/lib/storage-paths.sh (#640)', () => {
             expect(safe('attachments', name)).toBe('no');
         }
         expect(safe('../x', 'u1/a.pdf')).toBe('no');
+        expect(safe('archives.v2', 'u1/a.pdf')).toBe('yes');
+        for (const bucket of ['.', '..', 'a/b', '']) {
+            expect(safe(bucket, 'u1/a.pdf')).toBe('no');
+        }
     });
 });

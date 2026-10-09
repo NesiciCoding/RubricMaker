@@ -48,6 +48,10 @@ SERVICE_KEY=""
 if [[ -z "$SKIP_STORAGE" ]]; then
     read -rp "Project URL for the files (https://xxxx.supabase.co — empty to skip files): " PROJECT_URL
     PROJECT_URL="${PROJECT_URL%/}"
+    if [[ -n "$PROJECT_URL" && "$PROJECT_URL" != https://* ]]; then
+        echo "The project URL must start with https:// — the service_role key is sent with every download." >&2
+        exit 1
+    fi
     if [[ -n "$PROJECT_URL" ]]; then
         read -rsp "service_role key (Project Settings → API): " SERVICE_KEY
         echo ""

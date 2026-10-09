@@ -18,10 +18,10 @@ urlencode_path() {
     printf '%s' "$out"
 }
 
-# Bucket ids are plain names; object names must stay inside the bucket's folder on disk.
+# Bucket ids are plain names (Storage allows dots); object names must stay inside the bucket's folder on disk.
 is_safe_object() {
     local bucket="$1" name="$2"
-    [[ "$bucket" =~ ^[A-Za-z0-9_-]+$ ]] || return 1
+    [[ "$bucket" =~ ^[A-Za-z0-9._-]+$ && "$bucket" != "." && "$bucket" != ".." ]] || return 1
     [[ -n "$name" && "$name" != /* ]] || return 1
     [[ "/$name/" != */../* && "/$name/" != */./* && "$name" != *//* ]] || return 1
     return 0
