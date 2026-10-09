@@ -2527,7 +2527,11 @@
         "selected": "selected",
         "report_card_success": "Generated {{count}} report card(s).",
         "rubric_students_section_title": "Students",
-        "select_test": "Select test"
+        "select_test": "Select test",
+        "bulk_nhi_confirm_title": "Mark as not handed in?",
+        "bulk_nhi_confirm_message": "Mark {{count}} selected grade(s) as not handed in? They are left out of statistics, the dashboard and the student portal.",
+        "bulk_nhi_done": "Marked {{count}} grade(s) as not handed in",
+        "bulk_comment_done": "Added the comment to {{count}} grade(s)"
     },
     "reportCard": {
         "title": "Report Card",

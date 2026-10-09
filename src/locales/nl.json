@@ -2527,7 +2527,11 @@
         "selected": "geselecteerd",
         "report_card_success": "{{count}} rapport(en) gegenereerd.",
         "rubric_students_section_title": "Leerlingen",
-        "select_test": "Selecteer toets"
+        "select_test": "Selecteer toets",
+        "bulk_nhi_confirm_title": "Markeren als niet ingeleverd?",
+        "bulk_nhi_confirm_message": "{{count}} geselecteerde beoordeling(en) markeren als niet ingeleverd? Ze tellen dan niet mee in statistieken, het dashboard en het leerlingportaal.",
+        "bulk_nhi_done": "{{count}} beoordeling(en) gemarkeerd als niet ingeleverd",
+        "bulk_comment_done": "Opmerking toegevoegd aan {{count}} beoordeling(en)"
     },
     "reportCard": {
         "title": "Rapport",
