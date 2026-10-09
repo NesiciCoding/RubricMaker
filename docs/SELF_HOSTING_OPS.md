@@ -186,10 +186,10 @@ To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: 
 
 ```sql
 -- Find the account
-SELECT id, email, display_name, role FROM public.profiles WHERE email ILIKE 'teacher@school.example';
+SELECT id, email, display_name, role FROM public.profiles WHERE lower(email) = lower('teacher@school.example');
 
 -- Promote it
-UPDATE public.profiles SET role = 'admin' WHERE email ILIKE 'teacher@school.example';
+UPDATE public.profiles SET role = 'admin' WHERE lower(email) = lower('teacher@school.example');
 ```
 
 The user gets admin rights after reloading the app (or signing out and back in).
@@ -199,7 +199,7 @@ The user gets admin rights after reloading the app (or signing out and back in).
 ```sql
 BEGIN;
 ALTER TABLE public.profiles DISABLE TRIGGER enforce_role_protection;
-UPDATE public.profiles SET role = 'admin' WHERE email ILIKE 'teacher@school.example';
+UPDATE public.profiles SET role = 'admin' WHERE lower(email) = lower('teacher@school.example');
 ALTER TABLE public.profiles ENABLE TRIGGER enforce_role_protection;
 COMMIT;
 ```

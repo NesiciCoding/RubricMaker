@@ -2837,7 +2837,7 @@
         "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubriken erstellen und Schüler benoten.",
         "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
         "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
-        "error_last_admin": "Du bist der einzige Administrator und kannst daher nicht zu Schüler wechseln. Mache zuerst eine andere Person zum Administrator oder fahre als Administrator fort."
+        "error_last_admin": "Sie sind der einzige Administrator und können daher nicht zu Schüler wechseln. Machen Sie zuerst eine andere Person zum Administrator oder fahren Sie als Administrator fort."
     },
     "admin": {
         "title": "Admin-Dashboard",
@@ -2961,7 +2961,7 @@
         "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration.",
         "role_change_confirm_title": "Rolle ändern?",
         "role_change_confirm": "Rolle von {{name}} zu {{role}} ändern? Das ändert sofort, was diese Person sehen und tun kann.",
-        "role_last_admin": "Dies ist der letzte Administrator. Mache zuerst eine andere Person zum Administrator."
+        "role_last_admin": "Dies ist der letzte Administrator. Machen Sie zuerst eine andere Person zum Administrator."
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
