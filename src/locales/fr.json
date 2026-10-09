@@ -1648,6 +1648,9 @@
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
         "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
         "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)",
+        "voice_storage_full": "Le stockage de cet appareil est presque plein : un enregistrement vocal ne pourrait pas être conservé. Connectez-vous au cloud ou supprimez d'anciens enregistrements d'abord.",
+        "voice_storage_low": "Le stockage est presque plein — cet enregistrement s'arrête automatiquement après {{seconds}} secondes.",
+        "voice_storage_unavailable": "Le stockage de cet appareil est illisible : un enregistrement vocal ne pourrait pas être conservé hors ligne. Connectez-vous au cloud pour enregistrer.",
         "swipe_confirm_title": "Enregistrer et passer à l'élève suivant ?",
         "swipe_confirm_message": "Vous avez balayé vers la gauche. Enregistrer cette note et continuer avec {{name}} ?",
         "swipe_confirm_action": "Enregistrer et suivant",
@@ -2018,7 +2021,8 @@
         "sync_flushed": "De retour en ligne — toutes les modifications synchronisées.",
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local.",
-        "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre."
+        "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre.",
+        "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver."
     },
     "pwa": {
         "update_available_title": "Mise à jour disponible",
@@ -3767,6 +3771,7 @@
         "rb_tests_a4_preview_label": "Aperçu A4 :",
         "rb_tests_a4_preview_body": "Cliquez sur « Aperçu A4 » dans le créateur de tests pour ouvrir, à côté de vos questions, un aperçu en direct de la copie imprimée de l'élève. Activez « Corrigé » pour voir les bonnes réponses, masquez les points, zoomez ou imprimez la page. Modifiez l'en-tête, les consignes et le pied de page directement sur la page : ils sont enregistrés avec le test et figurent aussi dans l'export du livret d'examen.",
         "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver.",
+        "gr_feedback_item_audio_storage": "Commentaires vocaux enregistrés — sans connexion au cloud, les enregistrements sont stockés dans le navigateur, qui contient environ 5 Mo. Quand l'espace manque, l'enregistrement s'arrête automatiquement, un appareil plein n'en démarre pas, et si des enregistrements doivent être omis pour sauvegarder les notes, un avertissement s'affiche.",
         "gr_mobile_swipe": "Balayer vers la gauche sur une zone vide de la page de correction propose d'enregistrer et de passer à l'élève suivant ; confirmez pour continuer. Un balayage qui commence sur un curseur, les boutons − / +, un champ de texte ou un tableau défilant ne compte jamais : faire glisser une note ne fait donc pas passer à l'élève suivant.",
         "gr_scoring_item_nhi": "Non rendu (menu des réglages) : marque le travail comme manquant et l'exclut des statistiques, du tableau de bord et du portail élève. Si l'élève a déjà une note, une confirmation est demandée et le commentaire général existant est conservé. Un bandeau sur la page de correction permet d'annuler la marque ; noter et enregistrer le travail rendu en retard retire la marque automatiquement.",
         "ce_overview_item_achieved": "Atteint ou visé : un niveau ne compte comme atteint que lorsque la moyenne de l'élève atteint le seuil de réussite de la grille. En dessous, la liste des élèves, l'aperçu CECRL et le tableau de bord affichent le niveau avec un badge en pointillés (« vise »), et les cartes de classe ne comptent que les niveaux atteints.",

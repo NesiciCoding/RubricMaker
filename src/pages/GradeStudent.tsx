@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -48,6 +48,15 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
+import { isOffline } from '../context/storeCore';
+import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../store/storage';
+import {
+    LOW_STORAGE_RECORDING_SECONDS,
+    MIN_RECORDING_SECONDS,
+    unsavedAudioChars,
+    voiceRecordingBudgetSeconds,
+} from '../utils/voiceFeedbackBudget';
 import { useConfirm } from '../hooks/useConfirm';
 import { isLeftSwipe, isSwipeSafeTarget } from '../utils/swipeGesture';
 import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
@@ -193,6 +202,7 @@ export default function GradeStudent() {
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
     const audioRecorder = useMediaRecorder();
+    const { showToast } = useToast();
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [scanForCrit, setScanForCrit] = useState<string | null>(null);
@@ -546,17 +556,56 @@ export default function GradeStudent() {
         return studentRubrics.find((s) => s.rubricId === rubricId && s.isAnchor && s.id !== existingSR?.id) ?? null;
     }, [studentRubrics, rubricId, existingSR?.id]);
 
+    // Offline, recordings are stored as base64 in localStorage (~5MB), so cap them to what still fits.
+    const recordingLimitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stopAudioRecordingRef = useRef<(criterionId: string) => void>(() => {});
+    useEffect(
+        () => () => {
+            if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+        },
+        []
+    );
+
     const startAudioRecording = useCallback(
         (criterionId: string) => {
             if (audioRecorder.recordingKey && audioRecorder.recordingKey !== criterionId) return;
-            // getUserMedia denial surfaces as hook error state — silently ignored here, as before
-            void audioRecorder.start({ key: criterionId });
+            let budget: number | null = null;
+            if (isOffline()) {
+                const used = localStorageUsedChars();
+                if (used === null) {
+                    showToast(t('gradeStudent.voice_storage_unavailable'), 'warning');
+                    return;
+                }
+                budget = voiceRecordingBudgetSeconds(
+                    used + unsavedAudioChars(sr?.entries ?? [], existingSR?.entries),
+                    LOCAL_STORAGE_QUOTA_CHARS
+                );
+                if (budget < MIN_RECORDING_SECONDS) {
+                    showToast(t('gradeStudent.voice_storage_full'), 'warning');
+                    return;
+                }
+                if (budget < LOW_STORAGE_RECORDING_SECONDS) {
+                    showToast(t('gradeStudent.voice_storage_low', { seconds: budget }), 'warning');
+                }
+            }
+            // getUserMedia denial surfaces as hook error state — silently ignored here, as before.
+            // The limit starts once recording does: a stop() while getUserMedia is pending is a no-op.
+            void audioRecorder.start({ key: criterionId }).then((started) => {
+                if (!started || budget === null) return;
+                if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+                const limit = budget;
+                recordingLimitRef.current = setTimeout(() => stopAudioRecordingRef.current(criterionId), limit * 1000);
+            });
         },
-        [audioRecorder]
+        [audioRecorder, showToast, t, sr?.entries, existingSR?.entries]
     );
 
     const stopAudioRecording = useCallback(
         async (criterionId: string) => {
+            if (recordingLimitRef.current) {
+                clearTimeout(recordingLimitRef.current);
+                recordingLimitRef.current = null;
+            }
             const result = await audioRecorder.stop(criterionId);
             if (!result) return;
             try {
@@ -568,6 +617,9 @@ export default function GradeStudent() {
         },
         [audioRecorder, updateEntry]
     );
+    useEffect(() => {
+        stopAudioRecordingRef.current = (criterionId) => void stopAudioRecording(criterionId);
+    }, [stopAudioRecording]);
 
     const voice = useVoiceGrading(
         (critIdx, lvlIdx) => {

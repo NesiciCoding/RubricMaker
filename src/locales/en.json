@@ -1648,6 +1648,9 @@
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
         "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "voice_storage_full": "This device's storage is nearly full, so a voice recording can't be saved. Connect to the cloud or remove old recordings first.",
+        "voice_storage_low": "Storage is nearly full — this recording stops automatically after {{seconds}} seconds.",
+        "voice_storage_unavailable": "This device's storage can't be read, so a voice recording can't be saved offline. Connect to the cloud to record.",
         "swipe_confirm_title": "Save and go to the next student?",
         "swipe_confirm_message": "You swiped left. Save this grade and continue with {{name}}?",
         "swipe_confirm_action": "Save & next",
@@ -2018,7 +2021,8 @@
         "sync_flushed": "Back online — all changes synced.",
         "copy_paste_failed": "Copy/paste failed. Please try again.",
         "sync_offline_cache": "You're offline — using locally cached data.",
-        "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost."
+        "signout_pending_writes": "Some changes haven't synced yet — your local data was kept so nothing is lost.",
+        "voice_feedback_dropped": "Grades were saved, but {{count}} voice recording(s) did not fit in this device's storage and will be lost on reload. Connect to the cloud or remove old recordings to keep them."
     },
     "pwa": {
         "update_available_title": "Update available",
@@ -3765,6 +3769,7 @@
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "gr_feedback_item_audio_storage": "Recorded voice feedback — without a cloud connection recordings are stored in the browser, which holds about 5 MB. When space runs low a recording stops automatically, a full device refuses to start one, and if recordings ever have to be left out to save grades you get a warning.",
         "gr_mobile_swipe": "Swiping left on an empty part of the grading page offers to save and move to the next student; confirm to continue. Swipes that start on a slider, the − / + stepper, a text field or a scrollable table never count, so dragging a score can't jump to the next student.",
         "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
         "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
