@@ -15,6 +15,7 @@ import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import { encodeEssayAssignment } from '../utils/shareCode';
 import { decodeEssaySubmission } from '../utils/shareCode';
 import type { EssayAssignment } from '../types';
+import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../utils/dateInput';
 
 export default function EssayBuilderPage() {
     const { teacherKey: teacherKeyParam } = useParams<{ teacherKey?: string }>();
@@ -63,7 +64,7 @@ export default function EssayBuilderPage() {
     );
     const [requireSEB, setRequireSEB] = useState(existing?.requireSEB ?? false);
     const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(existing?.readOnlyAfterSubmit ?? true);
-    const [expiresAt, setExpiresAt] = useState(existing?.expiresAt ? existing.expiresAt.slice(0, 16) : '');
+    const [expiresAt, setExpiresAt] = useState(existing?.expiresAt ? toLocalDatetimeInput(existing.expiresAt) : '');
 
     const teacherKeyRef = useMemo(() => teacherKeyParam ?? nanoid(), [teacherKeyParam]);
 
@@ -90,7 +91,7 @@ export default function EssayBuilderPage() {
             timeLimitMinutes: timeLimitMinutes ? parseInt(timeLimitMinutes, 10) : undefined,
             requireSEB,
             readOnlyAfterSubmit,
-            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+            expiresAt: fromLocalDatetimeInput(expiresAt, existing?.expiresAt),
         };
     }
 

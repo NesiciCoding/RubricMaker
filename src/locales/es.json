@@ -1647,7 +1647,13 @@
         "quick_comments_label": "Rápido",
         "quick_comments_empty": "Guarda comentarios en el banco para tener inserciones rápidas aquí.",
         "shortcut_chord": "Selecciona un criterio y luego elige su nivel (acorde)",
-        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)"
+        "level_shortcut_hint": "Pulsa {{num}} para seleccionar (cuando el criterio está enfocado)",
+        "nhi_confirm_title": "¿Marcar como no entregado?",
+        "nhi_confirm_message": "{{name}} ya tiene una calificación para esta rúbrica. Marcar el trabajo como no entregado lo excluye de las estadísticas, el panel y el portal del alumno. Las puntuaciones se conservan y puedes deshacerlo desde el aviso de la página de calificación.",
+        "nhi_confirm_action": "Marcar como no entregado",
+        "nhi_banner": "Marcado como no entregado: este trabajo no cuenta en las estadísticas, el panel ni el portal del alumno. Calificar y guardar quita la marca.",
+        "nhi_undo": "Deshacer «no entregado»",
+        "points_before_modifier": "Puntos antes del modificador"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -2526,7 +2532,11 @@
         "selected": "seleccionados",
         "report_card_success": "Generados {{count}} boletín(es).",
         "rubric_students_section_title": "Alumnos",
-        "select_test": "Seleccionar examen"
+        "select_test": "Seleccionar examen",
+        "bulk_nhi_confirm_title": "¿Marcar como no entregado?",
+        "bulk_nhi_confirm_message": "¿Marcar {{count}} calificación(es) seleccionada(s) como no entregada(s)? Quedarán fuera de las estadísticas, el panel y el portal del alumno.",
+        "bulk_nhi_done": "{{count}} calificación(es) marcada(s) como no entregada(s)",
+        "bulk_comment_done": "Comentario añadido a {{count}} calificación(es)"
     },
     "reportCard": {
         "title": "Boletín",
@@ -2655,7 +2665,9 @@
         "evidence_title": "Evidencia por destreza",
         "evidence_subtitle": "Qué evaluaciones contribuyeron a cada destreza y nivel, y por qué está marcado como logrado o en desarrollo.",
         "rationale_achieved": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — logrado",
-        "rationale_developing": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — en desarrollo"
+        "rationale_developing": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — en desarrollo",
+        "working_toward": "Trabajando hacia {{level}}: aún no alcanzado",
+        "legend_developing": "Las insignias rellenas son niveles alcanzados. Una insignia discontinua significa que el alumno aún trabaja hacia ese nivel (por debajo del umbral de logro)."
     },
     "learningPath": {
         "page_title": "Ruta de aprendizaje",
@@ -2886,7 +2898,10 @@
         "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador.",
         "role_change_confirm_title": "¿Cambiar el rol?",
         "role_change_confirm": "¿Cambiar el rol de {{name}} a {{role}}? Esto cambia de inmediato lo que puede ver y hacer.",
-        "role_last_admin": "Es el último administrador. Primero nombra administrador a otro usuario."
+        "role_last_admin": "Es el último administrador. Primero nombra administrador a otro usuario.",
+        "audit_col_actor": "Realizado por",
+        "audit_col_details": "Detalles",
+        "audit_actor_system": "Sistema"
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -3014,7 +3029,10 @@
         "retry_submit": "Reintentar",
         "copy_backup_code": "Copiar código de respaldo",
         "already_submitted": "Ya entregaste esta redacción, así que esta versión no se envió. Sigue guardada en este dispositivo: pregunta a tu docente si necesitas entregarla de nuevo.",
-        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar."
+        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar.",
+        "load_error_title": "No se pudo cargar esta tarea",
+        "load_error": "No se pudo cargar la tarea. Comprueba tu conexión a internet y vuelve a intentarlo. Si sigue fallando, pide a tu profesor un enlace nuevo.",
+        "load_retry": "Reintentar"
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
@@ -3329,7 +3347,7 @@
         "gr_scoring_item_select": "Haz clic en cualquier celda de nivel para seleccionarla. Haz clic de nuevo para deseleccionarla.",
         "gr_scoring_item_slider": "Para rangos de puntos, usa el deslizador para elegir un valor dentro del rango permitido.",
         "gr_scoring_item_subitems": "Activa los subelementos dentro de un nivel con casillas de verificación.",
-        "gr_scoring_item_modifiers": "Aplica modificadores de puntuación (bonificación en %, deducción de puntos, ajuste de nivel) con un motivo.",
+        "gr_scoring_item_modifiers": "Aplica un modificador de puntuación (bonificación o deducción en %, o un ajuste en puntos) con un motivo. Un ajuste en puntos cuenta sobre el máximo de la rúbrica: +10 puntos en una rúbrica de 200 puntos suman un 5 %.",
         "gr_mobile_title": "Calificación móvil",
         "gr_mobile_body_prefix": "En teléfonos y iPad en modo vertical, la vista de calificación está optimizada para el tacto. Los deslizadores de rango de puntos y subelementos obtienen un",
         "gr_mobile_stepper": "− / +",
@@ -3651,7 +3669,7 @@
         "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards.",
         "da_admin_item_data": "Pestaña Datos — anonimizar datos de alumnos, eliminación masiva, herramientas de cumplimiento.",
         "da_admin_item_retention": "Pestaña Retención — establecer políticas automáticas de retención de datos por centro.",
-        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de cambios de rol, guardados de calificaciones, exportaciones y eventos de autenticación; los administradores ven todas las entradas, los profesores ven las suyas. Las entradas se conservan 3 años (admin), 1 año (calificación), 1 mes (exportación/autenticación) y luego se purgan automáticamente.",
+        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de quién hizo qué, con detalles: cambios de rol, pertenencia y cambios de centro, uso compartido de rúbricas/clases, cambios en la configuración del sitio, restablecimientos de contraseña, «Eliminar todos mis datos», calificaciones guardadas y exportaciones. Los cambios sensibles los registra la propia base de datos, solo cuando el cambio se ha aplicado de verdad. Los administradores ven todas las entradas; el profesorado, solo las suyas. Se conservan 3 años (admin), 1 año (calificaciones) o 1 mes (exportación/acceso) y luego se eliminan automáticamente.",
         "da_settings_title": "Configuración",
         "da_settings_item_theme": "Tema — oscuro / claro, selector de color de acento, 8 ajustes rápidos predefinidos, o elige un paquete de tema con nombre (Academy, Nature, Midnight, Warm, Slate, Rose) que establece con un clic la tipografía, el acento y el color de exportación.",
         "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
@@ -3708,7 +3726,7 @@
         "gr_layout_title": "Diseños de tarjeta y cuadrícula",
         "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
         "gr_keyboard_title": "Atajos de teclado",
-        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
+        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Con un criterio seleccionado, ↑ / ↓ pasan de un criterio a otro (Tab y Mayús+Tab recorren todos los botones y campos como siempre), Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
         "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante.",
         "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo.",
         "es_focus_title": "Modo de concentración del estudiante",
@@ -3750,6 +3768,8 @@
         "rb_tests_a4_preview_label": "Vista previa A4:",
         "rb_tests_a4_preview_body": "Haga clic en «Vista previa A4» en el creador de pruebas para abrir, junto a sus preguntas, una vista previa en directo de la hoja impresa del alumnado. Active «Clave de respuestas» para ver las respuestas correctas, oculte los puntos, haga zoom o imprima la página. Edite el encabezado, las instrucciones y el pie directamente en la página: se guardan con la prueba y también aparecen en la exportación del cuadernillo de examen.",
         "gr_comparative_existing_note": "La calificación existente de cada alumno se carga en la sesión, y guardar una comparación actualiza esa calificación en lugar de crear otra. Si un alumno ya tiene más de una calificación para la rúbrica, la sesión lo indica y permite conservar solo la mostrada; las demás se pueden restaurar desde Admin → Archivo.",
+        "gr_scoring_item_nhi": "No entregado (menú de ajustes): marca el trabajo como ausente y lo excluye de las estadísticas, el panel y el portal del alumno. Si el alumno ya tiene una calificación, se pide confirmación y se conserva el comentario general existente. Un aviso en la página de calificación permite deshacer la marca; calificar y guardar el trabajo tardío quita la marca automáticamente.",
+        "ce_overview_item_achieved": "Alcanzado o en progreso: un nivel solo cuenta como alcanzado cuando la media del alumno llega al umbral de logro de la rúbrica. Por debajo, la lista de alumnos, la vista MCER y el panel muestran el nivel con una insignia discontinua («trabajando hacia»), y las tarjetas de clase solo cuentan niveles alcanzados.",
         "gr_unsaved_note": "Al salir de una página de calificación con cambios sin guardar —desde la barra lateral, el botón Atrás o cerrando la pestaña— se pide confirmación primero. La calificación comparativa y la evaluación entre pares funcionan igual. Guardar, Guardar y siguiente y No entregado guardan antes de continuar, así que no preguntan nada.",
         "rb_import_export_item_docx": "Importar desde Word o PDF: sube una tabla de rúbrica en .docx o .pdf (criterios en filas, niveles en columnas). Los puntos siguen el encabezado —p. ej. «Bien (3 pts)» o «Débil (1-2 pts)»— o, sin puntos, los nombres de los niveles, de modo que una tabla Insuficiente → Excelente da más puntos a Excelente. Un porcentaje junto a un criterio («Contenido 40 %») pasa a ser su peso. La vista previa muestra los puntos de cada nivel y el peso de cada criterio, con un aviso para todo lo que tuvo que estimar; revísalos antes de pulsar Crear rúbrica."
     },
@@ -3928,7 +3948,7 @@
     },
     "help": {
         "score_modifier_title": "Modificadores de nota",
-        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10%) o puntos (p. ej. +5). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
+        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10% suma 10 puntos porcentuales) o puntos (p. ej. +5 suma 5 puntos al total de la rúbrica, es decir, un 2,5 % en una rúbrica de 200 puntos). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
         "lww_title": "Cómo resuelve conflictos la sincronización",
         "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
         "proctoring_title": "Alertas de supervisión",

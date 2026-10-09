@@ -5,7 +5,15 @@ import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
 import { useClasses, useSettings, useStudents } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { matchCsvRows, summarizeImport, type ImportSummary, type MatchedImportRow } from '../../utils/csvImportMatch';
+import {
+    autoMapCsvHeaders,
+    extractCsvName,
+    matchCsvRows,
+    summarizeImport,
+    type CsvColumnMap,
+    type ImportSummary,
+    type MatchedImportRow,
+} from '../../utils/csvImportMatch';
 
 interface Props {
     file: File;
@@ -13,13 +21,7 @@ interface Props {
     onSuccess: () => void;
 }
 
-type ColumnMap = {
-    fullName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    className: string;
-};
+type ColumnMap = CsvColumnMap;
 
 type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
@@ -68,11 +70,6 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
                 // Auto-map common headers
                 const autoMap: ColumnMap = { fullName: '', firstName: '', lastName: '', email: '', className: '' };
-                const lowerHeaders = detectedHeaders.map((h) => h.toLowerCase());
-
-                const findIndex = (...keywords: string[]) =>
-                    lowerHeaders.findIndex((h) => keywords.some((k) => h.includes(k)));
-
                 // Detect known CSV formats (Clever, OneRoster)
                 const hasCleverFormat =
                     detectedHeaders.some((h) => h === 'Email') &&
@@ -116,22 +113,9 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     return;
                 }
 
-                // Generic format detection
-                const fnIdx = findIndex('full name', 'fullname', 'name');
-                // Dutch (Magister): voornaam / roepnaam = first name, achternaam = last name, klas = class
-                const firstIdx = findIndex('first name', 'firstname', 'first', 'voornaam', 'roepnaam');
-                const lastIdx = findIndex('last name', 'lastname', 'last', 'achternaam');
-                const emailIdx = findIndex('email', 'e-mail');
-                const classIdx = findIndex('class', 'course', 'group', 'klas');
-
-                if (fnIdx !== -1) autoMap.fullName = detectedHeaders[fnIdx];
-                if (firstIdx !== -1) autoMap.firstName = detectedHeaders[firstIdx];
-                if (lastIdx !== -1) autoMap.lastName = detectedHeaders[lastIdx];
-                if (emailIdx !== -1) autoMap.email = detectedHeaders[emailIdx];
-                if (classIdx !== -1) autoMap.className = detectedHeaders[classIdx];
-
+                // Generic format detection (incl. Dutch Magister headers: voornaam/roepnaam, achternaam, klas)
                 setDetectedFormat('generic');
-                setMapping(autoMap);
+                setMapping(autoMapCsvHeaders(detectedHeaders));
             },
             error: (err) => {
                 setError(t('csv.err_parse', { message: err.message }));
@@ -141,16 +125,8 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
 
     const getPreviewRows = () => {
         return parsedData.slice(0, 3).map((row) => {
-            let name: string;
-            if (mapping.fullName && row[mapping.fullName]) {
-                name = row[mapping.fullName];
-            } else {
-                const f = mapping.firstName && row[mapping.firstName] ? row[mapping.firstName] : '';
-                const l = mapping.lastName && row[mapping.lastName] ? row[mapping.lastName] : '';
-                name = [f, l].filter(Boolean).join(' ');
-            }
             return {
-                name: name.trim(),
+                name: extractCsvName(row, mapping),
                 email: mapping.email && row[mapping.email] ? row[mapping.email].trim() : '',
                 className:
                     mapping.className && row[mapping.className]

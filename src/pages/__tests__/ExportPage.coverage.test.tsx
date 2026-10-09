@@ -408,7 +408,7 @@ describe('ExportPage coverage', () => {
         expect(global.URL.createObjectURL).toHaveBeenCalled();
     });
 
-    it('bulk-marks not handed in and bulk-appends a comment', () => {
+    it('bulk-marks not handed in and bulk-appends a comment', async () => {
         const saveStudentRubric = vi.fn();
         appOverrides = { saveStudentRubric };
         renderPage();
@@ -425,11 +425,26 @@ describe('ExportPage coverage', () => {
         // type and confirm via Enter
         fireEvent.change(input, { target: { value: 'See me' } });
         fireEvent.keyDown(input, { key: 'Enter' });
-        expect(saveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ overallComment: 'Well done See me' }));
-        // bulk mark NHI
+        // The bulk comment keeps the original grade date (#704).
+        expect(saveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ overallComment: 'Well done See me', gradedAt: '2024-01-15T10:00:00Z' })
+        );
+        expect(mockShowToast).toHaveBeenCalledWith('exportPage.bulk_comment_done:{"count":1}', 'success');
+        saveStudentRubric.mockClear();
+        // bulk mark NHI asks first; cancelling changes nothing
         fireEvent.click(screen.getByText('exportPage.bulk_nhi'));
-        expect(saveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockShowToast).toHaveBeenCalledWith('Marked 1 student(s) as not handed in', 'success');
+        fireEvent.click(within(await screen.findByRole('dialog')).getByText('common.cancel'));
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(saveStudentRubric).not.toHaveBeenCalled();
+        // confirming marks it and keeps gradedAt
+        fireEvent.click(screen.getByText('exportPage.bulk_nhi'));
+        fireEvent.click(within(await screen.findByRole('dialog')).getByText('exportPage.bulk_nhi'));
+        await waitFor(() =>
+            expect(saveStudentRubric).toHaveBeenCalledWith(
+                expect.objectContaining({ notHandedIn: true, gradedAt: '2024-01-15T10:00:00Z' })
+            )
+        );
+        expect(mockShowToast).toHaveBeenCalledWith('exportPage.bulk_nhi_done:{"count":1}', 'success');
     });
 
     it('exports essays with rubric analysis and skips ungraded ones', async () => {
@@ -800,16 +815,14 @@ describe('ExportPage coverage', () => {
         expect(screen.getByText('exportPage.no_rubric')).toBeInTheDocument();
     });
 
-    it('bulk ops skip unselected students and normalize comment spacers', () => {
+    it('bulk ops skip unselected students and normalize comment spacers', async () => {
         const saveStudentRubric = vi.fn();
-        appOverrides = {
-            studentRubrics: [
-                mockSr,
-                baseSr({ id: 'sr2', studentId: 's2', overallComment: '' }),
-                baseSr({ id: 'sr3', studentId: 's3', overallComment: 'Well done ' }),
-            ],
-            saveStudentRubric,
-        };
+        const studentRubrics = [
+            mockSr,
+            baseSr({ id: 'sr2', studentId: 's2', overallComment: '', gradedAt: '2024-01-12T08:00:00Z' }),
+            baseSr({ id: 'sr3', studentId: 's3', overallComment: 'Well done ' }),
+        ];
+        appOverrides = { studentRubrics, saveStudentRubric };
         renderPage();
         openSection('exportPage.rubric_students_section_title');
         fireEvent.click(screen.getByLabelText('Alice'));
@@ -824,8 +837,17 @@ describe('ExportPage coverage', () => {
         expect(saveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ overallComment: 'See me' }));
         expect(saveStudentRubric).toHaveBeenCalledTimes(2);
         fireEvent.click(screen.getByText('exportPage.bulk_nhi'));
-        expect(saveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockShowToast).toHaveBeenCalledWith('Marked 2 student(s) as not handed in', 'success');
+        expect(await screen.findByText('exportPage.bulk_nhi_confirm_message:{"count":2}')).toBeInTheDocument();
+        fireEvent.click(within(screen.getByRole('dialog')).getByText('exportPage.bulk_nhi'));
+        await waitFor(() => expect(saveStudentRubric).toHaveBeenCalledTimes(4));
+        const originalDates = new Map(studentRubrics.map((sr) => [sr.id, sr.gradedAt]));
+        const nhiSaves = saveStudentRubric.mock.calls.slice(2).map(([saved]) => saved as StudentRubric);
+        expect(nhiSaves.map((sr) => sr.id).sort()).toEqual([mockSr.id, 'sr2'].sort());
+        for (const saved of nhiSaves) {
+            expect(saved.notHandedIn).toBe(true);
+            expect(saved.gradedAt).toBe(originalDates.get(saved.id));
+        }
+        expect(mockShowToast).toHaveBeenCalledWith('exportPage.bulk_nhi_done:{"count":2}', 'success');
     });
 
     it('exports CSV with snapshot criterion fallbacks and date-less students', async () => {

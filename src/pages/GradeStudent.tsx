@@ -48,6 +48,8 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useConfirm } from '../hooks/useConfirm';
+import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
@@ -61,6 +63,8 @@ import { loadSupabaseConfig, storageSync } from '../services/database';
 import { getGradingTourSteps } from '../data/TutorialSteps';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { resolveScanOcrSettings } from '../utils/scanSettings';
+
+const formatPoints = (n: number) => String(Math.round(n * 100) / 100);
 
 export default function GradeStudent() {
     const { t, i18n } = useTranslation();
@@ -199,6 +203,7 @@ export default function GradeStudent() {
     const [showCoGradeModal, setShowCoGradeModal] = useState(false);
     const [showDeleteGrade, setShowDeleteGrade] = useState(false);
     const [deleteGradeScope, setDeleteGradeScope] = useState<'student' | 'group'>('student');
+    const { confirm: confirmNhi, dialogProps: nhiConfirmProps } = useConfirm();
     const [coGraderName, setCoGraderName] = useState('');
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     const [selectedColleagueId, setSelectedColleagueId] = useState('');
@@ -258,11 +263,15 @@ export default function GradeStudent() {
         return getCriterionInterventionFlags(studentId, studentRubrics, rubrics);
     }, [studentId, studentRubrics, rubrics]);
 
+    const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
+
     const handleSave = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
+        if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
-            ...sr,
+            ...toSave,
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -288,7 +297,18 @@ export default function GradeStudent() {
                 });
             }
         }
-    }, [sr, rubric, saveStudentRubric, feedbackOnly, isAnchor, settings.notifyStudentsOnGrade, student, studentId]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        feedbackOnly,
+        isAnchor,
+        settings.notifyStudentsOnGrade,
+        student,
+        studentId,
+        cannedNhiComment,
+        existingSR,
+    ]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
@@ -319,7 +339,7 @@ export default function GradeStudent() {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
         saveStudentRubric({
-            ...sr,
+            ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -328,17 +348,39 @@ export default function GradeStudent() {
         setIsDirty(false);
         allowNavigation();
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, feedbackOnly, isAnchor, allowNavigation]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        feedbackOnly,
+        isAnchor,
+        cannedNhiComment,
+        existingSR,
+        allowNavigation,
+    ]);
 
-    const handleNotHandedIn = useCallback(() => {
+    const handleNotHandedIn = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        const hasGrade = (!!existingSR?.gradedAt && !existingSR.notHandedIn) || hasAnyScore(sr);
+        if (
+            hasGrade &&
+            !(await confirmNhi({
+                title: t('gradeStudent.nhi_confirm_title'),
+                message: t('gradeStudent.nhi_confirm_message', { name: student?.name ?? '' }),
+                confirmLabel: t('gradeStudent.nhi_confirm_action'),
+                cancelLabel: t('common.cancel'),
+                danger: true,
+            }))
+        )
+            return;
         const nhiSR = {
-            ...sr,
+            ...markNotHandedIn(sr, cannedNhiComment),
             feedbackOnly,
             isAnchor,
-            notHandedIn: true,
-            overallComment: t('gradeStudent.not_handed_in_comment'),
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString(),
         };
@@ -350,7 +392,30 @@ export default function GradeStudent() {
         } else {
             navigate(-1);
         }
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t, feedbackOnly, isAnchor, allowNavigation]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        t,
+        feedbackOnly,
+        isAnchor,
+        existingSR,
+        student,
+        confirmNhi,
+        cannedNhiComment,
+        allowNavigation,
+    ]);
+
+    const handleUndoNotHandedIn = useCallback(() => {
+        /* v8 ignore next -- the banner only renders for a loaded not-handed-in record */
+        if (!sr) return;
+        const cleared = clearNotHandedIn(sr, cannedNhiComment);
+        setSr(cleared);
+        saveStudentRubric(cleared);
+    }, [sr, saveStudentRubric, cannedNhiComment]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -405,12 +470,16 @@ export default function GradeStudent() {
 
             const criteriaCount = rubric.criteria.length;
 
-            if (e.key === 'Tab') {
+            // Tab stays native so keyboard users can reach every control (#671). Once a criterion is
+            // addressed (letter key, click or focus), the arrow keys move between criteria — but only
+            // while focus is on the page or inside a criterion card, so they still scroll from e.g. Save.
+            const active = document.activeElement;
+            const arrowsNavigate =
+                !active || active === document.body || criterionCardsRef.current.some((card) => card?.contains(active));
+            if (focusedCriterionIdx !== null && arrowsNavigate && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
                 e.preventDefault();
-                setFocusedCriterionIdx((prev) => {
-                    if (prev === null) return e.shiftKey ? criteriaCount - 1 : 0;
-                    return e.shiftKey ? (prev - 1 + criteriaCount) % criteriaCount : (prev + 1) % criteriaCount;
-                });
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                setFocusedCriterionIdx((focusedCriterionIdx + step + criteriaCount) % criteriaCount);
                 return;
             }
 
@@ -721,6 +790,29 @@ export default function GradeStudent() {
                     </p>
                 </div>
 
+                {sr.notHandedIn && (
+                    <div
+                        role="status"
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            flexWrap: 'wrap',
+                            fontSize: '0.85rem',
+                            borderColor: 'var(--amber, #f59e0b)',
+                            background: 'color-mix(in srgb, var(--amber, #f59e0b) 10%, transparent)',
+                        }}
+                    >
+                        <XCircle size={16} style={{ color: 'var(--amber, #f59e0b)', flexShrink: 0 }} />
+                        <span style={{ flex: 1, minWidth: 200 }}>{t('gradeStudent.nhi_banner')}</span>
+                        <button className="btn btn-secondary btn-sm" onClick={handleUndoNotHandedIn}>
+                            {t('gradeStudent.nhi_undo')}
+                        </button>
+                    </div>
+                )}
+
                 {groupMemberNames.length > 0 && (
                     <div
                         className="card no-print"
@@ -951,6 +1043,7 @@ export default function GradeStudent() {
                                     ref={(el) => {
                                         criterionCardsRef.current[criterionIndex] = el;
                                     }}
+                                    onFocus={() => setFocusedCriterionIdx(criterionIndex)}
                                 >
                                     {/* Criterion header */}
                                     <div
@@ -2042,7 +2135,7 @@ export default function GradeStudent() {
                             {[
                                 { key: '1 – 5', desc: t('gradeStudent.shortcut_level') },
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
-                                { key: 'Tab / Shift+Tab', desc: t('gradeStudent.shortcut_tab') },
+                                { key: '↑ / ↓', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
                                 { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
@@ -2106,7 +2199,15 @@ export default function GradeStudent() {
                             </span>
                         )}
                         <span className="text-muted text-sm">
-                            {summary.rawScore} / {summary.configuredMaxPoints} {t('gradeStudent.table_points')}
+                            {summary.modifiedPoints !== summary.rawScore && (
+                                <span title={t('gradeStudent.points_before_modifier')}>
+                                    ({formatPoints(summary.rawScore)}{' '}
+                                    {summary.modifiedPoints > summary.rawScore ? '+' : '−'}{' '}
+                                    {formatPoints(Math.abs(summary.modifiedPoints - summary.rawScore))}){' '}
+                                </span>
+                            )}
+                            {formatPoints(summary.modifiedPoints)} / {formatPoints(summary.configuredMaxPoints)}{' '}
+                            {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {summary.gradedCount}/{summary.totalCriteria}{' '}
@@ -2202,6 +2303,7 @@ export default function GradeStudent() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...nhiConfirmProps} />
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
