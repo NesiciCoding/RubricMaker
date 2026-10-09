@@ -26,6 +26,7 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 - Always include `IF NOT EXISTS` guards so migrations are idempotent when possible.
 - Never modify an already-applied migration — create a new one instead.
 - Run `npm run db:reset` locally to verify a new migration applies cleanly from scratch.
+- After adding, changing or removing a migration, run `./scripts/generate-bootstrap.sh` and commit the regenerated `supabase/bootstrap.sql` (the single-file schema for fresh self-hosted deploys). CI fails when it is stale.
 
 ## Row-level security (RLS)
 
