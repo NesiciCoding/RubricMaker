@@ -151,6 +151,14 @@ describe('PeerReviewView coverage', () => {
         expect(dirtyEvent.defaultPrevented).toBe(true);
     });
 
+    it('treats an overall-comment edit as unsaved', () => {
+        renderAt('r1', 's1');
+        fireEvent.change(screen.getAllByTestId('tiptap-mock')[1], { target: { value: '<p>overall</p>' } });
+        const dirtyEvent = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(dirtyEvent);
+        expect(dirtyEvent.defaultPrevented).toBe(true);
+    });
+
     it('loads an existing peer review for the current round and reviewer', () => {
         // A legacy review without a round falls back to round 1 via the ?? arm.
         peerReviews.push(existingReview({ round: undefined }));

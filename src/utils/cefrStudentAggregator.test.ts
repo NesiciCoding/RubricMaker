@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
     getCefrStudentOverview,
     highestLevelForSkill,
+    skillLevelStatus,
+    overallLevelStatus,
     overallLevel,
     modeSkillLevel,
     aggregateCefrProgress,
@@ -959,12 +961,53 @@ describe('highestLevelForSkill', () => {
         expect(highestLevelForSkill(cells, 'reading')).toBe('B1');
     });
 
-    it('falls back to the highest developing cell when nothing is achieved', () => {
+    it('returns null when nothing is achieved — an attempted level is not an achieved one (#691)', () => {
         const cells = [
             makeCell({ skill: 'reading', level: 'A2', state: 'developing' }),
             makeCell({ skill: 'reading', level: 'B1', state: 'developing' }),
         ];
-        expect(highestLevelForSkill(cells, 'reading')).toBe('B1');
+        expect(highestLevelForSkill(cells, 'reading')).toBeNull();
+    });
+});
+
+describe('skillLevelStatus (#691)', () => {
+    it('reports the highest achieved level as achieved', () => {
+        const cells = [
+            makeCell({ skill: 'writing', level: 'A2', state: 'achieved' }),
+            makeCell({ skill: 'writing', level: 'B1', state: 'developing' }),
+        ];
+        expect(skillLevelStatus(cells, 'writing')).toEqual({ level: 'A2', achieved: true });
+    });
+
+    it('reports the highest attempted level as working-toward when nothing is achieved', () => {
+        const cells = [
+            makeCell({ skill: 'writing', level: 'A2', state: 'developing' }),
+            makeCell({ skill: 'writing', level: 'B1', state: 'not-started' }),
+        ];
+        expect(skillLevelStatus(cells, 'writing')).toEqual({ level: 'B1', achieved: false });
+    });
+
+    it('returns null without data', () => {
+        expect(skillLevelStatus([], 'writing')).toBeNull();
+    });
+});
+
+describe('overallLevelStatus (#691)', () => {
+    it('is achieved at the weakest skill when every skill with data has an achieved level', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'B2', state: 'achieved' }),
+            makeCell({ skill: 'writing', level: 'A2', state: 'achieved' }),
+        ];
+        expect(overallLevelStatus(cells, ['reading', 'writing'])).toEqual({ level: 'A2', achieved: true });
+    });
+
+    it('is only working toward a level when a skill has nothing achieved', () => {
+        const cells = [
+            makeCell({ skill: 'reading', level: 'B2', state: 'achieved' }),
+            makeCell({ skill: 'writing', level: 'B1', state: 'developing' }),
+        ];
+        expect(overallLevelStatus(cells, ['reading', 'writing'])).toEqual({ level: 'B1', achieved: false });
+        expect(overallLevel(cells, ['reading', 'writing'])).toBeNull();
     });
 });
 

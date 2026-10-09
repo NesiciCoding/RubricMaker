@@ -1647,7 +1647,8 @@
         "quick_comments_label": "Rapide",
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
         "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
-        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)"
+        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)",
+        "points_before_modifier": "Points avant le modificateur"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -2528,7 +2529,11 @@
         "selected": "sélectionné(s)",
         "report_card_success": "{{count}} bulletin(s) généré(s).",
         "rubric_students_section_title": "Élèves",
-        "select_test": "Sélectionner un test"
+        "select_test": "Sélectionner un test",
+        "bulk_nhi_confirm_title": "Marquer comme non rendu ?",
+        "bulk_nhi_confirm_message": "Marquer {{count}} évaluation(s) sélectionnée(s) comme non rendue(s) ? Elles seront exclues des statistiques, du tableau de bord et du portail élève.",
+        "bulk_nhi_done": "{{count}} évaluation(s) marquée(s) comme non rendue(s)",
+        "bulk_comment_done": "Commentaire ajouté à {{count}} évaluation(s)"
     },
     "reportCard": {
         "title": "Bulletin",
@@ -2657,7 +2662,9 @@
         "evidence_title": "Preuves par compétence",
         "evidence_subtitle": "Quelles évaluations ont contribué à chaque compétence et niveau, et pourquoi il est marqué atteint ou en développement.",
         "rationale_achieved": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — atteint",
-        "rationale_developing": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — en développement"
+        "rationale_developing": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — en développement",
+        "working_toward": "Vise {{level}} — pas encore atteint",
+        "legend_developing": "Les badges pleins sont des niveaux atteints. Un badge en pointillés signifie que l'élève vise encore ce niveau (sous le seuil de réussite)."
     },
     "learningPath": {
         "page_title": "Parcours d'apprentissage",
@@ -3327,7 +3334,7 @@
         "gr_scoring_item_select": "Cliquez sur n'importe quelle cellule de niveau pour la sélectionner. Cliquez à nouveau pour la désélectionner.",
         "gr_scoring_item_slider": "Pour les plages de points, utilisez le curseur pour choisir une valeur dans la plage autorisée.",
         "gr_scoring_item_subitems": "Basculez les sous-éléments dans un niveau avec des cases à cocher.",
-        "gr_scoring_item_modifiers": "Appliquez des modificateurs de score (bonus en %, déduction de points, ajustement de niveau) avec une raison.",
+        "gr_scoring_item_modifiers": "Appliquez un modificateur de score (bonus ou déduction en %, ou correction en points) avec une raison. Une correction en points se rapporte au maximum de la grille : +10 points sur une grille de 200 points ajoutent 5 %.",
         "gr_mobile_title": "Notation mobile",
         "gr_mobile_body_prefix": "Sur téléphones et iPad en mode portrait, la vue de notation est optimisée pour le tactile. Les curseurs de plage de points et de sous-éléments gagnent un",
         "gr_mobile_stepper": "− / +",
@@ -3706,7 +3713,7 @@
         "gr_layout_title": "Dispositions carte et grille",
         "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
-        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
+        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Une fois un critère sélectionné, ↑ / ↓ passent d'un critère à l'autre (Tab et Maj+Tab parcourent tous les boutons et champs comme d'habitude), Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
         "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
         "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale.",
         "es_focus_title": "Mode focus élève",
@@ -3747,7 +3754,10 @@
         "rb_tests_visual_editors_body": "Les questions de correction d'erreurs, de transformation avec mot clé, de texte à trous avec banque de mots et de construction de phrases se modifient sans saisir de syntaxe spéciale : marquez les fragments erronés et corrects en sélectionnant des mots du texte, ajoutez les réponses acceptées sous forme de cartes avec des pastilles, et les distracteurs sous forme de pastilles. Vous préférez saisir ou coller du texte ? Chaque éditeur propose un bouton « Modifier en texte » qui affiche la syntaxe brute ; les deux vues modifient les mêmes données.",
         "rb_tests_a4_preview_label": "Aperçu A4 :",
         "rb_tests_a4_preview_body": "Cliquez sur « Aperçu A4 » dans le créateur de tests pour ouvrir, à côté de vos questions, un aperçu en direct de la copie imprimée de l'élève. Activez « Corrigé » pour voir les bonnes réponses, masquez les points, zoomez ou imprimez la page. Modifiez l'en-tête, les consignes et le pied de page directement sur la page : ils sont enregistrés avec le test et figurent aussi dans l'export du livret d'examen.",
-        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver."
+        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver.",
+        "ce_overview_item_achieved": "Atteint ou visé : un niveau ne compte comme atteint que lorsque la moyenne de l'élève atteint le seuil de réussite de la grille. En dessous, la liste des élèves, l'aperçu CECRL et le tableau de bord affichent le niveau avec un badge en pointillés (« vise »), et les cartes de classe ne comptent que les niveaux atteints.",
+        "gr_unsaved_note": "Quitter une page de correction avec des modifications non enregistrées — par la barre latérale, le bouton Retour ou en fermant l'onglet — demande d'abord une confirmation. La correction comparative et l'évaluation par les pairs fonctionnent de la même manière. Enregistrer, Enregistrer et suivant et Non rendu enregistrent avant de continuer, sans rien demander.",
+        "rb_import_export_item_docx": "Import depuis Word ou PDF : téléversez un tableau de grille en .docx ou .pdf (critères en lignes, niveaux en colonnes). Les points suivent l'en-tête — p. ex. « Bien (3 pts) » ou « Faible (1-2 pts) » — ou, sans points, les noms des niveaux : un tableau Insuffisant → Excellent donne le plus de points à Excellent. Un pourcentage à côté d'un critère (« Contenu 40 % ») devient sa pondération. L'aperçu affiche les points de chaque niveau et la pondération de chaque critère, avec un avertissement pour tout ce qui a dû être deviné ; vérifiez-les avant de cliquer sur Créer la grille."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3924,7 +3934,7 @@
     },
     "help": {
         "score_modifier_title": "Modificateurs de note",
-        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
+        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10 % ajoute 10 points de pourcentage) ou des points (ex. +5 ajoute 5 points au total de la grille, soit 2,5 % sur une grille de 200 points). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
         "lww_title": "Comment la synchronisation résout les conflits",
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",
@@ -4229,7 +4239,26 @@
         "col_criterion": "Critère",
         "none_detected": "Aucune structure de grille détectée. Essayez un autre fichier.",
         "try_another": "Essayer un autre fichier",
-        "create": "Créer la grille"
+        "create": "Créer la grille",
+        "weight_value": "Pondération {{weight}} %",
+        "points_value": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "warn_no_table": "Aucun tableau trouvé dans le document. Vérifiez que votre grille utilise une mise en page en tableau.",
+        "warn_no_pdf_text": "Impossible d'extraire du texte du PDF. Le fichier est peut-être une image (numérisation).",
+        "warn_no_structure": "Aucune structure de grille n'a été détectée dans le document.",
+        "warn_no_levels": "Un tableau a été trouvé, mais les colonnes de niveaux n'ont pas été détectées.",
+        "warn_no_criteria": "Un tableau a été trouvé, mais aucun critère n'a pu être extrait.",
+        "warn_one_criterion": "Un seul critère a été détecté — le document n'est peut-être pas une grille standard.",
+        "warn_one_level": "Un seul niveau a été détecté — les colonnes n'ont peut-être pas été lues correctement.",
+        "warn_invalid_json": "Format JSON non valide : la liste des critères est absente.",
+        "warn_json_failed": "Impossible de lire le JSON : {{message}}",
+        "warn_order_guessed": "Impossible de savoir si les colonnes de niveaux vont du meilleur au plus faible ou l'inverse. Les points supposent que la première colonne est la plus haute — vérifiez-les ci-dessous.",
+        "warn_points_partial": "Seuls certains en-têtes de niveau indiquent des points ; les autres niveaux ont reçu des points estimés.",
+        "warn_merged_row": "La ligne « {{title}} » s'étend sur plusieurs colonnes (un titre ?) et a été ignorée.",
+        "warn_untitled_row": "Une ligne avec du texte de niveau mais sans titre de critère (une cellule fusionnée ?) a été ignorée.",
+        "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
+        "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
+        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."
     },
     "standardsPicker": {
         "title": "Associer une norme",

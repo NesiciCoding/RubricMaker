@@ -18,7 +18,8 @@ cd "$(dirname "$0")/.."
 
 MIGRATIONS_DIR="supabase/migrations"
 OUT="supabase/bootstrap.sql"
-FILES=$(cd "$MIGRATIONS_DIR" && ls *.sql | sort)
+# Byte-order sort so the output is identical on every machine (CI checks it is up to date).
+FILES=$(cd "$MIGRATIONS_DIR" && ls *.sql | LC_ALL=C sort)
 TOTAL=$(echo "$FILES" | wc -l | tr -d ' ')
 
 {

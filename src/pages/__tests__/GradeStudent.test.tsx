@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -157,6 +157,52 @@ describe('GradeStudent', () => {
         mockNavigate.mockClear();
         const mod = await import('../GradeStudent');
         GradeStudentComp = mod.default;
+    });
+
+    describe('unsaved-changes guard (#658)', () => {
+        function renderWithElsewhere() {
+            const router = createMemoryRouter(
+                [
+                    { path: '/rubrics/:rubricId/grade/:studentId', element: <GradeStudentComp /> },
+                    { path: '/tests', element: <div>tests page</div> },
+                ],
+                { initialEntries: ['/rubrics/r1/grade/s1'] }
+            );
+            render(<RouterProvider router={router} />);
+            return router;
+        }
+
+        it('asks before in-app navigation discards an unsaved level', async () => {
+            const router = renderWithElsewhere();
+            fireEvent.click(screen.getByText('Excellent'));
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('common.unsaved_title')).toBeInTheDocument();
+            expect(router.state.location.pathname).toBe('/rubrics/r1/grade/s1');
+            fireEvent.click(screen.getByText('common.unsaved_stay'));
+            await waitFor(() => expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument());
+            expect(screen.queryByText('tests page')).not.toBeInTheDocument();
+        });
+
+        it('navigates without a prompt when nothing changed', async () => {
+            const router = renderWithElsewhere();
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+            expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument();
+        });
+
+        it('navigates without a prompt after saving', async () => {
+            const router = renderWithElsewhere();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+        });
     });
 
     it('renders the rubric and student name', () => {
