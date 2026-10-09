@@ -1396,7 +1396,7 @@ function isObjectArray(v: unknown): boolean {
  * false only when the JSON itself is unparseable or the top-level value is not
  * a plain object.
  */
-export function importFullBackup(json: string): boolean {
+export function importFullBackup(json: string, currentSettings?: AppSettings): boolean {
     try {
         const raw = JSON.parse(json) as unknown;
         if (!isPlainObject(raw)) return false;
@@ -1438,7 +1438,12 @@ export function importFullBackup(json: string): boolean {
         }
         if (data.settings !== undefined) {
             if (isPlainObject(data.settings))
-                saveSettings(mergeRestoredSettings(load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS), data.settings));
+                saveSettings(
+                    mergeRestoredSettings(
+                        currentSettings ?? load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+                        data.settings
+                    )
+                );
             else console.warn('[importFullBackup] settings failed validation — skipped');
         }
         if (data.favoriteStandards !== undefined) {

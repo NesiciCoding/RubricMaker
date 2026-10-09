@@ -490,6 +490,19 @@ describe('importFullBackup', () => {
         expect(settings.schoolId).toBeUndefined();
     });
 
+    it('keeps protected values from the live settings passed in, not the stored copy (#633)', () => {
+        saveSettings({ ...makeSettings(), userRole: 'teacher', schoolId: 'stale-school' });
+        const live = { ...makeSettings(), userRole: 'admin' as const, schoolId: 'live-school' };
+        importFullBackup(
+            JSON.stringify({ settings: { ...makeSettings(), theme: 'light', userRole: 'student' } }),
+            live
+        );
+        const { settings } = loadStore();
+        expect(settings.theme).toBe('light');
+        expect(settings.userRole).toBe('admin');
+        expect(settings.schoolId).toBe('live-school');
+    });
+
     it('restores data from valid JSON', () => {
         saveRubrics([makeRubric('r1')]);
         const backup = exportFullBackup();

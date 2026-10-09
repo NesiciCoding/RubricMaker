@@ -612,7 +612,7 @@ describe('platform actions', () => {
             ok = await result.current.importBackup('{"rubrics":[]}');
         });
         expect(ok).toBe(true);
-        expect(storage.importFullBackup).toHaveBeenCalledWith('{"rubrics":[]}');
+        expect(storage.importFullBackup).toHaveBeenCalledWith('{"rubrics":[]}', expect.any(Object));
         expect(storageSync.pushAll).not.toHaveBeenCalled();
 
         // Connected: local restore + cloud push.
