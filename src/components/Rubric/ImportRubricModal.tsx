@@ -258,7 +258,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                         </div>
 
                         {/* Warnings */}
-                        {parsed.warnings.map((w: string, i: number) => (
+                        {parsed.warnings.map((w, i) => (
                             <div
                                 key={i}
                                 style={{
@@ -274,7 +274,7 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                 }}
                             >
                                 <AlertTriangle size={14} style={{ marginTop: 1, flexShrink: 0 }} />
-                                {w}
+                                {t(w.key, w.params)}
                             </div>
                         ))}
 
@@ -336,6 +336,12 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                                     }}
                                                 >
                                                     {c.title}
+                                                    <div
+                                                        className="text-muted"
+                                                        style={{ fontWeight: 400, fontSize: '0.74rem' }}
+                                                    >
+                                                        {t('importRubric.weight_value', { weight: c.weight })}
+                                                    </div>
                                                 </td>
                                                 {c.levels.map((l: RubricLevel) => (
                                                     <td
@@ -347,6 +353,22 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                                             minWidth: 120,
                                                         }}
                                                     >
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                color: 'var(--text)',
+                                                                marginBottom: 2,
+                                                            }}
+                                                        >
+                                                            {l.minPoints === l.maxPoints
+                                                                ? t('importRubric.points_value', {
+                                                                      points: l.maxPoints,
+                                                                  })
+                                                                : t('importRubric.points_range', {
+                                                                      min: l.minPoints,
+                                                                      max: l.maxPoints,
+                                                                  })}
+                                                        </div>
                                                         {l.description || (
                                                             <span style={{ color: 'var(--text-dim)' }}>—</span>
                                                         )}
