@@ -201,7 +201,9 @@ const mockGradedRubric2: StudentRubric = {
 // Three consecutive low CEFR-rubric scores → cefrSkill intervention flag + cefrProgress entry.
 const mockLowCefrSrs: StudentRubric[] = [1, 2, 3].map((n) => ({
     id: `sr-cefr-${n}`,
-    rubricId: 'r2',
+    // One grade per rubric (#646): each attempt is its own (snapshotted) rubric.
+    rubricId: `r2-${n}`,
+    rubricSnapshot: { ...mockCefrRubric, id: `r2-${n}` },
     studentId: 's1',
     entries: [{ criterionId: 'rc1', levelId: null, overridePoints: 30, checkedSubItems: [], comment: '' }],
     overallComment: '',
@@ -223,7 +225,8 @@ const mockClassmateHighSr: StudentRubric = {
 // Three consecutive low grammar-rubric scores → grammar recommendation.
 const mockLowGrammarSrs: StudentRubric[] = [1, 2, 3].map((n) => ({
     id: `sr-gr-${n}`,
-    rubricId: 'r3',
+    rubricId: `r3-${n}`,
+    rubricSnapshot: { ...mockGrammarRubric, id: `r3-${n}` },
     studentId: 's1',
     entries: [{ criterionId: 'gc1', levelId: null, overridePoints: 30, checkedSubItems: [], comment: '' }],
     overallComment: '',
@@ -249,9 +252,9 @@ const mockGhostSnapshot: Rubric = {
 };
 const mockGhostSnapshotSrs: StudentRubric[] = [1, 2, 3].map((n) => ({
     id: `sr-ghost-${n}`,
-    rubricId: 'r-ghost',
+    rubricId: `r-ghost-${n}`,
     studentId: 's1',
-    rubricSnapshot: mockGhostSnapshot,
+    rubricSnapshot: { ...mockGhostSnapshot, id: `r-ghost-${n}` },
     entries: [{ criterionId: 'ghost-c', levelId: null, overridePoints: 30, checkedSubItems: [], comment: '' }],
     overallComment: '',
     gradedAt: `2024-05-0${n}T10:00:00Z`,

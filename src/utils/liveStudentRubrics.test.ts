@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Student, StudentRubric } from '../types';
+import type { Rubric, Student, StudentRubric } from '../types';
 import { liveStudentRubrics, rubricGradesInScope } from './liveStudentRubrics';
 
 const sr = (id: string, studentId: string, extra: Partial<StudentRubric> = {}): StudentRubric => ({
@@ -52,5 +52,23 @@ describe('rubricGradesInScope', () => {
         expect(rubricGradesInScope(grades, 'r1', liveStudents, { excludeNotHandedIn: true }).map((g) => g.id)).toEqual([
             '1',
         ]);
+    });
+});
+
+describe('one live grade per student and rubric', () => {
+    it('keeps only the first record for a duplicated student/rubric pair', () => {
+        const dupes = [sr('first', 'a'), sr('second', 'a'), sr('other-rubric', 'a', { rubricId: 'r2' })];
+        expect(liveStudentRubrics(dupes, liveStudents).map((g) => g.id)).toEqual(['first', 'other-rubric']);
+        expect(rubricGradesInScope(dupes, 'r1', liveStudents).map((g) => g.id)).toEqual(['first']);
+    });
+
+    it('skips a soft-deleted duplicate in favour of the live one', () => {
+        const dupes = [sr('deleted', 'a', { deletedAt: '2026-01-01T00:00:00Z' }), sr('live', 'a')];
+        expect(liveStudentRubrics(dupes, liveStudents).map((g) => g.id)).toEqual(['live']);
+    });
+
+    it('drops grades of deleted rubrics when the live rubric list is given', () => {
+        const rubrics = [{ id: 'r1' }] as Rubric[];
+        expect(liveStudentRubrics(grades, liveStudents, rubrics).map((g) => g.id)).toEqual(['1', '2']);
     });
 });
