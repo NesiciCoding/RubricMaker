@@ -386,7 +386,7 @@ npx supabase db push --include-all
 
 This applies every file in `supabase/migrations/` in order. Keep `--include-all` on every later push too: one early migration (`20260617093844_delete_old_attachments_fn.sql`) has a timestamp version that sorts after all the numbered `NNN_` files, so once it is applied the CLI otherwise refuses newer numbered migrations as being older than the last remote version. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
 
-If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially.
+If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially, then run `20260617093844_delete_old_attachments_fn.sql` last — the same order the CLI uses. It defines the attachment-retention lookup that the `delete-old-attachments` cleanup relies on.
 
 ### 10.3 Configure auth
 
