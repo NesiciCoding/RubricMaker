@@ -3750,7 +3750,8 @@
         "rb_tests_a4_preview_label": "A4-Vorschau:",
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
         "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
-        "gr_feedback_item_audio_storage": "Aufgenommenes Sprachfeedback — ohne Cloud-Verbindung werden Aufnahmen im Browser gespeichert, der etwa 5 MB fasst. Wird der Platz knapp, stoppt eine Aufnahme automatisch, auf einem vollen Gerät startet keine, und wenn Aufnahmen weggelassen werden müssen, um Bewertungen zu speichern, erhalten Sie eine Warnung."
+        "gr_feedback_item_audio_storage": "Aufgenommenes Sprachfeedback — ohne Cloud-Verbindung werden Aufnahmen im Browser gespeichert, der etwa 5 MB fasst. Wird der Platz knapp, stoppt eine Aufnahme automatisch, auf einem vollen Gerät startet keine, und wenn Aufnahmen weggelassen werden müssen, um Bewertungen zu speichern, erhalten Sie eine Warnung.",
+        "rb_import_export_item_docx": "Import aus Word oder PDF: Laden Sie eine Rastertabelle als .docx oder .pdf hoch (Kriterien in Zeilen, Stufen in Spalten). Die Punkte folgen der Kopfzeile — z. B. „Gut (3 P.)“ oder „Schwach (1-2 P.)“ — oder, ohne Punkte, den Stufennamen, sodass eine Tabelle von Mangelhaft → Ausgezeichnet die meisten Punkte an Ausgezeichnet vergibt. Prozentangaben neben einem Kriterium („Inhalt 40 %“) werden zu dessen Gewichtung. Die Vorschau zeigt die Punkte jeder Stufe und die Gewichtung jedes Kriteriums sowie eine Warnung für alles Geschätzte; prüfen Sie sie, bevor Sie auf Rubric erstellen klicken."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -4232,7 +4233,26 @@
         "col_criterion": "Kriterium",
         "none_detected": "Keine Rubric-Struktur erkannt. Versuchen Sie eine andere Datei.",
         "try_another": "Andere Datei versuchen",
-        "create": "Rubric erstellen"
+        "create": "Rubric erstellen",
+        "weight_value": "Gewichtung {{weight}} %",
+        "points_value": "{{points}} P.",
+        "points_range": "{{min}}–{{max}} P.",
+        "warn_no_table": "Im Dokument wurde keine Tabelle gefunden. Achten Sie darauf, dass Ihr Raster als Tabelle aufgebaut ist.",
+        "warn_no_pdf_text": "Aus dem PDF konnte kein Text gelesen werden. Möglicherweise ist es eine gescannte Bilddatei.",
+        "warn_no_structure": "Im Dokument wurde keine Rastertabelle erkannt.",
+        "warn_no_levels": "Eine Tabelle wurde gefunden, aber die Stufenspalten wurden nicht erkannt.",
+        "warn_no_criteria": "Eine Tabelle wurde gefunden, aber es konnten keine Kriterien gelesen werden.",
+        "warn_one_criterion": "Es wurde nur ein Kriterium erkannt — das Dokument ist möglicherweise kein Standardraster.",
+        "warn_one_level": "Es wurde nur eine Stufe erkannt — die Spalten wurden möglicherweise nicht richtig gelesen.",
+        "warn_invalid_json": "Ungültiges JSON-Format: Die Liste der Kriterien fehlt.",
+        "warn_json_failed": "JSON konnte nicht gelesen werden: {{message}}",
+        "warn_order_guessed": "Es ist nicht erkennbar, ob die Stufenspalten von der besten zur schwächsten laufen oder umgekehrt. Die Punkte gehen davon aus, dass die erste Spalte die höchste ist — prüfen Sie sie unten.",
+        "warn_points_partial": "Nur einige Stufenüberschriften nennen Punkte; die übrigen Stufen haben geschätzte Punkte erhalten.",
+        "warn_merged_row": "Die Zeile „{{title}}“ erstreckt sich über mehrere Spalten (eine Überschrift?) und wurde übersprungen.",
+        "warn_untitled_row": "Eine Zeile mit Stufentext, aber ohne Kriteriumstitel (eine verbundene Zelle?), wurde übersprungen.",
+        "warn_cell_count": "Die Zeile „{{title}}“ hat {{found}} Stufenzellen, die Kopfzeile aber {{expected}} Stufen — prüfen Sie die Beschreibungen.",
+        "warn_weights_scaled": "Die Gewichtungen der Kriterien ergaben zusammen {{total}} % und wurden auf 100 % umgerechnet.",
+        "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt."
     },
     "standardsPicker": {
         "title": "Standard verknüpfen",

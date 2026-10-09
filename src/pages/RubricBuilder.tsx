@@ -56,6 +56,7 @@ import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
 import Modal from '../components/ui/Modal';
+import DropdownMenu from '../components/ui/DropdownMenu';
 import VocabularyListEditor from '../components/Vocabulary/VocabularyListEditor';
 import CriterionCard, { type CriterionStandardTarget as StandardTarget } from '../components/Rubric/CriterionCard';
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
@@ -157,6 +158,8 @@ export default function RubricBuilder() {
 
     const [pickingStandardFor, setPickingStandardFor] = useState<StandardTarget | null>(null);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const exportBtnRef = useRef<HTMLButtonElement>(null);
+    const closeExportMenu = useCallback(() => setShowExportMenu(false), []);
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
 
@@ -750,86 +753,76 @@ export default function RubricBuilder() {
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowPreview(!showPreview)}>
                             <Eye size={15} /> {t('rubricBuilder.action_preview')}
                         </button>
-                        <div style={{ position: 'relative' }}>
+                        <button
+                            ref={exportBtnRef}
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            aria-haspopup="menu"
+                            aria-expanded={showExportMenu}
+                        >
+                            <FileDown size={15} /> {t('rubricBuilder.action_export')}
+                        </button>
+                        <DropdownMenu
+                            open={showExportMenu}
+                            onClose={closeExportMenu}
+                            anchorRef={exportBtnRef}
+                            ariaLabel={t('rubricBuilder.action_export')}
+                        >
                             <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => setShowExportMenu(!showExportMenu)}
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ justifyContent: 'flex-start' }}
+                                onClick={() => handleExport('pdf')}
                             >
-                                <FileDown size={15} /> {t('rubricBuilder.action_export')}
+                                <FileText size={14} /> {t('rubricBuilder.action_export_pdf')}
                             </button>
-                            {showExportMenu && (
-                                <>
-                                    <div
-                                        style={{ position: 'fixed', inset: 0, zIndex: 5 }}
-                                        onClick={() => setShowExportMenu(false)}
-                                    />
-                                    <div
-                                        className="card"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '100%',
-                                            right: 0,
-                                            marginTop: 4,
-                                            padding: 4,
-                                            minWidth: 160,
-                                            zIndex: 10,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 2,
-                                        }}
-                                    >
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => handleExport('pdf')}
-                                        >
-                                            <FileText size={14} /> {t('rubricBuilder.action_export_pdf')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => handleExport('docx')}
-                                        >
-                                            <FileText size={14} /> {t('rubricBuilder.action_export_docx')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => handleExport('json')}
-                                        >
-                                            <FileText size={14} /> {t('rubricBuilder.action_download_json')}
-                                        </button>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setShowExportMenu(false);
-                                                handlePrint();
-                                            }}
-                                        >
-                                            <Printer size={14} /> {t('rubricBuilder.action_print')}
-                                        </button>
-                                        <hr
-                                            style={{
-                                                margin: '4px 0',
-                                                border: 'none',
-                                                borderTop: '1px solid var(--border)',
-                                            }}
-                                        />
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{ justifyContent: 'flex-start' }}
-                                            onClick={() => {
-                                                setShowExportMenu(false);
-                                                handleSaveAsTemplate();
-                                            }}
-                                        >
-                                            <Layers size={14} /> {t('rubricBuilder.action_save_as_template')}
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                            <button
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ justifyContent: 'flex-start' }}
+                                onClick={() => handleExport('docx')}
+                            >
+                                <FileText size={14} /> {t('rubricBuilder.action_export_docx')}
+                            </button>
+                            <button
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ justifyContent: 'flex-start' }}
+                                onClick={() => handleExport('json')}
+                            >
+                                <FileText size={14} /> {t('rubricBuilder.action_download_json')}
+                            </button>
+                            <button
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setShowExportMenu(false);
+                                    handlePrint();
+                                }}
+                            >
+                                <Printer size={14} /> {t('rubricBuilder.action_print')}
+                            </button>
+                            <hr
+                                role="separator"
+                                style={{
+                                    margin: '4px 0',
+                                    border: 'none',
+                                    borderTop: '1px solid var(--border)',
+                                }}
+                            />
+                            <button
+                                role="menuitem"
+                                className="btn btn-ghost btn-sm"
+                                style={{ justifyContent: 'flex-start' }}
+                                onClick={() => {
+                                    setShowExportMenu(false);
+                                    handleSaveAsTemplate();
+                                }}
+                            >
+                                <Layers size={14} /> {t('rubricBuilder.action_save_as_template')}
+                            </button>
+                        </DropdownMenu>
                         {id && (
                             <button
                                 className="btn btn-secondary btn-sm"
