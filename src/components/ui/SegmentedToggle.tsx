@@ -12,6 +12,10 @@ interface Props<T extends string> {
     onChange: (value: T) => void;
     ariaLabel: string;
     size?: 'sm' | 'md';
+    /** Let options wrap onto a second row instead of overflowing narrow screens. */
+    wrap?: boolean;
+    /** Minimum button height in px, e.g. 44 for touch targets. */
+    minTargetHeight?: number;
 }
 
 /**
@@ -26,6 +30,8 @@ export default function SegmentedToggle<T extends string>({
     onChange,
     ariaLabel,
     size = 'md',
+    wrap = false,
+    minTargetHeight,
 }: Props<T>) {
     const pad = size === 'sm' ? '5px 10px' : '7px 14px';
     const fontSize = size === 'sm' ? '0.8rem' : '0.85rem';
@@ -37,7 +43,8 @@ export default function SegmentedToggle<T extends string>({
                 display: 'inline-flex',
                 gap: 2,
                 padding: 2,
-                borderRadius: 999,
+                borderRadius: wrap ? 22 : 999,
+                ...(wrap ? { flexWrap: 'wrap', justifyContent: 'center', maxWidth: '100%' } : {}),
                 background: 'var(--bg-raised)',
                 border: '1px solid var(--border)',
             }}
@@ -53,7 +60,10 @@ export default function SegmentedToggle<T extends string>({
                         style={{
                             display: 'inline-flex',
                             alignItems: 'center',
+                            justifyContent: 'center',
                             gap: 6,
+                            minHeight: minTargetHeight,
+                            ...(wrap ? { flex: '1 0 auto' } : {}),
                             padding: pad,
                             fontSize,
                             fontWeight: 600,
