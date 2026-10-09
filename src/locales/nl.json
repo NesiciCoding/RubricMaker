@@ -2894,7 +2894,10 @@
         "delete_all_db_message": "Hiermee verwijder je definitief alles wat je in de database hebt: rubrics, klassen, leerlingen, cijfers, toetsen, essays, berichten en hun bestanden, opnames, scans en nachtelijke back-ups. Dit kan niet ongedaan worden gemaakt. De kopie op dit apparaat blijft behouden.",
         "delete_all_db_confirm": "Alles verwijderen",
         "delete_all_db_success": "Al je databasegegevens zijn verwijderd.",
-        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder."
+        "delete_all_db_failed": "Sommige gegevens konden niet worden verwijderd ({{items}}). Probeer het opnieuw of vraag je beheerder.",
+        "audit_col_actor": "Uitgevoerd door",
+        "audit_col_details": "Details",
+        "audit_actor_system": "Systeem"
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -3662,7 +3665,7 @@
         "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel.",
         "da_admin_item_data": "Tabblad Gegevens — anonimiseer leerlinggegevens, bulkverwijdering, compliancetools.",
         "da_admin_item_retention": "Tabblad Bewaartermijn — stel automatisch gegevensbewaarbeleid per school in.",
-        "da_admin_item_audit": "Tabblad Auditlogboek — filterbaar, gepagineerd logboek van rolwijzigingen, cijferopslag, exports en authenticatiegebeurtenissen; admins zien alle vermeldingen, docenten zien hun eigen vermeldingen. Vermeldingen worden 3 jaar bewaard (admin), 1 jaar (cijfer), 1 maand (export/auth) en daarna automatisch verwijderd.",
+        "da_admin_item_audit": "Tabblad Auditlog — filterbaar logboek per pagina met wie wat deed, inclusief details: rolwijzigingen, schoollidmaatschap en schoolwijzigingen, delen van rubrics/klassen, wijzigingen in site-instellingen, wachtwoordresets, \"Al mijn databasegegevens verwijderen\", opgeslagen cijfers en exports. Gevoelige wijzigingen worden door de database zelf vastgelegd, alleen als de wijziging echt is doorgevoerd. Beheerders zien alle regels, docenten alleen hun eigen. Regels worden 3 jaar (beheer), 1 jaar (cijfers) of 1 maand (export/inloggen) bewaard en daarna automatisch verwijderd.",
         "da_settings_title": "Instellingen",
         "da_settings_item_theme": "Thema — donker / licht, accentkleurkiezer, 8 snelle voorinstellingen, of kies een benoemde themabundel (Academy, Nature, Midnight, Warm, Slate, Rose) die met één klik lettertype, accent en exportkleur instelt.",
         "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in.",

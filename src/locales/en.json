@@ -2894,7 +2894,10 @@
         "delete_all_db_message": "This permanently deletes everything you own in the database — rubrics, classes, students, grades, tests, essays, messages and their files, recordings, scans and nightly backups. It cannot be undone. The copy on this device is not affected.",
         "delete_all_db_confirm": "Delete everything",
         "delete_all_db_success": "All your database data was deleted.",
-        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator."
+        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator.",
+        "audit_col_actor": "Actor",
+        "audit_col_details": "Details",
+        "audit_actor_system": "System"
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -3660,7 +3663,7 @@
         "da_admin_item_integrations": "Integrations tab — Standards API key.",
         "da_admin_item_data": "Data tab — anonymise student data, bulk delete, compliance tools.",
         "da_admin_item_retention": "Retention tab — set automatic data retention policies per school.",
-        "da_admin_item_audit": "Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
+        "da_admin_item_audit": "Audit Log tab — filterable, paginated log showing who did what, with details: role changes, school membership and school changes, rubric/class sharing, site settings changes, password resets, \"Delete all my database data\", grade saves and exports. Sensitive changes are recorded by the database itself, only when the change actually took effect. Admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
         "da_settings_title": "Settings",
         "da_settings_item_theme": "Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.",
         "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",

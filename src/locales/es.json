@@ -2894,7 +2894,10 @@
         "delete_all_db_message": "Esto elimina de forma permanente todo lo que te pertenece en la base de datos: rúbricas, clases, alumnos, calificaciones, pruebas, redacciones, mensajes y sus archivos, grabaciones, escaneos y copias de seguridad nocturnas. No se puede deshacer. La copia de este dispositivo no se ve afectada.",
         "delete_all_db_confirm": "Eliminar todo",
         "delete_all_db_success": "Se eliminaron todos tus datos de la base de datos.",
-        "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador."
+        "delete_all_db_failed": "No se pudieron eliminar algunos datos ({{items}}). Vuelve a intentarlo o consulta a tu administrador.",
+        "audit_col_actor": "Realizado por",
+        "audit_col_details": "Detalles",
+        "audit_actor_system": "Sistema"
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -3662,7 +3665,7 @@
         "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards.",
         "da_admin_item_data": "Pestaña Datos — anonimizar datos de alumnos, eliminación masiva, herramientas de cumplimiento.",
         "da_admin_item_retention": "Pestaña Retención — establecer políticas automáticas de retención de datos por centro.",
-        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de cambios de rol, guardados de calificaciones, exportaciones y eventos de autenticación; los administradores ven todas las entradas, los profesores ven las suyas. Las entradas se conservan 3 años (admin), 1 año (calificación), 1 mes (exportación/autenticación) y luego se purgan automáticamente.",
+        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de quién hizo qué, con detalles: cambios de rol, pertenencia y cambios de centro, uso compartido de rúbricas/clases, cambios en la configuración del sitio, restablecimientos de contraseña, «Eliminar todos mis datos», calificaciones guardadas y exportaciones. Los cambios sensibles los registra la propia base de datos, solo cuando el cambio se ha aplicado de verdad. Los administradores ven todas las entradas; el profesorado, solo las suyas. Se conservan 3 años (admin), 1 año (calificaciones) o 1 mes (exportación/acceso) y luego se eliminan automáticamente.",
         "da_settings_title": "Configuración",
         "da_settings_item_theme": "Tema — oscuro / claro, selector de color de acento, 8 ajustes rápidos predefinidos, o elige un paquete de tema con nombre (Academy, Nature, Midnight, Warm, Slate, Rose) que establece con un clic la tipografía, el acento y el color de exportación.",
         "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
