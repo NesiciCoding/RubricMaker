@@ -277,6 +277,32 @@ export default function GradeStudent() {
 
     const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
 
+    // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
+    const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
+    const { nextStudent, hasOtherUngraded } = useMemo(() => {
+        if (!student) return { nextStudent: null, hasOtherUngraded: false };
+        let eligible: typeof students;
+        if (navScope === 'current-class') {
+            eligible = students.filter((s) => s.classId === student.classId);
+        } else {
+            /* v8 ignore next -- this page only renders with a rubricId from the route */
+            const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubricId ?? '')).map((c) => c.id);
+            eligible =
+                linkedClassIds.length > 0
+                    ? students.filter((s) => linkedClassIds.includes(s.classId))
+                    : students.filter((s) => s.classId === student.classId);
+        }
+        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
+        const currentIndex = sorted.findIndex((s) => s.id === studentId);
+        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
+        const nextUngraded = after.find(
+            (s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)
+        );
+        // Wrapping round to graded students is for a review pass; the last ungraded student ends the loop.
+        const nextStudent = nextUngraded ?? (existingSR ? (after[0] ?? null) : null);
+        return { nextStudent, hasOtherUngraded: !!nextUngraded };
+    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope, existingSR]);
+
     const handleSave = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
@@ -291,6 +317,7 @@ export default function GradeStudent() {
         });
         setSaved(true);
         setIsDirty(false);
+        if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
 
         // Fire-and-forget grade notification if the teacher has opted in
         if (settings.notifyStudentsOnGrade && student && studentId) {
@@ -320,31 +347,10 @@ export default function GradeStudent() {
         studentId,
         cannedNhiComment,
         existingSR,
+        hasOtherUngraded,
+        showToast,
+        t,
     ]);
-
-    // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
-    const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
-    const { nextStudent, hasOtherUngraded } = useMemo(() => {
-        if (!student) return { nextStudent: null, hasOtherUngraded: false };
-        let eligible: typeof students;
-        if (navScope === 'current-class') {
-            eligible = students.filter((s) => s.classId === student.classId);
-        } else {
-            /* v8 ignore next -- this page only renders with a rubricId from the route */
-            const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubricId ?? '')).map((c) => c.id);
-            eligible =
-                linkedClassIds.length > 0
-                    ? students.filter((s) => linkedClassIds.includes(s.classId))
-                    : students.filter((s) => s.classId === student.classId);
-        }
-        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
-        const currentIndex = sorted.findIndex((s) => s.id === studentId);
-        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
-        const nextUngraded = after.find(
-            (s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)
-        );
-        return { nextStudent: nextUngraded ?? after[0] ?? null, hasOtherUngraded: !!nextUngraded };
-    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope]);
 
     const handleSaveAndNext = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
@@ -357,8 +363,6 @@ export default function GradeStudent() {
             gradedAt: new Date().toISOString(),
         });
         setIsDirty(false);
-        // Grading the last ungraded student ends the loop; Save & Next then only wraps round.
-        if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
         allowNavigation();
         // Replace rather than push history so the topbar Back returns to where grading started.
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
@@ -372,9 +376,6 @@ export default function GradeStudent() {
         feedbackOnly,
         isAnchor,
         existingSR,
-        hasOtherUngraded,
-        showToast,
-        t,
         cannedNhiComment,
         allowNavigation,
     ]);

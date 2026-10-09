@@ -433,20 +433,40 @@ describe('GradeStudent', () => {
             expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
         });
 
-        it('announces when Save & Next grades the last ungraded student', () => {
-            (mockStudentRubricsArr as unknown[]).push({
-                id: 'sr-bob',
-                rubricId: 'r1',
-                studentId: 's2',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-            });
+        const gradedRecord = (id: string, studentId: string) => ({
+            id,
+            rubricId: 'r1',
+            studentId,
+            entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }],
+            overallComment: '',
+            isPeerReview: false,
+        });
+
+        it.each([
+            ['Ctrl+S', { key: 's', ctrlKey: true }],
+            ['Ctrl+Enter', { key: 'Enter', ctrlKey: true }],
+        ])('%s on the last ungraded student announces completion and stays', (_label, keys) => {
+            (mockStudentRubricsArr as unknown[]).push(gradedRecord('sr-bob', 's2'));
             try {
                 renderPage();
+                expect(screen.queryByTitle('Next: Bob')).not.toBeInTheDocument();
                 fireEvent.click(screen.getByText('Excellent'));
-                fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+                fireEvent.keyDown(window, keys);
+                expect(mockSaveStudentRubric).toHaveBeenCalled();
                 expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+                expect(mockNavigate).not.toHaveBeenCalled();
+            } finally {
+                mockStudentRubricsArr.length = 0;
+            }
+        });
+
+        it('still wraps round to graded students for a review pass once everyone is graded', () => {
+            (mockStudentRubricsArr as unknown[]).push(gradedRecord('sr-alice', 's1'), gradedRecord('sr-bob', 's2'));
+            try {
+                renderPage();
+                fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+                expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+                expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
             } finally {
                 mockStudentRubricsArr.length = 0;
             }
