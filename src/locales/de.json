@@ -2855,7 +2855,8 @@
         "role_student_desc": "Noten einsehen und Schreibaufgaben bearbeiten.",
         "done_body": "Ihre Schule ist eingerichtet. Sie können jetzt Rubriken erstellen und Schüler benoten.",
         "student_done_body": "Ihr Konto ist als Schüler eingerichtet. Sie werden zu Ihrem Portal weitergeleitet, sobald Ihr Lehrer Ihre Schul-E-Mail mit einem Schülerprofil verknüpft.",
-        "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+        "error_role_update": "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+        "error_last_admin": "Sie sind der einzige Administrator und können daher nicht zu Schüler wechseln. Machen Sie zuerst eine andere Person zum Administrator oder fahren Sie als Administrator fort."
     },
     "admin": {
         "title": "Admin-Dashboard",
@@ -2985,6 +2986,9 @@
         "erase_partial": "Der Schüler wurde gelöscht. {{n}} Datei(en) im Speicherordner einer anderen Lehrkraft konnten hier nicht entfernt werden; sie stehen für einen Administrator im Audit-Log.",
         "erase_offline": "Verbinden Sie sich mit der Datenbank, um diesen Schüler zu löschen, damit auf dem Server nichts zurückbleibt.",
         "erase_failed": "Der Schüler konnte nicht gelöscht werden: {{error}}",
+        "role_change_confirm_title": "Rolle ändern?",
+        "role_change_confirm": "Rolle von {{name}} zu {{role}} ändern? Das ändert sofort, was diese Person sehen und tun kann.",
+        "role_last_admin": "Dies ist der letzte Administrator. Machen Sie zuerst eine andere Person zum Administrator.",
         "audit_col_actor": "Ausgeführt von",
         "audit_col_details": "Details",
         "audit_actor_system": "System"
@@ -3674,7 +3678,7 @@
         "da_admin_title": "Admin-Panel",
         "da_admin_intro_prefix": "Zugänglich unter",
         "da_admin_intro_suffix": "für Benutzer mit der Admin-Rolle.",
-        "da_admin_item_users": "Tab Benutzer — Rollen zuweisen (Admin, Lehrer, Schüler), Kollegen einladen.",
+        "da_admin_item_users": "Tab Benutzer — Rollen zuweisen (Admin, Lehrer, Schüler), Kollegen einladen. Rollenänderungen müssen bestätigt werden, und der letzte Administrator kann nicht herabgestuft werden — mache zuerst jemand anderen zum Administrator. Kann sich kein Administrator mehr anmelden, kann ein Server-Betreiber einen wiederherstellen (siehe Self-Hosting-Betriebshandbuch).",
         "da_admin_item_schools": "Tab Schulen — Schulnamen und Branding verwalten.",
         "da_admin_item_database": "Tab Datenbank — Supabase-Verbindung konfigurieren, Daten push/pull, Freigabe verwalten.",
         "da_admin_item_integrations": "Tab Integrationen — Standards-API-Schlüssel.",

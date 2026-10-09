@@ -2780,7 +2780,8 @@
         "error_name_required": "Voer een schoolnaam in.",
         "error_id_required": "Voer een school-ID in.",
         "error_create": "School aanmaken mislukt: {{error}}",
-        "error_join": "Aansluiten bij school mislukt: {{error}}"
+        "error_join": "Aansluiten bij school mislukt: {{error}}",
+        "error_last_admin": "Je bent de enige beheerder en kunt daarom niet naar Leerling wisselen. Maak eerst een andere gebruiker beheerder, of ga verder als beheerder."
     },
     "admin": {
         "title": "Beheerdashboard",
@@ -2910,6 +2911,9 @@
         "erase_partial": "De leerling is gewist. {{n}} bestand(en) in de opslagmap van een andere docent konden hier niet worden verwijderd; ze staan in het auditlogboek voor een beheerder.",
         "erase_offline": "Maak verbinding met de database om deze leerling te wissen, zodat er niets achterblijft op de server.",
         "erase_failed": "De leerling kon niet worden gewist: {{error}}",
+        "role_change_confirm_title": "Rol wijzigen?",
+        "role_change_confirm": "De rol van {{name}} wijzigen naar {{role}}? Dit verandert direct wat deze persoon kan zien en doen.",
+        "role_last_admin": "Dit is de laatste beheerder. Maak eerst een andere gebruiker beheerder.",
         "audit_col_actor": "Uitgevoerd door",
         "audit_col_details": "Details",
         "audit_actor_system": "Systeem"
@@ -3674,7 +3678,7 @@
         "da_admin_title": "Adminpaneel",
         "da_admin_intro_prefix": "Toegankelijk op",
         "da_admin_intro_suffix": "voor gebruikers met de adminrol.",
-        "da_admin_item_users": "Tabblad Gebruikers — wijs rollen toe (admin, docent, leerling), nodig collega's uit.",
+        "da_admin_item_users": "Tabblad Gebruikers — wijs rollen toe (admin, docent, leerling), nodig collega's uit. Rolwijzigingen vragen om bevestiging en de laatste beheerder kan niet worden gedegradeerd — maak eerst iemand anders beheerder. Kan geen enkele beheerder meer inloggen, dan kan een serverbeheerder er een herstellen (zie de handleiding voor zelf hosten).",
         "da_admin_item_schools": "Tabblad Scholen — beheer schoolnamen en branding.",
         "da_admin_item_database": "Tabblad Database — configureer Supabase-verbinding, push/pull gegevens, beheer delen.",
         "da_admin_item_integrations": "Tabblad Integraties — Standards API-sleutel.",

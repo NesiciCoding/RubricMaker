@@ -2780,7 +2780,8 @@
         "error_name_required": "Please enter a school name.",
         "error_id_required": "Please enter a school ID.",
         "error_create": "Could not create school: {{error}}",
-        "error_join": "Could not join school: {{error}}"
+        "error_join": "Could not join school: {{error}}",
+        "error_last_admin": "You are the only administrator, so you can't switch to Student. Promote another user to administrator first, or continue as administrator."
     },
     "admin": {
         "title": "Admin Dashboard",
@@ -2910,6 +2911,9 @@
         "erase_partial": "The student was erased. {{n}} file(s) in another teacher's storage folder could not be removed here; they are listed in the audit log for an administrator.",
         "erase_offline": "Connect to the database to erase this student, so nothing is left behind on the server.",
         "erase_failed": "The student could not be erased: {{error}}",
+        "role_change_confirm_title": "Change role?",
+        "role_change_confirm": "Change the role of {{name}} to {{role}}? This changes what they can see and do straight away.",
+        "role_last_admin": "This is the last administrator. Promote another user to administrator first.",
         "audit_col_actor": "Actor",
         "audit_col_details": "Details",
         "audit_actor_system": "System"
@@ -3672,7 +3676,7 @@
         "da_admin_title": "Admin panel",
         "da_admin_intro_prefix": "Accessible at",
         "da_admin_intro_suffix": "for users with the admin role.",
-        "da_admin_item_users": "Users tab — assign roles (admin, teacher, student), invite colleagues.",
+        "da_admin_item_users": "Users tab — assign roles (admin, teacher, student), invite colleagues. Role changes ask for confirmation, and the last administrator can't be demoted — promote someone else first. If no administrator can sign in any more, a server operator can restore one (see the self-hosting operations guide).",
         "da_admin_item_schools": "Schools tab — manage school names and branding.",
         "da_admin_item_database": "Database tab — configure Supabase connection, push/pull data, manage sharing.",
         "da_admin_item_integrations": "Integrations tab — Standards API key.",
