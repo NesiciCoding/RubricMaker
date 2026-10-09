@@ -71,6 +71,7 @@ vi.mock('../store/storage', () => ({
     saveExportTemplates: vi.fn(),
     savePeerReviews: vi.fn(),
     onStorageQuotaExceeded: vi.fn(),
+    onVoiceFeedbackDropped: vi.fn(),
     exportStore: vi.fn((state) => state),
     importFullBackup: vi.fn(() => true),
     loadRubricVersions: vi.fn(() => []),
@@ -648,6 +649,22 @@ describe('AppContext', () => {
 
             triggerQuotaExceeded();
 
+            expect(mockShowToast).not.toHaveBeenCalled();
+        });
+
+        it('warns when voice recordings had to be dropped to fit while offline (#678)', () => {
+            vi.mocked(storageSync.isConnected).mockReturnValue(false);
+            renderHook(() => useSettings(), { wrapper });
+            const registered = vi.mocked(storage.onVoiceFeedbackDropped).mock.calls[0]?.[0];
+            expect(registered).toBeDefined();
+            act(() => registered!(2));
+            expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'warning');
+        });
+
+        it('stays silent about dropped recordings while connected (the cloud copy has them)', () => {
+            vi.mocked(storageSync.isConnected).mockReturnValue(true);
+            renderHook(() => useSettings(), { wrapper });
+            act(() => vi.mocked(storage.onVoiceFeedbackDropped).mock.calls[0]?.[0]!(1));
             expect(mockShowToast).not.toHaveBeenCalled();
         });
     });

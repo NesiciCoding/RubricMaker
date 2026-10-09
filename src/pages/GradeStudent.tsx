@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -48,6 +48,18 @@ import { useTranslation } from 'react-i18next';
 import { useVoiceGrading } from '../hooks/useVoiceGrading';
 import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
+import { isOffline } from '../context/storeCore';
+import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../store/storage';
+import {
+    LOW_STORAGE_RECORDING_SECONDS,
+    MIN_RECORDING_SECONDS,
+    unsavedAudioChars,
+    voiceRecordingBudgetSeconds,
+} from '../utils/voiceFeedbackBudget';
+import { useConfirm } from '../hooks/useConfirm';
+import { isLeftSwipe, isSwipeSafeTarget } from '../utils/swipeGesture';
+import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
@@ -190,6 +202,7 @@ export default function GradeStudent() {
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
     const audioRecorder = useMediaRecorder();
+    const { showToast } = useToast();
     const [activeCommentCrit, setActiveCommentCrit] = useState<string | null>(null);
     const [showCommentBankFor, setShowCommentBankFor] = useState<string | null>(null);
     const [scanForCrit, setScanForCrit] = useState<string | null>(null);
@@ -201,6 +214,7 @@ export default function GradeStudent() {
     const [showCoGradeModal, setShowCoGradeModal] = useState(false);
     const [showDeleteGrade, setShowDeleteGrade] = useState(false);
     const [deleteGradeScope, setDeleteGradeScope] = useState<'student' | 'group'>('student');
+    const { confirm: confirmNhi, dialogProps: nhiConfirmProps } = useConfirm();
     const [coGraderName, setCoGraderName] = useState('');
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     const [selectedColleagueId, setSelectedColleagueId] = useState('');
@@ -224,7 +238,8 @@ export default function GradeStudent() {
     const [tourRun, setTourRun] = useState(false);
     const gradingTourSteps = useMemo(() => getGradingTourSteps(t), [t]);
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
+    const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -260,11 +275,15 @@ export default function GradeStudent() {
         return getCriterionInterventionFlags(studentId, studentRubrics, rubrics);
     }, [studentId, studentRubrics, rubrics]);
 
+    const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
+
     const handleSave = useCallback(() => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
+        if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
-            ...sr,
+            ...toSave,
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -290,7 +309,18 @@ export default function GradeStudent() {
                 });
             }
         }
-    }, [sr, rubric, saveStudentRubric, feedbackOnly, isAnchor, settings.notifyStudentsOnGrade, student, studentId]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        feedbackOnly,
+        isAnchor,
+        settings.notifyStudentsOnGrade,
+        student,
+        studentId,
+        cannedNhiComment,
+        existingSR,
+    ]);
 
     // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
     const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
@@ -321,7 +351,7 @@ export default function GradeStudent() {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
         saveStudentRubric({
-            ...sr,
+            ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -330,17 +360,39 @@ export default function GradeStudent() {
         setIsDirty(false);
         allowNavigation();
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, feedbackOnly, isAnchor, allowNavigation]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        feedbackOnly,
+        isAnchor,
+        cannedNhiComment,
+        existingSR,
+        allowNavigation,
+    ]);
 
-    const handleNotHandedIn = useCallback(() => {
+    const handleNotHandedIn = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        const hasGrade = (!!existingSR?.gradedAt && !existingSR.notHandedIn) || hasAnyScore(sr);
+        if (
+            hasGrade &&
+            !(await confirmNhi({
+                title: t('gradeStudent.nhi_confirm_title'),
+                message: t('gradeStudent.nhi_confirm_message', { name: student?.name ?? '' }),
+                confirmLabel: t('gradeStudent.nhi_confirm_action'),
+                cancelLabel: t('common.cancel'),
+                danger: true,
+            }))
+        )
+            return;
         const nhiSR = {
-            ...sr,
+            ...markNotHandedIn(sr, cannedNhiComment),
             feedbackOnly,
             isAnchor,
-            notHandedIn: true,
-            overallComment: t('gradeStudent.not_handed_in_comment'),
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
             gradedAt: new Date().toISOString(),
         };
@@ -352,7 +404,30 @@ export default function GradeStudent() {
         } else {
             navigate(-1);
         }
-    }, [sr, rubric, saveStudentRubric, nextStudent, navigate, rubricId, t, feedbackOnly, isAnchor, allowNavigation]);
+    }, [
+        sr,
+        rubric,
+        saveStudentRubric,
+        nextStudent,
+        navigate,
+        rubricId,
+        t,
+        feedbackOnly,
+        isAnchor,
+        existingSR,
+        student,
+        confirmNhi,
+        cannedNhiComment,
+        allowNavigation,
+    ]);
+
+    const handleUndoNotHandedIn = useCallback(() => {
+        /* v8 ignore next -- the banner only renders for a loaded not-handed-in record */
+        if (!sr) return;
+        const cleared = clearNotHandedIn(sr, cannedNhiComment);
+        setSr(cleared);
+        saveStudentRubric(cleared);
+    }, [sr, saveStudentRubric, cannedNhiComment]);
 
     // Scroll focused criterion into view
     React.useEffect(() => {
@@ -450,20 +525,30 @@ export default function GradeStudent() {
     }, [handleSave, handleSaveAndNext, nextStudent, rubric, sr, focusedCriterionIdx, updateEntry]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        const touch = e.touches[0];
-        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        // A second finger cancels the gesture: start and end could otherwise come from different touches.
+        const touch = e.touches.length === 1 ? e.touches[0] : null;
+        touchStartRef.current =
+            touch && isSwipeSafeTarget(e.target, e.currentTarget)
+                ? { id: touch.identifier, x: touch.clientX, y: touch.clientY }
+                : null;
     }, []);
 
     const handleTouchEnd = useCallback(
-        (e: React.TouchEvent) => {
-            if (!touchStartRef.current || !nextStudent) return;
-            const touch = e.changedTouches[0];
-            const dx = touchStartRef.current.x - touch.clientX;
-            const dy = Math.abs(touchStartRef.current.y - touch.clientY);
+        async (e: React.TouchEvent) => {
+            const start = touchStartRef.current;
             touchStartRef.current = null;
-            if (dx > 80 && dy < 60) handleSaveAndNext();
+            if (!start || !nextStudent) return;
+            const touch = Array.from(e.changedTouches).find((ct) => ct.identifier === start.id);
+            if (!touch || !isLeftSwipe(start, { x: touch.clientX, y: touch.clientY })) return;
+            const go = await confirmSwipe({
+                title: t('gradeStudent.swipe_confirm_title'),
+                message: t('gradeStudent.swipe_confirm_message', { name: nextStudent.name }),
+                confirmLabel: t('gradeStudent.swipe_confirm_action'),
+                cancelLabel: t('common.cancel'),
+            });
+            if (go) handleSaveAndNext();
         },
-        [nextStudent, handleSaveAndNext]
+        [nextStudent, handleSaveAndNext, confirmSwipe, t]
     );
 
     const anchorSR = useMemo(() => {
@@ -471,17 +556,56 @@ export default function GradeStudent() {
         return studentRubrics.find((s) => s.rubricId === rubricId && s.isAnchor && s.id !== existingSR?.id) ?? null;
     }, [studentRubrics, rubricId, existingSR?.id]);
 
+    // Offline, recordings are stored as base64 in localStorage (~5MB), so cap them to what still fits.
+    const recordingLimitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stopAudioRecordingRef = useRef<(criterionId: string) => void>(() => {});
+    useEffect(
+        () => () => {
+            if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+        },
+        []
+    );
+
     const startAudioRecording = useCallback(
         (criterionId: string) => {
             if (audioRecorder.recordingKey && audioRecorder.recordingKey !== criterionId) return;
-            // getUserMedia denial surfaces as hook error state — silently ignored here, as before
-            void audioRecorder.start({ key: criterionId });
+            let budget: number | null = null;
+            if (isOffline()) {
+                const used = localStorageUsedChars();
+                if (used === null) {
+                    showToast(t('gradeStudent.voice_storage_unavailable'), 'warning');
+                    return;
+                }
+                budget = voiceRecordingBudgetSeconds(
+                    used + unsavedAudioChars(sr?.entries ?? [], existingSR?.entries),
+                    LOCAL_STORAGE_QUOTA_CHARS
+                );
+                if (budget < MIN_RECORDING_SECONDS) {
+                    showToast(t('gradeStudent.voice_storage_full'), 'warning');
+                    return;
+                }
+                if (budget < LOW_STORAGE_RECORDING_SECONDS) {
+                    showToast(t('gradeStudent.voice_storage_low', { seconds: budget }), 'warning');
+                }
+            }
+            // getUserMedia denial surfaces as hook error state — silently ignored here, as before.
+            // The limit starts once recording does: a stop() while getUserMedia is pending is a no-op.
+            void audioRecorder.start({ key: criterionId }).then((started) => {
+                if (!started || budget === null) return;
+                if (recordingLimitRef.current) clearTimeout(recordingLimitRef.current);
+                const limit = budget;
+                recordingLimitRef.current = setTimeout(() => stopAudioRecordingRef.current(criterionId), limit * 1000);
+            });
         },
-        [audioRecorder]
+        [audioRecorder, showToast, t, sr?.entries, existingSR?.entries]
     );
 
     const stopAudioRecording = useCallback(
         async (criterionId: string) => {
+            if (recordingLimitRef.current) {
+                clearTimeout(recordingLimitRef.current);
+                recordingLimitRef.current = null;
+            }
             const result = await audioRecorder.stop(criterionId);
             if (!result) return;
             try {
@@ -493,6 +617,9 @@ export default function GradeStudent() {
         },
         [audioRecorder, updateEntry]
     );
+    useEffect(() => {
+        stopAudioRecordingRef.current = (criterionId) => void stopAudioRecording(criterionId);
+    }, [stopAudioRecording]);
 
     const voice = useVoiceGrading(
         (critIdx, lvlIdx) => {
@@ -726,6 +853,29 @@ export default function GradeStudent() {
                         {student.name} &middot; {new Date().toLocaleDateString()}
                     </p>
                 </div>
+
+                {sr.notHandedIn && (
+                    <div
+                        role="status"
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            flexWrap: 'wrap',
+                            fontSize: '0.85rem',
+                            borderColor: 'var(--amber, #f59e0b)',
+                            background: 'color-mix(in srgb, var(--amber, #f59e0b) 10%, transparent)',
+                        }}
+                    >
+                        <XCircle size={16} style={{ color: 'var(--amber, #f59e0b)', flexShrink: 0 }} />
+                        <span style={{ flex: 1, minWidth: 200 }}>{t('gradeStudent.nhi_banner')}</span>
+                        <button className="btn btn-secondary btn-sm" onClick={handleUndoNotHandedIn}>
+                            {t('gradeStudent.nhi_undo')}
+                        </button>
+                    </div>
+                )}
 
                 {groupMemberNames.length > 0 && (
                     <div
@@ -2217,6 +2367,8 @@ export default function GradeStudent() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...swipeConfirmProps} />
+            <ConfirmDialog {...nhiConfirmProps} />
             <ConfirmDialog {...unsavedDialogProps} />
         </>
     );

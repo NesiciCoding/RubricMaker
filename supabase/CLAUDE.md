@@ -26,6 +26,7 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 - Always include `IF NOT EXISTS` guards so migrations are idempotent when possible.
 - Never modify an already-applied migration — create a new one instead.
 - Run `npm run db:reset` locally to verify a new migration applies cleanly from scratch.
+- Migrations must be able to run inside a transaction: the Docker migrator (`docker/migrate.sh`) applies each file and its `public._migrations` row in one transaction, so a failing file rolls back completely. A migration that truly can't (e.g. `CREATE INDEX CONCURRENTLY`) needs a `-- migrate:no-transaction` line in its first 20 lines.
 - After adding, changing or removing a migration, run `./scripts/generate-bootstrap.sh` and commit the regenerated `supabase/bootstrap.sql` (the single-file schema for fresh self-hosted deploys). CI fails when it is stale.
 
 ## Row-level security (RLS)
@@ -50,8 +51,13 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `get_my_student_ids()` (and the sibling `get_my_*_as_student()` helpers) match roster emails against the confirmed email in `auth.users` via `get_my_verified_email()` (migration 076), not the editable `profiles.email`. If the project auto-confirms signups (`GOTRUE_MAILER_AUTOCONFIRM` / `enable_confirmations = false`), an address is "confirmed" without proof of ownership, so keep email confirmation on for any deployment that holds real student data.
 - Guard triggers (076): `profiles.email`/`id` are not client-updatable, `rubrics.owner_id` can only be changed by the owner, a student may only flip `messages.read_by_student`, and `attachments.updated_at` is set by the server on insert. They only constrain requests carrying a user JWT, so service-role and edge-function writes are unaffected.
 - `handle_new_user()` only grants the student role from roster rows owned by a teacher or admin profile.
+- Role changes (`protect_role_changes()`, latest 083): a client may only change roles as an admin (or a teacher downgrading themselves to student), and never demote the last admin. Operator requests — no request claims (SQL editor, `psql`, pg_cron) or the service-role key — skip both checks so a lost admin can be restored; the recovery runbook is in `docs/SELF_HOSTING_OPS.md` → Admin recovery. Any new path that changes `profiles.role` from the client must handle the `Cannot remove the last admin` error (`isLastAdminError` in `src/utils/roleChangeError.ts`).
 - Profile reads (077): admins read every profile; teachers read their own row, non-student profiles in a school they belong to (`school_members`), and colleagues they share a rubric or class with (`is_collaborator()`). Look up a colleague by email with the `find_profile_by_email(text)` RPC (exact match, teacher/admin results only, logged to `audit_logs` and capped at 30 per caller per 10 minutes) — never by querying `profiles.email` directly.
 - Grade rows (077): `student_rubrics` inserts/updates require a teacher/admin who owns the student or is an `editor` on the student's class (`can_grade_student()`), so the student row must exist server-side first (`pushAll` upserts students before grades). The portal only shows a student rows whose grader passes the same check.
+
+## Audit log
+
+- `audit_logs` (038) holds client entries (`logAuditEvent`, fire-and-forget: exports, grade saves) and server entries. Sensitive changes are written by AFTER triggers (081) through `write_audit_entry()`, in the same transaction as the change and only when a row really changed: role and school changes on `profiles`, `school_members` add/remove, `schools` create/update/delete, `rubric_shares` and `class_members` grants, `sharedWithSchool` toggles on `rubrics`/`comment_bank`, and `site_config` changes (key only, never the value). Don't add a client-side `logAuditEvent` for these. `erase_my_data()` (080) and the `set-student-password` edge function write their own entries.
 
 ## Retention job
 
@@ -64,7 +70,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `essays` — essay submission files, `008_essay_tables.sql`
 - `recordings` — speaking-assessment audio recordings, `034_recordings_storage.sql`
 - `feedback-audio` — per-criterion voice-feedback audio, kept out of `student_rubrics.data` jsonb (perf, issue #275); the `ScoreEntry` holds only `audioStoragePath`. `069_feedback_audio_storage.sql`. Students get a long-TTL signed URL minted by the teacher at `/feedback/:code` share-link generation time (no anonymous bucket access).
-- `scans` — scanned handwriting images (Phase 33), private, 15 MB, images only; `074_scans_storage.sql`. Kept for one academic year — `get_overdue_scans()` (same migration) lists path-bearing scans older than a year for a nightly cloud sweep, mirroring `get_overdue_attachments()`
+- `scans` — scanned handwriting images (Phase 33), private, 15 MB, images only; `074_scans_storage.sql`. Kept for one academic year — `get_overdue_scans()` (same migration) lists path-bearing scans older than a year, mirroring `get_overdue_attachments()`; `082_scans_sweep_guard.sql` skips rows whose `school_year` has no leading four-digit year so one bad value can't abort the query, and also returns text-only scans (NULL `storage_path`), whose row alone is deleted. Swept nightly by the same `delete-old-attachments` function / `scripts/delete-old-attachments.sh` as attachments
 - `backups` — nightly per-owner data dumps (JSON), `048_nightly_backup.sql`
 
 Access is controlled via storage policies that match `auth.uid()` to the uploader.
@@ -82,7 +88,7 @@ Current functions:
 - `next-placement-question` — server-authoritative question picker for a generator-engine placement test (roadmap 27.1): scores the previous answer, updates level/Elo state (per-item, on `question_bank_items` — same no-whole-blob-race approach `submit-test` now also uses via `update_test_question_elo()`), applies any pending teacher level nudge (roadmap 27.2, `placement_sessions.override_direction`), and picks the next question live from the bank
 - `notify-student-graded` — emails a student when a teacher saves a grade, if the student has an email on file and SMTP is configured
 - `set-student-password` — lets a teacher set/reset a student's login password, as a fallback when school email filters block Supabase's OTP mail
-- `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period
+- `delete-old-attachments` — run nightly via Supabase Cron; deletes storage files and metadata rows for attachments past the owner's school retention period, and for handwriting scans older than the current academic year (`get_overdue_scans()`)
 - `nightly-backup` — run nightly via Supabase Cron (or a self-hosted scheduler hitting the function URL); dumps each teacher/admin's rows via `export_owner_backup()` into the `backups` bucket. The bundled Docker Compose stack has no functions runtime, so self-hosted deployments use `scripts/backup.sh` instead — see the README's "Nightly cloud backup" section
 
 ### Edge function rules

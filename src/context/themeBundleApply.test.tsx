@@ -59,6 +59,7 @@ vi.mock('../store/storage', () => ({
     saveExportTemplates: vi.fn(),
     savePeerReviews: vi.fn(),
     onStorageQuotaExceeded: vi.fn(),
+    onVoiceFeedbackDropped: vi.fn(),
     exportStore: vi.fn((state) => state),
     importFullBackup: vi.fn(() => true),
 }));

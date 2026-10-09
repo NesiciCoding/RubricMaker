@@ -374,6 +374,18 @@ test.describe('protect_role_changes trigger (migration 030)', () => {
         const user = (await createRes.json()) as { id: string };
 
         try {
+            // On an otherwise empty stack handle_new_user makes this user the first admin, and the
+            // last-admin guard (migration 083) rightly blocks that self-demotion. Pin the role this
+            // test is about via the service key, which the trigger treats as an operator.
+            const pinRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+                method: 'PATCH',
+                headers: { ...adminHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                body: JSON.stringify({ role: 'teacher' }),
+            });
+            if (!pinRes.ok) {
+                throw new Error(`Failed to set teacher role: ${pinRes.status} ${await pinRes.text()}`);
+            }
+
             // Generate a magic link and exchange it in the browser so supabase-js
             // stores a real, signed session in localStorage.
             const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
