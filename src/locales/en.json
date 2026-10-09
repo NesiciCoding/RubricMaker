@@ -342,7 +342,7 @@
         "backup_restore": "Data Backup & Restore",
         "action_export_backup": "Export Backup (JSON)",
         "action_import_backup": "Import Backup",
-        "backup_help": "Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything.",
+        "backup_help": "Export saves all rubrics, students, grades, and settings to a JSON file. Import restores everything. Your role, account email, admin PIN, school and API keys are not included.",
         "alert_invalid_backup": "Invalid backup file.",
         "backup_preview_title": "Confirm Backup Import",
         "backup_preview_subtitle": "Review the changes below. Importing will replace all current data with the backup contents.",
@@ -497,7 +497,12 @@
         "switch_to_student_title": "Switch to the Student role?",
         "switch_to_student_message": "The app will only show the student portal for the student whose email matches your account. Teacher pages stay hidden while you have this role.",
         "switch_to_student_message_local": "The app will only show the student portal for the student whose email matches the one in your settings; without a match you will see a 'No student account linked' screen. You can switch back to teacher from that screen. Your data is not affected.",
-        "switch_to_student_confirm": "Switch to Student"
+        "switch_to_student_confirm": "Switch to Student",
+        "backup_preview_settings_title": "Settings",
+        "backup_preview_settings_none": "No settings change.",
+        "backup_preview_settings_changed": "changed",
+        "backup_preview_protected_note": "Your role, account email, admin PIN, school and API keys are never changed by a restore.",
+        "backup_preview_protected_ignored": "This backup contains a different role, account email, admin PIN, school or API key. Those are ignored — a restore never changes them."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -3651,7 +3656,7 @@
         "da_management_intro": "All data lives in localStorage by default. Supabase sync is optional.",
         "da_backup_title": "Backup & restore",
         "da_backup_item_export": "Export entire dataset to a single JSON file from Settings.",
-        "da_backup_item_restore": "Restore from any prior backup JSON — replaces all current data.",
+        "da_backup_item_restore": "Restore from any prior backup JSON — replaces all current data. The confirmation lists the settings that will change; your role, account email, admin PIN, school and API keys are never restored.",
         "da_backup_item_docker": "Docker deployments: use scripts/backup.sh and scripts/restore.sh for server-side backups.",
         "da_sync_title": "Supabase sync",
         "da_sync_item_env": "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable sync.",

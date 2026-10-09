@@ -342,7 +342,7 @@
         "backup_restore": "Data Back-up & Herstel",
         "action_export_backup": "Exporteer Back-up (JSON)",
         "action_import_backup": "Importeer Back-up",
-        "backup_help": "Exporteren slaat alle rubrieken, leerlingen, cijfers en instellingen op in een JSON bestand. Importeren herstelt alles.",
+        "backup_help": "Exporteren slaat alle rubrieken, leerlingen, cijfers en instellingen op in een JSON bestand. Importeren herstelt alles. Je rol, accountmail, beheerders-pincode, school en API-sleutels worden niet meegenomen.",
         "alert_invalid_backup": "Ongeldig back-up bestand.",
         "backup_preview_title": "Back-up importeren bevestigen",
         "backup_preview_subtitle": "Controleer de wijzigingen hieronder. Importeren vervangt alle huidige gegevens door de back-up.",
@@ -497,7 +497,12 @@
         "switch_to_student_title": "Overschakelen naar de rol Leerling?",
         "switch_to_student_message": "De app toont dan alleen het leerlingenportaal van de leerling met hetzelfde e-mailadres als je account. Docentpagina's blijven verborgen zolang je deze rol hebt.",
         "switch_to_student_message_local": "De app toont dan alleen het leerlingenportaal van de leerling met het e-mailadres uit je instellingen; zonder overeenkomst zie je het scherm 'Geen leerlingaccount gekoppeld'. Vanaf dat scherm kun je terug naar docent. Je gegevens blijven behouden.",
-        "switch_to_student_confirm": "Naar Leerling"
+        "switch_to_student_confirm": "Naar Leerling",
+        "backup_preview_settings_title": "Instellingen",
+        "backup_preview_settings_none": "Er veranderen geen instellingen.",
+        "backup_preview_settings_changed": "gewijzigd",
+        "backup_preview_protected_note": "Je rol, accountmail, beheerders-pincode, school en API-sleutels worden nooit gewijzigd door een herstel.",
+        "backup_preview_protected_ignored": "Deze back-up bevat een andere rol, accountmail, beheerders-pincode, school of API-sleutel. Die worden genegeerd — een herstel wijzigt ze nooit."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -3653,7 +3658,7 @@
         "da_management_intro": "Alle gegevens staan standaard in localStorage. Supabase-synchronisatie is optioneel.",
         "da_backup_title": "Backup & herstel",
         "da_backup_item_export": "Exporteer de volledige dataset naar een enkel JSON-bestand vanuit Instellingen.",
-        "da_backup_item_restore": "Herstel vanaf een eerdere backup-JSON — vervangt alle huidige gegevens.",
+        "da_backup_item_restore": "Herstel vanaf een eerdere backup-JSON — vervangt alle huidige gegevens. De bevestiging toont welke instellingen veranderen; je rol, accountmail, beheerders-pincode, school en API-sleutels worden nooit hersteld.",
         "da_backup_item_docker": "Docker-implementaties: gebruik scripts/backup.sh en scripts/restore.sh voor server-side backups.",
         "da_sync_title": "Supabase-synchronisatie",
         "da_sync_item_env": "Stel VITE_SUPABASE_URL en VITE_SUPABASE_ANON_KEY in om synchronisatie in te schakelen.",
