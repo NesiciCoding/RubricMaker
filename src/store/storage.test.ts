@@ -1184,6 +1184,21 @@ describe('migration flags (#636)', () => {
         expect(localStorage.getItem('rm_migration_done')).toBe('true');
     });
 
+    it('still reports pending data for this session when the flag cannot be written', () => {
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota', 'QuotaExceededError');
+        });
+        try {
+            expect(() => markMigrationPending()).not.toThrow();
+        } finally {
+            setItem.mockRestore();
+        }
+        expect(localStorage.getItem('rm_migration_pending')).toBeNull();
+        expect(isMigrationPending()).toBe(true);
+        markMigrationDone();
+        expect(isMigrationPending()).toBe(false);
+    });
+
     it('scopes Skip for now to the browser session', () => {
         expect(isMigrationSkippedForSession()).toBe(false);
         skipMigrationForSession();

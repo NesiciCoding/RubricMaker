@@ -973,8 +973,12 @@ export function isLocalMode(): boolean {
 export const MIGRATION_PENDING_KEY = 'rm_migration_pending';
 const MIGRATION_SKIPPED_SESSION_KEY = 'rm_migration_skipped';
 
+// Mirrors the stored flag, so this session's sign-out still keeps the data if the write fails.
+let migrationPendingInMemory = false;
+
 /** Marks the local data as uploaded, so the migration prompt doesn't reappear on next launch. */
 export function markMigrationDone(): void {
+    migrationPendingInMemory = false;
     localStorage.setItem(MIGRATION_DONE_KEY, 'true');
     localStorage.removeItem(MIGRATION_PENDING_KEY);
 }
@@ -984,11 +988,16 @@ export function markMigrationDone(): void {
  * are not in the pending queue, so sign-out must not treat the device as cloud-backed while set.
  */
 export function markMigrationPending(): void {
-    localStorage.setItem(MIGRATION_PENDING_KEY, 'true');
+    migrationPendingInMemory = true;
+    try {
+        localStorage.setItem(MIGRATION_PENDING_KEY, 'true');
+    } catch {
+        // storage full or blocked — the in-memory flag still protects this session's sign-out
+    }
 }
 
 export function isMigrationPending(): boolean {
-    return localStorage.getItem(MIGRATION_PENDING_KEY) === 'true';
+    return migrationPendingInMemory || localStorage.getItem(MIGRATION_PENDING_KEY) === 'true';
 }
 
 /** "Skip for now" only lasts for this browser tab's session; the prompt returns on the next one. */

@@ -54,6 +54,11 @@ export { useFlashcards } from './domains/flashcards';
 export { useSettings } from './domains/settings';
 export { usePlatform } from './domains/platform';
 
+// loadStore() seeds a { id: 'default' } class when none is saved; that alone is not local user data.
+function hasUnmigratedLocalData(s: StoreData): boolean {
+    return s.rubrics.length > 0 || s.students.length > 0 || s.classes.some((c) => c.id !== 'default');
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
     const initialStateRef = useRef(state);
@@ -252,6 +257,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     setLandingState('hide');
                 }
 
+                // Local data that was never uploaded is offered for upload, and kept out of the
+                // sign-out wipe until it is. Runs after every sign-in, not just a resumed session.
+                function checkUnmigratedLocalData() {
+                    if (localStorage.getItem(MIGRATION_DONE_KEY) === 'true' || storageSync.didWipeLocalData()) return;
+                    if (!hasUnmigratedLocalData(initialStateRef.current)) return;
+                    markMigrationPending();
+                    if (!isMigrationSkippedForSession()) setShowMigrationPrompt(true);
+                }
+
                 storageSync
                     .initAuth(config)
                     .then(async () => {
@@ -264,14 +278,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         // Session already existed on startup — connect and hydrate immediately
                         await configureAndEnter(config);
 
-                        // Show migration prompt once if local data exists and hasn't been migrated
-                        if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
-                            const s = initialStateRef.current;
-                            if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                                markMigrationPending();
-                                if (!isMigrationSkippedForSession()) setShowMigrationPrompt(true);
-                            }
-                        }
+                        checkUnmigratedLocalData();
                     })
                     .catch((e) => {
                         if (cancelled) return;
@@ -286,6 +293,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     if (!cfg) return;
                     try {
                         await configureAndEnter(cfg);
+                        checkUnmigratedLocalData();
                     } catch (e) {
                         console.error('[auth] onAuthChange configure failed', e);
                         setLandingState('show');

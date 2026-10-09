@@ -727,4 +727,14 @@ describe('MigrationPrompt', () => {
         await waitFor(() => expect(mockDismissMigrationPrompt).toHaveBeenCalledTimes(2));
         await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     });
+
+    it('falls back to a generic message when the upload fails with an empty error', async () => {
+        mockDismissMigrationPrompt.mockResolvedValueOnce({ success: false, error: '' });
+        render(<MigrationPrompt />);
+        fireEvent.click(screen.getByRole('button', { name: /migration\.upload$/ }));
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('common.unknown_error');
+        expect(screen.getByRole('button', { name: /migration\.retry/ })).toBeInTheDocument();
+    });
 });

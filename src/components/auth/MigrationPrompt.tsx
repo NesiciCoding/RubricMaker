@@ -28,7 +28,7 @@ export default function MigrationPrompt() {
         setUploadError(null);
         try {
             const result = await dismissMigrationPrompt(true);
-            if (!result.success) setUploadError(result.error ?? t('common.unknown_error'));
+            if (!result.success) setUploadError(result.error || t('common.unknown_error'));
         } finally {
             setUploading(false);
         }
