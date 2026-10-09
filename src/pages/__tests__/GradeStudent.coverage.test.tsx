@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, createEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -617,18 +617,45 @@ describe('GradeStudent coverage', () => {
         mockStudentsArr.push(mockStudentBob);
     });
 
-    it('ignores shortcut keys while typing in an input', () => {
+    it('leaves Tab to the browser so focus can reach every control (#671)', () => {
         renderPage();
-        const input = screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder');
-        fireEvent.click(input);
-        fireEvent.keyDown(input, { key: '?' });
-        expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
+        const tab = createEvent.keyDown(window, { key: 'Tab' });
+        fireEvent(window, tab);
+        expect(tab.defaultPrevented).toBe(false);
+        const shiftTab = createEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent(window, shiftTab);
+        expect(shiftTab.defaultPrevented).toBe(false);
     });
 
-    it('supports Shift+Tab focusing the last criterion', () => {
+    it('arrow keys scroll natively until a criterion is addressed', () => {
+        renderPage();
+        const down = createEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent(window, down);
+        expect(down.defaultPrevented).toBe(false);
+    });
+
+    it('arrow keys keep scrolling once focus leaves the criterion cards (#671)', () => {
         mockRubricsArr[0] = twoCriteriaRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent.keyDown(window, { key: 'a' });
+        const save = screen.getAllByText('gradeStudent.action_save')[0].closest('button') as HTMLElement;
+        save.focus();
+        const down = createEvent.keyDown(save, { key: 'ArrowDown' });
+        fireEvent(save, down);
+        expect(down.defaultPrevented).toBe(false);
+        (document.activeElement as HTMLElement | null)?.blur();
+        const onPage = createEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent(window, onPage);
+        expect(onPage.defaultPrevented).toBe(true);
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('focusing a control inside a criterion card makes it the focused criterion', () => {
+        mockRubricsArr[0] = twoCriteriaRubric;
+        renderPage();
+        const cards = document.querySelectorAll('.print-criterion');
+        const secondCardButton = cards[1].querySelector('button') as HTMLElement;
+        fireEvent.focus(secondCardButton);
         fireEvent.keyDown(window, { key: '2' });
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
@@ -639,12 +666,36 @@ describe('GradeStudent coverage', () => {
         mockRubricsArr[0] = mockRubric;
     });
 
-    it('wraps criterion focus with Tab and ignores out-of-range letters and levels', () => {
+    it('ignores shortcut keys while typing in an input', () => {
+        renderPage();
+        const input = screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder');
+        fireEvent.click(input);
+        fireEvent.keyDown(input, { key: '?' });
+        expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
+    });
+
+    it('ArrowUp from the first criterion wraps to the last one', () => {
         mockRubricsArr[0] = twoCriteriaRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab' });
-        fireEvent.keyDown(window, { key: 'Tab' });
-        fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent.keyDown(window, { key: 'a' });
+        fireEvent.keyDown(window, { key: 'ArrowUp' });
+        fireEvent.keyDown(window, { key: '2' });
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c2', levelId: 'l4' })]),
+            })
+        );
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('wraps criterion focus with the arrow keys and ignores out-of-range letters and levels', () => {
+        mockRubricsArr[0] = twoCriteriaRubric;
+        renderPage();
+        fireEvent.keyDown(window, { key: 'a' });
+        fireEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent.keyDown(window, { key: 'ArrowUp' });
         fireEvent.keyDown(window, { key: 'z' }); // beyond criteria count
         fireEvent.keyDown(window, { key: '5' }); // level index out of range
         // no crash is the assertion; coverage is the point
@@ -655,7 +706,7 @@ describe('GradeStudent coverage', () => {
     it('returns early from the number-chord for single-point rubrics', () => {
         mockRubricsArr[0] = singlePointRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab' });
+        fireEvent.keyDown(window, { key: 'a' });
         fireEvent.keyDown(window, { key: '1' });
         expect(screen.getByText('gradeStudent.single_point_meets')).toBeInTheDocument();
         mockRubricsArr[0] = mockRubric;

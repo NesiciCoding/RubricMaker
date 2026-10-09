@@ -1650,7 +1650,8 @@
         "level_shortcut_hint": "Druk op {{num}} om te selecteren (wanneer het criterium gefocust is)",
         "swipe_confirm_title": "Opslaan en naar de volgende leerling?",
         "swipe_confirm_message": "Je veegde naar links. Dit cijfer opslaan en verdergaan met {{name}}?",
-        "swipe_confirm_action": "Opslaan & volgende"
+        "swipe_confirm_action": "Opslaan & volgende",
+        "points_before_modifier": "Punten vóór de aanpassing"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -3328,7 +3329,7 @@
         "gr_scoring_item_select": "Klik op een niveaucel om deze te selecteren. Klik opnieuw om te deselecteren.",
         "gr_scoring_item_slider": "Voor puntbereiken gebruik je de schuifregelaar om een waarde binnen het toegestane bereik te kiezen.",
         "gr_scoring_item_subitems": "Schakel subitems binnen een niveau met selectievakjes.",
-        "gr_scoring_item_modifiers": "Pas scoremodificaties toe (%-bonus, puntaftrek, niveau-aanpassing) met een reden.",
+        "gr_scoring_item_modifiers": "Pas een scoremodificatie toe (procentuele bonus of aftrek, of een puntencorrectie) met een reden. Een puntencorrectie telt tegen het maximum van de rubric: +10 punten op een rubric van 200 punten is 5% extra.",
         "gr_mobile_title": "Mobiel beoordelen",
         "gr_mobile_body_prefix": "Op telefoons en iPad in portretstand is het beoordelingsscherm aanraak-geoptimaliseerd. Puntbereik- en subitemschuifregelaars krijgen een",
         "gr_mobile_stepper": "− / +",
@@ -3707,7 +3708,7 @@
         "gr_layout_title": "Kaart- en rasterweergave",
         "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
-        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Tab / Shift+Tab verplaatsen de focus tussen criteria, Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
+        "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Is een criterium geselecteerd, dan wisselen ↑ / ↓ tussen criteria (Tab en Shift+Tab gaan zoals gewoonlijk langs alle knoppen en velden), Ctrl+S slaat op (en gaat verder) en ? toont alle sneltoetsen.",
         "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
         "ce_flashcards_item_fields": "Woordkaarten kunnen een fonetische weergave (uitspraak/IPA) en woordsoort bevatten — direct getypt in de set-editor of geïmporteerd als optionele 4e en 5e kolom. Leerlingen zien ze op de kaart tijdens het studeren, naast een voortgangsbalk en een zijbalk met de woordenlijst van de set.",
         "es_focus_title": "Focusmodus voor leerlingen",
@@ -3928,7 +3929,7 @@
     },
     "help": {
         "score_modifier_title": "Cijferaanpassingen",
-        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10%) of punten (bijv. +5). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
+        "score_modifier_body": "Voeg een algemene aanpassing toe aan de eindscore. Kies percentage (bijv. +10% telt 10 procentpunten op) of punten (bijv. +5 telt 5 punten op bij het totaal van de rubric, dus op een rubric van 200 punten is dat 2,5%). Voer een reden in zodat die in het geëxporteerde rapport en het auditlogboek verschijnt.",
         "lww_title": "Hoe synchronisatie conflicten oplost",
         "lww_body": "Wanneer hetzelfde record op twee apparaten wordt bewerkt, wint de meest recente wijziging (last-write-wins). Wijzigingen die je offline maakt zijn beschermd en worden nooit overschreven door oudere clouddata totdat ze gesynchroniseerd zijn.",
         "proctoring_title": "Toezichtsmeldingen",
