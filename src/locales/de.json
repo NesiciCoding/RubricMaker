@@ -311,6 +311,7 @@
         "action_add_range": "Bereich hinzufügen",
         "scale_no_floor_warning": "Kein Bereich beginnt bei 0 %, daher erhalten niedrige Ergebnisse keine Note (angezeigt als —).",
         "action_fix_scale_floor": "Niedrigsten Bereich bei 0 % beginnen lassen",
+        "scale_default_range_label": "Bestanden",
         "alert_scale_needs_floor": "Eine Notenskala braucht einen Bereich, der bei 0 % beginnt. Setzen Sie zuerst das Minimum eines anderen Bereichs auf 0.",
         "mastery_colors_title": "Beherrschungsfarben",
         "mastery_colors_help": "Passen Sie die Farben der Grammatik-Spalte in der Schülerübersicht des Dashboards an. Ohne Anpassung wird die rot-grüne Standardskala verwendet.",

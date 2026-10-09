@@ -390,7 +390,10 @@ export default function SettingsPage() {
 
     function fixScaleFloor(scale: GradeScale) {
         if (scale.ranges.length === 0) {
-            updateGradeScale({ ...scale, ranges: [{ min: 0, max: 100, label: 'Pass', color: '#22c55e' }] });
+            updateGradeScale({
+                ...scale,
+                ranges: [{ min: 0, max: 100, label: t('settings.scale_default_range_label'), color: '#22c55e' }],
+            });
             return;
         }
         const lowest = scale.ranges.reduce((lo, r, i) => (r.min < scale.ranges[lo].min ? i : lo), 0);
@@ -1211,7 +1214,14 @@ export default function SettingsPage() {
                                         const gs = addGradeScale({
                                             name: t('settings.scale_new_name'),
                                             type: 'custom',
-                                            ranges: [{ min: 0, max: 100, label: 'Pass', color: '#22c55e' }],
+                                            ranges: [
+                                                {
+                                                    min: 0,
+                                                    max: 100,
+                                                    label: t('settings.scale_default_range_label'),
+                                                    color: '#22c55e',
+                                                },
+                                            ],
                                         });
                                         setEditingScaleId(gs.id);
                                     }}

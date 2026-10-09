@@ -311,6 +311,7 @@
         "action_add_range": "Ajouter une plage",
         "scale_no_floor_warning": "Aucune plage ne commence à 0 %, les scores faibles n'obtiennent donc aucune note (affiché —).",
         "action_fix_scale_floor": "Faire commencer la plage la plus basse à 0 %",
+        "scale_default_range_label": "Réussi",
         "alert_scale_needs_floor": "Une échelle de notes nécessite une plage commençant à 0 %. Mettez d'abord le minimum d'une autre plage à 0.",
         "mastery_colors_title": "Couleurs de maîtrise",
         "mastery_colors_help": "Personnalisez les couleurs de la colonne Grammaire dans l'aperçu des élèves du tableau de bord. Par défaut, l'échelle rouge-vert est utilisée.",

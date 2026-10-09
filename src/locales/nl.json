@@ -314,6 +314,7 @@
         "action_add_range": "Bereik Toevoegen",
         "scale_no_floor_warning": "Geen bereik begint bij 0%, dus lage scores krijgen geen cijfer (getoond als —).",
         "action_fix_scale_floor": "Laat het laagste bereik bij 0% beginnen",
+        "scale_default_range_label": "Voldoende",
         "alert_scale_needs_floor": "Een cijferschaal heeft een bereik nodig dat bij 0% begint. Zet eerst het minimum van een ander bereik op 0.",
         "mastery_colors_title": "Beheersingskleuren",
         "mastery_colors_help": "Pas de kleuren van de Grammatica-kolom op het Leerlingoverzicht van het Dashboard aan. Standaard wordt de rood-naar-groen schaal gebruikt.",

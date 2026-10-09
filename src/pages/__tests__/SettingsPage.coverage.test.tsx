@@ -416,6 +416,18 @@ describe('SettingsPage coverage', () => {
             expect(mockGradeScalesArr[0].ranges.map((r) => r.min)).toEqual([50, 0]);
         });
 
+        it('repairs an empty scale with a translated full-range label', () => {
+            mockGradeScalesArr[0] = { ...mockGradeScale, ranges: [] };
+            renderPage();
+            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+
+            fireEvent.click(screen.getByText('settings.action_fix_scale_floor'));
+            expect(mockGradeScalesArr[0].ranges).toEqual([
+                expect.objectContaining({ min: 0, max: 100, label: 'settings.scale_default_range_label' }),
+            ]);
+        });
+
         it('clears the editing state when deleting the scale being edited', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();

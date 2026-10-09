@@ -314,6 +314,7 @@
         "action_add_range": "Add Range",
         "scale_no_floor_warning": "No range starts at 0%, so low scores get no grade (shown as —).",
         "action_fix_scale_floor": "Start the lowest range at 0%",
+        "scale_default_range_label": "Pass",
         "alert_scale_needs_floor": "A grade scale needs a range that starts at 0%. Set another range's minimum to 0 first.",
         "mastery_colors_title": "Mastery Colors",
         "mastery_colors_help": "Customize the Grammar column colors on the Dashboard's Student Snapshot. Left unset, it uses the default red-to-green scale.",

@@ -314,6 +314,7 @@
         "action_add_range": "Añadir Rango",
         "scale_no_floor_warning": "Ningún rango empieza en 0 %, así que las puntuaciones bajas no reciben nota (se muestra —).",
         "action_fix_scale_floor": "Hacer que el rango más bajo empiece en 0 %",
+        "scale_default_range_label": "Aprobado",
         "alert_scale_needs_floor": "Una escala de notas necesita un rango que empiece en 0 %. Pon primero el mínimo de otro rango en 0.",
         "mastery_colors_title": "Colores de Dominio",
         "mastery_colors_help": "Personaliza los colores de la columna de Gramática en el Resumen de Estudiantes del Panel. Sin configurar, se usa la escala predeterminada de rojo a verde.",
