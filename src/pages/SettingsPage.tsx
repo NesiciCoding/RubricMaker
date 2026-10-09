@@ -41,6 +41,8 @@ import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
 import { exportFullBackup } from '../store/storage';
 import { seedDemoData } from '../utils/seedDemoData';
+import { diffRestoredSettings, hasIgnoredProtectedSettings, type SettingChange } from '../utils/backupSettings';
+import BackupSettingsChanges from '../components/Settings/BackupSettingsChanges';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
@@ -150,6 +152,8 @@ export default function SettingsPage() {
         students: number;
         classes: number;
         studentRubrics: number;
+        settingsChanges: SettingChange[];
+        ignoredProtectedSettings: boolean;
     }
     const [backupPreview, setBackupPreview] = useState<{ json: string; summary: BackupSummary } | null>(null);
 
@@ -300,6 +304,10 @@ export default function SettingsPage() {
                     showToast(t('toast.import_error'), 'error');
                     return;
                 }
+                const backupSettings =
+                    data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)
+                        ? (data.settings as Record<string, unknown>)
+                        : null;
                 setBackupPreview({
                     json,
                     summary: {
@@ -311,6 +319,10 @@ export default function SettingsPage() {
                             data.studentRubrics !== undefined && Array.isArray(data.studentRubrics)
                                 ? data.studentRubrics.length
                                 : 0,
+                        settingsChanges: backupSettings ? diffRestoredSettings(settings, backupSettings) : [],
+                        ignoredProtectedSettings: backupSettings
+                            ? hasIgnoredProtectedSettings(settings, backupSettings)
+                            : false,
                     },
                 });
             } catch {
@@ -2224,6 +2236,11 @@ export default function SettingsPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        <BackupSettingsChanges
+                            changes={backupPreview.summary.settingsChanges}
+                            ignoredProtected={backupPreview.summary.ignoredProtectedSettings}
+                        />
 
                         <div
                             style={{

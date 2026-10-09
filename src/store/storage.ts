@@ -38,6 +38,7 @@ import type {
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
+import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
 
@@ -1396,7 +1397,8 @@ export function exportStore(state: StoreData): StoreData {
 }
 
 export function exportFullBackup(): string {
-    return JSON.stringify(loadStore(), null, 2);
+    const store = loadStore();
+    return JSON.stringify({ ...store, settings: withoutProtectedSettings(store.settings) }, null, 2);
 }
 
 // ─── Backup import validators ──────────────────────────────────────────────────
@@ -1425,7 +1427,7 @@ function isObjectArray(v: unknown): boolean {
  * false only when the JSON itself is unparseable or the top-level value is not
  * a plain object.
  */
-export function importFullBackup(json: string): boolean {
+export function importFullBackup(json: string, currentSettings?: AppSettings): boolean {
     try {
         const raw = JSON.parse(json) as unknown;
         if (!isPlainObject(raw)) return false;
@@ -1466,7 +1468,13 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] gradeScales failed validation — skipped');
         }
         if (data.settings !== undefined) {
-            if (isPlainObject(data.settings)) saveSettings(data.settings as AppSettings);
+            if (isPlainObject(data.settings))
+                saveSettings(
+                    mergeRestoredSettings(
+                        currentSettings ?? load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+                        data.settings
+                    )
+                );
             else console.warn('[importFullBackup] settings failed validation — skipped');
         }
         if (data.favoriteStandards !== undefined) {

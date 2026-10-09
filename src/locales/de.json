@@ -339,7 +339,7 @@
         "backup_restore": "Datensicherung und Wiederherstellung",
         "action_export_backup": "Sicherung exportieren (JSON)",
         "action_import_backup": "Sicherung importieren",
-        "backup_help": "Der Export speichert alle Rubriken, Schüler, Noten und Einstellungen in eine JSON-Datei. Der Import stellt alles wieder her.",
+        "backup_help": "Der Export speichert alle Rubriken, Schüler, Noten und Einstellungen in eine JSON-Datei. Der Import stellt alles wieder her. Deine Rolle, Konto-E-Mail, Admin-PIN, Schule und API-Schlüssel sind nicht enthalten.",
         "alert_invalid_backup": "Ungültige Sicherungsdatei.",
         "backup_preview_title": "Sicherungsimport bestätigen",
         "backup_preview_subtitle": "Überprüfen Sie die Änderungen unten. Der Import ersetzt alle aktuellen Daten durch den Inhalt der Sicherung.",
@@ -497,7 +497,12 @@
         "switch_to_student_title": "Zur Rolle Schüler/in wechseln?",
         "switch_to_student_message": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu deinem Konto passt. Lehrkraft-Seiten bleiben ausgeblendet, solange du diese Rolle hast.",
         "switch_to_student_message_local": "Die App zeigt dann nur noch das Schülerportal der Person, deren E-Mail zu der in deinen Einstellungen passt; ohne Treffer erscheint der Hinweis „Kein Schülerkonto verknüpft“. Von dort kannst du zur Lehrkraft-Rolle zurückwechseln. Deine Daten bleiben erhalten.",
-        "switch_to_student_confirm": "Zu Schüler/in wechseln"
+        "switch_to_student_confirm": "Zu Schüler/in wechseln",
+        "backup_preview_settings_title": "Einstellungen",
+        "backup_preview_settings_none": "Es ändern sich keine Einstellungen.",
+        "backup_preview_settings_changed": "geändert",
+        "backup_preview_protected_note": "Deine Rolle, Konto-E-Mail, Admin-PIN, Schule und API-Schlüssel werden durch eine Wiederherstellung nie geändert.",
+        "backup_preview_protected_ignored": "Diese Sicherung enthält eine andere Rolle, Konto-E-Mail, Admin-PIN, Schule oder einen anderen API-Schlüssel. Diese werden ignoriert — eine Wiederherstellung ändert sie nie."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -3661,7 +3666,7 @@
         "da_management_intro": "Alle Daten liegen standardmäßig in localStorage. Supabase-Synchronisierung ist optional.",
         "da_backup_title": "Sichern & Wiederherstellen",
         "da_backup_item_export": "Exportiere den gesamten Datensatz in eine einzelne JSON-Datei aus den Einstellungen.",
-        "da_backup_item_restore": "Wiederherstellen aus einem vorherigen Backup-JSON — ersetzt alle aktuellen Daten.",
+        "da_backup_item_restore": "Wiederherstellen aus einem vorherigen Backup-JSON — ersetzt alle aktuellen Daten. Die Bestätigung listet die Einstellungen auf, die sich ändern; Rolle, Konto-E-Mail, Admin-PIN, Schule und API-Schlüssel werden nie wiederhergestellt.",
         "da_backup_item_docker": "Docker-Bereitstellungen: verwende scripts/backup.sh und scripts/restore.sh für serverseitige Backups.",
         "da_sync_title": "Supabase-Synchronisierung",
         "da_sync_item_env": "Setze VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY, um die Synchronisierung zu aktivieren.",

@@ -342,7 +342,7 @@
         "backup_restore": "Copia de Seguridad y Restauración",
         "action_export_backup": "Exportar Copia de Seguridad (JSON)",
         "action_import_backup": "Importar Copia de Seguridad",
-        "backup_help": "La exportación guarda todas las rúbricas, estudiantes, calificaciones y ajustes en un archivo JSON. La importación restaura todo.",
+        "backup_help": "La exportación guarda todas las rúbricas, estudiantes, calificaciones y ajustes en un archivo JSON. La importación restaura todo. Tu rol, el correo de la cuenta, el PIN de administrador, el centro y las claves de API no se incluyen.",
         "alert_invalid_backup": "Archivo de copia de seguridad no válido.",
         "backup_preview_title": "Confirmar importación de copia de seguridad",
         "backup_preview_subtitle": "Revise los cambios a continuación. La importación reemplazará todos los datos actuales con el contenido de la copia de seguridad.",
@@ -497,7 +497,12 @@
         "switch_to_student_title": "¿Cambiar al rol de alumno?",
         "switch_to_student_message": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con tu cuenta. Las páginas de docente quedan ocultas mientras tengas este rol.",
         "switch_to_student_message_local": "La aplicación solo mostrará el portal del alumno cuyo correo coincida con el de tu configuración; si no hay coincidencia, verás la pantalla «No hay cuenta de alumno vinculada». Desde esa pantalla puedes volver al rol de docente. Tus datos no se modifican.",
-        "switch_to_student_confirm": "Cambiar a alumno"
+        "switch_to_student_confirm": "Cambiar a alumno",
+        "backup_preview_settings_title": "Ajustes",
+        "backup_preview_settings_none": "No cambia ningún ajuste.",
+        "backup_preview_settings_changed": "modificado",
+        "backup_preview_protected_note": "Tu rol, el correo de la cuenta, el PIN de administrador, el centro y las claves de API nunca cambian al restaurar.",
+        "backup_preview_protected_ignored": "Esta copia contiene otro rol, correo de cuenta, PIN de administrador, centro o clave de API. Se ignoran: una restauración nunca los cambia."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -3661,7 +3666,7 @@
         "da_management_intro": "Todos los datos residen por defecto en localStorage. La sincronización con Supabase es opcional.",
         "da_backup_title": "Copia de seguridad y restauración",
         "da_backup_item_export": "Exporta todo el conjunto de datos a un único archivo JSON desde Configuración.",
-        "da_backup_item_restore": "Restaura desde cualquier JSON de copia de seguridad anterior — reemplaza todos los datos actuales.",
+        "da_backup_item_restore": "Restaura desde cualquier JSON de copia de seguridad anterior — reemplaza todos los datos actuales. La confirmación muestra los ajustes que cambiarán; tu rol, el correo de la cuenta, el PIN de administrador, el centro y las claves de API nunca se restauran.",
         "da_backup_item_docker": "Implementaciones Docker: usa scripts/backup.sh y scripts/restore.sh para copias de seguridad del lado del servidor.",
         "da_sync_title": "Sincronización con Supabase",
         "da_sync_item_env": "Establece VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY para habilitar la sincronización.",

@@ -194,7 +194,9 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         }
     };
     const importBackup = async (json: string): Promise<boolean> => {
-        const ok = importFullBackup(json);
+        // While connected, settings edits skip localStorage, so the stored copy can lag the live
+        // state; protected values must come from the same live settings the restore preview showed.
+        const ok = importFullBackup(json, getState().settings);
         if (ok) {
             const newState = loadStore();
             dispatch({ type: 'SET_ALL', payload: newState });
