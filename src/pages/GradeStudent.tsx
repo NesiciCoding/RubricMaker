@@ -50,6 +50,7 @@ import { useMediaRecorder } from '../hooks/useMediaRecorder';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useConfirm } from '../hooks/useConfirm';
 import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
@@ -216,6 +217,7 @@ export default function GradeStudent() {
         return () => clearTimeout(id);
     }, [saved]);
     const [isDirty, setIsDirty] = useState(false);
+    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(isDirty);
     const [showStdDesc, setShowStdDesc] = useState(false);
     const [focusedCriterionIdx, setFocusedCriterionIdx] = useState<number | null>(null);
     const [gradingView, setGradingView] = useState<'cards' | 'grid'>('cards');
@@ -342,6 +344,7 @@ export default function GradeStudent() {
             gradedAt: new Date().toISOString(),
         });
         setIsDirty(false);
+        allowNavigation();
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
     }, [
         sr,
@@ -354,6 +357,7 @@ export default function GradeStudent() {
         isAnchor,
         cannedNhiComment,
         existingSR,
+        allowNavigation,
     ]);
 
     const handleNotHandedIn = useCallback(async () => {
@@ -380,6 +384,7 @@ export default function GradeStudent() {
         };
         saveStudentRubric(nhiSR);
         setIsDirty(false);
+        allowNavigation();
         if (nextStudent) {
             navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
         } else {
@@ -399,6 +404,7 @@ export default function GradeStudent() {
         student,
         confirmNhi,
         cannedNhiComment,
+        allowNavigation,
     ]);
 
     const handleUndoNotHandedIn = useCallback(() => {
@@ -499,18 +505,6 @@ export default function GradeStudent() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleSave, handleSaveAndNext, nextStudent, rubric, sr, focusedCriterionIdx, updateEntry]);
-
-    // Warn on unsaved changes
-    React.useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty) {
-                e.preventDefault();
-                e.returnValue = ''; // Required for Chrome
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
@@ -1983,6 +1977,7 @@ export default function GradeStudent() {
                     onConfirm={() => {
                         deleteStudentRubric(existingSR.id, 'student');
                         setShowDeleteGrade(false);
+                        allowNavigation();
                         navigate(-1);
                     }}
                 />
@@ -2026,6 +2021,7 @@ export default function GradeStudent() {
                                 onClick={() => {
                                     deleteStudentRubric(existingSR.id, deleteGradeScope);
                                     setShowDeleteGrade(false);
+                                    allowNavigation();
                                     navigate(-1);
                                 }}
                             >
@@ -2293,6 +2289,7 @@ export default function GradeStudent() {
                 </div>
             )}
             <ConfirmDialog {...nhiConfirmProps} />
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }
