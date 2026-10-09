@@ -17,12 +17,27 @@ export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFor
     return format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
 }
 
+function clamp(value: number, min: number, max: number): number {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(max, Math.max(min, value));
+}
+
+/** A criterion's weight, treating NaN, infinite and negative weights as 0. */
+export function effectiveWeight(criterion: RubricCriterion): number {
+    return Number.isFinite(criterion.weight) && criterion.weight > 0 ? criterion.weight : 0;
+}
+
 /**
  * Points earned for a single criterion entry.
  * Priority: overridePoints > sub-items sum + selected range points > level minimum
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
-    if (entry.overridePoints !== undefined) return entry.overridePoints;
+    // Overrides arrive unclamped from imports and co-grade reconciliation, not just the UI.
+    if (entry.overridePoints !== undefined) {
+        // Criteria without point levels take free-form points (total-points rubrics), so only a real maximum caps them.
+        const max = criterionMaxPoints(criterion);
+        return clamp(entry.overridePoints, 0, max > 0 ? max : Infinity);
+    }
     // Single-point rubric outcome: meets/exceeds = full points, not-yet = 0
     if (entry.singlePointOutcome !== undefined) {
         if (entry.singlePointOutcome === 'not-yet') return 0;
@@ -114,7 +129,7 @@ export function criterionPercentage(entry: ScoreEntry | undefined, criterion: Ru
 export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriterion[]): number {
     // A criterion nobody can score on (max 0) must not dilute the others through its weight.
     const scorable = criteria.filter((c) => criterionMaxPoints(c) > 0);
-    const totalWeight = scorable.reduce((s, c) => s + c.weight, 0);
+    const totalWeight = scorable.reduce((s, c) => s + effectiveWeight(c), 0);
     if (totalWeight === 0) return calcPercentage(entries, criteria);
 
     let weightedSum = 0;
@@ -123,7 +138,7 @@ export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriteri
         const maxPoints = criterionMaxPoints(criterion);
 
         const pts = entry ? calcEntryPoints(entry, criterion) : 0;
-        weightedSum += (pts / maxPoints) * criterion.weight;
+        weightedSum += (pts / maxPoints) * effectiveWeight(criterion);
     }
     return (weightedSum / totalWeight) * 100;
 }
@@ -178,6 +193,11 @@ function matchRange(percentage: number, scale: GradeScale): GradeRange | undefin
     return sortedRangesDesc(scale).find((r) => percentage >= r.min);
 }
 
+/** Whether some range starts at 0%, so every score maps to a grade. */
+export function hasFloorRange(ranges: GradeRange[]): boolean {
+    return ranges.some((r) => r.min <= 0);
+}
+
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.label ?? '—';
 }
@@ -215,12 +235,16 @@ export function calcGradeSummary(
     const configuredMax =
         rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints > 0 ? rubric.totalMaxPoints : calculatedMax;
 
-    const pct =
+    // totalMaxPoints can be configured below the raw maximum, which would push past 100%.
+    const pct = clamp(
         rubric?.scoringMode === 'total-points'
             ? configuredMax > 0
                 ? (raw / configuredMax) * 100
                 : 0
-            : calcWeightedScore(sr.entries, criteria);
+            : calcWeightedScore(sr.entries, criteria),
+        0,
+        100
+    );
 
     const modified = applyModifier(pct, sr.globalModifier, configuredMax);
     const modifiedPoints =
@@ -228,7 +252,8 @@ export function calcGradeSummary(
             ? Math.min(configuredMax, Math.max(0, raw + sr.globalModifier.value))
             : raw;
     const gradedCount = sr.entries.filter(
-        (e) => e.levelId !== null || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
+        // Legacy entries can lack levelId entirely; undefined is as ungraded as null.
+        (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
     return {

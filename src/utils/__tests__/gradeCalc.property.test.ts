@@ -95,9 +95,9 @@ describe('calcEntryPoints — property tests', () => {
         );
     });
 
-    it('overridePoints always takes precedence over level selection', () => {
+    it('overridePoints always takes precedence over level selection, clamped to [0, max] when a max exists', () => {
         fc.assert(
-            fc.property(singleLevelCriterionArb, finiteFloat(0, 200), (criterion, override) => {
+            fc.property(singleLevelCriterionArb, finiteFloat(-50, 200), (criterion, override) => {
                 const entry: ScoreEntry = {
                     criterionId: 'c1',
                     levelId: 'l1',
@@ -105,7 +105,10 @@ describe('calcEntryPoints — property tests', () => {
                     comment: '',
                     overridePoints: override,
                 };
-                return calcEntryPoints(entry, criterion) === override;
+                const max = Math.max(criterion.levels[0].maxPoints, 0);
+                // A level without points takes free-form override points (total-points rubrics).
+                const expected = max > 0 ? Math.min(max, Math.max(0, override)) : Math.max(0, override);
+                return calcEntryPoints(entry, criterion) === expected;
             }),
             { numRuns: 300 }
         );
