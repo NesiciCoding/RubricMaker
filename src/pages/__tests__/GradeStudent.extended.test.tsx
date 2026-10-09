@@ -196,15 +196,15 @@ describe('GradeStudent extended', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
     });
 
-    it('closes the shortcuts panel with Escape and navigates criteria with Tab', () => {
+    it('closes the shortcuts panel with Escape and addresses criteria by letter', () => {
         renderPage();
         fireEvent.keyDown(window, { key: '?' });
         expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
         fireEvent.keyDown(window, { key: 'Escape' });
         expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
 
-        // Tab focuses criterion 0; a number key then picks its level.
-        fireEvent.keyDown(window, { key: 'Tab' });
+        // The letter A focuses criterion 0; a number key then picks its level.
+        fireEvent.keyDown(window, { key: 'a' });
         fireEvent.keyDown(window, { key: '2' });
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
