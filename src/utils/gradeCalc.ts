@@ -137,13 +137,18 @@ export function calcPercentage(entries: ScoreEntry[], criteria: RubricCriterion[
 
 // ─── Modifier ─────────────────────────────────────────────────────────────────
 
-export function applyModifier(score: number, modifier?: Modifier): number {
+/**
+ * Applies the global modifier to a 0–100 score. A 'points' offset is converted through the rubric's
+ * max points (10 points on a 200-point rubric = +5%); without a positive max it has no effect.
+ */
+export function applyModifier(score: number, modifier?: Modifier, maxPoints?: number): number {
     if (!modifier) return score;
     switch (modifier.type) {
         case 'percentage':
             return Math.min(100, Math.max(0, score + modifier.value));
         case 'points':
-            return Math.min(100, Math.max(0, score + modifier.value));
+            if (!maxPoints || maxPoints <= 0) return Math.min(100, Math.max(0, score));
+            return Math.min(100, Math.max(0, score + (modifier.value / maxPoints) * 100));
         case 'level':
             return Math.min(100, Math.max(0, score + modifier.value * 10));
         default:
@@ -194,6 +199,8 @@ export interface GradeSummary {
     configuredMaxPoints: number; // rubric.totalMaxPoints or calcMaxRawScore
     percentage: number;
     modifiedPercentage: number;
+    /** rawScore after a 'points' modifier (clamped to 0…configuredMaxPoints); equals rawScore otherwise. */
+    modifiedPoints: number;
     letterGrade: string;
     gradeColor: string;
     gradedCount: number;
@@ -224,7 +231,11 @@ export function calcGradeSummary(
         100
     );
 
-    const modified = applyModifier(pct, sr.globalModifier);
+    const modified = applyModifier(pct, sr.globalModifier, configuredMax);
+    const modifiedPoints =
+        sr.globalModifier?.type === 'points' && configuredMax > 0
+            ? Math.min(configuredMax, Math.max(0, raw + sr.globalModifier.value))
+            : raw;
     const gradedCount = sr.entries.filter(
         // Legacy entries can lack levelId entirely; undefined is as ungraded as null.
         (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
@@ -236,6 +247,7 @@ export function calcGradeSummary(
         configuredMaxPoints: configuredMax,
         percentage: pct,
         modifiedPercentage: modified,
+        modifiedPoints,
         letterGrade: scale ? calcLetterGrade(modified, scale) : '—',
         gradeColor: scale ? calcGradeColor(modified, scale) : '#6b7280',
         gradedCount,

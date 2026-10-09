@@ -25,6 +25,7 @@ import { useAuthoring, useEssays, useFlashcards } from '../context/AppContext';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { QUICK_START_TEMPLATES } from '../data/templates';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregator';
 import { getGrammarRecommendations } from '../utils/learningPathAggregator';
 import { nanoid } from '../utils/nanoid';
@@ -126,7 +127,10 @@ export default function Dashboard() {
         settings: s.settings,
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
-    const studentRubrics = useMemo(() => allStudentRubrics.filter((sr) => !sr.deletedAt), [allStudentRubrics]);
+    const studentRubrics = useMemo(
+        () => liveStudentRubrics(allStudentRubrics, students, rubrics),
+        [allStudentRubrics, students, rubrics]
+    );
     // Actions stay on the domain contexts (they are identity-stable; the contexts keep
     // this page subscribed to the roster domain only for the two derived slices above).
     const { deleteUserTemplate } = useAuthoring();
@@ -256,9 +260,13 @@ export default function Dashboard() {
         >();
         for (const sub of essaySubmissions) {
             const key = `${sub.assignmentRubricId}_${sub.assignmentStudentId}`;
-            const alreadyGraded = studentRubrics.some(
+            // Any live graded record counts, not just the deduplicated one analytics uses.
+            const alreadyGraded = allStudentRubrics.some(
                 (sr) =>
-                    sr.rubricId === sub.assignmentRubricId && sr.studentId === sub.assignmentStudentId && sr.gradedAt
+                    !sr.deletedAt &&
+                    sr.rubricId === sub.assignmentRubricId &&
+                    sr.studentId === sub.assignmentStudentId &&
+                    sr.gradedAt
             );
             if (alreadyGraded) continue;
             const rubric = rubrics.find((r) => r.id === sub.assignmentRubricId);
@@ -277,7 +285,7 @@ export default function Dashboard() {
             });
         }
         return Array.from(byKey.values()).sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
-    }, [essaySubmissions, studentRubrics, rubrics, students, classes]);
+    }, [essaySubmissions, allStudentRubrics, rubrics, students, classes]);
 
     // "This week" trend counts feeding the stat-card badges — real counts, not fabricated percentages
     const weeklyTrends = useMemo(

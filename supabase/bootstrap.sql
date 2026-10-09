@@ -4871,6 +4871,1392 @@ where path is null
       or name like 'test_%'
   );
 
+-- ── 074_scans_storage.sql ──────────────────────────────────────────────────────────────
+
+-- Scanned images of student handwriting + their OCR text (roadmap Phase 33.5).
+-- Same jsonb-document pattern as recordings (034_recordings_storage.sql):
+-- metadata + storage_path in `scan_metadata`, image bytes in the `scans` bucket.
+-- Scans carry a one-academic-year retention cap purged by get_overdue_scans().
+
+create table if not exists public.scan_metadata (
+  id text primary key,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  student_id text,
+  storage_path text,
+  school_year text not null,
+  created_at timestamptz not null default now(),
+  data jsonb not null
+);
+create index if not exists scan_metadata_owner_id_idx on public.scan_metadata(owner_id);
+create index if not exists scan_metadata_student_id_idx on public.scan_metadata(student_id);
+create index if not exists scan_metadata_created_at_idx on public.scan_metadata(created_at);
+
+alter table public.scan_metadata enable row level security;
+
+drop policy if exists "scan_metadata_own" on public.scan_metadata;
+create policy "scan_metadata_own"
+  on public.scan_metadata for all
+  using ((select auth.uid()) = owner_id)
+  with check ((select auth.uid()) = owner_id);
+
+-- Storage bucket for scan image files (private, 15 MB, images only)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'scans', 'scans', false, 15728640,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do nothing;
+
+-- Scan storage RLS: owner can read/write their own path ({userId}/{scanId})
+drop policy if exists "scans_storage_owner" on storage.objects;
+create policy "scans_storage_owner"
+  on storage.objects for all
+  using (
+    bucket_id = 'scans'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
+-- Returns scans stamped with an academic year before the current one (the one-academic-year
+-- retention cap). This mirrors the client sweep (src/utils/scanRetention.ts → isBeyondRetention),
+-- comparing the `school_year` start year against the current academic year with an August cutover
+-- (ACADEMIC_YEAR_CUTOVER_MONTH = 8) — not a rolling created_at interval, which would purge on a
+-- different boundary than the local sweep. Called by the delete-old-scans edge function (Phase 33.6)
+-- so only the Storage API, not raw SQL, is used to remove files from the scans bucket.
+create or replace function public.get_overdue_scans(batch_size int default 100)
+returns table (id text, owner_id uuid, storage_path text)
+language sql
+security definer
+set search_path = public
+as $$
+  select s.id, s.owner_id, s.storage_path
+  from public.scan_metadata s
+  where s.storage_path is not null
+    and left(s.school_year, 4)::int <
+        (case when extract(month from now()) >= 8
+              then extract(year from now())::int
+              else extract(year from now())::int - 1 end)
+  limit batch_size;
+$$;
+
+-- Only callable by service_role (the edge-function runtime)
+revoke all on function public.get_overdue_scans(int) from public, anon, authenticated;
+grant execute on function public.get_overdue_scans(int) to service_role;
+
+-- ── 075_comparative_matchups.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 075: Comparative-grading matchup history.
+--
+-- Comparative Grading (ComparativeGrading.tsx) lets a teacher pair students up and
+-- grade them head-to-head, capped at N matchups per student (Rubric.comparativeMatchupLimit)
+-- so the pairing loop can't run forever. Until now that cap was enforced against an
+-- in-memory Set that reset on every reload/session — this table makes each completed
+-- comparison a durable, append-only row so the per-student/per-rubric count survives
+-- reloads and follows the teacher across devices.
+--
+-- A row is written once (when a matchup is saved) and never updated — it's a log, not
+-- a mutable counter — so there's no last-write-wins conflict to resolve on sync; two
+-- devices recording different comparisons offline just produce a union of rows once
+-- both reconnect.
+--
+-- Same jsonb-doc shape as notification_dismissals (066)/document_comments (062): one
+-- table, owner-only RLS, no columns beyond id/owner_id needed since the client always
+-- reads its own whole owner-scoped set (there's no server-side query by rubric/student).
+
+CREATE TABLE IF NOT EXISTS public.comparative_matchups (
+  id       TEXT  PRIMARY KEY,
+  owner_id UUID  NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  data     JSONB NOT NULL
+);
+CREATE INDEX IF NOT EXISTS comparative_matchups_owner_idx ON public.comparative_matchups(owner_id);
+
+ALTER TABLE public.comparative_matchups ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "comparative_matchups_owner_all" ON public.comparative_matchups;
+CREATE POLICY "comparative_matchups_owner_all"
+  ON public.comparative_matchups FOR ALL
+  USING      ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
+
+-- ── Realtime — same guarded pattern as 047/052/067 (ADD TABLE has no IF NOT EXISTS) ──
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'comparative_matchups'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.comparative_matchups;
+  END IF;
+END $$;
+
+-- ── Include comparative_matchups in the nightly owner backup ────────────────────
+-- Full replacement of export_owner_backup (066 was the last to touch it), same body
+-- plus the new table appended at the end.
+
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb := '{}'::jsonb;
+BEGIN
+  result := result || jsonb_build_object('rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.rubrics t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('classes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.classes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('students',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.students t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_rubrics',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = false));
+  result := result || jsonb_build_object('peer_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_rubrics t WHERE t.grader_id = target_owner AND t.is_peer_review = true));
+  result := result || jsonb_build_object('attachments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.attachments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grade_scales',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grade_scales t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_snippets',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_snippets t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comment_bank',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comment_bank t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('export_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.export_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('favorite_standards',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.favorite_standards t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('self_assessments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.self_assessments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('speaking_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.speaking_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('analysis_results',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.analysis_results t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('student_tests',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.student_tests t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('grading_tasks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.grading_tasks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_batch_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_batch_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_offline_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_offline_submissions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_templates',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.user_templates t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('user_settings',
+    (SELECT to_jsonb(t) FROM public.user_settings t WHERE t.user_id = target_owner));
+  result := result || jsonb_build_object('essay_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('essay_submissions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.essay_submissions t
+     WHERE t.assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = target_owner)));
+  result := result || jsonb_build_object('flashcard_decks',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_decks t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_assignments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_assignments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('flashcard_reviews',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.flashcard_reviews t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flashes',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flashes t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('news_flash_reads',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.news_flash_reads t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('question_bank_items',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.question_bank_items t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('document_comments',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.document_comments t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('placement_sessions',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.placement_sessions t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('notification_dismissals',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.notification_dismissals t WHERE t.owner_id = target_owner));
+  result := result || jsonb_build_object('comparative_matchups',
+    (SELECT COALESCE(jsonb_agg(to_jsonb(t)), '[]'::jsonb) FROM public.comparative_matchups t WHERE t.owner_id = target_owner));
+  RETURN result;
+END;
+$$;
+
+-- ── 076_security_hardening.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 076: Tighten a few write paths that relied on client behaviour.
+--
+-- Each change is a guard trigger or a narrower grant rather than a policy rewrite,
+-- so existing client flows keep working. Triggers only constrain requests that carry
+-- a user JWT (auth.uid() IS NOT NULL); service-role and definer paths are unaffected.
+
+-- ── 1. profiles: identity columns are not client-editable ────────────────────
+-- profiles.email feeds roster matching; changing it must not be possible from a client.
+CREATE OR REPLACE FUNCTION public.protect_profile_identity()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL THEN
+    IF NEW.id IS DISTINCT FROM OLD.id THEN
+      RAISE EXCEPTION 'Profile id cannot be changed';
+    END IF;
+    IF NEW.email IS DISTINCT FROM OLD.email THEN
+      RAISE EXCEPTION 'Profile email cannot be changed';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS profiles_protect_identity ON public.profiles;
+CREATE TRIGGER profiles_protect_identity
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_identity();
+
+REVOKE EXECUTE ON FUNCTION public.protect_profile_identity() FROM PUBLIC, anon, authenticated;
+
+-- ── 2. Student identity comes from the confirmed auth email ──────────────────
+CREATE OR REPLACE FUNCTION public.get_my_verified_email()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT lower(u.email)
+  FROM   auth.users u
+  WHERE  u.id = auth.uid()
+    AND  u.email IS NOT NULL
+    AND  u.email_confirmed_at IS NOT NULL
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.get_my_verified_email() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.get_my_verified_email() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_my_student_ids()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT s.id
+  FROM   public.students s
+  WHERE  s.data->>'email' IS NOT NULL
+    AND  lower(s.data->>'email') = public.get_my_verified_email()
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_class_ids_as_student()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT s.class_id
+  FROM   public.students s
+  WHERE  s.data->>'email' IS NOT NULL
+    AND  lower(s.data->>'email') = public.get_my_verified_email()
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_rubric_ids_as_student()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT sr.rubric_id
+  FROM   public.student_rubrics sr
+  JOIN   public.students s ON s.id = sr.student_id
+  WHERE  s.data->>'email' IS NOT NULL
+    AND  lower(s.data->>'email') = public.get_my_verified_email()
+$$;
+
+-- ── 3. New accounts match the roster only against teacher/admin-owned rows ───
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_role TEXT;
+  v_name TEXT;
+BEGIN
+  v_name := COALESCE(
+    NULLIF(TRIM(new.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(new.raw_user_meta_data->>'name'), ''),
+    new.email
+  );
+
+  IF new.is_anonymous THEN
+    v_role := 'student';
+
+  ELSIF new.email IS NOT NULL AND EXISTS (
+    SELECT 1
+    FROM public.students s
+    JOIN public.profiles owner_p ON owner_p.id = s.owner_id
+    WHERE s.data->>'email' IS NOT NULL
+      AND lower(s.data->>'email') = lower(new.email)
+      AND owner_p.role IN ('teacher', 'admin')
+  ) THEN
+    v_role := 'student';
+
+  ELSE
+    PERFORM pg_advisory_xact_lock(hashtext('public.handle_new_user:first_admin'));
+
+    SELECT CASE WHEN EXISTS (
+      SELECT 1 FROM public.profiles WHERE NOT (
+        role = 'student' AND email IS NULL
+      ) LIMIT 1
+    ) THEN 'teacher' ELSE 'admin' END
+      INTO v_role;
+  END IF;
+
+  INSERT INTO public.profiles (id, email, display_name, role)
+  VALUES (new.id, new.email, v_name, v_role)
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN new;
+END;
+$$;
+
+-- ── 4. rubrics: shared editors cannot reassign ownership ─────────────────────
+CREATE OR REPLACE FUNCTION public.protect_rubric_owner()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL
+     AND (NEW.owner_id IS DISTINCT FROM OLD.owner_id OR NEW.id IS DISTINCT FROM OLD.id)
+     AND auth.uid() IS DISTINCT FROM OLD.owner_id THEN
+    RAISE EXCEPTION 'Only the owner can change rubric ownership';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS rubrics_protect_owner ON public.rubrics;
+CREATE TRIGGER rubrics_protect_owner
+  BEFORE UPDATE ON public.rubrics
+  FOR EACH ROW EXECUTE FUNCTION public.protect_rubric_owner();
+
+REVOKE EXECUTE ON FUNCTION public.protect_rubric_owner() FROM PUBLIC, anon, authenticated;
+
+-- ── 5. marketplace_listings: only descriptive columns are updatable ──────────
+-- Migration 053's blanket grant re-opened table-level UPDATE; restore the column list from 040.
+REVOKE UPDATE ON public.marketplace_listings FROM authenticated;
+GRANT UPDATE (name, subject, description, attribution) ON public.marketplace_listings TO authenticated;
+
+-- ── 6. messages: a student may only change read_by_student ───────────────────
+CREATE OR REPLACE FUNCTION public.protect_message_columns()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL AND auth.uid() IS DISTINCT FROM OLD.owner_id THEN
+    IF (to_jsonb(NEW) - 'read_by_student') IS DISTINCT FROM (to_jsonb(OLD) - 'read_by_student') THEN
+      RAISE EXCEPTION 'Students can only update the read state of a message';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS messages_protect_columns ON public.messages;
+CREATE TRIGGER messages_protect_columns
+  BEFORE UPDATE ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.protect_message_columns();
+
+REVOKE EXECUTE ON FUNCTION public.protect_message_columns() FROM PUBLIC, anon, authenticated;
+
+-- ── 7. attachments: the creation time used by retention is server-set ───────
+CREATE OR REPLACE FUNCTION public.set_attachment_created_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS attachments_set_created_at ON public.attachments;
+CREATE TRIGGER attachments_set_created_at
+  BEFORE INSERT ON public.attachments
+  FOR EACH ROW EXECUTE FUNCTION public.set_attachment_created_at();
+
+-- ── 077_profile_scope_grade_write_check.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 077: Scope profile reads and check who grade rows are written for.
+--
+-- profiles: teachers read their own row, non-student profiles in a school they belong to,
+-- and the colleagues they share a rubric or class with. Admins keep reading every profile.
+-- Looking up a colleague by email for sharing goes through find_profile_by_email().
+--
+-- student_rubrics: a row can only be written by a teacher/admin who owns the student or is
+-- an editor on the student's class. The student portal only shows rows from those graders.
+
+-- ── 1. profiles ──────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.is_collaborator(p_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.rubric_shares rs JOIN public.rubrics r ON r.id = rs.rubric_id
+    WHERE (r.owner_id = auth.uid() AND rs.user_id = p_user_id)
+       OR (r.owner_id = p_user_id AND rs.user_id = auth.uid())
+  ) OR EXISTS (
+    SELECT 1 FROM public.class_members cm JOIN public.classes c ON c.id = cm.class_id
+    WHERE (c.owner_id = auth.uid() AND cm.user_id = p_user_id)
+       OR (c.owner_id = p_user_id AND cm.user_id = auth.uid())
+  )
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_collaborator(uuid) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.is_collaborator(uuid) TO authenticated;
+
+DROP POLICY IF EXISTS "profiles_read_users_and_admins" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_read_scoped" ON public.profiles;
+CREATE POLICY "profiles_read_scoped" ON public.profiles FOR SELECT TO authenticated
+  USING (
+    get_my_role() = 'admin'
+    OR (
+      get_my_role() = 'teacher'
+      AND role <> 'student'
+      AND (
+        school_id IN (SELECT sm.school_id FROM public.school_members sm WHERE sm.profile_id = (SELECT auth.uid()))
+        OR public.is_collaborator(id)
+      )
+    )
+  );
+
+-- Exact-address lookup for sharing. Returns only teacher/admin accounts, is logged to
+-- audit_logs, and is capped per caller.
+CREATE OR REPLACE FUNCTION public.find_profile_by_email(p_email text)
+RETURNS TABLE (id uuid, display_name text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_id uuid;
+  v_name text;
+BEGIN
+  IF v_uid IS NULL OR coalesce(get_my_role(), '') NOT IN ('teacher', 'admin') THEN
+    RAISE EXCEPTION 'Not allowed' USING ERRCODE = '42501';
+  END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtextextended('profile_lookup:' || v_uid::text, 0));
+
+  IF (
+    SELECT count(*) FROM public.audit_logs a
+    WHERE a.actor_id = v_uid AND a.action = 'profile_lookup' AND a.created_at > now() - interval '10 minutes'
+  ) >= 30 THEN
+    RAISE EXCEPTION 'Too many lookups, try again later' USING ERRCODE = '54000';
+  END IF;
+
+  SELECT p.id, p.display_name INTO v_id, v_name
+  FROM public.profiles p
+  WHERE lower(p.email) = lower(btrim(p_email))
+    AND p.role IN ('teacher', 'admin')
+  LIMIT 1;
+
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, entity_id)
+  VALUES (v_uid, 'auth', 'profile_lookup', 'profile', v_id::text);
+
+  IF v_id IS NOT NULL THEN
+    RETURN QUERY SELECT v_id, v_name;
+  END IF;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.find_profile_by_email(text) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.find_profile_by_email(text) TO authenticated;
+
+-- ── 2. student_rubrics ───────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.can_grade_student(p_student_id text, p_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.students s
+    WHERE s.id = p_student_id
+      AND (
+        s.owner_id = p_user_id
+        OR EXISTS (
+          SELECT 1 FROM public.class_members cm
+          WHERE cm.class_id = s.class_id AND cm.user_id = p_user_id AND cm.role = 'editor'
+        )
+      )
+  )
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.can_grade_student(text, uuid) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.can_grade_student(text, uuid) TO authenticated;
+
+DROP POLICY IF EXISTS "sr_grader_all" ON public.student_rubrics;
+CREATE POLICY "sr_grader_all" ON public.student_rubrics FOR ALL
+  USING ((SELECT auth.uid()) = grader_id)
+  WITH CHECK (
+    (SELECT auth.uid()) = grader_id
+    AND get_my_role() IN ('teacher', 'admin')
+    AND public.can_grade_student(student_id, (SELECT auth.uid()))
+  );
+
+DROP POLICY IF EXISTS "student_rubrics_self_by_email" ON public.student_rubrics;
+CREATE POLICY "student_rubrics_self_by_email" ON public.student_rubrics FOR SELECT
+  USING (
+    student_id IN (SELECT get_my_student_ids())
+    AND public.can_grade_student(student_id, grader_id)
+  );
+
+CREATE OR REPLACE FUNCTION public.get_my_rubric_ids_as_student()
+RETURNS SETOF text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT DISTINCT sr.rubric_id
+  FROM   public.student_rubrics sr
+  JOIN   public.students s ON s.id = sr.student_id
+  WHERE  s.data->>'email' IS NOT NULL
+    AND  lower(s.data->>'email') = public.get_my_verified_email()
+    AND  public.can_grade_student(sr.student_id, sr.grader_id)
+$$;
+
+-- ── 078_fix_retention_anonymization.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 078: make the nightly retention job actually run (#627).
+--
+-- anonymize_overdue_students() (last redefined in 018, scheduled by 038) referenced
+-- student_rubrics.owner_id, which does not exist (the column is grader_id), so every
+-- 02:00 run raised and no school's retention_years was ever applied. It also only looked
+-- at profiles.school_id, skipping teachers who joined through school_members.
+--
+-- This version:
+--   * keys grades on the real student_rubrics.student_id column (any grader's latest
+--     grade counts, so co-graded students are not anonymized early);
+--   * resolves a teacher's school from profiles.school_id OR school_members;
+--   * stamps data.updatedAt so last-write-wins sync on a teacher's device cannot push the
+--     pre-anonymization record back over it;
+--   * skips (and counts) students with a grade whose gradedAt cannot be parsed, since their
+--     latest grade date is unknown;
+--   * isolates per-student failures and records every run in audit_logs.
+
+-- ── 1. Lenient timestamp cast ───────────────────────────────────────────────────
+-- gradedAt lives in jsonb; one malformed value must not abort the whole nightly run.
+CREATE OR REPLACE FUNCTION public.try_timestamptz(p_value text)
+RETURNS timestamptz
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+BEGIN
+  RETURN p_value::timestamptz;
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.try_timestamptz(text) FROM PUBLIC, anon, authenticated;
+
+-- ── 2. Anonymize one student ────────────────────────────────────────────────────
+-- Returns the number of rows changed (0 when already anonymized), so the job counts real work.
+-- The return type changes from void, which CREATE OR REPLACE cannot do.
+DROP FUNCTION IF EXISTS public.anonymize_student(text, uuid);
+CREATE FUNCTION public.anonymize_student(p_student_id text, p_owner_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_token text := substring(encode(sha256(p_student_id::bytea), 'hex'), 1, 8);
+  v_now   text := to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"');
+  v_rows  integer;
+BEGIN
+  UPDATE public.students
+  SET data = data || jsonb_build_object(
+        'name',          'Student-' || v_token,
+        'email',         NULL,
+        'studentNumber', NULL,
+        'anonymizedAt',  v_now,
+        'updatedAt',     v_now
+      )
+  WHERE id = p_student_id
+    AND owner_id = p_owner_id
+    AND (data->>'anonymizedAt') IS NULL;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  RETURN v_rows;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.anonymize_student(text, uuid) FROM PUBLIC, anon, authenticated;
+
+-- ── 3. Bulk job ─────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.anonymize_overdue_students()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_student    RECORD;
+  v_count      integer := 0;
+  v_failed     integer := 0;
+  v_skipped    integer := 0;
+  v_last_error text;
+BEGIN
+  FOR v_student IN
+    -- school_members is UNIQUE (profile_id) since 018, so each owner resolves to at most one school.
+    WITH owner_school AS (
+      SELECT p.id AS owner_id, COALESCE(p.school_id, sm.school_id) AS school_id
+      FROM public.profiles p
+      LEFT JOIN public.school_members sm ON sm.profile_id = p.id
+      WHERE COALESCE(p.school_id, sm.school_id) IS NOT NULL
+    )
+    SELECT s.id, s.owner_id,
+      -- A grade whose gradedAt cannot be read has an unknown age, so the student is not provably
+      -- past retention; leave them for review instead of anonymizing.
+      EXISTS (
+        SELECT 1 FROM public.student_rubrics sr
+        WHERE sr.student_id = s.id
+          AND sr.data->>'gradedAt' IS NOT NULL
+          AND public.try_timestamptz(sr.data->>'gradedAt') IS NULL
+      ) AS has_unreadable_date
+    FROM public.students s
+    JOIN owner_school os ON os.owner_id = s.owner_id
+    JOIN public.schools sc ON sc.id = os.school_id
+    WHERE (s.data->>'anonymizedAt') IS NULL
+      AND (
+        SELECT MAX(public.try_timestamptz(sr.data->>'gradedAt'))
+        FROM public.student_rubrics sr
+        WHERE sr.student_id = s.id
+      ) < now() - make_interval(years => sc.retention_years)
+  LOOP
+    IF v_student.has_unreadable_date THEN
+      v_skipped := v_skipped + 1;
+      CONTINUE;
+    END IF;
+    BEGIN
+      v_count := v_count + public.anonymize_student(v_student.id, v_student.owner_id);
+    EXCEPTION WHEN others THEN
+      v_failed := v_failed + 1;
+      v_last_error := SQLERRM;
+      RAISE WARNING 'anonymize_overdue_students: student % failed: %', v_student.id, SQLERRM;
+    END;
+  END LOOP;
+
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, details)
+  VALUES (
+    NULL, 'admin', 'retention_anonymize', 'student',
+    jsonb_build_object(
+      'anonymized', v_count, 'failed', v_failed, 'skipped_unreadable_date', v_skipped, 'last_error', v_last_error
+    )
+  );
+
+  RETURN v_count;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.anonymize_overdue_students() FROM PUBLIC, anon, authenticated;
+
+-- ── 079_owner_data_registry.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 079: one registry of owner-scoped tables, used by export_owner_backup (#631).
+--
+-- export_owner_backup() was rewritten by hand in 051–075 and drifted: rubric_versions and
+-- standard_mastery_targets were dropped again by later versions, and messages,
+-- test_assignments, recording_metadata, scan_metadata, rubric_shares, class_members and the
+-- marketplace tables were never included, so a restore from the nightly snapshot silently
+-- lacked them. The table list now lives in owner_data_tables(); the backup iterates it, and
+-- src/__tests__/ownerDataRegistry.test.ts fails when
+-- a migration adds a public table that is neither registered here nor allow-listed there.
+--
+-- Deliberately NOT registered (account/org-level or compliance data, not a teacher's content):
+--   profiles, schools, school_members, audit_logs, client_logs, site_config.
+
+-- ── 1. Registry ─────────────────────────────────────────────────────────────────
+-- owner_filter is a trusted SQL predicate on alias-free columns, with $1 = the owner's uuid.
+-- Keys match the snapshot keys earlier backups used, so old and new snapshots line up.
+CREATE OR REPLACE FUNCTION public.owner_data_tables()
+RETURNS TABLE (key text, table_name text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('rubrics',                   'rubrics',                   'owner_id = $1'),
+    ('rubric_versions',           'rubric_versions',           'owner_id = $1'),
+    ('rubric_shares',             'rubric_shares',             'rubric_id IN (SELECT id FROM public.rubrics WHERE owner_id = $1)'),
+    ('classes',                   'classes',                   'owner_id = $1'),
+    ('class_members',             'class_members',             'class_id IN (SELECT id FROM public.classes WHERE owner_id = $1)'),
+    ('students',                  'students',                  'owner_id = $1'),
+    ('student_rubrics',           'student_rubrics',           'grader_id = $1 AND is_peer_review = false'),
+    ('peer_reviews',              'student_rubrics',           'grader_id = $1 AND is_peer_review = true'),
+    ('attachments',               'attachments',               'owner_id = $1'),
+    ('grade_scales',              'grade_scales',              'owner_id = $1'),
+    ('comment_snippets',          'comment_snippets',          'owner_id = $1'),
+    ('comment_bank',              'comment_bank',              'owner_id = $1'),
+    ('export_templates',          'export_templates',          'owner_id = $1'),
+    ('favorite_standards',        'favorite_standards',        'owner_id = $1'),
+    ('standard_mastery_targets',  'standard_mastery_targets',  'owner_id = $1'),
+    ('self_assessments',          'self_assessments',          'owner_id = $1'),
+    ('speaking_sessions',         'speaking_sessions',         'owner_id = $1'),
+    ('recording_metadata',        'recording_metadata',        'owner_id = $1'),
+    ('scan_metadata',             'scan_metadata',             'owner_id = $1'),
+    ('analysis_results',          'analysis_results',          'owner_id = $1'),
+    ('tests',                     'tests',                     'owner_id = $1'),
+    ('test_assignments',          'test_assignments',          'owner_id = $1'),
+    ('student_tests',             'student_tests',             'owner_id = $1'),
+    ('placement_sessions',        'placement_sessions',        'owner_id = $1'),
+    ('essay_templates',           'essay_templates',           'owner_id = $1'),
+    ('essay_assignments',         'essay_assignments',         'owner_id = $1'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $1)'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   'owner_id = $1'),
+    ('essay_offline_submissions', 'essay_offline_submissions', 'owner_id = $1'),
+    ('grading_tasks',             'grading_tasks',             'owner_id = $1'),
+    ('user_templates',            'user_templates',            'owner_id = $1'),
+    ('user_settings',             'user_settings',             'user_id = $1'),
+    ('flashcard_decks',           'flashcard_decks',           'owner_id = $1'),
+    ('flashcard_assignments',     'flashcard_assignments',     'owner_id = $1'),
+    ('flashcard_reviews',         'flashcard_reviews',         'owner_id = $1'),
+    ('news_flashes',              'news_flashes',              'owner_id = $1'),
+    ('news_flash_reads',          'news_flash_reads',          'owner_id = $1'),
+    ('messages',                  'messages',                  'owner_id = $1'),
+    ('question_bank_items',       'question_bank_items',       'owner_id = $1'),
+    ('document_comments',         'document_comments',         'owner_id = $1'),
+    ('notification_dismissals',   'notification_dismissals',   'owner_id = $1'),
+    ('comparative_matchups',      'comparative_matchups',      'owner_id = $1'),
+    ('marketplace_listings',      'marketplace_listings',      'published_by = $1'),
+    ('marketplace_upvotes',       'marketplace_upvotes',       'profile_id = $1')
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.owner_data_tables() FROM PUBLIC, anon, authenticated;
+
+-- ── 2. Backup driven by the registry ────────────────────────────────────────────
+-- STABLE: every per-table query reads the calling statement's snapshot, so a concurrent write
+-- between two tables (a rubric and its version, say) cannot produce an inconsistent snapshot.
+CREATE OR REPLACE FUNCTION public.export_owner_backup(target_owner uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  r      record;
+  rows   jsonb;
+  result jsonb := '{}'::jsonb;
+BEGIN
+  FOR r IN SELECT * FROM public.owner_data_tables() LOOP
+    EXECUTE format(
+      'SELECT COALESCE(jsonb_agg(to_jsonb(t)), ''[]''::jsonb) FROM public.%I t WHERE %s',
+      r.table_name, r.owner_filter
+    ) INTO rows USING target_owner;
+    result := result || jsonb_build_object(r.key, rows);
+  END LOOP;
+  -- user_settings is one row per user; earlier snapshots stored it as an object, not a list.
+  result := jsonb_set(result, '{user_settings}', COALESCE(result->'user_settings'->0, 'null'::jsonb));
+  RETURN result;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.export_owner_backup(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.export_owner_backup(uuid) TO service_role;
+
+-- ── 080_erase_my_data.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 080: server-side "Delete all my database data" (#642).
+--
+-- The client used to delete a hard-coded subset of tables one by one, ignore every error,
+-- skip the feedback-audio, scans and backups buckets, and always report success. Erasure
+-- now uses the owner_data_tables() registry from 079, so it covers exactly what the nightly
+-- backup covers, and reports what it could not delete.
+--
+-- Flow (src/services/database/SupabaseAdapter.ts deleteAllMyData):
+--   1. my_storage_objects() lists every storage object that belongs to the caller; the client
+--      removes them through the Storage API (deleting storage.objects rows in SQL would leave
+--      the files behind) while the essay_assignments rows that locate essay files still exist.
+--   2. erase_my_data() deletes the caller's rows from every registered table and returns
+--      per-table counts and errors.
+
+-- ── 1. Let owners delete their own nightly snapshots ─────────────────────────────
+-- 048 only granted read; writes go through the service role.
+DROP POLICY IF EXISTS "backups_storage_owner_delete" ON storage.objects;
+CREATE POLICY "backups_storage_owner_delete"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'backups'
+    AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
+  );
+
+-- ── 2. The caller's storage objects ─────────────────────────────────────────────
+-- Folder-per-user buckets use {uid}/...; essays use {essay_assignment_id}/....
+CREATE OR REPLACE FUNCTION public.my_storage_objects()
+RETURNS TABLE (bucket_id text, name text)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, storage
+AS $$
+  SELECT o.bucket_id, o.name
+  FROM storage.objects o
+  WHERE auth.uid() IS NOT NULL
+    AND (
+      (o.bucket_id IN ('attachments', 'export-templates', 'recordings', 'feedback-audio', 'scans', 'backups')
+        AND (storage.foldername(o.name))[1] = auth.uid()::text)
+      OR (o.bucket_id = 'essays'
+        AND (storage.foldername(o.name))[1] IN (
+          SELECT ea.id FROM public.essay_assignments ea WHERE ea.owner_id = auth.uid()
+        ))
+    )
+  ORDER BY o.bucket_id, o.name;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.my_storage_objects() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.my_storage_objects() TO authenticated;
+
+-- ── 3. Erase the caller's rows ──────────────────────────────────────────────────
+-- Children are registered after their parents, so walking the registry backwards deletes
+-- grants, versions and submissions before the rubrics/classes/assignments they hang off.
+-- Each table is its own subtransaction: one failure is reported, the rest still go.
+CREATE OR REPLACE FUNCTION public.erase_my_data()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid     uuid := auth.uid();
+  r         record;
+  v_n       bigint;
+  v_deleted jsonb := '{}'::jsonb;
+  v_errors  jsonb := '{}'::jsonb;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  FOR r IN
+    SELECT t.key, t.table_name, t.owner_filter
+    FROM public.owner_data_tables() WITH ORDINALITY AS t(key, table_name, owner_filter, pos)
+    ORDER BY t.pos DESC
+  LOOP
+    BEGIN
+      EXECUTE format('DELETE FROM public.%I WHERE %s', r.table_name, r.owner_filter) USING v_uid;
+      GET DIAGNOSTICS v_n = ROW_COUNT;
+      v_deleted := v_deleted || jsonb_build_object(r.key, v_n);
+    EXCEPTION WHEN others THEN
+      v_errors := v_errors || jsonb_build_object(r.key, SQLERRM);
+    END;
+  END LOOP;
+
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, entity_id, details)
+  VALUES (v_uid, 'admin', 'erase_my_data', 'profile', v_uid::text,
+          jsonb_build_object('deleted', v_deleted, 'errors', v_errors));
+
+  RETURN jsonb_build_object('deleted', v_deleted, 'errors', v_errors);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.erase_my_data() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.erase_my_data() TO authenticated;
+
+-- ── 081_audit_triggers.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 081: server-side audit entries for sensitive changes (#621).
+--
+-- Client-side logAuditEvent is fire-and-forget and runs even when RLS silently
+-- turned an update/delete into a no-op, so it can record changes that never
+-- happened and misses changes made elsewhere (Studio, SQL, other clients).
+-- These AFTER triggers write the entry in the same transaction as the change,
+-- so an entry exists exactly when the change committed. Actor = auth.uid()
+-- (NULL for service/cron/SQL sessions without a profile).
+--
+-- Covered: role changes and school join/leave on profiles, school membership
+-- additions/removals, school create/update/delete, rubric shares and class
+-- collaborators (grant/change/revoke), school sharing of rubrics and comment
+-- bank items, and site_config changes (key only — values can hold API keys). Student password changes and erase_my_data already write their
+-- own entries server-side (set-student-password edge function, migration 080).
+
+CREATE OR REPLACE FUNCTION public.write_audit_entry(
+  p_category    text,
+  p_action      text,
+  p_entity_type text,
+  p_entity_id   text,
+  p_details     jsonb
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, entity_id, details)
+  VALUES (
+    (SELECT p.id FROM public.profiles p WHERE p.id = auth.uid()),
+    p_category, p_action, p_entity_type, p_entity_id, p_details
+  );
+EXCEPTION WHEN others THEN
+  -- Auditing must never block the change it describes.
+  RAISE WARNING 'audit entry % failed: %', p_action, SQLERRM;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.write_audit_entry(text, text, text, text, jsonb) FROM PUBLIC, anon, authenticated;
+
+-- ── profiles: role changes and school join/leave ─────────────────────────────
+CREATE OR REPLACE FUNCTION public.audit_profiles_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role THEN
+    PERFORM public.write_audit_entry('admin', 'role_change', 'user', NEW.id::text,
+      jsonb_build_object('from', OLD.role, 'to', NEW.role));
+  END IF;
+  IF NEW.school_id IS DISTINCT FROM OLD.school_id THEN
+    PERFORM public.write_audit_entry('admin',
+      CASE WHEN NEW.school_id IS NULL THEN 'school_leave' ELSE 'school_join' END,
+      'user', NEW.id::text,
+      jsonb_build_object('from', OLD.school_id, 'to', NEW.school_id));
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_profiles_change ON public.profiles;
+CREATE TRIGGER audit_profiles_change
+  AFTER UPDATE OF role, school_id ON public.profiles
+  FOR EACH ROW
+  WHEN (OLD.role IS DISTINCT FROM NEW.role OR OLD.school_id IS DISTINCT FROM NEW.school_id)
+  EXECUTE FUNCTION public.audit_profiles_change();
+
+-- ── school_members: members added / removed ──────────────────────────────────
+CREATE OR REPLACE FUNCTION public.audit_school_members_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM public.write_audit_entry('admin', 'member_added', 'school', NEW.school_id::text,
+      jsonb_build_object('profile_id', NEW.profile_id));
+  ELSE
+    PERFORM public.write_audit_entry('admin', 'member_removed', 'school', OLD.school_id::text,
+      jsonb_build_object('profile_id', OLD.profile_id));
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_school_members_change ON public.school_members;
+CREATE TRIGGER audit_school_members_change
+  AFTER INSERT OR DELETE ON public.school_members
+  FOR EACH ROW EXECUTE FUNCTION public.audit_school_members_change();
+
+-- ── schools: create / update / delete ────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.audit_schools_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    PERFORM public.write_audit_entry('admin', 'school_create', 'school', NEW.id::text,
+      jsonb_build_object('name', NEW.name, 'retention_years', NEW.retention_years));
+  ELSIF TG_OP = 'UPDATE' THEN
+    PERFORM public.write_audit_entry('admin', 'school_update', 'school', NEW.id::text,
+      jsonb_strip_nulls(jsonb_build_object(
+        'name', CASE WHEN NEW.name IS DISTINCT FROM OLD.name
+                     THEN jsonb_build_object('from', OLD.name, 'to', NEW.name) END,
+        'retention_years', CASE WHEN NEW.retention_years IS DISTINCT FROM OLD.retention_years
+                     THEN jsonb_build_object('from', OLD.retention_years, 'to', NEW.retention_years) END)));
+  ELSE
+    PERFORM public.write_audit_entry('admin', 'school_delete', 'school', OLD.id::text,
+      jsonb_build_object('name', OLD.name));
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_schools_change ON public.schools;
+CREATE TRIGGER audit_schools_change
+  AFTER INSERT OR DELETE ON public.schools
+  FOR EACH ROW EXECUTE FUNCTION public.audit_schools_change();
+
+DROP TRIGGER IF EXISTS audit_schools_update ON public.schools;
+CREATE TRIGGER audit_schools_update
+  AFTER UPDATE OF name, retention_years ON public.schools
+  FOR EACH ROW
+  WHEN (OLD.name IS DISTINCT FROM NEW.name OR OLD.retention_years IS DISTINCT FROM NEW.retention_years)
+  EXECUTE FUNCTION public.audit_schools_change();
+
+-- ── rubrics / comment bank: shared with or withdrawn from the school ─────────
+CREATE OR REPLACE FUNCTION public.audit_school_share_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_shared boolean := COALESCE(NEW.data->'sharedWithSchool' = 'true'::jsonb, false);
+BEGIN
+  PERFORM public.write_audit_entry('admin',
+    CASE WHEN v_shared THEN 'school_share' ELSE 'school_unshare' END,
+    TG_ARGV[0], NEW.id::text,
+    jsonb_build_object('owner_id', NEW.owner_id));
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_rubrics_share ON public.rubrics;
+CREATE TRIGGER audit_rubrics_share
+  AFTER UPDATE OF data ON public.rubrics
+  FOR EACH ROW
+  WHEN (COALESCE(OLD.data->'sharedWithSchool' = 'true'::jsonb, false)
+        IS DISTINCT FROM COALESCE(NEW.data->'sharedWithSchool' = 'true'::jsonb, false))
+  EXECUTE FUNCTION public.audit_school_share_change('rubric');
+
+DROP TRIGGER IF EXISTS audit_comment_bank_share ON public.comment_bank;
+CREATE TRIGGER audit_comment_bank_share
+  AFTER UPDATE OF data ON public.comment_bank
+  FOR EACH ROW
+  WHEN (COALESCE(OLD.data->'sharedWithSchool' = 'true'::jsonb, false)
+        IS DISTINCT FROM COALESCE(NEW.data->'sharedWithSchool' = 'true'::jsonb, false))
+  EXECUTE FUNCTION public.audit_school_share_change('comment_bank');
+
+-- ── rubric_shares / class_members: per-user share grants ─────────────────────
+-- TG_ARGV: entity type, column holding the shared entity's id, column holding the access level.
+CREATE OR REPLACE FUNCTION public.audit_share_grant_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row   jsonb := to_jsonb(COALESCE(NEW, OLD));
+  v_old   jsonb := CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END;
+  v_new   jsonb := CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END;
+BEGIN
+  IF TG_OP = 'UPDATE' AND v_old->>TG_ARGV[2] IS NOT DISTINCT FROM v_new->>TG_ARGV[2] THEN
+    RETURN NULL;
+  END IF;
+  PERFORM public.write_audit_entry('admin',
+    CASE TG_OP WHEN 'INSERT' THEN 'share_grant' WHEN 'UPDATE' THEN 'share_change' ELSE 'share_revoke' END,
+    TG_ARGV[0], v_row->>TG_ARGV[1],
+    jsonb_strip_nulls(jsonb_build_object(
+      'user_id', v_row->>'user_id',
+      'from', v_old->>TG_ARGV[2],
+      'to', v_new->>TG_ARGV[2])));
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_rubric_shares_change ON public.rubric_shares;
+CREATE TRIGGER audit_rubric_shares_change
+  AFTER INSERT OR DELETE OR UPDATE OF mode ON public.rubric_shares
+  FOR EACH ROW EXECUTE FUNCTION public.audit_share_grant_change('rubric', 'rubric_id', 'mode');
+
+DROP TRIGGER IF EXISTS audit_class_members_change ON public.class_members;
+CREATE TRIGGER audit_class_members_change
+  AFTER INSERT OR DELETE OR UPDATE OF role ON public.class_members
+  FOR EACH ROW EXECUTE FUNCTION public.audit_share_grant_change('class', 'class_id', 'role');
+
+-- ── site_config: any change (key only) ───────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.audit_site_config_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM public.write_audit_entry('admin', 'site_config_' || lower(TG_OP), 'site_config',
+    COALESCE(NEW.key, OLD.key), NULL);
+  RETURN NULL;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS audit_site_config_change ON public.site_config;
+CREATE TRIGGER audit_site_config_change
+  AFTER INSERT OR DELETE ON public.site_config
+  FOR EACH ROW EXECUTE FUNCTION public.audit_site_config_change();
+
+DROP TRIGGER IF EXISTS audit_site_config_update ON public.site_config;
+CREATE TRIGGER audit_site_config_update
+  AFTER UPDATE ON public.site_config
+  FOR EACH ROW WHEN (OLD.* IS DISTINCT FROM NEW.*)
+  EXECUTE FUNCTION public.audit_site_config_change();
+
+-- ── 082_scans_sweep_guard.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 082: make get_overdue_scans() safe for the nightly sweep (#625).
+--
+-- delete-old-attachments (edge function) and scripts/delete-old-attachments.sh now also purge
+-- overdue scans. school_year is written by the client; one malformed value made the
+-- left(school_year, 4)::int cast fail and abort the whole query, so no scan would ever be swept.
+-- Rows without a leading four-digit year are now skipped instead (they still need attention, but
+-- they no longer block everyone else's purge). Text-only scans (image discarded after OCR) are
+-- stored with a NULL storage_path; 074 left them out, so their OCR text was never purged. They are
+-- now returned too, and the sweep deletes just their row. Same signature, grants and boundary as 074.
+
+create or replace function public.get_overdue_scans(batch_size int default 100)
+returns table (id text, owner_id uuid, storage_path text)
+language sql
+security definer
+set search_path = public
+as $$
+  select s.id, s.owner_id, s.storage_path
+  from public.scan_metadata s
+  -- CASE, not AND: Postgres may evaluate AND operands in any order, so only CASE guarantees the
+  -- cast never sees a malformed value.
+  where (case when s.school_year ~ '^[0-9]{4}' then left(s.school_year, 4)::int end) <
+        (case when extract(month from now()) >= 8
+              then extract(year from now())::int
+              else extract(year from now())::int - 1 end)
+  limit batch_size;
+$$;
+
+revoke all on function public.get_overdue_scans(int) from public, anon, authenticated;
+grant execute on function public.get_overdue_scans(int) to service_role;
+
+-- ── 083_role_repair_last_admin.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 083: let operators repair roles, and never leave the instance without an admin (#629).
+--
+-- protect_role_changes() (latest: 037) required get_my_role() = 'admin', which reads auth.uid().
+-- A direct database connection (Supabase SQL editor, psql) or the service-role key has no user,
+-- so an operator could not repair a role at all, and the last admin demoting themselves (Users tab,
+-- or picking Student in onboarding) locked everyone out.
+--
+-- Operator requests are recognised by their request claims: a direct connection has none, and the
+-- service-role key carries role = 'service_role'. PostgREST always sets the claims for API requests,
+-- so a signed-in or anonymous client can never look like an operator. Operators skip both checks.
+
+CREATE OR REPLACE FUNCTION public.protect_role_changes()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_request_role text := coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
+  );
+BEGIN
+  IF OLD.role IS NOT DISTINCT FROM NEW.role THEN
+    RETURN NEW;
+  END IF;
+
+  IF v_request_role IS NULL OR v_request_role = 'service_role' THEN
+    RETURN NEW;
+  END IF;
+
+  IF NOT (NEW.id = auth.uid() AND OLD.role = 'teacher' AND NEW.role = 'student')
+     AND get_my_role() IS DISTINCT FROM 'admin' THEN
+    RAISE EXCEPTION 'Only admins can change roles';
+  END IF;
+
+  IF OLD.role = 'admin' THEN
+    -- Serialises concurrent demotions so two admins cannot remove each other at the same time.
+    PERFORM pg_advisory_xact_lock(hashtext('public.protect_role_changes:last_admin'));
+    IF NOT EXISTS (
+      SELECT 1 FROM public.profiles WHERE role = 'admin' AND id <> OLD.id
+    ) THEN
+      RAISE EXCEPTION 'Cannot remove the last admin'
+        USING HINT = 'Promote another user to admin first.';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.protect_role_changes() FROM PUBLIC, anon, authenticated;
+
+-- ── 084_erase_student.sql ──────────────────────────────────────────────────────────────
+
+-- Migration 084: erase one student — every row and file keyed to them (#644).
+--
+-- "Delete" only archived a student and "Anonymize" (017/078) only rewrote the students row, so
+-- grades with free-text comments, voice feedback, essays, messages, test answers, attachments,
+-- scans, self-assessments and recordings stayed linked to the student. This gives the student's
+-- teacher a right-to-erasure path.
+--
+-- Flow (src/services/database/SupabaseAdapter.ts eraseStudentData):
+--   1. student_storage_objects(id) lists the files that belong to the student; the client removes
+--      them through the Storage API while the rows that locate them still exist.
+--   2. erase_student(id, storage_failures) deletes the rows from every registered table and
+--      records anything left behind in the audit log.
+--
+-- Scope: the student's teacher (students.owner_id) erases everything keyed to the student,
+-- including grades other graders gave in a shared class. If the student row was never synced,
+-- only the caller's own rows are erased; if another teacher owns it, the call is refused.
+
+-- ── 1. Registry of student-keyed tables ──────────────────────────────────────────
+-- student_filter: trusted predicate with $1 = student id. owner_filter: with $2 = caller uuid,
+-- applied when the caller may only erase their own rows. Children come before the parents
+-- their filters look up (comments before attachments, recordings before sessions, …).
+CREATE OR REPLACE FUNCTION public.student_data_tables()
+RETURNS TABLE (key text, table_name text, student_filter text, owner_filter text)
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  VALUES
+    ('document_comments',         'document_comments',         $f$data->>'attachmentId' IN (SELECT id FROM public.attachments WHERE data->>'studentId' = $1)$f$, 'owner_id = $2'),
+    ('attachments',               'attachments',               $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('recording_metadata',        'recording_metadata',        'session_id IN (SELECT id FROM public.speaking_sessions WHERE student_id = $1)',            'owner_id = $2'),
+    ('speaking_sessions',         'speaking_sessions',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('self_assessments',          'self_assessments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('analysis_results',          'analysis_results',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('scan_metadata',             'scan_metadata',             'student_id = $1',                                                                          'owner_id = $2'),
+    ('student_rubrics',           'student_rubrics',           'student_id = $1',                                                                          'grader_id = $2'),
+    ('essay_submissions',         'essay_submissions',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE student_id = $1)',         'assignment_id IN (SELECT id FROM public.essay_assignments WHERE owner_id = $2)'),
+    ('essay_assignments',         'essay_assignments',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('essay_batch_assignments',   'essay_batch_assignments',   $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('essay_offline_submissions', 'essay_offline_submissions', $f$data->>'assignmentStudentId' = $1$f$,                                                    'owner_id = $2'),
+    ('placement_sessions',        'placement_sessions',        'assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)',          'owner_id = $2'),
+    ('student_tests',             'student_tests',             $f$data->>'studentId' = $1 OR assignment_id IN (SELECT id FROM public.test_assignments WHERE student_id = $1)$f$, 'owner_id = $2'),
+    ('test_assignments',          'test_assignments',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('messages',                  'messages',                  'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_reviews',         'flashcard_reviews',         'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_assignments',     'flashcard_assignments',     'student_id = $1',                                                                          'owner_id = $2'),
+    ('flashcard_decks',           'flashcard_decks',           'student_id = $1',                                                                          'owner_id = $2'),
+    ('news_flash_reads',          'news_flash_reads',          'student_id = $1',                                                                          'owner_id = $2'),
+    ('grading_tasks',             'grading_tasks',             $f$data->>'studentId' = $1$f$,                                                              'owner_id = $2'),
+    ('comparative_matchups',      'comparative_matchups',      $f$data->>'studentAId' = $1 OR data->>'studentBId' = $1$f$,                                 'owner_id = $2'),
+    ('students',                  'students',                  'id = $1',                                                                                  'owner_id = $2')
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.student_data_tables() FROM PUBLIC, anon, authenticated;
+
+-- ── 2. Who may erase ─────────────────────────────────────────────────────────────
+-- true: the caller is the student's teacher (erase everything); false: the student row isn't
+-- in the database (erase the caller's own rows only); raises when another teacher owns it.
+CREATE OR REPLACE FUNCTION public.student_erasure_scope(p_student_id text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_owner uuid;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated' USING ERRCODE = '42501';
+  END IF;
+  SELECT owner_id INTO v_owner FROM public.students WHERE id = p_student_id;
+  IF NOT FOUND THEN
+    RETURN false;
+  END IF;
+  IF v_owner IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Only the student''s teacher can erase this student' USING ERRCODE = '42501';
+  END IF;
+  RETURN true;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.student_erasure_scope(text) FROM PUBLIC, anon, authenticated;
+
+-- ── 3. The student's storage objects ────────────────────────────────────────────
+-- Folder-per-user buckets are located through their metadata rows; essays live under
+-- {essay_assignment_id}/; voice feedback is referenced from student_rubrics.data entries.
+CREATE OR REPLACE FUNCTION public.student_storage_objects(p_student_id text)
+RETURNS TABLE (bucket_id text, name text)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, storage
+AS $$
+DECLARE
+  v_all boolean := public.student_erasure_scope(p_student_id);
+  v_uid uuid := auth.uid();
+BEGIN
+  RETURN QUERY
+  SELECT o.bucket_id, o.name
+  FROM storage.objects o
+  WHERE
+    (o.bucket_id = 'attachments' AND o.name IN (
+      SELECT a.storage_path FROM public.attachments a
+      WHERE a.data->>'studentId' = p_student_id AND (v_all OR a.owner_id = v_uid)))
+    OR (o.bucket_id = 'scans' AND o.name IN (
+      SELECT s.storage_path FROM public.scan_metadata s
+      WHERE s.student_id = p_student_id AND (v_all OR s.owner_id = v_uid)))
+    OR (o.bucket_id = 'recordings' AND o.name IN (
+      SELECT r.storage_path FROM public.recording_metadata r
+      WHERE r.session_id IN (SELECT ss.id FROM public.speaking_sessions ss WHERE ss.student_id = p_student_id)
+        AND (v_all OR r.owner_id = v_uid)))
+    OR (o.bucket_id = 'essays' AND (storage.foldername(o.name))[1] IN (
+      SELECT ea.id FROM public.essay_assignments ea
+      WHERE ea.student_id = p_student_id AND (v_all OR ea.owner_id = v_uid)))
+    OR (o.bucket_id = 'feedback-audio' AND o.name IN (
+      SELECT e->>'audioStoragePath'
+      FROM public.student_rubrics sr,
+           jsonb_array_elements(CASE WHEN jsonb_typeof(sr.data->'entries') = 'array' THEN sr.data->'entries' ELSE '[]'::jsonb END) e
+      WHERE sr.student_id = p_student_id AND (v_all OR sr.grader_id = v_uid)))
+  ORDER BY o.bucket_id, o.name;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.student_storage_objects(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.student_storage_objects(text) TO authenticated;
+
+-- ── 4. Erase the rows ───────────────────────────────────────────────────────────
+-- Each table is its own subtransaction. The first failure stops the run: the registry deletes
+-- children before the parents their filters look up (students last), so carrying on would orphan
+-- the failed table's rows and drop the scope a retry needs. Later tables are reported as skipped.
+-- p_storage_failures lists files the client could not remove (e.g. voice feedback another
+-- grader recorded, which Storage RLS keeps in that grader's folder); they are written to the
+-- audit log so an operator can delete them — the rows that located them are gone afterwards.
+CREATE OR REPLACE FUNCTION public.erase_student(p_student_id text, p_storage_failures jsonb DEFAULT '[]'::jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_all     boolean := public.student_erasure_scope(p_student_id);
+  v_uid     uuid := auth.uid();
+  r         record;
+  v_n       bigint;
+  v_deleted jsonb := '{}'::jsonb;
+  v_errors  jsonb := '{}'::jsonb;
+  v_failed  boolean := false;
+BEGIN
+  FOR r IN
+    SELECT t.key, t.table_name, t.student_filter, t.owner_filter
+    FROM public.student_data_tables() WITH ORDINALITY AS t(key, table_name, student_filter, owner_filter, pos)
+    ORDER BY t.pos
+  LOOP
+    IF v_failed THEN
+      v_errors := v_errors || jsonb_build_object(r.key, 'skipped');
+      CONTINUE;
+    END IF;
+    BEGIN
+      EXECUTE format(
+        'DELETE FROM public.%I WHERE (%s) AND ($3 OR (%s))',
+        r.table_name, r.student_filter, r.owner_filter
+      ) USING p_student_id, v_uid, v_all;
+      GET DIAGNOSTICS v_n = ROW_COUNT;
+      v_deleted := v_deleted || jsonb_build_object(r.key, v_n);
+    EXCEPTION WHEN others THEN
+      v_errors := v_errors || jsonb_build_object(r.key, SQLERRM);
+      v_failed := true;
+    END;
+  END LOOP;
+
+  -- The audit row holds the opaque student id and counts only — nothing that identifies them.
+  INSERT INTO public.audit_logs (actor_id, category, action, entity_type, entity_id, details)
+  VALUES (v_uid, 'admin', 'erase_student', 'student', p_student_id,
+          jsonb_build_object('deleted', v_deleted, 'errors', v_errors,
+                             'storage_failures', COALESCE(p_storage_failures, '[]'::jsonb)));
+
+  RETURN jsonb_build_object('deleted', v_deleted, 'errors', v_errors);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.erase_student(text, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.erase_student(text, jsonb) TO authenticated;
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -4983,5 +6369,16 @@ insert into public._migrations (name) values
     ('071_marketplace_kind_constraint_guard.sql'),
     ('072_client_logs_observability.sql'),
     ('073_client_logs_backfill.sql'),
+    ('074_scans_storage.sql'),
+    ('075_comparative_matchups.sql'),
+    ('076_security_hardening.sql'),
+    ('077_profile_scope_grade_write_check.sql'),
+    ('078_fix_retention_anonymization.sql'),
+    ('079_owner_data_registry.sql'),
+    ('080_erase_my_data.sql'),
+    ('081_audit_triggers.sql'),
+    ('082_scans_sweep_guard.sql'),
+    ('083_role_repair_last_admin.sql'),
+    ('084_erase_student.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

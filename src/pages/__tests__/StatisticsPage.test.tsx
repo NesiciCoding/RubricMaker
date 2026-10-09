@@ -217,6 +217,22 @@ describe('StatisticsPage', () => {
         expect(mockUpdateSettings).toHaveBeenCalledWith({ activeClassId: 'c1' });
     });
 
+    it('excludes archived students from the all-classes figures', async () => {
+        const archived: Student = { id: 's3', name: 'Carla', classId: 'c1', archivedAt: '2026-01-01T00:00:00Z' };
+        const archivedSr: StudentRubric = { ...mockSrA, id: 'sr3', studentId: 's3' };
+        const original = { students: mockAppValue.students, studentRubrics: mockAppValue.studentRubrics };
+        mockAppValue.students = [mockStudentA, mockStudentB, archived];
+        mockAppValue.studentRubrics = [mockSrA, mockSrB, archivedSr];
+        try {
+            renderPage();
+            await waitForCharts();
+            expect(screen.getByText('2 / 2')).toBeInTheDocument();
+            expect(screen.queryByText('3 / 2')).not.toBeInTheDocument();
+        } finally {
+            Object.assign(mockAppValue, original);
+        }
+    });
+
     it('toggles the criterion chart type and the exclude-not-handed-in filter', async () => {
         renderPage();
         await waitForCharts();

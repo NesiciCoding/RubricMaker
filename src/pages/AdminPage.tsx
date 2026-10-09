@@ -3,6 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
+import { isLastAdminError } from '../utils/roleChangeError';
 import { useTranslation, Trans } from 'react-i18next';
 import {
     Users,
@@ -44,7 +45,7 @@ import { useAuthoring, useClasses, useGrading, usePlatform, useSettings, useStud
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
-import { logAuditEvent } from '../services/database/AuditLogger';
+import { auditActorLabel, formatAuditDetails } from '../utils/auditFormat';
 import LoginButtons from '../components/auth/LoginButtons';
 import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -55,9 +56,10 @@ type Tab = 'users' | 'schools' | 'database' | 'integrations' | 'data' | 'retenti
 
 // ─── Users tab ───────────────────────────────────────────────────────────────
 
-function UsersTab() {
+export function UsersTab() {
     const { t } = useTranslation();
     const { fetchAllUsers, updateUserRole, getCurrentDatabaseUserId } = usePlatform();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
     const { showToast } = useToast();
     const dbStatus = useDbStatus();
@@ -88,11 +90,21 @@ function UsersTab() {
         };
     }, [fetchAllUsers, dbStatus.isConnected]);
 
-    async function handleRoleChange(userId: string, newRole: 'admin' | 'teacher' | 'student') {
-        setSaving(userId);
-        const result = await updateUserRole(userId, newRole);
+    async function handleRoleChange(user: DbUser, newRole: 'admin' | 'teacher' | 'student') {
+        const ok = await confirm({
+            title: t('admin.role_change_confirm_title'),
+            message: t('admin.role_change_confirm', {
+                name: user.displayName ?? user.email ?? '—',
+                role: t(`admin.role_${newRole}`),
+            }),
+        });
+        if (!ok) return;
+        setSaving(user.id);
+        const result = await updateUserRole(user.id, newRole);
         if (result.success) {
-            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+            setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u)));
+        } else if (isLastAdminError(result.error)) {
+            showToast(t('admin.role_last_admin'), 'error');
         } else {
             showToast(result.error ?? t('common.unknown_error'), 'error');
         }
@@ -153,7 +165,7 @@ function UsersTab() {
                                         value={u.role}
                                         disabled={u.id === currentUserId}
                                         onChange={(e) =>
-                                            handleRoleChange(u.id, e.target.value as 'admin' | 'teacher' | 'student')
+                                            handleRoleChange(u, e.target.value as 'admin' | 'teacher' | 'student')
                                         }
                                     >
                                         <option value="admin">{t('admin.role_admin')}</option>
@@ -166,6 +178,7 @@ function UsersTab() {
                     ))}
                 </tbody>
             </table>
+            <ConfirmDialog {...confirmDialogProps} />
         </div>
     );
 }
@@ -215,7 +228,6 @@ function SchoolsTab() {
         setCreating(true);
         const s = await createSchool(newName.trim(), retention);
         if (s) {
-            logAuditEvent('admin', 'school_create', 'school', s.id);
             setNewName('');
             setNewRetention(3);
             await load();
@@ -227,7 +239,6 @@ function SchoolsTab() {
         const years = editRetention[schoolId];
         if (!years || !Number.isFinite(years) || years < 1 || years > 20) return;
         await updateSchool(schoolId, { retentionYears: Math.round(years) });
-        logAuditEvent('admin', 'school_update', 'school', schoolId, { retentionYears: Math.round(years) });
         await load();
     }
 
@@ -238,7 +249,6 @@ function SchoolsTab() {
         });
         if (!ok) return;
         await deleteSchool(schoolId);
-        logAuditEvent('admin', 'school_delete', 'school', schoolId);
         await load();
     }
 
@@ -1578,32 +1588,48 @@ function AuditTab() {
             return;
         }
         let cancelled = false;
-        let q = client
-            .from('audit_logs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-        if (category !== 'all') q = q.eq('category', category);
-        void q.then(
-            ({ data, error }) => {
-                if (cancelled) return;
-                if (error) console.warn('[audit] fetch failed', error.message);
-                setRows((data as AuditRow[]) ?? []);
-                setLoading(false);
-            },
-            (err: unknown) => {
-                if (cancelled) return;
-                console.warn('[audit] fetch error', err);
-                setLoading(false);
-            }
-        );
+        const query = (columns: string) => {
+            let q = client
+                .from('audit_logs')
+                .select(columns)
+                .order('created_at', { ascending: false })
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+            if (category !== 'all') q = q.eq('category', category);
+            return q;
+        };
+        // Embed the actor's profile; fall back to the bare rows if the embed is unavailable.
+        void query('*, actor:profiles!audit_logs_actor_id_fkey(display_name, email)')
+            .then((res) => (res.error ? query('*') : res))
+            .then(
+                ({ data, error }) => {
+                    if (cancelled) return;
+                    if (error) console.warn('[audit] fetch failed', error.message);
+                    setRows((data as unknown as AuditRow[]) ?? []);
+                    setLoading(false);
+                },
+                (err: unknown) => {
+                    if (cancelled) return;
+                    console.warn('[audit] fetch error', err);
+                    setLoading(false);
+                }
+            );
         return () => {
             cancelled = true;
         };
     }, [dbStatus.isConnected, category, page]);
 
     function exportCsv() {
-        const header = ['timestamp', 'category', 'action', 'entity_type', 'entity_id', 'actor_id'];
+        const header = [
+            'timestamp',
+            'category',
+            'action',
+            'entity_type',
+            'entity_id',
+            'actor_id',
+            'actor_name',
+            'actor_email',
+            'details',
+        ];
         const csv = Papa.unparse(
             [
                 header,
@@ -1614,6 +1640,9 @@ function AuditTab() {
                     r.entity_type ?? '',
                     r.entity_id ?? '',
                     r.actor_id ?? '',
+                    r.actor?.display_name ?? '',
+                    r.actor?.email ?? '',
+                    r.details ? JSON.stringify(r.details) : '',
                 ]),
             ],
             CSV_UNPARSE_OPTIONS
@@ -1664,6 +1693,10 @@ function AuditTab() {
                                 </th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_action')}</th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_entity')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_actor')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                    {t('admin.audit_col_details')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1690,9 +1723,32 @@ function AuditTab() {
                                         </span>
                                     </td>
                                     <td style={{ padding: '6px 8px' }}>{r.action}</td>
-                                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        {r.entity_type &&
-                                            `${r.entity_type}${r.entity_id ? ` / ${r.entity_id.slice(0, 8)}` : ''}`}
+                                    <td
+                                        style={{
+                                            padding: '6px 8px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            wordBreak: 'break-all',
+                                        }}
+                                    >
+                                        {r.entity_type && `${r.entity_type}${r.entity_id ? ` / ${r.entity_id}` : ''}`}
+                                    </td>
+                                    <td
+                                        style={{ padding: '6px 8px', fontSize: '0.8rem' }}
+                                        title={r.actor_id ?? undefined}
+                                    >
+                                        {auditActorLabel(r) ??
+                                            (r.actor_id ? r.actor_id : t('admin.audit_actor_system'))}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '6px 8px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            wordBreak: 'break-word',
+                                        }}
+                                    >
+                                        {formatAuditDetails(r.details)}
                                     </td>
                                 </tr>
                             ))}
@@ -1721,10 +1777,12 @@ function AuditTab() {
 
 // ─── Archive tab ─────────────────────────────────────────────────────────────
 
-function ArchiveTab() {
+export function ArchiveTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
-    const { archivedStudents, restoreStudent, anonymizeStudent, students } = useStudents();
+    const { archivedStudents, restoreStudent, anonymizeStudent, eraseStudent, students } = useStudents();
+    const { showToast } = useToast();
+    const [erasingId, setErasingId] = useState<string | null>(null);
     const { classes } = useClasses();
     const { deletedStudentRubrics, restoreStudentRubric } = useGrading();
 
@@ -1741,6 +1799,33 @@ function ArchiveTab() {
         });
         if (!ok) return;
         anonymizeStudent(id);
+    }
+
+    async function handleErase(id: string, name: string) {
+        const ok = await confirm({
+            title: t('admin.erase_confirm_title'),
+            message: t('admin.erase_confirm', { name }),
+            confirmLabel: t('admin.erase_btn'),
+        });
+        if (!ok) return;
+        setErasingId(id);
+        try {
+            const result = await eraseStudent(id);
+            if (!result.success) {
+                showToast(
+                    result.error === 'offline'
+                        ? t('admin.erase_offline')
+                        : t('admin.erase_failed', { error: result.error ?? t('common.unknown_error') }),
+                    'error'
+                );
+            } else if (result.leftoverFiles > 0) {
+                showToast(t('admin.erase_partial', { n: result.leftoverFiles }), 'warning');
+            } else {
+                showToast(t('admin.erase_success'), 'success');
+            }
+        } finally {
+            setErasingId(null);
+        }
     }
 
     if (archivedStudents.length === 0 && deletedStudentRubrics.length === 0) {
@@ -1830,7 +1915,14 @@ function ArchiveTab() {
                                         )}
                                     </td>
                                     <td style={{ color: 'var(--text-muted)' }}>{classMap.get(s.classId) ?? '—'}</td>
-                                    <td style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                    <td
+                                        style={{
+                                            display: 'flex',
+                                            gap: 6,
+                                            justifyContent: 'flex-end',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
                                         {!s.anonymizedAt && (
                                             <>
                                                 <button
@@ -1850,6 +1942,16 @@ function ArchiveTab() {
                                                 </button>
                                             </>
                                         )}
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ color: 'var(--red, #ef4444)' }}
+                                            disabled={erasingId !== null}
+                                            onClick={() => handleErase(s.id, s.name)}
+                                            title={t('admin.erase_btn')}
+                                        >
+                                            <Trash2 size={14} />{' '}
+                                            {erasingId === s.id ? t('admin.erase_in_progress') : t('admin.erase_btn')}
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

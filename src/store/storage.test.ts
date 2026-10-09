@@ -30,6 +30,10 @@ import {
     saveAnalysisResults,
     exportStore,
     exportFullBackup,
+    markMigrationPending,
+    isMigrationPending,
+    skipMigrationForSession,
+    isMigrationSkippedForSession,
     importFullBackup,
     updateDefaultFormat,
     DEFAULT_GRADE_SCALES,
@@ -40,6 +44,9 @@ import {
     saveTestTimer,
     clearTestTimer,
     onStorageQuotaExceeded,
+    onVoiceFeedbackDropped,
+    localStorageUsedChars,
+    LOCAL_STORAGE_QUOTA_CHARS,
     clearLocalData,
     loadRubricVersions,
     upsertRubricVersion,
@@ -439,9 +446,70 @@ describe('exportFullBackup', () => {
         expect(data).toHaveProperty('classes');
         expect(data).toHaveProperty('settings');
     });
+
+    it('leaves out identity and credential settings (#633)', () => {
+        saveSettings({
+            ...makeSettings(),
+            theme: 'light',
+            userRole: 'admin',
+            userEmail: 'me@school.nl',
+            adminPin: '1234',
+            standardsApiKey: 'secret',
+            schoolId: 'school-1',
+        });
+        const { settings } = JSON.parse(exportFullBackup());
+        expect(settings.theme).toBe('light');
+        for (const key of ['userRole', 'userEmail', 'adminPin', 'standardsApiKey', 'schoolId']) {
+            expect(settings).not.toHaveProperty(key);
+        }
+    });
 });
 
 describe('importFullBackup', () => {
+    it('never changes role, PIN, email, school or API key, but restores other settings (#633)', () => {
+        saveSettings({
+            ...makeSettings(),
+            theme: 'dark',
+            userRole: 'admin',
+            userEmail: 'me@school.nl',
+            adminPin: '1234',
+            standardsApiKey: 'mine',
+        });
+        const ok = importFullBackup(
+            JSON.stringify({
+                settings: {
+                    ...makeSettings(),
+                    theme: 'light',
+                    userRole: 'student',
+                    userEmail: 'someone@else.nl',
+                    standardsApiKey: 'theirs',
+                    schoolId: 'other-school',
+                },
+            })
+        );
+        expect(ok).toBe(true);
+        const { settings } = loadStore();
+        expect(settings.theme).toBe('light');
+        expect(settings.userRole).toBe('admin');
+        expect(settings.userEmail).toBe('me@school.nl');
+        expect(settings.adminPin).toBe('1234');
+        expect(settings.standardsApiKey).toBe('mine');
+        expect(settings.schoolId).toBeUndefined();
+    });
+
+    it('keeps protected values from the live settings passed in, not the stored copy (#633)', () => {
+        saveSettings({ ...makeSettings(), userRole: 'teacher', schoolId: 'stale-school' });
+        const live = { ...makeSettings(), userRole: 'admin' as const, schoolId: 'live-school' };
+        importFullBackup(
+            JSON.stringify({ settings: { ...makeSettings(), theme: 'light', userRole: 'student' } }),
+            live
+        );
+        const { settings } = loadStore();
+        expect(settings.theme).toBe('light');
+        expect(settings.userRole).toBe('admin');
+        expect(settings.schoolId).toBe('live-school');
+    });
+
     it('restores data from valid JSON', () => {
         saveRubrics([makeRubric('r1')]);
         const backup = exportFullBackup();
@@ -604,6 +672,61 @@ describe('pending sync queue', () => {
 
         setItemSpy.mockRestore();
         onStorageQuotaExceeded(() => {});
+    });
+
+    it('saveStudentRubrics reports how many recordings were dropped to fit the quota (#678)', () => {
+        const dropped = vi.fn();
+        const quota = vi.fn();
+        onVoiceFeedbackDropped(dropped);
+        onStorageQuotaExceeded(quota);
+        const realSetItem = Storage.prototype.setItem;
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage,
+            key: string,
+            value: string
+        ) {
+            if (value.includes('data:audio')) throw new DOMException('quota exceeded', 'QuotaExceededError');
+            realSetItem.call(this, key, value);
+        });
+        const entry = (audio?: string) => ({
+            criterionId: 'c',
+            levelId: 'l',
+            comment: '',
+            checkedSubItems: [],
+            audioDataUrl: audio,
+        });
+        saveStudentRubrics([
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                entries: [entry('data:audio/webm;base64,AAA'), entry('data:audio/webm;base64,BBB')],
+                overallComment: '',
+                isPeerReview: false,
+            },
+            { id: 'sr2', rubricId: 'r1', studentId: 's2', entries: [entry()], overallComment: '', isPeerReview: false },
+        ]);
+        expect(dropped).toHaveBeenCalledWith(2);
+        expect(quota).not.toHaveBeenCalled();
+        setItemSpy.mockRestore();
+        onVoiceFeedbackDropped(() => {});
+        onStorageQuotaExceeded(() => {});
+    });
+
+    it('localStorageUsedChars counts keys and values', () => {
+        localStorage.clear();
+        localStorage.setItem('ab', 'cdef');
+        expect(localStorageUsedChars()).toBe(6);
+        expect(LOCAL_STORAGE_QUOTA_CHARS).toBeGreaterThan(0);
+    });
+
+    it('localStorageUsedChars reports null when storage cannot be read', () => {
+        localStorage.setItem('ab', 'cdef');
+        const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+            throw new Error('denied');
+        });
+        expect(localStorageUsedChars()).toBeNull();
+        keySpy.mockRestore();
     });
 
     it('stripAudioForOfflineCache passes rubrics without any audio through unchanged', () => {
@@ -1162,5 +1285,43 @@ describe('saveStudentRubricsCache', () => {
         expect(stored().map((s) => s.id)).toEqual(['newest', 'new']);
         expect(warn).toHaveBeenCalled();
         vi.restoreAllMocks();
+    });
+});
+
+describe('migration flags (#636)', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+    });
+
+    it('tracks never-uploaded local data until the migration is done', () => {
+        expect(isMigrationPending()).toBe(false);
+        markMigrationPending();
+        expect(isMigrationPending()).toBe(true);
+        markMigrationDone();
+        expect(isMigrationPending()).toBe(false);
+        expect(localStorage.getItem('rm_migration_done')).toBe('true');
+    });
+
+    it('still reports pending data for this session when the flag cannot be written', () => {
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new DOMException('quota', 'QuotaExceededError');
+        });
+        try {
+            expect(() => markMigrationPending()).not.toThrow();
+        } finally {
+            setItem.mockRestore();
+        }
+        expect(localStorage.getItem('rm_migration_pending')).toBeNull();
+        expect(isMigrationPending()).toBe(true);
+        markMigrationDone();
+        expect(isMigrationPending()).toBe(false);
+    });
+
+    it('scopes Skip for now to the browser session', () => {
+        expect(isMigrationSkippedForSession()).toBe(false);
+        skipMigrationForSession();
+        expect(isMigrationSkippedForSession()).toBe(true);
+        expect(localStorage.getItem('rm_migration_done')).toBeNull();
     });
 });

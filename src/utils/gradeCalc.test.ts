@@ -222,9 +222,16 @@ describe('gradeCalc utilities', () => {
             expect(applyModifier(80, { type: 'percentage', value: -10, reason: '' })).toBe(70);
         });
 
-        it('applies points modifiers as direct percentage modification (based on logic)', () => {
-            // Note: Currently in gradeCalc.ts, 'points' modifier acts exactly like 'percentage'
-            expect(applyModifier(80, { type: 'points', value: 5, reason: '' })).toBe(85);
+        it('converts a points offset through the max points (#674)', () => {
+            // 10 points on a 200-point rubric is +5 percentage points, not +10.
+            expect(applyModifier(90, { type: 'points', value: 10, reason: '' }, 200)).toBe(95);
+            expect(applyModifier(90, { type: 'points', value: -20, reason: '' }, 200)).toBe(80);
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' }, 10)).toBe(100);
+        });
+
+        it('ignores a points offset when there is no positive max', () => {
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' })).toBe(80);
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' }, 0)).toBe(80);
         });
 
         it('applies level modifiers (value * 10)', () => {
@@ -794,6 +801,72 @@ describe('gradeCalc utilities', () => {
             ];
             // c1 = 100% * 50; c2 = 0% * 50 → 50%
             expect(calcWeightedScore(entries, criteria)).toBe(50);
+        });
+    });
+
+    describe('calcGradeSummary — points modifier (#674)', () => {
+        const criteria: RubricCriterion[] = [100, 100].map((max, i) => ({
+            id: `c${i}`,
+            title: `C${i}`,
+            description: '',
+            weight: 50,
+            levels: [{ id: `l${i}`, label: 'Top', minPoints: 90, maxPoints: max, description: '', subItems: [] }],
+        }));
+        const sr = (modifier?: StudentRubric['globalModifier']): StudentRubric => ({
+            id: 'sr',
+            rubricId: 'r',
+            studentId: 's',
+            entries: criteria.map((c) => ({
+                criterionId: c.id,
+                levelId: null,
+                overridePoints: 90,
+                checkedSubItems: [],
+                comment: '',
+            })),
+            overallComment: '',
+            isPeerReview: false,
+            globalModifier: modifier,
+        });
+
+        it('reconciles footer points and percentage on a 200-point rubric', () => {
+            const s = calcGradeSummary(sr({ type: 'points', value: 10, reason: '' }), criteria, null, {
+                scoringMode: 'total-points',
+                totalMaxPoints: 200,
+            });
+            expect(s.rawScore).toBe(180);
+            expect(s.modifiedPoints).toBe(190);
+            expect(s.modifiedPercentage).toBeCloseTo(95);
+            expect((s.modifiedPoints / s.configuredMaxPoints) * 100).toBeCloseTo(s.modifiedPercentage);
+        });
+
+        it('uses the calculated max in weighted mode and leaves points alone for percentage modifiers', () => {
+            const pts = calcGradeSummary(sr({ type: 'points', value: -20, reason: '' }), criteria, null);
+            expect(pts.modifiedPercentage).toBeCloseTo(80);
+            expect(pts.modifiedPoints).toBe(160);
+            const pct = calcGradeSummary(sr({ type: 'percentage', value: 5, reason: '' }), criteria, null);
+            expect(pct.modifiedPercentage).toBeCloseTo(95);
+            expect(pct.modifiedPoints).toBe(180);
+        });
+
+        it('moves points and percentage by the same share of the max on an unevenly weighted rubric', () => {
+            const weighted = criteria.map((c, i) => ({ ...c, weight: i === 0 ? 90 : 10 }));
+            const entries = sr().entries.map((e, i) => ({ ...e, overridePoints: i === 0 ? 90 : 0 }));
+            const s = calcGradeSummary({ ...sr({ type: 'points', value: 10, reason: '' }), entries }, weighted, null);
+            expect(s.percentage).toBeCloseTo(81);
+            expect(s.modifiedPercentage).toBeCloseTo(86);
+            expect(s.modifiedPoints - s.rawScore).toBe(10);
+            expect(((s.modifiedPoints - s.rawScore) / s.configuredMaxPoints) * 100).toBeCloseTo(
+                s.modifiedPercentage - s.percentage
+            );
+        });
+
+        it('clamps modified points to 0…max', () => {
+            expect(calcGradeSummary(sr({ type: 'points', value: 50, reason: '' }), criteria, null).modifiedPoints).toBe(
+                200
+            );
+            expect(
+                calcGradeSummary(sr({ type: 'points', value: -500, reason: '' }), criteria, null).modifiedPoints
+            ).toBe(0);
         });
     });
 

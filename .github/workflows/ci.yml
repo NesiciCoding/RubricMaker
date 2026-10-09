@@ -74,6 +74,28 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      # nginx -t with the same image the Dockerfile ships, for the dev and prod (compose) configs.
+      # The compose service names the prod config proxies to are mapped to localhost so they resolve.
+      - name: Validate nginx configs
+        run: |
+          for conf in docker/nginx.conf docker/nginx.prod.conf; do
+            echo "nginx -t: $conf"
+            docker run --rm \
+              --add-host rest:127.0.0.1 --add-host auth:127.0.0.1 --add-host storage:127.0.0.1 \
+              -v "$PWD/$conf:/etc/nginx/conf.d/default.conf:ro" \
+              nginx:alpine nginx -t
+          done
+
+      # supabase/bootstrap.sql is generated from supabase/migrations/; a migration added
+      # without regenerating it leaves single-file (bootstrap) deploys without that schema.
+      - name: Check supabase/bootstrap.sql is up to date
+        run: |
+          bash scripts/generate-bootstrap.sh
+          git diff --exit-code -- supabase/bootstrap.sql || {
+            echo "::error file=supabase/bootstrap.sql::bootstrap.sql is stale — run ./scripts/generate-bootstrap.sh and commit the result."
+            exit 1
+          }
+
       - name: Test with coverage
         run: npm run coverage
 
@@ -176,13 +198,41 @@ jobs:
           fi
           echo "Coverage badge published: $(node -p "require('./docs/badges/coverage.json').message") lines"
 
+  # The e2e shards run inside the official Playwright image, whose tag must match
+  # the installed @playwright/test exactly — read it from the lockfile so a
+  # Dependabot bump can't drift from the image.
+  playwright-version:
+    name: Playwright version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: package-lock.json
+          sparse-checkout-cone-mode: false
+
+      - id: v
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
   # E2E runs in parallel with `ci` (independent of typecheck/lint) and is split
   # across two shards. Each shard emits a blob report; `e2e-merge-reports`
   # merges them into the final HTML + JUnit reports after the shards finish.
+  # The container ships the browsers and their OS deps, so no apt-get runs:
+  # `playwright install --with-deps` used to download ~115 MB from the Ubuntu
+  # mirror, which at times took 23-27 min and got passing shards cancelled.
+  # --user 1001 matches the runner's workspace/$HOME owner (Firefox refuses to
+  # run as root with a $HOME owned by another user).
   e2e:
     name: E2E (${{ matrix.shard }}/2)
+    needs: playwright-version
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright-version.outputs.version }}-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -199,17 +249,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/2)
         run: |
@@ -296,8 +335,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Not containerised: `supabase start` needs the host's Docker and ports.
+      # No --with-deps either — the runner image ships Google Chrome, so
+      # Chromium's OS libs are already present, and skipping apt keeps the job
+      # independent of Ubuntu mirror speed. A missing lib fails fast at browser
+      # launch ("Host system is missing dependencies") rather than timing out.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
+        timeout-minutes: 5
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
