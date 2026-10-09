@@ -15,8 +15,8 @@ import StandardsCoveragePanel from '../components/Standards/StandardsCoveragePan
 import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import {
     getCefrStudentOverview,
-    highestLevelForSkill,
-    overallLevel,
+    skillLevelStatus,
+    overallLevelStatus,
     modeSkillLevel,
 } from '../utils/cefrStudentAggregator';
 import { PROGRESS_STATUS_COLOR, progressStatusLabelKey } from '../utils/cefrOrdinal';
@@ -230,6 +230,9 @@ export default function CefrOverviewPage() {
                                     <div className="text-muted text-sm" style={{ fontWeight: 600, marginBottom: 8 }}>
                                         {t('cefrOverview.class_levels_title')}
                                     </div>
+                                    <div className="text-muted text-xs" style={{ marginBottom: 8 }}>
+                                        {t('cefrOverview.legend_developing')}
+                                    </div>
                                     <div
                                         style={{
                                             display: 'grid',
@@ -422,8 +425,12 @@ export default function CefrOverviewPage() {
                                                         </td>
 
                                                         {SKILLS.map((sk) => {
-                                                            const skillLevel = highestLevelForSkill(ov.cells, sk.key);
-                                                            const isTarget = !!rowTarget && skillLevel === rowTarget;
+                                                            const status = skillLevelStatus(ov.cells, sk.key);
+                                                            const skillLevel = status?.level ?? null;
+                                                            const isTarget =
+                                                                !!rowTarget &&
+                                                                !!status?.achieved &&
+                                                                skillLevel === rowTarget;
                                                             return (
                                                                 <td
                                                                     key={sk.key}
@@ -449,8 +456,12 @@ export default function CefrOverviewPage() {
                                                                         outlineOffset: -1,
                                                                     }}
                                                                 >
-                                                                    {skillLevel ? (
-                                                                        <CefrBadge level={skillLevel} size="sm" />
+                                                                    {status ? (
+                                                                        <CefrBadge
+                                                                            level={status.level}
+                                                                            size="sm"
+                                                                            developing={!status.achieved}
+                                                                        />
                                                                     ) : (
                                                                         <span
                                                                             style={{
@@ -473,12 +484,23 @@ export default function CefrOverviewPage() {
                                                             }}
                                                         >
                                                             {(() => {
-                                                                const lvl = overallLevel(
+                                                                const overall = overallLevelStatus(
                                                                     ov.cells,
                                                                     SKILLS.map((sk) => sk.key)
                                                                 );
-                                                                return lvl ? (
-                                                                    <CefrBadge level={lvl} size="sm" />
+                                                                return overall ? (
+                                                                    <CefrBadge
+                                                                        level={overall.level}
+                                                                        size="sm"
+                                                                        developing={!overall.achieved}
+                                                                        title={
+                                                                            overall.achieved
+                                                                                ? undefined
+                                                                                : t('cefrOverview.working_toward', {
+                                                                                      level: overall.level,
+                                                                                  })
+                                                                        }
+                                                                    />
                                                                 ) : (
                                                                     <span
                                                                         style={{

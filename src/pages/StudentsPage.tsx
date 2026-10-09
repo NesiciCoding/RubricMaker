@@ -51,7 +51,6 @@ import type {
     StudentRubric,
     Rubric,
     GradeScale,
-    CefrLevel,
     SelfAssessment,
     DocumentAnalysisResult,
     Test,
@@ -59,7 +58,7 @@ import type {
 } from '../types';
 import Avatar from '../components/ui/Avatar';
 import CefrBadge from '../components/CEFR/CefrBadge';
-import { getCefrStudentOverview, highestLevelForSkill } from '../utils/cefrStudentAggregator';
+import { getCefrStudentOverview, skillLevelStatus, type CefrLevelStatus } from '../utils/cefrStudentAggregator';
 import { formatShortDate } from '../utils/dateInput';
 import {
     calcGradeSummary,
@@ -182,7 +181,7 @@ function calcStudentOverall(
 
 /** Per-student roster extras (CEFR writing level, score trend, last-active date, graded percentages). */
 interface StudentDerivedValue {
-    writing: CefrLevel | null;
+    writing: CefrLevelStatus | null;
     trend: 'up' | 'down' | 'flat' | null;
     lastActive: string | null;
     pcts: number[];
@@ -266,7 +265,7 @@ function computeStudentDerived(
         sts,
         cefrAchieveThreshold
     );
-    return { writing: highestLevelForSkill(ov.cells, 'writing'), trend, lastActive, pcts };
+    return { writing: skillLevelStatus(ov.cells, 'writing'), trend, lastActive, pcts };
 }
 
 /**
@@ -1183,7 +1182,18 @@ export default function StudentsPage() {
                                                     </td>
                                                     <td>
                                                         {d?.writing ? (
-                                                            <CefrBadge level={d.writing} size="sm" />
+                                                            <CefrBadge
+                                                                level={d.writing.level}
+                                                                size="sm"
+                                                                developing={!d.writing.achieved}
+                                                                title={
+                                                                    d.writing.achieved
+                                                                        ? undefined
+                                                                        : t('cefrOverview.working_toward', {
+                                                                              level: d.writing.level,
+                                                                          })
+                                                                }
+                                                            />
                                                         ) : (
                                                             <span className="text-muted text-sm">—</span>
                                                         )}

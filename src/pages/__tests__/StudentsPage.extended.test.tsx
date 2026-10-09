@@ -26,7 +26,7 @@ const h = vi.hoisted(() => {
             standardsCovered: 0,
             practiceCefrProgress: [],
         })),
-        highestLevel: vi.fn((cells: unknown[]) => (cells.length > 0 ? 'B1' : null)),
+        skillLevelStatus: vi.fn((cells: unknown[]) => (cells.length > 0 ? { level: 'B1', achieved: true } : null)),
         saveAs: vi.fn(),
         showToast: vi.fn(),
         setPassword: vi.fn(),
@@ -226,7 +226,7 @@ vi.mock('../../context/useStore', () => ({
 
 vi.mock('../../utils/cefrStudentAggregator', () => ({
     getCefrStudentOverview: h.getCefrStudentOverview,
-    highestLevelForSkill: h.highestLevel,
+    skillLevelStatus: h.skillLevelStatus,
 }));
 
 vi.mock('react-router-dom', async () => {
