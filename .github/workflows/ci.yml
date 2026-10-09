@@ -86,6 +86,16 @@ jobs:
               nginx:alpine nginx -t
           done
 
+      # supabase/bootstrap.sql is generated from supabase/migrations/; a migration added
+      # without regenerating it leaves single-file (bootstrap) deploys without that schema.
+      - name: Check supabase/bootstrap.sql is up to date
+        run: |
+          bash scripts/generate-bootstrap.sh
+          git diff --exit-code -- supabase/bootstrap.sql || {
+            echo "::error file=supabase/bootstrap.sql::bootstrap.sql is stale — run ./scripts/generate-bootstrap.sh and commit the result."
+            exit 1
+          }
+
       - name: Test with coverage
         run: npm run coverage
 

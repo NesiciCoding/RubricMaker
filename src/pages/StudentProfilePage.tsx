@@ -1,4 +1,4 @@
-import React, { useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -24,6 +24,7 @@ import PageTour from '../components/Tour/PageTour';
 import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
+import DropdownMenu from '../components/ui/DropdownMenu';
 import { formatShortDate } from '../utils/dateInput';
 import { useStoreSelector } from '../context/useStore';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
@@ -89,6 +90,8 @@ export default function StudentProfilePage() {
     const [exportingId, setExportingId] = useState<string | null>(null);
     const [copiedSALink, setCopiedSALink] = useState<string | null>(null);
     const [showSpeakingPicker, setShowSpeakingPicker] = useState(false);
+    const speakingBtnRef = useRef<HTMLButtonElement>(null);
+    const closeSpeakingPicker = useCallback(() => setShowSpeakingPicker(false), []);
     const [activeTab, setActiveTab] = useState<'overview' | 'portfolio'>('overview');
     const [tourRun, setTourRun] = useState(false);
     const { t, i18n } = useTranslation();
@@ -363,70 +366,58 @@ export default function StudentProfilePage() {
                             {t('tutorial.sprofile_tour_button')}
                         </button>
                         {/* Speaking session launcher */}
-                        <div style={{ position: 'relative' }} className="no-print" data-tour="sprofile-speaking">
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => {
-                                    if (rubrics.length === 1) {
-                                        navigate(`/speaking/${rubrics[0].id}/${student.id}`);
-                                    } else {
-                                        setShowSpeakingPicker((o) => !o);
-                                    }
+                        <button
+                            ref={speakingBtnRef}
+                            className="btn btn-secondary btn-sm no-print"
+                            data-tour="sprofile-speaking"
+                            aria-haspopup={rubrics.length > 1 ? 'menu' : undefined}
+                            aria-expanded={rubrics.length > 1 ? showSpeakingPicker : undefined}
+                            onClick={() => {
+                                if (rubrics.length === 1) {
+                                    navigate(`/speaking/${rubrics[0].id}/${student.id}`);
+                                } else {
+                                    setShowSpeakingPicker((o) => !o);
+                                }
+                            }}
+                        >
+                            <Mic size={14} /> {t('speaking.launch_session')}
+                            {rubrics.length !== 1 && <ChevronDown size={12} />}
+                        </button>
+                        <DropdownMenu
+                            open={showSpeakingPicker && rubrics.length > 1}
+                            onClose={closeSpeakingPicker}
+                            anchorRef={speakingBtnRef}
+                            minWidth={220}
+                            ariaLabel={t('speaking.choose_rubric')}
+                        >
+                            <div
+                                aria-hidden="true"
+                                style={{
+                                    padding: '4px 10px 6px',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text-dim)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.06em',
                                 }}
                             >
-                                <Mic size={14} /> {t('speaking.launch_session')}
-                                {rubrics.length !== 1 && <ChevronDown size={12} />}
-                            </button>
-                            {showSpeakingPicker && rubrics.length > 1 && (
-                                <>
-                                    <div
-                                        style={{ position: 'fixed', inset: 0, zIndex: 5 }}
-                                        onClick={() => setShowSpeakingPicker(false)}
-                                    />
-                                    <div
-                                        className="card"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '100%',
-                                            right: 0,
-                                            marginTop: 4,
-                                            minWidth: 220,
-                                            padding: 4,
-                                            zIndex: 10,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 2,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                padding: '4px 10px 6px',
-                                                fontSize: '0.72rem',
-                                                fontWeight: 700,
-                                                color: 'var(--text-dim)',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.06em',
-                                            }}
-                                        >
-                                            {t('speaking.choose_rubric')}
-                                        </div>
-                                        {rubrics.map((r) => (
-                                            <button
-                                                key={r.id}
-                                                className="btn btn-ghost btn-sm"
-                                                style={{ justifyContent: 'flex-start' }}
-                                                onClick={() => {
-                                                    setShowSpeakingPicker(false);
-                                                    navigate(`/speaking/${r.id}/${student.id}`);
-                                                }}
-                                            >
-                                                <Mic size={13} /> {r.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                                {t('speaking.choose_rubric')}
+                            </div>
+                            {rubrics.map((r) => (
+                                <button
+                                    key={r.id}
+                                    role="menuitem"
+                                    className="btn btn-ghost btn-sm"
+                                    style={{ justifyContent: 'flex-start' }}
+                                    onClick={() => {
+                                        setShowSpeakingPicker(false);
+                                        navigate(`/speaking/${r.id}/${student.id}`);
+                                    }}
+                                >
+                                    <Mic size={13} /> {r.name}
+                                </button>
+                            ))}
+                        </DropdownMenu>
                         <button
                             className="btn btn-ghost btn-sm no-print"
                             onClick={() => navigate(`/students/${student.id}/learning-path`)}
