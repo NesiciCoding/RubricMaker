@@ -2027,6 +2027,7 @@
         "copy_paste_failed": "Kopiëren/plakken mislukt. Probeer het opnieuw.",
         "sync_offline_cache": "Je bent offline — lokaal gecachte gegevens worden gebruikt.",
         "signout_pending_writes": "Sommige wijzigingen zijn nog niet gesynchroniseerd — je lokale gegevens zijn bewaard zodat niets verloren gaat.",
+        "signout_unmigrated_local": "Je lokale gegevens zijn nooit naar je account geüpload en zijn daarom op dit apparaat bewaard. Log opnieuw in en kies Uploaden naar account om ze te synchroniseren.",
         "voice_feedback_dropped": "De cijfers zijn opgeslagen, maar {{count}} spraakopname(n) pasten niet in de opslag van dit apparaat en gaan verloren bij herladen. Maak verbinding met de cloud of verwijder oude opnames om ze te bewaren."
     },
     "pwa": {
@@ -3227,7 +3228,7 @@
         "gs_mode_offline_title": "Offline / Lokaal",
         "gs_mode_offline_desc": "Alle gegevens in de localStorage van de browser. Niets wordt naar een server verzonden. Werkt op elke statische hostingomgeving.",
         "gs_mode_cloud_title": "Cloudsynchronisatie",
-        "gs_mode_cloud_desc": "Koppel een Supabase-project (zelf gehost of supabase.com) voor toegang en delen vanaf meerdere apparaten. Afmelden doe je onderaan de zijbalk.",
+        "gs_mode_cloud_desc": "Koppel een Supabase-project (zelf gehost of supabase.com) voor toegang en delen vanaf meerdere apparaten. Afmelden doe je onderaan de zijbalk. Staan er al gegevens in deze browser wanneer je voor het eerst inlogt, dan wordt gevraagd ze naar je account te uploaden; Nu overslaan vraagt het de volgende sessie opnieuw, en gegevens die nooit zijn geüpload blijven bij uitloggen op dit apparaat staan.",
         "gs_mode_docker_title": "Docker (volledige stack)",
         "gs_mode_docker_desc": "docker-compose up start de frontend + Supabase + Caddy (HTTPS). Aanbevolen voor scholen.",
         "gs_themes_title": "Thema's & uiterlijk",
@@ -4366,5 +4367,19 @@
         "col_average": "Klasgemiddelde",
         "col_weak": "Aanhoudend zwak",
         "col_declining": "Dalend"
+    },
+    "migration": {
+        "title": "Lokale gegevens naar je account uploaden?",
+        "found_local": "We hebben lokale gegevens gevonden in deze browser:",
+        "count_rubrics": "rubrics: {{n}}",
+        "count_students": "leerlingen: {{n}}",
+        "count_classes": "klassen: {{n}}",
+        "explain": "Upload ze naar je account zodat ze ook op je andere apparaten beschikbaar zijn. Er wordt niets uit deze browser verwijderd. Sla je over, dan vragen we het de volgende keer opnieuw.",
+        "skip": "Nu overslaan",
+        "upload": "Uploaden naar account",
+        "uploading": "Bezig met uploaden…",
+        "retry": "Opnieuw proberen",
+        "upload_failed": "Het uploaden is mislukt, dus er is nog niets naar je account gegaan. Je gegevens staan nog in deze browser.",
+        "upload_success": "Je lokale gegevens zijn naar je account geüpload."
     }
 }

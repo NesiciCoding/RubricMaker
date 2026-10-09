@@ -1107,7 +1107,7 @@ export interface AppContextValue extends StoreData {
     showMigrationPrompt: boolean;
     enterLocalMode: () => void;
     connectForOAuth: (config: DatabaseConfig) => Promise<boolean>;
-    dismissMigrationPrompt: (upload: boolean) => Promise<void>;
+    dismissMigrationPrompt: (upload: boolean) => Promise<SyncResult>;
     signInWithGoogle: () => Promise<{ error?: string }>;
     signInWithMicrosoftPersonal: () => Promise<{ error?: string }>;
     signInWithAzureAD: () => Promise<{ error?: string }>;

@@ -2027,6 +2027,7 @@
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local.",
         "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre.",
+        "signout_unmigrated_local": "Vos données locales n'ont jamais été téléversées vers votre compte : elles ont donc été conservées sur cet appareil. Reconnectez-vous et choisissez Téléverser vers le compte pour les synchroniser.",
         "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver."
     },
     "pwa": {
@@ -3227,7 +3228,7 @@
         "gs_mode_offline_title": "Hors ligne / Local",
         "gs_mode_offline_desc": "Toutes les données dans le localStorage du navigateur. Rien n'est envoyé à un serveur. Fonctionne sur n'importe quel hébergement statique.",
         "gs_mode_cloud_title": "Synchronisation cloud",
-        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils. Déconnectez-vous en bas de la barre latérale.",
+        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils. Déconnectez-vous en bas de la barre latérale. Si ce navigateur contient déjà des données lors de votre première connexion, il vous est proposé de les téléverser vers votre compte ; Plus tard vous le reproposera à la session suivante, et les données jamais téléversées restent sur cet appareil à la déconnexion.",
         "gs_mode_docker_title": "Docker (pile complète)",
         "gs_mode_docker_desc": "docker-compose up démarre le frontend + Supabase + Caddy (HTTPS). Recommandé pour les établissements.",
         "gs_themes_title": "Thèmes & apparence",
@@ -4366,5 +4367,19 @@
         "col_average": "Moyenne de la classe",
         "col_weak": "Durablement faible",
         "col_declining": "En baisse"
+    },
+    "migration": {
+        "title": "Téléverser les données locales vers votre compte ?",
+        "found_local": "Nous avons trouvé des données locales dans ce navigateur :",
+        "count_rubrics": "grilles : {{n}}",
+        "count_students": "élèves : {{n}}",
+        "count_classes": "classes : {{n}}",
+        "explain": "Téléversez-les vers votre compte pour les retrouver sur vos autres appareils. Rien n'est supprimé de ce navigateur. Si vous passez, la question vous sera reposée la prochaine fois.",
+        "skip": "Plus tard",
+        "upload": "Téléverser vers le compte",
+        "uploading": "Téléversement…",
+        "retry": "Réessayer",
+        "upload_failed": "Le téléversement a échoué : rien n'a encore été transféré vers votre compte. Vos données sont toujours dans ce navigateur.",
+        "upload_success": "Vos données locales ont été téléversées vers votre compte."
     }
 }

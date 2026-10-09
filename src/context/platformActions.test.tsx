@@ -74,6 +74,10 @@ vi.mock('../store/storage', () => ({
     MIGRATION_DONE_KEY: 'rm_migration_done',
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
+    markMigrationPending: vi.fn(),
+    isMigrationPending: vi.fn(() => false),
+    skipMigrationForSession: vi.fn(),
+    isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(mockEmptyState),
     loadPendingQueue: vi.fn(() => []),
     loadCachedStudentRubrics: vi.fn(async () => []),
@@ -524,7 +528,7 @@ describe('platform actions', () => {
         expect(storageSync.initAuth).toHaveBeenCalled();
     });
 
-    it('dismissMigrationPrompt optionally uploads all data', async () => {
+    it('dismissMigrationPrompt(false) skips for this session only, without uploading (#636)', async () => {
         const { result } = renderHook(() => usePlatform(), { wrapper });
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
@@ -534,11 +538,46 @@ describe('platform actions', () => {
             await result.current.dismissMigrationPrompt(false);
         });
         expect(storageSync.pushAll).not.toHaveBeenCalled();
+        expect(storage.skipMigrationForSession).toHaveBeenCalled();
+        expect(storage.markMigrationDone).not.toHaveBeenCalled();
+    });
 
+    it('dismissMigrationPrompt(true) marks the migration done only after a successful upload (#636)', async () => {
+        const { result } = renderHook(() => usePlatform(), { wrapper });
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
+        };
+
+        let outcome: { success: boolean; error?: string } | undefined;
         await act(async () => {
-            await result.current.dismissMigrationPrompt(true);
+            outcome = await result.current.dismissMigrationPrompt(true);
         });
         expect(storageSync.pushAll).toHaveBeenCalled();
+        expect(outcome).toEqual({ success: true });
+        expect(storage.markMigrationDone).toHaveBeenCalled();
+        expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'success');
+    });
+
+    it('dismissMigrationPrompt(true) returns the failure and keeps the migration pending (#636)', async () => {
+        const { result } = renderHook(() => usePlatform(), { wrapper });
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
+        };
+        vi.mocked(storageSync.pushAll).mockResolvedValueOnce({ success: false, error: 'RLS violation' });
+
+        let outcome: { success: boolean; error?: string } | undefined;
+        await act(async () => {
+            outcome = await result.current.dismissMigrationPrompt(true);
+        });
+        expect(outcome).toEqual({ success: false, error: 'RLS violation' });
+        expect(storage.markMigrationDone).not.toHaveBeenCalled();
+
+        vi.mocked(storageSync.pushAll).mockRejectedValueOnce(new Error('network down'));
+        await act(async () => {
+            outcome = await result.current.dismissMigrationPrompt(true);
+        });
+        expect(outcome).toEqual({ success: false, error: 'network down' });
+        expect(storage.markMigrationDone).not.toHaveBeenCalled();
     });
 
     it('delegates OAuth sign-ins to the adapter', async () => {
@@ -582,6 +621,23 @@ describe('platform actions', () => {
             await result.current.signOutFromDatabase();
         });
         expect(storage.clearLocalData).not.toHaveBeenCalled();
+    });
+
+    it('signOutFromDatabase keeps local data that was never uploaded (#636)', async () => {
+        const { result } = renderHook(() => usePlatform(), { wrapper });
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
+        };
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
+        vi.mocked(storage.loadPendingQueue).mockReturnValue([]);
+        vi.mocked(storage.isMigrationPending).mockReturnValue(true);
+
+        await act(async () => {
+            await result.current.signOutFromDatabase();
+        });
+        expect(storage.clearLocalData).not.toHaveBeenCalled();
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('signout_unmigrated_local'), 'warning');
+        vi.mocked(storage.isMigrationPending).mockReturnValue(false);
     });
 
     it('signOutFromDatabase warns when the pending queue is not empty', async () => {

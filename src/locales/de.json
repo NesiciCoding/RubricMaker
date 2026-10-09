@@ -2027,6 +2027,7 @@
         "copy_paste_failed": "Kopieren/Einfügen fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "sync_offline_cache": "Sie sind offline — es werden lokal zwischengespeicherte Daten verwendet.",
         "signout_pending_writes": "Einige Änderungen wurden noch nicht synchronisiert — Ihre lokalen Daten wurden beibehalten, damit nichts verloren geht.",
+        "signout_unmigrated_local": "Deine lokalen Daten wurden nie in dein Konto hochgeladen und deshalb auf diesem Gerät behalten. Melde dich erneut an und wähle In Konto hochladen, um sie zu synchronisieren.",
         "voice_feedback_dropped": "Die Bewertungen wurden gespeichert, aber {{count}} Sprachaufnahme(n) passten nicht in den Speicher dieses Geräts und gehen beim Neuladen verloren. Verbinden Sie sich mit der Cloud oder entfernen Sie alte Aufnahmen, um sie zu behalten."
     },
     "pwa": {
@@ -3227,7 +3228,7 @@
         "gs_mode_offline_title": "Offline / Lokal",
         "gs_mode_offline_desc": "Alle Daten im localStorage des Browsers. Nichts wird an einen Server gesendet. Funktioniert auf jedem statischen Hosting.",
         "gs_mode_cloud_title": "Cloud-Synchronisierung",
-        "gs_mode_cloud_desc": "Verbinde ein Supabase-Projekt (selbst gehostet oder supabase.com) für Zugriff und Teilen über mehrere Geräte. Abmelden kannst du unten in der Seitenleiste.",
+        "gs_mode_cloud_desc": "Verbinde ein Supabase-Projekt (selbst gehostet oder supabase.com) für Zugriff und Teilen über mehrere Geräte. Abmelden kannst du unten in der Seitenleiste. Sind beim ersten Anmelden bereits Daten in diesem Browser, wirst du gefragt, ob du sie in dein Konto hochladen möchtest; Jetzt überspringen fragt in der nächsten Sitzung erneut, und nie hochgeladene Daten bleiben beim Abmelden auf diesem Gerät.",
         "gs_mode_docker_title": "Docker (vollständiger Stack)",
         "gs_mode_docker_desc": "docker-compose up startet Frontend + Supabase + Caddy (HTTPS). Für Schulen empfohlen.",
         "gs_themes_title": "Themes & Erscheinungsbild",
@@ -4366,5 +4367,19 @@
         "col_average": "Klassendurchschnitt",
         "col_weak": "Anhaltend schwach",
         "col_declining": "Sinkend"
+    },
+    "migration": {
+        "title": "Lokale Daten in dein Konto hochladen?",
+        "found_local": "Wir haben lokale Daten in diesem Browser gefunden:",
+        "count_rubrics": "Bewertungsraster: {{n}}",
+        "count_students": "Schüler: {{n}}",
+        "count_classes": "Klassen: {{n}}",
+        "explain": "Lade sie in dein Konto hoch, damit sie auf deinen anderen Geräten verfügbar sind. In diesem Browser wird nichts gelöscht. Wenn du überspringst, fragen wir beim nächsten Mal erneut.",
+        "skip": "Jetzt überspringen",
+        "upload": "In Konto hochladen",
+        "uploading": "Wird hochgeladen…",
+        "retry": "Erneut versuchen",
+        "upload_failed": "Das Hochladen ist fehlgeschlagen, es wurde noch nichts in dein Konto übertragen. Deine Daten sind weiterhin in diesem Browser.",
+        "upload_success": "Deine lokalen Daten wurden in dein Konto hochgeladen."
     }
 }

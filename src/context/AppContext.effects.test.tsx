@@ -82,6 +82,10 @@ vi.mock('../store/storage', () => ({
     MIGRATION_DONE_KEY: 'rm_migration_done',
     isMigrationDone: vi.fn(() => false),
     markMigrationDone: vi.fn(),
+    markMigrationPending: vi.fn(),
+    isMigrationPending: vi.fn(() => false),
+    skipMigrationForSession: vi.fn(),
+    isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(() => loadStoreValue.current ?? mockEmptyState()),
     loadPendingQueue: vi.fn(() => []),
     loadCachedStudentRubrics: vi.fn(async () => []),
@@ -471,6 +475,53 @@ describe('AppContext startup effects', () => {
         }
     });
 
+    it('marks local data as pending but keeps the prompt hidden after Skip for now this session (#636)', async () => {
+        // Guard against the offline test above leaving navigator.onLine false.
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        const supabaseConfig = await import('../services/database/supabaseConfig');
+        vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(CONFIG);
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: {
+                isConnected: Mock;
+                getCurrentUserId: Mock;
+                configure: Mock;
+                setToastFn: Mock;
+                hydrate: Mock;
+                hydratePartial: Mock;
+                hasSession: Mock;
+                initAuth: Mock;
+                didWipeLocalData: Mock;
+                disconnect: Mock;
+                pushAll: Mock;
+                pushOne: Mock;
+                pushMany: Mock;
+                onAuthChange: Mock;
+                onNetworkReconnect: Mock;
+                onRealtimeChange: Mock;
+                adapter: { getClient: Mock };
+            };
+        };
+        vi.mocked(storageSync.hasSession).mockReturnValue(true);
+        const fresh = { ...mockEmptyState(), students: [{ id: 's1', name: 'Sync', classId: 'c1' }] };
+        vi.mocked(storageSync.hydrate).mockResolvedValue({ data: fresh, error: null });
+        const withLocalData = {
+            ...mockEmptyState(),
+            rubrics: [{ id: 'r1', name: 'Local', criteria: [] }],
+        } as unknown as StoreData;
+        loadStoreValue.current = withLocalData;
+        vi.mocked(storage.isMigrationSkippedForSession).mockReturnValue(true);
+        try {
+            const { getPlatform } = renderProvider();
+            // The startup flow ends with a dynamic import (flushToLocalStorage ->
+            // mediaStore), which settles after plain act() — poll until the prompt lands.
+            await waitFor(() => expect(storage.markMigrationPending).toHaveBeenCalled(), { timeout: 3000 });
+            expect(getPlatform().showMigrationPrompt).toBe(false);
+        } finally {
+            loadStoreValue.current = null;
+            vi.mocked(storage.isMigrationSkippedForSession).mockReturnValue(false);
+        }
+    });
+
     it('hydrates against the wiped store when didWipeLocalData is true', async () => {
         const supabaseConfig = await import('../services/database/supabaseConfig');
         vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(CONFIG);
@@ -536,6 +587,57 @@ describe('AppContext startup effects', () => {
         const { getPlatform } = renderProvider();
         await act(async () => {});
         expect(getPlatform().showMigrationPrompt).toBe(false);
+    });
+
+    it('does not treat the seeded default class as local data to migrate (#636)', async () => {
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        const supabaseConfig = await import('../services/database/supabaseConfig');
+        vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(CONFIG);
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: { hasSession: Mock; hydrate: Mock };
+        };
+        vi.mocked(storageSync.hasSession).mockReturnValue(true);
+        vi.mocked(storageSync.hydrate).mockResolvedValue({ data: mockEmptyState(), error: null });
+        loadStoreValue.current = {
+            ...mockEmptyState(),
+            classes: [{ id: 'default', name: 'Default Class' }],
+        } as unknown as StoreData;
+        try {
+            const { getPlatform } = renderProvider();
+            await waitFor(() => expect(getPlatform().showLanding).toBe(false), { timeout: 3000 });
+            expect(storage.markMigrationPending).not.toHaveBeenCalled();
+            expect(getPlatform().showMigrationPrompt).toBe(false);
+        } finally {
+            loadStoreValue.current = null;
+        }
+    });
+
+    it('offers the migration and protects local data after a sign-in on the landing page (#636)', async () => {
+        Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+        const supabaseConfig = await import('../services/database/supabaseConfig');
+        vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(CONFIG);
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: { hydrate: Mock };
+        };
+        vi.mocked(storageSync.hydrate).mockResolvedValue({ data: mockEmptyState(), error: null });
+        loadStoreValue.current = {
+            ...mockEmptyState(),
+            rubrics: [{ id: 'r1', name: 'Local', criteria: [] }],
+        } as unknown as StoreData;
+        try {
+            const { getPlatform } = renderProvider();
+            await act(async () => {});
+            expect(getPlatform().showLanding).toBe(true);
+            expect(storage.markMigrationPending).not.toHaveBeenCalled();
+
+            await act(async () => {
+                authHandlers.forEach((h) => h({ id: 'user-1' }));
+            });
+            await waitFor(() => expect(getPlatform().showMigrationPrompt).toBe(true), { timeout: 3000 });
+            expect(storage.markMigrationPending).toHaveBeenCalled();
+        } finally {
+            loadStoreValue.current = null;
+        }
     });
 
     it('runs the full OTP login flow when a user signs in on the landing page', async () => {
