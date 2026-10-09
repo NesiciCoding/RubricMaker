@@ -3022,7 +3022,10 @@
         "retry_submit": "Erneut versuchen",
         "copy_backup_code": "Sicherungscode kopieren",
         "already_submitted": "Du hast diesen Aufsatz bereits abgegeben, daher wurde diese Fassung nicht gesendet. Sie ist weiterhin auf diesem Gerät gespeichert – frag deine Lehrkraft, falls du erneut abgeben musst.",
-        "submit_failed_unsaved": "Dein Aufsatz wurde noch nicht gesendet, und dieses Gerät konnte keine Kopie speichern. Kopiere den Sicherungscode, bevor du diese Seite verlässt, und klicke dann auf Erneut versuchen."
+        "submit_failed_unsaved": "Dein Aufsatz wurde noch nicht gesendet, und dieses Gerät konnte keine Kopie speichern. Kopiere den Sicherungscode, bevor du diese Seite verlässt, und klicke dann auf Erneut versuchen.",
+        "load_error_title": "Diese Aufgabe konnte nicht geladen werden",
+        "load_error": "Die Aufgabe konnte nicht geladen werden. Prüfe deine Internetverbindung und versuche es erneut. Wenn es weiterhin nicht klappt, bitte deine Lehrkraft um einen neuen Link.",
+        "load_retry": "Erneut versuchen"
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",

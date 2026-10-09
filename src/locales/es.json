@@ -3022,7 +3022,10 @@
         "retry_submit": "Reintentar",
         "copy_backup_code": "Copiar código de respaldo",
         "already_submitted": "Ya entregaste esta redacción, así que esta versión no se envió. Sigue guardada en este dispositivo: pregunta a tu docente si necesitas entregarla de nuevo.",
-        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar."
+        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar.",
+        "load_error_title": "No se pudo cargar esta tarea",
+        "load_error": "No se pudo cargar la tarea. Comprueba tu conexión a internet y vuelve a intentarlo. Si sigue fallando, pide a tu profesor un enlace nuevo.",
+        "load_retry": "Reintentar"
     },
     "editor": {
         "switchToCompactView": "Vista compacta",

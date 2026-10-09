@@ -3022,7 +3022,10 @@
         "retry_submit": "Retry",
         "copy_backup_code": "Copy backup code",
         "already_submitted": "You have already handed in this essay, so this version was not sent. It is still saved on this device — ask your teacher if you need to hand in again.",
-        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry."
+        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry.",
+        "load_error_title": "Could not load this assignment",
+        "load_error": "The assignment could not be loaded. Check your internet connection and try again. If it keeps failing, ask your teacher for a new link.",
+        "load_retry": "Try again"
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
