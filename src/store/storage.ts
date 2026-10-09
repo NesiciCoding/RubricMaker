@@ -939,6 +939,35 @@ export function onStorageQuotaExceeded(handler: () => void): void {
     quotaExceededHandler = handler;
 }
 
+let audioDroppedHandler: ((count: number) => void) | null = null;
+
+/**
+ * Registers a callback fired when grades were saved but their voice-feedback recordings had to be
+ * left out to fit the localStorage quota; `count` is the number of recordings dropped.
+ */
+export function onVoiceFeedbackDropped(handler: (count: number) => void): void {
+    audioDroppedHandler = handler;
+}
+
+/** Rough localStorage quota in UTF-16 characters; browsers allow about 5M per origin. */
+export const LOCAL_STORAGE_QUOTA_CHARS = 5_000_000;
+
+/** Characters currently stored in localStorage (keys + values), the unit the quota is counted in; null when it can't be read. */
+export function localStorageUsedChars(): number | null {
+    let used = 0;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            /* v8 ignore next -- key(i) is non-null for every i below length */
+            if (key === null) continue;
+            used += key.length + (localStorage.getItem(key)?.length ?? 0);
+        }
+    } catch {
+        return null;
+    }
+    return used;
+}
+
 function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
@@ -1166,6 +1195,8 @@ export function saveStudentRubrics(srs: StudentRubric[]) {
         try {
             localStorage.setItem(KEYS.studentRubrics, JSON.stringify(stripAudioForOfflineCache(srs)));
             console.warn('[storage] rm_student_rubrics exceeded quota with audio; retried without it');
+            const dropped = srs.reduce((n, sr) => n + sr.entries.filter((e) => e.audioDataUrl).length, 0);
+            if (dropped > 0) audioDroppedHandler?.(dropped);
         } catch (e2) {
             console.error(
                 '[storage] write failed even after stripping audio (quota exceeded?):',

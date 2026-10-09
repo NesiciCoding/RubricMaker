@@ -4,6 +4,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { storageSync } from '../../services/database';
+import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../../store/storage';
+import {
+    LOW_STORAGE_RECORDING_SECONDS,
+    MIN_RECORDING_SECONDS,
+    voiceRecordingBudgetSeconds,
+} from '../../utils/voiceFeedbackBudget';
 import type {
     AppSettings,
     Attachment,
@@ -47,6 +53,9 @@ vi.mock('../../hooks/useMediaRecorder', () => ({
         stop: recorderState.stop,
     }),
 }));
+
+const mockShowToast = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
 
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: dbState.isConnected, userId: dbState.userId }),
@@ -722,13 +731,58 @@ describe('GradeStudent coverage', () => {
     });
 
     // ---------- Touch gestures ----------
-    it('swipes right to save and advance', () => {
+    it('swipes left from a safe area, confirms, then saves and advances (#666)', async () => {
         renderPage();
         const page = pageContent();
         fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
         fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
-        expect(mockSaveStudentRubric).toHaveBeenCalled();
+        expect(await screen.findByText(/gradeStudent.swipe_confirm_title/)).toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByText(/gradeStudent.swipe_confirm_action/));
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+    });
+
+    it('does not save when the swipe confirmation is cancelled', async () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
+        fireEvent.click(await screen.findByText(/common.cancel/));
+        await waitFor(() => expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument());
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('never treats dragging a control (points slider, stepper, text) as a swipe (#666)', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
+        const page = pageContent();
+        const controls = Array.from(page.querySelectorAll('input, textarea, button, .touch-stepper')).slice(0, 5);
+        expect(controls.length).toBeGreaterThan(0);
+        for (const control of controls) {
+            fireEvent.touchStart(control, { touches: [{ clientX: 200, clientY: 100 }] });
+            fireEvent.touchEnd(control, { changedTouches: [{ clientX: 20, clientY: 100 }] });
+        }
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('ignores multi-touch and an endpoint from a different finger (#666)', () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, {
+            touches: [
+                { identifier: 1, clientX: 200, clientY: 100 },
+                { identifier: 2, clientX: 220, clientY: 100 },
+            ],
+        });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        fireEvent.touchStart(page, { touches: [{ identifier: 1, clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
     });
 
     it('ignores touch end without a matching start', () => {
@@ -771,6 +825,115 @@ describe('GradeStudent coverage', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
         fireEvent.click(screen.getByText('gradeStudent.audio_record'));
         expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+    });
+
+    describe('voice feedback near the local storage quota (#678)', () => {
+        afterEach(() => {
+            localStorage.removeItem('test-filler');
+            mockShowToast.mockClear();
+            vi.useRealTimers();
+        });
+
+        it('refuses to start and warns when there is no room left offline', () => {
+            localStorage.setItem('test-filler', 'x'.repeat(4_950_000));
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
+        });
+
+        const startRecording = async () => {
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+        };
+        const expectedBudget = () =>
+            voiceRecordingBudgetSeconds(localStorageUsedChars() ?? 0, LOCAL_STORAGE_QUOTA_CHARS);
+
+        it('warns and stops the recording at the calculated budget when space runs short', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            const budget = expectedBudget();
+            expect(budget).toBeLessThan(LOW_STORAGE_RECORDING_SECONDS);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+            expect(mockShowToast).toHaveBeenCalledWith(
+                expect.stringContaining('gradeStudent.voice_storage_low'),
+                'warning'
+            );
+            act(() => {
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('caps every offline recording at its budget, without a warning when there is room', async () => {
+            const budget = expectedBudget();
+            expect(budget).toBeGreaterThanOrEqual(LOW_STORAGE_RECORDING_SECONDS);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            expect(mockShowToast).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('sets no limit when the recorder fails to start', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            recorderState.start.mockResolvedValueOnce(false);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            act(() => {
+                vi.advanceTimersByTime(3_600_000);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+        });
+
+        it('refuses to record when local storage cannot be read', async () => {
+            localStorage.setItem('test-filler', 'x');
+            renderPage();
+            const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+                throw new Error('denied');
+            });
+            await startRecording();
+            keySpy.mockRestore();
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_unavailable', 'warning');
+        });
+
+        it('counts recordings that are not saved yet against the budget', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_700_000));
+            expect(expectedBudget()).toBeGreaterThanOrEqual(MIN_RECORDING_SECONDS);
+            fileToDataUrlMock.mockResolvedValue('data:audio/webm;base64,' + 'A'.repeat(1_300_000));
+            recorderState.recordingKey = 'c1';
+            recorderState.stop.mockResolvedValueOnce({ blob: new Blob(['x']), mimeType: 'audio/webm' });
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            recorderState.recordingKey = null;
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_stop'));
+            });
+            await waitFor(() => expect(screen.getByText('gradeStudent.audio_record')).toBeInTheDocument());
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
+        });
     });
 
     it('stops, encodes, and saves recorded audio', async () => {
