@@ -1650,7 +1650,8 @@
         "level_shortcut_hint": "Drücken Sie {{num}} zum Auswählen (wenn das Kriterium fokussiert ist)",
         "voice_storage_full": "Der Speicher dieses Geräts ist fast voll, daher kann keine Sprachaufnahme gespeichert werden. Verbinden Sie sich zuerst mit der Cloud oder entfernen Sie alte Aufnahmen.",
         "voice_storage_low": "Der Speicher ist fast voll — diese Aufnahme stoppt automatisch nach {{seconds}} Sekunden.",
-        "voice_storage_unavailable": "Der Speicher dieses Geräts kann nicht gelesen werden, daher kann eine Sprachaufnahme offline nicht gespeichert werden. Verbinden Sie sich mit der Cloud, um aufzunehmen."
+        "voice_storage_unavailable": "Der Speicher dieses Geräts kann nicht gelesen werden, daher kann eine Sprachaufnahme offline nicht gespeichert werden. Verbinden Sie sich mit der Cloud, um aufzunehmen.",
+        "points_before_modifier": "Punkte vor der Anpassung"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -3329,7 +3330,7 @@
         "gr_scoring_item_select": "Klicke auf eine Stufenzelle, um sie auszuwählen. Klicke erneut, um die Auswahl aufzuheben.",
         "gr_scoring_item_slider": "Verwende für Punktbereiche den Schieberegler, um einen Wert innerhalb des zulässigen Bereichs zu wählen.",
         "gr_scoring_item_subitems": "Schalte Unterpunkte innerhalb einer Stufe mit Kontrollkästchen um.",
-        "gr_scoring_item_modifiers": "Wende Bewertungsmodifikatoren (%-Bonus, Punktabzug, Stufenanpassung) mit einer Begründung an.",
+        "gr_scoring_item_modifiers": "Wende einen Bewertungsmodifikator (Prozent-Bonus oder -Abzug oder eine Punktkorrektur) mit einer Begründung an. Eine Punktkorrektur bezieht sich auf das Maximum des Rasters: +10 Punkte bei einem 200-Punkte-Raster ergeben +5 %.",
         "gr_mobile_title": "Mobile Bewertung",
         "gr_mobile_body_prefix": "Auf Telefonen und iPad im Hochformat ist die Bewertungsansicht touch-optimiert. Punktbereich- und Unterpunkt-Schieberegler erhalten einen",
         "gr_mobile_stepper": "− / +",
@@ -3708,7 +3709,7 @@
         "gr_layout_title": "Karten- und Rasteransicht",
         "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
         "gr_keyboard_title": "Tastaturkürzel",
-        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Tab / Umschalt+Tab bewegen den Fokus zwischen Kriterien, Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
+        "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Ist ein Kriterium ausgewählt, wechseln ↑ / ↓ zwischen Kriterien (Tab und Umschalt+Tab gehen wie gewohnt durch alle Schaltflächen und Felder), Strg+S speichert (und wechselt weiter) und ? listet alle Kürzel auf.",
         "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich.",
         "ce_flashcards_item_fields": "Vokabelkarten können eine Phonetik (Aussprache/IPA) und Wortart enthalten — direkt im Deck-Editor eingegeben oder als optionale 4. und 5. Spalte importiert. Lernende sehen sie beim Lernen auf der Karte, zusammen mit einer Fortschrittsleiste und einer Seitenleiste mit der Wortliste des Decks.",
         "es_focus_title": "Fokusmodus für Lernende",
@@ -3929,7 +3930,7 @@
     },
     "help": {
         "score_modifier_title": "Notenanpassungen",
-        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10%) oder Punkte (z. B. +5). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
+        "score_modifier_body": "Fügen Sie eine globale Anpassung zur Endnote hinzu. Wählen Sie Prozent (z. B. +10% addiert 10 Prozentpunkte) oder Punkte (z. B. +5 addiert 5 Punkte zur Gesamtpunktzahl des Rasters, bei 200 Punkten also 2,5 %). Geben Sie einen Grund an, damit er im exportierten Bericht und im Audit-Protokoll erscheint.",
         "lww_title": "Wie die Synchronisierung Konflikte löst",
         "lww_body": "Wenn derselbe Datensatz auf zwei Geräten bearbeitet wird, gewinnt die neueste Änderung (Last-Write-Wins). Offline vorgenommene Änderungen sind geschützt und werden niemals von älteren Cloud-Daten überschrieben, bis sie synchronisiert wurden.",
         "proctoring_title": "Aufsichtsmeldungen",
