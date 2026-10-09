@@ -595,13 +595,12 @@ describe('StudentProfilePage extended coverage', () => {
         renderAt('s1');
         fireEvent.click(findButtonByText('speaking.launch_session'));
         expect(screen.getByText('speaking.choose_rubric')).toBeInTheDocument();
-        // Backdrop click closes the picker.
-        const backdrop = document.querySelector('div[style*="position: fixed"]') as HTMLElement;
-        fireEvent.click(backdrop);
+        // An outside click closes the picker.
+        fireEvent.mouseDown(document.body);
         expect(screen.queryByText('speaking.choose_rubric')).not.toBeInTheDocument();
 
         fireEvent.click(findButtonByText('speaking.launch_session'));
-        fireEvent.click(findButtonByText('Speaking Extra'));
+        fireEvent.click(screen.getByRole('menuitem', { name: /Speaking Extra/ }));
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r4/s1');
     });
 

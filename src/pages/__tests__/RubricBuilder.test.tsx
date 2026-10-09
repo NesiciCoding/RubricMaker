@@ -1681,11 +1681,15 @@ describe('RubricBuilder', () => {
 
     // ── Navigation, export menu overlay, clipboard, CEFR badges ──────────────────
 
-    it('goes back to the rubric list and closes the export menu via its overlay', () => {
+    it('goes back to the rubric list and closes the export menu on an outside click', () => {
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.action_export'));
-        fireEvent.click(document.querySelector('div[style*="position: fixed"]') as HTMLElement);
+        // The menu is portalled to <body> so .topbar-actions' overflow can't clip it (#650).
+        expect(screen.getByRole('menu').parentElement).toBe(document.body);
+        expect(screen.getByRole('menuitem', { name: /rubricBuilder.action_save_as_template/ })).toBeInTheDocument();
+        fireEvent.mouseDown(document.body);
         expect(screen.queryByText('rubricBuilder.action_export_pdf')).not.toBeInTheDocument();
+        expect(document.querySelector('div[style*="inset: 0"]')).toBeNull();
         fireEvent.click(screen.getByText('rubricBuilder.action_back'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics');
     });
