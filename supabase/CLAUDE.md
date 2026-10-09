@@ -27,6 +27,7 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 - Never modify an already-applied migration — create a new one instead.
 - Run `npm run db:reset` locally to verify a new migration applies cleanly from scratch.
 - Migrations must be able to run inside a transaction: the Docker migrator (`docker/migrate.sh`) applies each file and its `public._migrations` row in one transaction, so a failing file rolls back completely. A migration that truly can't (e.g. `CREATE INDEX CONCURRENTLY`) needs a `-- migrate:no-transaction` line in its first 20 lines.
+- After adding, changing or removing a migration, run `./scripts/generate-bootstrap.sh` and commit the regenerated `supabase/bootstrap.sql` (the single-file schema for fresh self-hosted deploys). CI fails when it is stale.
 
 ## Row-level security (RLS)
 

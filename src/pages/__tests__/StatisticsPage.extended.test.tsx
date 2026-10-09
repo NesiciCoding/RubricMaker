@@ -747,12 +747,13 @@ describe('StatisticsPage extended', () => {
         fireEvent.click(aliceCell);
         expect(screen.getByText(/statistics\.table_score/)).toBeInTheDocument();
         expect(screen.getByText(/statistics\.table_raw/)).toBeInTheDocument();
-        // Carol's second row (the not-handed-in submission) includes the NHI marker.
+        // Carol has two records for r1; only the first (the not-handed-in one) counts (#646).
         const carolCells = screen.getAllByRole('button', { name: 'Carol' });
-        fireEvent.click(carolCells[1]);
+        expect(carolCells).toHaveLength(1);
+        fireEvent.click(carolCells[0]);
         expect(screen.getAllByText('(NHI)').length).toBeGreaterThan(0);
         // Clicking Carol again collapses the detail.
-        fireEvent.click(carolCells[1]);
+        fireEvent.click(carolCells[0]);
         expect(screen.queryByText(/statistics\.table_score/)).not.toBeInTheDocument();
     });
 

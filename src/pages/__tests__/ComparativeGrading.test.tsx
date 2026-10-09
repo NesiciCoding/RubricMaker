@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ComparativeGradingDefault from '../ComparativeGrading';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -149,6 +149,39 @@ describe('ComparativeGrading', () => {
         fireEvent.click(screen.getByText('comparativeGrading.action_equal'));
         fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
         expect(mockSaveStudentRubric).toHaveBeenCalledTimes(2);
+    });
+
+    describe('unsaved-changes guard (#658)', () => {
+        function renderWithElsewhere() {
+            const router = createMemoryRouter(
+                [
+                    { path: '/grade-comparative/:classId/:rubricId', element: <ComparativeGradingDefault /> },
+                    { path: '/tests', element: <div>tests page</div> },
+                ],
+                { initialEntries: ['/grade-comparative/c1/r1'] }
+            );
+            render(<RouterProvider router={router} />);
+            return router;
+        }
+
+        it('leaves a freshly loaded matchup without a prompt', async () => {
+            const router = renderWithElsewhere();
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+        });
+
+        it('asks before leaving a matchup with an unsaved comparison', async () => {
+            const router = renderWithElsewhere();
+            fireEvent.click(screen.getByText('comparativeGrading.action_equal'));
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('common.unsaved_title')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('common.unsaved_leave'));
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+        });
     });
 
     describe('existing grade records (#618)', () => {
