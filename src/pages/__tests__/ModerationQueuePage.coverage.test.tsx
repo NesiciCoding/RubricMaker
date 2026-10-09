@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
     buildReconciledEntries: vi.fn(),
     fetchSchoolMembers: vi.fn(),
     saveStudentRubric: vi.fn(),
-    deletePeerReview: vi.fn(),
+    savePeerReview: vi.fn(),
 }));
 
 const state = vi.hoisted(() => ({
@@ -40,8 +40,9 @@ const makeAppContextMock = () => ({
     peerReviews: state.peerReviews,
     students,
     settings: { ...mockSettings, schoolId: state.schoolId },
+    gradeScales: [],
     saveStudentRubric: mocks.saveStudentRubric,
-    deletePeerReview: mocks.deletePeerReview,
+    savePeerReview: mocks.savePeerReview,
     fetchSchoolMembers: mocks.fetchSchoolMembers,
 });
 vi.mock('../../context/AppContext', () => ({
@@ -68,7 +69,12 @@ vi.mock('../../hooks/useDbStatus', () => ({
 vi.mock('../../utils/coGradingModerationQueue', () => ({
     getModerationQueue: mocks.getModerationQueue,
     buildReconciledEntries: mocks.buildReconciledEntries,
-    DEFAULT_MODERATION_THRESHOLD_POINTS: 3,
+    markModerationResolved: (entry: StudentRubric, resolution: string) => ({
+        ...entry,
+        moderationResolution: resolution,
+        moderationResolvedAt: 'resolved-at',
+    }),
+    DEFAULT_MODERATION_THRESHOLD_PERCENT: 3,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -99,6 +105,7 @@ const item = (id: string, secondMarkerId: string, gradedAt: string | undefined, 
         { criterionId: 'c2', title: 'Style', baselinePoints: 2, secondMarkerPoints: 2, delta: 0 },
     ],
     totalAbsDelta: 3,
+    deltaPercent: 30,
 });
 
 beforeEach(() => {
@@ -108,7 +115,7 @@ beforeEach(() => {
     state.studentRubrics = [];
     state.peerReviews = [];
     mocks.saveStudentRubric.mockClear();
-    mocks.deletePeerReview.mockClear();
+    mocks.savePeerReview.mockClear();
     mocks.fetchSchoolMembers.mockResolvedValue([
         { id: 'col1', displayName: 'Dr. Doe', email: 'd@x' },
         { id: 'col2', displayName: '', email: 'e@x' },
@@ -151,7 +158,7 @@ describe('ModerationQueuePage coverage', () => {
         expect(screen.getAllByText('coGrading.pending_days:{"count":0}')).toHaveLength(1);
 
         // delta badge + zero-delta criterion renders
-        expect(screen.getAllByText('coGrading.delta_badge:{"delta":"3.0"}').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('coGrading.delta_badge:{"delta":"3.0","percent":"30"}').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Style').length).toBeGreaterThan(0);
     });
 
@@ -213,9 +220,18 @@ describe('ModerationQueuePage coverage', () => {
         fireEvent.click(screen.getByText('coGrading.action_view_baseline'));
         expect(router.state.location.pathname).toBe('/rubrics/r1/grade/s1');
 
-        // keep baseline → delete the second-marker entry
+        // keep baseline → confirm showing the grade it keeps, then mark the review resolved (#609)
         fireEvent.click(screen.getByText('coGrading.action_keep_baseline'));
-        expect(mocks.deletePeerReview).toHaveBeenCalledWith('sm1');
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/coGrading.confirm_keep_message/)).toHaveTextContent('"grade":"0%"');
+        expect(mocks.savePeerReview).not.toHaveBeenCalled();
+        fireEvent.click(within(dialog).getByText('coGrading.action_keep_baseline'));
+        await waitFor(() =>
+            expect(mocks.savePeerReview).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'sm1', moderationResolution: 'kept-baseline' })
+            )
+        );
+        expect(mocks.saveStudentRubric).not.toHaveBeenCalled();
     });
 
     it('accepts the second marker and saves the merged baseline', async () => {
@@ -242,12 +258,26 @@ describe('ModerationQueuePage coverage', () => {
                 isPeerReview: false,
             },
         ];
-        mocks.getModerationQueue.mockReturnValue([item('sm1', 'col1', daysAgo(10))]);
+        const queued = item('sm1', 'col1', daysAgo(10));
+        mocks.getModerationQueue.mockReturnValue([
+            { ...queued, baseline: state.studentRubrics[0], secondMarkerEntry: state.peerReviews[0] },
+        ]);
         const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
         renderWithRouter(<ModerationQueuePage />);
         await waitFor(() => expect(mocks.getModerationQueue).toHaveBeenCalled());
 
         fireEvent.click(screen.getByText('coGrading.action_accept_second_marker'));
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/coGrading.confirm_accept_message/)).toBeInTheDocument();
+
+        // cancelling changes nothing
+        fireEvent.click(within(dialog).getByText('common.cancel'));
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+        expect(mocks.saveStudentRubric).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByText('coGrading.action_accept_second_marker'));
+        fireEvent.click(within(await screen.findByRole('dialog')).getByText('coGrading.action_accept_second_marker'));
+        await waitFor(() => expect(mocks.saveStudentRubric).toHaveBeenCalled());
         expect(mocks.saveStudentRubric).toHaveBeenCalledWith(
             expect.objectContaining({
                 id: 'b1',
@@ -256,7 +286,88 @@ describe('ModerationQueuePage coverage', () => {
                 globalModifier: { type: 'points', value: -1, reason: '' },
             })
         );
-        expect(mocks.deletePeerReview).toHaveBeenCalledWith('sm1');
+        expect(mocks.savePeerReview).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'sm1', moderationResolution: 'accepted-second-marker' })
+        );
+    });
+
+    it('shows the confirmation grade from the rubric snapshot the baseline was graded with', async () => {
+        const level = (maxPoints: number) => ({
+            id: 'l1',
+            label: 'Good',
+            minPoints: 0,
+            maxPoints,
+            description: '',
+            subItems: [],
+        });
+        const liveRubric: Rubric = {
+            id: 'r1',
+            name: 'Essay Rubric',
+            subject: 'writing',
+            description: '',
+            criteria: [{ id: 'c1', title: 'Argument', description: '', weight: 100, levels: [level(10)] }],
+            gradeScaleId: 'gs1',
+            format: DEFAULT_FORMAT,
+            attachmentIds: [],
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            totalMaxPoints: 10,
+            scoringMode: 'weighted-percentage',
+        };
+        state.rubrics = [liveRubric];
+        const queued = item('sm1', 'col1', daysAgo(10));
+        mocks.getModerationQueue.mockReturnValue([
+            {
+                ...queued,
+                baseline: {
+                    ...queued.baseline,
+                    entries: [
+                        { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 4 },
+                    ],
+                    rubricSnapshot: {
+                        ...liveRubric,
+                        criteria: [{ ...liveRubric.criteria[0], levels: [level(4)] }],
+                    },
+                },
+            },
+        ]);
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        await waitFor(() => expect(mocks.getModerationQueue).toHaveBeenCalled());
+
+        fireEvent.click(screen.getByText('coGrading.action_keep_baseline'));
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText(/coGrading.confirm_keep_message/)).toHaveTextContent('"grade":"100%"');
+    });
+
+    it('accepts onto the live baseline when it changed while the dialog was open', async () => {
+        const baselineSr: StudentRubric = {
+            id: 'b1',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [],
+            overallComment: 'Baseline',
+            isPeerReview: false,
+        };
+        state.studentRubrics = [baselineSr];
+        const queued = item('sm1', 'col1', daysAgo(10));
+        mocks.getModerationQueue.mockReturnValue([{ ...queued, baseline: baselineSr }]);
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        await waitFor(() => expect(mocks.getModerationQueue).toHaveBeenCalled());
+
+        fireEvent.click(screen.getByText('coGrading.action_accept_second_marker'));
+        const dialog = await screen.findByRole('dialog');
+
+        // A sync lands while the dialog is open; any re-render picks up the new store state.
+        state.studentRubrics = [{ ...baselineSr, feedbackOnly: true }];
+        fireEvent.change(screen.getByLabelText('coGrading.threshold_label'), { target: { value: '5' } });
+
+        fireEvent.click(within(dialog).getByText('coGrading.action_accept_second_marker'));
+        await waitFor(() => expect(mocks.saveStudentRubric).toHaveBeenCalled());
+        expect(mocks.saveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'b1', feedbackOnly: true, overallComment: '' })
+        );
     });
 
     it('reconciles the baseline via the modal and cancels', async () => {
@@ -272,7 +383,9 @@ describe('ModerationQueuePage coverage', () => {
         expect(mocks.saveStudentRubric).toHaveBeenCalledWith(
             expect.objectContaining({ id: 'b1', entries: [{ criterionId: 'c1', points: 3 }] })
         );
-        expect(mocks.deletePeerReview).toHaveBeenCalledWith('sm1');
+        expect(mocks.savePeerReview).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'sm1', moderationResolution: 'reconciled' })
+        );
         expect(screen.queryByText('coGrading.reconcile_modal_title')).toBeNull();
 
         // cancel arm closes the modal without saving

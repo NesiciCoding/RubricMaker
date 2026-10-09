@@ -1,9 +1,15 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, createEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import { storageSync } from '../../services/database';
+import { LOCAL_STORAGE_QUOTA_CHARS, localStorageUsedChars } from '../../store/storage';
+import {
+    LOW_STORAGE_RECORDING_SECONDS,
+    MIN_RECORDING_SECONDS,
+    voiceRecordingBudgetSeconds,
+} from '../../utils/voiceFeedbackBudget';
 import type {
     AppSettings,
     Attachment,
@@ -47,6 +53,9 @@ vi.mock('../../hooks/useMediaRecorder', () => ({
         stop: recorderState.stop,
     }),
 }));
+
+const mockShowToast = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
 
 vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: dbState.isConnected, userId: dbState.userId }),
@@ -617,18 +626,45 @@ describe('GradeStudent coverage', () => {
         mockStudentsArr.push(mockStudentBob);
     });
 
-    it('ignores shortcut keys while typing in an input', () => {
+    it('leaves Tab to the browser so focus can reach every control (#671)', () => {
         renderPage();
-        const input = screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder');
-        fireEvent.click(input);
-        fireEvent.keyDown(input, { key: '?' });
-        expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
+        const tab = createEvent.keyDown(window, { key: 'Tab' });
+        fireEvent(window, tab);
+        expect(tab.defaultPrevented).toBe(false);
+        const shiftTab = createEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent(window, shiftTab);
+        expect(shiftTab.defaultPrevented).toBe(false);
     });
 
-    it('supports Shift+Tab focusing the last criterion', () => {
+    it('arrow keys scroll natively until a criterion is addressed', () => {
+        renderPage();
+        const down = createEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent(window, down);
+        expect(down.defaultPrevented).toBe(false);
+    });
+
+    it('arrow keys keep scrolling once focus leaves the criterion cards (#671)', () => {
         mockRubricsArr[0] = twoCriteriaRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent.keyDown(window, { key: 'a' });
+        const save = screen.getAllByText('gradeStudent.action_save')[0].closest('button') as HTMLElement;
+        save.focus();
+        const down = createEvent.keyDown(save, { key: 'ArrowDown' });
+        fireEvent(save, down);
+        expect(down.defaultPrevented).toBe(false);
+        (document.activeElement as HTMLElement | null)?.blur();
+        const onPage = createEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent(window, onPage);
+        expect(onPage.defaultPrevented).toBe(true);
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('focusing a control inside a criterion card makes it the focused criterion', () => {
+        mockRubricsArr[0] = twoCriteriaRubric;
+        renderPage();
+        const cards = document.querySelectorAll('.print-criterion');
+        const secondCardButton = cards[1].querySelector('button') as HTMLElement;
+        fireEvent.focus(secondCardButton);
         fireEvent.keyDown(window, { key: '2' });
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
@@ -639,12 +675,36 @@ describe('GradeStudent coverage', () => {
         mockRubricsArr[0] = mockRubric;
     });
 
-    it('wraps criterion focus with Tab and ignores out-of-range letters and levels', () => {
+    it('ignores shortcut keys while typing in an input', () => {
+        renderPage();
+        const input = screen.getByPlaceholderText('gradeStudent.modifier_reason_placeholder');
+        fireEvent.click(input);
+        fireEvent.keyDown(input, { key: '?' });
+        expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
+    });
+
+    it('ArrowUp from the first criterion wraps to the last one', () => {
         mockRubricsArr[0] = twoCriteriaRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab' });
-        fireEvent.keyDown(window, { key: 'Tab' });
-        fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+        fireEvent.keyDown(window, { key: 'a' });
+        fireEvent.keyDown(window, { key: 'ArrowUp' });
+        fireEvent.keyDown(window, { key: '2' });
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c2', levelId: 'l4' })]),
+            })
+        );
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('wraps criterion focus with the arrow keys and ignores out-of-range letters and levels', () => {
+        mockRubricsArr[0] = twoCriteriaRubric;
+        renderPage();
+        fireEvent.keyDown(window, { key: 'a' });
+        fireEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent.keyDown(window, { key: 'ArrowDown' });
+        fireEvent.keyDown(window, { key: 'ArrowUp' });
         fireEvent.keyDown(window, { key: 'z' }); // beyond criteria count
         fireEvent.keyDown(window, { key: '5' }); // level index out of range
         // no crash is the assertion; coverage is the point
@@ -655,7 +715,7 @@ describe('GradeStudent coverage', () => {
     it('returns early from the number-chord for single-point rubrics', () => {
         mockRubricsArr[0] = singlePointRubric;
         renderPage();
-        fireEvent.keyDown(window, { key: 'Tab' });
+        fireEvent.keyDown(window, { key: 'a' });
         fireEvent.keyDown(window, { key: '1' });
         expect(screen.getByText('gradeStudent.single_point_meets')).toBeInTheDocument();
         mockRubricsArr[0] = mockRubric;
@@ -671,13 +731,58 @@ describe('GradeStudent coverage', () => {
     });
 
     // ---------- Touch gestures ----------
-    it('swipes right to save and advance', () => {
+    it('swipes left from a safe area, confirms, then saves and advances (#666)', async () => {
         renderPage();
         const page = pageContent();
         fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
         fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
-        expect(mockSaveStudentRubric).toHaveBeenCalled();
+        expect(await screen.findByText(/gradeStudent.swipe_confirm_title/)).toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByText(/gradeStudent.swipe_confirm_action/));
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+    });
+
+    it('does not save when the swipe confirmation is cancelled', async () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
+        fireEvent.click(await screen.findByText(/common.cancel/));
+        await waitFor(() => expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument());
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('never treats dragging a control (points slider, stepper, text) as a swipe (#666)', () => {
+        renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
+        const page = pageContent();
+        const controls = Array.from(page.querySelectorAll('input, textarea, button, .touch-stepper')).slice(0, 5);
+        expect(controls.length).toBeGreaterThan(0);
+        for (const control of controls) {
+            fireEvent.touchStart(control, { touches: [{ clientX: 200, clientY: 100 }] });
+            fireEvent.touchEnd(control, { changedTouches: [{ clientX: 20, clientY: 100 }] });
+        }
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('ignores multi-touch and an endpoint from a different finger (#666)', () => {
+        renderPage();
+        const page = pageContent();
+        fireEvent.touchStart(page, {
+            touches: [
+                { identifier: 1, clientX: 200, clientY: 100 },
+                { identifier: 2, clientX: 220, clientY: 100 },
+            ],
+        });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        fireEvent.touchStart(page, { touches: [{ identifier: 1, clientX: 200, clientY: 100 }] });
+        fireEvent.touchEnd(page, { changedTouches: [{ identifier: 2, clientX: 50, clientY: 110 }] });
+        expect(screen.queryByText(/gradeStudent.swipe_confirm_title/)).not.toBeInTheDocument();
+        expect(mockSaveStudentRubric).not.toHaveBeenCalled();
     });
 
     it('ignores touch end without a matching start', () => {
@@ -720,6 +825,115 @@ describe('GradeStudent coverage', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
         fireEvent.click(screen.getByText('gradeStudent.audio_record'));
         expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+    });
+
+    describe('voice feedback near the local storage quota (#678)', () => {
+        afterEach(() => {
+            localStorage.removeItem('test-filler');
+            mockShowToast.mockClear();
+            vi.useRealTimers();
+        });
+
+        it('refuses to start and warns when there is no room left offline', () => {
+            localStorage.setItem('test-filler', 'x'.repeat(4_950_000));
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
+        });
+
+        const startRecording = async () => {
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+        };
+        const expectedBudget = () =>
+            voiceRecordingBudgetSeconds(localStorageUsedChars() ?? 0, LOCAL_STORAGE_QUOTA_CHARS);
+
+        it('warns and stops the recording at the calculated budget when space runs short', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            const budget = expectedBudget();
+            expect(budget).toBeLessThan(LOW_STORAGE_RECORDING_SECONDS);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            expect(recorderState.start).toHaveBeenCalledWith({ key: 'c1' });
+            expect(mockShowToast).toHaveBeenCalledWith(
+                expect.stringContaining('gradeStudent.voice_storage_low'),
+                'warning'
+            );
+            act(() => {
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('caps every offline recording at its budget, without a warning when there is room', async () => {
+            const budget = expectedBudget();
+            expect(budget).toBeGreaterThanOrEqual(LOW_STORAGE_RECORDING_SECONDS);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            expect(mockShowToast).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(budget * 1000 - 1);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+            act(() => {
+                vi.advanceTimersByTime(1);
+            });
+            expect(recorderState.stop).toHaveBeenCalledWith('c1');
+        });
+
+        it('sets no limit when the recorder fails to start', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_500_000));
+            recorderState.start.mockResolvedValueOnce(false);
+            vi.useFakeTimers();
+            renderPage();
+            await startRecording();
+            act(() => {
+                vi.advanceTimersByTime(3_600_000);
+            });
+            expect(recorderState.stop).not.toHaveBeenCalled();
+        });
+
+        it('refuses to record when local storage cannot be read', async () => {
+            localStorage.setItem('test-filler', 'x');
+            renderPage();
+            const keySpy = vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+                throw new Error('denied');
+            });
+            await startRecording();
+            keySpy.mockRestore();
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_unavailable', 'warning');
+        });
+
+        it('counts recordings that are not saved yet against the budget', async () => {
+            localStorage.setItem('test-filler', 'x'.repeat(3_700_000));
+            expect(expectedBudget()).toBeGreaterThanOrEqual(MIN_RECORDING_SECONDS);
+            fileToDataUrlMock.mockResolvedValue('data:audio/webm;base64,' + 'A'.repeat(1_300_000));
+            recorderState.recordingKey = 'c1';
+            recorderState.stop.mockResolvedValueOnce({ blob: new Blob(['x']), mimeType: 'audio/webm' });
+            renderPage();
+            fireEvent.click(screen.getByLabelText('gradeStudent.comment_open_bank'));
+            recorderState.recordingKey = null;
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_stop'));
+            });
+            await waitFor(() => expect(screen.getByText('gradeStudent.audio_record')).toBeInTheDocument());
+            await act(async () => {
+                fireEvent.click(screen.getByText('gradeStudent.audio_record'));
+            });
+            expect(recorderState.start).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.voice_storage_full', 'warning');
+        });
     });
 
     it('stops, encodes, and saves recorded audio', async () => {
@@ -894,13 +1108,14 @@ describe('GradeStudent coverage', () => {
         // sub-item slider + base-points slider (sub-items render first)
         const sliders = screen.getAllByRole('slider');
         expect(sliders.length).toBeGreaterThan(1);
-        fireEvent.click(screen.getByText('Sub A')); // bubbles through the sub-item row stopPropagation
-        // click the sub-items container itself (its own stopPropagation handler)
-        const levelBtn = screen.getByText('Excellent').closest('button') as HTMLElement;
-        const subContainer = Array.from(levelBtn.querySelectorAll('div')).find((d) =>
+        // Clicks inside the card's sub-item controls never toggle the level (#616).
+        fireEvent.click(screen.getByText('Sub A'));
+        const card = screen.getByText('Excellent').closest('.level-btn') as HTMLElement;
+        const subContainer = Array.from(card.querySelectorAll('div')).find((d) =>
             d.textContent?.includes('Sub A')
         ) as HTMLElement;
         fireEvent.click(subContainer);
+        expect(screen.getByRole('button', { name: /Excellent/, pressed: true })).toBeInTheDocument();
         fireEvent.change(sliders[0], { target: { value: '1.5' } });
         fireEvent.change(sliders[1], { target: { value: '95' } });
         // sub-item stepper (first) then base-points stepper (last)
@@ -919,6 +1134,26 @@ describe('GradeStudent coverage', () => {
                 ]),
             })
         );
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('renders level cards without nested buttons, selectable by header or card padding (#616)', () => {
+        mockRubricsArr[0] = subItemsRubric;
+        renderPage();
+        const header = screen.getByRole('button', { name: /Excellent/ });
+        expect(header).toHaveAttribute('aria-pressed', 'false');
+        const card = header.closest('.level-btn') as HTMLElement;
+        expect(card.tagName).toBe('DIV');
+        expect(card).toHaveAttribute('role', 'group');
+
+        fireEvent.click(header);
+        expect(header).toHaveAttribute('aria-pressed', 'true');
+        // Sliders and steppers now render inside the card, but never inside a button.
+        expect(document.querySelector('button button, button input')).toBeNull();
+
+        // Clicking the card's own padding toggles it too, as the whole card used to be a button.
+        fireEvent.click(card);
+        expect(header).toHaveAttribute('aria-pressed', 'false');
         mockRubricsArr[0] = mockRubric;
     });
 

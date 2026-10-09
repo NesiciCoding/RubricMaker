@@ -264,7 +264,8 @@ export function seedDemoData(): void {
             id: nanoid(),
             rubricId: disputeRubric.id,
             studentId: disputeStudent.id,
-            entries: disputeRubric.criteria.map((c) => mkEntry(c, 60, 'Second marker: more conservative on grammar.')),
+            // Baseline sits around 55%; 85% clears the default 10%-of-max moderation threshold.
+            entries: disputeRubric.criteria.map((c) => mkEntry(c, 85, 'Second marker: more generous on content.')),
             overallComment: 'Second opinion — see delta per criterion.',
             gradedAt: daysAgo(2),
             gradedBy: 'colleague@example.com',

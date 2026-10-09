@@ -33,7 +33,10 @@ import {
     loadPendingQueue,
     loadCachedStudentRubrics,
     onStorageQuotaExceeded,
+    onVoiceFeedbackDropped,
     sanitizeClassYears,
+    markMigrationPending,
+    isMigrationSkippedForSession,
 } from '../store/storage';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
 import { mergeStoreData } from '../utils/syncMerge';
@@ -51,6 +54,11 @@ export { useEssays } from './domains/essays';
 export { useFlashcards } from './domains/flashcards';
 export { useSettings } from './domains/settings';
 export { usePlatform } from './domains/platform';
+
+// loadStore() seeds a { id: 'default' } class when none is saved; that alone is not local user data.
+function hasUnmigratedLocalData(s: StoreData): boolean {
+    return s.rubrics.length > 0 || s.students.length > 0 || s.classes.some((c) => c.id !== 'default');
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
     const [state, dispatch] = useReducer(loggingReducer, null, loadStore);
@@ -107,7 +115,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // quota hit there isn't data loss and shouldn't alarm the user.
     useEffect(() => {
         onStorageQuotaExceeded(() => {
-            if (isOffline()) showToast(t('toast.storage_full'), 'error');
+            // Fired from the reducer's storage write, i.e. while AppProvider renders; a toast
+            // there is a setState on ToastProvider during another component's render.
+            queueMicrotask(() => {
+                if (isOffline()) showToast(t('toast.storage_full'), 'error');
+            });
+        });
+        onVoiceFeedbackDropped((count) => {
+            if (isOffline()) showToast(t('toast.voice_feedback_dropped', { count }), 'warning');
         });
     }, [showToast, t]);
 
@@ -250,6 +265,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     setLandingState('hide');
                 }
 
+                // Local data that was never uploaded is offered for upload, and kept out of the
+                // sign-out wipe until it is. Runs after every sign-in, not just a resumed session.
+                function checkUnmigratedLocalData() {
+                    if (localStorage.getItem(MIGRATION_DONE_KEY) === 'true' || storageSync.didWipeLocalData()) return;
+                    if (!hasUnmigratedLocalData(initialStateRef.current)) return;
+                    markMigrationPending();
+                    if (!isMigrationSkippedForSession()) setShowMigrationPrompt(true);
+                }
+
                 storageSync
                     .initAuth(config)
                     .then(async () => {
@@ -262,13 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         // Session already existed on startup — connect and hydrate immediately
                         await configureAndEnter(config);
 
-                        // Show migration prompt once if local data exists and hasn't been migrated
-                        if (localStorage.getItem(MIGRATION_DONE_KEY) !== 'true' && !storageSync.didWipeLocalData()) {
-                            const s = initialStateRef.current;
-                            if (s.rubrics.length > 0 || s.students.length > 0 || s.classes.length > 0) {
-                                setShowMigrationPrompt(true);
-                            }
-                        }
+                        checkUnmigratedLocalData();
                     })
                     .catch((e) => {
                         if (cancelled) return;
@@ -283,6 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     if (!cfg) return;
                     try {
                         await configureAndEnter(cfg);
+                        checkUnmigratedLocalData();
                     } catch (e) {
                         console.error('[auth] onAuthChange configure failed', e);
                         setLandingState('show');

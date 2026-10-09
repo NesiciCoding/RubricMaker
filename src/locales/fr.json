@@ -309,6 +309,10 @@
         "label_max_pct": "Max %",
         "label_color": "Couleur",
         "action_add_range": "Ajouter une plage",
+        "scale_no_floor_warning": "Aucune plage ne commence à 0 %, les scores faibles n'obtiennent donc aucune note (affiché —).",
+        "action_fix_scale_floor": "Faire commencer la plage la plus basse à 0 %",
+        "scale_default_range_label": "Réussi",
+        "alert_scale_needs_floor": "Une échelle de notes nécessite une plage commençant à 0 %. Mettez d'abord le minimum d'une autre plage à 0.",
         "mastery_colors_title": "Couleurs de maîtrise",
         "mastery_colors_help": "Personnalisez les couleurs de la colonne Grammaire dans l'aperçu des élèves du tableau de bord. Par défaut, l'échelle rouge-vert est utilisée.",
         "action_customize_mastery_colors": "Personnaliser les couleurs",
@@ -339,7 +343,7 @@
         "backup_restore": "Sauvegarde et Restauration",
         "action_export_backup": "Exporter la sauvegarde (JSON)",
         "action_import_backup": "Importer une sauvegarde",
-        "backup_help": "L'export sauvegarde toutes les rubriques, élèves, notes et paramètres dans un fichier JSON. L'import restaure tout.",
+        "backup_help": "L'export sauvegarde toutes les rubriques, élèves, notes et paramètres dans un fichier JSON. L'import restaure tout. Votre rôle, l'e-mail du compte, le code PIN administrateur, l'établissement et les clés API ne sont pas inclus.",
         "alert_invalid_backup": "Fichier de sauvegarde invalide.",
         "backup_preview_title": "Confirmer l'importation de la sauvegarde",
         "backup_preview_subtitle": "Vérifiez les modifications ci-dessous. L'importation remplacera toutes les données actuelles par le contenu de la sauvegarde.",
@@ -497,7 +501,12 @@
         "switch_to_student_title": "Passer au rôle Élève ?",
         "switch_to_student_message": "L'application n'affichera que le portail élève de l'élève dont l'e-mail correspond à votre compte. Les pages enseignant restent masquées tant que vous avez ce rôle.",
         "switch_to_student_message_local": "L'application n'affichera que le portail élève de l'élève dont l'e-mail correspond à celui de vos paramètres ; sans correspondance, vous verrez l'écran « Aucun compte élève associé ». Vous pourrez revenir au rôle enseignant depuis cet écran. Vos données ne sont pas modifiées.",
-        "switch_to_student_confirm": "Passer en Élève"
+        "switch_to_student_confirm": "Passer en Élève",
+        "backup_preview_settings_title": "Paramètres",
+        "backup_preview_settings_none": "Aucun paramètre ne change.",
+        "backup_preview_settings_changed": "modifié",
+        "backup_preview_protected_note": "Votre rôle, l'e-mail du compte, le code PIN administrateur, l'établissement et les clés API ne sont jamais modifiés par une restauration.",
+        "backup_preview_protected_ignored": "Cette sauvegarde contient un autre rôle, e-mail de compte, code PIN administrateur, établissement ou clé API. Ils sont ignorés — une restauration ne les modifie jamais."
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -1647,7 +1656,19 @@
         "quick_comments_label": "Rapide",
         "quick_comments_empty": "Enregistrez des commentaires dans la banque pour des insertions rapides ici.",
         "shortcut_chord": "Ciblez un critère puis choisissez son niveau (accord)",
-        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)"
+        "level_shortcut_hint": "Appuyez sur {{num}} pour sélectionner (quand le critère est ciblé)",
+        "voice_storage_full": "Le stockage de cet appareil est presque plein : un enregistrement vocal ne pourrait pas être conservé. Connectez-vous au cloud ou supprimez d'anciens enregistrements d'abord.",
+        "voice_storage_low": "Le stockage est presque plein — cet enregistrement s'arrête automatiquement après {{seconds}} secondes.",
+        "voice_storage_unavailable": "Le stockage de cet appareil est illisible : un enregistrement vocal ne pourrait pas être conservé hors ligne. Connectez-vous au cloud pour enregistrer.",
+        "swipe_confirm_title": "Enregistrer et passer à l'élève suivant ?",
+        "swipe_confirm_message": "Vous avez balayé vers la gauche. Enregistrer cette note et continuer avec {{name}} ?",
+        "swipe_confirm_action": "Enregistrer et suivant",
+        "nhi_confirm_title": "Marquer comme non rendu ?",
+        "nhi_confirm_message": "{{name}} a déjà une note pour cette grille. Marquer le travail comme non rendu le retire des statistiques, du tableau de bord et du portail élève. Les scores sont conservés et vous pouvez annuler depuis le bandeau de la page de correction.",
+        "nhi_confirm_action": "Marquer comme non rendu",
+        "nhi_banner": "Marqué comme non rendu — ce travail est exclu des statistiques, du tableau de bord et du portail élève. Noter et enregistrer retire cette marque.",
+        "nhi_undo": "Annuler « non rendu »",
+        "points_before_modifier": "Points avant le modificateur"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -1813,7 +1834,9 @@
         "add_round": "Ajouter un tour",
         "view_analytics": "Voir les statistiques",
         "unsaved_round_switch_title": "Changer de tour ?",
-        "unsaved_round_switch_message": "Les modifications non enregistrées seront perdues. Continuer ?"
+        "unsaved_round_switch_message": "Les modifications non enregistrées seront perdues. Continuer ?",
+        "title_self": "Auto-évaluation : {{name}}",
+        "title_peer": "Évaluation par les pairs : {{reviewer}} évalue {{reviewed}}"
     },
     "coGrading": {
         "action_co_grade": "Double correction",
@@ -1823,11 +1846,11 @@
         "colleague_placeholder": "ex. j.smith@school.org",
         "action_start": "Démarrer la double correction",
         "moderation_title": "File de modération",
-        "threshold_label": "Signaler les désaccords à partir de ce nombre de points",
+        "threshold_label": "Signaler les désaccords à partir de ce % du maximum de points de la grille",
         "moderation_empty": "Aucune correction contestée",
         "moderation_empty_desc": "Les copies en double correction avec un écart au moins égal au seuil apparaîtront ici.",
         "second_marker_label": "second correcteur : {{name}}",
-        "delta_badge": "Δ {{delta}} pts",
+        "delta_badge": "Δ {{delta}} pts ({{percent}} %)",
         "col_criterion": "Critère",
         "col_baseline": "Original",
         "col_second_marker": "Second correcteur",
@@ -1842,7 +1865,11 @@
         "reconcile_modal_title": "Concilier la notation",
         "reconcile_modal_desc": "Chaque critère ci-dessous sera fixé à la moyenne des points de l'original et du second correcteur. Vérifiez le résultat avant de l'appliquer.",
         "col_reconciled": "Concilié",
-        "action_confirm_reconcile": "Appliquer le score concilié"
+        "action_confirm_reconcile": "Appliquer le score concilié",
+        "confirm_keep_title": "Conserver la note d'origine ?",
+        "confirm_keep_message": "{{student}} conserve {{grade}}. L'évaluation du second correcteur est conservée comme résolue et quitte la file.",
+        "confirm_accept_title": "Accepter la note du second correcteur ?",
+        "confirm_accept_message": "La note de {{student}} passe de {{before}} à {{after}}. Les scores, le commentaire et l'ajustement d'origine sont remplacés ; l'évaluation du second correcteur est conservée comme résolue."
     },
     "commentBank": {
         "title": "Banque de commentaires",
@@ -2009,7 +2036,9 @@
         "sync_flushed": "De retour en ligne — toutes les modifications synchronisées.",
         "copy_paste_failed": "Copier/coller échoué. Veuillez réessayer.",
         "sync_offline_cache": "Vous êtes hors ligne — utilisation des données en cache local.",
-        "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre."
+        "signout_pending_writes": "Certaines modifications ne sont pas encore synchronisées — vos données locales ont été conservées pour ne rien perdre.",
+        "signout_unmigrated_local": "Vos données locales n'ont jamais été téléversées vers votre compte : elles ont donc été conservées sur cet appareil. Reconnectez-vous et choisissez Téléverser vers le compte pour les synchroniser.",
+        "voice_feedback_dropped": "Les notes ont été enregistrées, mais le stockage de cet appareil n'a pas pu conserver {{count}} enregistrement(s) vocal(aux), qui seront perdus au rechargement. Connectez-vous au cloud ou supprimez d'anciens enregistrements pour les conserver."
     },
     "pwa": {
         "update_available_title": "Mise à jour disponible",
@@ -2459,7 +2488,10 @@
         "comment_author_you": "Vous",
         "comment_author_teacher": "Enseignant",
         "comments_empty": "Aucun commentaire pour l'instant. Sélectionnez du texte dans le document ci-dessus pour en ajouter un.",
-        "loading_preview": "Chargement de l'aperçu…"
+        "loading_preview": "Chargement de l'aperçu…",
+        "size_limit_hint": "jusqu'à {{limit}} par fichier",
+        "too_large": "« {{name}} » n'a pas été ajouté : il dépasse la limite de {{limit}}.",
+        "too_large_local_hint": "Sans connexion à une base de données, les fichiers sont stockés dans ce navigateur, qui a peu d'espace. Connectez-vous à une base de données pour joindre des fichiers plus volumineux."
     },
     "exportPage": {
         "rubric_section_title": "Export de rubrique",
@@ -2526,7 +2558,11 @@
         "selected": "sélectionné(s)",
         "report_card_success": "{{count}} bulletin(s) généré(s).",
         "rubric_students_section_title": "Élèves",
-        "select_test": "Sélectionner un test"
+        "select_test": "Sélectionner un test",
+        "bulk_nhi_confirm_title": "Marquer comme non rendu ?",
+        "bulk_nhi_confirm_message": "Marquer {{count}} évaluation(s) sélectionnée(s) comme non rendue(s) ? Elles seront exclues des statistiques, du tableau de bord et du portail élève.",
+        "bulk_nhi_done": "{{count}} évaluation(s) marquée(s) comme non rendue(s)",
+        "bulk_comment_done": "Commentaire ajouté à {{count}} évaluation(s)"
     },
     "reportCard": {
         "title": "Bulletin",
@@ -2655,7 +2691,9 @@
         "evidence_title": "Preuves par compétence",
         "evidence_subtitle": "Quelles évaluations ont contribué à chaque compétence et niveau, et pourquoi il est marqué atteint ou en développement.",
         "rationale_achieved": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — atteint",
-        "rationale_developing": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — en développement"
+        "rationale_developing": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — en développement",
+        "working_toward": "Vise {{level}} — pas encore atteint",
+        "legend_developing": "Les badges pleins sont des niveaux atteints. Un badge en pointillés signifie que l'élève vise encore ce niveau (sous le seuil de réussite)."
     },
     "learningPath": {
         "page_title": "Parcours d'apprentissage",
@@ -2836,7 +2874,8 @@
         "role_student_desc": "Consultez vos notes et réalisez vos devoirs de rédaction.",
         "done_body": "Votre école est configurée. Vous pouvez maintenant créer des grilles et noter vos élèves.",
         "student_done_body": "Votre compte est configuré en tant qu'élève. Vous serez redirigé vers votre portail une fois que votre enseignant aura lié votre adresse e-mail scolaire à un profil d'élève.",
-        "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer."
+        "error_role_update": "Impossible de mettre à jour votre rôle. Veuillez réessayer.",
+        "error_last_admin": "Vous êtes le seul administrateur et ne pouvez donc pas passer en Élève. Nommez d'abord un autre utilisateur administrateur, ou continuez en tant qu'administrateur."
     },
     "admin": {
         "title": "Tableau de bord administrateur",
@@ -2849,7 +2888,7 @@
         "tab_audit": "Journal d'audit",
         "tab_archive": "Archiver",
         "archive_empty": "Aucun élève archivé.",
-        "archive_desc": "Les élèves archivés sont retirés des listes de classe mais leurs notes sont conservées. Anonymisez pour effacer les données personnelles.",
+        "archive_desc": "Les élèves archivés sont retirés des listes de classe mais leurs notes sont conservées. Anonymisez pour effacer les données personnelles. Effacer définitivement supprime l'élève et toutes les données liées.",
         "deleted_grades_title": "Notes récemment supprimées",
         "deleted_grades_desc": "Notes supprimées par un enseignant depuis la page de notation. Restaurez pour les réutiliser.",
         "deleted_grades_col_rubric": "Grille",
@@ -2957,7 +2996,21 @@
         "delete_all_db_message": "Cela supprime définitivement tout ce qui vous appartient dans la base : grilles, classes, élèves, notes, tests, rédactions, messages et leurs fichiers, enregistrements, scans et sauvegardes nocturnes. Cette action est irréversible. La copie sur cet appareil n'est pas modifiée.",
         "delete_all_db_confirm": "Tout supprimer",
         "delete_all_db_success": "Toutes vos données de la base ont été supprimées.",
-        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur."
+        "delete_all_db_failed": "Certaines données n'ont pas pu être supprimées ({{items}}). Réessayez ou contactez votre administrateur.",
+        "erase_btn": "Effacer définitivement",
+        "erase_in_progress": "Effacement…",
+        "erase_confirm_title": "Effacer définitivement l'élève ?",
+        "erase_confirm": "Supprimer définitivement {{name}} et tout ce qui lui est lié — notes et commentaires (y compris ceux d'autres enseignants pour cet élève), retours vocaux, rédactions, réponses aux tests, messages, pièces jointes, numérisations, auto-évaluations et enregistrements — de cet appareil et de la base de données. Cette action est irréversible. Les copies dans les sauvegardes antérieures ne sont pas concernées.",
+        "erase_success": "L'élève et toutes ses données ont été effacés.",
+        "erase_partial": "L'élève a été effacé. {{n}} fichier(s) dans le dossier de stockage d'un autre enseignant n'ont pas pu être supprimés ici ; ils figurent dans le journal d'audit pour un administrateur.",
+        "erase_offline": "Connectez-vous à la base de données pour effacer cet élève, afin que rien ne reste sur le serveur.",
+        "erase_failed": "L'élève n'a pas pu être effacé : {{error}}",
+        "role_change_confirm_title": "Modifier le rôle ?",
+        "role_change_confirm": "Changer le rôle de {{name}} en {{role}} ? Cela modifie immédiatement ce que cette personne peut voir et faire.",
+        "role_last_admin": "C'est le dernier administrateur. Nommez d'abord un autre utilisateur administrateur.",
+        "audit_col_actor": "Auteur",
+        "audit_col_details": "Détails",
+        "audit_actor_system": "Système"
     },
     "essay": {
         "email_gate_title": "Entrez votre adresse email scolaire",
@@ -3010,7 +3063,10 @@
         "retry_submit": "Réessayer",
         "copy_backup_code": "Copier le code de secours",
         "already_submitted": "Tu as déjà rendu cette rédaction, donc cette version n'a pas été envoyée. Elle est toujours enregistrée sur cet appareil — demande à ton enseignant si tu dois la rendre à nouveau.",
-        "submit_failed_unsaved": "Ta rédaction n'a pas encore été envoyée et cet appareil n'a pas pu en garder une copie. Copie le code de secours avant de quitter cette page, puis clique sur Réessayer."
+        "submit_failed_unsaved": "Ta rédaction n'a pas encore été envoyée et cet appareil n'a pas pu en garder une copie. Copie le code de secours avant de quitter cette page, puis clique sur Réessayer.",
+        "load_error_title": "Impossible de charger ce devoir",
+        "load_error": "Le devoir n'a pas pu être chargé. Vérifie ta connexion internet et réessaie. Si le problème persiste, demande un nouveau lien à ton professeur.",
+        "load_retry": "Réessayer"
     },
     "editor": {
         "switchToCompactView": "Vue compacte",
@@ -3136,7 +3192,7 @@
         "route_activity_dashboard_label": "Tableau d'activité",
         "route_activity_dashboard_desc": "Grille de toutes les rubriques, tests et rédactions par rapport aux classes — lier, attribuer et surveiller la couverture en un coup d'œil. Les lignes peuvent être réordonnées par glisser-déposer, et les cellules non notées peuvent être attribuées à un enseignant spécifique comme tâche de notation.",
         "route_moderation_label": "Modération",
-        "route_moderation_desc": "File d'attente des soumissions co-notées où deux enseignants sont en désaccord au-delà d'un seuil de points configurable — comparer les écarts par critère et conserver ou accepter la note du second correcteur.",
+        "route_moderation_desc": "File d'attente des soumissions co-notées où deux enseignants sont en désaccord d'au moins un pourcentage configurable du maximum de la grille (10 % par défaut) — comparer les écarts par critère et conserver ou accepter la note du second correcteur après une confirmation indiquant la note avant et après.",
         "route_messages_label": "Messages",
         "route_messages_desc": "Boîte de réception des questions des élèves sur une rubrique, un test ou un essai — répondez directement, ou lancez vous-même un nouveau fil vers un élève. Réservé aux élèves connectés au portail.",
         "route_notifications_label": "Notifications",
@@ -3193,7 +3249,7 @@
         "gs_mode_offline_title": "Hors ligne / Local",
         "gs_mode_offline_desc": "Toutes les données dans le localStorage du navigateur. Rien n'est envoyé à un serveur. Fonctionne sur n'importe quel hébergement statique.",
         "gs_mode_cloud_title": "Synchronisation cloud",
-        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils. Déconnectez-vous en bas de la barre latérale.",
+        "gs_mode_cloud_desc": "Connectez un projet Supabase (auto-hébergé ou supabase.com) pour l'accès et le partage multi-appareils. Déconnectez-vous en bas de la barre latérale. Si ce navigateur contient déjà des données lors de votre première connexion, il vous est proposé de les téléverser vers votre compte ; Plus tard vous le reproposera à la session suivante, et les données jamais téléversées restent sur cet appareil à la déconnexion.",
         "gs_mode_docker_title": "Docker (pile complète)",
         "gs_mode_docker_desc": "docker-compose up démarre le frontend + Supabase + Caddy (HTTPS). Recommandé pour les établissements.",
         "gs_themes_title": "Thèmes & apparence",
@@ -3225,7 +3281,7 @@
         "rb_builder_views_suffix": "à l'aide du commutateur dans la barre d'outils.",
         "rb_scoring_modes_title": "Modes de notation",
         "rb_scoring_modes_item_total": "Points totaux — score brut de tous les niveaux de critères.",
-        "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée.",
+        "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée. Les critères valant 0 point sont exclus de la moyenne.",
         "rb_scoring_modes_item_single": "Rubrique à point unique — un niveau par critère (atteint / non atteint) ; logique de réussite/échec.",
         "rb_level_options_title": "Options de niveau",
         "rb_level_options_item_checklist": "Listes de sous-éléments dans un niveau (les élèves doivent compléter des éléments spécifiques).",
@@ -3325,7 +3381,7 @@
         "gr_scoring_item_select": "Cliquez sur n'importe quelle cellule de niveau pour la sélectionner. Cliquez à nouveau pour la désélectionner.",
         "gr_scoring_item_slider": "Pour les plages de points, utilisez le curseur pour choisir une valeur dans la plage autorisée.",
         "gr_scoring_item_subitems": "Basculez les sous-éléments dans un niveau avec des cases à cocher.",
-        "gr_scoring_item_modifiers": "Appliquez des modificateurs de score (bonus en %, déduction de points, ajustement de niveau) avec une raison.",
+        "gr_scoring_item_modifiers": "Appliquez un modificateur de score (bonus ou déduction en %, ou correction en points) avec une raison. Une correction en points se rapporte au maximum de la grille : +10 points sur une grille de 200 points ajoutent 5 %.",
         "gr_mobile_title": "Notation mobile",
         "gr_mobile_body_prefix": "Sur téléphones et iPad en mode portrait, la vue de notation est optimisée pour le tactile. Les curseurs de plage de points et de sous-éléments gagnent un",
         "gr_mobile_stepper": "− / +",
@@ -3334,7 +3390,7 @@
         "gr_feedback_item_comment_bank": "Banque de commentaires — insérez des extraits réutilisables par étiquette. Constituez la banque depuis la page Banque de commentaires.",
         "gr_feedback_item_voice": "Notation vocale — dictez des commentaires mains libres à l'aide de l'API de reconnaissance vocale du navigateur.",
         "gr_feedback_item_notes": "Notes par critère en plus du champ de feedback global.",
-        "gr_feedback_item_attachments": "Pièces jointes — téléchargez des fichiers justificatifs (images, PDF) par rubrique notée.",
+        "gr_feedback_item_attachments": "Pièces jointes — téléversez des fichiers justificatifs (images, PDF) par grille notée. Les fichiers peuvent atteindre 50 Mo avec une connexion à une base de données ; sans connexion, ils sont conservés dans ce navigateur et limités à 2 Mo chacun, et les fichiers plus volumineux sont refusés avec un message.",
         "gr_document_view_title": "Vue du document",
         "gr_document_view_body": "Les copies d'essai et les pièces jointes Word (.docx) importées s'affichent désormais dans la même vue de document paginée et mise en forme, en notation individuelle comme comparative — fini le dump HTML brut ou la visionneuse Word incohérente. Pour les fichiers .docx, un bouton « Afficher tel qu'envoyé » bascule vers le rendu du fichier original si la conversion mise en forme perd des détails de mise en page.",
         "gr_document_comments_body": "Sélectionnez du texte dans cette vue de document pour laisser un commentaire en ligne, ancré directement sur le passage concerné. Les commentaires s'affichent dans une barre latérale sous le document — résolvez-les ou supprimez-les selon les besoins. Il s'agit d'un outil d'annotation côté enseignant ; les élèves ne voient pas ces commentaires et ne peuvent pas y répondre.",
@@ -3350,7 +3406,7 @@
         "gr_delete_title": "Supprimer une note",
         "gr_delete_body": "L'icône de corbeille sur la page de notation d'un élève supprime cette note (après confirmation). Pour une note de groupe, on vous demande si vous voulez supprimer uniquement la copie de cet élève ou la note partagée de tout le groupe. Les notes supprimées ne sont pas perdues définitivement — un enseignant/administrateur peut les restaurer depuis Admin → Archiver → Notes récemment supprimées.",
         "gr_peer_title": "Évaluation par les pairs & autoévaluation",
-        "gr_peer_item_peer_review": "Évaluation par les pairs — partagez une URL avec un élève pour évaluer le travail d'un camarade.",
+        "gr_peer_item_peer_review": "Évaluation par les pairs — partagez une URL avec un élève pour évaluer le travail d'un camarade. Le titre de la page indique l'évaluateur et l'élève évalué (ou Auto-évaluation si le lien ne contient pas d'évaluateur). Changer ou ajouter un tour avec des modifications non enregistrées demande d'abord une confirmation.",
         "gr_peer_item_self_assess": "Autoévaluation — les élèves s'évaluent eux-mêmes selon les énoncés Can-Do du CECRL. Les résultats sont stockés avec les notes de l'enseignant.",
         "gr_peer_item_analytics": "Analytique de l'évaluation par les pairs (/peer-analytics/:rubricId) — ouvrez depuis l'écran d'évaluation par les pairs pour voir des scores de cohérence comparant les notes des pairs à votre référence, une carte de chaleur de feedback indiquant quels critères reçoivent le plus de commentaires, et des tendances de round en round. Les évaluations sont associées aux évaluateurs via leur identifiant d'élève ; les anciens enregistrements sans identifiant sont affichés comme « Évaluateur anonyme ».",
         "gr_cograding_title": "Co-notation & modération",
@@ -3358,7 +3414,7 @@
         "gr_cograding_button": "Co-noter",
         "gr_cograding_body_mid": "sur la page d'un élève noté pour envoyer la soumission à une seconde notation indépendante — cela ouvre le même écran que l'évaluation par les pairs, mais avec un collègue au lieu d'un camarade comme évaluateur. Avec la synchronisation cloud activée et un établissement configuré, choisissez le collègue dans une liste déroulante issue des membres de l'établissement, afin que le même collègue soit toujours reconnu comme le même évaluateur même si son nom est saisi différemment ailleurs. Sans synchronisation cloud (ou sans établissement), la fenêtre revient à un champ de texte libre pour le nom/e-mail. Toute soumission où les deux notes diffèrent de plus d'un seuil de points configurable apparaît dans",
         "gr_cograding_moderation": "Modération",
-        "gr_cograding_body_suffix": "dans la barre latérale, avec une répartition des écarts par critère et un choix en un clic pour conserver la note d'origine ou accepter celle du second correcteur.",
+        "gr_cograding_body_suffix": "dans la barre latérale, avec une répartition des écarts par critère. Conserver la note d'origine ou accepter celle du second correcteur demande une confirmation et affiche la note avant et après ; l'évaluation du second correcteur est conservée comme résolue au lieu d'être supprimée.",
         "gr_cograding_reconcile_body_prefix": "Une troisième option,",
         "gr_cograding_reconcile_button": "Concilier (moyenne)",
         "gr_cograding_reconcile_body_suffix": "ouvre un aperçu de la note fusionnée — la moyenne des points sur chaque critère divergent — à confirmer avant application, plutôt que de choisir entièrement la note d'un correcteur.",
@@ -3624,7 +3680,7 @@
         "da_management_intro": "Toutes les données résident par défaut dans le localStorage. La synchronisation Supabase est facultative.",
         "da_backup_title": "Sauvegarde & restauration",
         "da_backup_item_export": "Exportez l'ensemble de données complet vers un seul fichier JSON depuis les Paramètres.",
-        "da_backup_item_restore": "Restaurez à partir de n'importe quel JSON de sauvegarde précédent — remplace toutes les données actuelles.",
+        "da_backup_item_restore": "Restaurez à partir de n'importe quel JSON de sauvegarde précédent — remplace toutes les données actuelles. La confirmation liste les paramètres qui changeront ; votre rôle, l'e-mail du compte, le code PIN administrateur, l'établissement et les clés API ne sont jamais restaurés.",
         "da_backup_item_docker": "Déploiements Docker : utilisez scripts/backup.sh et scripts/restore.sh pour les sauvegardes côté serveur.",
         "da_sync_title": "Synchronisation Supabase",
         "da_sync_item_env": "Définissez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY pour activer la synchronisation.",
@@ -3641,16 +3697,16 @@
         "da_admin_title": "Panneau d'administration",
         "da_admin_intro_prefix": "Accessible sur",
         "da_admin_intro_suffix": "pour les utilisateurs ayant le rôle administrateur.",
-        "da_admin_item_users": "Onglet Utilisateurs — attribuer des rôles (admin, enseignant, élève), inviter des collègues.",
+        "da_admin_item_users": "Onglet Utilisateurs — attribuer des rôles (admin, enseignant, élève), inviter des collègues. Les changements de rôle demandent une confirmation et le dernier administrateur ne peut pas être rétrogradé — nommez d'abord quelqu'un d'autre. Si plus aucun administrateur ne peut se connecter, un opérateur du serveur peut en rétablir un (voir le guide d'exploitation auto-hébergée).",
         "da_admin_item_schools": "Onglet Établissements — gérer les noms d'établissement et l'image de marque.",
         "da_admin_item_database": "Onglet Base de données — configurer la connexion Supabase, envoyer/récupérer des données, gérer le partage.",
         "da_admin_item_integrations": "Onglet Intégrations — clé API Standards.",
         "da_admin_item_data": "Onglet Données — anonymiser les données des élèves, suppression en masse, outils de conformité.",
         "da_admin_item_retention": "Onglet Conservation — définir des politiques de conservation des données automatiques par établissement.",
-        "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé des changements de rôle, enregistrements de notes, exports et événements d'authentification ; les administrateurs voient toutes les entrées, les enseignants voient les leurs. Les entrées sont conservées 3 ans (admin), 1 an (note), 1 mois (export/auth) puis automatiquement purgées.",
+        "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé indiquant qui a fait quoi, avec les détails : changements de rôle, adhésion et modifications d'école, partage de grilles/classes, modifications des paramètres du site, réinitialisations de mot de passe, « Supprimer toutes mes données », notes enregistrées et exports. Les changements sensibles sont enregistrés par la base de données elle-même, uniquement s'ils ont réellement eu lieu. Les admins voient toutes les entrées, les enseignants les leurs. Conservation : 3 ans (admin), 1 an (notes), 1 mois (export/authentification), puis suppression automatique.",
         "da_settings_title": "Paramètres",
         "da_settings_item_theme": "Thème — sombre / clair, sélecteur de couleur d'accent, 8 préréglages rapides, ou choisissez un ensemble de thème nommé (Academy, Nature, Midnight, Warm, Slate, Rose) qui définit en un clic la police, l'accent et la couleur d'export.",
-        "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut.",
+        "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut. Chaque échelle doit avoir une plage commençant à 0 % pour que chaque score reçoive une note.",
         "da_settings_item_lang": "Langue — anglais, néerlandais, français, allemand, espagnol.",
         "da_settings_item_tour": "Visite guidée — relancer la visite d'intégration.",
         "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données.",
@@ -3704,7 +3760,7 @@
         "gr_layout_title": "Dispositions carte et grille",
         "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
-        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
+        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Une fois un critère sélectionné, ↑ / ↓ passent d'un critère à l'autre (Tab et Maj+Tab parcourent tous les boutons et champs comme d'habitude), Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
         "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
         "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale.",
         "es_focus_title": "Mode focus élève",
@@ -3745,7 +3801,14 @@
         "rb_tests_visual_editors_body": "Les questions de correction d'erreurs, de transformation avec mot clé, de texte à trous avec banque de mots et de construction de phrases se modifient sans saisir de syntaxe spéciale : marquez les fragments erronés et corrects en sélectionnant des mots du texte, ajoutez les réponses acceptées sous forme de cartes avec des pastilles, et les distracteurs sous forme de pastilles. Vous préférez saisir ou coller du texte ? Chaque éditeur propose un bouton « Modifier en texte » qui affiche la syntaxe brute ; les deux vues modifient les mêmes données.",
         "rb_tests_a4_preview_label": "Aperçu A4 :",
         "rb_tests_a4_preview_body": "Cliquez sur « Aperçu A4 » dans le créateur de tests pour ouvrir, à côté de vos questions, un aperçu en direct de la copie imprimée de l'élève. Activez « Corrigé » pour voir les bonnes réponses, masquez les points, zoomez ou imprimez la page. Modifiez l'en-tête, les consignes et le pied de page directement sur la page : ils sont enregistrés avec le test et figurent aussi dans l'export du livret d'examen.",
-        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver."
+        "gr_comparative_existing_note": "L'évaluation existante de chaque élève est chargée dans la session, et l'enregistrement d'une comparaison met à jour cette évaluation au lieu d'en créer une seconde. Si un élève a déjà plusieurs évaluations pour la grille, la session le signale et propose de ne garder que celle affichée ; les autres peuvent être restaurées depuis Admin → Archiver.",
+        "da_admin_item_archive": "Onglet Archives — restaurer les élèves archivés, les anonymiser ou les effacer définitivement (droit à l'effacement) : notes, commentaires, rédactions, réponses aux tests, messages, pièces jointes, numérisations et enregistrements liés à l'élève sont supprimés de l'appareil et de la base de données. Les sauvegardes cloud nocturnes conservent les 7 instantanés les plus récents par enseignant : un élève effacé en disparaît sous 7 jours ; les exports JSON et sauvegardes serveur que vous avez faits vous-même doivent être supprimés manuellement. Le compte de connexion de l'élève, s'il en avait un, est supprimé séparément par un administrateur dans Supabase Auth.",
+        "gr_feedback_item_audio_storage": "Commentaires vocaux enregistrés — sans connexion au cloud, les enregistrements sont stockés dans le navigateur, qui contient environ 5 Mo. Quand l'espace manque, l'enregistrement s'arrête automatiquement, un appareil plein n'en démarre pas, et si des enregistrements doivent être omis pour sauvegarder les notes, un avertissement s'affiche.",
+        "gr_mobile_swipe": "Balayer vers la gauche sur une zone vide de la page de correction propose d'enregistrer et de passer à l'élève suivant ; confirmez pour continuer. Un balayage qui commence sur un curseur, les boutons − / +, un champ de texte ou un tableau défilant ne compte jamais : faire glisser une note ne fait donc pas passer à l'élève suivant.",
+        "gr_scoring_item_nhi": "Non rendu (menu des réglages) : marque le travail comme manquant et l'exclut des statistiques, du tableau de bord et du portail élève. Si l'élève a déjà une note, une confirmation est demandée et le commentaire général existant est conservé. Un bandeau sur la page de correction permet d'annuler la marque ; noter et enregistrer le travail rendu en retard retire la marque automatiquement.",
+        "ce_overview_item_achieved": "Atteint ou visé : un niveau ne compte comme atteint que lorsque la moyenne de l'élève atteint le seuil de réussite de la grille. En dessous, la liste des élèves, l'aperçu CECRL et le tableau de bord affichent le niveau avec un badge en pointillés (« vise »), et les cartes de classe ne comptent que les niveaux atteints.",
+        "gr_unsaved_note": "Quitter une page de correction avec des modifications non enregistrées — par la barre latérale, le bouton Retour ou en fermant l'onglet — demande d'abord une confirmation. La correction comparative et l'évaluation par les pairs fonctionnent de la même manière. Enregistrer, Enregistrer et suivant et Non rendu enregistrent avant de continuer, sans rien demander.",
+        "rb_import_export_item_docx": "Import depuis Word ou PDF : téléversez un tableau de grille en .docx ou .pdf (critères en lignes, niveaux en colonnes). Les points suivent l'en-tête — p. ex. « Bien (3 pts) » ou « Faible (1-2 pts) » — ou, sans points, les noms des niveaux : un tableau Insuffisant → Excellent donne le plus de points à Excellent. Un pourcentage à côté d'un critère (« Contenu 40 % ») devient sa pondération. L'aperçu affiche les points de chaque niveau et la pondération de chaque critère, avec un avertissement pour tout ce qui a dû être deviné ; vérifiez-les avant de cliquer sur Créer la grille."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -3922,7 +3985,7 @@
     },
     "help": {
         "score_modifier_title": "Modificateurs de note",
-        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
+        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10 % ajoute 10 points de pourcentage) ou des points (ex. +5 ajoute 5 points au total de la grille, soit 2,5 % sur une grille de 200 points). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
         "lww_title": "Comment la synchronisation résout les conflits",
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",
@@ -4227,7 +4290,26 @@
         "col_criterion": "Critère",
         "none_detected": "Aucune structure de grille détectée. Essayez un autre fichier.",
         "try_another": "Essayer un autre fichier",
-        "create": "Créer la grille"
+        "create": "Créer la grille",
+        "weight_value": "Pondération {{weight}} %",
+        "points_value": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "warn_no_table": "Aucun tableau trouvé dans le document. Vérifiez que votre grille utilise une mise en page en tableau.",
+        "warn_no_pdf_text": "Impossible d'extraire du texte du PDF. Le fichier est peut-être une image (numérisation).",
+        "warn_no_structure": "Aucune structure de grille n'a été détectée dans le document.",
+        "warn_no_levels": "Un tableau a été trouvé, mais les colonnes de niveaux n'ont pas été détectées.",
+        "warn_no_criteria": "Un tableau a été trouvé, mais aucun critère n'a pu être extrait.",
+        "warn_one_criterion": "Un seul critère a été détecté — le document n'est peut-être pas une grille standard.",
+        "warn_one_level": "Un seul niveau a été détecté — les colonnes n'ont peut-être pas été lues correctement.",
+        "warn_invalid_json": "Format JSON non valide : la liste des critères est absente.",
+        "warn_json_failed": "Impossible de lire le JSON : {{message}}",
+        "warn_order_guessed": "Impossible de savoir si les colonnes de niveaux vont du meilleur au plus faible ou l'inverse. Les points supposent que la première colonne est la plus haute — vérifiez-les ci-dessous.",
+        "warn_points_partial": "Seuls certains en-têtes de niveau indiquent des points ; les autres niveaux ont reçu des points estimés.",
+        "warn_merged_row": "La ligne « {{title}} » s'étend sur plusieurs colonnes (un titre ?) et a été ignorée.",
+        "warn_untitled_row": "Une ligne avec du texte de niveau mais sans titre de critère (une cellule fusionnée ?) a été ignorée.",
+        "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
+        "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
+        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."
     },
     "standardsPicker": {
         "title": "Associer une norme",
@@ -4307,5 +4389,19 @@
         "col_average": "Moyenne de la classe",
         "col_weak": "Durablement faible",
         "col_declining": "En baisse"
+    },
+    "migration": {
+        "title": "Téléverser les données locales vers votre compte ?",
+        "found_local": "Nous avons trouvé des données locales dans ce navigateur :",
+        "count_rubrics": "grilles : {{n}}",
+        "count_students": "élèves : {{n}}",
+        "count_classes": "classes : {{n}}",
+        "explain": "Téléversez-les vers votre compte pour les retrouver sur vos autres appareils. Rien n'est supprimé de ce navigateur. Si vous passez, la question vous sera reposée la prochaine fois.",
+        "skip": "Plus tard",
+        "upload": "Téléverser vers le compte",
+        "uploading": "Téléversement…",
+        "retry": "Réessayer",
+        "upload_failed": "Le téléversement a échoué : rien n'a encore été transféré vers votre compte. Vos données sont toujours dans ce navigateur.",
+        "upload_success": "Vos données locales ont été téléversées vers votre compte."
     }
 }

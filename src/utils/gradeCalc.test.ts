@@ -11,8 +11,10 @@ import {
     calcGradeSummary,
     calcClassStats,
     orderedLevels,
+    patchScoreEntry,
     criterionMaxPointsOrOne,
     criterionPercentage,
+    effectiveWeight,
 } from './gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Rubric } from '../types';
 import type { GradeSummary } from './gradeCalc';
@@ -58,9 +60,9 @@ describe('gradeCalc utilities', () => {
                 levelId: 'l1a',
                 checkedSubItems: [],
                 comment: '',
-                overridePoints: 10,
+                overridePoints: 4.5,
             };
-            expect(calcEntryPoints(entry, mockCriteria[0])).toBe(10);
+            expect(calcEntryPoints(entry, mockCriteria[0])).toBe(4.5);
         });
 
         it('returns 0 if no level is selected', () => {
@@ -221,9 +223,16 @@ describe('gradeCalc utilities', () => {
             expect(applyModifier(80, { type: 'percentage', value: -10, reason: '' })).toBe(70);
         });
 
-        it('applies points modifiers as direct percentage modification (based on logic)', () => {
-            // Note: Currently in gradeCalc.ts, 'points' modifier acts exactly like 'percentage'
-            expect(applyModifier(80, { type: 'points', value: 5, reason: '' })).toBe(85);
+        it('converts a points offset through the max points (#674)', () => {
+            // 10 points on a 200-point rubric is +5 percentage points, not +10.
+            expect(applyModifier(90, { type: 'points', value: 10, reason: '' }, 200)).toBe(95);
+            expect(applyModifier(90, { type: 'points', value: -20, reason: '' }, 200)).toBe(80);
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' }, 10)).toBe(100);
+        });
+
+        it('ignores a points offset when there is no positive max', () => {
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' })).toBe(80);
+            expect(applyModifier(80, { type: 'points', value: 5, reason: '' }, 0)).toBe(80);
         });
 
         it('applies level modifiers (value * 10)', () => {
@@ -464,6 +473,65 @@ describe('gradeCalc utilities', () => {
         });
     });
 
+    describe('stale points after a level change (#628)', () => {
+        const base: ScoreEntry = {
+            criterionId: 'c1',
+            levelId: 'good',
+            checkedSubItems: [],
+            comment: 'keep',
+            selectedPoints: 85,
+            subItemScores: { s1: 3 },
+        };
+
+        it('drops range points and sub-item scores when the level changes', () => {
+            const next = patchScoreEntry(base, { levelId: 'excellent' });
+            expect(next.levelId).toBe('excellent');
+            expect(next.selectedPoints).toBeUndefined();
+            expect(next.subItemScores).toBeUndefined();
+            expect(next.comment).toBe('keep');
+        });
+
+        it('drops ticked sub-item checkboxes so switching back does not restore their points', () => {
+            const ticked: ScoreEntry = { ...base, checkedSubItems: ['s1'] };
+            const away = patchScoreEntry(ticked, { levelId: 'excellent' });
+            expect(away.checkedSubItems).toEqual([]);
+            expect(patchScoreEntry(away, { levelId: 'good' }).checkedSubItems).toEqual([]);
+            expect(patchScoreEntry(ticked, { levelId: 'good' }).checkedSubItems).toEqual(['s1']);
+            expect(patchScoreEntry(ticked, { levelId: 'excellent', checkedSubItems: ['s2'] }).checkedSubItems).toEqual([
+                's2',
+            ]);
+        });
+
+        it('keeps points when the level is unchanged or the patch sets them', () => {
+            expect(patchScoreEntry(base, { levelId: 'good' }).selectedPoints).toBe(85);
+            expect(patchScoreEntry(base, { selectedPoints: 80 }).selectedPoints).toBe(80);
+            expect(patchScoreEntry(base, { levelId: 'excellent', selectedPoints: 95 }).selectedPoints).toBe(95);
+        });
+
+        it('never scores a sub-item criterion below the selected level minimum', () => {
+            const criterion: RubricCriterion = {
+                id: 'c1',
+                title: 'C',
+                description: '',
+                weight: 1,
+                levels: [
+                    { id: 'good', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] },
+                    {
+                        id: 'exc',
+                        label: 'Excellent',
+                        minPoints: 90,
+                        maxPoints: 100,
+                        description: '',
+                        subItems: [{ id: 's1', label: 'S', maxPoints: 5 }],
+                    },
+                ],
+            };
+            expect(calcEntryPoints({ ...base, levelId: 'exc', selectedPoints: 75, subItemScores: {} }, criterion)).toBe(
+                90
+            );
+        });
+    });
+
     describe('applyModifier — unknown type fallback', () => {
         it('returns unchanged score for unknown modifier type', () => {
             expect(applyModifier(80, { type: 'unknown' as any, value: 5, reason: '' })).toBe(80);
@@ -471,7 +539,7 @@ describe('gradeCalc utilities', () => {
     });
 
     describe('calcWeightedScore — maxPoints === 0 branch', () => {
-        it('skips criteria where all level maxPoints are 0', () => {
+        it('excludes criteria where all level maxPoints are 0 from score and weight', () => {
             const criteria: RubricCriterion[] = [
                 {
                     id: 'c1',
@@ -493,10 +561,8 @@ describe('gradeCalc utilities', () => {
                 { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '', selectedPoints: 5 },
                 { criterionId: 'c2', levelId: 'l2', checkedSubItems: [], comment: '' },
             ];
-            // Only c1 contributes: 5/10 * 50 = 25; totalWeight is 100 but only c1's weight=50 matters
-            // calcWeightedScore: weightedSum = (5/10)*50 = 25; totalWeight = 100
-            // Result: (25/100)*100 = 25
-            expect(calcWeightedScore(entries, criteria)).toBe(25);
+            // c2's weight must not dilute c1: 5/10 on the only scorable criterion is 50% (#647).
+            expect(calcWeightedScore(entries, criteria)).toBe(50);
         });
     });
 
@@ -796,6 +862,72 @@ describe('gradeCalc utilities', () => {
         });
     });
 
+    describe('calcGradeSummary — points modifier (#674)', () => {
+        const criteria: RubricCriterion[] = [100, 100].map((max, i) => ({
+            id: `c${i}`,
+            title: `C${i}`,
+            description: '',
+            weight: 50,
+            levels: [{ id: `l${i}`, label: 'Top', minPoints: 90, maxPoints: max, description: '', subItems: [] }],
+        }));
+        const sr = (modifier?: StudentRubric['globalModifier']): StudentRubric => ({
+            id: 'sr',
+            rubricId: 'r',
+            studentId: 's',
+            entries: criteria.map((c) => ({
+                criterionId: c.id,
+                levelId: null,
+                overridePoints: 90,
+                checkedSubItems: [],
+                comment: '',
+            })),
+            overallComment: '',
+            isPeerReview: false,
+            globalModifier: modifier,
+        });
+
+        it('reconciles footer points and percentage on a 200-point rubric', () => {
+            const s = calcGradeSummary(sr({ type: 'points', value: 10, reason: '' }), criteria, null, {
+                scoringMode: 'total-points',
+                totalMaxPoints: 200,
+            });
+            expect(s.rawScore).toBe(180);
+            expect(s.modifiedPoints).toBe(190);
+            expect(s.modifiedPercentage).toBeCloseTo(95);
+            expect((s.modifiedPoints / s.configuredMaxPoints) * 100).toBeCloseTo(s.modifiedPercentage);
+        });
+
+        it('uses the calculated max in weighted mode and leaves points alone for percentage modifiers', () => {
+            const pts = calcGradeSummary(sr({ type: 'points', value: -20, reason: '' }), criteria, null);
+            expect(pts.modifiedPercentage).toBeCloseTo(80);
+            expect(pts.modifiedPoints).toBe(160);
+            const pct = calcGradeSummary(sr({ type: 'percentage', value: 5, reason: '' }), criteria, null);
+            expect(pct.modifiedPercentage).toBeCloseTo(95);
+            expect(pct.modifiedPoints).toBe(180);
+        });
+
+        it('moves points and percentage by the same share of the max on an unevenly weighted rubric', () => {
+            const weighted = criteria.map((c, i) => ({ ...c, weight: i === 0 ? 90 : 10 }));
+            const entries = sr().entries.map((e, i) => ({ ...e, overridePoints: i === 0 ? 90 : 0 }));
+            const s = calcGradeSummary({ ...sr({ type: 'points', value: 10, reason: '' }), entries }, weighted, null);
+            expect(s.percentage).toBeCloseTo(81);
+            expect(s.modifiedPercentage).toBeCloseTo(86);
+            expect(s.modifiedPoints - s.rawScore).toBe(10);
+            expect(((s.modifiedPoints - s.rawScore) / s.configuredMaxPoints) * 100).toBeCloseTo(
+                s.modifiedPercentage - s.percentage
+            );
+        });
+
+        it('clamps modified points to 0…max', () => {
+            expect(calcGradeSummary(sr({ type: 'points', value: 50, reason: '' }), criteria, null).modifiedPoints).toBe(
+                200
+            );
+            expect(
+                calcGradeSummary(sr({ type: 'points', value: -500, reason: '' }), criteria, null).modifiedPoints
+            ).toBe(0);
+        });
+    });
+
     describe('calcGradeSummary — ungraded entry and null scale', () => {
         const scale: GradeScale = {
             id: 's1',
@@ -829,6 +961,80 @@ describe('gradeCalc utilities', () => {
             const summary = calcGradeSummary(studentRubric, mockCriteria, null);
             expect(summary.letterGrade).toBe('—');
             expect(summary.gradeColor).toBe('#6b7280');
+        });
+    });
+
+    describe('robustness against out-of-range data (#651)', () => {
+        const tenPoint: RubricCriterion = {
+            id: 'c1',
+            title: 'Ten',
+            description: '',
+            weight: 1,
+            levels: [
+                { id: 'lo', label: 'Low', minPoints: 0, maxPoints: 4, description: '', subItems: [] },
+                { id: 'hi', label: 'High', minPoints: 5, maxPoints: 10, description: '', subItems: [] },
+            ],
+        };
+        const entry = (patch: Partial<ScoreEntry>): ScoreEntry => ({
+            criterionId: 'c1',
+            levelId: null,
+            checkedSubItems: [],
+            comment: '',
+            ...patch,
+        });
+
+        it('clamps override points to [0, criterion max]', () => {
+            expect(calcEntryPoints(entry({ overridePoints: 25 }), tenPoint)).toBe(10);
+            expect(calcEntryPoints(entry({ overridePoints: -5 }), tenPoint)).toBe(0);
+            expect(calcEntryPoints(entry({ overridePoints: NaN }), tenPoint)).toBe(0);
+        });
+
+        it('leaves overrides on criteria without point levels uncapped above 0', () => {
+            const freePoints: RubricCriterion = { ...tenPoint, levels: [] };
+            expect(calcEntryPoints(entry({ overridePoints: 20 }), freePoints)).toBe(20);
+            expect(calcEntryPoints(entry({ overridePoints: -5 }), freePoints)).toBe(0);
+        });
+
+        it('treats NaN and negative weights as 0', () => {
+            expect(effectiveWeight({ ...tenPoint, weight: NaN })).toBe(0);
+            expect(effectiveWeight({ ...tenPoint, weight: -3 })).toBe(0);
+            const other: RubricCriterion = { ...tenPoint, id: 'c2', weight: 1 };
+            const entries = [
+                entry({ levelId: 'hi', selectedPoints: 10 }),
+                { ...entry({ levelId: 'lo', selectedPoints: 0 }), criterionId: 'c2' },
+            ];
+            expect(calcWeightedScore(entries, [{ ...tenPoint, weight: -1 }, other])).toBe(0);
+            const score = calcWeightedScore(entries, [{ ...tenPoint, weight: NaN }, other]);
+            expect(Number.isNaN(score)).toBe(false);
+        });
+
+        it('clamps the total-points percentage when totalMaxPoints is below the raw maximum', () => {
+            const sr: StudentRubric = {
+                id: 'sr',
+                rubricId: 'r',
+                studentId: 's',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [entry({ levelId: 'hi', selectedPoints: 10 })],
+            };
+            const summary = calcGradeSummary(sr, [tenPoint], null, { scoringMode: 'total-points', totalMaxPoints: 5 });
+            expect(summary.percentage).toBe(100);
+        });
+
+        it('does not count an entry with an undefined levelId as graded', () => {
+            const legacy = { criterionId: 'c1', checkedSubItems: [], comment: '' } as unknown as ScoreEntry;
+            const sr: StudentRubric = {
+                id: 'sr',
+                rubricId: 'r',
+                studentId: 's',
+                isPeerReview: false,
+                overallComment: '',
+                entries: [legacy],
+            };
+            expect(calcGradeSummary(sr, [tenPoint], null).gradedCount).toBe(0);
+            expect(
+                calcGradeSummary({ ...sr, entries: [entry({ overridePoints: 0 })] }, [tenPoint], null).gradedCount
+            ).toBe(1);
         });
     });
 });

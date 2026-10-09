@@ -4,9 +4,10 @@
  * using heuristic table detection.
  */
 
-import type { LinkedStandard, Rubric, RubricCriterion, RubricFormat, RubricLevel, ScoringMode } from '../types';
+import type { LinkedStandard, Rubric, RubricCriterion, RubricFormat, ScoringMode } from '../types';
 import { nanoid } from './nanoid';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
+import type { ImportWarning } from './questionBankImport';
 
 /** Shape of a rubric JSON export — loosely typed since it's untrusted file input. */
 interface RawRubricJson {
@@ -42,7 +43,8 @@ export interface ParsedRubric {
     criteria: RubricCriterion[];
     /** Number of cells successfully parsed (quality indicator) */
     confidence: 'high' | 'medium' | 'low';
-    warnings: string[];
+    /** i18n keys (namespace `importRubric`) with interpolation params. */
+    warnings: ImportWarning[];
 }
 
 interface RawTable {
@@ -64,7 +66,7 @@ export async function parseDocxToRubric(file: File): Promise<ParsedRubric> {
 
     const tables = doc.querySelectorAll('table');
     if (tables.length === 0) {
-        return emptyResult(['No table found in document. Make sure your rubric uses a table layout.']);
+        return emptyResult([{ key: 'importRubric.warn_no_table' }]);
     }
 
     // Pick the largest table (most likely the rubric)
@@ -137,7 +139,7 @@ export async function parsePdfToRubric(file: File): Promise<ParsedRubric> {
     }
 
     if (allLines.length === 0) {
-        return emptyResult(['Could not extract any text from PDF. The file may be image-based (scanned).']);
+        return emptyResult([{ key: 'importRubric.warn_no_pdf_text' }]);
     }
 
     const rawTable = detectTableFromLines(allLines);
@@ -203,11 +205,79 @@ export function splitCells(line: string): string[] {
 
 // ─── Build ParsedRubric from RawTable ─────────────────────────────────────────
 
+/** Quality rank of common level names (higher = better), used to tell ascending from descending tables. */
+const LEVEL_RANKS: [RegExp, number][] = [
+    [
+        /\b(excellent|outstanding|distinguished|exemplary|exceeds|exceptional|advanced|mastering|mastery|very good|high|highest|uitstekend|zeer goed)\b/i,
+        5,
+    ],
+    [/\b(good|proficient|meets|accomplished|strong|goed|ruim voldoende)\b/i, 4],
+    [/\b(satisfactory|sufficient|adequate|competent|complete|full|voldoende)\b/i, 3],
+    [/\b(fair|developing|approaching|partial|basic|emerging|average|matig)\b/i, 2],
+    [
+        /\b(poor|weak|beginning|needs improvement|below|unsatisfactory|insufficient|limited|not yet|inadequate|incomplete|missing|low|lowest|onvoldoende|slecht|zwak)\b/i,
+        1,
+    ],
+];
+
+function levelRank(label: string): number | null {
+    for (const [re, rank] of LEVEL_RANKS) if (re.test(label)) return rank;
+    const numbered = label.match(/\b(?:level|band|niveau|stage|score)\s*(\d+)\b/i);
+    return numbered ? Number(numbered[1]) : null;
+}
+
+const HEADER_POINTS_RE =
+    /\(?\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]|to)?\s*(\d+(?:[.,]\d+)?)?\s*(?:pts?|points?|punten|pnt|pt|p)\b\.?\s*\)?/i;
+const BARE_NUMBER_RE = /^\s*(\d+(?:[.,]\d+)?)\s*(?:[-–—]\s*(\d+(?:[.,]\d+)?))?\s*$/;
+const WEIGHT_RE = /\(?\s*(\d+(?:[.,]\d+)?)\s*%\s*\)?/;
+
+const toNum = (v: string) => parseFloat(v.replace(',', '.'));
+
+/** Splits a header like "Weak (1-2 pts)" or "4" into a clean label and its point range, when present. */
+export function parseLevelHeader(header: string): { label: string; points: { min: number; max: number } | null } {
+    const bare = header.match(BARE_NUMBER_RE);
+    if (bare) {
+        const a = toNum(bare[1]);
+        const b = bare[2] ? toNum(bare[2]) : a;
+        return { label: header.trim(), points: { min: Math.min(a, b), max: Math.max(a, b) } };
+    }
+    const m = header.match(HEADER_POINTS_RE);
+    if (!m) return { label: header.trim(), points: null };
+    const a = toNum(m[1]);
+    const b = m[2] ? toNum(m[2]) : a;
+    const label = header.replace(m[0], ' ').replace(/\s+/g, ' ').trim() || header.trim();
+    return { label, points: { min: Math.min(a, b), max: Math.max(a, b) } };
+}
+
+/** Splits a criterion cell like "Content 40%" or "Language (60%)" into its title and weight, when present. */
+export function parseCriterionCell(cell: string): { title: string; weight: number | null } {
+    const m = cell.match(WEIGHT_RE);
+    if (!m) return { title: cell.trim(), weight: null };
+    const title = cell.replace(m[0], ' ').replace(/\s+/g, ' ').trim();
+    return { title: title || cell.trim(), weight: toNum(m[1]) };
+}
+
+/** Integer weights summing to 100 (largest remainder), proportional to `raw`. */
+function normaliseWeights(raw: number[]): number[] {
+    const total = raw.reduce((a, b) => a + b, 0);
+    if (total <= 0) return normaliseWeights(raw.map(() => 1));
+    const exact = raw.map((w) => (w / total) * 100);
+    const floored = exact.map(Math.floor);
+    let remainder = 100 - floored.reduce((a, b) => a + b, 0);
+    const order = exact.map((e, i) => ({ i, frac: e - Math.floor(e) })).sort((x, y) => y.frac - x.frac);
+    for (const { i } of order) {
+        if (remainder <= 0) break;
+        floored[i] += 1;
+        remainder -= 1;
+    }
+    return floored;
+}
+
 export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRubric {
-    const warnings: string[] = [];
+    const warnings: ImportWarning[] = [];
 
     if (raw.headers.length === 0 || raw.rows.length === 0) {
-        return emptyResult(['Could not detect a rubric table structure in the document.']);
+        return emptyResult([{ key: 'importRubric.warn_no_structure' }]);
     }
 
     // Determine level labels from header row (skip first col which is "Criterion")
@@ -215,63 +285,107 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
     const criterionColIdx =
         firstHeader.includes('criterion') || firstHeader.includes('criteria') || firstHeader.length < 30 ? 0 : -1;
 
-    const levelLabels = criterionColIdx === 0 ? raw.headers.slice(1) : raw.headers;
+    const levelHeaders = (criterionColIdx === 0 ? raw.headers.slice(1) : raw.headers).map(parseLevelHeader);
 
-    if (levelLabels.length === 0) {
-        return emptyResult(['Found a table but could not detect level columns.']);
+    if (levelHeaders.length === 0) {
+        return emptyResult([{ key: 'importRubric.warn_no_levels' }]);
     }
 
-    // Default increasing point values based on number of levels
-    const defaultPoints = (idx: number, total: number) => total - idx; // e.g. 4,3,2,1 for 4 levels
+    const total = levelHeaders.length;
+    const withPoints = levelHeaders.filter((h) => h.points).length;
+    // Rank by header points when every level has them, otherwise by level keywords.
+    const ranks = levelHeaders.map((h) => (withPoints === total ? h.points!.max : levelRank(h.label)));
+    const known = ranks.filter((r): r is number => r !== null);
+    const ascending = known.length >= 2 && known[known.length - 1] > known[0];
+    const orderKnown = known.length >= 2 && known[known.length - 1] !== known[0];
+    let ambiguous = false;
+    if (withPoints > 0 && withPoints < total) warnings.push({ key: 'importRubric.warn_points_partial' });
+    if (withPoints < total && !orderKnown && total > 1) {
+        ambiguous = true;
+        warnings.push({ key: 'importRubric.warn_order_guessed' });
+    }
+    const levelPoints = levelHeaders.map((h, i) => {
+        if (h.points) return h.points;
+        const pts = ascending ? i + 1 : total - i;
+        return { min: pts, max: pts };
+    });
 
-    const criteria: RubricCriterion[] = [];
+    const descStart = criterionColIdx === 0 ? 1 : 0;
+    const expectedCells = descStart + total;
+    let mismatched = false;
+    const parsedRows: { title: string; weight: number | null; row: string[] }[] = [];
 
     for (const row of raw.rows) {
         if (row.length === 0) continue;
-
-        const criterionName = criterionColIdx === 0 ? row[0] : row[0];
-        const descStart = criterionColIdx === 0 ? 1 : 0;
-
-        const levels: RubricLevel[] = levelLabels.map((label, i) => {
-            const pts = defaultPoints(i, levelLabels.length);
-            return {
-                id: nanoid(),
-                label,
-                minPoints: pts,
-                maxPoints: pts,
-                description: row[descStart + i] ?? '',
-                subItems: [],
-            };
-        });
-
-        if (criterionName) {
-            criteria.push({
-                id: nanoid(),
-                title: criterionName,
-                description: '',
-                weight: Math.round(100 / raw.rows.length),
-                levels,
+        if (!row[0]) {
+            // An empty title cell (often a vertically merged one) — level text would be lost silently.
+            if (row.some((c) => c.trim().length > 0)) {
+                warnings.push({ key: 'importRubric.warn_untitled_row' });
+                mismatched = true;
+            }
+            continue;
+        }
+        const filled = row.filter((c) => c.trim().length > 0).length;
+        if (total >= 2 && filled === 1) {
+            // A merged (colspan) row such as a section heading — not a criterion.
+            warnings.push({ key: 'importRubric.warn_merged_row', params: { title: row[0] } });
+            mismatched = true;
+            continue;
+        }
+        if (row.length !== expectedCells) {
+            mismatched = true;
+            warnings.push({
+                key: 'importRubric.warn_cell_count',
+                params: { title: row[0], found: Math.max(0, row.length - descStart), expected: total },
             });
         }
+        const { title, weight } = parseCriterionCell(row[0]);
+        parsedRows.push({ title, weight, row });
     }
 
-    if (criteria.length === 0) {
-        return emptyResult(['Table found but no criteria could be extracted.']);
+    if (parsedRows.length === 0) {
+        return emptyResult([...warnings, { key: 'importRubric.warn_no_criteria' }]);
     }
 
-    if (criteria.length < 2)
-        warnings.push('Only one criterion was detected — the document may not be a standard rubric.');
-    if (levelLabels.length < 2)
-        warnings.push('Only one level was detected — columns may not have been parsed correctly.');
+    const given = parsedRows.map((r) => r.weight);
+    const givenCount = given.filter((w) => w !== null).length;
+    let rawWeights: number[];
+    if (givenCount === 0) {
+        rawWeights = given.map(() => 1);
+    } else if (givenCount === given.length) {
+        rawWeights = given as number[];
+        const sum = rawWeights.reduce((a, b) => a + b, 0);
+        if (Math.abs(sum - 100) > 0.5)
+            warnings.push({ key: 'importRubric.warn_weights_scaled', params: { total: sum } });
+    } else {
+        const sum = given.reduce<number>((a, b) => a + (b ?? 0), 0);
+        const remaining = Math.max(0, 100 - sum);
+        const share = remaining / (given.length - givenCount);
+        rawWeights = given.map((w) => w ?? share);
+        warnings.push({ key: 'importRubric.warn_weights_partial', params: { remaining: Math.round(remaining) } });
+    }
+    const weights = normaliseWeights(rawWeights);
 
-    /* v8 ignore next -- 'low' is unreachable here: the levelLabels.length === 0 and criteria.length === 0
-       guards above already returned an empty result, so both counts are >= 1 at this point */
+    const criteria: RubricCriterion[] = parsedRows.map(({ title, row }, idx) => ({
+        id: nanoid(),
+        title,
+        description: '',
+        weight: weights[idx],
+        levels: levelHeaders.map((h, i) => ({
+            id: nanoid(),
+            label: h.label,
+            minPoints: levelPoints[i].min,
+            maxPoints: levelPoints[i].max,
+            description: row[descStart + i] ?? '',
+            subItems: [],
+        })),
+    }));
+
+    if (criteria.length < 2) warnings.push({ key: 'importRubric.warn_one_criterion' });
+    if (total < 2) warnings.push({ key: 'importRubric.warn_one_level' });
+
     const confidence: ParsedRubric['confidence'] =
-        criteria.length >= 2 && levelLabels.length >= 2
-            ? 'high'
-            : criteria.length >= 1 && levelLabels.length >= 1
-              ? 'medium'
-              : 'low';
+        criteria.length >= 2 && total >= 2 && !mismatched && !ambiguous ? 'high' : 'medium';
 
     return {
         name: defaultName,
@@ -283,7 +397,7 @@ export function buildParsedRubric(raw: RawTable, defaultName: string): ParsedRub
     };
 }
 
-function emptyResult(warnings: string[]): ParsedRubric {
+function emptyResult(warnings: ImportWarning[]): ParsedRubric {
     return {
         name: '',
         subject: '',
@@ -302,7 +416,7 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
         const data = JSON.parse(text) as RawRubricJson;
 
         if (!data || !Array.isArray(data.criteria)) {
-            return emptyResult(['Invalid JSON format: missing criteria array.']);
+            return emptyResult([{ key: 'importRubric.warn_invalid_json' }]);
         }
 
         // Deep clone and regenerate all IDs to prevent collisions when importing into the same workspace
@@ -342,7 +456,7 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
         };
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return emptyResult([`Failed to parse JSON: ${message}`]);
+        return emptyResult([{ key: 'importRubric.warn_json_failed', params: { message } }]);
     }
 }
 

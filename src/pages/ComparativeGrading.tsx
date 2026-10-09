@@ -19,10 +19,12 @@ import { getComparativeTourSteps } from '../data/TutorialSteps';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
-import { calcGradeSummary } from '../utils/gradeCalc';
+import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry } from '../types';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
 const COMBINED_ID = '__combined__';
 
@@ -220,7 +222,9 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const [srA, setSrA] = useState<(typeof studentRubrics)[0] | null>(null);
     const [srB, setSrB] = useState<(typeof studentRubrics)[0] | null>(null);
     const [error, setError] = useState('');
+    // Set by teacher edits only — loading a matchup's existing grades leaves the page clean.
     const [isDirty, setIsDirty] = useState(false);
+    const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const [sessionDone, setSessionDone] = useState(false);
     // Per-student limit, persisted on the rubric so it survives reloads and applies across
     // devices/sessions. Seeded from the rubric (falling back to the global default setting for
@@ -260,22 +264,6 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             pickNextMatchup(startStudentId);
         }
     }, [classStudents, rubric]);
-
-    // Warn on unsaved changes when navigating away
-    useEffect(() => {
-        const handler = (e: BeforeUnloadEvent) => {
-            if (!isDirty) return;
-            e.preventDefault();
-            e.returnValue = '';
-        };
-        window.addEventListener('beforeunload', handler);
-        return () => window.removeEventListener('beforeunload', handler);
-    }, [isDirty]);
-
-    // Mark dirty whenever scores change
-    useEffect(() => {
-        if (srA || srB) setIsDirty(true);
-    }, [srA, srB]);
 
     // Older sessions appended a second record per matchup (#618); flag those and let the teacher keep
     // the one on screen. The rest are soft-deleted, so they stay restorable from Admin → Archive.
@@ -426,16 +414,21 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         idxA = Math.max(0, Math.min(idxA, sortedLevels.length - 1));
         idxB = Math.max(0, Math.min(idxB, sortedLevels.length - 1));
 
+        setIsDirty(true);
         setSrA({
             ...srA,
             entries: srA.entries.map((e) =>
-                e.criterionId === criterionId ? { ...e, levelId: sortedLevels[idxA].id, overridePoints: undefined } : e
+                e.criterionId === criterionId
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined })
+                    : e
             ),
         });
         setSrB({
             ...srB,
             entries: srB.entries.map((e) =>
-                e.criterionId === criterionId ? { ...e, levelId: sortedLevels[idxB].id, overridePoints: undefined } : e
+                e.criterionId === criterionId
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined })
+                    : e
             ),
         });
     }
@@ -447,12 +440,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const updateEntry = useCallback(
         (isA: boolean, criterionId: string, patch: Partial<ScoreEntry>) => {
             const setter = isA ? setSrA : setSrB;
+            setIsDirty(true);
             setter((prev) => {
                 // v8 ignore next 1 -- updateEntry only runs from session controls while both SRs are set
                 if (!prev) return prev;
                 return {
                     ...prev,
-                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e)),
+                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e)),
                 };
             });
         },
@@ -1422,6 +1416,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         placeholder={t('comparativeGrading.overall_feedback_placeholder')}
                                         value={srA.overallComment || ''}
                                         onChange={(e) => {
+                                            setIsDirty(true);
                                             /* v8 ignore next -- srA is non-null whenever the textarea renders */
                                             setSrA((prev) =>
                                                 prev ? { ...prev, overallComment: e.target.value } : prev
@@ -1439,6 +1434,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         placeholder={t('comparativeGrading.overall_feedback_placeholder')}
                                         value={srB.overallComment || ''}
                                         onChange={(e) => {
+                                            setIsDirty(true);
                                             /* v8 ignore next -- srB is non-null whenever the textarea renders */
                                             setSrB((prev) =>
                                                 prev ? { ...prev, overallComment: e.target.value } : prev
@@ -1484,6 +1480,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                     </div>
                 </div>
             </div>
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

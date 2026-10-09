@@ -40,7 +40,10 @@ import { isLocalMode } from '../store/storage';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
 import { exportFullBackup } from '../store/storage';
+import { hasFloorRange } from '../utils/gradeCalc';
 import { seedDemoData } from '../utils/seedDemoData';
+import { diffRestoredSettings, hasIgnoredProtectedSettings, type SettingChange } from '../utils/backupSettings';
+import BackupSettingsChanges from '../components/Settings/BackupSettingsChanges';
 import { hashPin, verifyPin, isHashed } from '../utils/pinHash';
 import { THEME_BUNDLES, ACCENT_PRESETS } from '../data/themes';
 import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
@@ -150,6 +153,8 @@ export default function SettingsPage() {
         students: number;
         classes: number;
         studentRubrics: number;
+        settingsChanges: SettingChange[];
+        ignoredProtectedSettings: boolean;
     }
     const [backupPreview, setBackupPreview] = useState<{ json: string; summary: BackupSummary } | null>(null);
 
@@ -300,6 +305,10 @@ export default function SettingsPage() {
                     showToast(t('toast.import_error'), 'error');
                     return;
                 }
+                const backupSettings =
+                    data.settings && typeof data.settings === 'object' && !Array.isArray(data.settings)
+                        ? (data.settings as Record<string, unknown>)
+                        : null;
                 setBackupPreview({
                     json,
                     summary: {
@@ -311,6 +320,10 @@ export default function SettingsPage() {
                             data.studentRubrics !== undefined && Array.isArray(data.studentRubrics)
                                 ? data.studentRubrics.length
                                 : 0,
+                        settingsChanges: backupSettings ? diffRestoredSettings(settings, backupSettings) : [],
+                        ignoredProtectedSettings: backupSettings
+                            ? hasIgnoredProtectedSettings(settings, backupSettings)
+                            : false,
                     },
                 });
             } catch {
@@ -379,7 +392,24 @@ export default function SettingsPage() {
         const scale = gradeScales.find((g) => g.id === scaleId);
         /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
-        updateGradeScale({ ...scale, ranges: scale.ranges.filter((_, i) => i !== idx) });
+        const ranges = scale.ranges.filter((_, i) => i !== idx);
+        if (hasFloorRange(scale.ranges) && !hasFloorRange(ranges)) {
+            showToast(t('settings.alert_scale_needs_floor'), 'error');
+            return;
+        }
+        updateGradeScale({ ...scale, ranges });
+    }
+
+    function fixScaleFloor(scale: GradeScale) {
+        if (scale.ranges.length === 0) {
+            updateGradeScale({
+                ...scale,
+                ranges: [{ min: 0, max: 100, label: t('settings.scale_default_range_label'), color: '#22c55e' }],
+            });
+            return;
+        }
+        const lowest = scale.ranges.reduce((lo, r, i) => (r.min < scale.ranges[lo].min ? i : lo), 0);
+        updateGradeScale({ ...scale, ranges: scale.ranges.map((r, i) => (i === lowest ? { ...r, min: 0 } : r)) });
     }
 
     function updateMasteryBand(idx: number, patch: Partial<GradeRange>) {
@@ -1196,7 +1226,14 @@ export default function SettingsPage() {
                                         const gs = addGradeScale({
                                             name: t('settings.scale_new_name'),
                                             type: 'custom',
-                                            ranges: [{ min: 0, max: 100, label: 'Pass', color: '#22c55e' }],
+                                            ranges: [
+                                                {
+                                                    min: 0,
+                                                    max: 100,
+                                                    label: t('settings.scale_default_range_label'),
+                                                    color: '#22c55e',
+                                                },
+                                            ],
                                         });
                                         setEditingScaleId(gs.id);
                                     }}
@@ -1373,6 +1410,33 @@ export default function SettingsPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            {!hasFloorRange(gs.ranges) && (
+                                                <div
+                                                    role="alert"
+                                                    style={{
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        marginBottom: 10,
+                                                        padding: '8px 12px',
+                                                        borderRadius: 6,
+                                                        border: '1px solid var(--yellow)',
+                                                        color: 'var(--text)',
+                                                        fontSize: '0.85rem',
+                                                    }}
+                                                >
+                                                    <span style={{ flex: 1 }}>
+                                                        {t('settings.scale_no_floor_warning')}
+                                                    </span>
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => fixScaleFloor(gs)}
+                                                    >
+                                                        {t('settings.action_fix_scale_floor')}
+                                                    </button>
+                                                </div>
+                                            )}
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={() => addRange(gs.id)}
@@ -2224,6 +2288,11 @@ export default function SettingsPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        <BackupSettingsChanges
+                            changes={backupPreview.summary.settingsChanges}
+                            ignoredProtected={backupPreview.summary.ignoredProtectedSettings}
+                        />
 
                         <div
                             style={{

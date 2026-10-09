@@ -6,7 +6,7 @@
 export interface PurgeRow {
     id: string;
     owner_id: string;
-    storage_path: string;
+    storage_path: string | null;
 }
 
 const NAME = /^[A-Za-z0-9_-]{1,64}$/;
@@ -14,7 +14,12 @@ const FILE_NAME = /^[A-Za-z0-9_-]{1,64}(\.[A-Za-z0-9]{1,10})?$/;
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export function isPurgeableRow(row: PurgeRow): boolean {
-    if (!NAME.test(row.id) || !UUID.test(row.owner_id)) return false;
+    if (!NAME.test(row.id) || !UUID.test(row.owner_id) || row.storage_path === null) return false;
     const [folder, name, ...rest] = row.storage_path.split('/');
     return rest.length === 0 && folder.toLowerCase() === row.owner_id.toLowerCase() && FILE_NAME.test(name ?? '');
+}
+
+// A row with no stored file (e.g. a text-only scan): only its metadata row is deleted.
+export function isMetadataOnlyRow(row: PurgeRow): boolean {
+    return row.storage_path === null && NAME.test(row.id) && UUID.test(row.owner_id);
 }

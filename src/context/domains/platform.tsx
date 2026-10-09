@@ -9,13 +9,15 @@ import {
     loadPendingQueue,
     loadStore,
     markMigrationDone,
+    isMigrationPending,
+    skipMigrationForSession,
     setLocalMode,
 } from '../../store/storage';
 import { mergeStoreData } from '../../utils/syncMerge';
 import { saveSupabaseConfig } from '../../services/database/supabaseConfig';
 import { getDb, loadDb } from '../../services/database/lazyDb';
 import type { DatabaseConfig, DbUser, SyncResult } from '../../services/database';
-import { clearAuditLogger, initAuditLogger, logAuditEvent } from '../../services/database/AuditLogger';
+import { clearAuditLogger, initAuditLogger } from '../../services/database/AuditLogger';
 
 export type PlatformValue = Pick<
     AppContextValue,
@@ -138,8 +140,9 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
     const updateUserRole = async (userId: string, role: UserRole): Promise<SyncResult> => {
         const { storageSync } = await loadDb();
         const result = await storageSync.updateUserRole(userId, role);
+        // The role_change audit entry is written by a database trigger (migration 081), only when
+        // the row really changed — an RLS-blocked update also returns success here.
         if (result.success) {
-            logAuditEvent('admin', 'role_change', 'user', userId, { role });
             if (userId === storageSync.getCurrentUserId()) {
                 dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
             }
@@ -157,10 +160,25 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         saveSupabaseConfig(config);
         return (await loadDb()).storageSync.initAuth(config);
     };
-    const dismissMigrationPrompt = async (upload: boolean) => {
-        setShowMigrationPrompt(false);
+    // Only a successful upload ends the migration: a failed push keeps the prompt open (the
+    // caller shows the error) and "Skip for now" lasts for this session only.
+    const dismissMigrationPrompt = async (upload: boolean): Promise<SyncResult> => {
+        if (!upload) {
+            skipMigrationForSession();
+            setShowMigrationPrompt(false);
+            return { success: true };
+        }
+        let result: SyncResult;
+        try {
+            result = await (await loadDb()).storageSync.pushAll(getState());
+        } catch (e) {
+            result = { success: false, error: e instanceof Error ? e.message : String(e) };
+        }
+        if (!result.success) return result;
         markMigrationDone();
-        if (upload) await (await loadDb()).storageSync.pushAll(getState());
+        setShowMigrationPrompt(false);
+        showToast(t('migration.upload_success'), 'success');
+        return result;
     };
     const signInWithGoogle = async (): Promise<{ error?: string }> => {
         return (await loadDb()).storageSync.signInWithGoogle();
@@ -182,18 +200,23 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         // next person to open the app on this browser doesn't see it. Only safe when
         // everything has actually reached Supabase — a non-empty pending queue means
         // wiping would lose edits that exist nowhere else yet.
-        if (cloudBacked && loadPendingQueue().length === 0) {
+        // Local data that was never uploaded (migration skipped or failed) isn't in the pending
+        // queue either, so it is kept too.
+        const unmigrated = isMigrationPending();
+        if (cloudBacked && loadPendingQueue().length === 0 && !unmigrated) {
             clearLocalData();
             dispatch({ type: 'SET_ALL', payload: loadStore() });
         } else if (cloudBacked) {
-            showToast(t('toast.signout_pending_writes'), 'warning');
+            showToast(t(unmigrated ? 'toast.signout_unmigrated_local' : 'toast.signout_pending_writes'), 'warning');
         }
         if (!isLocalMode()) {
             setLandingState('show');
         }
     };
     const importBackup = async (json: string): Promise<boolean> => {
-        const ok = importFullBackup(json);
+        // While connected, settings edits skip localStorage, so the stored copy can lag the live
+        // state; protected values must come from the same live settings the restore preview showed.
+        const ok = importFullBackup(json, getState().settings);
         if (ok) {
             const newState = loadStore();
             dispatch({ type: 'SET_ALL', payload: newState });

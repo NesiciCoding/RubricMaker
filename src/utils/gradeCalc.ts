@@ -17,12 +17,27 @@ export function orderedLevels(criterion: RubricCriterion, format: Pick<RubricFor
     return format.levelOrder === 'worst-first' ? [...criterion.levels].reverse() : criterion.levels;
 }
 
+function clamp(value: number, min: number, max: number): number {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(max, Math.max(min, value));
+}
+
+/** A criterion's weight, treating NaN, infinite and negative weights as 0. */
+export function effectiveWeight(criterion: RubricCriterion): number {
+    return Number.isFinite(criterion.weight) && criterion.weight > 0 ? criterion.weight : 0;
+}
+
 /**
  * Points earned for a single criterion entry.
- * Priority: overridePoints > sub-items sum + selected range points > level midpoint
+ * Priority: overridePoints > sub-items sum + selected range points > level minimum
  */
 export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): number {
-    if (entry.overridePoints !== undefined) return entry.overridePoints;
+    // Overrides arrive unclamped from imports and co-grade reconciliation, not just the UI.
+    if (entry.overridePoints !== undefined) {
+        // Criteria without point levels take free-form points (total-points rubrics), so only a real maximum caps them.
+        const max = criterionMaxPoints(criterion);
+        return clamp(entry.overridePoints, 0, max > 0 ? max : Infinity);
+    }
     // Single-point rubric outcome: meets/exceeds = full points, not-yet = 0
     if (entry.singlePointOutcome !== undefined) {
         if (entry.singlePointOutcome === 'not-yet') return 0;
@@ -54,12 +69,26 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
 
     const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
 
-    // If criterion has sub-items: combined sub-item total + range points, capped at selected level's maxPoints
-    // If no sub-items at all: just range points (bounded by the level range)
+    // Both branches stay inside the selected level's range: a selectedPoints left over from a
+    // previously selected level must not score below the new level's minimum.
     if (hasAnySubItems) {
-        return Math.min(subItemTotal + rangePoints, level.maxPoints);
+        return Math.max(level.minPoints, Math.min(subItemTotal + rangePoints, level.maxPoints));
     }
     return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));
+}
+
+/**
+ * Merge a patch into a score entry. Choosing a different level drops the points picked
+ * within the old level's range, so the card and the total never disagree.
+ */
+export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): ScoreEntry {
+    const next = { ...entry, ...patch };
+    if ('levelId' in patch && patch.levelId !== entry.levelId) {
+        if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
+        if (!('subItemScores' in patch)) next.subItemScores = undefined;
+        if (!('checkedSubItems' in patch)) next.checkedSubItems = [];
+    }
+    return next;
 }
 
 /** Raw sum of selected level points (honouring sub-items and ranges) */
@@ -98,17 +127,18 @@ export function criterionPercentage(entry: ScoreEntry | undefined, criterion: Ru
 
 /** Weighted score as percentage 0–100 */
 export function calcWeightedScore(entries: ScoreEntry[], criteria: RubricCriterion[]): number {
-    const totalWeight = criteria.reduce((s, c) => s + c.weight, 0);
+    // A criterion nobody can score on (max 0) must not dilute the others through its weight.
+    const scorable = criteria.filter((c) => criterionMaxPoints(c) > 0);
+    const totalWeight = scorable.reduce((s, c) => s + effectiveWeight(c), 0);
     if (totalWeight === 0) return calcPercentage(entries, criteria);
 
     let weightedSum = 0;
-    for (const criterion of criteria) {
+    for (const criterion of scorable) {
         const entry = entries.find((e) => e.criterionId === criterion.id);
-        const maxPoints = Math.max(...criterion.levels.map((l) => l.maxPoints), 0);
-        if (maxPoints === 0) continue;
+        const maxPoints = criterionMaxPoints(criterion);
 
         const pts = entry ? calcEntryPoints(entry, criterion) : 0;
-        weightedSum += (pts / maxPoints) * criterion.weight;
+        weightedSum += (pts / maxPoints) * effectiveWeight(criterion);
     }
     return (weightedSum / totalWeight) * 100;
 }
@@ -122,13 +152,18 @@ export function calcPercentage(entries: ScoreEntry[], criteria: RubricCriterion[
 
 // ─── Modifier ─────────────────────────────────────────────────────────────────
 
-export function applyModifier(score: number, modifier?: Modifier): number {
+/**
+ * Applies the global modifier to a 0–100 score. A 'points' offset is converted through the rubric's
+ * max points (10 points on a 200-point rubric = +5%); without a positive max it has no effect.
+ */
+export function applyModifier(score: number, modifier?: Modifier, maxPoints?: number): number {
     if (!modifier) return score;
     switch (modifier.type) {
         case 'percentage':
             return Math.min(100, Math.max(0, score + modifier.value));
         case 'points':
-            return Math.min(100, Math.max(0, score + modifier.value));
+            if (!maxPoints || maxPoints <= 0) return Math.min(100, Math.max(0, score));
+            return Math.min(100, Math.max(0, score + (modifier.value / maxPoints) * 100));
         case 'level':
             return Math.min(100, Math.max(0, score + modifier.value * 10));
         default:
@@ -158,6 +193,11 @@ function matchRange(percentage: number, scale: GradeScale): GradeRange | undefin
     return sortedRangesDesc(scale).find((r) => percentage >= r.min);
 }
 
+/** Whether some range starts at 0%, so every score maps to a grade. */
+export function hasFloorRange(ranges: GradeRange[]): boolean {
+    return ranges.some((r) => r.min <= 0);
+}
+
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.label ?? '—';
 }
@@ -174,6 +214,8 @@ export interface GradeSummary {
     configuredMaxPoints: number; // rubric.totalMaxPoints or calcMaxRawScore
     percentage: number;
     modifiedPercentage: number;
+    /** rawScore after a 'points' modifier (clamped to 0…configuredMaxPoints); equals rawScore otherwise. */
+    modifiedPoints: number;
     letterGrade: string;
     gradeColor: string;
     gradedCount: number;
@@ -193,16 +235,25 @@ export function calcGradeSummary(
     const configuredMax =
         rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints > 0 ? rubric.totalMaxPoints : calculatedMax;
 
-    const pct =
+    // totalMaxPoints can be configured below the raw maximum, which would push past 100%.
+    const pct = clamp(
         rubric?.scoringMode === 'total-points'
             ? configuredMax > 0
                 ? (raw / configuredMax) * 100
                 : 0
-            : calcWeightedScore(sr.entries, criteria);
+            : calcWeightedScore(sr.entries, criteria),
+        0,
+        100
+    );
 
-    const modified = applyModifier(pct, sr.globalModifier);
+    const modified = applyModifier(pct, sr.globalModifier, configuredMax);
+    const modifiedPoints =
+        sr.globalModifier?.type === 'points' && configuredMax > 0
+            ? Math.min(configuredMax, Math.max(0, raw + sr.globalModifier.value))
+            : raw;
     const gradedCount = sr.entries.filter(
-        (e) => e.levelId !== null || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
+        // Legacy entries can lack levelId entirely; undefined is as ungraded as null.
+        (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
     return {
@@ -211,6 +262,7 @@ export function calcGradeSummary(
         configuredMaxPoints: configuredMax,
         percentage: pct,
         modifiedPercentage: modified,
+        modifiedPoints,
         letterGrade: scale ? calcLetterGrade(modified, scale) : '—',
         gradeColor: scale ? calcGradeColor(modified, scale) : '#6b7280',
         gradedCount,

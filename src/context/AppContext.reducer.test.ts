@@ -80,6 +80,7 @@ vi.mock('../store/storage', () => {
         'importFullBackup',
         'loadPendingQueue',
         'onStorageQuotaExceeded',
+        'onVoiceFeedbackDropped',
         'clearLocalData',
         'sanitizeClassYears',
         'loadRubricVersions',

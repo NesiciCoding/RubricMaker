@@ -1,9 +1,9 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { AppSettings, Class, EssayAssignment, GradeScale, Rubric, Student } from '../../types';
+import type { AppSettings, Class, EssayAssignment, GradeScale, Rubric, Student, StudentRubric } from '../../types';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -59,7 +59,7 @@ const mockUpdateSettings = vi.fn();
 const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudent, mockStudentBob];
 const mockClassesArr = [mockClass];
-const mockStudentRubricsArr: never[] = [];
+const mockStudentRubricsArr: StudentRubric[] = [];
 const mockAttachmentsArr: never[] = [];
 const mockAnalysisResultsArr: never[] = [];
 const mockGradeScalesArr = [mockGradeScale];
@@ -160,6 +160,52 @@ describe('GradeStudent', () => {
         GradeStudentComp = mod.default;
     });
 
+    describe('unsaved-changes guard (#658)', () => {
+        function renderWithElsewhere() {
+            const router = createMemoryRouter(
+                [
+                    { path: '/rubrics/:rubricId/grade/:studentId', element: <GradeStudentComp /> },
+                    { path: '/tests', element: <div>tests page</div> },
+                ],
+                { initialEntries: ['/rubrics/r1/grade/s1'] }
+            );
+            render(<RouterProvider router={router} />);
+            return router;
+        }
+
+        it('asks before in-app navigation discards an unsaved level', async () => {
+            const router = renderWithElsewhere();
+            fireEvent.click(screen.getByText('Excellent'));
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('common.unsaved_title')).toBeInTheDocument();
+            expect(router.state.location.pathname).toBe('/rubrics/r1/grade/s1');
+            fireEvent.click(screen.getByText('common.unsaved_stay'));
+            await waitFor(() => expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument());
+            expect(screen.queryByText('tests page')).not.toBeInTheDocument();
+        });
+
+        it('navigates without a prompt when nothing changed', async () => {
+            const router = renderWithElsewhere();
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+            expect(screen.queryByText('common.unsaved_title')).not.toBeInTheDocument();
+        });
+
+        it('navigates without a prompt after saving', async () => {
+            const router = renderWithElsewhere();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            await act(async () => {
+                await router.navigate('/tests');
+            });
+            expect(await screen.findByText('tests page')).toBeInTheDocument();
+        });
+    });
+
     it('renders the rubric and student name', () => {
         renderPage();
         expect(screen.getAllByText(/Alice/).length).toBeGreaterThan(0);
@@ -232,6 +278,87 @@ describe('GradeStudent', () => {
         expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
             expect.objectContaining({ notHandedIn: true, feedbackOnly: true, isAnchor: true })
         );
+    });
+
+    describe('not handed in (#662)', () => {
+        const record = (over: Partial<StudentRubric>): StudentRubric => ({
+            id: 'sr-alice',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'c1', levelId: null, comment: '', checkedSubItems: [] }],
+            overallComment: '',
+            isPeerReview: false,
+            ...over,
+        });
+        afterEach(() => {
+            mockStudentRubricsArr.length = 0;
+        });
+
+        function clickNotHandedIn() {
+            fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
+            fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
+        }
+
+        it('asks before marking an already graded student and keeps their comment', async () => {
+            mockStudentRubricsArr.push(
+                record({
+                    entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }],
+                    overallComment: 'Strong argument',
+                    gradedAt: '2026-01-01T00:00:00Z',
+                })
+            );
+            renderPage();
+            clickNotHandedIn();
+            expect(await screen.findByText('gradeStudent.nhi_confirm_title')).toBeInTheDocument();
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+            fireEvent.click(screen.getByText('gradeStudent.nhi_confirm_action'));
+            await waitFor(() =>
+                expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+                    expect.objectContaining({ notHandedIn: true, overallComment: 'Strong argument' })
+                )
+            );
+        });
+
+        it('does nothing when the confirmation is cancelled', async () => {
+            mockStudentRubricsArr.push(
+                record({
+                    entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }],
+                    gradedAt: '2026-01-01T00:00:00Z',
+                })
+            );
+            renderPage();
+            clickNotHandedIn();
+            fireEvent.click(await screen.findByText('common.cancel'));
+            await waitFor(() => expect(screen.queryByText('gradeStudent.nhi_confirm_title')).not.toBeInTheDocument());
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+            expect(mockNavigate).not.toHaveBeenCalled();
+        });
+
+        it('shows a banner on a not-handed-in record and undoes the mark', () => {
+            mockStudentRubricsArr.push(
+                record({ notHandedIn: true, overallComment: 'gradeStudent.not_handed_in_comment' })
+            );
+            renderPage();
+            expect(screen.getByText('gradeStudent.nhi_banner')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('gradeStudent.nhi_undo'));
+            expect(mockSaveStudentRubric).toHaveBeenCalledWith(
+                expect.objectContaining({ notHandedIn: false, overallComment: '' })
+            );
+            expect(screen.queryByText('gradeStudent.nhi_banner')).not.toBeInTheDocument();
+        });
+
+        it('clears the mark and the canned comment when the late work is scored and saved', () => {
+            mockStudentRubricsArr.push(
+                record({ notHandedIn: true, overallComment: 'gradeStudent.not_handed_in_comment' })
+            );
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({ notHandedIn: false, overallComment: '' })
+            );
+            expect(screen.queryByText('gradeStudent.nhi_banner')).not.toBeInTheDocument();
+        });
     });
 
     it('edits the overall comment', () => {

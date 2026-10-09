@@ -54,6 +54,13 @@ describe('applyModifier — property tests', () => {
             }),
             { numRuns: 500 }
         );
+        fc.assert(
+            fc.property(finiteFloat(-500, 500), modifierArb, finiteFloat(1, 1000), (score, modifier, max) => {
+                const result = applyModifier(score, modifier, max);
+                return Number.isFinite(result) && result >= 0 && result <= 100;
+            }),
+            { numRuns: 500 }
+        );
     });
 
     it('without a modifier, output equals input (no clamping applied)', () => {
@@ -88,9 +95,9 @@ describe('calcEntryPoints — property tests', () => {
         );
     });
 
-    it('overridePoints always takes precedence over level selection', () => {
+    it('overridePoints always takes precedence over level selection, clamped to [0, max] when a max exists', () => {
         fc.assert(
-            fc.property(singleLevelCriterionArb, finiteFloat(0, 200), (criterion, override) => {
+            fc.property(singleLevelCriterionArb, finiteFloat(-50, 200), (criterion, override) => {
                 const entry: ScoreEntry = {
                     criterionId: 'c1',
                     levelId: 'l1',
@@ -98,7 +105,10 @@ describe('calcEntryPoints — property tests', () => {
                     comment: '',
                     overridePoints: override,
                 };
-                return calcEntryPoints(entry, criterion) === override;
+                const max = Math.max(criterion.levels[0].maxPoints, 0);
+                // A level without points takes free-form override points (total-points rubrics).
+                const expected = max > 0 ? Math.min(max, Math.max(0, override)) : Math.max(0, override);
+                return calcEntryPoints(entry, criterion) === expected;
             }),
             { numRuns: 300 }
         );

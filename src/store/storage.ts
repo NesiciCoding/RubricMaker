@@ -38,6 +38,7 @@ import type {
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
+import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
 
@@ -939,6 +940,35 @@ export function onStorageQuotaExceeded(handler: () => void): void {
     quotaExceededHandler = handler;
 }
 
+let audioDroppedHandler: ((count: number) => void) | null = null;
+
+/**
+ * Registers a callback fired when grades were saved but their voice-feedback recordings had to be
+ * left out to fit the localStorage quota; `count` is the number of recordings dropped.
+ */
+export function onVoiceFeedbackDropped(handler: (count: number) => void): void {
+    audioDroppedHandler = handler;
+}
+
+/** Rough localStorage quota in UTF-16 characters; browsers allow about 5M per origin. */
+export const LOCAL_STORAGE_QUOTA_CHARS = 5_000_000;
+
+/** Characters currently stored in localStorage (keys + values), the unit the quota is counted in; null when it can't be read. */
+export function localStorageUsedChars(): number | null {
+    let used = 0;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            /* v8 ignore next -- key(i) is non-null for every i below length */
+            if (key === null) continue;
+            used += key.length + (localStorage.getItem(key)?.length ?? 0);
+        }
+    } catch {
+        return null;
+    }
+    return used;
+}
+
 function save<T>(key: string, value: T): void {
     try {
         localStorage.setItem(key, JSON.stringify(value));
@@ -970,9 +1000,51 @@ export function isLocalMode(): boolean {
     return localStorage.getItem(LOCAL_MODE_KEY) === 'true';
 }
 
-/** Marks the migration prompt as dismissed so it doesn't reappear on next launch. */
+export const MIGRATION_PENDING_KEY = 'rm_migration_pending';
+const MIGRATION_SKIPPED_SESSION_KEY = 'rm_migration_skipped';
+
+// Mirrors the stored flag, so this session's sign-out still keeps the data if the write fails.
+let migrationPendingInMemory = false;
+
+/** Marks the local data as uploaded, so the migration prompt doesn't reappear on next launch. */
 export function markMigrationDone(): void {
+    migrationPendingInMemory = false;
     localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+    localStorage.removeItem(MIGRATION_PENDING_KEY);
+}
+
+/**
+ * Records that this browser holds local data that was never uploaded to the account. Those rows
+ * are not in the pending queue, so sign-out must not treat the device as cloud-backed while set.
+ */
+export function markMigrationPending(): void {
+    migrationPendingInMemory = true;
+    try {
+        localStorage.setItem(MIGRATION_PENDING_KEY, 'true');
+    } catch {
+        // storage full or blocked — the in-memory flag still protects this session's sign-out
+    }
+}
+
+export function isMigrationPending(): boolean {
+    return migrationPendingInMemory || localStorage.getItem(MIGRATION_PENDING_KEY) === 'true';
+}
+
+/** "Skip for now" only lasts for this browser tab's session; the prompt returns on the next one. */
+export function skipMigrationForSession(): void {
+    try {
+        sessionStorage.setItem(MIGRATION_SKIPPED_SESSION_KEY, 'true');
+    } catch {
+        // sessionStorage unavailable — the prompt simply returns on the next load
+    }
+}
+
+export function isMigrationSkippedForSession(): boolean {
+    try {
+        return sessionStorage.getItem(MIGRATION_SKIPPED_SESSION_KEY) === 'true';
+    } catch {
+        return false;
+    }
 }
 
 // ─── Rubric version history (Phase 18.4) ────────────────────────────────────────
@@ -1166,6 +1238,8 @@ export function saveStudentRubrics(srs: StudentRubric[]) {
         try {
             localStorage.setItem(KEYS.studentRubrics, JSON.stringify(stripAudioForOfflineCache(srs)));
             console.warn('[storage] rm_student_rubrics exceeded quota with audio; retried without it');
+            const dropped = srs.reduce((n, sr) => n + sr.entries.filter((e) => e.audioDataUrl).length, 0);
+            if (dropped > 0) audioDroppedHandler?.(dropped);
         } catch (e2) {
             console.error(
                 '[storage] write failed even after stripping audio (quota exceeded?):',
@@ -1365,7 +1439,8 @@ export function exportStore(state: StoreData): StoreData {
 }
 
 export function exportFullBackup(): string {
-    return JSON.stringify(loadStore(), null, 2);
+    const store = loadStore();
+    return JSON.stringify({ ...store, settings: withoutProtectedSettings(store.settings) }, null, 2);
 }
 
 // ─── Backup import validators ──────────────────────────────────────────────────
@@ -1394,7 +1469,7 @@ function isObjectArray(v: unknown): boolean {
  * false only when the JSON itself is unparseable or the top-level value is not
  * a plain object.
  */
-export function importFullBackup(json: string): boolean {
+export function importFullBackup(json: string, currentSettings?: AppSettings): boolean {
     try {
         const raw = JSON.parse(json) as unknown;
         if (!isPlainObject(raw)) return false;
@@ -1435,7 +1510,13 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] gradeScales failed validation — skipped');
         }
         if (data.settings !== undefined) {
-            if (isPlainObject(data.settings)) saveSettings(data.settings as AppSettings);
+            if (isPlainObject(data.settings))
+                saveSettings(
+                    mergeRestoredSettings(
+                        currentSettings ?? load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+                        data.settings
+                    )
+                );
             else console.warn('[importFullBackup] settings failed validation — skipped');
         }
         if (data.favoriteStandards !== undefined) {
@@ -1848,7 +1929,53 @@ export function saveTestTimer(timerKey: string, seconds: number): void {
 export function clearTestTimer(timerKey: string): void {
     try {
         sessionStorage.removeItem(timerKey);
+        localStorage.removeItem(timerKey + TIMER_DEADLINE_SUFFIX);
     } catch {
         // ignore
+    }
+}
+
+const TIMER_DEADLINE_SUFFIX = '_endsAt';
+
+/**
+ * Absolute deadline (epoch ms) of a timed test/essay. Kept in localStorage — unlike the legacy
+ * remaining-seconds value in sessionStorage — so closing and reopening the link keeps the deadline.
+ */
+export function loadTimerDeadline(timerKey: string): number | null {
+    try {
+        const raw = localStorage.getItem(timerKey + TIMER_DEADLINE_SUFFIX);
+        if (!raw) return null;
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveTimerDeadline(timerKey: string, endsAt: number): void {
+    try {
+        localStorage.setItem(timerKey + TIMER_DEADLINE_SUFFIX, String(endsAt));
+    } catch {
+        // ignore — the countdown still runs from memory for this session
+    }
+}
+
+const TIMER_RECEIPT_SUFFIX = '_handedIn';
+
+/** Marks a timed attempt as handed in: its deadline is dropped and the receipt kept, so a reload neither restarts nor re-submits it. */
+export function completeTimedAttempt(timerKey: string, receipt: string): void {
+    clearTestTimer(timerKey);
+    try {
+        localStorage.setItem(timerKey + TIMER_RECEIPT_SUFFIX, receipt);
+    } catch {
+        // ignore — without the marker a reload starts the attempt over, as before
+    }
+}
+
+export function loadTimedAttemptReceipt(timerKey: string): string | null {
+    try {
+        return localStorage.getItem(timerKey + TIMER_RECEIPT_SUFFIX);
+    } catch {
+        return null;
     }
 }
