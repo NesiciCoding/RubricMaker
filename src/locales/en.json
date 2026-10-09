@@ -1651,6 +1651,9 @@
         "voice_storage_full": "This device's storage is nearly full, so a voice recording can't be saved. Connect to the cloud or remove old recordings first.",
         "voice_storage_low": "Storage is nearly full — this recording stops automatically after {{seconds}} seconds.",
         "voice_storage_unavailable": "This device's storage can't be read, so a voice recording can't be saved offline. Connect to the cloud to record.",
+        "swipe_confirm_title": "Save and go to the next student?",
+        "swipe_confirm_message": "You swiped left. Save this grade and continue with {{name}}?",
+        "swipe_confirm_action": "Save & next",
         "nhi_confirm_title": "Mark as not handed in?",
         "nhi_confirm_message": "{{name}} already has a grade for this rubric. Marking the work as not handed in removes it from statistics, the dashboard and the student portal. The scores are kept, and you can undo this from the banner on the grading page.",
         "nhi_confirm_action": "Mark not handed in",
@@ -2898,7 +2901,10 @@
         "delete_all_db_message": "This permanently deletes everything you own in the database — rubrics, classes, students, grades, tests, essays, messages and their files, recordings, scans and nightly backups. It cannot be undone. The copy on this device is not affected.",
         "delete_all_db_confirm": "Delete everything",
         "delete_all_db_success": "All your database data was deleted.",
-        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator."
+        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator.",
+        "audit_col_actor": "Actor",
+        "audit_col_details": "Details",
+        "audit_actor_system": "System"
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -3026,7 +3032,10 @@
         "retry_submit": "Retry",
         "copy_backup_code": "Copy backup code",
         "already_submitted": "You have already handed in this essay, so this version was not sent. It is still saved on this device — ask your teacher if you need to hand in again.",
-        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry."
+        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry.",
+        "load_error_title": "Could not load this assignment",
+        "load_error": "The assignment could not be loaded. Check your internet connection and try again. If it keeps failing, ask your teacher for a new link.",
+        "load_retry": "Try again"
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
@@ -3661,7 +3670,7 @@
         "da_admin_item_integrations": "Integrations tab — Standards API key.",
         "da_admin_item_data": "Data tab — anonymise student data, bulk delete, compliance tools.",
         "da_admin_item_retention": "Retention tab — set automatic data retention policies per school.",
-        "da_admin_item_audit": "Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
+        "da_admin_item_audit": "Audit Log tab — filterable, paginated log showing who did what, with details: role changes, school membership and school changes, rubric/class sharing, site settings changes, password resets, \"Delete all my database data\", grade saves and exports. Sensitive changes are recorded by the database itself, only when the change actually took effect. Admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
         "da_settings_title": "Settings",
         "da_settings_item_theme": "Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.",
         "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",
@@ -3761,6 +3770,7 @@
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
         "gr_feedback_item_audio_storage": "Recorded voice feedback — without a cloud connection recordings are stored in the browser, which holds about 5 MB. When space runs low a recording stops automatically, a full device refuses to start one, and if recordings ever have to be left out to save grades you get a warning.",
+        "gr_mobile_swipe": "Swiping left on an empty part of the grading page offers to save and move to the next student; confirm to continue. Swipes that start on a slider, the − / + stepper, a text field or a scrollable table never count, so dragging a score can't jump to the next student.",
         "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
         "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
         "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",

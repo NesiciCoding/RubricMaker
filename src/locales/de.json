@@ -1651,6 +1651,9 @@
         "voice_storage_full": "Der Speicher dieses Geräts ist fast voll, daher kann keine Sprachaufnahme gespeichert werden. Verbinden Sie sich zuerst mit der Cloud oder entfernen Sie alte Aufnahmen.",
         "voice_storage_low": "Der Speicher ist fast voll — diese Aufnahme stoppt automatisch nach {{seconds}} Sekunden.",
         "voice_storage_unavailable": "Der Speicher dieses Geräts kann nicht gelesen werden, daher kann eine Sprachaufnahme offline nicht gespeichert werden. Verbinden Sie sich mit der Cloud, um aufzunehmen.",
+        "swipe_confirm_title": "Speichern und zur nächsten Person?",
+        "swipe_confirm_message": "Sie haben nach links gewischt. Diese Bewertung speichern und mit {{name}} weitermachen?",
+        "swipe_confirm_action": "Speichern & weiter",
         "nhi_confirm_title": "Als nicht abgegeben markieren?",
         "nhi_confirm_message": "{{name}} hat für dieses Raster bereits eine Bewertung. Wenn Sie die Arbeit als nicht abgegeben markieren, fällt sie aus Statistiken, Dashboard und Schülerportal heraus. Die Punkte bleiben erhalten, und Sie können dies über den Hinweis auf der Bewertungsseite rückgängig machen.",
         "nhi_confirm_action": "Als nicht abgegeben markieren",
@@ -2973,7 +2976,10 @@
         "delete_all_db_message": "Damit wird alles, was Ihnen in der Datenbank gehört, endgültig gelöscht – Raster, Klassen, Schüler/innen, Noten, Tests, Aufsätze, Nachrichten samt Dateien, Aufnahmen, Scans und nächtliche Sicherungen. Das kann nicht rückgängig gemacht werden. Die Kopie auf diesem Gerät bleibt erhalten.",
         "delete_all_db_confirm": "Alles löschen",
         "delete_all_db_success": "Alle Ihre Datenbankdaten wurden gelöscht.",
-        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration."
+        "delete_all_db_failed": "Einige Daten konnten nicht gelöscht werden ({{items}}). Versuchen Sie es erneut oder wenden Sie sich an Ihre Administration.",
+        "audit_col_actor": "Ausgeführt von",
+        "audit_col_details": "Details",
+        "audit_actor_system": "System"
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
@@ -3026,7 +3032,10 @@
         "retry_submit": "Erneut versuchen",
         "copy_backup_code": "Sicherungscode kopieren",
         "already_submitted": "Du hast diesen Aufsatz bereits abgegeben, daher wurde diese Fassung nicht gesendet. Sie ist weiterhin auf diesem Gerät gespeichert – frag deine Lehrkraft, falls du erneut abgeben musst.",
-        "submit_failed_unsaved": "Dein Aufsatz wurde noch nicht gesendet, und dieses Gerät konnte keine Kopie speichern. Kopiere den Sicherungscode, bevor du diese Seite verlässt, und klicke dann auf Erneut versuchen."
+        "submit_failed_unsaved": "Dein Aufsatz wurde noch nicht gesendet, und dieses Gerät konnte keine Kopie speichern. Kopiere den Sicherungscode, bevor du diese Seite verlässt, und klicke dann auf Erneut versuchen.",
+        "load_error_title": "Diese Aufgabe konnte nicht geladen werden",
+        "load_error": "Die Aufgabe konnte nicht geladen werden. Prüfe deine Internetverbindung und versuche es erneut. Wenn es weiterhin nicht klappt, bitte deine Lehrkraft um einen neuen Link.",
+        "load_retry": "Erneut versuchen"
     },
     "editor": {
         "switchToCompactView": "Kompaktansicht",
@@ -3663,7 +3672,7 @@
         "da_admin_item_integrations": "Tab Integrationen — Standards-API-Schlüssel.",
         "da_admin_item_data": "Tab Daten — Schülerdaten anonymisieren, Massenlöschung, Compliance-Tools.",
         "da_admin_item_retention": "Tab Aufbewahrung — automatische Datenaufbewahrungsrichtlinien pro Schule festlegen.",
-        "da_admin_item_audit": "Tab Auditprotokoll — filterbares, paginiertes Protokoll von Rollenänderungen, Bewertungsspeicherungen, Exporten und Authentifizierungsereignissen; Admins sehen alle Einträge, Lehrer sehen ihre eigenen. Einträge werden 3 Jahre (Admin), 1 Jahr (Bewertung), 1 Monat (Export/Auth) aufbewahrt und dann automatisch gelöscht.",
+        "da_admin_item_audit": "Registerkarte Audit-Protokoll — filterbares, seitenweises Protokoll, wer was getan hat, mit Details: Rollenänderungen, Schulmitgliedschaft und Schuländerungen, Freigabe von Rastern/Klassen, Änderungen der Website-Einstellungen, Passwort-Zurücksetzungen, „Alle meine Datenbankdaten löschen“, gespeicherte Bewertungen und Exporte. Sensible Änderungen protokolliert die Datenbank selbst, nur wenn die Änderung tatsächlich wirksam wurde. Admins sehen alle Einträge, Lehrkräfte nur ihre eigenen. Aufbewahrung: 3 Jahre (Admin), 1 Jahr (Noten), 1 Monat (Export/Anmeldung), danach automatische Löschung.",
         "da_settings_title": "Einstellungen",
         "da_settings_item_theme": "Theme — Dunkel / Hell, Akzentfarbwähler, 8 schnelle Voreinstellungen, oder wähle ein benanntes Theme-Bundle (Academy, Nature, Midnight, Warm, Slate, Rose), das mit einem Klick Schriftart, Akzent und Exportfarbe festlegt.",
         "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest.",
@@ -3763,6 +3772,7 @@
         "rb_tests_a4_preview_body": "Klicken Sie im Test-Editor auf „A4-Vorschau“, um neben Ihren Fragen eine Live-Vorschau der gedruckten Schülerfassung zu öffnen. Aktivieren Sie „Lösungsschlüssel“, um die richtigen Antworten zu sehen, blenden Sie die Punktwerte aus, zoomen Sie oder drucken Sie die Seite. Bearbeiten Sie Kopfzeile, Anweisungen und Fußzeile direkt auf der Seite – sie werden mit dem Test gespeichert und erscheinen auch im Export des Prüfungsheftes.",
         "gr_comparative_existing_note": "Die vorhandene Bewertung jeder Person wird in die Sitzung geladen, und das Speichern eines Vergleichs aktualisiert diese Bewertung, statt eine zweite anzulegen. Gibt es für das Raster bereits mehrere Bewertungen, weist die Sitzung darauf hin und bietet an, nur die angezeigte zu behalten; die anderen lassen sich über Admin → Archiv wiederherstellen.",
         "gr_feedback_item_audio_storage": "Aufgenommenes Sprachfeedback — ohne Cloud-Verbindung werden Aufnahmen im Browser gespeichert, der etwa 5 MB fasst. Wird der Platz knapp, stoppt eine Aufnahme automatisch, auf einem vollen Gerät startet keine, und wenn Aufnahmen weggelassen werden müssen, um Bewertungen zu speichern, erhalten Sie eine Warnung.",
+        "gr_mobile_swipe": "Ein Wisch nach links auf einem leeren Bereich der Bewertungsseite bietet an, zu speichern und zur nächsten Person zu wechseln; bestätigen Sie, um fortzufahren. Wischgesten, die auf einem Schieberegler, den − / +-Tasten, einem Textfeld oder einer scrollbaren Tabelle beginnen, zählen nie — das Ziehen einer Punktzahl springt also nicht zur nächsten Person.",
         "gr_scoring_item_nhi": "Nicht abgegeben (Zahnradmenü): markiert die Arbeit als fehlend und lässt sie in Statistiken, Dashboard und Schülerportal außen vor. Hat die Person bereits eine Bewertung, wird um Bestätigung gebeten, und ein vorhandener Gesamtkommentar bleibt erhalten. Ein Hinweis auf der Bewertungsseite macht die Markierung rückgängig; die verspätete Arbeit bewerten und speichern hebt die Markierung automatisch auf.",
         "ce_overview_item_achieved": "Erreicht vs. arbeitet darauf hin: Ein Niveau gilt erst als erreicht, wenn der Durchschnitt der Person die Erreichungsschwelle des Rasters erreicht. Darunter zeigen die Schülerliste, die GER-Übersicht und das Dashboard das Niveau als gestricheltes Abzeichen („arbeitet darauf hin“), und Klassenkarten zählen nur erreichte Niveaus.",
         "gr_unsaved_note": "Wenn Sie eine Bewertungsseite mit nicht gespeicherten Änderungen verlassen — über die Seitenleiste, die Zurück-Schaltfläche oder durch Schließen des Tabs —, werden Sie zuerst um Bestätigung gebeten. Vergleichendes Bewerten und Peer-Review funktionieren genauso. Speichern, Speichern & Weiter und Nicht abgegeben speichern vorher und fragen daher nicht.",

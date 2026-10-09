@@ -25,6 +25,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/generate-docker-secrets.sh to create .env}
     volumes:
       - db-data:/var/lib/postgresql/data
+      # Gives the auth/REST/storage roles the POSTGRES_PASSWORD (the image creates them
+      # without one). Runs only when db-data is first initialised — see the file for how
+      # to apply it to an existing database or after changing POSTGRES_PASSWORD.
+      - ./docker/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U supabase_admin -d postgres"]
       interval: 5s

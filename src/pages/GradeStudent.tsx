@@ -58,6 +58,7 @@ import {
     voiceRecordingBudgetSeconds,
 } from '../utils/voiceFeedbackBudget';
 import { useConfirm } from '../hooks/useConfirm';
+import { isLeftSwipe, isSwipeSafeTarget } from '../utils/swipeGesture';
 import { clearNotHandedIn, clearNotHandedInIfScored, hasAnyScore, markNotHandedIn } from '../utils/notHandedIn';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
@@ -237,7 +238,8 @@ export default function GradeStudent() {
     const [tourRun, setTourRun] = useState(false);
     const gradingTourSteps = useMemo(() => getGradingTourSteps(t), [t]);
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
+    const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
@@ -523,20 +525,30 @@ export default function GradeStudent() {
     }, [handleSave, handleSaveAndNext, nextStudent, rubric, sr, focusedCriterionIdx, updateEntry]);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        const touch = e.touches[0];
-        touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        // A second finger cancels the gesture: start and end could otherwise come from different touches.
+        const touch = e.touches.length === 1 ? e.touches[0] : null;
+        touchStartRef.current =
+            touch && isSwipeSafeTarget(e.target, e.currentTarget)
+                ? { id: touch.identifier, x: touch.clientX, y: touch.clientY }
+                : null;
     }, []);
 
     const handleTouchEnd = useCallback(
-        (e: React.TouchEvent) => {
-            if (!touchStartRef.current || !nextStudent) return;
-            const touch = e.changedTouches[0];
-            const dx = touchStartRef.current.x - touch.clientX;
-            const dy = Math.abs(touchStartRef.current.y - touch.clientY);
+        async (e: React.TouchEvent) => {
+            const start = touchStartRef.current;
             touchStartRef.current = null;
-            if (dx > 80 && dy < 60) handleSaveAndNext();
+            if (!start || !nextStudent) return;
+            const touch = Array.from(e.changedTouches).find((ct) => ct.identifier === start.id);
+            if (!touch || !isLeftSwipe(start, { x: touch.clientX, y: touch.clientY })) return;
+            const go = await confirmSwipe({
+                title: t('gradeStudent.swipe_confirm_title'),
+                message: t('gradeStudent.swipe_confirm_message', { name: nextStudent.name }),
+                confirmLabel: t('gradeStudent.swipe_confirm_action'),
+                cancelLabel: t('common.cancel'),
+            });
+            if (go) handleSaveAndNext();
         },
-        [nextStudent, handleSaveAndNext]
+        [nextStudent, handleSaveAndNext, confirmSwipe, t]
     );
 
     const anchorSR = useMemo(() => {
@@ -2355,6 +2367,7 @@ export default function GradeStudent() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog {...swipeConfirmProps} />
             <ConfirmDialog {...nhiConfirmProps} />
             <ConfirmDialog {...unsavedDialogProps} />
         </>
