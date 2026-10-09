@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useCallback, useEffect, useRef } from 'react';
+import { useBlocker, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from './useConfirm';
 
@@ -7,32 +7,58 @@ import { useConfirm } from './useConfirm';
  * Warns before leaving an editor with unsaved changes. Blocks in-app navigation
  * (back button, sidebar, browser back) via useBlocker and tab close via beforeunload.
  * Requires a data router (createHashRouter/RouterProvider) for useBlocker to work.
+ *
+ * Call `allowNavigation()` right before a navigation that follows a save or an intentional
+ * discard: a `setDirty(false)` in the same handler hasn't re-rendered yet, so the blocker would
+ * otherwise still see the page as dirty.
  */
 export function useUnsavedChangesGuard(isDirty: boolean) {
     const { t } = useTranslation();
     const { confirm, dialogProps } = useConfirm();
+    const { pathname } = useLocation();
+    const bypassRef = useRef(false);
 
-    const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) => isDirty && currentLocation.pathname !== nextLocation.pathname
-    );
+    useEffect(() => {
+        bypassRef.current = false;
+    }, [pathname]);
 
+    // The bypass is one-shot: it covers the navigation it was set for, even when that navigation
+    // keeps the pathname (e.g. navigate(-1) back to the same grading route).
+    const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+        if (bypassRef.current) {
+            bypassRef.current = false;
+            return false;
+        }
+        return isDirty && currentLocation.pathname !== nextLocation.pathname;
+    });
+
+    const allowNavigation = useCallback(() => {
+        bypassRef.current = true;
+    }, []);
+
+    // Keyed on the blocker state only: re-running on a new `t`/`confirm` identity would re-open the dialog.
+    const latest = useRef({ blocker, confirm, t });
+    useEffect(() => {
+        latest.current = { blocker, confirm, t };
+    });
     useEffect(() => {
         if (blocker.state !== 'blocked') return;
         let cancelled = false;
-        confirm({
-            title: t('common.unsaved_title'),
-            message: t('common.unsaved_message'),
-            confirmLabel: t('common.unsaved_leave'),
-            cancelLabel: t('common.unsaved_stay'),
+        const { confirm: ask, t: tr } = latest.current;
+        ask({
+            title: tr('common.unsaved_title'),
+            message: tr('common.unsaved_message'),
+            confirmLabel: tr('common.unsaved_leave'),
+            cancelLabel: tr('common.unsaved_stay'),
         }).then((leave) => {
             if (cancelled) return;
-            if (leave) blocker.proceed();
-            else blocker.reset();
+            if (leave) latest.current.blocker.proceed?.();
+            else latest.current.blocker.reset?.();
         });
         return () => {
             cancelled = true;
         };
-    }, [blocker, confirm, t]);
+    }, [blocker.state]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -45,5 +71,5 @@ export function useUnsavedChangesGuard(isDirty: boolean) {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty]);
 
-    return { dialogProps };
+    return { dialogProps, allowNavigation };
 }
