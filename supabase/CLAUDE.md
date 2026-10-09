@@ -26,6 +26,7 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 - Always include `IF NOT EXISTS` guards so migrations are idempotent when possible.
 - Never modify an already-applied migration — create a new one instead.
 - Run `npm run db:reset` locally to verify a new migration applies cleanly from scratch.
+- Migrations must be able to run inside a transaction: the Docker migrator (`docker/migrate.sh`) applies each file and its `public._migrations` row in one transaction, so a failing file rolls back completely. A migration that truly can't (e.g. `CREATE INDEX CONCURRENTLY`) needs a `-- migrate:no-transaction` line in its first 20 lines.
 - After adding, changing or removing a migration, run `./scripts/generate-bootstrap.sh` and commit the regenerated `supabase/bootstrap.sql` (the single-file schema for fresh self-hosted deploys). CI fails when it is stale.
 
 ## Row-level security (RLS)
@@ -52,6 +53,10 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `handle_new_user()` only grants the student role from roster rows owned by a teacher or admin profile.
 - Profile reads (077): admins read every profile; teachers read their own row, non-student profiles in a school they belong to (`school_members`), and colleagues they share a rubric or class with (`is_collaborator()`). Look up a colleague by email with the `find_profile_by_email(text)` RPC (exact match, teacher/admin results only, logged to `audit_logs` and capped at 30 per caller per 10 minutes) — never by querying `profiles.email` directly.
 - Grade rows (077): `student_rubrics` inserts/updates require a teacher/admin who owns the student or is an `editor` on the student's class (`can_grade_student()`), so the student row must exist server-side first (`pushAll` upserts students before grades). The portal only shows a student rows whose grader passes the same check.
+
+## Audit log
+
+- `audit_logs` (038) holds client entries (`logAuditEvent`, fire-and-forget: exports, grade saves) and server entries. Sensitive changes are written by AFTER triggers (081) through `write_audit_entry()`, in the same transaction as the change and only when a row really changed: role and school changes on `profiles`, `school_members` add/remove, `schools` create/update/delete, `rubric_shares` and `class_members` grants, `sharedWithSchool` toggles on `rubrics`/`comment_bank`, and `site_config` changes (key only, never the value). Don't add a client-side `logAuditEvent` for these. `erase_my_data()` (080) and the `set-student-password` edge function write their own entries.
 
 ## Retention job
 

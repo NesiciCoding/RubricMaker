@@ -971,6 +971,7 @@ function GradingTab() {
                         t('docs.gr_scoring_item_slider'),
                         t('docs.gr_scoring_item_subitems'),
                         t('docs.gr_scoring_item_modifiers'),
+                        t('docs.gr_scoring_item_nhi'),
                     ]}
                 />
 
@@ -1432,6 +1433,7 @@ function CefrTab() {
                         t('docs.ce_overview_item_whole_class'),
                         t('docs.ce_overview_item_summary_cards'),
                         t('docs.ce_overview_item_per_student'),
+                        t('docs.ce_overview_item_achieved'),
                         t('docs.ce_overview_item_progress'),
                         t('docs.ce_overview_item_evidence'),
                     ]}

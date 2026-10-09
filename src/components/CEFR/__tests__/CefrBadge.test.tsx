@@ -28,4 +28,18 @@ describe('CefrBadge', () => {
         render(<CefrBadge level="C1" showCambridgeLabel={false} />);
         expect(screen.queryByText('· CAE')).toBeNull();
     });
+
+    it('renders a working-toward level as an outlined badge with a tooltip (#691)', () => {
+        render(<CefrBadge level="B1" developing title="Working toward B1" />);
+        const badge = screen.getByText('B1');
+        expect(badge).toHaveAttribute('data-developing', 'true');
+        expect(badge.style.background).toBe('transparent');
+        expect(badge.style.border).toContain('dashed');
+        expect(screen.getByTitle('Working toward B1')).toBeInTheDocument();
+    });
+
+    it('renders achieved levels filled', () => {
+        render(<CefrBadge level="B1" />);
+        expect(screen.getByText('B1')).not.toHaveAttribute('data-developing');
+    });
 });

@@ -144,7 +144,7 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
                 practiceCefrProgress: [],
             }) satisfies CefrStudentOverview
     ),
-    highestLevelForSkill: vi.fn(() => null),
+    skillLevelStatus: vi.fn(() => null),
 }));
 
 vi.mock('react-router-dom', async () => {

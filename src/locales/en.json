@@ -1647,7 +1647,13 @@
         "quick_comments_label": "Quick",
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
-        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)"
+        "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "nhi_confirm_title": "Mark as not handed in?",
+        "nhi_confirm_message": "{{name}} already has a grade for this rubric. Marking the work as not handed in removes it from statistics, the dashboard and the student portal. The scores are kept, and you can undo this from the banner on the grading page.",
+        "nhi_confirm_action": "Mark not handed in",
+        "nhi_banner": "Marked as not handed in — this work is left out of statistics, the dashboard and the student portal. Scoring and saving a grade clears the mark.",
+        "nhi_undo": "Undo not handed in",
+        "points_before_modifier": "Points before the modifier"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -2526,7 +2532,11 @@
         "selected": "selected",
         "report_card_success": "Generated {{count}} report card(s).",
         "rubric_students_section_title": "Students",
-        "select_test": "Select test"
+        "select_test": "Select test",
+        "bulk_nhi_confirm_title": "Mark as not handed in?",
+        "bulk_nhi_confirm_message": "Mark {{count}} selected grade(s) as not handed in? They are left out of statistics, the dashboard and the student portal.",
+        "bulk_nhi_done": "Marked {{count}} grade(s) as not handed in",
+        "bulk_comment_done": "Added the comment to {{count}} grade(s)"
     },
     "reportCard": {
         "title": "Report Card",
@@ -2655,7 +2665,9 @@
         "evidence_title": "Skill Evidence",
         "evidence_subtitle": "Which assessments contributed to each skill and level, and why it's marked achieved or developing.",
         "rationale_achieved": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — achieved",
-        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing"
+        "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing",
+        "working_toward": "Working toward {{level}} — not achieved yet",
+        "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold)."
     },
     "learningPath": {
         "page_title": "Learning Path",
@@ -2882,7 +2894,10 @@
         "delete_all_db_message": "This permanently deletes everything you own in the database — rubrics, classes, students, grades, tests, essays, messages and their files, recordings, scans and nightly backups. It cannot be undone. The copy on this device is not affected.",
         "delete_all_db_confirm": "Delete everything",
         "delete_all_db_success": "All your database data was deleted.",
-        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator."
+        "delete_all_db_failed": "Some data could not be deleted ({{items}}). Try again, or ask your administrator.",
+        "audit_col_actor": "Actor",
+        "audit_col_details": "Details",
+        "audit_actor_system": "System"
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -3010,7 +3025,10 @@
         "retry_submit": "Retry",
         "copy_backup_code": "Copy backup code",
         "already_submitted": "You have already handed in this essay, so this version was not sent. It is still saved on this device — ask your teacher if you need to hand in again.",
-        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry."
+        "submit_failed_unsaved": "Your essay has not been sent yet, and this device could not keep a copy. Copy the backup code before you leave this page, then press Retry.",
+        "load_error_title": "Could not load this assignment",
+        "load_error": "The assignment could not be loaded. Check your internet connection and try again. If it keeps failing, ask your teacher for a new link.",
+        "load_retry": "Try again"
     },
     "editor": {
         "switchToCompactView": "Switch to compact view",
@@ -3323,7 +3341,7 @@
         "gr_scoring_item_select": "Click any level cell to select it. Click again to deselect.",
         "gr_scoring_item_slider": "For point ranges, use the slider to choose a value within the allowed range.",
         "gr_scoring_item_subitems": "Toggle sub-items inside a level with checkboxes.",
-        "gr_scoring_item_modifiers": "Apply score modifiers (% bonus, point deduction, level adjustment) with a reason.",
+        "gr_scoring_item_modifiers": "Apply a score modifier (percentage bonus or deduction, or a points offset) with a reason. A points offset counts against the rubric's maximum: +10 points on a 200-point rubric adds 5%.",
         "gr_mobile_title": "Mobile grading",
         "gr_mobile_body_prefix": "On phones and iPad portrait the grading view is touch-optimised. Point-range and sub-item sliders gain a",
         "gr_mobile_stepper": "− / +",
@@ -3645,7 +3663,7 @@
         "da_admin_item_integrations": "Integrations tab — Standards API key.",
         "da_admin_item_data": "Data tab — anonymise student data, bulk delete, compliance tools.",
         "da_admin_item_retention": "Retention tab — set automatic data retention policies per school.",
-        "da_admin_item_audit": "Audit Log tab — filterable, paginated log of role changes, grade saves, exports, and auth events; admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
+        "da_admin_item_audit": "Audit Log tab — filterable, paginated log showing who did what, with details: role changes, school membership and school changes, rubric/class sharing, site settings changes, password resets, \"Delete all my database data\", grade saves and exports. Sensitive changes are recorded by the database itself, only when the change actually took effect. Admins see all entries, teachers see their own. Entries are retained for 3 years (admin), 1 year (grade), 1 month (export/auth) then automatically purged.",
         "da_settings_title": "Settings",
         "da_settings_item_theme": "Theme — dark / light, accent colour picker, 8 quick presets, or choose a named theme bundle (Academy, Nature, Midnight, Warm, Slate, Rose) that sets font, accent, and export colour in one click.",
         "da_settings_item_scales": "Grade scales — create custom scales (1–10, A–F, etc.) and set a default.",
@@ -3702,7 +3720,7 @@
         "gr_layout_title": "Card & grid layouts",
         "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
-        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Tab / Shift+Tab move focus between criteria, Ctrl+S saves (and advances), and ? lists every shortcut.",
+        "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Once a criterion is selected, ↑ / ↓ move between criteria (Tab and Shift+Tab move through every button and field as usual), Ctrl+S saves (and advances), and ? lists every shortcut.",
         "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
         "ce_flashcards_item_fields": "Vocabulary cards can include a phonetic (pronunciation/IPA) and part of speech — typed inline in the deck editor, or imported as optional 4th and 5th columns. Students see them on the card during study, alongside a session progress bar and a deck word-list sidebar.",
         "es_focus_title": "Student focus mode",
@@ -3744,6 +3762,8 @@
         "rb_tests_a4_preview_label": "A4 preview:",
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
+        "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
+        "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
         "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",
         "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
     },
@@ -3922,7 +3942,7 @@
     },
     "help": {
         "score_modifier_title": "Score Modifiers",
-        "score_modifier_body": "Add a global adjustment to the final score. Choose percentage (e.g. +10%) or points (e.g. +5). Enter a reason so it appears in the exported report and audit log.",
+        "score_modifier_body": "Add a global adjustment to the final score. Choose percentage (e.g. +10% adds 10 percentage points) or points (e.g. +5 adds 5 points to the rubric total, so on a 200-point rubric it adds 2.5%). Enter a reason so it appears in the exported report and audit log.",
         "lww_title": "How sync resolves conflicts",
         "lww_body": "When the same record is edited on two devices, the most recent change wins (last-write-wins). Edits you make while offline are protected and are never overwritten by older cloud data until they have synced.",
         "proctoring_title": "Proctoring flags",
