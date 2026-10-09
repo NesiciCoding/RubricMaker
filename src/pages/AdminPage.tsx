@@ -44,7 +44,7 @@ import { useAuthoring, useClasses, useGrading, usePlatform, useSettings, useStud
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { loadSupabaseConfig, storageSync } from '../services/database';
-import { logAuditEvent } from '../services/database/AuditLogger';
+import { auditActorLabel, formatAuditDetails } from '../utils/auditFormat';
 import LoginButtons from '../components/auth/LoginButtons';
 import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -215,7 +215,6 @@ function SchoolsTab() {
         setCreating(true);
         const s = await createSchool(newName.trim(), retention);
         if (s) {
-            logAuditEvent('admin', 'school_create', 'school', s.id);
             setNewName('');
             setNewRetention(3);
             await load();
@@ -227,7 +226,6 @@ function SchoolsTab() {
         const years = editRetention[schoolId];
         if (!years || !Number.isFinite(years) || years < 1 || years > 20) return;
         await updateSchool(schoolId, { retentionYears: Math.round(years) });
-        logAuditEvent('admin', 'school_update', 'school', schoolId, { retentionYears: Math.round(years) });
         await load();
     }
 
@@ -238,7 +236,6 @@ function SchoolsTab() {
         });
         if (!ok) return;
         await deleteSchool(schoolId);
-        logAuditEvent('admin', 'school_delete', 'school', schoolId);
         await load();
     }
 
@@ -1578,32 +1575,48 @@ function AuditTab() {
             return;
         }
         let cancelled = false;
-        let q = client
-            .from('audit_logs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-        if (category !== 'all') q = q.eq('category', category);
-        void q.then(
-            ({ data, error }) => {
-                if (cancelled) return;
-                if (error) console.warn('[audit] fetch failed', error.message);
-                setRows((data as AuditRow[]) ?? []);
-                setLoading(false);
-            },
-            (err: unknown) => {
-                if (cancelled) return;
-                console.warn('[audit] fetch error', err);
-                setLoading(false);
-            }
-        );
+        const query = (columns: string) => {
+            let q = client
+                .from('audit_logs')
+                .select(columns)
+                .order('created_at', { ascending: false })
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+            if (category !== 'all') q = q.eq('category', category);
+            return q;
+        };
+        // Embed the actor's profile; fall back to the bare rows if the embed is unavailable.
+        void query('*, actor:profiles!audit_logs_actor_id_fkey(display_name, email)')
+            .then((res) => (res.error ? query('*') : res))
+            .then(
+                ({ data, error }) => {
+                    if (cancelled) return;
+                    if (error) console.warn('[audit] fetch failed', error.message);
+                    setRows((data as unknown as AuditRow[]) ?? []);
+                    setLoading(false);
+                },
+                (err: unknown) => {
+                    if (cancelled) return;
+                    console.warn('[audit] fetch error', err);
+                    setLoading(false);
+                }
+            );
         return () => {
             cancelled = true;
         };
     }, [dbStatus.isConnected, category, page]);
 
     function exportCsv() {
-        const header = ['timestamp', 'category', 'action', 'entity_type', 'entity_id', 'actor_id'];
+        const header = [
+            'timestamp',
+            'category',
+            'action',
+            'entity_type',
+            'entity_id',
+            'actor_id',
+            'actor_name',
+            'actor_email',
+            'details',
+        ];
         const csv = Papa.unparse(
             [
                 header,
@@ -1614,6 +1627,9 @@ function AuditTab() {
                     r.entity_type ?? '',
                     r.entity_id ?? '',
                     r.actor_id ?? '',
+                    r.actor?.display_name ?? '',
+                    r.actor?.email ?? '',
+                    r.details ? JSON.stringify(r.details) : '',
                 ]),
             ],
             CSV_UNPARSE_OPTIONS
@@ -1664,6 +1680,10 @@ function AuditTab() {
                                 </th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_action')}</th>
                                 <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_entity')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>{t('admin.audit_col_actor')}</th>
+                                <th style={{ textAlign: 'left', padding: '6px 8px' }}>
+                                    {t('admin.audit_col_details')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1690,9 +1710,32 @@ function AuditTab() {
                                         </span>
                                     </td>
                                     <td style={{ padding: '6px 8px' }}>{r.action}</td>
-                                    <td style={{ padding: '6px 8px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                        {r.entity_type &&
-                                            `${r.entity_type}${r.entity_id ? ` / ${r.entity_id.slice(0, 8)}` : ''}`}
+                                    <td
+                                        style={{
+                                            padding: '6px 8px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            wordBreak: 'break-all',
+                                        }}
+                                    >
+                                        {r.entity_type && `${r.entity_type}${r.entity_id ? ` / ${r.entity_id}` : ''}`}
+                                    </td>
+                                    <td
+                                        style={{ padding: '6px 8px', fontSize: '0.8rem' }}
+                                        title={r.actor_id ?? undefined}
+                                    >
+                                        {auditActorLabel(r) ??
+                                            (r.actor_id ? r.actor_id : t('admin.audit_actor_system'))}
+                                    </td>
+                                    <td
+                                        style={{
+                                            padding: '6px 8px',
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.8rem',
+                                            wordBreak: 'break-word',
+                                        }}
+                                    >
+                                        {formatAuditDetails(r.details)}
                                     </td>
                                 </tr>
                             ))}

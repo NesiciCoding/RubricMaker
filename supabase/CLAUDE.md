@@ -26,6 +26,7 @@ A few migrations (e.g. `20260617093844_delete_old_attachments_fn.sql`) use a tim
 - Always include `IF NOT EXISTS` guards so migrations are idempotent when possible.
 - Never modify an already-applied migration — create a new one instead.
 - Run `npm run db:reset` locally to verify a new migration applies cleanly from scratch.
+- Migrations must be able to run inside a transaction: the Docker migrator (`docker/migrate.sh`) applies each file and its `public._migrations` row in one transaction, so a failing file rolls back completely. A migration that truly can't (e.g. `CREATE INDEX CONCURRENTLY`) needs a `-- migrate:no-transaction` line in its first 20 lines.
 - After adding, changing or removing a migration, run `./scripts/generate-bootstrap.sh` and commit the regenerated `supabase/bootstrap.sql` (the single-file schema for fresh self-hosted deploys). CI fails when it is stale.
 
 ## Row-level security (RLS)
@@ -59,6 +60,10 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `erase_student(p_student_id, p_storage_failures)` (084) deletes every row keyed to one student, walking `student_data_tables()`; `student_storage_objects(p_student_id)` lists their files (attachments, scans, recordings, essays, voice feedback) for the client to remove through the Storage API first (`SupabaseAdapter.eraseStudentData`). Only the student's teacher (`students.owner_id`) may erase them; that includes grades other teachers gave the student in a shared class. When the student row was never synced, only the caller's own rows go.
 - Files Storage RLS won't let the teacher delete (voice feedback in another grader's folder) are passed in `p_storage_failures` and recorded in the `audit_logs` row (`action = 'erase_student'`, counts only — nothing identifying) for an operator to remove.
 - Not covered: the student's own `auth.users`/`profiles` login account (an admin deletes it in Supabase Auth), and copies in earlier backups — nightly snapshots keep the 7 most recent per teacher, so an erased student ages out within 7 days; JSON exports and `scripts/backup.sh` dumps must be deleted by hand.
+
+## Audit log
+
+- `audit_logs` (038) holds client entries (`logAuditEvent`, fire-and-forget: exports, grade saves) and server entries. Sensitive changes are written by AFTER triggers (081) through `write_audit_entry()`, in the same transaction as the change and only when a row really changed: role and school changes on `profiles`, `school_members` add/remove, `schools` create/update/delete, `rubric_shares` and `class_members` grants, `sharedWithSchool` toggles on `rubrics`/`comment_bank`, and `site_config` changes (key only, never the value). Don't add a client-side `logAuditEvent` for these. `erase_my_data()` (080) and the `set-student-password` edge function write their own entries.
 
 ## Retention job
 

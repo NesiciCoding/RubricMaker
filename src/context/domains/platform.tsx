@@ -15,7 +15,7 @@ import { mergeStoreData } from '../../utils/syncMerge';
 import { saveSupabaseConfig } from '../../services/database/supabaseConfig';
 import { getDb, loadDb } from '../../services/database/lazyDb';
 import type { DatabaseConfig, DbUser, SyncResult } from '../../services/database';
-import { clearAuditLogger, initAuditLogger, logAuditEvent } from '../../services/database/AuditLogger';
+import { clearAuditLogger, initAuditLogger } from '../../services/database/AuditLogger';
 
 export type PlatformValue = Pick<
     AppContextValue,
@@ -138,8 +138,9 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
     const updateUserRole = async (userId: string, role: UserRole): Promise<SyncResult> => {
         const { storageSync } = await loadDb();
         const result = await storageSync.updateUserRole(userId, role);
+        // The role_change audit entry is written by a database trigger (migration 081), only when
+        // the row really changed — an RLS-blocked update also returns success here.
         if (result.success) {
-            logAuditEvent('admin', 'role_change', 'user', userId, { role });
             if (userId === storageSync.getCurrentUserId()) {
                 dispatch({ type: 'UPDATE_SETTINGS', payload: { userRole: role } });
             }

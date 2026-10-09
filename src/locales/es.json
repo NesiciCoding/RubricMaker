@@ -2902,7 +2902,10 @@
         "erase_success": "Se ha borrado al alumno y todos sus datos.",
         "erase_partial": "Se ha borrado al alumno. {{n}} archivo(s) en la carpeta de almacenamiento de otro docente no se pudieron eliminar aquí; figuran en el registro de auditoría para un administrador.",
         "erase_offline": "Conéctate a la base de datos para borrar a este alumno, de modo que no quede nada en el servidor.",
-        "erase_failed": "No se pudo borrar al alumno: {{error}}"
+        "erase_failed": "No se pudo borrar al alumno: {{error}}",
+        "audit_col_actor": "Realizado por",
+        "audit_col_details": "Detalles",
+        "audit_actor_system": "Sistema"
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -3030,7 +3033,10 @@
         "retry_submit": "Reintentar",
         "copy_backup_code": "Copiar código de respaldo",
         "already_submitted": "Ya entregaste esta redacción, así que esta versión no se envió. Sigue guardada en este dispositivo: pregunta a tu docente si necesitas entregarla de nuevo.",
-        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar."
+        "submit_failed_unsaved": "Tu redacción aún no se ha enviado y este dispositivo no pudo guardar una copia. Copia el código de respaldo antes de salir de esta página y luego pulsa Reintentar.",
+        "load_error_title": "No se pudo cargar esta tarea",
+        "load_error": "No se pudo cargar la tarea. Comprueba tu conexión a internet y vuelve a intentarlo. Si sigue fallando, pide a tu profesor un enlace nuevo.",
+        "load_retry": "Reintentar"
     },
     "editor": {
         "switchToCompactView": "Vista compacta",
@@ -3667,7 +3673,7 @@
         "da_admin_item_integrations": "Pestaña Integraciones — clave de API de Standards.",
         "da_admin_item_data": "Pestaña Datos — anonimizar datos de alumnos, eliminación masiva, herramientas de cumplimiento.",
         "da_admin_item_retention": "Pestaña Retención — establecer políticas automáticas de retención de datos por centro.",
-        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de cambios de rol, guardados de calificaciones, exportaciones y eventos de autenticación; los administradores ven todas las entradas, los profesores ven las suyas. Las entradas se conservan 3 años (admin), 1 año (calificación), 1 mes (exportación/autenticación) y luego se purgan automáticamente.",
+        "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de quién hizo qué, con detalles: cambios de rol, pertenencia y cambios de centro, uso compartido de rúbricas/clases, cambios en la configuración del sitio, restablecimientos de contraseña, «Eliminar todos mis datos», calificaciones guardadas y exportaciones. Los cambios sensibles los registra la propia base de datos, solo cuando el cambio se ha aplicado de verdad. Los administradores ven todas las entradas; el profesorado, solo las suyas. Se conservan 3 años (admin), 1 año (calificaciones) o 1 mes (exportación/acceso) y luego se eliminan automáticamente.",
         "da_settings_title": "Configuración",
         "da_settings_item_theme": "Tema — oscuro / claro, selector de color de acento, 8 ajustes rápidos predefinidos, o elige un paquete de tema con nombre (Academy, Nature, Midnight, Warm, Slate, Rose) que establece con un clic la tipografía, el acento y el color de exportación.",
         "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada.",
