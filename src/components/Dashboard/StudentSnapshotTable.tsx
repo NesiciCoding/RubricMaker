@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronRight, Users } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import CefrBadge from '../CEFR/CefrBadge';
-import { getCefrStudentOverview, overallLevel } from '../../utils/cefrStudentAggregator';
+import { getCefrStudentOverview, overallLevelStatus } from '../../utils/cefrStudentAggregator';
 import { getStudentVocabProfile } from '../../utils/vocabProfileAggregator';
 import { getStudentGrammarMasteryScore, type MasteryProfileDeps } from '../../utils/masteryProfileAggregator';
 import { getCriterionInterventionFlags, getCefrSkillInterventionFlags } from '../../utils/learningPathAggregator';
@@ -41,7 +41,7 @@ interface Props {
 interface Row {
     student: Student;
     cls?: Class;
-    cefrLevel: ReturnType<typeof overallLevel>;
+    cefrLevel: ReturnType<typeof overallLevelStatus>;
     vocabLevel: ReturnType<typeof getStudentVocabProfile>['estimatedLevel'] | null;
     grammarScore: number | null;
     flagCount: number;
@@ -128,7 +128,7 @@ export default function StudentSnapshotTable({
             return {
                 student,
                 cls,
-                cefrLevel: overallLevel(cefrOverview.cells),
+                cefrLevel: overallLevelStatus(cefrOverview.cells),
                 vocabLevel: vocabProfile.analysisCount > 0 ? vocabProfile.estimatedLevel : null,
                 grammarScore: getStudentGrammarMasteryScore(student.id, masteryDeps),
                 flagCount,
@@ -259,7 +259,16 @@ export default function StudentSnapshotTable({
                                         onClick={() => navigate(`/students/${s.id}/cefr-overview`)}
                                         aria-label={t('dashboard.snapshot_open_cefr', { name: s.name })}
                                     >
-                                        <CefrBadge level={cefrLevel} size="sm" />
+                                        <CefrBadge
+                                            level={cefrLevel.level}
+                                            size="sm"
+                                            developing={!cefrLevel.achieved}
+                                            title={
+                                                cefrLevel.achieved
+                                                    ? undefined
+                                                    : t('cefrOverview.working_toward', { level: cefrLevel.level })
+                                            }
+                                        />
                                     </button>
                                 ) : (
                                     <span style={textDim}>·</span>

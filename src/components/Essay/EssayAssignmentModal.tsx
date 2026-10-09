@@ -9,6 +9,7 @@ import Modal from '../ui/Modal';
 import type { EssayAssignment, EssayTemplate } from '../../types';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
+import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../../utils/dateInput';
 
 interface Props {
     rubricId: string;
@@ -73,13 +74,8 @@ export default function EssayAssignmentModal({
     const [readOnlyAfterSubmit, setReadOnlyAfterSubmit] = useState(
         savedTemplate?.readOnlyAfterSubmit ?? initialValues?.readOnlyAfterSubmit ?? true
     );
-    const [expiresAt, setExpiresAt] = useState(
-        savedTemplate?.expiresAt
-            ? savedTemplate.expiresAt.slice(0, 16)
-            : initialValues?.expiresAt
-              ? initialValues.expiresAt.slice(0, 16)
-              : ''
-    );
+    const originalExpiresAt = savedTemplate?.expiresAt ?? initialValues?.expiresAt;
+    const [expiresAt, setExpiresAt] = useState(originalExpiresAt ? toLocalDatetimeInput(originalExpiresAt) : '');
     // On by default when connected — but only when this modal instance can actually save
     // the row (onSaveAssignment). Without that, embedding credentials just hands out a
     // "DB mode" link for a row that never gets persisted (see handleAssignToStudents).
@@ -107,7 +103,7 @@ export default function EssayAssignmentModal({
                 requireSEB,
                 readOnlyAfterSubmit,
                 createdAt: new Date().toISOString(),
-                expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+                expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
             };
             // Embed Supabase credentials so the student page can submit directly to the DB —
             // only when there's a way to actually persist this row (onSaveAssignment).
@@ -128,6 +124,7 @@ export default function EssayAssignmentModal({
             requireSEB,
             readOnlyAfterSubmit,
             expiresAt,
+            originalExpiresAt,
             embedDb,
             dbStatus.isConnected,
             config,
@@ -210,7 +207,7 @@ export default function EssayAssignmentModal({
             timeLimitMinutes: timeLimitMinutes ? parseInt(timeLimitMinutes, 10) : undefined,
             requireSEB,
             readOnlyAfterSubmit,
-            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+            expiresAt: fromLocalDatetimeInput(expiresAt, originalExpiresAt),
             createdAt: savedTemplate?.createdAt ?? new Date().toISOString(),
         };
         onSaveTemplate(template);
@@ -228,6 +225,7 @@ export default function EssayAssignmentModal({
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
+        originalExpiresAt,
     ]);
 
     return (
