@@ -1007,6 +1007,7 @@ function GradingTab() {
                     items={[
                         t('docs.gr_feedback_item_comment_bank'),
                         t('docs.gr_feedback_item_voice'),
+                        t('docs.gr_feedback_item_audio_storage'),
                         t('docs.gr_feedback_item_notes'),
                         t('docs.gr_feedback_item_attachments'),
                     ]}
