@@ -34,6 +34,8 @@ import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { ReportCardConfig, Student, StudentRubric } from '../types';
 import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -72,6 +74,7 @@ export default function ExportPage() {
     const { saveStudentRubric, updateSettings } = useStoreActions();
 
     const { showToast } = useToast();
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [selectedRubricId, setSelectedRubricId] = useState(rubrics[0]?.id ?? '');
     const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
     const [exporting, setExporting] = useState(false);
@@ -471,26 +474,33 @@ export default function ExportPage() {
         logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });
     }
 
-    function handleBulkMarkNHI() {
-        const now = new Date().toISOString();
-        gradedStudents.forEach(({ sr }) => {
-            if (!selectedStudentIds.has(sr.studentId)) return;
-            saveStudentRubric({ ...sr, notHandedIn: true, gradedAt: now });
+    async function handleBulkMarkNHI() {
+        const targets = gradedStudents.filter(({ sr }) => selectedStudentIds.has(sr.studentId));
+        if (targets.length === 0) return;
+        const ok = await confirm({
+            title: t('exportPage.bulk_nhi_confirm_title'),
+            message: t('exportPage.bulk_nhi_confirm_message', { count: targets.length }),
+            confirmLabel: t('exportPage.bulk_nhi'),
+            cancelLabel: t('common.cancel'),
+            danger: true,
         });
-        showToast(`Marked ${selectedStudentIds.size} student(s) as not handed in`, 'success');
+        if (!ok) return;
+        const now = new Date().toISOString();
+        // Keep the original grade date: it drives "Date graded", period reports and recent activity.
+        targets.forEach(({ sr }) => saveStudentRubric({ ...sr, notHandedIn: true, gradedAt: sr.gradedAt ?? now }));
+        showToast(t('exportPage.bulk_nhi_done', { count: targets.length }), 'success');
         setSelectedStudentIds(new Set());
     }
 
     function handleBulkComment() {
         if (!bulkCommentText.trim()) return;
-        const now = new Date().toISOString();
-        gradedStudents.forEach(({ sr }) => {
-            if (!selectedStudentIds.has(sr.studentId)) return;
+        const targets = gradedStudents.filter(({ sr }) => selectedStudentIds.has(sr.studentId));
+        targets.forEach(({ sr }) => {
             const current = sr.overallComment || '';
             const spacer = current && !current.endsWith(' ') ? ' ' : '';
-            saveStudentRubric({ ...sr, overallComment: current + spacer + bulkCommentText, gradedAt: now });
+            saveStudentRubric({ ...sr, overallComment: current + spacer + bulkCommentText });
         });
-        showToast(`Added comment to ${selectedStudentIds.size} student(s)`, 'success');
+        showToast(t('exportPage.bulk_comment_done', { count: targets.length }), 'success');
         setBulkCommentText('');
         setShowBulkComment(false);
     }
@@ -1717,6 +1727,7 @@ export default function ExportPage() {
                     </div>
                 </div>
             </div>
+            <ConfirmDialog {...confirmDialogProps} />
         </>
     );
 }

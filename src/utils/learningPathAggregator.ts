@@ -12,7 +12,7 @@ import type {
     Test,
 } from '../types';
 import type { CefrCellData } from './cefrStudentAggregator';
-import { calcEntryPoints, criterionMaxPoints, criterionPercentage } from './gradeCalc';
+import { calcGradeSummary, criterionMaxPoints, criterionPercentage } from './gradeCalc';
 import { autoScoreResponse } from './testCalc';
 
 export const DEFAULT_LEARNING_PATH_CONFIG: LearningPathConfig = {
@@ -185,14 +185,10 @@ export function getCefrSkillInterventionFlags(
         if (!rubric?.cefrTargetLevel) continue;
 
         const skill: CefrSkill = rubric.cefrSkill ?? 'writing';
-        const maxPoints = Math.max(...rubric.criteria.flatMap((c) => c.levels.map((l) => l.maxPoints)), 0);
-        if (maxPoints === 0) continue;
-
-        const earned = sr.entries.reduce((sum, entry) => {
-            const criterion = rubric.criteria.find((c) => c.id === entry.criterionId);
-            return criterion ? sum + calcEntryPoints(entry, criterion) : sum;
-        }, 0);
-        const pct = (earned / maxPoints) * 100;
+        // Same percentage the CEFR overview uses: earned over the whole rubric, not one criterion's max.
+        const summary = calcGradeSummary(sr, rubric.criteria, null, rubric);
+        if (summary.configuredMaxPoints === 0) continue;
+        const pct = summary.modifiedPercentage;
 
         const list = scoresBySkill.get(skill) ?? [];
         list.push({ score: pct, gradedAt: sr.gradedAt! });

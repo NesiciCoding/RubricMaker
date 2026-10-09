@@ -32,4 +32,25 @@ describe('SegmentedToggle', () => {
         render(<SegmentedToggle options={options} value="cards" onChange={() => {}} ariaLabel="View mode" />);
         expect(screen.getByRole('group', { name: 'View mode' })).toBeTruthy();
     });
+
+    it('can wrap onto several rows with touch-sized targets (#715)', () => {
+        render(
+            <SegmentedToggle
+                options={options}
+                value="cards"
+                onChange={() => {}}
+                ariaLabel="Sections"
+                wrap
+                minTargetHeight={44}
+            />
+        );
+        expect(screen.getByRole('group', { name: 'Sections' }).style.flexWrap).toBe('wrap');
+        for (const button of screen.getAllByRole('button')) expect(button.style.minHeight).toBe('44px');
+    });
+
+    it('stays a single nowrap pill by default', () => {
+        render(<SegmentedToggle options={options} value="cards" onChange={() => {}} ariaLabel="View mode" />);
+        expect(screen.getByRole('group').style.flexWrap).toBe('');
+        expect(screen.getAllByRole('button')[0].style.minHeight).toBe('');
+    });
 });
