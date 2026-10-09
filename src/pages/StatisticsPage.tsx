@@ -105,8 +105,8 @@ export default function StatisticsPage() {
     }));
     const students = useMemo(() => allStudents.filter((s) => !s.archivedAt), [allStudents]);
     const studentRubrics = useMemo(
-        () => liveStudentRubrics(allStudentRubrics, students),
-        [allStudentRubrics, students]
+        () => liveStudentRubrics(allStudentRubrics, students, rubrics),
+        [allStudentRubrics, students, rubrics]
     );
     const { updateSettings } = useSettings();
 
