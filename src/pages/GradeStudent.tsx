@@ -52,6 +52,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels } from '../utils/gradeCalc';
+import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -223,12 +224,15 @@ export default function GradeStudent() {
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
     // A deep link can mount before hydration merges this student's saved grade into state.
-    // Adopt that record when it arrives; if the teacher already started editing, keep their
-    // edits but write them to the real record's id so a save can't add a blank duplicate.
+    // Adopt that record when it arrives; if the teacher already started editing, lay their
+    // edits over it so a save neither adds a blank duplicate nor wipes untouched saved scores.
+    const seedSrRef = useRef(sr);
     React.useEffect(() => {
         if (!existingSR || !sr || sr.id === existingSR.id) return;
-        if (isDirty) {
-            setSr({ ...sr, id: existingSR.id });
+        if (isDirty && seedSrRef.current) {
+            setSr(mergeEditsOntoSavedGrade(seedSrRef.current, sr, existingSR));
+            setFeedbackOnly((f) => f || (existingSR.feedbackOnly ?? false));
+            setIsAnchor((a) => a || (existingSR.isAnchor ?? false));
             return;
         }
         setSr(existingSR);

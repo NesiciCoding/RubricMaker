@@ -278,7 +278,7 @@ describe('GradeStudent', () => {
             );
         });
 
-        it('keeps the teacher edits but writes to the existing record id when already editing', () => {
+        it('lays the teacher edits over the existing record when already editing', () => {
             renderPage();
             fireEvent.click(screen.getByText('Excellent'));
             mockAppValue.studentRubrics = [hydrated] as never[];
@@ -287,6 +287,7 @@ describe('GradeStudent', () => {
             expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
                 expect.objectContaining({
                     id: 'sr-real',
+                    overallComment: 'Real feedback',
                     entries: [expect.objectContaining({ levelId: 'l1' })],
                 })
             );
