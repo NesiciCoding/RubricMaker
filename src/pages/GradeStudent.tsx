@@ -1302,10 +1302,18 @@ export default function GradeStudent() {
                                             {levels.map((level, levelIndex) => {
                                                 const isSelected = entry.levelId === level.id;
                                                 const shortcutNum = levelIndex + 1;
+                                                const toggleLevel = () =>
+                                                    updateEntry(c.id, {
+                                                        levelId: isSelected ? null : level.id,
+                                                        overridePoints: undefined,
+                                                    });
+                                                // The card holds sliders and steppers, so it can't itself be a
+                                                // <button>: only its header is, and the controls sit beside it.
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={level.id}
-                                                        type="button"
+                                                        role="group"
+                                                        aria-label={level.label}
                                                         data-tour={
                                                             levelIndex === 0 && criterionIndex === 0
                                                                 ? 'grading-level-btn'
@@ -1320,123 +1328,131 @@ export default function GradeStudent() {
                                                                   }
                                                                 : {}
                                                         }
-                                                        title={
-                                                            shortcutNum <= 5
-                                                                ? t('gradeStudent.level_shortcut_hint', {
-                                                                      num: shortcutNum,
-                                                                  })
-                                                                : undefined
-                                                        }
-                                                        onClick={() =>
-                                                            updateEntry(c.id, {
-                                                                levelId: isSelected ? null : level.id,
-                                                                overridePoints: undefined,
-                                                            })
-                                                        }
+                                                        onClick={(e) => {
+                                                            if (e.target === e.currentTarget) toggleLevel();
+                                                        }}
                                                     >
-                                                        {/* Label + points badge */}
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'baseline',
-                                                                marginBottom: 5,
-                                                                gap: 6,
-                                                            }}
+                                                        <button
+                                                            type="button"
+                                                            className="level-btn-select"
+                                                            aria-pressed={isSelected}
+                                                            title={
+                                                                shortcutNum <= 5
+                                                                    ? t('gradeStudent.level_shortcut_hint', {
+                                                                          num: shortcutNum,
+                                                                      })
+                                                                    : undefined
+                                                            }
+                                                            onClick={toggleLevel}
                                                         >
-                                                            <span
+                                                            {/* Label + points badge */}
+                                                            <div
                                                                 style={{
-                                                                    fontWeight: 700,
-                                                                    fontSize: '0.88em',
-                                                                    color: isSelected ? fmt.accentColor : 'var(--text)',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'baseline',
+                                                                    marginBottom: 5,
+                                                                    gap: 6,
                                                                 }}
                                                             >
-                                                                {isCriterionFocused && shortcutNum <= 5 && (
-                                                                    <span
-                                                                        className="level-btn-shortcut-hint"
-                                                                        style={{
-                                                                            display: 'inline-block',
-                                                                            marginRight: 5,
-                                                                            fontSize: '0.75em',
-                                                                            fontWeight: 700,
-                                                                            background: isSelected
-                                                                                ? fmt.accentColor
-                                                                                : 'var(--bg)',
-                                                                            color: isSelected
-                                                                                ? '#fff'
-                                                                                : 'var(--text-muted)',
-                                                                            border: '1px solid var(--border)',
-                                                                            borderRadius: 3,
-                                                                            padding: '0 4px',
-                                                                            verticalAlign: 'middle',
-                                                                        }}
-                                                                    >
-                                                                        {shortcutNum}
-                                                                    </span>
-                                                                )}
-                                                                {level.label}
-                                                            </span>
-                                                            {level.cefrLevel && (
                                                                 <span
                                                                     style={{
-                                                                        fontSize: '0.65em',
                                                                         fontWeight: 700,
-                                                                        padding: '1px 5px',
-                                                                        borderRadius: 3,
-                                                                        background: isSelected
-                                                                            ? 'rgba(255,255,255,0.25)'
-                                                                            : 'var(--accent-soft)',
-                                                                        color: isSelected ? '#fff' : 'var(--accent)',
-                                                                        flexShrink: 0,
-                                                                        letterSpacing: '0.03em',
-                                                                    }}
-                                                                >
-                                                                    {level.cefrLevel}
-                                                                </span>
-                                                            )}
-                                                            {fmt.showPoints && (
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: '0.72em',
+                                                                        fontSize: '0.88em',
                                                                         color: isSelected
                                                                             ? fmt.accentColor
-                                                                            : 'var(--text-muted)',
-                                                                        fontWeight: 600,
-                                                                        flexShrink: 0,
+                                                                            : 'var(--text)',
                                                                     }}
                                                                 >
-                                                                    {level.minPoints === level.maxPoints
-                                                                        ? `${level.minPoints}${t('gradeStudent.table_points')}`
-                                                                        : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
+                                                                    {isCriterionFocused && shortcutNum <= 5 && (
+                                                                        <span
+                                                                            className="level-btn-shortcut-hint"
+                                                                            style={{
+                                                                                display: 'inline-block',
+                                                                                marginRight: 5,
+                                                                                fontSize: '0.75em',
+                                                                                fontWeight: 700,
+                                                                                background: isSelected
+                                                                                    ? fmt.accentColor
+                                                                                    : 'var(--bg)',
+                                                                                color: isSelected
+                                                                                    ? '#fff'
+                                                                                    : 'var(--text-muted)',
+                                                                                border: '1px solid var(--border)',
+                                                                                borderRadius: 3,
+                                                                                padding: '0 4px',
+                                                                                verticalAlign: 'middle',
+                                                                            }}
+                                                                        >
+                                                                            {shortcutNum}
+                                                                        </span>
+                                                                    )}
+                                                                    {level.label}
                                                                 </span>
+                                                                {level.cefrLevel && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.65em',
+                                                                            fontWeight: 700,
+                                                                            padding: '1px 5px',
+                                                                            borderRadius: 3,
+                                                                            background: isSelected
+                                                                                ? 'rgba(255,255,255,0.25)'
+                                                                                : 'var(--accent-soft)',
+                                                                            color: isSelected
+                                                                                ? '#fff'
+                                                                                : 'var(--accent)',
+                                                                            flexShrink: 0,
+                                                                            letterSpacing: '0.03em',
+                                                                        }}
+                                                                    >
+                                                                        {level.cefrLevel}
+                                                                    </span>
+                                                                )}
+                                                                {fmt.showPoints && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.72em',
+                                                                            color: isSelected
+                                                                                ? fmt.accentColor
+                                                                                : 'var(--text-muted)',
+                                                                            fontWeight: 600,
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    >
+                                                                        {level.minPoints === level.maxPoints
+                                                                            ? `${level.minPoints}${t('gradeStudent.table_points')}`
+                                                                            : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {/* Description */}
+                                                            {level.description ? (
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: '0.8em',
+                                                                        color: isSelected
+                                                                            ? 'var(--text)'
+                                                                            : 'var(--text-muted)',
+                                                                        lineHeight: 1.45,
+                                                                    }}
+                                                                >
+                                                                    {level.description}
+                                                                </p>
+                                                            ) : (
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: '0.8em',
+                                                                        color: 'var(--text-dim)',
+                                                                        fontStyle: 'italic',
+                                                                    }}
+                                                                >
+                                                                    {t('gradeStudent.level_select')}
+                                                                </p>
                                                             )}
-                                                        </div>
-                                                        {/* Description */}
-                                                        {level.description ? (
-                                                            <p
-                                                                style={{
-                                                                    margin: 0,
-                                                                    fontSize: '0.8em',
-                                                                    color: isSelected
-                                                                        ? 'var(--text)'
-                                                                        : 'var(--text-muted)',
-                                                                    lineHeight: 1.45,
-                                                                }}
-                                                            >
-                                                                {level.description}
-                                                            </p>
-                                                        ) : (
-                                                            <p
-                                                                style={{
-                                                                    margin: 0,
-                                                                    fontSize: '0.8em',
-                                                                    color: 'var(--text-dim)',
-                                                                    fontStyle: 'italic',
-                                                                }}
-                                                            >
-                                                                {t('gradeStudent.level_select')}
-                                                            </p>
-                                                        )}
+                                                        </button>
                                                         {/* Sub-items */}
                                                         {level.subItems.length > 0 && (
                                                             <div
@@ -1445,7 +1461,6 @@ export default function GradeStudent() {
                                                                     paddingTop: 8,
                                                                     borderTop: `1px solid ${isSelected ? fmt.accentColor + '40' : 'var(--border)'}`,
                                                                 }}
-                                                                onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <div
                                                                     style={{
@@ -1470,7 +1485,6 @@ export default function GradeStudent() {
                                                                         return (
                                                                             <div
                                                                                 key={si.id}
-                                                                                onClick={(e) => e.stopPropagation()}
                                                                                 style={{
                                                                                     display: 'flex',
                                                                                     flexDirection: 'column',
@@ -1577,7 +1591,6 @@ export default function GradeStudent() {
                                                                         paddingTop: 8,
                                                                         borderTop: `1px solid ${fmt.accentColor}30`,
                                                                     }}
-                                                                    onClick={(e) => e.stopPropagation()}
                                                                 >
                                                                     <div
                                                                         style={{
@@ -1661,7 +1674,7 @@ export default function GradeStudent() {
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                    </button>
+                                                    </div>
                                                 );
                                             })}
                                         </div>

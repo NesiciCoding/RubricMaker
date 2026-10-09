@@ -166,6 +166,14 @@ describe('PeerReviewView coverage', () => {
         expect(screen.getAllByTestId('tiptap-mock')[1]).toHaveValue('overall pre-filled');
     });
 
+    it('renders level cards as toggle buttons reachable by keyboard (#616)', () => {
+        renderAt('r1', 's1');
+        const card = screen.getByRole('button', { name: /Good/ });
+        expect(card).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(card);
+        expect(card).toHaveAttribute('aria-pressed', 'true');
+    });
+
     it('loads an existing review by gradedBy when a reviewerId is present', () => {
         peerReviews.push(existingReview({ id: 'pr2', gradedBy: 'peer1', overallComment: 'peer comment' }));
         renderAt('r1', 's1', '?reviewerId=peer1');
