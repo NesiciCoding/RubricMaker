@@ -1830,7 +1830,9 @@
         "add_round": "Añadir ronda",
         "view_analytics": "Ver estadísticas",
         "unsaved_round_switch_title": "¿Cambiar de ronda?",
-        "unsaved_round_switch_message": "Los cambios sin guardar se perderán. ¿Continuar?"
+        "unsaved_round_switch_message": "Los cambios sin guardar se perderán. ¿Continuar?",
+        "title_self": "Autoevaluación: {{name}}",
+        "title_peer": "Revisión entre pares: {{reviewer}} revisa a {{reviewed}}"
     },
     "coGrading": {
         "action_co_grade": "Segunda corrección",
@@ -3400,7 +3402,7 @@
         "gr_delete_title": "Eliminar una calificación",
         "gr_delete_body": "El icono de papelera en la página de calificación de un estudiante elimina esa calificación (con confirmación previa). Para una calificación grupal, se pregunta si eliminar solo la copia de ese estudiante o la calificación compartida de todo el grupo. Las calificaciones eliminadas no se pierden para siempre: un docente/administrador puede restaurarlas desde Admin → Archivo → Calificaciones eliminadas recientemente.",
         "gr_peer_title": "Evaluación entre compañeros y autoevaluación",
-        "gr_peer_item_peer_review": "Evaluación entre compañeros — comparte una URL con un alumno para evaluar el trabajo de un compañero.",
+        "gr_peer_item_peer_review": "Evaluación entre compañeros — comparte una URL con un alumno para evaluar el trabajo de un compañero. El título de la página indica quién revisa y a quién se revisa (o muestra Autoevaluación si el enlace no incluye revisor). Cambiar o añadir una ronda con cambios sin guardar pide confirmación primero.",
         "gr_peer_item_self_assess": "Autoevaluación — los alumnos se evalúan a sí mismos según los enunciados Can-Do del MCER. Los resultados se almacenan junto con las puntuaciones del profesor.",
         "gr_peer_item_analytics": "Analítica de evaluación entre compañeros (/peer-analytics/:rubricId) — ábrela desde la pantalla de evaluación entre compañeros para ver puntuaciones de consistencia que comparan las calificaciones de los compañeros con tu referencia, un mapa de calor de retroalimentación de qué criterios reciben más comentarios y tendencias entre rondas. Las evaluaciones se vinculan a los evaluadores mediante su ID de alumno; los registros antiguos sin ID se muestran como «Evaluador anónimo».",
         "gr_cograding_title": "Co-calificación y moderación",

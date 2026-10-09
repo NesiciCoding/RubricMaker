@@ -1830,7 +1830,9 @@
         "add_round": "Ronde toevoegen",
         "view_analytics": "Analyse bekijken",
         "unsaved_round_switch_title": "Ronde wisselen?",
-        "unsaved_round_switch_message": "Niet-opgeslagen wijzigingen gaan verloren. Doorgaan?"
+        "unsaved_round_switch_message": "Niet-opgeslagen wijzigingen gaan verloren. Doorgaan?",
+        "title_self": "Zelfbeoordeling: {{name}}",
+        "title_peer": "Peerreview: {{reviewer}} beoordeelt {{reviewed}}"
     },
     "coGrading": {
         "action_co_grade": "Tweede beoordelaar",
@@ -3400,7 +3402,7 @@
         "gr_delete_title": "Een cijfer verwijderen",
         "gr_delete_body": "Het prullenbak-icoon op de beoordelingspagina van een leerling verwijdert dat cijfer (met een bevestiging vooraf). Bij een groepscijfer wordt gevraagd of je alleen het cijfer van die leerling of het hele groepscijfer wilt verwijderen. Verwijderde cijfers zijn niet definitief weg — een docent/beheerder kan ze herstellen via Beheer → Archief → Onlangs verwijderde cijfers.",
         "gr_peer_title": "Peerbeoordeling & zelfbeoordeling",
-        "gr_peer_item_peer_review": "Peerbeoordeling — deel een URL met een leerling om het werk van een klasgenoot te beoordelen.",
+        "gr_peer_item_peer_review": "Peerbeoordeling — deel een URL met een leerling om het werk van een klasgenoot te beoordelen. De paginatitel noemt de beoordelaar en de beoordeelde leerling (of toont Zelfbeoordeling als de link geen beoordelaar bevat). Bij het wisselen of toevoegen van een ronde met niet-opgeslagen wijzigingen wordt eerst om bevestiging gevraagd.",
         "gr_peer_item_self_assess": "Zelfbeoordeling — leerlingen beoordelen zichzelf aan de hand van ERK Can-Do-uitspraken. Resultaten worden samen met de docentscores opgeslagen.",
         "gr_peer_item_analytics": "Peerbeoordeling Analytics (/peer-analytics/:rubricId) — open vanaf het peerbeoordelingsscherm om consistentiescores te zien die peerscores vergelijken met je basislijn, een feedback-heatmap van welke criteria de meeste opmerkingen krijgen, en trends per ronde. Beoordelingen worden gekoppeld aan beoordelaars via hun leerling-ID; oudere records zonder ID worden weergegeven als \"Anonieme beoordelaar\".",
         "gr_cograding_title": "Mede-beoordelen & moderatie",

@@ -1830,7 +1830,9 @@
         "add_round": "Ajouter un tour",
         "view_analytics": "Voir les statistiques",
         "unsaved_round_switch_title": "Changer de tour ?",
-        "unsaved_round_switch_message": "Les modifications non enregistrées seront perdues. Continuer ?"
+        "unsaved_round_switch_message": "Les modifications non enregistrées seront perdues. Continuer ?",
+        "title_self": "Auto-évaluation : {{name}}",
+        "title_peer": "Évaluation par les pairs : {{reviewer}} évalue {{reviewed}}"
     },
     "coGrading": {
         "action_co_grade": "Double correction",
@@ -3400,7 +3402,7 @@
         "gr_delete_title": "Supprimer une note",
         "gr_delete_body": "L'icône de corbeille sur la page de notation d'un élève supprime cette note (après confirmation). Pour une note de groupe, on vous demande si vous voulez supprimer uniquement la copie de cet élève ou la note partagée de tout le groupe. Les notes supprimées ne sont pas perdues définitivement — un enseignant/administrateur peut les restaurer depuis Admin → Archiver → Notes récemment supprimées.",
         "gr_peer_title": "Évaluation par les pairs & autoévaluation",
-        "gr_peer_item_peer_review": "Évaluation par les pairs — partagez une URL avec un élève pour évaluer le travail d'un camarade.",
+        "gr_peer_item_peer_review": "Évaluation par les pairs — partagez une URL avec un élève pour évaluer le travail d'un camarade. Le titre de la page indique l'évaluateur et l'élève évalué (ou Auto-évaluation si le lien ne contient pas d'évaluateur). Changer ou ajouter un tour avec des modifications non enregistrées demande d'abord une confirmation.",
         "gr_peer_item_self_assess": "Autoévaluation — les élèves s'évaluent eux-mêmes selon les énoncés Can-Do du CECRL. Les résultats sont stockés avec les notes de l'enseignant.",
         "gr_peer_item_analytics": "Analytique de l'évaluation par les pairs (/peer-analytics/:rubricId) — ouvrez depuis l'écran d'évaluation par les pairs pour voir des scores de cohérence comparant les notes des pairs à votre référence, une carte de chaleur de feedback indiquant quels critères reçoivent le plus de commentaires, et des tendances de round en round. Les évaluations sont associées aux évaluateurs via leur identifiant d'élève ; les anciens enregistrements sans identifiant sont affichés comme « Évaluateur anonyme ».",
         "gr_cograding_title": "Co-notation & modération",
