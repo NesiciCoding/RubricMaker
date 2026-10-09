@@ -1652,7 +1652,8 @@
         "nhi_confirm_message": "{{name}} ya tiene una calificación para esta rúbrica. Marcar el trabajo como no entregado lo excluye de las estadísticas, el panel y el portal del alumno. Las puntuaciones se conservan y puedes deshacerlo desde el aviso de la página de calificación.",
         "nhi_confirm_action": "Marcar como no entregado",
         "nhi_banner": "Marcado como no entregado: este trabajo no cuenta en las estadísticas, el panel ni el portal del alumno. Calificar y guardar quita la marca.",
-        "nhi_undo": "Deshacer «no entregado»"
+        "nhi_undo": "Deshacer «no entregado»",
+        "points_before_modifier": "Puntos antes del modificador"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -3330,7 +3331,7 @@
         "gr_scoring_item_select": "Haz clic en cualquier celda de nivel para seleccionarla. Haz clic de nuevo para deseleccionarla.",
         "gr_scoring_item_slider": "Para rangos de puntos, usa el deslizador para elegir un valor dentro del rango permitido.",
         "gr_scoring_item_subitems": "Activa los subelementos dentro de un nivel con casillas de verificación.",
-        "gr_scoring_item_modifiers": "Aplica modificadores de puntuación (bonificación en %, deducción de puntos, ajuste de nivel) con un motivo.",
+        "gr_scoring_item_modifiers": "Aplica un modificador de puntuación (bonificación o deducción en %, o un ajuste en puntos) con un motivo. Un ajuste en puntos cuenta sobre el máximo de la rúbrica: +10 puntos en una rúbrica de 200 puntos suman un 5 %.",
         "gr_mobile_title": "Calificación móvil",
         "gr_mobile_body_prefix": "En teléfonos y iPad en modo vertical, la vista de calificación está optimizada para el tacto. Los deslizadores de rango de puntos y subelementos obtienen un",
         "gr_mobile_stepper": "− / +",
@@ -3709,7 +3710,7 @@
         "gr_layout_title": "Diseños de tarjeta y cuadrícula",
         "gr_layout_body": "Alterna entre las tarjetas apiladas y una cuadrícula compacta de criterio×nivel con el selector Tarjetas/Cuadrícula. En la cuadrícula, cada celda muestra el nivel y una breve descripción; al hacer clic en una celda se abre un panel de detalle con un control deslizante de puntos, fichas de subelementos, un control de anulación y el redactor de comentarios. Las rúbricas de punto único siempre usan el diseño de tarjeta.",
         "gr_keyboard_title": "Atajos de teclado",
-        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Tab / Mayús+Tab mueven el foco entre criterios, Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
+        "gr_keyboard_body": "Pulsa las teclas 1–5 para elegir un nivel para el criterio enfocado. Pulsa una letra de criterio y luego un número — A+1, B+2 — para saltar directamente a un criterio y fijar su nivel. Con un criterio seleccionado, ↑ / ↓ pasan de un criterio a otro (Tab y Mayús+Tab recorren todos los botones y campos como siempre), Ctrl+S guarda (y avanza) y ? muestra todos los atajos.",
         "gr_portal_tabs_body": "El portal se organiza en cuatro pestañas: Inicio (noticias y avisos), Tareas (redacciones, exámenes y mazos de tarjetas), Comentarios (calificaciones, respuestas del profesor y revisiones entre pares) y Progreso (historial de notas, MCER y sugerencias de práctica). En la cabecera se muestran un logotipo, el conmutador de tema y el avatar del estudiante.",
         "ce_flashcards_item_fields": "Las tarjetas de vocabulario pueden incluir fonética (pronunciación/AFI) y categoría gramatical, escritas directamente en el editor del mazo o importadas como 4.ª y 5.ª columnas opcionales. Los estudiantes las ven en la tarjeta durante el estudio, junto a una barra de progreso y una barra lateral con la lista de palabras del mazo.",
         "es_focus_title": "Modo de concentración del estudiante",
@@ -3930,7 +3931,7 @@
     },
     "help": {
         "score_modifier_title": "Modificadores de nota",
-        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10%) o puntos (p. ej. +5). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
+        "score_modifier_body": "Añade un ajuste global a la nota final. Elige porcentaje (p. ej. +10% suma 10 puntos porcentuales) o puntos (p. ej. +5 suma 5 puntos al total de la rúbrica, es decir, un 2,5 % en una rúbrica de 200 puntos). Indica un motivo para que aparezca en el informe exportado y en el registro de auditoría.",
         "lww_title": "Cómo resuelve conflictos la sincronización",
         "lww_body": "Cuando el mismo registro se edita en dos dispositivos, gana el cambio más reciente (last-write-wins). Los cambios que hagas sin conexión están protegidos y nunca se sobrescriben con datos más antiguos de la nube hasta que se hayan sincronizado.",
         "proctoring_title": "Alertas de supervisión",

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { encodeEssayAssignment } from '../../utils/shareCode';
@@ -212,6 +212,35 @@ describe('StudentEssayPage — timer auto-submit', () => {
         // Submission must fire; word limit affects the button only, not the countdown
         expect(mockEncode).toHaveBeenCalled();
         expect(mockEncode).toHaveBeenCalledWith(expect.objectContaining({ wordLimitStatus: 'over' }));
+    });
+});
+
+describe('StudentEssayPage — handed-in timed essay (#717)', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.clearAllMocks();
+        sessionStorage.clear();
+        localStorage.clear();
+    });
+
+    it('stays handed in after a reload instead of restarting the countdown', async () => {
+        vi.useFakeTimers();
+        const assignment = makeAssignment({ timeLimitMinutes: 1 });
+        renderPage(assignment);
+        setContent(5);
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /essay\.submit_btn/i }));
+        });
+        expect(mockEncode).toHaveBeenCalledTimes(1);
+        cleanup();
+
+        renderPage(assignment);
+        expect(screen.getByDisplayValue('MOCK_SUBMISSION_CODE')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /essay\.submit_btn/i })).not.toBeInTheDocument();
+        await act(async () => {
+            vi.advanceTimersByTime(61_000);
+        });
+        expect(mockEncode).toHaveBeenCalledTimes(1);
     });
 });
 

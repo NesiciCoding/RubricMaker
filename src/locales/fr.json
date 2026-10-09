@@ -1652,7 +1652,8 @@
         "nhi_confirm_message": "{{name}} a déjà une note pour cette grille. Marquer le travail comme non rendu le retire des statistiques, du tableau de bord et du portail élève. Les scores sont conservés et vous pouvez annuler depuis le bandeau de la page de correction.",
         "nhi_confirm_action": "Marquer comme non rendu",
         "nhi_banner": "Marqué comme non rendu — ce travail est exclu des statistiques, du tableau de bord et du portail élève. Noter et enregistrer retire cette marque.",
-        "nhi_undo": "Annuler « non rendu »"
+        "nhi_undo": "Annuler « non rendu »",
+        "points_before_modifier": "Points avant le modificateur"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -3330,7 +3331,7 @@
         "gr_scoring_item_select": "Cliquez sur n'importe quelle cellule de niveau pour la sélectionner. Cliquez à nouveau pour la désélectionner.",
         "gr_scoring_item_slider": "Pour les plages de points, utilisez le curseur pour choisir une valeur dans la plage autorisée.",
         "gr_scoring_item_subitems": "Basculez les sous-éléments dans un niveau avec des cases à cocher.",
-        "gr_scoring_item_modifiers": "Appliquez des modificateurs de score (bonus en %, déduction de points, ajustement de niveau) avec une raison.",
+        "gr_scoring_item_modifiers": "Appliquez un modificateur de score (bonus ou déduction en %, ou correction en points) avec une raison. Une correction en points se rapporte au maximum de la grille : +10 points sur une grille de 200 points ajoutent 5 %.",
         "gr_mobile_title": "Notation mobile",
         "gr_mobile_body_prefix": "Sur téléphones et iPad en mode portrait, la vue de notation est optimisée pour le tactile. Les curseurs de plage de points et de sous-éléments gagnent un",
         "gr_mobile_stepper": "− / +",
@@ -3709,7 +3710,7 @@
         "gr_layout_title": "Dispositions carte et grille",
         "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
-        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Tab / Maj+Tab déplacent le focus entre les critères, Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
+        "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Une fois un critère sélectionné, ↑ / ↓ passent d'un critère à l'autre (Tab et Maj+Tab parcourent tous les boutons et champs comme d'habitude), Ctrl+S enregistre (et avance) et ? liste tous les raccourcis.",
         "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
         "ce_flashcards_item_fields": "Les cartes de vocabulaire peuvent inclure une phonétique (prononciation/API) et une nature de mot — saisies directement dans l’éditeur de jeu ou importées en 4e et 5e colonnes facultatives. Les élèves les voient sur la carte pendant l’étude, avec une barre de progression et une liste des mots du paquet en barre latérale.",
         "es_focus_title": "Mode focus élève",
@@ -3930,7 +3931,7 @@
     },
     "help": {
         "score_modifier_title": "Modificateurs de note",
-        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10%) ou des points (ex. +5). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
+        "score_modifier_body": "Ajoutez un ajustement global à la note finale. Choisissez un pourcentage (ex. +10 % ajoute 10 points de pourcentage) ou des points (ex. +5 ajoute 5 points au total de la grille, soit 2,5 % sur une grille de 200 points). Indiquez une raison afin qu'elle figure dans le rapport exporté et le journal d'audit.",
         "lww_title": "Comment la synchronisation résout les conflits",
         "lww_body": "Lorsqu'un même enregistrement est modifié sur deux appareils, la modification la plus récente l'emporte (last-write-wins). Les modifications faites hors ligne sont protégées et ne sont jamais écrasées par des données cloud plus anciennes tant qu'elles n'ont pas été synchronisées.",
         "proctoring_title": "Signalements de surveillance",
