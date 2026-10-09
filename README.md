@@ -262,6 +262,8 @@ Teachers receive an 8-digit sign-in code by email. The bundled GoTrue config sen
 
 Backups hold data only; the restore target must be a running stack migrated to at least the same version (`docker-compose up -d` runs the migrations). The restore runs in one transaction and stops on the first error. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md#backup-and-restore).
 
+**Moving from Supabase Cloud:** `./scripts/export-cloud.sh` (on your laptop) dumps users, rows and every Storage file; `./scripts/import-cloud.sh <export-dir>` (on the server) loads them, compares file counts per bucket, and checks that each attachment, export template, essay, recording and scan row finds its file. See [docs/SELF_HOSTING_OPS.md](docs/SELF_HOSTING_OPS.md#migrating-from-supabase-cloud).
+
 **Updating to a new version:**
 
 ```bash
