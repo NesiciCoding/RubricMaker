@@ -120,6 +120,7 @@ test.describe('Admin dashboard — Users tab', () => {
             await expect(bystanderRow.locator('select')).toHaveValue('teacher');
 
             await bystanderRow.locator('select').selectOption({ label: 'Admin' });
+            await adminSupabasePage.getByRole('button', { name: /^confirm$/i }).click();
             await expect(bystanderRow.getByText(/saving/i)).toHaveCount(0, { timeout: 10_000 });
 
             expect(await fetchProfileRole(bystanderId)).toBe('admin');

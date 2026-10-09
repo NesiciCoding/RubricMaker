@@ -3,6 +3,7 @@ import { CheckCircle2, Loader } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { usePlatform, useSettings } from '../context/AppContext';
 import type { UserRole } from '../types';
+import { isLastAdminError } from '../utils/roleChangeError';
 
 type RoleChoice = UserRole;
 type SchoolAction = 'create' | 'join';
@@ -81,7 +82,11 @@ export default function OnboardingPage() {
                 if (currentId) {
                     const result = await updateUserRole(currentId, 'student');
                     if (!result.success) {
-                        setError(result.error ?? t('onboarding.error_role_update'));
+                        setError(
+                            isLastAdminError(result.error)
+                                ? t('onboarding.error_last_admin')
+                                : (result.error ?? t('onboarding.error_role_update'))
+                        );
                         return;
                     }
                 }

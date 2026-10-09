@@ -487,7 +487,7 @@ test.describe('Essay page — short-code format (teacherKey only in URL)', () =>
         await expect(page.getByText('Klimaat Schrijfopdracht')).toBeVisible({ timeout: 5_000 });
     });
 
-    test('edge function failure still shows editor (graceful degradation)', async ({ page }) => {
+    test('edge function failure shows an error with Retry instead of an empty editor', async ({ page }) => {
         await injectConfig(page);
         await mockSupabaseAuth(page);
         // Edge function returns 404 — no content available
@@ -498,8 +498,18 @@ test.describe('Essay page — short-code format (teacherKey only in URL)', () =>
         await essay.goto(buildShortCode());
         await essay.fillEmailAndStart('student@school.nl');
 
-        // Editor should still be reachable despite content fetch failing
+        // Without the prompt, word limits and timer the editor must not be shown
+        await expect(page.getByRole('alert')).toContainText('Could not load this assignment', { timeout: 10_000 });
+        await expect(essay.editor()).not.toBeVisible();
+
+        // Once the edge function recovers, Retry loads the assignment
+        await page.unroute(`${MOCK_SUPABASE_URL}/functions/v1/get-essay-assignment`);
+        await mockGetEssayAssignment(page, MOCK_SUPABASE_URL, {
+            content: { prompt: 'Describe the water cycle in your own words.' },
+        });
+        await page.getByRole('button', { name: 'Try again' }).click();
         await expect(essay.editor()).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByText('Describe the water cycle in your own words.')).toBeVisible({ timeout: 5_000 });
     });
 
     test('word limits from edge function are enforced', async ({ page }) => {
