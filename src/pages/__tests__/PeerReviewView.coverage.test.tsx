@@ -212,6 +212,14 @@ describe('PeerReviewView coverage', () => {
         expect(mockSavePeerReview).toHaveBeenCalledWith(expect.objectContaining({ round: 2 }));
     });
 
+    it('keeps adding rounds past an unsaved new round', () => {
+        peerReviews.push(existingReview({}));
+        renderAt('r1', 's1');
+        fireEvent.click(screen.getByText('+ peerReview.add_round'));
+        fireEvent.click(screen.getByText('+ peerReview.add_round'));
+        expect(screen.getByText('peerReview.round_n:{"n":3}')).toHaveAttribute('aria-pressed', 'true');
+    });
+
     it('updates criterion comments and the overall comment, then saves them', () => {
         renderAt('r1', 's1');
         const editors = screen.getAllByTestId('tiptap-mock');

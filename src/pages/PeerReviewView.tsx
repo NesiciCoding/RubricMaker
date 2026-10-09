@@ -109,7 +109,7 @@ export default function PeerReviewView() {
 
     const addRound = async () => {
         if (isDirty && !(await confirmDiscardUnsaved())) return;
-        setActiveRound(maxRound + 1);
+        setActiveRound(Math.max(maxRound, activeRound) + 1);
     };
 
     const updateScore = (criterionId: string, levelId: string) => {
