@@ -1648,6 +1648,11 @@
         "quick_comments_empty": "Save comments to the bank to get quick inserts here.",
         "shortcut_chord": "Address a criterion, then pick its level (chord)",
         "level_shortcut_hint": "Press {{num}} to select (when criterion is focused)",
+        "nhi_confirm_title": "Mark as not handed in?",
+        "nhi_confirm_message": "{{name}} already has a grade for this rubric. Marking the work as not handed in removes it from statistics, the dashboard and the student portal. The scores are kept, and you can undo this from the banner on the grading page.",
+        "nhi_confirm_action": "Mark not handed in",
+        "nhi_banner": "Marked as not handed in — this work is left out of statistics, the dashboard and the student portal. Scoring and saving a grade clears the mark.",
+        "nhi_undo": "Undo not handed in",
         "points_before_modifier": "Points before the modifier"
     },
     "rubricBuilder": {
@@ -3760,6 +3765,7 @@
         "rb_tests_a4_preview_body": "Click \"A4 preview\" in the test builder to open a live preview of the printed student paper next to your questions. Switch on \"Answer key\" to see the correct answers, hide the point values, zoom, or print the page. Edit the header, instructions and footer directly on the page — they are saved with the test and also appear on the exam booklet export.",
         "gr_comparative_existing_note": "Each student's existing grade is loaded into the session, and saving a comparison updates that grade instead of creating a second one. If a student already has more than one grade for the rubric, the session flags it and offers to keep only the one shown; the others can be restored from Admin → Archive.",
         "da_admin_item_archive": "Archive tab — restore archived students, anonymize them, or erase them permanently (right to erasure): every grade, feedback, essay, test answer, message, attachment, scan and recording linked to the student is deleted from the device and the database. Nightly cloud backups keep each teacher's 7 most recent snapshots, so an erased student disappears from them within 7 days; JSON exports and server backups you made yourself must be deleted by hand. The student's own sign-in account, if they had one, is removed separately by an administrator in Supabase Auth.",
+        "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
         "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
         "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",
         "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
