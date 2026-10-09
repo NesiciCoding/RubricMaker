@@ -65,6 +65,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
+import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -240,6 +241,23 @@ export default function GradeStudent() {
     const criterionCardsRef = useRef<(HTMLDivElement | null)[]>([]);
     const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
     const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
+
+    // A deep link can mount before hydration merges this student's saved grade into state.
+    // Adopt that record when it arrives; if the teacher already started editing, lay their
+    // edits over it so a save neither adds a blank duplicate nor wipes untouched saved scores.
+    const seedSrRef = useRef(sr);
+    React.useEffect(() => {
+        if (!existingSR || !sr || sr.id === existingSR.id) return;
+        if (isDirty && seedSrRef.current) {
+            setSr(mergeEditsOntoSavedGrade(seedSrRef.current, sr, existingSR));
+            setFeedbackOnly((f) => f || (existingSR.feedbackOnly ?? false));
+            setIsAnchor((a) => a || (existingSR.isAnchor ?? false));
+            return;
+        }
+        setSr(existingSR);
+        setFeedbackOnly(existingSR.feedbackOnly ?? false);
+        setIsAnchor(existingSR.isAnchor ?? false);
+    }, [existingSR, sr, isDirty]);
 
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class

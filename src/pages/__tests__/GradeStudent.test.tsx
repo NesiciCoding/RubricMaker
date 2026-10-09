@@ -152,6 +152,7 @@ describe('GradeStudent', () => {
     beforeEach(async () => {
         // jsdom has no scrollIntoView; focusing a criterion triggers it.
         Element.prototype.scrollIntoView = vi.fn();
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
         mockSaveStudentRubric.mockClear();
         mockUpdateSettings.mockClear();
         mockNavigate.mockClear();
@@ -375,6 +376,49 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+    });
+
+    describe('grade that hydrates after mount (#643)', () => {
+        const hydrated = {
+            id: 'sr-real',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '', selectedPoints: 80 }],
+            overallComment: 'Real feedback',
+            isPeerReview: false,
+            gradedAt: '2026-01-01T00:00:00Z',
+        };
+
+        it('adopts the saved grade instead of saving a blank duplicate', () => {
+            renderPage();
+            // The store hands out a new array when hydration merges records.
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            // Any re-render picks up the newly merged record.
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    overallComment: 'Real feedback',
+                    entries: [expect.objectContaining({ levelId: 'l2', selectedPoints: 80 })],
+                })
+            );
+        });
+
+        it('lays the teacher edits over the existing record when already editing', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    overallComment: 'Real feedback',
+                    entries: [expect.objectContaining({ levelId: 'l1' })],
+                })
+            );
+        });
     });
 
     it('toggles to the grid layout and selects a level cell', () => {
