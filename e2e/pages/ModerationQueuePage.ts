@@ -18,14 +18,23 @@ export class ModerationQueuePage extends BasePage {
         return this.page.locator('.card').filter({ hasText: studentName });
     }
 
+    // Both resolutions open a confirmation that shows the grade impact (#609).
     async keepOriginal(studentName: string): Promise<void> {
         await this.disputeCard(studentName)
+            .getByRole('button', { name: /keep original/i })
+            .click();
+        await this.page
+            .getByRole('dialog')
             .getByRole('button', { name: /keep original/i })
             .click();
     }
 
     async acceptSecondMarker(studentName: string): Promise<void> {
         await this.disputeCard(studentName)
+            .getByRole('button', { name: /accept second marker/i })
+            .click();
+        await this.page
+            .getByRole('dialog')
             .getByRole('button', { name: /accept second marker/i })
             .click();
     }
