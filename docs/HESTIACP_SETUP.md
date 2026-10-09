@@ -11,8 +11,8 @@ This guide covers everything needed to host RubricMaker on a VPS managed by **He
 3. [Create the Web Domain in HestiaCP](#3-create-the-web-domain-in-hestiacp)
 4. [Enable SSL with Let's Encrypt](#4-enable-ssl-with-lets-encrypt)
 5. [Web Server Configuration](#5-web-server-configuration)
-   - [Nginx + Apache (default)](#51-nginx--apache-default)
-   - [Nginx only (alternative)](#52-nginx-only-alternative)
+    - [Nginx + Apache (default)](#51-nginx--apache-default)
+    - [Nginx only (alternative)](#52-nginx-only-alternative)
 6. [Node.js for Building (optional)](#6-nodejs-for-building-optional)
 7. [Environment Variables](#7-environment-variables)
 8. [First Deployment](#8-first-deployment)
@@ -26,11 +26,13 @@ This guide covers everything needed to host RubricMaker on a VPS managed by **He
 ## 1. Prerequisites
 
 ### On your local machine
+
 - Git, Node.js 22+, npm
 - SSH key pair (for deploying without a password)
 - Access to the GitHub repository secrets (for CI/CD)
 
 ### On the VPS
+
 - A fresh VPS with at least **1 GB RAM / 1 vCPU / 10 GB disk**  
   (Ubuntu 22.04 / 24.04 LTS or Debian 11 / 12 — all officially supported by HestiaCP)
 - **HestiaCP** already installed. If not, run the official installer:
@@ -40,20 +42,20 @@ wget https://raw.githubusercontent.com/hestiacp/hestiacp/release/install/hst-ins
 sudo bash hst-install.sh
 ```
 
-  The installer takes 5–10 minutes. Access the control panel at `https://YOUR_VPS_IP:8083`.
+The installer takes 5–10 minutes. Access the control panel at `https://YOUR_VPS_IP:8083`.
 
 ---
 
 ## 2. VPS & HestiaCP Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 1 GB | 2 GB |
-| vCPU | 1 | 2 |
-| Disk | 10 GB | 20 GB |
-| OS | Ubuntu 22.04 / Debian 12 | Ubuntu 24.04 LTS |
-| HestiaCP | 1.8+ | Latest stable |
-| Web server | Nginx + Apache 2.4 | Nginx + Apache 2.4 |
+| Component  | Minimum                  | Recommended        |
+| ---------- | ------------------------ | ------------------ |
+| RAM        | 1 GB                     | 2 GB               |
+| vCPU       | 1                        | 2                  |
+| Disk       | 10 GB                    | 20 GB              |
+| OS         | Ubuntu 22.04 / Debian 12 | Ubuntu 24.04 LTS   |
+| HestiaCP   | 1.8+                     | Latest stable      |
+| Web server | Nginx + Apache 2.4       | Nginx + Apache 2.4 |
 
 RubricMaker stores all data in the browser's **localStorage** by default; the Supabase integration is optional. The server only needs to serve static files — no database or backend server is required on the VPS.
 
@@ -71,9 +73,9 @@ Running each site under its own Unix user isolates it from other sites on the se
 
 1. Click **Edit User** (top right) or navigate to **Users → Add User**.
 2. Fill in:
-   - **Username:** `rubricmaker` (becomes the Unix account)
-   - **Password:** choose a strong password
-   - **Email:** an address for renewal alerts
+    - **Username:** `rubricmaker` (becomes the Unix account)
+    - **Password:** choose a strong password
+    - **Email:** an address for renewal alerts
 3. Click **Save**.
 
 > **Skip this step** if you want to host RubricMaker directly under the `admin` account. Replace `rubricmaker` with `admin` in every path below.
@@ -83,12 +85,13 @@ Running each site under its own Unix user isolates it from other sites on the se
 1. Switch to the `rubricmaker` user (or stay as admin).
 2. Click **Web → Add Web Domain**.
 3. Fill in:
-   - **Domain:** `rubricmaker.example.com`
-   - Leave **Create DNS Zone** and **Create Mail Domain** ticked if you want them.
-   - Under **Web Template**, leave the default (`default` or `proxy`).
+    - **Domain:** `rubricmaker.example.com`
+    - Leave **Create DNS Zone** and **Create Mail Domain** ticked if you want them.
+    - Under **Web Template**, leave the default (`default` or `proxy`).
 4. Click **Save**.
 
 HestiaCP creates:
+
 - Unix user: `rubricmaker`
 - Home directory: `/home/rubricmaker/`
 - Web root: **`/home/rubricmaker/web/rubricmaker.example.com/public_html/`**
@@ -180,10 +183,10 @@ sudo systemctl reload nginx
 
 You have two build strategies:
 
-| Strategy | Where the build runs | When to use |
-|----------|---------------------|-------------|
-| **Local build + rsync** | Your laptop | Simplest; no Node on server needed |
-| **Server-side build** | VPS | Useful if CI/CD deploys source code instead of built artefacts |
+| Strategy                | Where the build runs | When to use                                                    |
+| ----------------------- | -------------------- | -------------------------------------------------------------- |
+| **Local build + rsync** | Your laptop          | Simplest; no Node on server needed                             |
+| **Server-side build**   | VPS                  | Useful if CI/CD deploys source code instead of built artefacts |
 
 ### Option A — Local build (recommended)
 
@@ -218,9 +221,9 @@ cp -r dist/* /home/rubricmaker/web/rubricmaker.example.com/public_html/
 
 RubricMaker has two **optional** build-time environment variables. The app is fully functional without them — users can enter their own Supabase credentials in the Settings page.
 
-| Variable | Purpose |
-|----------|---------|
-| `VITE_SUPABASE_URL` | Pre-fills the Supabase URL in Settings |
+| Variable                 | Purpose                                     |
+| ------------------------ | ------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Pre-fills the Supabase URL in Settings      |
 | `VITE_SUPABASE_ANON_KEY` | Pre-fills the Supabase anon key in Settings |
 
 ### Setting them for a local build
@@ -233,6 +236,7 @@ cp .env.example .env
 ```
 
 `.env.example`:
+
 ```
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
@@ -248,14 +252,14 @@ npm run build
 
 Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
 
-| Secret name | Value |
-|-------------|-------|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key |
-| `VPS_USER` | HestiaCP Unix username, e.g. `rubricmaker` |
-| `VPS_HOST` | Your VPS IP address or hostname |
-| `VPS_DOMAIN` | Your domain, e.g. `rubricmaker.example.com` |
-| `VPS_SSH_KEY` | Private SSH key (see §9.1) |
+| Secret name              | Value                                       |
+| ------------------------ | ------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Your Supabase project URL                   |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key             |
+| `VPS_USER`               | HestiaCP Unix username, e.g. `rubricmaker`  |
+| `VPS_HOST`               | Your VPS IP address or hostname             |
+| `VPS_DOMAIN`             | Your domain, e.g. `rubricmaker.example.com` |
+| `VPS_SSH_KEY`            | Private SSH key (see §9.1)                  |
 
 ---
 
@@ -311,6 +315,7 @@ chmod +x deploy.sh
 ```
 
 The script will:
+
 1. Run `npm run build` to produce `dist/`
 2. Rsync `dist/` → `/home/rubricmaker/web/rubricmaker.example.com/public_html/` on the VPS (with `--delete` to clean stale files)
 3. Upload `deploy/.htaccess` → web root
@@ -334,56 +339,56 @@ The workflow at `.github/workflows/deploy-vps.yml` was created for Virtualmin. F
 name: Deploy to HestiaCP VPS
 
 on:
-  push:
-    branches: ["main"]
-  workflow_dispatch:
+    push:
+        branches: ['main']
+    workflow_dispatch:
 
 concurrency:
-  group: "hestiacp-deploy"
-  cancel-in-progress: false
+    group: 'hestiacp-deploy'
+    cancel-in-progress: false
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
+            - name: Set up Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Build
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            - name: Build
+              run: npm run build
+              env:
+                  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+                  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: Deploy via rsync
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -avz --delete
-          path: dist/
-          # HestiaCP web root: /home/<user>/web/<domain>/public_html/
-          remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: ${{ secrets.VPS_USER }}
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+            - name: Deploy via rsync
+              uses: burnett01/rsync-deployments@7.0.1
+              with:
+                  switches: -avz --delete
+                  path: dist/
+                  # HestiaCP web root: /home/<user>/web/<domain>/public_html/
+                  remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/
+                  remote_host: ${{ secrets.VPS_HOST }}
+                  remote_user: ${{ secrets.VPS_USER }}
+                  remote_key: ${{ secrets.VPS_SSH_KEY }}
 
-      - name: Upload .htaccess
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -avz
-          path: deploy/.htaccess
-          remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
-          remote_host: ${{ secrets.VPS_HOST }}
-          remote_user: ${{ secrets.VPS_USER }}
-          remote_key: ${{ secrets.VPS_SSH_KEY }}
+            - name: Upload .htaccess
+              uses: burnett01/rsync-deployments@7.0.1
+              with:
+                  switches: -avz
+                  path: deploy/.htaccess
+                  remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
+                  remote_host: ${{ secrets.VPS_HOST }}
+                  remote_user: ${{ secrets.VPS_USER }}
+                  remote_key: ${{ secrets.VPS_SSH_KEY }}
 ```
 
 ### 9.1 Create a dedicated deploy SSH key
@@ -452,12 +457,12 @@ Apply all migrations using the Supabase CLI:
 ```bash
 npx supabase login
 npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase db push
+npx supabase db push --include-all
 ```
 
-This applies every file in `supabase/migrations/` in order. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
+This applies every file in `supabase/migrations/` in order. Keep `--include-all` on every later push too: one early migration (`20260617093844_delete_old_attachments_fn.sql`) has a timestamp version that sorts after all the numbered `NNN_` files, so once it is applied the CLI otherwise refuses newer numbered migrations as being older than the last remote version. The schema includes tables for rubrics, students, classes, grades, attachments, comment snippets, essays, speaking sessions, site configuration, and school/admin management.
 
-If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially.
+If you prefer to apply migrations manually via the **SQL Editor**, open each file in `supabase/migrations/` in order (001 through the highest number) and run them sequentially, then run `20260617093844_delete_old_attachments_fn.sql` last — the same order the CLI uses. It defines the attachment-retention lookup that the `delete-old-attachments` cleanup relies on.
 
 ### 10.3 Configure auth
 
@@ -534,9 +539,9 @@ The built `dist/` is typically 3–6 MB.
 - Check the browser console for 404 errors on `.js` / `.css` assets.
 - Ensure Vite's `vite.config.ts` has `base: './'` (it does by default in this project) so asset paths are relative.
 - Confirm files were actually uploaded:
-  ```bash
-  ls /home/rubricmaker/web/rubricmaker.example.com/public_html/
-  ```
+    ```bash
+    ls /home/rubricmaker/web/rubricmaker.example.com/public_html/
+    ```
 
 ### HashRouter vs "page not found" errors
 
@@ -562,6 +567,7 @@ sudo systemctl reload apache2
 ### HestiaCP regenerates conf files after changes
 
 HestiaCP may rebuild vhost configs when you save domain settings in the panel. Always use:
+
 - `.htaccess` for Apache directives (persists because it's in `public_html/`), **or**
 - The `*.conf_after` extension files under `/home/user/conf/web/domain/` — HestiaCP preserves these and includes them in every rebuild.
 
@@ -590,12 +596,12 @@ sudo systemctl restart apache2
 
 ## File Reference
 
-| File | Purpose |
-|------|---------|
-| `deploy.sh` | Local build + rsync deploy script (update `REMOTE_PATH` for HestiaCP — see §8.2) |
-| `deploy/.htaccess` | Apache SPA config, security headers, caching (works with both Virtualmin and HestiaCP) |
-| `deploy/apache-hestiacp.conf` | Apache `<Directory>` block for HestiaCP vhost extension (`apache2.conf_after`) |
-| `deploy/nginx-hestiacp.conf` | Nginx snippet for HestiaCP (`nginx.ssl.conf_after`) + Nginx-only reference block |
-| `.github/workflows/deploy-hestiacp.yml` | GitHub Actions CI/CD pipeline for HestiaCP |
-| `.env.example` | Template for local environment variables |
-| `supabase/migrations/` | Database schema SQL files |
+| File                                    | Purpose                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `deploy.sh`                             | Local build + rsync deploy script (update `REMOTE_PATH` for HestiaCP — see §8.2)       |
+| `deploy/.htaccess`                      | Apache SPA config, security headers, caching (works with both Virtualmin and HestiaCP) |
+| `deploy/apache-hestiacp.conf`           | Apache `<Directory>` block for HestiaCP vhost extension (`apache2.conf_after`)         |
+| `deploy/nginx-hestiacp.conf`            | Nginx snippet for HestiaCP (`nginx.ssl.conf_after`) + Nginx-only reference block       |
+| `.github/workflows/deploy-hestiacp.yml` | GitHub Actions CI/CD pipeline for HestiaCP                                             |
+| `.env.example`                          | Template for local environment variables                                               |
+| `supabase/migrations/`                  | Database schema SQL files                                                              |
