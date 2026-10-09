@@ -64,7 +64,7 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
-import { calcGradeSummary, orderedLevels as sharedOrderedLevels } from '../utils/gradeCalc';
+import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -257,7 +257,7 @@ export default function GradeStudent() {
             // sr is never null here: the early return above gates every render path
             /* v8 ignore next -- sr is non-null whenever this callback can run */
             if (!prev) return prev;
-            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e));
+            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e));
             return { ...prev, entries };
         });
         setIsDirty(true);
