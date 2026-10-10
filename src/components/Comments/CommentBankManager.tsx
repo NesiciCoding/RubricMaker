@@ -3,6 +3,7 @@ import { Plus, Search, Trash2, Edit2, Tag, Save, Users2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthoring } from '../../context/AppContext';
 import { useDbStatus } from '../../hooks/useDbStatus';
+import { useToast } from '../../hooks/useToast';
 import { storageSync } from '../../services/database';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import CefrBadge from '../CEFR/CefrBadge';
@@ -20,7 +21,9 @@ type SortMode = 'newest' | 'mostUsed';
 
 export default function CommentBankManager({ onSelect, suggestedTags, fullPage }: CommentBankManagerProps) {
     const { t } = useTranslation();
-    const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem } = useAuthoring();
+    const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem, restoreCommentBankItem } =
+        useAuthoring();
+    const { showToast } = useToast();
 
     const dbStatus = useDbStatus();
     const [schoolShared, setSchoolShared] = useState<CommentBankItem[]>([]);
@@ -72,13 +75,18 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         return item.tags.find((tag): tag is CefrLevel => (CEFR_LEVELS as readonly string[]).includes(tag));
     }
 
+    // A selected tag whose last comment was deleted has no chip left to untick (the compact view has
+    // no "All" button), so it stops filtering instead of hiding everything.
+    const activeTags = useMemo(() => [...selectedTags].filter((tag) => tagCounts.has(tag)), [selectedTags, tagCounts]);
+
     const filteredItems = useMemo(() => {
         return combinedItems
             .filter((item) => {
                 const matchesSearch =
                     item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     item.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-                const matchesTags = selectedTags.size === 0 || item.tags.some((tag) => selectedTags.has(tag));
+                // Each selected tag narrows the list further (B1 + Grammar = B1 grammar comments).
+                const matchesTags = activeTags.every((tag) => item.tags.includes(tag));
                 return matchesSearch && matchesTags;
             })
             .sort((a, b) =>
@@ -86,7 +94,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     ? (b.usageCount ?? 0) - (a.usageCount ?? 0)
                     : b.createdAt.localeCompare(a.createdAt)
             );
-    }, [combinedItems, searchTerm, selectedTags, sortMode]);
+    }, [combinedItems, searchTerm, activeTags, sortMode]);
 
     // Additive surfacing, not filtering — matches items don't get hidden from the regular
     // list below, they're just echoed at the top when this criterion has a real signal.
@@ -125,6 +133,13 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
             addCommentBankItem(formText, tags);
             setIsCreating(false);
         }
+    };
+
+    const handleDelete = ({ isOwn: _isOwn, ...item }: CommentBankItem & { isOwn: boolean }) => {
+        deleteCommentBankItem(item.id);
+        showToast(t('commentBank.deleted_toast'), 'info', {
+            action: { label: t('common.undo'), onClick: () => restoreCommentBankItem(item) },
+        });
     };
 
     const renderItem = (item: CommentBankItem & { isOwn: boolean }) => (
@@ -193,7 +208,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             style={{ color: 'var(--red)' }}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                deleteCommentBankItem(item.id);
+                                handleDelete(item);
                             }}
                         >
                             <Trash2 size={12} />
@@ -348,6 +363,11 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
 
     const itemList = (
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+            {activeTags.length > 1 && (
+                <p className="text-xs text-muted" style={{ marginBottom: 12 }}>
+                    {t('commentBank.filter_all_tags_hint', { count: activeTags.length })}
+                </p>
+            )}
             {suggestedItems.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
                     <div
@@ -415,6 +435,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 color: selectedTags.has(tag) ? 'var(--accent)' : undefined,
                             }}
                             onClick={() => toggleTagFilter(tag)}
+                            aria-pressed={selectedTags.has(tag)}
                         >
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                                 <Tag size={12} style={{ flexShrink: 0 }} />
@@ -476,6 +497,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 type="button"
                                 className={`btn btn-xs ${selectedTags.has(tag) ? 'btn-primary' : 'btn-secondary'}`}
                                 onClick={() => toggleTagFilter(tag)}
+                                aria-pressed={selectedTags.has(tag)}
                                 style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
                             >
                                 {tag}

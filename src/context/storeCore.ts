@@ -946,6 +946,8 @@ export interface AppContextValue extends StoreData {
     addCommentBankItem: (text: string, tags: string[]) => CommentBankItem;
     updateCommentBankItem: (item: CommentBankItem) => void;
     deleteCommentBankItem: (id: string) => void;
+    /** Re-adds a deleted item unchanged (same id, usage and sharing), for undo. */
+    restoreCommentBankItem: (item: CommentBankItem) => void;
     recordCommentBankUsage: (id: string) => void;
     addQuestionBankItem: (
         question: Omit<TestQuestion, 'sectionId'>,
