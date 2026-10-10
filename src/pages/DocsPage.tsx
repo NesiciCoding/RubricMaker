@@ -761,7 +761,8 @@ function RubricsTab() {
                     {t('docs.rb_builder_views_suffix')}
                 </InfoBox>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 12 }}>
-                    {t('docs.rb_builder_undo_delete')} {t('docs.rb_builder_save_shortcut')}
+                    {t('docs.rb_builder_undo_delete')} {t('docs.rb_builder_save_shortcut')}{' '}
+                    {t('docs.rb_builder_designer_columns')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
