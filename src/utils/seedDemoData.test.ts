@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { seedDemoData } from './seedDemoData';
+import { DEFAULT_MODERATION_THRESHOLD_PERCENT, getModerationQueue } from './coGradingModerationQueue';
 
 describe('seedDemoData', () => {
     beforeEach(() => {
@@ -35,5 +36,18 @@ describe('seedDemoData', () => {
         seedDemoData();
         const secondCount = JSON.parse(localStorage.getItem('rm_classes') ?? '[]').length;
         expect(secondCount).toBe(firstCount);
+    });
+
+    it('seeds a co-grading dispute that shows in the moderation queue at the default threshold', () => {
+        seedDemoData();
+        const read = (key: string) => JSON.parse(localStorage.getItem(key) ?? '[]');
+        const queue = getModerationQueue(
+            read('rm_rubrics'),
+            read('rm_student_rubrics'),
+            read('rm_peer_reviews'),
+            read('rm_students'),
+            DEFAULT_MODERATION_THRESHOLD_PERCENT
+        );
+        expect(queue).toHaveLength(1);
     });
 });

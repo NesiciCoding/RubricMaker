@@ -157,6 +157,7 @@ describe('GradeStudent', () => {
     beforeEach(async () => {
         // jsdom has no scrollIntoView; focusing a criterion triggers it.
         Element.prototype.scrollIntoView = vi.fn();
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
         mockSaveStudentRubric.mockClear();
         mockUpdateSettings.mockClear();
         mockShowToast.mockClear();
@@ -268,6 +269,7 @@ describe('GradeStudent', () => {
 
     it('persists feedback-only and anchor flags on Ctrl+S (#606)', () => {
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         tickFeedbackOnlyAndAnchor();
         fireEvent.keyDown(window, { key: 's', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
@@ -383,6 +385,49 @@ describe('GradeStudent', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
+    describe('grade that hydrates after mount (#643)', () => {
+        const hydrated = {
+            id: 'sr-real',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [{ criterionId: 'c1', levelId: 'l2', checkedSubItems: [], comment: '', selectedPoints: 80 }],
+            overallComment: 'Real feedback',
+            isPeerReview: false,
+            gradedAt: '2026-01-01T00:00:00Z',
+        };
+
+        it('adopts the saved grade instead of saving a blank duplicate', () => {
+            renderPage();
+            // The store hands out a new array when hydration merges records.
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            // Any re-render picks up the newly merged record.
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    overallComment: 'Real feedback',
+                    entries: [expect.objectContaining({ levelId: 'l2', selectedPoints: 80 })],
+                })
+            );
+        });
+
+        it('lays the teacher edits over the existing record when already editing', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            mockAppValue.studentRubrics = [hydrated] as never[];
+            fireEvent.keyDown(window, { key: '?' });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    id: 'sr-real',
+                    overallComment: 'Real feedback',
+                    entries: [expect.objectContaining({ levelId: 'l1' })],
+                })
+            );
+        });
+    });
+
     it('toggles to the grid layout and selects a level cell', () => {
         renderPage();
         fireEvent.click(screen.getByText('common.view_grid'));
@@ -477,6 +522,49 @@ describe('GradeStudent', () => {
             fireEvent.click(screen.getByText('Excellent'));
             fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
             expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+        });
+    });
+
+    describe('saving with nothing scored (#620)', () => {
+        it('asks before saving a blank grade and saves only on confirm', async () => {
+            renderPage();
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(await screen.findByText('gradeStudent.confirm_nothing_scored_message')).toBeInTheDocument();
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+
+            fireEvent.click(screen.getByText('gradeStudent.confirm_nothing_scored_save'));
+            // The Save button flips to "Saved" once the confirmed save has gone through.
+            expect((await screen.findAllByText('gradeStudent.action_saved')).length).toBeGreaterThan(0);
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+        });
+
+        it('does not save when the confirmation is cancelled', async () => {
+            renderPage();
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            await screen.findByText('gradeStudent.confirm_nothing_scored_message');
+            fireEvent.click(screen.getByText('common.cancel'));
+            expect(screen.queryByText('gradeStudent.confirm_nothing_scored_message')).not.toBeInTheDocument();
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+            expect(screen.queryByText('gradeStudent.action_saved')).not.toBeInTheDocument();
+        });
+
+        it('skips an ungraded student on Save & Next without creating a grade', () => {
+            renderPage();
+            fireEvent.click(screen.getByTitle('Next: Bob'));
+            expect(mockSaveStudentRubric).not.toHaveBeenCalled();
+            expect(mockShowToast).toHaveBeenCalledWith(
+                expect.stringContaining('gradeStudent.skipped_nothing_scored'),
+                'info'
+            );
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
+
+        it('saves without asking when only a comment was written', () => {
+            renderPage();
+            const editors = screen.getAllByTestId('tiptap-mock');
+            fireEvent.change(editors[editors.length - 1], { target: { value: 'See me after class' } });
+            fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
         });
     });
 

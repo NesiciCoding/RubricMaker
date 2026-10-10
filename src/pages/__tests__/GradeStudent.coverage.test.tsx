@@ -621,6 +621,7 @@ describe('GradeStudent coverage', () => {
     it('saves via Ctrl+S when there is no next student', () => {
         mockStudentsArr.length = 1;
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         fireEvent.keyDown(window, { key: 's', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenCalled();
         mockStudentsArr.push(mockStudentBob);
@@ -733,6 +734,7 @@ describe('GradeStudent coverage', () => {
     // ---------- Touch gestures ----------
     it('swipes left from a safe area, confirms, then saves and advances (#666)', async () => {
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         const page = pageContent();
         fireEvent.touchStart(page, { touches: [{ clientX: 200, clientY: 100 }] });
         fireEvent.touchEnd(page, { changedTouches: [{ clientX: 50, clientY: 110 }] });
@@ -1044,6 +1046,7 @@ describe('GradeStudent coverage', () => {
         const fetchMock = vi.fn().mockResolvedValue({ ok: true });
         vi.stubGlobal('fetch', fetchMock);
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
         await waitFor(() =>
             expect(fetchMock).toHaveBeenCalledWith(
@@ -1073,7 +1076,7 @@ describe('GradeStudent coverage', () => {
     });
 
     // ---------- Single-point rubric ----------
-    it('scores with single-point outcome buttons and toggles them off', () => {
+    it('scores with single-point outcome buttons and toggles them off', async () => {
         mockRubricsArr[0] = singlePointRubric;
         renderPage();
         expect(screen.getByText('Standard description')).toBeInTheDocument();
@@ -1086,9 +1089,11 @@ describe('GradeStudent coverage', () => {
                 ]),
             })
         );
-        // toggle off
+        // toggle off — nothing is scored any more, so saving asks first (#620)
         fireEvent.click(screen.getByText('gradeStudent.single_point_exceeds'));
         fireEvent.click(screen.getAllByText('gradeStudent.action_saved')[0]);
+        fireEvent.click(await screen.findByText('gradeStudent.confirm_nothing_scored_save'));
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalledTimes(2));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
             expect.objectContaining({
                 entries: expect.arrayContaining([
@@ -1108,13 +1113,14 @@ describe('GradeStudent coverage', () => {
         // sub-item slider + base-points slider (sub-items render first)
         const sliders = screen.getAllByRole('slider');
         expect(sliders.length).toBeGreaterThan(1);
-        fireEvent.click(screen.getByText('Sub A')); // bubbles through the sub-item row stopPropagation
-        // click the sub-items container itself (its own stopPropagation handler)
-        const levelBtn = screen.getByText('Excellent').closest('button') as HTMLElement;
-        const subContainer = Array.from(levelBtn.querySelectorAll('div')).find((d) =>
+        // Clicks inside the card's sub-item controls never toggle the level (#616).
+        fireEvent.click(screen.getByText('Sub A'));
+        const card = screen.getByText('Excellent').closest('.level-btn') as HTMLElement;
+        const subContainer = Array.from(card.querySelectorAll('div')).find((d) =>
             d.textContent?.includes('Sub A')
         ) as HTMLElement;
         fireEvent.click(subContainer);
+        expect(screen.getByRole('button', { name: /Excellent/, pressed: true })).toBeInTheDocument();
         fireEvent.change(sliders[0], { target: { value: '1.5' } });
         fireEvent.change(sliders[1], { target: { value: '95' } });
         // sub-item stepper (first) then base-points stepper (last)
@@ -1133,6 +1139,26 @@ describe('GradeStudent coverage', () => {
                 ]),
             })
         );
+        mockRubricsArr[0] = mockRubric;
+    });
+
+    it('renders level cards without nested buttons, selectable by header or card padding (#616)', () => {
+        mockRubricsArr[0] = subItemsRubric;
+        renderPage();
+        const header = screen.getByRole('button', { name: /Excellent/ });
+        expect(header).toHaveAttribute('aria-pressed', 'false');
+        const card = header.closest('.level-btn') as HTMLElement;
+        expect(card.tagName).toBe('DIV');
+        expect(card).toHaveAttribute('role', 'group');
+
+        fireEvent.click(header);
+        expect(header).toHaveAttribute('aria-pressed', 'true');
+        // Sliders and steppers now render inside the card, but never inside a button.
+        expect(document.querySelector('button button, button input')).toBeNull();
+
+        // Clicking the card's own padding toggles it too, as the whole card used to be a button.
+        fireEvent.click(card);
+        expect(header).toHaveAttribute('aria-pressed', 'false');
         mockRubricsArr[0] = mockRubric;
     });
 
@@ -1613,11 +1639,13 @@ describe('GradeStudent coverage', () => {
         expect(screen.getByText('gradeStudent.error_not_found')).toBeInTheDocument();
     });
 
-    it('deselects a level by clicking it again', () => {
+    it('deselects a level by clicking it again', async () => {
         renderPage();
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        fireEvent.click(await screen.findByText('gradeStudent.confirm_nothing_scored_save'));
+        await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(
             expect.objectContaining({
                 entries: expect.arrayContaining([expect.objectContaining({ criterionId: 'c1', levelId: null })]),

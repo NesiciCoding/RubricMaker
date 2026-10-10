@@ -2577,4 +2577,51 @@ export class SupabaseAdapter {
         failed.push(...Object.keys((erased as { errors?: Record<string, string> } | null)?.errors ?? {}));
         return failed.length > 0 ? { success: false, error: failed.join(', '), failed } : { success: true, failed };
     }
+
+    /**
+     * Erases one student (#644): every row keyed to them and their files. Files go first, while
+     * the rows that locate them still exist; a list or remove error stops before any row is
+     * touched so a retry can find everything. Objects Storage RLS silently keeps (voice feedback
+     * another grader recorded in their own folder) can't be removed with this session — they are
+     * passed to erase_student(), which records them in the audit log, and returned as
+     * `leftoverFiles`.
+     */
+    async eraseStudentData(
+        studentId: string
+    ): Promise<SyncResult & { failed: string[]; leftoverFiles: { bucket: string; name: string }[] }> {
+        const db = this.db();
+        const { data: objects, error: listError } = await db.rpc('student_storage_objects', {
+            p_student_id: studentId,
+        });
+        if (listError) return { success: false, error: listError.message, failed: ['storage'], leftoverFiles: [] };
+
+        const byBucket = new Map<string, string[]>();
+        for (const o of (objects ?? []) as { bucket_id: string; name: string }[]) {
+            byBucket.set(o.bucket_id, [...(byBucket.get(o.bucket_id) ?? []), o.name]);
+        }
+        const leftoverFiles: { bucket: string; name: string }[] = [];
+        for (const [bucket, paths] of byBucket) {
+            for (let i = 0; i < paths.length; i += 100) {
+                const chunk = paths.slice(i, i + 100);
+                const { data, error } = await db.storage.from(bucket).remove(chunk);
+                if (error) {
+                    return { success: false, error: error.message, failed: [`storage:${bucket}`], leftoverFiles: [] };
+                }
+                const removed = new Set((data ?? []).map((d: { name: string }) => d.name));
+                for (const name of chunk) if (!removed.has(name)) leftoverFiles.push({ bucket, name });
+            }
+        }
+
+        const { data: erased, error: eraseError } = await db.rpc('erase_student', {
+            p_student_id: studentId,
+            p_storage_failures: leftoverFiles,
+        });
+        if (eraseError) return { success: false, error: eraseError.message, failed: ['database'], leftoverFiles };
+        const errors = (erased as { errors?: Record<string, string> } | null)?.errors ?? {};
+        // erase_student() stops at the first failing table and marks the rest 'skipped'.
+        const failed = Object.keys(errors).filter((table) => errors[table] !== 'skipped');
+        return failed.length > 0
+            ? { success: false, error: failed.join(', '), failed, leftoverFiles }
+            : { success: true, failed, leftoverFiles };
+    }
 }

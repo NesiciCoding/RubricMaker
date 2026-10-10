@@ -34,6 +34,7 @@ vi.mock('../../../hooks/useNotificationFeed', () => ({
 }));
 
 vi.mock('../../../utils/coGradingModerationQueue', () => ({
+    DEFAULT_MODERATION_THRESHOLD_PERCENT: 10,
     getModerationQueue: () => Array.from({ length: mockModerationCount }),
 }));
 vi.mock('../../../context/AppContext', () => ({

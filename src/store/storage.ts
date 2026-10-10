@@ -38,6 +38,7 @@ import type {
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { nanoid } from '../utils/nanoid';
+import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
 
@@ -999,9 +1000,51 @@ export function isLocalMode(): boolean {
     return localStorage.getItem(LOCAL_MODE_KEY) === 'true';
 }
 
-/** Marks the migration prompt as dismissed so it doesn't reappear on next launch. */
+export const MIGRATION_PENDING_KEY = 'rm_migration_pending';
+const MIGRATION_SKIPPED_SESSION_KEY = 'rm_migration_skipped';
+
+// Mirrors the stored flag, so this session's sign-out still keeps the data if the write fails.
+let migrationPendingInMemory = false;
+
+/** Marks the local data as uploaded, so the migration prompt doesn't reappear on next launch. */
 export function markMigrationDone(): void {
+    migrationPendingInMemory = false;
     localStorage.setItem(MIGRATION_DONE_KEY, 'true');
+    localStorage.removeItem(MIGRATION_PENDING_KEY);
+}
+
+/**
+ * Records that this browser holds local data that was never uploaded to the account. Those rows
+ * are not in the pending queue, so sign-out must not treat the device as cloud-backed while set.
+ */
+export function markMigrationPending(): void {
+    migrationPendingInMemory = true;
+    try {
+        localStorage.setItem(MIGRATION_PENDING_KEY, 'true');
+    } catch {
+        // storage full or blocked — the in-memory flag still protects this session's sign-out
+    }
+}
+
+export function isMigrationPending(): boolean {
+    return migrationPendingInMemory || localStorage.getItem(MIGRATION_PENDING_KEY) === 'true';
+}
+
+/** "Skip for now" only lasts for this browser tab's session; the prompt returns on the next one. */
+export function skipMigrationForSession(): void {
+    try {
+        sessionStorage.setItem(MIGRATION_SKIPPED_SESSION_KEY, 'true');
+    } catch {
+        // sessionStorage unavailable — the prompt simply returns on the next load
+    }
+}
+
+export function isMigrationSkippedForSession(): boolean {
+    try {
+        return sessionStorage.getItem(MIGRATION_SKIPPED_SESSION_KEY) === 'true';
+    } catch {
+        return false;
+    }
 }
 
 // ─── Rubric version history (Phase 18.4) ────────────────────────────────────────
@@ -1396,7 +1439,8 @@ export function exportStore(state: StoreData): StoreData {
 }
 
 export function exportFullBackup(): string {
-    return JSON.stringify(loadStore(), null, 2);
+    const store = loadStore();
+    return JSON.stringify({ ...store, settings: withoutProtectedSettings(store.settings) }, null, 2);
 }
 
 // ─── Backup import validators ──────────────────────────────────────────────────
@@ -1425,7 +1469,7 @@ function isObjectArray(v: unknown): boolean {
  * false only when the JSON itself is unparseable or the top-level value is not
  * a plain object.
  */
-export function importFullBackup(json: string): boolean {
+export function importFullBackup(json: string, currentSettings?: AppSettings): boolean {
     try {
         const raw = JSON.parse(json) as unknown;
         if (!isPlainObject(raw)) return false;
@@ -1466,7 +1510,13 @@ export function importFullBackup(json: string): boolean {
             else console.warn('[importFullBackup] gradeScales failed validation — skipped');
         }
         if (data.settings !== undefined) {
-            if (isPlainObject(data.settings)) saveSettings(data.settings as AppSettings);
+            if (isPlainObject(data.settings))
+                saveSettings(
+                    mergeRestoredSettings(
+                        currentSettings ?? load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+                        data.settings
+                    )
+                );
             else console.warn('[importFullBackup] settings failed validation — skipped');
         }
         if (data.favoriteStandards !== undefined) {

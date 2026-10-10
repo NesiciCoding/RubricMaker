@@ -64,7 +64,8 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/TiptapEditor';
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
-import { calcGradeSummary, orderedLevels as sharedOrderedLevels } from '../utils/gradeCalc';
+import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
+import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
 import { exportSinglePdf } from '../utils/pdfExport';
@@ -241,6 +242,23 @@ export default function GradeStudent() {
     const touchStartRef = useRef<{ id: number; x: number; y: number } | null>(null);
     const { confirm: confirmSwipe, dialogProps: swipeConfirmProps } = useConfirm();
 
+    // A deep link can mount before hydration merges this student's saved grade into state.
+    // Adopt that record when it arrives; if the teacher already started editing, lay their
+    // edits over it so a save neither adds a blank duplicate nor wipes untouched saved scores.
+    const seedSrRef = useRef(sr);
+    React.useEffect(() => {
+        if (!existingSR || !sr || sr.id === existingSR.id) return;
+        if (isDirty && seedSrRef.current) {
+            setSr(mergeEditsOntoSavedGrade(seedSrRef.current, sr, existingSR));
+            setFeedbackOnly((f) => f || (existingSR.feedbackOnly ?? false));
+            setIsAnchor((a) => a || (existingSR.isAnchor ?? false));
+            return;
+        }
+        setSr(existingSR);
+        setFeedbackOnly(existingSR.feedbackOnly ?? false);
+        setIsAnchor(existingSR.isAnchor ?? false);
+    }, [existingSR, sr, isDirty]);
+
     // Ensure that if we loaded this student, the global active class defaults to their class
     // This perfectly handles the user going back and expecting to see this student's class
     React.useEffect(() => {
@@ -257,7 +275,7 @@ export default function GradeStudent() {
             // sr is never null here: the early return above gates every render path
             /* v8 ignore next -- sr is non-null whenever this callback can run */
             if (!prev) return prev;
-            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? { ...e, ...patch } : e));
+            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e));
             return { ...prev, entries };
         });
         setIsDirty(true);
@@ -274,6 +292,28 @@ export default function GradeStudent() {
         if (!studentId) return [];
         return getCriterionInterventionFlags(studentId, studentRubrics, rubrics);
     }, [studentId, studentRubrics, rubrics]);
+
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+    const nothingScored =
+        !!sr &&
+        !!summary &&
+        summary.gradedCount === 0 &&
+        !sr.globalModifier &&
+        !stripCommentHtml(sr.overallComment ?? '').trim() &&
+        !sr.entries.some((e) => stripCommentHtml(e.comment ?? '').trim() || e.audioDataUrl || e.audioStoragePath);
+
+    // Saving with nothing chosen records a graded 0% that counts in class stats and the portal.
+    const confirmSaveNothingScored = useCallback(
+        () =>
+            confirm({
+                title: t('gradeStudent.confirm_nothing_scored_title'),
+                message: t('gradeStudent.confirm_nothing_scored_message'),
+                confirmLabel: t('gradeStudent.confirm_nothing_scored_save'),
+                cancelLabel: t('common.cancel'),
+                danger: false,
+            }),
+        [confirm, t]
+    );
 
     const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
 
@@ -303,9 +343,10 @@ export default function GradeStudent() {
         return { nextStudent, hasOtherUngraded: !!nextUngraded };
     }, [student, students, classes, studentId, studentRubrics, rubricId, navScope, existingSR]);
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (nothingScored && !(await confirmSaveNothingScored())) return;
         const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
@@ -339,6 +380,8 @@ export default function GradeStudent() {
     }, [
         sr,
         rubric,
+        nothingScored,
+        confirmSaveNothingScored,
         saveStudentRubric,
         feedbackOnly,
         isAnchor,
@@ -352,9 +395,19 @@ export default function GradeStudent() {
         t,
     ]);
 
-    const handleSaveAndNext = useCallback(() => {
+    const handleSaveAndNext = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
+        if (nothingScored) {
+            // Save & Next on an untouched, ungraded student is a skip: there is nothing to record.
+            if (!existingSR) {
+                showToast(t('gradeStudent.skipped_nothing_scored', { name: student?.name ?? '' }), 'info');
+                allowNavigation();
+                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
+                return;
+            }
+            if (!(await confirmSaveNothingScored())) return;
+        }
         saveStudentRubric({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             feedbackOnly,
@@ -375,7 +428,12 @@ export default function GradeStudent() {
         rubricId,
         feedbackOnly,
         isAnchor,
+        nothingScored,
         existingSR,
+        showToast,
+        t,
+        student?.name,
+        confirmSaveNothingScored,
         cannedNhiComment,
         allowNavigation,
     ]);
@@ -817,6 +875,7 @@ export default function GradeStudent() {
 
     return (
         <>
+            <ConfirmDialog {...confirmDialogProps} />
             <PageTour
                 steps={gradingTourSteps}
                 run={tourRun}
@@ -1314,10 +1373,18 @@ export default function GradeStudent() {
                                             {levels.map((level, levelIndex) => {
                                                 const isSelected = entry.levelId === level.id;
                                                 const shortcutNum = levelIndex + 1;
+                                                const toggleLevel = () =>
+                                                    updateEntry(c.id, {
+                                                        levelId: isSelected ? null : level.id,
+                                                        overridePoints: undefined,
+                                                    });
+                                                // The card holds sliders and steppers, so it can't itself be a
+                                                // <button>: only its header is, and the controls sit beside it.
                                                 return (
-                                                    <button
+                                                    <div
                                                         key={level.id}
-                                                        type="button"
+                                                        role="group"
+                                                        aria-label={level.label}
                                                         data-tour={
                                                             levelIndex === 0 && criterionIndex === 0
                                                                 ? 'grading-level-btn'
@@ -1332,123 +1399,131 @@ export default function GradeStudent() {
                                                                   }
                                                                 : {}
                                                         }
-                                                        title={
-                                                            shortcutNum <= 5
-                                                                ? t('gradeStudent.level_shortcut_hint', {
-                                                                      num: shortcutNum,
-                                                                  })
-                                                                : undefined
-                                                        }
-                                                        onClick={() =>
-                                                            updateEntry(c.id, {
-                                                                levelId: isSelected ? null : level.id,
-                                                                overridePoints: undefined,
-                                                            })
-                                                        }
+                                                        onClick={(e) => {
+                                                            if (e.target === e.currentTarget) toggleLevel();
+                                                        }}
                                                     >
-                                                        {/* Label + points badge */}
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'baseline',
-                                                                marginBottom: 5,
-                                                                gap: 6,
-                                                            }}
+                                                        <button
+                                                            type="button"
+                                                            className="level-btn-select"
+                                                            aria-pressed={isSelected}
+                                                            title={
+                                                                shortcutNum <= 5
+                                                                    ? t('gradeStudent.level_shortcut_hint', {
+                                                                          num: shortcutNum,
+                                                                      })
+                                                                    : undefined
+                                                            }
+                                                            onClick={toggleLevel}
                                                         >
-                                                            <span
+                                                            {/* Label + points badge */}
+                                                            <div
                                                                 style={{
-                                                                    fontWeight: 700,
-                                                                    fontSize: '0.88em',
-                                                                    color: isSelected ? fmt.accentColor : 'var(--text)',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'baseline',
+                                                                    marginBottom: 5,
+                                                                    gap: 6,
                                                                 }}
                                                             >
-                                                                {isCriterionFocused && shortcutNum <= 5 && (
-                                                                    <span
-                                                                        className="level-btn-shortcut-hint"
-                                                                        style={{
-                                                                            display: 'inline-block',
-                                                                            marginRight: 5,
-                                                                            fontSize: '0.75em',
-                                                                            fontWeight: 700,
-                                                                            background: isSelected
-                                                                                ? fmt.accentColor
-                                                                                : 'var(--bg)',
-                                                                            color: isSelected
-                                                                                ? '#fff'
-                                                                                : 'var(--text-muted)',
-                                                                            border: '1px solid var(--border)',
-                                                                            borderRadius: 3,
-                                                                            padding: '0 4px',
-                                                                            verticalAlign: 'middle',
-                                                                        }}
-                                                                    >
-                                                                        {shortcutNum}
-                                                                    </span>
-                                                                )}
-                                                                {level.label}
-                                                            </span>
-                                                            {level.cefrLevel && (
                                                                 <span
                                                                     style={{
-                                                                        fontSize: '0.65em',
                                                                         fontWeight: 700,
-                                                                        padding: '1px 5px',
-                                                                        borderRadius: 3,
-                                                                        background: isSelected
-                                                                            ? 'rgba(255,255,255,0.25)'
-                                                                            : 'var(--accent-soft)',
-                                                                        color: isSelected ? '#fff' : 'var(--accent)',
-                                                                        flexShrink: 0,
-                                                                        letterSpacing: '0.03em',
-                                                                    }}
-                                                                >
-                                                                    {level.cefrLevel}
-                                                                </span>
-                                                            )}
-                                                            {fmt.showPoints && (
-                                                                <span
-                                                                    style={{
-                                                                        fontSize: '0.72em',
+                                                                        fontSize: '0.88em',
                                                                         color: isSelected
                                                                             ? fmt.accentColor
-                                                                            : 'var(--text-muted)',
-                                                                        fontWeight: 600,
-                                                                        flexShrink: 0,
+                                                                            : 'var(--text)',
                                                                     }}
                                                                 >
-                                                                    {level.minPoints === level.maxPoints
-                                                                        ? `${level.minPoints}${t('gradeStudent.table_points')}`
-                                                                        : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
+                                                                    {isCriterionFocused && shortcutNum <= 5 && (
+                                                                        <span
+                                                                            className="level-btn-shortcut-hint"
+                                                                            style={{
+                                                                                display: 'inline-block',
+                                                                                marginRight: 5,
+                                                                                fontSize: '0.75em',
+                                                                                fontWeight: 700,
+                                                                                background: isSelected
+                                                                                    ? fmt.accentColor
+                                                                                    : 'var(--bg)',
+                                                                                color: isSelected
+                                                                                    ? '#fff'
+                                                                                    : 'var(--text-muted)',
+                                                                                border: '1px solid var(--border)',
+                                                                                borderRadius: 3,
+                                                                                padding: '0 4px',
+                                                                                verticalAlign: 'middle',
+                                                                            }}
+                                                                        >
+                                                                            {shortcutNum}
+                                                                        </span>
+                                                                    )}
+                                                                    {level.label}
                                                                 </span>
+                                                                {level.cefrLevel && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.65em',
+                                                                            fontWeight: 700,
+                                                                            padding: '1px 5px',
+                                                                            borderRadius: 3,
+                                                                            background: isSelected
+                                                                                ? 'rgba(255,255,255,0.25)'
+                                                                                : 'var(--accent-soft)',
+                                                                            color: isSelected
+                                                                                ? '#fff'
+                                                                                : 'var(--accent)',
+                                                                            flexShrink: 0,
+                                                                            letterSpacing: '0.03em',
+                                                                        }}
+                                                                    >
+                                                                        {level.cefrLevel}
+                                                                    </span>
+                                                                )}
+                                                                {fmt.showPoints && (
+                                                                    <span
+                                                                        style={{
+                                                                            fontSize: '0.72em',
+                                                                            color: isSelected
+                                                                                ? fmt.accentColor
+                                                                                : 'var(--text-muted)',
+                                                                            fontWeight: 600,
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    >
+                                                                        {level.minPoints === level.maxPoints
+                                                                            ? `${level.minPoints}${t('gradeStudent.table_points')}`
+                                                                            : `${level.minPoints}–${level.maxPoints}${t('gradeStudent.table_points')}`}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {/* Description */}
+                                                            {level.description ? (
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: '0.8em',
+                                                                        color: isSelected
+                                                                            ? 'var(--text)'
+                                                                            : 'var(--text-muted)',
+                                                                        lineHeight: 1.45,
+                                                                    }}
+                                                                >
+                                                                    {level.description}
+                                                                </p>
+                                                            ) : (
+                                                                <p
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontSize: '0.8em',
+                                                                        color: 'var(--text-dim)',
+                                                                        fontStyle: 'italic',
+                                                                    }}
+                                                                >
+                                                                    {t('gradeStudent.level_select')}
+                                                                </p>
                                                             )}
-                                                        </div>
-                                                        {/* Description */}
-                                                        {level.description ? (
-                                                            <p
-                                                                style={{
-                                                                    margin: 0,
-                                                                    fontSize: '0.8em',
-                                                                    color: isSelected
-                                                                        ? 'var(--text)'
-                                                                        : 'var(--text-muted)',
-                                                                    lineHeight: 1.45,
-                                                                }}
-                                                            >
-                                                                {level.description}
-                                                            </p>
-                                                        ) : (
-                                                            <p
-                                                                style={{
-                                                                    margin: 0,
-                                                                    fontSize: '0.8em',
-                                                                    color: 'var(--text-dim)',
-                                                                    fontStyle: 'italic',
-                                                                }}
-                                                            >
-                                                                {t('gradeStudent.level_select')}
-                                                            </p>
-                                                        )}
+                                                        </button>
                                                         {/* Sub-items */}
                                                         {level.subItems.length > 0 && (
                                                             <div
@@ -1457,7 +1532,6 @@ export default function GradeStudent() {
                                                                     paddingTop: 8,
                                                                     borderTop: `1px solid ${isSelected ? fmt.accentColor + '40' : 'var(--border)'}`,
                                                                 }}
-                                                                onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <div
                                                                     style={{
@@ -1482,7 +1556,6 @@ export default function GradeStudent() {
                                                                         return (
                                                                             <div
                                                                                 key={si.id}
-                                                                                onClick={(e) => e.stopPropagation()}
                                                                                 style={{
                                                                                     display: 'flex',
                                                                                     flexDirection: 'column',
@@ -1589,7 +1662,6 @@ export default function GradeStudent() {
                                                                         paddingTop: 8,
                                                                         borderTop: `1px solid ${fmt.accentColor}30`,
                                                                     }}
-                                                                    onClick={(e) => e.stopPropagation()}
                                                                 >
                                                                     <div
                                                                         style={{
@@ -1673,7 +1745,7 @@ export default function GradeStudent() {
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                    </button>
+                                                    </div>
                                                 );
                                             })}
                                         </div>
