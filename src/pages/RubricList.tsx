@@ -16,7 +16,7 @@ import {
     ClipboardPaste,
     Check,
     Layers,
-    Eye,
+    Link2,
     Users2,
     GripVertical,
     X,
@@ -345,7 +345,7 @@ export default function RubricList() {
                         <select
                             value={subjectFilter}
                             onChange={(e) => setSubjectFilter(e.target.value)}
-                            style={{ minWidth: 150 }}
+                            style={{ minWidth: 150, width: 'auto' }}
                             aria-label={t('rubricList.all_subjects')}
                         >
                             <option value="all">{t('rubricList.all_subjects')}</option>
@@ -429,6 +429,7 @@ export default function RubricList() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('rubricList.action_edit')}
+                                                        aria-label={t('rubricList.action_edit')}
                                                         onClick={() => navigate(`/rubrics/${r.id}`)}
                                                     >
                                                         <Edit2 size={14} />
@@ -436,6 +437,7 @@ export default function RubricList() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('rubricList.grade_students')}
+                                                        aria-label={t('rubricList.grade_students')}
                                                         onClick={() => navigate('/students')}
                                                     >
                                                         <Users size={14} />
@@ -443,6 +445,7 @@ export default function RubricList() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('rubricList.action_compare')}
+                                                        aria-label={t('rubricList.action_compare')}
                                                         onClick={() => {
                                                             const activeClass = classes.find(
                                                                 (c) => c.id === settings.activeClassId
@@ -457,6 +460,7 @@ export default function RubricList() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('rubricList.action_duplicate')}
+                                                        aria-label={t('rubricList.action_duplicate')}
                                                         onClick={() => handleDuplicate(r.id)}
                                                     >
                                                         <Copy size={14} />
@@ -464,6 +468,7 @@ export default function RubricList() {
                                                     <button
                                                         className="btn btn-ghost btn-icon btn-sm"
                                                         title={t('rubricList.action_delete')}
+                                                        aria-label={t('rubricList.action_delete')}
                                                         style={{ color: 'var(--red)' }}
                                                         onClick={async () => {
                                                             const ok = await confirm({
@@ -534,11 +539,13 @@ export default function RubricList() {
                                                             (e.currentTarget.style.borderColor = 'var(--border)')
                                                         }
                                                     >
+                                                        {/* The title gets its own full-width line so a long name wraps instead of
+                                                            squeezing the action row off the card. */}
                                                         <div
                                                             style={{
                                                                 display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'flex-start',
+                                                                flexDirection: 'column',
+                                                                gap: 8,
                                                                 marginBottom: 12,
                                                             }}
                                                         >
@@ -547,6 +554,7 @@ export default function RubricList() {
                                                                     display: 'flex',
                                                                     alignItems: 'flex-start',
                                                                     gap: 6,
+                                                                    minWidth: 0,
                                                                 }}
                                                             >
                                                                 {reorderable && (
@@ -563,7 +571,18 @@ export default function RubricList() {
                                                                     </span>
                                                                 )}
                                                                 <div style={{ minWidth: 0 }}>
-                                                                    <h3 className="truncate">{r.name}</h3>
+                                                                    <h3
+                                                                        title={r.name}
+                                                                        style={{
+                                                                            overflowWrap: 'anywhere',
+                                                                            display: '-webkit-box',
+                                                                            WebkitLineClamp: 2,
+                                                                            WebkitBoxOrient: 'vertical',
+                                                                            overflow: 'hidden',
+                                                                        }}
+                                                                    >
+                                                                        {r.name}
+                                                                    </h3>
                                                                     {r.subject && (
                                                                         <div
                                                                             className="text-muted text-xs"
@@ -574,11 +593,21 @@ export default function RubricList() {
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    gap: 4,
+                                                                    justifyContent: 'flex-end',
+                                                                    flexWrap: 'nowrap',
+                                                                }}
+                                                            >
                                                                 {dbStatus.isConnected && (
                                                                     <button
                                                                         className="btn btn-ghost btn-icon btn-sm"
                                                                         title={t('rubricList.action_share_colleague')}
+                                                                        aria-label={t(
+                                                                            'rubricList.action_share_colleague'
+                                                                        )}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             openShareModal(r.id, r.name);
@@ -590,6 +619,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tooltips.copy_share_code')}
+                                                                    aria-label={t('tooltips.copy_share_code')}
                                                                     style={{
                                                                         color:
                                                                             copiedId === r.id
@@ -610,6 +640,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('tooltips.share_preview')}
+                                                                    aria-label={t('tooltips.share_preview')}
                                                                     style={{
                                                                         color:
                                                                             copiedId === 'preview-' + r.id
@@ -624,13 +655,14 @@ export default function RubricList() {
                                                                     {copiedId === 'preview-' + r.id ? (
                                                                         <Check size={14} />
                                                                     ) : (
-                                                                        <Eye size={14} />
+                                                                        <Link2 size={14} />
                                                                     )}
                                                                 </button>
                                                                 {import.meta.env.DEV && (
                                                                     <a
                                                                         className="btn btn-ghost btn-icon btn-sm"
                                                                         title={t('rubricList.dev_open_preview')}
+                                                                        aria-label={t('rubricList.dev_open_preview')}
                                                                         href={`${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(r)}`}
                                                                         target="_blank"
                                                                         rel="noreferrer"
@@ -642,6 +674,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('voTrack.differentiate_title')}
+                                                                    aria-label={t('voTrack.differentiate_title')}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         openDifferentiate(r.id);
@@ -652,6 +685,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('rubricList.action_duplicate')}
+                                                                    aria-label={t('rubricList.action_duplicate')}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         handleDuplicate(r.id);
@@ -662,6 +696,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('rubricList.action_edit')}
+                                                                    aria-label={t('rubricList.action_edit')}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         navigate(`/rubrics/${r.id}`);
@@ -672,6 +707,7 @@ export default function RubricList() {
                                                                 <button
                                                                     className="btn btn-ghost btn-icon btn-sm"
                                                                     title={t('rubricList.action_delete')}
+                                                                    aria-label={t('rubricList.action_delete')}
                                                                     style={{ color: 'var(--red)' }}
                                                                     onClick={async (e) => {
                                                                         e.stopPropagation();
