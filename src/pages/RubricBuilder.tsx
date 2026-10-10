@@ -83,6 +83,13 @@ function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     };
 }
 
+function insertLevel(criterion: RubricCriterion, index: number, level: RubricLevel): RubricCriterion {
+    if (criterion.levels.some((l) => l.id === level.id)) return criterion;
+    const levels = [...criterion.levels];
+    levels.splice(Math.min(index, levels.length), 0, level);
+    return { ...criterion, levels };
+}
+
 function newCriterion(weight: number): RubricCriterion {
     return {
         id: nanoid(),
@@ -489,6 +496,9 @@ export default function RubricBuilder() {
     useEffect(() => {
         criteriaRef.current = criteria;
     }, [criteria]);
+    // A level whose Undo is pressed after its criterion was also deleted waits here, and comes
+    // back with the criterion if that delete is undone too.
+    const parkedLevels = useRef<{ cid: string; index: number; level: RubricLevel }[]>([]);
     const deleteCriterion = useCallback(
         (cid: string) => {
             const index = criteriaRef.current.findIndex((x) => x.id === cid);
@@ -499,13 +509,17 @@ export default function RubricBuilder() {
             showToast(t('rubricBuilder.criterion_deleted', { title: removed.title }), 'info', {
                 action: {
                     label: t('common.undo'),
-                    onClick: () =>
+                    onClick: () => {
+                        const parked = parkedLevels.current.filter((p) => p.cid === removed.id);
+                        parkedLevels.current = parkedLevels.current.filter((p) => p.cid !== removed.id);
+                        const restored = parked.reduce((x, p) => insertLevel(x, p.index, p.level), removed);
                         setCriteria((c) => {
                             if (c.some((x) => x.id === removed.id)) return c;
                             const next = [...c];
-                            next.splice(Math.min(index, next.length), 0, removed);
+                            next.splice(Math.min(index, next.length), 0, restored);
                             return next;
-                        }),
+                        });
+                    },
                 },
             });
         },
@@ -571,15 +585,13 @@ export default function RubricBuilder() {
             showToast(t('rubricBuilder.level_deleted', { label: removed.label }), 'info', {
                 action: {
                     label: t('common.undo'),
-                    onClick: () =>
-                        setCriteria((c) =>
-                            c.map((x) => {
-                                if (x.id !== cid || x.levels.some((l) => l.id === removed.id)) return x;
-                                const next = [...x.levels];
-                                next.splice(Math.min(index, next.length), 0, removed);
-                                return { ...x, levels: next };
-                            })
-                        ),
+                    onClick: () => {
+                        if (!criteriaRef.current.some((x) => x.id === cid)) {
+                            parkedLevels.current.push({ cid, index, level: removed });
+                            return;
+                        }
+                        setCriteria((c) => c.map((x) => (x.id === cid ? insertLevel(x, index, removed) : x)));
+                    },
                 },
             });
         },
