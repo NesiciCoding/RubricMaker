@@ -20,8 +20,9 @@ export function reorderDisplayOrder<T>(sorted: T[], fromIndex: number, toIndex: 
 /**
  * A displayOrder that sorts a new item directly after `sorted[index]`, plus any positions that
  * must be written first. Takes the midpoint to the next item when both are placed, so placing a
- * copy normally writes nothing else; only items that have no position yet up to and including
- * the source get numbered, after the highest existing position.
+ * copy normally writes nothing else. A next item tied with the source would sort before an
+ * appended copy, so tied followers are bumped just far enough to leave room. Items that have no
+ * position yet up to and including the source get numbered, after the highest existing position.
  */
 export function displayOrderAfter<T extends { displayOrder?: number }>(
     sorted: T[],
@@ -34,7 +35,14 @@ export function displayOrderAfter<T extends { displayOrder?: number }>(
         if (next.displayOrder > source.displayOrder) {
             return { order: (source.displayOrder + next.displayOrder) / 2, updates: [] };
         }
-        return { order: source.displayOrder, updates: [] };
+        const order = source.displayOrder + 1;
+        const updates: Array<[T, number]> = [];
+        let last = order;
+        for (const item of sorted.slice(index + 1)) {
+            if (item.displayOrder == null || item.displayOrder > last) break;
+            updates.push([item, ++last]);
+        }
+        return { order, updates };
     }
     let order = Math.max(-1, ...sorted.map((item) => item.displayOrder ?? -1));
     const updates: Array<[T, number]> = [];
