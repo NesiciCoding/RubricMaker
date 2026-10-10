@@ -139,6 +139,23 @@ describe('rubric JSON import warnings (#699)', () => {
         expect(parsed.criteria.map((c) => c.weight)).toEqual([60, 40]);
         expect(parsed.warnings).toContainEqual({ key: 'importRubric.warn_weights_partial', params: { remaining: 40 } });
     });
+
+    it('splits an uneven remaining weight so the criteria still total 100', async () => {
+        const parsed = await parseJsonToRubric(
+            asFile({
+                criteria: [
+                    { title: 'A', weight: 50, levels: [] },
+                    { title: 'B', levels: [] },
+                    { title: 'C', levels: [] },
+                    { title: 'D', levels: [] },
+                ],
+            })
+        );
+        const weights = parsed.criteria.map((c) => c.weight);
+        expect(weights[0]).toBe(50);
+        expect(weights.slice(1).sort((a, b) => a - b)).toEqual([16, 17, 17]);
+        expect(parsed.warnings).toContainEqual({ key: 'importRubric.warn_weights_partial', params: { remaining: 50 } });
+    });
 });
 
 describe('share code paste (#699)', () => {
