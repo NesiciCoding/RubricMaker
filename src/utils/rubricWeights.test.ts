@@ -29,6 +29,7 @@ describe('hasEvenWeights', () => {
     it('rejects a split that does not total 100 or was tuned by hand', () => {
         expect(hasEvenWeights(w(25, 25, 25))).toBe(false);
         expect(hasEvenWeights(w(60, 40))).toBe(false);
+        expect(hasEvenWeights(w(50.5, 49.5))).toBe(false);
     });
 
     it('treats a missing weight as 0', () => {

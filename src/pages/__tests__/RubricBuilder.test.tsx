@@ -1515,6 +1515,16 @@ describe('RubricBuilder', () => {
             addCriterion();
             expect(weights()).toEqual([30, 50, 20]);
         });
+
+        it('rebalances a criterion added under total points once weighted scoring is back', () => {
+            renderNew();
+            const mode = (value: string) =>
+                fireEvent.click(screen.getAllByRole('radio').find((r) => (r as HTMLInputElement).value === value)!);
+            mode('total-points');
+            addCriterion();
+            mode('weighted-percentage');
+            expect(weights()).toEqual([50, 50]);
+        });
     });
 
     // ── Vocabulary editor round trip ─────────────────────────────────────────────
