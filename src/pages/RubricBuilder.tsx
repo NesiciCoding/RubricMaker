@@ -381,13 +381,7 @@ export default function RubricBuilder() {
             /* v8 ignore next -- weight is required on RubricCriterion */
             const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
             if (totalWeight < 85 || totalWeight > 115) {
-                showToast(
-                    t(
-                        'rubricBuilder.weight_total_warning',
-                        `Weights total ${totalWeight}% (expected 100%). You can still save — the grade engine normalises them.`
-                    ),
-                    'warning'
-                );
+                showToast(t('rubricBuilder.weight_total_warning', { total: totalWeight }), 'warning');
             }
         }
         const rubricData = {

@@ -307,6 +307,9 @@ vi.mock('../../context/AppContext', () => ({
 }));
 
 const i18nState = vi.hoisted(() => ({ language: 'en' }));
+const mockT = vi.hoisted(() =>
+    vi.fn((key: string, opts?: string | Record<string, unknown>) => (typeof opts === 'string' ? opts : key))
+);
 
 vi.mock('../../context/useStore', () => ({
     useStoreSelector: (selector: (state: any) => any) => selector(makeAppContextMock()),
@@ -314,10 +317,7 @@ vi.mock('../../context/useStore', () => ({
 }));
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string, opts?: string | Record<string, unknown>) => {
-            if (typeof opts === 'string') return opts;
-            return key;
-        },
+        t: mockT,
         i18n: i18nState,
     }),
     Trans: ({ i18nKey }: { i18nKey: string }) => React.createElement('span', null, i18nKey),
@@ -1329,8 +1329,8 @@ describe('RubricBuilder', () => {
         appOverrides = { rubrics: [{ ...mockRubric, criteria: [{ ...mockRubric.criteria[0], weight: 40 }] }] };
         renderEdit();
         fireEvent.click(screen.getByText('rubricBuilder.action_save'));
-        // The t mock returns the literal English fallback for string options.
-        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Weights total'), 'warning');
+        expect(mockT).toHaveBeenCalledWith('rubricBuilder.weight_total_warning', { total: 40 });
+        expect(mockShowToast).toHaveBeenCalledWith('rubricBuilder.weight_total_warning', 'warning');
     });
 
     // ── Template save: fresh id + failure toast ──────────────────────────────────
