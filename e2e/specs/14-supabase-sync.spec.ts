@@ -31,7 +31,7 @@ async function saveAndSync(page: Page, builder: RubricBuilderPage): Promise<void
     expect(
         nameValue.trim(),
         `Name input empty before save — URL: ${page.url()}, ` +
-            `body classes: ${await page.evaluate(() => document.body.className)}`,
+            `body classes: ${await page.evaluate(() => document.body.className)}`
     ).not.toBe('');
 
     await builder.save();
@@ -165,13 +165,18 @@ test.describe('Cloud persistence (Supabase-first hydration)', () => {
         await list.clickDeleteRubric('Delete This One');
         await expect(supabasePage.getByRole('dialog')).toBeVisible();
         await list.confirmDelete();
-        await expect(supabasePage.getByText('Delete This One')).not.toBeVisible({
+        // exact: the Undo toast also mentions the name ("Deleted “Delete This One”.")
+        await expect(supabasePage.getByText('Delete This One', { exact: true })).not.toBeVisible({
             timeout: 5_000,
         });
 
-        // Verify the DB reflects the deletion
+        // The delete only reaches the DB once the 8s Undo window has passed.
+        await expect
+            .poll(async () => (await fetchRubricsFromDb(testUserEmail)).map((r) => r.data.name), {
+                timeout: 20_000,
+            })
+            .not.toContain('Delete This One');
         const dbRubrics = await fetchRubricsFromDb(testUserEmail);
-        expect(dbRubrics.some((r) => r.data.name === 'Delete This One')).toBe(false);
         expect(dbRubrics.some((r) => r.data.name === 'Keep This One')).toBe(true);
     });
 });
@@ -197,12 +202,21 @@ test.describe('Offline write queue and reconnect flush', () => {
                     criteria: [],
                     gradeScaleId: 'letter-10',
                     format: {
-                        criterionColWidth: 200, levelColWidth: 160, fontSize: 14,
-                        headerColor: '#1e3a5f', headerTextColor: '#ffffff',
-                        accentColor: '#3b82f6', fontFamily: 'Inter, system-ui, sans-serif',
-                        showWeights: true, showPoints: true, showCalculatedGrade: true,
-                        levelOrder: 'best-first', headerTextAlign: 'center',
-                        showBorders: true, rowStriping: false, orientation: 'portrait',
+                        criterionColWidth: 200,
+                        levelColWidth: 160,
+                        fontSize: 14,
+                        headerColor: '#1e3a5f',
+                        headerTextColor: '#ffffff',
+                        accentColor: '#3b82f6',
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                        showWeights: true,
+                        showPoints: true,
+                        showCalculatedGrade: true,
+                        levelOrder: 'best-first',
+                        headerTextAlign: 'center',
+                        showBorders: true,
+                        rowStriping: false,
+                        orientation: 'portrait',
                     },
                     scoringMode: 'weighted-percentage',
                     totalMaxPoints: 100,

@@ -858,7 +858,7 @@ describe('RubricList deep coverage', () => {
     });
 
     it('delete button shows confirmation, confirming calls deleteRubric', async () => {
-        renderPage(<RubricList />);
+        const { unmount } = renderPage(<RubricList />);
         const deleteBtn = screen
             .getAllByRole('button')
             .find((b) => b.getAttribute('title') === 'rubricList.action_delete');
@@ -874,6 +874,8 @@ describe('RubricList deep coverage', () => {
                 await act(async () => {
                     fireEvent.click(confirmBtn);
                 });
+                // The delete waits out its Undo toast; leaving the page commits it.
+                unmount();
                 expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
             }
         }

@@ -219,6 +219,18 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(vi.mocked(deleteRubricVersions)).toHaveBeenCalledWith('r1');
     });
 
+    it('deletes a rubric together with its grades and peer reviews, leaving other rubrics alone', () => {
+        const grade = (id: string, rubricId: string) =>
+            ({ id, rubricId, studentId: 's1', entries: [], overallComment: '', isPeerReview: false }) as never;
+        let state = makeState({
+            studentRubrics: [grade('g1', 'r1'), grade('g2', 'r2')],
+            peerReviews: [grade('p1', 'r1'), grade('p2', 'r2')],
+        });
+        state = run(state, { type: 'DELETE_RUBRIC', id: 'r1' });
+        expect(state.studentRubrics.map((sr) => sr.id)).toEqual(['g2']);
+        expect(state.peerReviews.map((pr) => pr.id)).toEqual(['p2']);
+    });
+
     it('updates, archives, restores, and anonymizes students', () => {
         let state = makeState();
         state = run(state, { type: 'UPDATE_STUDENT', payload: { ...student, name: 'Bobby' } });

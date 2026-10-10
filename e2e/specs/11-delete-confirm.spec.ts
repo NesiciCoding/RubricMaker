@@ -23,7 +23,8 @@ test.describe('ConfirmDialog — delete flows', () => {
         await expect(confirmBtn).toHaveClass(/btn-danger/);
         await confirmBtn.click();
 
-        await expect(appPage.getByText('Confirm Delete Rubric')).not.toBeVisible({ timeout: 5_000 });
+        // exact: the Undo toast also mentions the name ("Deleted “Confirm Delete Rubric”.")
+        await expect(appPage.getByText('Confirm Delete Rubric', { exact: true })).not.toBeVisible({ timeout: 5_000 });
     });
 
     test('rubric delete: cancel keeps rubric', async ({ appPage, seedStorage }) => {
