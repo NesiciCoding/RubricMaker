@@ -514,12 +514,14 @@ export default function RubricBuilder() {
     const appendCriterion = useCallback(() => setCriteria((c) => [...c, newCriterion(remainingWeight(c))]), []);
 
     // An untouched (evenly split) set of weights is rebalanced whenever criteria are added or
-    // removed, so a fresh rubric always totals 100%; a hand-tuned split is left alone.
+    // removed, so a fresh rubric always totals 100%; a hand-tuned split is left alone. The snapshot
+    // only advances in weighted mode, so criteria added under total points are caught on switching back.
     const prevCriteriaRef = useRef(criteria);
     useEffect(() => {
+        if (scoringMode !== 'weighted-percentage') return;
         const prev = prevCriteriaRef.current;
         prevCriteriaRef.current = criteria;
-        if (scoringMode !== 'weighted-percentage' || criteria.length === prev.length) return;
+        if (criteria.length === prev.length) return;
         if (hasEvenWeights(prev) && !hasEvenWeights(criteria)) setCriteria(distributeWeights(criteria));
     }, [criteria, scoringMode]);
 
