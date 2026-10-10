@@ -440,6 +440,19 @@ export default function RubricBuilder() {
         peerReviews,
     ]);
 
+    // Ctrl/Cmd+S saves from anywhere in the builder, inputs included, instead of opening the
+    // browser's Save Page dialog.
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSave]);
+
     // ── Criterion operations ────────────────────────────────────────────────────
     // All stable useCallbacks so the memoized CriterionCard skips re-rendering on unrelated edits.
     const moveCriterion = useCallback((idx: number, dir: -1 | 1) => {
@@ -775,6 +788,12 @@ export default function RubricBuilder() {
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rubrics')}>
                             <ArrowLeft size={15} /> {t('rubricBuilder.action_back')}
                         </button>
+                        {/* Leading the toolbar keeps Save on screen: the action strip scrolls and narrower
+                            windows hide its trailing buttons first. */}
+                        <button data-tour="rb-save" className="btn btn-primary btn-sm" onClick={handleSave}>
+                            <Save size={15} />{' '}
+                            {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
+                        </button>
                         <div
                             style={{
                                 display: 'flex',
@@ -893,10 +912,6 @@ export default function RubricBuilder() {
                             }}
                         >
                             {t('tutorial.rb_tour_button')}
-                        </button>
-                        <button data-tour="rb-save" className="btn btn-primary btn-sm" onClick={handleSave}>
-                            <Save size={15} />{' '}
-                            {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
                     </>
                 }
