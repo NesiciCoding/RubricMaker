@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortByDisplayOrder, reorderDisplayOrder } from './displayOrder';
+import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from './displayOrder';
 
 describe('sortByDisplayOrder', () => {
     it('sorts by displayOrder when set, falling back to createdAt for unset items placed last', () => {
@@ -27,5 +27,39 @@ describe('reorderDisplayOrder', () => {
             ['c', 1],
             ['a', 2],
         ]);
+    });
+});
+
+describe('displayOrderAfter', () => {
+    const item = (id: string, displayOrder?: number) => ({ id, displayOrder });
+
+    it('takes the midpoint to the next placed item without moving anything', () => {
+        const sorted = [item('a', 0), item('b', 1), item('c', 2)];
+        expect(displayOrderAfter(sorted, 0)).toEqual({ order: 0.5, updates: [] });
+    });
+
+    it('goes one past the last placed item', () => {
+        const sorted = [item('a', 0), item('b', 1), item('c')];
+        expect(displayOrderAfter(sorted, 1)).toEqual({ order: 2, updates: [] });
+    });
+
+    it('numbers unplaced items up to the source after the highest position', () => {
+        const sorted = [item('a', 5), item('b'), item('c'), item('d')];
+        const { order, updates } = displayOrderAfter(sorted, 2);
+        expect(updates.map(([i, o]) => [i.id, o])).toEqual([
+            ['b', 6],
+            ['c', 7],
+        ]);
+        expect(order).toBe(8);
+    });
+
+    it('starts from 0 when nothing is placed yet', () => {
+        const sorted = [item('a'), item('b')];
+        expect(displayOrderAfter(sorted, 0)).toEqual({ order: 1, updates: [[sorted[0], 0]] });
+    });
+
+    it('ties with the source when the next item already shares its position', () => {
+        const sorted = [item('a', 1), item('b', 1)];
+        expect(displayOrderAfter(sorted, 0)).toEqual({ order: 1, updates: [] });
     });
 });

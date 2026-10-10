@@ -216,7 +216,9 @@ describe('RubricList coverage', () => {
         fireEvent.click(within_row(rows[1], 'rubricList.action_compare'));
         expect(mockNavigate).toHaveBeenCalledWith('/grade-comparative/c1/r1');
         fireEvent.click(within_row(rows[1], 'rubricList.action_duplicate'));
-        expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ name: 'Essay Rubric (Copy)' }));
+        expect(mockAddRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'rubricList.copy_name:{"name":"Essay Rubric"}' })
+        );
         // Delete + confirm removes the rubric.
         fireEvent.click(within_row(rows[1], 'rubricList.action_delete'));
         await clickConfirm('delete');
@@ -554,7 +556,9 @@ it('regenerates criterion and level ids when differentiating and duplicating a r
     expect(diffCall.criteria[0].levels[0].id).not.toBe('l1');
 
     fireEvent.click(screen.getAllByTitle('rubricList.action_duplicate')[3]);
-    expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ name: 'Criterion Rubric (Copy)' }));
+    expect(mockAddRubric).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'rubricList.copy_name:{"name":"Criterion Rubric"}' })
+    );
     const dupCall = mockAddRubric.mock.calls.at(-1)![0];
     expect(dupCall.criteria[0].id).not.toBe('c1');
     expect(dupCall.criteria[0].levels[0].id).not.toBe('l1');

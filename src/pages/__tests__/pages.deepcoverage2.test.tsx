@@ -850,9 +850,7 @@ describe('RubricList deep coverage', () => {
             .find((b) => b.getAttribute('title') === 'rubricList.action_duplicate');
         if (dupBtn) {
             fireEvent.click(dupBtn);
-            expect(mockAddRubric).toHaveBeenCalledWith(
-                expect.objectContaining({ name: expect.stringContaining('Copy') })
-            );
+            expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ name: 'rubricList.copy_name' }));
         } else {
             // Skip gracefully if button not found (shouldn't happen)
             expect(true).toBe(true);
