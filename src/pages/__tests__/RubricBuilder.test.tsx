@@ -1428,6 +1428,36 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByDisplayValue('50').length).toBeGreaterThan(0);
     });
 
+    describe('automatic weight balancing (#694)', () => {
+        const weights = () =>
+            screen
+                .getAllByText('rubricBuilder.label_weight')
+                .map((label) => Number((label.parentElement!.querySelector('input') as HTMLInputElement).value));
+        const addCriterion = () => fireEvent.click(screen.getByText('rubricBuilder.action_add_first_criterion'));
+
+        it('keeps an untouched rubric at 100% as criteria are added and removed', () => {
+            renderNew();
+            expect(weights()).toEqual([100]);
+            addCriterion();
+            expect(weights()).toEqual([50, 50]);
+            addCriterion();
+            expect(weights()).toEqual([34, 33, 33]);
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_criterion')[0]);
+            expect(weights()).toEqual([50, 50]);
+        });
+
+        it('leaves hand-tuned weights alone and gives a new criterion what is left', () => {
+            renderNew();
+            addCriterion();
+            const firstWeight = screen
+                .getAllByText('rubricBuilder.label_weight')[0]
+                .parentElement!.querySelector('input')!;
+            fireEvent.change(firstWeight, { target: { value: '30' } });
+            addCriterion();
+            expect(weights()).toEqual([30, 50, 20]);
+        });
+    });
+
     // ── Vocabulary editor round trip ─────────────────────────────────────────────
 
     it('adds, edits, and deletes vocabulary items for an existing rubric', () => {

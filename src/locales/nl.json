@@ -3287,7 +3287,7 @@
         "rb_builder_views_suffix": ".",
         "rb_scoring_modes_title": "Beoordelingsmodi",
         "rb_scoring_modes_item_total": "Totaalpunten — ruwe score van alle criteriumniveaus.",
-        "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde. Criteria van 0 punten tellen niet mee in het gemiddelde.",
+        "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde. Criteria van 0 punten tellen niet mee in het gemiddelde. Nieuwe criteria verdelen het gewicht gelijk en het totaal blijft 100% terwijl u criteria toevoegt of verwijdert, totdat u zelf een gewicht aanpast.",
         "rb_scoring_modes_item_single": "Eenpunts-rubriek — één niveau per criterium (voldoet / voldoet niet); slaag/zak-logica.",
         "rb_level_options_title": "Niveau-opties",
         "rb_level_options_item_checklist": "Subitem-checklists binnen een niveau (leerlingen moeten specifieke items afronden).",

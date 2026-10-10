@@ -3287,7 +3287,7 @@
         "rb_builder_views_suffix": "à l'aide du commutateur dans la barre d'outils.",
         "rb_scoring_modes_title": "Modes de notation",
         "rb_scoring_modes_item_total": "Points totaux — score brut de tous les niveaux de critères.",
-        "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée. Les critères valant 0 point sont exclus de la moyenne.",
+        "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée. Les critères valant 0 point sont exclus de la moyenne. Les nouveaux critères se partagent le poids à parts égales et le total reste à 100 % quand vous en ajoutez ou en retirez, jusqu'à ce que vous modifiiez vous-même un poids.",
         "rb_scoring_modes_item_single": "Rubrique à point unique — un niveau par critère (atteint / non atteint) ; logique de réussite/échec.",
         "rb_level_options_title": "Options de niveau",
         "rb_level_options_item_checklist": "Listes de sous-éléments dans un niveau (les élèves doivent compléter des éléments spécifiques).",
