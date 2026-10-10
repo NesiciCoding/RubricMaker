@@ -3,6 +3,7 @@ import { screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
+import { encodeRubricShareCode } from '../../utils/rubricImport';
 import type { AppSettings, Class, Rubric, Student } from '../../types';
 
 const mockRubric: Rubric = {
@@ -245,6 +246,34 @@ describe('RubricList', () => {
             expect(actions.style.flexWrap).toBe('nowrap');
         } finally {
             (mockAppValue as Record<string, unknown>).rubrics = orig;
+        }
+    });
+
+    it('imports a share code with its scoring settings, keeping its grade scale only if it exists here (#699)', () => {
+        (mockAppValue as Record<string, unknown>).gradeScales = [
+            { id: 'gs-here', name: 'Here', type: 'letter', ranges: [] },
+        ];
+        try {
+            renderPage();
+            const importCode = (gradeScaleId: string) => {
+                fireEvent.click(screen.getByText('Import from code'));
+                fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
+                    target: {
+                        value: `\n  ${encodeRubricShareCode({ ...mockRubric, gradeScaleId, scoringMode: 'total-points', totalMaxPoints: 30 })}\n`,
+                    },
+                });
+                fireEvent.click(screen.getByText('Import rubric'));
+            };
+            importCode('gs-here');
+            expect(mockAddRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({ gradeScaleId: 'gs-here', scoringMode: 'total-points', totalMaxPoints: 30 })
+            );
+            importCode('gs-elsewhere');
+            expect(mockAddRubric).toHaveBeenLastCalledWith(
+                expect.objectContaining({ gradeScaleId: mockSettings.defaultGradeScaleId })
+            );
+        } finally {
+            delete (mockAppValue as Record<string, unknown>).gradeScales;
         }
     });
 
