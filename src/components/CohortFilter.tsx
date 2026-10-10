@@ -25,7 +25,7 @@ export default function CohortFilter({
                     value={value.year}
                     onChange={(e) => onChange({ ...value, year: e.target.value as CohortFilterValue['year'] })}
                     aria-label={t('statistics.filters.year')}
-                    style={{ minWidth: 110 }}
+                    style={{ minWidth: 110, width: 'auto' }}
                 >
                     <option value="all">{t('statistics.filters.year')}</option>
                     {yearOptions.map((y) => (
@@ -40,7 +40,7 @@ export default function CohortFilter({
                     value={value.voTrack}
                     onChange={(e) => onChange({ ...value, voTrack: e.target.value as CohortFilterValue['voTrack'] })}
                     aria-label={t('statistics.filters.track')}
-                    style={{ minWidth: 130 }}
+                    style={{ minWidth: 130, width: 'auto' }}
                 >
                     <option value="all">{t('statistics.filters.track')}</option>
                     {VO_TRACKS.map((track) => (

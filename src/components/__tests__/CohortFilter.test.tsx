@@ -35,6 +35,11 @@ describe('CohortFilter', () => {
         expect(screen.getByRole('option', { name: 'voTrack.havo' })).toBeInTheDocument();
     });
 
+    it('sizes its dropdowns to their content so they sit beside other filters', () => {
+        render(<CohortFilter classes={[classWithYearAndTrack]} value={value} onChange={vi.fn()} />);
+        for (const select of screen.getAllByRole('combobox')) expect(select.style.width).toBe('auto');
+    });
+
     it('reports year changes with the previous value spread in', () => {
         const onChange = vi.fn();
         render(

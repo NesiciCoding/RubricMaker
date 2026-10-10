@@ -222,6 +222,32 @@ describe('RubricList', () => {
         }
     });
 
+    it('names every card action and keeps a long title from crowding them out (#711)', () => {
+        const orig = mockAppValue.rubrics;
+        const longName = 'Beoordelingsrubric voor argumentatieve betogen in de bovenbouw havo en vwo';
+        (mockAppValue as Record<string, unknown>).rubrics = [{ ...mockRubric, name: longName }];
+        try {
+            renderPage();
+            for (const name of [
+                'tooltips.copy_share_code',
+                'tooltips.share_preview',
+                'voTrack.differentiate_title',
+                'rubricList.action_duplicate',
+                'rubricList.action_edit',
+                'rubricList.action_delete',
+            ]) {
+                expect(screen.getByRole('button', { name })).toBeInTheDocument();
+            }
+            const title = screen.getByRole('heading', { name: longName });
+            expect(title).toHaveAttribute('title', longName);
+            expect(title).not.toHaveClass('truncate');
+            const actions = screen.getByRole('button', { name: 'rubricList.action_delete' }).parentElement!;
+            expect(actions.style.flexWrap).toBe('nowrap');
+        } finally {
+            (mockAppValue as Record<string, unknown>).rubrics = orig;
+        }
+    });
+
     it('deletes a rubric after confirming', async () => {
         renderPage();
         await act(async () => {
