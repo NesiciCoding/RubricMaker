@@ -4,7 +4,18 @@
  * using heuristic table detection.
  */
 
-import type { LinkedStandard, Rubric, RubricCriterion, RubricFormat, ScoringMode } from '../types';
+import {
+    DEFAULT_FORMAT,
+    type CefrLevel,
+    type CefrSkill,
+    type LinkedStandard,
+    type Rubric,
+    type RubricCriterion,
+    type RubricFormat,
+    type ScoringMode,
+    type VocabularyItem,
+} from '../types';
+import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { nanoid } from './nanoid';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 import type { ImportWarning } from './questionBankImport';
@@ -14,7 +25,16 @@ interface RawRubricJson {
     name?: string;
     subject?: string;
     description?: string;
+    gradeScaleId?: unknown;
+    scoringMode?: unknown;
+    totalMaxPoints?: unknown;
+    format?: unknown;
+    cefrTargetLevel?: unknown;
+    cefrSkill?: unknown;
+    cefrAchieveThreshold?: unknown;
+    vocabularyItems?: unknown;
     criteria?: Array<{
+        id?: string;
         title?: string;
         description?: string;
         weight?: number;
@@ -26,6 +46,7 @@ interface RawRubricJson {
             maxPoints?: number;
             description?: string;
             subItems?: Array<{
+                id?: string;
                 label?: string;
                 points?: number;
                 linkedStandards?: Partial<LinkedStandard>[];
@@ -45,6 +66,15 @@ export interface ParsedRubric {
     confidence: 'high' | 'medium' | 'low';
     /** i18n keys (namespace `importRubric`) with interpolation params. */
     warnings: ImportWarning[];
+    /** Rubric settings carried by a JSON export or share code; absent for DOCX/PDF tables. */
+    gradeScaleId?: string;
+    scoringMode?: ScoringMode;
+    totalMaxPoints?: number;
+    format?: RubricFormat;
+    cefrTargetLevel?: CefrLevel;
+    cefrSkill?: CefrSkill;
+    cefrAchieveThreshold?: number;
+    vocabularyItems?: VocabularyItem[];
 }
 
 interface RawTable {
@@ -257,13 +287,17 @@ export function parseCriterionCell(cell: string): { title: string; weight: numbe
     return { title: title || cell.trim(), weight: toNum(m[1]) };
 }
 
-/** Integer weights summing to 100 (largest remainder), proportional to `raw`. */
-function normaliseWeights(raw: number[]): number[] {
+/** Integer weights summing to `target` (largest remainder), proportional to `raw`. */
+function normaliseWeights(raw: number[], target = 100): number[] {
     const total = raw.reduce((a, b) => a + b, 0);
-    if (total <= 0) return normaliseWeights(raw.map(() => 1));
-    const exact = raw.map((w) => (w / total) * 100);
+    if (total <= 0)
+        return normaliseWeights(
+            raw.map(() => 1),
+            target
+        );
+    const exact = raw.map((w) => (w / total) * target);
     const floored = exact.map(Math.floor);
-    let remainder = 100 - floored.reduce((a, b) => a + b, 0);
+    let remainder = target - floored.reduce((a, b) => a + b, 0);
     const order = exact.map((e, i) => ({ i, frac: e - Math.floor(e) })).sort((x, y) => y.frac - x.frac);
     for (const { i } of order) {
         if (remainder <= 0) break;
@@ -410,6 +444,130 @@ function emptyResult(warnings: ImportWarning[]): ParsedRubric {
 
 // ─── JSON Parsing ──────────────────────────────────────────────────────────────
 
+const SCORING_MODES: ScoringMode[] = ['weighted-percentage', 'total-points', 'single-point'];
+const CEFR_SKILLS: CefrSkill[] = ['reading', 'writing', 'speaking_production', 'speaking_interaction', 'listening'];
+
+const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+// Weights an export spelled out are kept exactly (a round trip must not rescale them); only
+// missing ones are filled in, the same way the table importer fills them.
+function fillMissingWeights(given: (number | null)[], warnings: ImportWarning[]): number[] {
+    const givenCount = given.filter((w) => w !== null).length;
+    if (givenCount === given.length) return given as number[];
+    if (givenCount === 0) return normaliseWeights(given.map(() => 1));
+    const sum = given.reduce<number>((a, b) => a + (b ?? 0), 0);
+    const remaining = Math.round(Math.max(0, 100 - sum));
+    const shares = normaliseWeights(
+        given.filter((w) => w === null).map(() => 1),
+        remaining
+    );
+    warnings.push({ key: 'importRubric.warn_weights_partial', params: { remaining } });
+    return given.map((w) => w ?? shares.shift()!);
+}
+
+/**
+ * Validates an exported rubric (JSON file or share code) and gives every nested record a fresh
+ * id so importing never collides with the source rubric in the same workspace.
+ */
+function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedRubric {
+    const rawCriteria = data.criteria ?? [];
+    const warnings: ImportWarning[] = [];
+    if (rawCriteria.length === 0) warnings.push({ key: 'importRubric.warn_json_no_criteria' });
+
+    const ids = new Map<string, string>();
+    const freshId = (oldId: string | undefined) => {
+        const id = nanoid();
+        if (oldId) ids.set(oldId, id);
+        return id;
+    };
+    const weights = fillMissingWeights(
+        rawCriteria.map((c) => (isNumber(c.weight) ? c.weight : null)),
+        warnings
+    );
+
+    const criteria: RubricCriterion[] = rawCriteria.map((c, ci) => {
+        const title = c.title || 'Untitled Criterion';
+        if (!c.levels?.length) warnings.push({ key: 'importRubric.warn_json_no_levels', params: { title } });
+        // Spread first so fields this importer does not validate (CEFR descriptors, collaborative,
+        // level CEFR tags, sub-item ranges...) survive the round trip.
+        return {
+            ...(c as Partial<RubricCriterion>),
+            id: freshId(c.id),
+            title,
+            description: c.description || '',
+            weight: weights[ci],
+            linkedStandard: c.linkedStandard ? ({ ...c.linkedStandard } as LinkedStandard) : undefined,
+            linkedStandards: Array.isArray(c.linkedStandards)
+                ? c.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
+                : undefined,
+            levels: (c.levels || []).map((l) => {
+                const label = l.label || 'Level';
+                let minPoints = isNumber(l.minPoints) ? l.minPoints : 0;
+                let maxPoints = isNumber(l.maxPoints) ? l.maxPoints : minPoints;
+                if (minPoints > maxPoints) {
+                    [minPoints, maxPoints] = [maxPoints, minPoints];
+                    warnings.push({ key: 'importRubric.warn_json_range_swapped', params: { title, label } });
+                }
+                return {
+                    ...(l as Partial<RubricCriterion['levels'][number]>),
+                    id: nanoid(),
+                    label,
+                    minPoints,
+                    maxPoints,
+                    description: l.description || '',
+                    subItems: (l.subItems || []).map((si) => ({
+                        ...(si as Partial<RubricCriterion['levels'][number]['subItems'][number]>),
+                        id: freshId(si.id),
+                        label: si.label || '',
+                        points: isNumber(si.points) ? si.points : 0,
+                        linkedStandards: Array.isArray(si.linkedStandards)
+                            ? si.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
+                            : undefined,
+                    })),
+                };
+            }),
+        };
+    });
+
+    const remap = (oldId: unknown) => (typeof oldId === 'string' ? (ids.get(oldId) ?? oldId) : undefined);
+    const vocabularyItems = Array.isArray(data.vocabularyItems)
+        ? (data.vocabularyItems as Partial<VocabularyItem>[])
+              .filter((v) => typeof v?.phrase === 'string' && typeof v.category === 'string')
+              .map(
+                  (v) =>
+                      ({
+                          ...v,
+                          id: nanoid(),
+                          linkedCriterionId: remap(v.linkedCriterionId),
+                          linkedSubItemId: remap(v.linkedSubItemId),
+                      }) as VocabularyItem
+              )
+        : undefined;
+    const scoringMode = SCORING_MODES.find((m) => m === data.scoringMode);
+    const cefrTargetLevel = CEFR_LEVELS.find((l) => l === data.cefrTargetLevel);
+
+    return {
+        name: data.name || fallbackName,
+        subject: data.subject || '',
+        description: data.description || '',
+        criteria,
+        confidence: criteria.length > 0 ? 'high' : 'low',
+        warnings,
+        gradeScaleId: typeof data.gradeScaleId === 'string' ? data.gradeScaleId : undefined,
+        scoringMode,
+        totalMaxPoints: isNumber(data.totalMaxPoints) && data.totalMaxPoints > 0 ? data.totalMaxPoints : undefined,
+        format:
+            data.format && typeof data.format === 'object'
+                ? { ...DEFAULT_FORMAT, ...(data.format as Partial<RubricFormat>) }
+                : undefined,
+        cefrTargetLevel,
+        cefrSkill: cefrTargetLevel ? CEFR_SKILLS.find((sk) => sk === data.cefrSkill) : undefined,
+        cefrAchieveThreshold:
+            cefrTargetLevel && isNumber(data.cefrAchieveThreshold) ? data.cefrAchieveThreshold : undefined,
+        ...(vocabularyItems?.length ? { vocabularyItems } : {}),
+    };
+}
+
 export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
     try {
         const text = await file.text();
@@ -418,42 +576,7 @@ export async function parseJsonToRubric(file: File): Promise<ParsedRubric> {
         if (!data || !Array.isArray(data.criteria)) {
             return emptyResult([{ key: 'importRubric.warn_invalid_json' }]);
         }
-
-        // Deep clone and regenerate all IDs to prevent collisions when importing into the same workspace
-        const criteria: RubricCriterion[] = data.criteria.map((c) => ({
-            id: nanoid(),
-            title: c.title || 'Untitled Criterion',
-            description: c.description || '',
-            weight: typeof c.weight === 'number' ? c.weight : 0,
-            linkedStandard: c.linkedStandard ? ({ ...c.linkedStandard } as LinkedStandard) : undefined,
-            linkedStandards: Array.isArray(c.linkedStandards)
-                ? c.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
-                : undefined,
-            levels: (c.levels || []).map((l) => ({
-                id: nanoid(),
-                label: l.label || 'Level',
-                minPoints: typeof l.minPoints === 'number' ? l.minPoints : 0,
-                maxPoints: typeof l.maxPoints === 'number' ? l.maxPoints : 0,
-                description: l.description || '',
-                subItems: (l.subItems || []).map((si) => ({
-                    id: nanoid(),
-                    label: si.label || '',
-                    points: typeof si.points === 'number' ? si.points : 0,
-                    linkedStandards: Array.isArray(si.linkedStandards)
-                        ? si.linkedStandards.map((s) => ({ ...s }) as LinkedStandard)
-                        : undefined,
-                })),
-            })),
-        }));
-
-        return {
-            name: data.name || file.name.replace(/\.[^.]+$/, ''),
-            subject: data.subject || '',
-            description: data.description || '',
-            criteria,
-            confidence: 'high',
-            warnings: [],
-        };
+        return normaliseRubricJson(data, file.name.replace(/\.[^.]+$/, ''));
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return emptyResult([{ key: 'importRubric.warn_json_failed', params: { message } }]);
@@ -477,26 +600,20 @@ export function encodeRubricShareCode(rubric: Rubric): string {
     return encodeUrlSafeBase64(JSON.stringify(shareable));
 }
 
-/** Decodes a share code back into a ParsedRubric (ready for import). */
-export function decodeRubricShareCode(code: string): ParsedRubric & {
-    gradeScaleId?: string;
-    scoringMode?: ScoringMode;
-    totalMaxPoints?: number;
-    format?: RubricFormat;
-} {
-    const json = decodeUrlSafeBase64(code);
-    const data = JSON.parse(json);
-    if (!Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');
-    return {
-        name: data.name || '',
-        subject: data.subject || '',
-        description: data.description || '',
-        criteria: data.criteria,
-        confidence: 'high',
-        warnings: [],
-        gradeScaleId: data.gradeScaleId,
-        scoringMode: data.scoringMode,
-        totalMaxPoints: data.totalMaxPoints,
-        format: data.format,
-    };
+/**
+ * Pasted codes arrive wrapped across lines by mail clients, quoted, or as the whole "Share
+ * preview link"; strip all of that down to the bare code.
+ */
+export function normaliseShareCode(input: string): string {
+    let code = input.trim().replace(/^["'`]+|["'`]+$/g, '');
+    const preview = code.indexOf('#/preview/');
+    if (preview >= 0) code = code.slice(preview + '#/preview/'.length).split(/[?#]/)[0];
+    return code.replace(/\s+/g, '');
+}
+
+/** Decodes a share code (or preview link) back into a ParsedRubric (ready for import). */
+export function decodeRubricShareCode(code: string): ParsedRubric {
+    const data = JSON.parse(decodeUrlSafeBase64(normaliseShareCode(code))) as RawRubricJson;
+    if (!data || !Array.isArray(data.criteria)) throw new Error('Invalid share code: missing criteria');
+    return normaliseRubricJson(data, '');
 }
