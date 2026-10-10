@@ -1503,6 +1503,46 @@ describe('RubricBuilder', () => {
             expect(savedCriteria()[0].levels[0]).toMatchObject({ minPoints: 100, maxPoints: 120 });
         });
 
+        it("keeps another criterion's range when a single-point header is edited", () => {
+            const mixed: Rubric = {
+                ...mockRubric,
+                criteria: [
+                    { ...mockRubric.criteria[0], id: 'c1', levels: [level('a1', 'Top', 4)] },
+                    { ...mockRubric.criteria[0], id: 'c2', title: 'Criterion 2', levels: [level('b1', 'Top', 2, 4)] },
+                ],
+            };
+            const grid = renderDesigner(mixed);
+            const points = grid.getAllByLabelText('rubricBuilder.label_level_points')[0];
+            fireEvent.change(points, { target: { value: '6' } });
+            fireEvent.blur(points);
+            const [c1, c2] = savedCriteria();
+            expect(c1.levels[0]).toMatchObject({ minPoints: 6, maxPoints: 6 });
+            expect(c2.levels[0]).toMatchObject({ minPoints: 4, maxPoints: 6 });
+        });
+
+        it("fills gaps in shorter criteria with the existing column's label and points", () => {
+            const grid = renderDesigner(unevenRubric);
+            fireEvent.click(screen.getByText('rubricBuilder.action_add_column_level'));
+            const names = grid
+                .getAllByPlaceholderText('rubricBuilder.placeholder_level_name')
+                .map((input) => (input as HTMLInputElement).value);
+            expect(names).toEqual(['Top', 'Low', 'Extra', 'New Level']);
+            const [c1] = savedCriteria();
+            expect(c1.levels[2]).toMatchObject({ label: 'Extra', minPoints: 0, maxPoints: 0 });
+            expect(c1.levels[3].label).toBe('New Level');
+        });
+
+        it('lines the preview up on the widest criterion too', () => {
+            renderDesigner(unevenRubric);
+            fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
+            const tables = document.querySelectorAll('table.rubric-grid');
+            const preview = tables[tables.length - 1] as HTMLElement;
+            expect(within(preview).getByText(/^Extra/)).toBeInTheDocument();
+            const rows = preview.querySelectorAll('tbody tr');
+            expect(rows[0].querySelectorAll('td.level-cell')).toHaveLength(3);
+            expect(within(rows[0] as HTMLElement).getByLabelText('rubricBuilder.level_missing')).toBeInTheDocument();
+        });
+
         it('gives the point inputs room for three digits', () => {
             const grid = renderDesigner(mockRubric);
             expect((grid.getAllByLabelText('rubricBuilder.label_min_pts')[0] as HTMLInputElement).style.width).toBe(
