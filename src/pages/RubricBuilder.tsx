@@ -62,6 +62,7 @@ import CriterionCard, { type CriterionStandardTarget as StandardTarget } from '.
 import { CEFR_LEVELS, CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import { exportRubricGridPdf } from '../utils/pdfExport';
 import { sanitizeFilename } from '../utils/exportDataPrep';
+import { distributeWeights, hasEvenWeights, remainingWeight } from '../utils/rubricWeights';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { getSpeakingDimensions } from '../data/speakingDimensions';
 import { useToast } from '../hooks/useToast';
@@ -82,12 +83,12 @@ function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     };
 }
 
-function newCriterion(): RubricCriterion {
+function newCriterion(weight: number): RubricCriterion {
     return {
         id: nanoid(),
         title: 'New Criterion',
         description: '',
-        weight: 25,
+        weight,
         levels: [
             { id: nanoid(), label: 'Excellent', minPoints: 4, maxPoints: 4, description: '', subItems: [] },
             { id: nanoid(), label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] },
@@ -139,7 +140,7 @@ export default function RubricBuilder() {
     const [subject, setSubject] = useState(existing?.subject ?? template?.subject ?? '');
     const [description, setDescription] = useState(existing?.description ?? template?.description ?? '');
     const [criteria, setCriteria] = useState<RubricCriterion[]>(
-        existing?.criteria ?? template?.criteria ?? [newCriterion()]
+        existing?.criteria ?? template?.criteria ?? [newCriterion(100)]
     );
     const [gradeScaleId, setGradeScaleId] = useState(
         existing?.gradeScaleId ?? template?.gradeScaleId ?? settings.defaultGradeScaleId
@@ -470,6 +471,19 @@ export default function RubricBuilder() {
         });
     }, []);
     const deleteCriterion = useCallback((cid: string) => setCriteria((c) => c.filter((x) => x.id !== cid)), []);
+    const appendCriterion = useCallback(() => setCriteria((c) => [...c, newCriterion(remainingWeight(c))]), []);
+
+    // An untouched (evenly split) set of weights is rebalanced whenever criteria are added or
+    // removed, so a fresh rubric always totals 100%; a hand-tuned split is left alone. The snapshot
+    // only advances in weighted mode, so criteria added under total points are caught on switching back.
+    const prevCriteriaRef = useRef(criteria);
+    useEffect(() => {
+        if (scoringMode !== 'weighted-percentage') return;
+        const prev = prevCriteriaRef.current;
+        prevCriteriaRef.current = criteria;
+        if (criteria.length === prev.length) return;
+        if (hasEvenWeights(prev) && !hasEvenWeights(criteria)) setCriteria(distributeWeights(criteria));
+    }, [criteria, scoringMode]);
 
     function pasteFromClipboard() {
         try {
@@ -1193,16 +1207,7 @@ export default function RubricBuilder() {
                                         <button
                                             className="btn btn-ghost btn-sm"
                                             style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--accent)' }}
-                                            onClick={() => {
-                                                const even = Math.round(100 / criteria.length);
-                                                const remainder = 100 - even * (criteria.length - 1);
-                                                setCriteria((prev) =>
-                                                    prev.map((c, i) => ({
-                                                        ...c,
-                                                        weight: i === prev.length - 1 ? remainder : even,
-                                                    }))
-                                                );
-                                            }}
+                                            onClick={() => setCriteria(distributeWeights)}
                                             title={t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
                                         >
                                             {t('rubricBuilder.weight_distribute_evenly', 'Distribute evenly')}
@@ -1267,10 +1272,7 @@ export default function RubricBuilder() {
                                 >
                                     <Plus size={15} /> {t('rubricBuilder.action_paste_criterion')}
                                 </button>
-                                <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => setCriteria((c) => [...c, newCriterion()])}
-                                >
+                                <button className="btn btn-primary btn-sm" onClick={appendCriterion}>
                                     <Plus size={15} />{' '}
                                     {t('rubricBuilder.action_add_first_criterion').replace('First ', '')}
                                 </button>
@@ -1318,7 +1320,7 @@ export default function RubricBuilder() {
                         {criteria.length === 0 && (
                             <div className="empty-state">
                                 <p>{t('rubricBuilder.empty_state_criteria')}</p>
-                                <button className="btn btn-primary" onClick={() => setCriteria([newCriterion()])}>
+                                <button className="btn btn-primary" onClick={appendCriterion}>
                                     <Plus size={16} /> {t('rubricBuilder.action_add_first_criterion')}
                                 </button>
                             </div>
@@ -1335,7 +1337,7 @@ export default function RubricBuilder() {
                                 format={format}
                                 updateCriterion={updateCriterion}
                                 updateLevel={updateLevel}
-                                addCriterion={() => setCriteria((c) => [...c, newCriterion()])}
+                                addCriterion={appendCriterion}
                                 addCriterionLevel={(cid) => addLevel(cid)}
                                 criteriaSetter={setCriteria}
                                 totalMaxPoints={totalMaxPoints}
@@ -2282,16 +2284,7 @@ function RubricWysiwygEditor({
 
     function balanceWeights() {
         if (!criteria.length) return;
-        // Don't modify if user has already perfectly balanced it or if there are none
-        const baseWeight = Math.floor(100 / criteria.length);
-        const remainder = 100 % criteria.length;
-
-        criteriaSetter((prev) =>
-            prev.map((c, i) => ({
-                ...c,
-                weight: baseWeight + (i === 0 ? remainder : 0), // Give remainder to first item
-            }))
-        );
+        criteriaSetter(distributeWeights);
     }
 
     function smartAllocatePoints() {
@@ -2326,7 +2319,7 @@ function RubricWysiwygEditor({
 
     function insertFromBank(item: { title: string; desc: string }) {
         criteriaSetter((c) => {
-            const nc = newCriterion();
+            const nc = newCriterion(remainingWeight(c));
             nc.title = item.title;
             nc.description = item.desc;
             // Match the level headers of the active rubric if they exist
