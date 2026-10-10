@@ -205,7 +205,7 @@ describe('RubricList coverage', () => {
     });
 
     it('covers the list-view actions: edit, grade students, compare, duplicate, delete', async () => {
-        renderPage();
+        const { unmount } = renderPage();
         fireEvent.click(screen.getByText('common.view_list'));
         const rows = screen.getAllByRole('row');
         // Edit button navigates without triggering the row click.
@@ -222,6 +222,7 @@ describe('RubricList coverage', () => {
         // Delete + confirm removes the rubric.
         fireEvent.click(within_row(rows[1], 'rubricList.action_delete'));
         await clickConfirm('delete');
+        unmount();
         expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
     });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +49,8 @@ import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../u
 import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
+
+const UNDO_DELETE_MS = 8000;
 
 export default function RubricList() {
     const { t } = useTranslation();
@@ -223,10 +225,58 @@ export default function RubricList() {
         }
     }
 
+    // The delete is held back for as long as its Undo toast shows, so undoing needs no way to
+    // rebuild the rubric, its grades or its version history; leaving the page commits it at once.
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<ReadonlySet<string>>(new Set());
+    const pendingDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+    const deleteRubricRef = useRef(deleteRubric);
+    useEffect(() => {
+        deleteRubricRef.current = deleteRubric;
+    }, [deleteRubric]);
+    useEffect(() => {
+        const timers = pendingDeletes.current;
+        return () => {
+            for (const [id, timer] of timers) {
+                clearTimeout(timer);
+                deleteRubricRef.current(id);
+            }
+            timers.clear();
+        };
+    }, []);
+
+    function settlePendingDelete(id: string) {
+        clearTimeout(pendingDeletes.current.get(id));
+        pendingDeletes.current.delete(id);
+        setPendingDeleteIds((prev) => new Set([...prev].filter((x) => x !== id)));
+    }
+
+    async function requestDelete(r: Rubric) {
+        const gradeCount = studentRubrics.filter((sr) => sr.rubricId === r.id && !sr.deletedAt).length;
+        const ok = await confirm({
+            title: t('rubricList.delete_rubric_title'),
+            message: t('rubricList.delete_rubric_warning', { count: gradeCount }),
+            confirmLabel: t('common.delete'),
+        });
+        if (!ok) return;
+        pendingDeletes.current.set(
+            r.id,
+            setTimeout(() => {
+                settlePendingDelete(r.id);
+                deleteRubricRef.current(r.id);
+            }, UNDO_DELETE_MS)
+        );
+        setPendingDeleteIds((prev) => new Set(prev).add(r.id));
+        showToast(t('rubricList.deleted_toast', { name: r.name }), 'info', {
+            durationMs: UNDO_DELETE_MS,
+            action: { label: t('common.undo'), onClick: () => settlePendingDelete(r.id) },
+        });
+    }
+
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
     const cohortStudentIds = getCohortStudentIds(students, classes, cohortFilter);
     const filtered = sortByDisplayOrder(rubrics).filter((r) => {
+        if (pendingDeleteIds.has(r.id)) return false;
         const matchesSearch =
             r.name.toLowerCase().includes(search.toLowerCase()) ||
             r.subject.toLowerCase().includes(search.toLowerCase());
@@ -469,14 +519,7 @@ export default function RubricList() {
                                                         title={t('rubricList.action_delete')}
                                                         aria-label={t('rubricList.action_delete')}
                                                         style={{ color: 'var(--red)' }}
-                                                        onClick={async () => {
-                                                            const ok = await confirm({
-                                                                title: t('rubricList.delete_rubric_title'),
-                                                                message: t('rubricList.delete_rubric_warning'),
-                                                                confirmLabel: t('common.delete'),
-                                                            });
-                                                            if (ok) deleteRubric(r.id);
-                                                        }}
+                                                        onClick={() => requestDelete(r)}
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
@@ -708,16 +751,9 @@ export default function RubricList() {
                                                                     title={t('rubricList.action_delete')}
                                                                     aria-label={t('rubricList.action_delete')}
                                                                     style={{ color: 'var(--red)' }}
-                                                                    onClick={async (e) => {
+                                                                    onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        const ok = await confirm({
-                                                                            title: t('rubricList.delete_rubric_title'),
-                                                                            message: t(
-                                                                                'rubricList.delete_rubric_warning'
-                                                                            ),
-                                                                            confirmLabel: t('common.delete'),
-                                                                        });
-                                                                        if (ok) deleteRubric(r.id);
+                                                                        requestDelete(r);
                                                                     }}
                                                                 >
                                                                     <Trash2 size={14} />

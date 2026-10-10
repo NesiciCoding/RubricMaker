@@ -1,6 +1,6 @@
 import React from 'react';
 import { screen, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
@@ -277,8 +277,8 @@ describe('RubricList', () => {
         }
     });
 
-    it('deletes a rubric after confirming', async () => {
-        renderPage();
+    it('deletes a rubric after confirming, at the latest when the page is left', async () => {
+        const { unmount } = renderPage();
         await act(async () => {
             fireEvent.click(screen.getByTitle('rubricList.action_delete'));
         });
@@ -286,7 +286,55 @@ describe('RubricList', () => {
         await act(async () => {
             fireEvent.click(confirmBtn);
         });
+        expect(screen.queryByTitle('rubricList.action_delete')).not.toBeInTheDocument();
+        unmount();
         expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
+    });
+
+    describe('undoable rubric delete (#683)', () => {
+        async function confirmDelete() {
+            await act(async () => {
+                fireEvent.click(screen.getByTitle('rubricList.action_delete'));
+            });
+            expect(screen.getByText(/^rubricList\.delete_rubric_warning/)).toHaveTextContent('"count":0');
+            await act(async () => {
+                fireEvent.click(screen.getByText('common.delete'));
+            });
+        }
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            mockShowToast.mockClear();
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('hides the rubric at once and deletes it, grades included, when the Undo toast runs out', async () => {
+            renderPage();
+            await confirmDelete();
+            expect(screen.queryByText('Essay Rubric')).not.toBeInTheDocument();
+            expect(mockDeleteRubric).not.toHaveBeenCalled();
+            const [, , options] = mockShowToast.mock.calls[0];
+            expect(options.durationMs).toBe(8000);
+            act(() => {
+                vi.advanceTimersByTime(8000);
+            });
+            expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
+        });
+
+        it('brings the rubric back and never deletes it when Undo is pressed', async () => {
+            const { unmount } = renderPage();
+            await confirmDelete();
+            const [, , options] = mockShowToast.mock.calls[0];
+            act(() => options.action.onClick());
+            expect(screen.getByText('Essay Rubric')).toBeInTheDocument();
+            act(() => {
+                vi.advanceTimersByTime(10000);
+            });
+            unmount();
+            expect(mockDeleteRubric).not.toHaveBeenCalled();
+        });
     });
 
     it('copies the share code to clipboard', async () => {

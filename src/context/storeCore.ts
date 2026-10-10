@@ -243,9 +243,17 @@ export function reducer(state: StoreData, action: Action): StoreData {
         }
         case 'DELETE_RUBRIC': {
             const next = state.rubrics.filter((r) => r.id !== action.id);
-            if (isOffline()) saveRubrics(next);
+            // A rubric's grades and peer reviews go with it: left behind they were hidden from
+            // profiles and statistics yet kept syncing as orphans.
+            const studentRubrics = state.studentRubrics.filter((sr) => sr.rubricId !== action.id);
+            const peerReviews = state.peerReviews.filter((pr) => pr.rubricId !== action.id);
+            if (isOffline()) {
+                saveRubrics(next);
+                if (studentRubrics.length !== state.studentRubrics.length) saveStudentRubrics(studentRubrics);
+                if (peerReviews.length !== state.peerReviews.length) savePeerReviews(peerReviews);
+            }
             deleteRubricVersions(action.id);
-            return { ...state, rubrics: next };
+            return { ...state, rubrics: next, studentRubrics, peerReviews };
         }
         case 'ADD_STUDENT': {
             const next = [...state.students, { ...action.payload, updatedAt: new Date().toISOString() }];
