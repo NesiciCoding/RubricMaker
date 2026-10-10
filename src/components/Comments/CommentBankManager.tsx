@@ -75,6 +75,10 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         return item.tags.find((tag): tag is CefrLevel => (CEFR_LEVELS as readonly string[]).includes(tag));
     }
 
+    // A selected tag whose last comment was deleted has no chip left to untick (the compact view has
+    // no "All" button), so it stops filtering instead of hiding everything.
+    const activeTags = useMemo(() => [...selectedTags].filter((tag) => tagCounts.has(tag)), [selectedTags, tagCounts]);
+
     const filteredItems = useMemo(() => {
         return combinedItems
             .filter((item) => {
@@ -82,7 +86,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     item.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
                 // Each selected tag narrows the list further (B1 + Grammar = B1 grammar comments).
-                const matchesTags = [...selectedTags].every((tag) => item.tags.includes(tag));
+                const matchesTags = activeTags.every((tag) => item.tags.includes(tag));
                 return matchesSearch && matchesTags;
             })
             .sort((a, b) =>
@@ -90,7 +94,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     ? (b.usageCount ?? 0) - (a.usageCount ?? 0)
                     : b.createdAt.localeCompare(a.createdAt)
             );
-    }, [combinedItems, searchTerm, selectedTags, sortMode]);
+    }, [combinedItems, searchTerm, activeTags, sortMode]);
 
     // Additive surfacing, not filtering — matches items don't get hidden from the regular
     // list below, they're just echoed at the top when this criterion has a real signal.
@@ -359,9 +363,9 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
 
     const itemList = (
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-            {selectedTags.size > 1 && (
+            {activeTags.length > 1 && (
                 <p className="text-xs text-muted" style={{ marginBottom: 12 }}>
-                    {t('commentBank.filter_all_tags_hint', { count: selectedTags.size })}
+                    {t('commentBank.filter_all_tags_hint', { count: activeTags.length })}
                 </p>
             )}
             {suggestedItems.length > 0 && (
