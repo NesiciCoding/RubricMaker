@@ -41,6 +41,7 @@ export type AuthoringValue = Pick<
     | 'addCommentBankItem'
     | 'updateCommentBankItem'
     | 'deleteCommentBankItem'
+    | 'restoreCommentBankItem'
     | 'recordCommentBankUsage'
     | 'addQuestionBankItem'
     | 'addSectionBankItem'
@@ -79,6 +80,7 @@ export type AuthoringActions = Pick<
     | 'addCommentBankItem'
     | 'updateCommentBankItem'
     | 'deleteCommentBankItem'
+    | 'restoreCommentBankItem'
     | 'recordCommentBankUsage'
     | 'addQuestionBankItem'
     | 'addSectionBankItem'
@@ -134,6 +136,10 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
     const updateCommentBankItem = (item: CommentBankItem) =>
         dispatch({ type: 'UPDATE_COMMENT_BANK_ITEM', payload: item });
     const deleteCommentBankItem = (id: string) => dispatch({ type: 'DELETE_COMMENT_BANK_ITEM', id });
+    const restoreCommentBankItem = (item: CommentBankItem) => {
+        if (getState().commentBank.some((i) => i.id === item.id)) return;
+        dispatch({ type: 'ADD_COMMENT_BANK_ITEM', payload: item });
+    };
     const recordCommentBankUsage = (id: string) => dispatch({ type: 'RECORD_COMMENT_BANK_USAGE', id });
     const addQuestionBankItem = (
         question: Omit<TestQuestion, 'sectionId'>,
@@ -264,6 +270,7 @@ export function createAuthoringActions(ctx: StoreActionsCtx): AuthoringActions {
         addCommentBankItem,
         updateCommentBankItem,
         deleteCommentBankItem,
+        restoreCommentBankItem,
         recordCommentBankUsage,
         addQuestionBankItem,
         addSectionBankItem,

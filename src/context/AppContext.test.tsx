@@ -507,6 +507,32 @@ describe('AppContext', () => {
         expect(result.current.commentBank).toHaveLength(0);
     });
 
+    it('restores a deleted comment bank item unchanged, and ignores a restore of a live item', () => {
+        const { result } = renderHook(() => useAuthoring(), { wrapper });
+
+        act(() => {
+            result.current.addCommentBankItem('Good job', ['tag1']);
+        });
+        const item = { ...result.current.commentBank[0], usageCount: 4 };
+        act(() => {
+            result.current.updateCommentBankItem(item);
+        });
+        const saved = result.current.commentBank[0];
+        act(() => {
+            result.current.deleteCommentBankItem(saved.id);
+        });
+        act(() => {
+            result.current.restoreCommentBankItem(saved);
+        });
+        expect(result.current.commentBank).toHaveLength(1);
+        expect(result.current.commentBank[0]).toMatchObject({ id: saved.id, usageCount: 4, text: 'Good job' });
+
+        act(() => {
+            result.current.restoreCommentBankItem(saved);
+        });
+        expect(result.current.commentBank).toHaveLength(1);
+    });
+
     it('should track comment bank usage without requiring a full item replace', () => {
         const { result } = renderHook(() => useAuthoring(), { wrapper });
 
