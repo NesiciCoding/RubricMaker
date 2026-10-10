@@ -58,8 +58,19 @@ describe('displayOrderAfter', () => {
         expect(displayOrderAfter(sorted, 0)).toEqual({ order: 1, updates: [[sorted[0], 0]] });
     });
 
-    it('ties with the source when the next item already shares its position', () => {
-        const sorted = [item('a', 1), item('b', 1)];
-        expect(displayOrderAfter(sorted, 0)).toEqual({ order: 1, updates: [] });
+    it('bumps followers tied with the source so the copy still sorts right after it', () => {
+        const sorted = [item('x', 1), item('a', 1), item('b', 1), item('c', 2), item('d', 5), item('e')];
+        const { order, updates } = displayOrderAfter(sorted, 1);
+        expect(order).toBe(2);
+        expect(updates.map(([i, o]) => [i.id, o])).toEqual([
+            ['b', 3],
+            ['c', 4],
+        ]);
+        const placed = new Map(updates.map(([i, o]) => [i.id, o]));
+        const after = [
+            ...sorted.map((i) => ({ ...i, displayOrder: placed.get(i.id) ?? i.displayOrder })),
+            item('copy', order),
+        ];
+        expect(sortByDisplayOrder(after).map((i) => i.id)).toEqual(['x', 'a', 'copy', 'b', 'c', 'd', 'e']);
     });
 });
