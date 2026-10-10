@@ -293,11 +293,34 @@ export default function GradeStudent() {
         return getCriterionInterventionFlags(studentId, studentRubrics, rubrics);
     }, [studentId, studentRubrics, rubrics]);
 
+    const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+    const nothingScored =
+        !!sr &&
+        !!summary &&
+        summary.gradedCount === 0 &&
+        !sr.globalModifier &&
+        !stripCommentHtml(sr.overallComment ?? '').trim() &&
+        !sr.entries.some((e) => stripCommentHtml(e.comment ?? '').trim() || e.audioDataUrl || e.audioStoragePath);
+
+    // Saving with nothing chosen records a graded 0% that counts in class stats and the portal.
+    const confirmSaveNothingScored = useCallback(
+        () =>
+            confirm({
+                title: t('gradeStudent.confirm_nothing_scored_title'),
+                message: t('gradeStudent.confirm_nothing_scored_message'),
+                confirmLabel: t('gradeStudent.confirm_nothing_scored_save'),
+                cancelLabel: t('common.cancel'),
+                danger: false,
+            }),
+        [confirm, t]
+    );
+
     const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
+        if (nothingScored && !(await confirmSaveNothingScored())) return;
         const toSave = clearNotHandedInIfScored(sr, cannedNhiComment, existingSR);
         if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
@@ -330,6 +353,8 @@ export default function GradeStudent() {
     }, [
         sr,
         rubric,
+        nothingScored,
+        confirmSaveNothingScored,
         saveStudentRubric,
         feedbackOnly,
         isAnchor,
@@ -365,9 +390,19 @@ export default function GradeStudent() {
         );
     }, [student, students, classes, studentId, studentRubrics, rubricId, navScope]);
 
-    const handleSaveAndNext = useCallback(() => {
+    const handleSaveAndNext = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric || !nextStudent) return;
+        if (nothingScored) {
+            // Save & Next on an untouched, ungraded student is a skip: there is nothing to record.
+            if (!existingSR) {
+                showToast(t('gradeStudent.skipped_nothing_scored', { name: student?.name ?? '' }), 'info');
+                allowNavigation();
+                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+                return;
+            }
+            if (!(await confirmSaveNothingScored())) return;
+        }
         saveStudentRubric({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
             feedbackOnly,
@@ -387,8 +422,13 @@ export default function GradeStudent() {
         rubricId,
         feedbackOnly,
         isAnchor,
-        cannedNhiComment,
+        nothingScored,
         existingSR,
+        showToast,
+        t,
+        student?.name,
+        confirmSaveNothingScored,
+        cannedNhiComment,
         allowNavigation,
     ]);
 
@@ -823,6 +863,7 @@ export default function GradeStudent() {
 
     return (
         <>
+            <ConfirmDialog {...confirmDialogProps} />
             <PageTour
                 steps={gradingTourSteps}
                 run={tourRun}

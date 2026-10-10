@@ -206,6 +206,7 @@ describe('GradeStudent extended', () => {
 
     it('saves and advances with Ctrl+S', () => {
         renderPage();
+        fireEvent.click(screen.getAllByText('Excellent')[0]);
         fireEvent.keyDown(window, { key: 's', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenCalled();
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
