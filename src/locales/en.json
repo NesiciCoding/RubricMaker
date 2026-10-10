@@ -3289,6 +3289,7 @@
         "rb_builder_views_designer_desc": "(table layout)",
         "rb_builder_views_suffix": "at any time using the toggle in the toolbar.",
         "rb_builder_undo_delete": "Deleted a criterion or level by mistake? The message that appears in the corner has an Undo button for a few seconds, which puts it back where it was.",
+        "rb_builder_save_shortcut": "Press Ctrl+S (Cmd+S on a Mac) to save the rubric from anywhere in the builder, even while typing in a field.",
         "rb_scoring_modes_title": "Scoring modes",
         "rb_scoring_modes_item_total": "Total Points — raw score from all criteria levels.",
         "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average. Criteria worth 0 points are left out of the average. New criteria share the weight evenly and the total is kept at 100% as you add or remove them, until you change a weight yourself.",

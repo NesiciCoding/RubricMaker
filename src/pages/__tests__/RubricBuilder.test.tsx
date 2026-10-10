@@ -1428,6 +1428,31 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByDisplayValue('50').length).toBeGreaterThan(0);
     });
 
+    describe('saving from the keyboard and toolbar (#680)', () => {
+        it('saves with Ctrl+S and Cmd+S, even while typing in a field', () => {
+            renderEdit();
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockUpdateRubric).toHaveBeenCalledTimes(1);
+            const title = screen.getByPlaceholderText('rubricBuilder.placeholder_criterion_name');
+            fireEvent.keyDown(title, { key: 'S', metaKey: true });
+            expect(mockUpdateRubric).toHaveBeenCalledTimes(2);
+        });
+
+        it('leaves plain S and other shortcuts alone', () => {
+            renderEdit();
+            fireEvent.keyDown(window, { key: 's' });
+            fireEvent.keyDown(window, { key: 'p', ctrlKey: true });
+            expect(mockUpdateRubric).not.toHaveBeenCalled();
+        });
+
+        it('puts Save ahead of the secondary toolbar buttons so narrow windows keep it visible', () => {
+            renderEdit();
+            const save = screen.getByText('rubricBuilder.action_save').closest('button')!;
+            const preview = screen.getByText('rubricBuilder.action_preview').closest('button')!;
+            expect(save.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        });
+    });
+
     describe('undo for deleted criteria and levels (#714)', () => {
         const pressUndo = () => {
             const [, , options] = mockShowToast.mock.calls.at(-1)!;
