@@ -1485,6 +1485,21 @@ describe('RubricBuilder', () => {
             pressUndo();
             expect(criterionTitles()).toEqual(['Criterion 1', 'Criterion 2']);
         });
+
+        it('brings a level back with its criterion when both deletes are undone level-first', () => {
+            renderEdit();
+            const levelNames = () =>
+                screen
+                    .queryAllByPlaceholderText('rubricBuilder.placeholder_level_name')
+                    .map((input) => (input as HTMLInputElement).value);
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_level')[0]);
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_criterion')[0]);
+            const [levelToast, criterionToast] = mockShowToast.mock.calls.slice(-2).map(([, , o]) => o);
+            act(() => levelToast.action.onClick());
+            expect(levelNames()).toEqual([]);
+            act(() => criterionToast.action.onClick());
+            expect(levelNames()).toEqual(['Excellent', 'Good']);
+        });
     });
 
     describe('automatic weight balancing (#694)', () => {
