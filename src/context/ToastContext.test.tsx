@@ -3,6 +3,8 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ToastProvider, ToastContext } from './ToastContext';
 
+const onUndo = vi.fn();
+
 function TestConsumer() {
     const ctx = React.useContext(ToastContext);
     return (
@@ -10,6 +12,9 @@ function TestConsumer() {
             <button onClick={() => ctx.showToast('Hello!')}>show-info</button>
             <button onClick={() => ctx.showToast('Success!', 'success')}>show-success</button>
             <button onClick={() => ctx.showToast('Error!', 'error')}>show-error</button>
+            <button onClick={() => ctx.showToast('Deleted', 'info', { action: { label: 'Undo', onClick: onUndo } })}>
+                show-undo
+            </button>
         </div>
     );
 }
@@ -109,5 +114,39 @@ describe('ToastContext default value', () => {
     it('showToast is a no-op by default', () => {
         const defaultValue = { showToast: (_msg: string) => {} };
         expect(() => defaultValue.showToast('test')).not.toThrow();
+    });
+
+    it('runs a toast action once and dismisses the toast', () => {
+        onUndo.mockClear();
+        render(
+            <ToastProvider>
+                <TestConsumer />
+            </ToastProvider>
+        );
+        fireEvent.click(screen.getByText('show-undo'));
+        fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+        expect(onUndo).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText('Deleted')).toBeNull();
+    });
+
+    it('keeps a toast with an action up longer than a plain one', () => {
+        vi.useFakeTimers();
+        render(
+            <ToastProvider>
+                <TestConsumer />
+            </ToastProvider>
+        );
+        fireEvent.click(screen.getByText('show-info'));
+        fireEvent.click(screen.getByText('show-undo'));
+        act(() => {
+            vi.advanceTimersByTime(4000);
+        });
+        expect(screen.queryByText('Hello!')).toBeNull();
+        expect(screen.getByText('Deleted')).toBeInTheDocument();
+        act(() => {
+            vi.advanceTimersByTime(4000);
+        });
+        expect(screen.queryByText('Deleted')).toBeNull();
+        vi.useRealTimers();
     });
 });

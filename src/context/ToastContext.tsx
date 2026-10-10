@@ -2,15 +2,30 @@ import React, { createContext, useCallback, useState } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
+export interface ToastAction {
+    label: string;
+    onClick: () => void;
+}
+
+export interface ToastOptions {
+    action?: ToastAction;
+    durationMs?: number;
+}
+
 export interface Toast {
     id: number;
     message: string;
     type: ToastType;
+    action?: ToastAction;
 }
 
 interface ToastContextValue {
-    showToast: (message: string, type?: ToastType) => void;
+    showToast: (message: string, type?: ToastType, options?: ToastOptions) => void;
 }
+
+// An action (e.g. Undo) needs time to be read and reached, so those toasts stay up longer.
+const DEFAULT_DURATION_MS = 4000;
+const ACTION_DURATION_MS = 8000;
 
 export const ToastContext = createContext<ToastContextValue>({
     showToast: () => {},
@@ -21,12 +36,15 @@ let nextId = 0;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const showToast = useCallback((message: string, type: ToastType = 'info') => {
+    const showToast = useCallback((message: string, type: ToastType = 'info', options: ToastOptions = {}) => {
         const id = ++nextId;
-        setToasts((prev) => [...prev, { id, message, type }]);
-        setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
-        }, 4000);
+        setToasts((prev) => [...prev, { id, message, type, action: options.action }]);
+        setTimeout(
+            () => {
+                setToasts((prev) => prev.filter((t) => t.id !== id));
+            },
+            options.durationMs ?? (options.action ? ACTION_DURATION_MS : DEFAULT_DURATION_MS)
+        );
     }, []);
 
     const dismiss = useCallback((id: number) => {
@@ -96,6 +114,25 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         >
             <span style={{ fontWeight: 700, color: s.border, flexShrink: 0, lineHeight: '1.4' }}>{s.icon}</span>
             <span style={{ flex: 1 }}>{toast.message}</span>
+            {toast.action && (
+                <button
+                    onClick={() => {
+                        toast.action!.onClick();
+                        onDismiss(toast.id);
+                    }}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: s.border,
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                    }}
+                >
+                    {toast.action.label}
+                </button>
+            )}
             <button
                 onClick={() => onDismiss(toast.id)}
                 aria-label="Dismiss"

@@ -760,6 +760,9 @@ function RubricsTab() {
                     <strong>{t('docs.rb_builder_views_designer')}</strong> {t('docs.rb_builder_views_designer_desc')}{' '}
                     {t('docs.rb_builder_views_suffix')}
                 </InfoBox>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 12 }}>
+                    {t('docs.rb_builder_undo_delete')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_scoring_modes_title')}
