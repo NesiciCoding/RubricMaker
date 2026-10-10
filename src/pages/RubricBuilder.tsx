@@ -83,6 +83,14 @@ function newLevel(min = 0, max = 0, label = ''): RubricLevel {
     };
 }
 
+// Criteria can carry different level counts (levels are added per criterion in the form view),
+// so grids are as wide as the widest criterion and each column is labelled by its first level.
+function sharedColumns(criteria: RubricCriterion[]): { columnCount: number; headerLevels: RubricLevel[] } {
+    const columnCount = Math.max(0, ...criteria.map((c) => c.levels.length));
+    const headerLevels = Array.from({ length: columnCount }, (_, i) => criteria.find((c) => c.levels[i])!.levels[i]);
+    return { columnCount, headerLevels };
+}
+
 function insertLevel(criterion: RubricCriterion, index: number, level: RubricLevel): RubricCriterion {
     if (criterion.levels.some((l) => l.id === level.id)) return criterion;
     const levels = [...criterion.levels];
@@ -2047,7 +2055,7 @@ function RubricPreviewTable({
     showDescriptions?: boolean;
 }) {
     const { t } = useTranslation();
-    const headers = criteria[0]?.levels ?? [];
+    const { columnCount, headerLevels: headers } = sharedColumns(criteria);
     return (
         <div style={{ fontFamily: format.fontFamily, fontSize: format.fontSize }}>
             <h2 style={{ marginBottom: 12 }}>{name}</h2>
@@ -2181,6 +2189,20 @@ function RubricPreviewTable({
                                     )}
                                 </td>
                             ))}
+                            {Array.from({ length: columnCount - c.levels.length }, (_, k) => (
+                                <td
+                                    key={`missing-${k}`}
+                                    className="level-cell"
+                                    aria-label={t('rubricBuilder.level_missing')}
+                                    style={{
+                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                        padding: 8,
+                                        color: 'var(--text-dim)',
+                                    }}
+                                >
+                                    —
+                                </td>
+                            ))}
                             {format.showWeights && (
                                 <td
                                     style={{
@@ -2278,10 +2300,7 @@ function RubricWysiwygEditor({
 }: WYSIWYGProps) {
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
-    // Criteria can carry different level counts (levels are added per criterion in the form
-    // view), so the grid is as wide as the widest criterion and shorter rows are padded.
-    const columnCount = Math.max(0, ...criteria.map((c) => c.levels.length));
-    const headerLevels = Array.from({ length: columnCount }, (_, i) => criteria.find((c) => c.levels[i])!.levels[i]);
+    const { columnCount, headerLevels } = sharedColumns(criteria);
     const [editingCell, setEditingCell] = useState<string | null>(null);
     const [showStdDesc, setShowStdDesc] = useState(false);
 
@@ -2291,8 +2310,17 @@ function RubricWysiwygEditor({
         });
     }
 
-    function setColumnPoints(i: number, field: 'minPoints' | 'maxPoints', value: number, single: boolean) {
-        updateLevelColumn(i, single ? { minPoints: value, maxPoints: value } : { [field]: value });
+    // Decided per level, so a single-point header never collapses another criterion's range.
+    function setColumnPoints(i: number, field: 'minPoints' | 'maxPoints', value: number) {
+        criteria.forEach((c) => {
+            const l = c.levels[i];
+            if (!l) return;
+            updateLevel(
+                c.id,
+                l.id,
+                l.minPoints === l.maxPoints ? { minPoints: value, maxPoints: value } : { [field]: value }
+            );
+        });
     }
 
     // Swapping on blur (not per keystroke) lets a teacher retype a bound without the other one
@@ -2344,12 +2372,18 @@ function RubricWysiwygEditor({
 
     function addColumn() {
         criteriaSetter((prev) => {
-            const target = Math.max(0, ...prev.map((c) => c.levels.length)) + 1;
+            const { columnCount, headerLevels } = sharedColumns(prev);
+            // Gaps in shorter criteria take over the existing column's label and points; only the
+            // genuinely new column gets a fresh level.
+            const fill = (j: number) => {
+                const h = headerLevels[j];
+                return h ? newLevel(h.minPoints, h.maxPoints, h.label) : newLevel(0, 0, 'New Level');
+            };
             return prev.map((c) => ({
                 ...c,
                 levels: [
                     ...c.levels,
-                    ...Array.from({ length: target - c.levels.length }, () => newLevel(0, 0, 'New Level')),
+                    ...Array.from({ length: columnCount + 1 - c.levels.length }, (_, k) => fill(c.levels.length + k)),
                 ],
             }));
         });
@@ -2659,12 +2693,7 @@ function RubricWysiwygEditor({
                                                 }
                                                 value={h.minPoints}
                                                 onChange={(e) =>
-                                                    setColumnPoints(
-                                                        i,
-                                                        'minPoints',
-                                                        Number(e.target.value),
-                                                        h.minPoints === h.maxPoints
-                                                    )
+                                                    setColumnPoints(i, 'minPoints', Number(e.target.value))
                                                 }
                                                 onBlur={() => normaliseColumnRange(i)}
                                                 style={pointInputStyle}
@@ -2678,12 +2707,7 @@ function RubricWysiwygEditor({
                                                         aria-label={t('rubricBuilder.label_max_pts')}
                                                         value={h.maxPoints}
                                                         onChange={(e) =>
-                                                            setColumnPoints(
-                                                                i,
-                                                                'maxPoints',
-                                                                Number(e.target.value),
-                                                                false
-                                                            )
+                                                            setColumnPoints(i, 'maxPoints', Number(e.target.value))
                                                         }
                                                         onBlur={() => normaliseColumnRange(i)}
                                                         style={pointInputStyle}
