@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
@@ -28,10 +29,11 @@ import {
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
-import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
+import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
+import { addToPendingQueue } from '../store/storage';
 import { DEFAULT_FORMAT } from '../types';
 import type { Rubric } from '../types';
 import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../types';
@@ -56,10 +58,11 @@ export default function RubricList() {
     const { t } = useTranslation();
     const tour = usePageTourState('rubrics');
     const navigate = useNavigate();
-    const { showToast } = useToast();
+    const { showToast, dismissToast } = useToast();
     const { students } = useStudents();
     const { classes } = useClasses();
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
+    const { peerReviews } = useAssessment();
 
     const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric } = useAuthoring();
     const { settings } = useSettings();
@@ -229,29 +232,48 @@ export default function RubricList() {
     // rebuild the rubric, its grades or its version history; leaving the page (or closing/reloading the
     // tab) commits it at once.
     const [pendingDeleteIds, setPendingDeleteIds] = useState<ReadonlySet<string>>(new Set());
-    const pendingDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-    const deleteRubricRef = useRef(deleteRubric);
+    const pendingDeletes = useRef(new Map<string, { timer: ReturnType<typeof setTimeout>; toastId: number }>());
+    const latest = useRef({ deleteRubric, dismissToast, studentRubrics, peerReviews });
     useEffect(() => {
-        deleteRubricRef.current = deleteRubric;
-    }, [deleteRubric]);
+        latest.current = { deleteRubric, dismissToast, studentRubrics, peerReviews };
+    }, [deleteRubric, dismissToast, studentRubrics, peerReviews]);
     useEffect(() => {
-        const timers = pendingDeletes.current;
+        const pending = pendingDeletes.current;
         const commitPendingDeletes = () => {
-            for (const [id, timer] of timers) {
+            for (const [id, { timer, toastId }] of pending) {
                 clearTimeout(timer);
-                deleteRubricRef.current(id);
+                latest.current.dismissToast(toastId);
+                latest.current.deleteRubric(id);
             }
-            timers.clear();
+            pending.clear();
         };
-        window.addEventListener('pagehide', commitPendingDeletes);
+        // pagehide can be the last thing this tab runs, and React would only process the dispatch
+        // (and the effect that pushes it to Supabase) afterwards. flushSync applies it, and the
+        // offline localStorage write, right now; when connected the deletes are also queued so the
+        // next session sends them even if this tab's requests never complete.
+        const commitBeforePageExit = () => {
+            if (pending.size === 0) return;
+            if (storageSync.isConnected()) {
+                const { studentRubrics, peerReviews } = latest.current;
+                const queueDelete = (entity: string, entityId: string) =>
+                    addToPendingQueue({ entity, action: 'delete', payload: null, entityId });
+                for (const id of pending.keys()) {
+                    queueDelete('rubric', id);
+                    for (const sr of studentRubrics) if (sr.rubricId === id) queueDelete('studentRubric', sr.id);
+                    for (const pr of peerReviews) if (pr.rubricId === id) queueDelete('peerReview', pr.id);
+                }
+            }
+            flushSync(commitPendingDeletes);
+        };
+        window.addEventListener('pagehide', commitBeforePageExit);
         return () => {
-            window.removeEventListener('pagehide', commitPendingDeletes);
+            window.removeEventListener('pagehide', commitBeforePageExit);
             commitPendingDeletes();
         };
     }, []);
 
     function settlePendingDelete(id: string) {
-        clearTimeout(pendingDeletes.current.get(id));
+        clearTimeout(pendingDeletes.current.get(id)?.timer);
         pendingDeletes.current.delete(id);
         setPendingDeleteIds((prev) => new Set([...prev].filter((x) => x !== id)));
     }
@@ -264,18 +286,16 @@ export default function RubricList() {
             confirmLabel: t('common.delete'),
         });
         if (!ok) return;
-        pendingDeletes.current.set(
-            r.id,
-            setTimeout(() => {
-                settlePendingDelete(r.id);
-                deleteRubricRef.current(r.id);
-            }, UNDO_DELETE_MS)
-        );
-        setPendingDeleteIds((prev) => new Set(prev).add(r.id));
-        showToast(t('rubricList.deleted_toast', { name: r.name }), 'info', {
+        const toastId = showToast(t('rubricList.deleted_toast', { name: r.name }), 'info', {
             durationMs: UNDO_DELETE_MS,
             action: { label: t('common.undo'), onClick: () => settlePendingDelete(r.id) },
         });
+        const timer = setTimeout(() => {
+            settlePendingDelete(r.id);
+            latest.current.deleteRubric(r.id);
+        }, UNDO_DELETE_MS);
+        pendingDeletes.current.set(r.id, { timer, toastId });
+        setPendingDeleteIds((prev) => new Set(prev).add(r.id));
     }
 
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
@@ -292,8 +312,10 @@ export default function RubricList() {
             studentRubrics.some((sr) => sr.rubricId === r.id && cohortStudentIds.has(sr.studentId));
         return matchesSearch && matchesSubject && matchesCohort;
     });
-    // ponytail: reordering only writes back when the list is unfiltered, so dragged positions map 1:1 onto displayOrder
-    const reorderable = !search.trim() && subjectFilter === 'all' && isAllCohorts(cohortFilter);
+    // ponytail: reordering only writes back when the list is unfiltered (and nothing is hidden pending
+    // deletion), so dragged positions map 1:1 onto displayOrder
+    const reorderable =
+        !search.trim() && subjectFilter === 'all' && isAllCohorts(cohortFilter) && pendingDeleteIds.size === 0;
 
     function handleDragEnd(result: DropResult) {
         if (!result.destination || !reorderable) return;

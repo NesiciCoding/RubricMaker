@@ -20,7 +20,8 @@ export interface Toast {
 }
 
 interface ToastContextValue {
-    showToast: (message: string, type?: ToastType, options?: ToastOptions) => void;
+    showToast: (message: string, type?: ToastType, options?: ToastOptions) => number;
+    dismissToast: (id: number) => void;
 }
 
 // An action (e.g. Undo) needs time to be read and reached, so those toasts stay up longer.
@@ -28,7 +29,8 @@ const DEFAULT_DURATION_MS = 4000;
 const ACTION_DURATION_MS = 8000;
 
 export const ToastContext = createContext<ToastContextValue>({
-    showToast: () => {},
+    showToast: () => 0,
+    dismissToast: () => {},
 });
 
 let nextId = 0;
@@ -45,6 +47,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             },
             options.durationMs ?? (options.action ? ACTION_DURATION_MS : DEFAULT_DURATION_MS)
         );
+        return id;
     }, []);
 
     const dismiss = useCallback((id: number) => {
@@ -52,7 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <ToastContext.Provider value={{ showToast }}>
+        <ToastContext.Provider value={{ showToast, dismissToast: dismiss }}>
             {children}
             <ToastContainer toasts={toasts} onDismiss={dismiss} />
         </ToastContext.Provider>

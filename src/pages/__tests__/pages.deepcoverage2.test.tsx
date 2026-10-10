@@ -187,7 +187,7 @@ vi.mock('../../context/useStore', () => ({
     useStoreSelector: (selector: (state: any) => any) => selector(mockUseApp),
     useStoreActions: () => mockUseApp,
 }));
-vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn(), dismissToast: vi.fn() }) }));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({

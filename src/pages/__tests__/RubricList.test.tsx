@@ -43,12 +43,14 @@ const mockRubricsArr = [mockRubric];
 const mockStudentsArr = [mockStudent];
 const mockClassesArr = [mockClass];
 const mockStudentRubricsArr: never[] = [];
+const mockPeerReviewsArr: never[] = [];
 
 const mockAppValue = {
     rubrics: mockRubricsArr,
     students: mockStudentsArr,
     classes: mockClassesArr,
-    studentRubrics: mockStudentRubricsArr,
+    studentRubrics: mockStudentRubricsArr as unknown[],
+    peerReviews: mockPeerReviewsArr as unknown[],
     settings: mockSettings,
     addRubric: mockAddRubric,
     updateRubric: mockUpdateRubric,
@@ -78,11 +80,18 @@ vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: false }),
 }));
 
-const mockShowToast = vi.hoisted(() => vi.fn());
-vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
+const mockShowToast = vi.hoisted(() =>
+    vi.fn((_message: string, _type: string, _options: { durationMs: number; action: { onClick: () => void } }) => 42)
+);
+const mockDismissToast = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast, dismissToast: mockDismissToast }),
+}));
+const mockIsConnected = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock('../../services/database', () => ({
     storageSync: {
+        isConnected: mockIsConnected,
         adapter: {
             fetchSharedRubrics: vi.fn().mockResolvedValue([]),
             fetchSchoolSharedRubrics: vi.fn().mockResolvedValue([]),
@@ -305,6 +314,7 @@ describe('RubricList', () => {
         beforeEach(() => {
             vi.useFakeTimers();
             mockShowToast.mockClear();
+            mockDismissToast.mockClear();
         });
         afterEach(() => {
             vi.useRealTimers();
@@ -334,6 +344,66 @@ describe('RubricList', () => {
             });
             unmount();
             expect(mockDeleteRubric).not.toHaveBeenCalled();
+        });
+
+        it('closes the Undo toast once leaving the page has committed the delete', async () => {
+            const { unmount } = renderPage();
+            await confirmDelete();
+            expect(mockDismissToast).not.toHaveBeenCalled();
+            unmount();
+            expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
+            expect(mockDismissToast).toHaveBeenCalledWith(42);
+        });
+
+        it('turns reordering off while a rubric is hidden pending deletion', async () => {
+            const original = mockAppValue.rubrics;
+            mockAppValue.rubrics = [original[0], { ...original[0], id: 'r2', name: 'Other Rubric' }];
+            try {
+                renderPage();
+                expect(screen.getAllByLabelText('rubricList.drag_to_reorder')).toHaveLength(2);
+                await act(async () => {
+                    fireEvent.click(screen.getAllByTitle('rubricList.action_delete')[0]);
+                });
+                await act(async () => {
+                    fireEvent.click(screen.getByText('common.delete'));
+                });
+                expect(screen.getByText('Other Rubric')).toBeInTheDocument();
+                expect(screen.queryByLabelText('rubricList.drag_to_reorder')).not.toBeInTheDocument();
+            } finally {
+                mockAppValue.rubrics = original;
+            }
+        });
+
+        it('queues the deletes for the next session when a connected tab is closed', async () => {
+            localStorage.removeItem('rm_pending_sync');
+            mockIsConnected.mockReturnValue(true);
+            mockAppValue.studentRubrics = [
+                { id: 'sr1', rubricId: 'r1' },
+                { id: 'sr2', rubricId: 'other' },
+            ];
+            mockAppValue.peerReviews = [{ id: 'pr1', rubricId: 'r1' }];
+            try {
+                renderPage();
+                await act(async () => {
+                    fireEvent.click(screen.getByTitle('rubricList.action_delete'));
+                });
+                await act(async () => {
+                    fireEvent.click(screen.getByText('common.delete'));
+                });
+                act(() => {
+                    window.dispatchEvent(new Event('pagehide'));
+                });
+                const queued = JSON.parse(localStorage.getItem('rm_pending_sync') ?? '[]').map(
+                    (q: { entity: string; action: string; entityId: string }) => `${q.entity}:${q.action}:${q.entityId}`
+                );
+                expect(queued).toEqual(['rubric:delete:r1', 'studentRubric:delete:sr1', 'peerReview:delete:pr1']);
+                expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
+            } finally {
+                mockIsConnected.mockReturnValue(false);
+                mockAppValue.studentRubrics = mockStudentRubricsArr;
+                mockAppValue.peerReviews = mockPeerReviewsArr;
+                localStorage.removeItem('rm_pending_sync');
+            }
         });
 
         it('commits a pending delete when the tab is closed or reloaded', async () => {
