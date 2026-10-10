@@ -30,6 +30,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useToast } from '../hooks/useToast';
 import { storageSync } from '../services/database';
 import { DEFAULT_FORMAT } from '../types';
 import type { Rubric } from '../types';
@@ -37,7 +38,6 @@ import type { VoTrack, CefrLevel, CohortFilter as CohortFilterValue } from '../t
 import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } from '../data/voTracks';
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
-import { nanoid } from '../utils/nanoid';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
@@ -45,7 +45,8 @@ import type { ParsedRubric } from '../utils/rubricImport';
 import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImport';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
-import { sortByDisplayOrder, reorderDisplayOrder } from '../utils/displayOrder';
+import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
+import { cloneRubricForCopy } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
 
@@ -53,6 +54,7 @@ export default function RubricList() {
     const { t } = useTranslation();
     const tour = usePageTourState('rubrics');
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const { students } = useStudents();
     const { classes } = useClasses();
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
@@ -246,34 +248,26 @@ export default function RubricList() {
         const r = rubrics.find((x) => x.id === differentiateId);
         /* v8 ignore next -- provably dead: differentiateId is only set from a rendered rubric */
         if (!r) return;
-        const newR = addRubric({
-            ...r,
-            name: `${r.name} (${VO_TRACK_LABELS[diffTrack]})`,
-            criteria: r.criteria.map((c) => ({
-                ...c,
-                id: nanoid(),
-                levels: c.levels.map((l) => ({ ...l, id: nanoid() })),
-            })),
-            attachmentIds: [],
-            cefrTargetLevel: diffCefr,
-        });
+        const newR = addRubric(
+            cloneRubricForCopy(r, { name: `${r.name} (${VO_TRACK_LABELS[diffTrack]})`, cefrTargetLevel: diffCefr })
+        );
         setDifferentiateId(null);
         navigate(`/rubrics/${newR.id}`);
     }
 
     function handleDuplicate(rubricId: string) {
-        const r = rubrics.find((x) => x.id === rubricId);
+        const sorted = sortByDisplayOrder(rubrics);
+        const index = sorted.findIndex((x) => x.id === rubricId);
         /* v8 ignore next -- provably dead: the duplicate button only renders for live rubrics */
-        if (!r) return;
-        addRubric({
-            ...r,
-            name: `${r.name} (Copy)`,
-            criteria: r.criteria.map((c) => ({
-                ...c,
-                id: nanoid(),
-                levels: c.levels.map((l) => ({ ...l, id: nanoid() })),
-            })),
-            attachmentIds: [],
+        if (index < 0) return;
+        const r = sorted[index];
+        const { order, updates } = displayOrderAfter(sorted, index);
+        for (const [rubric, displayOrder] of updates) updateRubric({ ...rubric, displayOrder });
+        const copy = addRubric(
+            cloneRubricForCopy(r, { name: t('rubricList.copy_name', { name: r.name }), displayOrder: order })
+        );
+        showToast(t('rubricList.duplicated_toast', { name: copy.name }), 'success', {
+            action: { label: t('rubricList.open_copy'), onClick: () => navigate(`/rubrics/${copy.id}`) },
         });
     }
 

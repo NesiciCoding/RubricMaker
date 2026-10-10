@@ -77,6 +77,9 @@ vi.mock('../../hooks/useDbStatus', () => ({
     useDbStatus: () => ({ isConnected: false }),
 }));
 
+const mockShowToast = vi.hoisted(() => vi.fn());
+vi.mock('../../hooks/useToast', () => ({ useToast: () => ({ showToast: mockShowToast }) }));
+
 vi.mock('../../services/database', () => ({
     storageSync: {
         adapter: {
@@ -190,7 +193,33 @@ describe('RubricList', () => {
     it('duplicates a rubric', () => {
         renderPage();
         fireEvent.click(screen.getByTitle('rubricList.action_duplicate'));
-        expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ name: 'Essay Rubric (Copy)' }));
+        expect(mockAddRubric).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'rubricList.copy_name:{"name":"Essay Rubric"}' })
+        );
+    });
+
+    it('places a private copy right after its source and offers to open it (#707)', () => {
+        const orig = mockAppValue.rubrics;
+        (mockAppValue as Record<string, unknown>).rubrics = [
+            { ...mockRubric, id: 'r1', sharedWithSchool: true, displayOrder: 0 },
+            { ...mockRubric, id: 'r2', name: 'Other Rubric', displayOrder: 1 },
+        ];
+        mockShowToast.mockClear();
+        try {
+            renderPage();
+            fireEvent.click(screen.getAllByTitle('rubricList.action_duplicate')[0]);
+            const copy = (mockAddRubric.mock.calls[0] as unknown[])[0] as Rubric;
+            expect(copy.displayOrder).toBe(0.5);
+            expect(copy).not.toHaveProperty('sharedWithSchool');
+            expect(mockUpdateRubric).not.toHaveBeenCalled();
+            const [message, type, options] = mockShowToast.mock.calls[0];
+            expect(message).toMatch(/^rubricList\.duplicated_toast/);
+            expect(type).toBe('success');
+            options.action.onClick();
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new-r');
+        } finally {
+            (mockAppValue as Record<string, unknown>).rubrics = orig;
+        }
     });
 
     it('deletes a rubric after confirming', async () => {
