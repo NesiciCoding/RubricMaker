@@ -17,6 +17,7 @@ const commentBank: CommentBankItem[] = [
     { id: 'c3', text: 'Good B1 vocabulary.', tags: ['B1'], createdAt: '2026-01-03T00:00:00.000Z' },
 ];
 
+const bank = vi.hoisted(() => ({ items: [] as CommentBankItem[] }));
 const mocks = vi.hoisted(() => ({
     deleteCommentBankItem: vi.fn(),
     restoreCommentBankItem: vi.fn(),
@@ -25,7 +26,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../../context/AppContext', () => ({
     useAuthoring: () => ({
-        commentBank,
+        commentBank: bank.items,
         addCommentBankItem: vi.fn(),
         updateCommentBankItem: vi.fn(),
         deleteCommentBankItem: mocks.deleteCommentBankItem,
@@ -41,6 +42,7 @@ vi.mock('react-i18next', () => ({
 describe('CommentBankManager delete undo and tag filter (#686)', () => {
     beforeEach(() => {
         Object.values(mocks).forEach((m) => m.mockClear());
+        bank.items = commentBank;
     });
 
     it('deletes a comment with an Undo toast that restores the original item', () => {
@@ -72,5 +74,15 @@ describe('CommentBankManager delete undo and tag filter (#686)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Grammar' }));
         expect(screen.getByText('Great use of B1 grammar.')).toBeInTheDocument();
         expect(screen.queryByText('Good B1 vocabulary.')).not.toBeInTheDocument();
+    });
+
+    it('stops filtering by a tag once its last comment is gone, since its chip disappears too', () => {
+        const { rerender } = render(<CommentBankManager />);
+        fireEvent.click(screen.getByRole('button', { name: 'Grammar' }));
+        expect(screen.queryByText('Good B1 vocabulary.')).not.toBeInTheDocument();
+        bank.items = commentBank.filter((item) => !item.tags.includes('Grammar'));
+        rerender(<CommentBankManager />);
+        expect(screen.queryByRole('button', { name: 'Grammar' })).not.toBeInTheDocument();
+        expect(screen.getByText('Good B1 vocabulary.')).toBeInTheDocument();
     });
 });
