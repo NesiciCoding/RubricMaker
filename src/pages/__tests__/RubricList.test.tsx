@@ -335,6 +335,22 @@ describe('RubricList', () => {
             unmount();
             expect(mockDeleteRubric).not.toHaveBeenCalled();
         });
+
+        it('commits a pending delete when the tab is closed or reloaded', async () => {
+            const { unmount } = renderPage();
+            await confirmDelete();
+            expect(mockDeleteRubric).not.toHaveBeenCalled();
+            act(() => {
+                window.dispatchEvent(new Event('pagehide'));
+            });
+            expect(mockDeleteRubric).toHaveBeenCalledTimes(1);
+            expect(mockDeleteRubric).toHaveBeenCalledWith('r1');
+            act(() => {
+                vi.advanceTimersByTime(10000);
+            });
+            unmount();
+            expect(mockDeleteRubric).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('copies the share code to clipboard', async () => {

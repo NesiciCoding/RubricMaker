@@ -226,7 +226,8 @@ export default function RubricList() {
     }
 
     // The delete is held back for as long as its Undo toast shows, so undoing needs no way to
-    // rebuild the rubric, its grades or its version history; leaving the page commits it at once.
+    // rebuild the rubric, its grades or its version history; leaving the page (or closing/reloading the
+    // tab) commits it at once.
     const [pendingDeleteIds, setPendingDeleteIds] = useState<ReadonlySet<string>>(new Set());
     const pendingDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>());
     const deleteRubricRef = useRef(deleteRubric);
@@ -235,12 +236,17 @@ export default function RubricList() {
     }, [deleteRubric]);
     useEffect(() => {
         const timers = pendingDeletes.current;
-        return () => {
+        const commitPendingDeletes = () => {
             for (const [id, timer] of timers) {
                 clearTimeout(timer);
                 deleteRubricRef.current(id);
             }
             timers.clear();
+        };
+        window.addEventListener('pagehide', commitPendingDeletes);
+        return () => {
+            window.removeEventListener('pagehide', commitPendingDeletes);
+            commitPendingDeletes();
         };
     }, []);
 
