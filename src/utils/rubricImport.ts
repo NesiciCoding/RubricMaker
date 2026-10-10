@@ -287,13 +287,17 @@ export function parseCriterionCell(cell: string): { title: string; weight: numbe
     return { title: title || cell.trim(), weight: toNum(m[1]) };
 }
 
-/** Integer weights summing to 100 (largest remainder), proportional to `raw`. */
-function normaliseWeights(raw: number[]): number[] {
+/** Integer weights summing to `target` (largest remainder), proportional to `raw`. */
+function normaliseWeights(raw: number[], target = 100): number[] {
     const total = raw.reduce((a, b) => a + b, 0);
-    if (total <= 0) return normaliseWeights(raw.map(() => 1));
-    const exact = raw.map((w) => (w / total) * 100);
+    if (total <= 0)
+        return normaliseWeights(
+            raw.map(() => 1),
+            target
+        );
+    const exact = raw.map((w) => (w / total) * target);
     const floored = exact.map(Math.floor);
-    let remainder = 100 - floored.reduce((a, b) => a + b, 0);
+    let remainder = target - floored.reduce((a, b) => a + b, 0);
     const order = exact.map((e, i) => ({ i, frac: e - Math.floor(e) })).sort((x, y) => y.frac - x.frac);
     for (const { i } of order) {
         if (remainder <= 0) break;
@@ -452,10 +456,13 @@ function fillMissingWeights(given: (number | null)[], warnings: ImportWarning[])
     if (givenCount === given.length) return given as number[];
     if (givenCount === 0) return normaliseWeights(given.map(() => 1));
     const sum = given.reduce<number>((a, b) => a + (b ?? 0), 0);
-    const remaining = Math.max(0, 100 - sum);
-    const share = Math.round(remaining / (given.length - givenCount));
-    warnings.push({ key: 'importRubric.warn_weights_partial', params: { remaining: Math.round(remaining) } });
-    return given.map((w) => w ?? share);
+    const remaining = Math.round(Math.max(0, 100 - sum));
+    const shares = normaliseWeights(
+        given.filter((w) => w === null).map(() => 1),
+        remaining
+    );
+    warnings.push({ key: 'importRubric.warn_weights_partial', params: { remaining } });
+    return given.map((w) => w ?? shares.shift()!);
 }
 
 /**
