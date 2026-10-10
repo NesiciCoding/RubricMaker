@@ -1428,6 +1428,65 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByDisplayValue('50').length).toBeGreaterThan(0);
     });
 
+    describe('undo for deleted criteria and levels (#714)', () => {
+        const pressUndo = () => {
+            const [, , options] = mockShowToast.mock.calls.at(-1)!;
+            expect(options.action.label).toBe('common.undo');
+            act(() => options.action.onClick());
+        };
+        const criterionTitles = () =>
+            screen
+                .getAllByPlaceholderText('rubricBuilder.placeholder_criterion_name')
+                .map((input) => (input as HTMLInputElement).value);
+
+        it('restores a deleted criterion at its original position', () => {
+            appOverrides = { rubrics: [mockRubricTwo] };
+            renderEdit();
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_criterion')[0]);
+            expect(criterionTitles()).toEqual(['Criterion 2']);
+            expect(mockShowToast).toHaveBeenLastCalledWith(
+                'rubricBuilder.criterion_deleted',
+                'info',
+                expect.anything()
+            );
+            pressUndo();
+            expect(criterionTitles()).toEqual(['Criterion 1', 'Criterion 2']);
+        });
+
+        it('restores a deleted level within its criterion', () => {
+            renderEdit();
+            const levelNames = () =>
+                screen
+                    .getAllByPlaceholderText('rubricBuilder.placeholder_level_name')
+                    .map((input) => (input as HTMLInputElement).value);
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_level')[0]);
+            expect(levelNames()).toEqual(['Good']);
+            expect(mockShowToast).toHaveBeenLastCalledWith('rubricBuilder.level_deleted', 'info', expect.anything());
+            pressUndo();
+            expect(levelNames()).toEqual(['Excellent', 'Good']);
+        });
+
+        it('offers undo for a row deleted in the designer view', () => {
+            appOverrides = { rubrics: [mockRubricTwo] };
+            renderEdit();
+            fireEvent.click(screen.getByText('rubricBuilder.action_designer_view'));
+            const grid = within(document.querySelector('table.rubric-grid') as HTMLElement);
+            fireEvent.click(grid.getAllByLabelText('rubricBuilder.action_delete_criterion')[1]);
+            expect(grid.getAllByLabelText('rubricBuilder.action_delete_criterion')).toHaveLength(1);
+            pressUndo();
+            expect(grid.getAllByLabelText('rubricBuilder.action_delete_criterion')).toHaveLength(2);
+        });
+
+        it('does not duplicate a criterion when undo is pressed twice', () => {
+            appOverrides = { rubrics: [mockRubricTwo] };
+            renderEdit();
+            fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_criterion')[0]);
+            pressUndo();
+            pressUndo();
+            expect(criterionTitles()).toEqual(['Criterion 1', 'Criterion 2']);
+        });
+    });
+
     describe('automatic weight balancing (#694)', () => {
         const weights = () =>
             screen

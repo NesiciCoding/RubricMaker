@@ -470,7 +470,34 @@ export default function RubricBuilder() {
             return next;
         });
     }, []);
-    const deleteCriterion = useCallback((cid: string) => setCriteria((c) => c.filter((x) => x.id !== cid)), []);
+    // Read at delete time so the undo toast knows what was removed and where, without
+    // making the delete callbacks depend on (and re-create with) every criteria edit.
+    const criteriaRef = useRef(criteria);
+    useEffect(() => {
+        criteriaRef.current = criteria;
+    }, [criteria]);
+    const deleteCriterion = useCallback(
+        (cid: string) => {
+            const index = criteriaRef.current.findIndex((x) => x.id === cid);
+            /* v8 ignore next -- delete buttons only render for existing criteria */
+            if (index < 0) return;
+            const removed = criteriaRef.current[index];
+            setCriteria((c) => c.filter((x) => x.id !== cid));
+            showToast(t('rubricBuilder.criterion_deleted', { title: removed.title }), 'info', {
+                action: {
+                    label: t('common.undo'),
+                    onClick: () =>
+                        setCriteria((c) => {
+                            if (c.some((x) => x.id === removed.id)) return c;
+                            const next = [...c];
+                            next.splice(Math.min(index, next.length), 0, removed);
+                            return next;
+                        }),
+                },
+            });
+        },
+        [showToast, t]
+    );
     const appendCriterion = useCallback(() => setCriteria((c) => [...c, newCriterion(remainingWeight(c))]), []);
 
     // An untouched (evenly split) set of weights is rebalanced whenever criteria are added or
@@ -517,11 +544,31 @@ export default function RubricBuilder() {
         []
     );
     const deleteLevel = useCallback(
-        (cid: string, lid: string) =>
+        (cid: string, lid: string) => {
+            const levels = criteriaRef.current.find((x) => x.id === cid)?.levels ?? [];
+            const index = levels.findIndex((l) => l.id === lid);
+            /* v8 ignore next -- delete buttons only render for existing levels */
+            if (index < 0) return;
+            const removed = levels[index];
             setCriteria((c) =>
                 c.map((x) => (x.id === cid ? { ...x, levels: x.levels.filter((l) => l.id !== lid) } : x))
-            ),
-        []
+            );
+            showToast(t('rubricBuilder.level_deleted', { label: removed.label }), 'info', {
+                action: {
+                    label: t('common.undo'),
+                    onClick: () =>
+                        setCriteria((c) =>
+                            c.map((x) => {
+                                if (x.id !== cid || x.levels.some((l) => l.id === removed.id)) return x;
+                                const next = [...x.levels];
+                                next.splice(Math.min(index, next.length), 0, removed);
+                                return { ...x, levels: next };
+                            })
+                        ),
+                },
+            });
+        },
+        [showToast, t]
     );
     const updateLevel = useCallback(
         (cid: string, lid: string, patch: Partial<RubricLevel>) =>
@@ -1338,6 +1385,7 @@ export default function RubricBuilder() {
                                 addCriterion={appendCriterion}
                                 addCriterionLevel={(cid) => addLevel(cid)}
                                 criteriaSetter={setCriteria}
+                                deleteCriterion={deleteCriterion}
                                 totalMaxPoints={totalMaxPoints}
                                 scoringMode={scoringMode}
                                 onShowMarkdownHint={() => setShowMarkdownHint(true)}
@@ -2135,6 +2183,7 @@ interface WYSIWYGProps {
     addCriterion: () => void;
     addCriterionLevel: (cid: string) => void;
     criteriaSetter: React.Dispatch<React.SetStateAction<RubricCriterion[]>>;
+    deleteCriterion: (cid: string) => void;
     totalMaxPoints: number;
     scoringMode: ScoringMode;
     onShowMarkdownHint: () => void;
@@ -2196,6 +2245,7 @@ function RubricWysiwygEditor({
     addCriterion,
     addCriterionLevel,
     criteriaSetter,
+    deleteCriterion,
     scoringMode,
     totalMaxPoints,
     onShowMarkdownHint,
@@ -2255,10 +2305,6 @@ function RubricWysiwygEditor({
             [next[cIdx], next[swap]] = [next[swap], next[cIdx]];
             return next;
         });
-    }
-
-    function deleteCriterionWysiwyg(cIdx: number) {
-        criteriaSetter((prev) => prev.filter((_, i) => i !== cIdx));
     }
 
     function duplicateCriterionWysiwyg(cIdx: number) {
@@ -2649,7 +2695,7 @@ function RubricWysiwygEditor({
                                     <button
                                         className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('rubricBuilder.action_delete_criterion')}
-                                        onClick={() => deleteCriterionWysiwyg(cIdx)}
+                                        onClick={() => deleteCriterion(c.id)}
                                         style={{ padding: 2, height: 20, width: 20, color: 'var(--red)' }}
                                     >
                                         <Trash2 size={13} />
