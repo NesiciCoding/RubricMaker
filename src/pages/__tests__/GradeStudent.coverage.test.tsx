@@ -742,7 +742,7 @@ describe('GradeStudent coverage', () => {
         expect(mockSaveStudentRubric).not.toHaveBeenCalled();
         fireEvent.click(screen.getByText(/gradeStudent.swipe_confirm_action/));
         await waitFor(() => expect(mockSaveStudentRubric).toHaveBeenCalled());
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('does not save when the swipe confirmation is cancelled', async () => {

@@ -317,6 +317,32 @@ export default function GradeStudent() {
 
     const cannedNhiComment = t('gradeStudent.not_handed_in_comment');
 
+    // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
+    const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
+    const { nextStudent, hasOtherUngraded } = useMemo(() => {
+        if (!student) return { nextStudent: null, hasOtherUngraded: false };
+        let eligible: typeof students;
+        if (navScope === 'current-class') {
+            eligible = students.filter((s) => s.classId === student.classId);
+        } else {
+            /* v8 ignore next -- this page only renders with a rubricId from the route */
+            const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubricId ?? '')).map((c) => c.id);
+            eligible =
+                linkedClassIds.length > 0
+                    ? students.filter((s) => linkedClassIds.includes(s.classId))
+                    : students.filter((s) => s.classId === student.classId);
+        }
+        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
+        const currentIndex = sorted.findIndex((s) => s.id === studentId);
+        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
+        const nextUngraded = after.find(
+            (s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)
+        );
+        // Wrapping round to graded students is for a review pass; the last ungraded student ends the loop.
+        const nextStudent = nextUngraded ?? (existingSR ? (after[0] ?? null) : null);
+        return { nextStudent, hasOtherUngraded: !!nextUngraded };
+    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope, existingSR]);
+
     const handleSave = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
         if (!sr || !rubric) return;
@@ -332,6 +358,7 @@ export default function GradeStudent() {
         });
         setSaved(true);
         setIsDirty(false);
+        if (!existingSR && !hasOtherUngraded) showToast(t('gradeStudent.all_students_graded'), 'success');
 
         // Fire-and-forget grade notification if the teacher has opted in
         if (settings.notifyStudentsOnGrade && student && studentId) {
@@ -363,32 +390,10 @@ export default function GradeStudent() {
         studentId,
         cannedNhiComment,
         existingSR,
+        hasOtherUngraded,
+        showToast,
+        t,
     ]);
-
-    // Find next student; scope is configurable: stay in current class or span all rubric-linked classes
-    const navScope = settings.gradeNavigationScope ?? 'rubric-classes';
-    const nextStudent = useMemo(() => {
-        if (!student) return null;
-        let eligible: typeof students;
-        if (navScope === 'current-class') {
-            eligible = students.filter((s) => s.classId === student.classId);
-        } else {
-            /* v8 ignore next -- this page only renders with a rubricId from the route */
-            const linkedClassIds = classes.filter((c) => c.rubricIds?.includes(rubricId ?? '')).map((c) => c.id);
-            eligible =
-                linkedClassIds.length > 0
-                    ? students.filter((s) => linkedClassIds.includes(s.classId))
-                    : students.filter((s) => s.classId === student.classId);
-        }
-        const sorted = [...eligible].sort((a, b) => a.name.localeCompare(b.name));
-        const currentIndex = sorted.findIndex((s) => s.id === studentId);
-        const after = sorted.slice(currentIndex + 1).concat(sorted.slice(0, currentIndex));
-        return (
-            after.find((s) => !studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === s.id)) ??
-            after[0] ??
-            null
-        );
-    }, [student, students, classes, studentId, studentRubrics, rubricId, navScope]);
 
     const handleSaveAndNext = useCallback(async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric */
@@ -398,7 +403,7 @@ export default function GradeStudent() {
             if (!existingSR) {
                 showToast(t('gradeStudent.skipped_nothing_scored', { name: student?.name ?? '' }), 'info');
                 allowNavigation();
-                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+                navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
                 return;
             }
             if (!(await confirmSaveNothingScored())) return;
@@ -412,7 +417,8 @@ export default function GradeStudent() {
         });
         setIsDirty(false);
         allowNavigation();
-        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+        // Replace rather than push history so the topbar Back returns to where grading started.
+        navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
         sr,
         rubric,
@@ -458,7 +464,7 @@ export default function GradeStudent() {
         setIsDirty(false);
         allowNavigation();
         if (nextStudent) {
-            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`);
+            navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
         } else {
             navigate(-1);
         }
@@ -519,6 +525,12 @@ export default function GradeStudent() {
             const inInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
 
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+                return;
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 if (nextStudent) handleSaveAndNext();
                 else handleSave();
@@ -2273,6 +2285,7 @@ export default function GradeStudent() {
                                 { key: 'A + 1, B + 2 …', desc: t('gradeStudent.shortcut_chord') },
                                 { key: '↑ / ↓', desc: t('gradeStudent.shortcut_tab') },
                                 { key: 'Ctrl+S', desc: t('gradeStudent.shortcut_save') },
+                                { key: 'Ctrl+Enter', desc: t('gradeStudent.shortcut_save_next') },
                                 { key: '?', desc: t('gradeStudent.shortcut_help') },
                                 { key: 'Esc', desc: t('gradeStudent.shortcut_esc') },
                             ].map(({ key, desc }) => (

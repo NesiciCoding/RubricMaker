@@ -204,12 +204,12 @@ describe('GradeStudent extended', () => {
         expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(80.7 + 0.1)');
     });
 
-    it('saves and advances with Ctrl+S', () => {
+    it('saves and advances with Ctrl+Enter', () => {
         renderPage();
         fireEvent.click(screen.getAllByText('Excellent')[0]);
-        fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+        fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     it('closes the shortcuts panel with Escape and addresses criteria by letter', () => {

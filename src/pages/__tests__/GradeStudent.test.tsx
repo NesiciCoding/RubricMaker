@@ -382,7 +382,7 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
         fireEvent.click(screen.getByText('gradeStudent.action_not_handed_in'));
         expect(mockSaveStudentRubric).toHaveBeenCalledWith(expect.objectContaining({ notHandedIn: true }));
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
     });
 
     describe('grade that hydrates after mount (#643)', () => {
@@ -458,7 +458,71 @@ describe('GradeStudent', () => {
         fireEvent.click(screen.getByText('Excellent'));
         fireEvent.click(screen.getByTitle('Next: Bob'));
         expect(mockSaveStudentRubric).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+    });
+
+    describe('keyboard save shortcuts (#624)', () => {
+        it('Ctrl+S saves and stays on the student', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 's', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).not.toHaveBeenCalled();
+        });
+
+        it('Ctrl+Enter saves and advances, replacing the history entry', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+            expect(mockSaveStudentRubric).toHaveBeenCalled();
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+        });
+
+        const gradedRecord = (id: string, studentId: string) => ({
+            id,
+            rubricId: 'r1',
+            studentId,
+            entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }],
+            overallComment: '',
+            isPeerReview: false,
+        });
+
+        it.each([
+            ['Ctrl+S', { key: 's', ctrlKey: true }],
+            ['Ctrl+Enter', { key: 'Enter', ctrlKey: true }],
+        ])('%s on the last ungraded student announces completion and stays', (_label, keys) => {
+            (mockStudentRubricsArr as unknown[]).push(gradedRecord('sr-bob', 's2'));
+            try {
+                renderPage();
+                expect(screen.queryByTitle('Next: Bob')).not.toBeInTheDocument();
+                fireEvent.click(screen.getByText('Excellent'));
+                fireEvent.keyDown(window, keys);
+                expect(mockSaveStudentRubric).toHaveBeenCalled();
+                expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+                expect(mockNavigate).not.toHaveBeenCalled();
+            } finally {
+                mockStudentRubricsArr.length = 0;
+            }
+        });
+
+        it('still wraps round to graded students for a review pass once everyone is graded', () => {
+            (mockStudentRubricsArr as unknown[]).push(gradedRecord('sr-alice', 's1'), gradedRecord('sr-bob', 's2'));
+            try {
+                renderPage();
+                fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+                expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
+                expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+            } finally {
+                mockStudentRubricsArr.length = 0;
+            }
+        });
+
+        it('does not announce completion while other students are ungraded', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('Excellent'));
+            fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true });
+            expect(mockShowToast).not.toHaveBeenCalledWith('gradeStudent.all_students_graded', 'success');
+        });
     });
 
     describe('saving with nothing scored (#620)', () => {
@@ -492,7 +556,7 @@ describe('GradeStudent', () => {
                 expect.stringContaining('gradeStudent.skipped_nothing_scored'),
                 'info'
             );
-            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2');
+            expect(mockNavigate).toHaveBeenCalledWith('/rubrics/r1/grade/s2', { replace: true });
         });
 
         it('saves without asking when only a comment was written', () => {
