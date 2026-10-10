@@ -1398,7 +1398,6 @@ export default function RubricBuilder() {
                                 updateCriterion={updateCriterion}
                                 updateLevel={updateLevel}
                                 addCriterion={appendCriterion}
-                                addCriterionLevel={(cid) => addLevel(cid)}
                                 criteriaSetter={setCriteria}
                                 deleteCriterion={deleteCriterion}
                                 totalMaxPoints={totalMaxPoints}
@@ -2196,7 +2195,6 @@ interface WYSIWYGProps {
     updateCriterion: (cid: string, patch: Partial<RubricCriterion>) => void;
     updateLevel: (cid: string, lid: string, patch: Partial<RubricLevel>) => void;
     addCriterion: () => void;
-    addCriterionLevel: (cid: string) => void;
     criteriaSetter: React.Dispatch<React.SetStateAction<RubricCriterion[]>>;
     deleteCriterion: (cid: string) => void;
     totalMaxPoints: number;
@@ -2258,7 +2256,6 @@ function RubricWysiwygEditor({
     updateCriterion,
     updateLevel,
     addCriterion,
-    addCriterionLevel,
     criteriaSetter,
     deleteCriterion,
     scoringMode,
@@ -2267,8 +2264,33 @@ function RubricWysiwygEditor({
 }: WYSIWYGProps) {
     const { t } = useTranslation();
     const headers = criteria[0]?.levels ?? [];
+    // Criteria can carry different level counts (levels are added per criterion in the form
+    // view), so the grid is as wide as the widest criterion and shorter rows are padded.
+    const columnCount = Math.max(0, ...criteria.map((c) => c.levels.length));
+    const headerLevels = Array.from({ length: columnCount }, (_, i) => criteria.find((c) => c.levels[i])!.levels[i]);
     const [editingCell, setEditingCell] = useState<string | null>(null);
     const [showStdDesc, setShowStdDesc] = useState(false);
+
+    function updateLevelColumn(i: number, patch: Partial<RubricLevel>) {
+        criteria.forEach((c) => {
+            if (c.levels[i]) updateLevel(c.id, c.levels[i].id, patch);
+        });
+    }
+
+    function setColumnPoints(i: number, field: 'minPoints' | 'maxPoints', value: number, single: boolean) {
+        updateLevelColumn(i, single ? { minPoints: value, maxPoints: value } : { [field]: value });
+    }
+
+    // Swapping on blur (not per keystroke) lets a teacher retype a bound without the other one
+    // jumping, while still never leaving an inverted range behind.
+    function normaliseColumnRange(i: number) {
+        criteria.forEach((c) => {
+            const l = c.levels[i];
+            if (l && l.minPoints > l.maxPoints) {
+                updateLevel(c.id, l.id, { minPoints: l.maxPoints, maxPoints: l.minPoints });
+            }
+        });
+    }
 
     // Auto-resize textarea
     const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
@@ -2298,6 +2320,26 @@ function RubricWysiwygEditor({
         display: 'inline-block',
         width: 'auto',
     };
+    const pointInputStyle: React.CSSProperties = {
+        ...inputStyle,
+        width: '6ch',
+        textAlign: 'center',
+        padding: 0,
+        margin: 0,
+    };
+
+    function addColumn() {
+        criteriaSetter((prev) => {
+            const target = Math.max(0, ...prev.map((c) => c.levels.length)) + 1;
+            return prev.map((c) => ({
+                ...c,
+                levels: [
+                    ...c.levels,
+                    ...Array.from({ length: target - c.levels.length }, () => newLevel(0, 0, 'New Level')),
+                ],
+            }));
+        });
+    }
 
     function moveLevel(lIdx: number, dir: -1 | 1) {
         criteriaSetter((prev) =>
@@ -2498,7 +2540,7 @@ function RubricWysiwygEditor({
                         >
                             <div style={{ padding: '12px 14px' }}>{t('rubricBuilder.label_criterion')}</div>
                         </th>
-                        {headers.map((h, i) => (
+                        {headerLevels.map((h, i) => (
                             <th
                                 key={h.id}
                                 style={{
@@ -2532,7 +2574,7 @@ function RubricWysiwygEditor({
                                         className="btn btn-ghost btn-icon btn-sm"
                                         aria-label={t('rubricBuilder.action_move_level_right')}
                                         onClick={() => moveLevel(i, 1)}
-                                        disabled={i === headers.length - 1}
+                                        disabled={i === columnCount - 1}
                                         style={{ padding: 2, height: 20, width: 20, color: 'inherit' }}
                                     >
                                         <MoveRight size={12} />
@@ -2553,12 +2595,7 @@ function RubricWysiwygEditor({
                                 >
                                     <textarea
                                         value={h.label}
-                                        onChange={(e) => {
-                                            // Update this level's label across all criteria to keep them synced
-                                            criteria.forEach((c) =>
-                                                updateLevel(c.id, c.levels[i].id, { label: e.target.value })
-                                            );
-                                        }}
+                                        onChange={(e) => updateLevelColumn(i, { label: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_level_name')}
                                         style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
@@ -2601,21 +2638,22 @@ function RubricWysiwygEditor({
                                             (
                                             <input
                                                 type="number"
+                                                aria-label={
+                                                    h.minPoints === h.maxPoints
+                                                        ? t('rubricBuilder.label_level_points')
+                                                        : t('rubricBuilder.label_min_pts')
+                                                }
                                                 value={h.minPoints}
-                                                onChange={(e) => {
-                                                    criteria.forEach((c) =>
-                                                        updateLevel(c.id, c.levels[i].id, {
-                                                            minPoints: Number(e.target.value),
-                                                        })
-                                                    );
-                                                }}
-                                                style={{
-                                                    ...inputStyle,
-                                                    width: 30,
-                                                    textAlign: 'center',
-                                                    padding: 0,
-                                                    margin: 0,
-                                                }}
+                                                onChange={(e) =>
+                                                    setColumnPoints(
+                                                        i,
+                                                        'minPoints',
+                                                        Number(e.target.value),
+                                                        h.minPoints === h.maxPoints
+                                                    )
+                                                }
+                                                onBlur={() => normaliseColumnRange(i)}
+                                                style={pointInputStyle}
                                                 className="hover-border"
                                             />
                                             {h.minPoints !== h.maxPoints && (
@@ -2623,21 +2661,18 @@ function RubricWysiwygEditor({
                                                     -
                                                     <input
                                                         type="number"
+                                                        aria-label={t('rubricBuilder.label_max_pts')}
                                                         value={h.maxPoints}
-                                                        onChange={(e) => {
-                                                            criteria.forEach((c) =>
-                                                                updateLevel(c.id, c.levels[i].id, {
-                                                                    maxPoints: Number(e.target.value),
-                                                                })
-                                                            );
-                                                        }}
-                                                        style={{
-                                                            ...inputStyle,
-                                                            width: 30,
-                                                            textAlign: 'center',
-                                                            padding: 0,
-                                                            margin: 0,
-                                                        }}
+                                                        onChange={(e) =>
+                                                            setColumnPoints(
+                                                                i,
+                                                                'maxPoints',
+                                                                Number(e.target.value),
+                                                                false
+                                                            )
+                                                        }
+                                                        onBlur={() => normaliseColumnRange(i)}
+                                                        style={pointInputStyle}
                                                         className="hover-border"
                                                     />
                                                 </>
@@ -2790,73 +2825,89 @@ function RubricWysiwygEditor({
                                     ))}
                                 </div>
                             </td>
-                            {c.levels.map((l) => (
-                                <td
-                                    key={l.id}
-                                    className="level-cell"
-                                    style={{
-                                        verticalAlign: 'top',
-                                        border: format.showBorders ? '1px solid var(--border)' : 'none',
-                                    }}
-                                >
-                                    <div style={{ padding: '10px 12px' }}>
-                                        {editingCell === `${c.id}_${l.id}` ? (
-                                            <textarea
-                                                autoFocus
-                                                value={l.description}
-                                                onChange={(e) =>
-                                                    updateLevel(c.id, l.id, { description: e.target.value })
-                                                }
-                                                onBlur={() => setEditingCell(null)}
-                                                onInput={handleInput}
-                                                placeholder={t('rubricBuilder.placeholder_level_description')}
-                                                style={{ ...textareaStyle, minHeight: 60 }}
-                                                className="hover-border"
-                                            />
-                                        ) : (
-                                            <MarkdownRender
-                                                text={l.description}
-                                                onClick={() => setEditingCell(`${c.id}_${l.id}`)}
-                                                style={{ cursor: 'text' }}
-                                                className="hover-border"
-                                            />
-                                        )}
-                                        {l.subItems.length > 0 && (
-                                            <ul
-                                                style={{
-                                                    margin: '6px 0 0',
-                                                    padding: '0 0 0 14px',
-                                                    fontSize: '0.85em',
-                                                    color: 'var(--text-muted)',
-                                                }}
-                                            >
-                                                {l.subItems.map((si) => (
-                                                    <li key={si.id}>
-                                                        {si.label} ({si.points}pts)
-                                                        {si.linkedStandards && si.linkedStandards.length > 0 && (
-                                                            <div
-                                                                style={{
-                                                                    fontSize: '0.85em',
-                                                                    color: 'var(--accent)',
-                                                                    marginTop: 2,
-                                                                }}
-                                                            >
-                                                                {si.linkedStandards
-                                                                    .map((std) =>
-                                                                        showStdDesc
-                                                                            ? std.description
-                                                                            : `[${std.statementNotation ?? std.guid}]`
-                                                                    )
-                                                                    .join(' ')}
-                                                            </div>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-                                </td>
-                            ))}
+                            {Array.from({ length: columnCount }, (_, i) => c.levels[i]).map((l, i) =>
+                                l ? (
+                                    <td
+                                        key={l.id}
+                                        className="level-cell"
+                                        style={{
+                                            verticalAlign: 'top',
+                                            border: format.showBorders ? '1px solid var(--border)' : 'none',
+                                        }}
+                                    >
+                                        <div style={{ padding: '10px 12px' }}>
+                                            {editingCell === `${c.id}_${l.id}` ? (
+                                                <textarea
+                                                    autoFocus
+                                                    value={l.description}
+                                                    onChange={(e) =>
+                                                        updateLevel(c.id, l.id, { description: e.target.value })
+                                                    }
+                                                    onBlur={() => setEditingCell(null)}
+                                                    onInput={handleInput}
+                                                    placeholder={t('rubricBuilder.placeholder_level_description')}
+                                                    style={{ ...textareaStyle, minHeight: 60 }}
+                                                    className="hover-border"
+                                                />
+                                            ) : (
+                                                <MarkdownRender
+                                                    text={l.description}
+                                                    onClick={() => setEditingCell(`${c.id}_${l.id}`)}
+                                                    style={{ cursor: 'text' }}
+                                                    className="hover-border"
+                                                />
+                                            )}
+                                            {l.subItems.length > 0 && (
+                                                <ul
+                                                    style={{
+                                                        margin: '6px 0 0',
+                                                        padding: '0 0 0 14px',
+                                                        fontSize: '0.85em',
+                                                        color: 'var(--text-muted)',
+                                                    }}
+                                                >
+                                                    {l.subItems.map((si) => (
+                                                        <li key={si.id}>
+                                                            {si.label} ({si.points}pts)
+                                                            {si.linkedStandards && si.linkedStandards.length > 0 && (
+                                                                <div
+                                                                    style={{
+                                                                        fontSize: '0.85em',
+                                                                        color: 'var(--accent)',
+                                                                        marginTop: 2,
+                                                                    }}
+                                                                >
+                                                                    {si.linkedStandards
+                                                                        .map((std) =>
+                                                                            showStdDesc
+                                                                                ? std.description
+                                                                                : `[${std.statementNotation ?? std.guid}]`
+                                                                        )
+                                                                        .join(' ')}
+                                                                </div>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </td>
+                                ) : (
+                                    <td
+                                        key={`missing-${i}`}
+                                        className="level-cell"
+                                        aria-label={t('rubricBuilder.level_missing')}
+                                        style={{
+                                            verticalAlign: 'middle',
+                                            textAlign: 'center',
+                                            color: 'var(--text-dim)',
+                                            border: format.showBorders ? '1px dashed var(--border)' : 'none',
+                                        }}
+                                    >
+                                        —
+                                    </td>
+                                )
+                            )}
                             {format.showWeights && (
                                 <td
                                     style={{
@@ -2880,7 +2931,7 @@ function RubricWysiwygEditor({
                     ))}
                     <tr>
                         <td
-                            colSpan={(format.showWeights ? 2 : 1) + headers.length}
+                            colSpan={(format.showWeights ? 2 : 1) + columnCount}
                             style={{
                                 padding: 12,
                                 textAlign: 'center',
@@ -2895,6 +2946,7 @@ function RubricWysiwygEditor({
                                 <select
                                     className="btn btn-ghost btn-sm"
                                     style={{ padding: '0 8px', maxWidth: 160 }}
+                                    defaultValue=""
                                     onChange={(e) => {
                                         if (!e.target.value) return;
                                         const item = RUBRIC_BANK.find((i) => i.title === e.target.value);
@@ -2903,7 +2955,7 @@ function RubricWysiwygEditor({
                                         e.target.value = ''; // reset
                                     }}
                                 >
-                                    <option value="" disabled selected>
+                                    <option value="" disabled>
                                         {t('rubricBuilder.action_insert_from_bank')}
                                     </option>
                                     {RUBRIC_BANK.map((item) => (
@@ -2919,11 +2971,7 @@ function RubricWysiwygEditor({
             </table>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => addCriterionLevel(criteria[0]?.id)}
-                    disabled={!criteria.length}
-                >
+                <button className="btn btn-ghost btn-sm" onClick={addColumn} disabled={!criteria.length}>
                     <Plus size={14} /> {t('rubricBuilder.action_add_column_level')}
                 </button>
             </div>

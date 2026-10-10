@@ -1428,6 +1428,89 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByDisplayValue('50').length).toBeGreaterThan(0);
     });
 
+    describe('designer grid with uneven or single-point levels (#690)', () => {
+        const level = (id: string, label: string, min: number, max = min) => ({
+            id,
+            label,
+            minPoints: min,
+            maxPoints: max,
+            description: '',
+            subItems: [],
+        });
+        const unevenRubric: Rubric = {
+            ...mockRubric,
+            criteria: [
+                { ...mockRubric.criteria[0], id: 'c1', levels: [level('a1', 'Top', 4), level('a2', 'Low', 1)] },
+                {
+                    ...mockRubric.criteria[0],
+                    id: 'c2',
+                    title: 'Criterion 2',
+                    levels: [level('b1', 'Top', 4), level('b2', 'Low', 1), level('b3', 'Extra', 0)],
+                },
+            ],
+        };
+        function renderDesigner(rubric: Rubric) {
+            appOverrides = { rubrics: [rubric] };
+            renderEdit();
+            fireEvent.click(screen.getByText('rubricBuilder.action_designer_view'));
+            return within(document.querySelector('table.rubric-grid') as HTMLElement);
+        }
+        const savedCriteria = () => {
+            fireEvent.click(screen.getByText('rubricBuilder.action_save'));
+            return mockUpdateRubric.mock.calls.at(-1)![0].criteria as RubricCriterion[];
+        };
+
+        it('pads shorter rows so every column lines up', () => {
+            const grid = renderDesigner(unevenRubric);
+            expect(grid.getAllByPlaceholderText('rubricBuilder.placeholder_level_name')).toHaveLength(3);
+            const rows = document.querySelectorAll('table.rubric-grid tbody tr');
+            expect(rows[0].querySelectorAll('td.level-cell')).toHaveLength(3);
+            expect(rows[1].querySelectorAll('td.level-cell')).toHaveLength(3);
+            expect(grid.getByLabelText('rubricBuilder.level_missing')).toBeInTheDocument();
+        });
+
+        it('renames a column without touching criteria that lack it', () => {
+            const grid = renderDesigner(unevenRubric);
+            fireEvent.change(grid.getAllByPlaceholderText('rubricBuilder.placeholder_level_name')[2], {
+                target: { value: 'Bonus' },
+            });
+            const [c1, c2] = savedCriteria();
+            expect(c1.levels).toHaveLength(2);
+            expect(c2.levels[2].label).toBe('Bonus');
+        });
+
+        it('adds a column to every criterion, filling shorter ones up to the new width', () => {
+            renderDesigner(unevenRubric);
+            fireEvent.click(screen.getByText('rubricBuilder.action_add_column_level'));
+            expect(savedCriteria().map((c) => c.levels.length)).toEqual([4, 4]);
+        });
+
+        it('sets both bounds when a single-point level is edited', () => {
+            const grid = renderDesigner(unevenRubric);
+            const top = grid.getAllByLabelText('rubricBuilder.label_level_points')[0];
+            fireEvent.change(top, { target: { value: '100' } });
+            expect(grid.queryByLabelText('rubricBuilder.label_max_pts')).toBeNull();
+            const [c1, c2] = savedCriteria();
+            expect(c1.levels[0]).toMatchObject({ minPoints: 100, maxPoints: 100 });
+            expect(c2.levels[0]).toMatchObject({ minPoints: 100, maxPoints: 100 });
+        });
+
+        it('swaps an inverted range back when the field loses focus', () => {
+            const grid = renderDesigner(mockRubric);
+            const min = grid.getAllByLabelText('rubricBuilder.label_min_pts')[0];
+            fireEvent.change(min, { target: { value: '120' } });
+            fireEvent.blur(min);
+            expect(savedCriteria()[0].levels[0]).toMatchObject({ minPoints: 100, maxPoints: 120 });
+        });
+
+        it('gives the point inputs room for three digits', () => {
+            const grid = renderDesigner(mockRubric);
+            expect((grid.getAllByLabelText('rubricBuilder.label_min_pts')[0] as HTMLInputElement).style.width).toBe(
+                '6ch'
+            );
+        });
+    });
+
     describe('saving from the keyboard and toolbar (#680)', () => {
         it('saves with Ctrl+S and Cmd+S, even while typing in a field', () => {
             renderEdit();
