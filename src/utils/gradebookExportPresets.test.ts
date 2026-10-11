@@ -12,18 +12,32 @@ describe('buildGradebookPresetCsv', () => {
         const result = buildGradebookPresetCsv('magister', [{ ...row, percentage: 50, grade: '5,5' }])!;
         expect(result.csv).toContain('Leerlingnummer,Naam,Cijfer');
         expect(result.csv).toContain('1234,Jane Doe,5.5');
-        expect(result.approximateCount).toBe(0);
+        expect(result.blankGradeCount).toBe(0);
     });
 
-    it('falls back to the linear 1-10 conversion for non-numeric scale labels and counts them (#688)', () => {
+    it('leaves the grade empty for non-numeric scale labels instead of guessing one, and counts them (#688)', () => {
         const result = buildGradebookPresetCsv('somtoday', [
             { ...row, grade: 'B' },
-            { ...row, grade: '<6', percentage: 50 },
+            { ...row, grade: 'F', percentage: 50 },
         ])!;
         expect(result.csv).toContain('Leerling,Leerlingnummer,Resultaat');
-        expect(result.csv).toContain('Jane Doe,1234,8.2');
-        expect(result.csv).toContain('Jane Doe,1234,5.5');
-        expect(result.approximateCount).toBe(2);
+        expect(result.csv).not.toMatch(/\d\.\d/);
+        expect(result.csv.trim().split(/\r?\n/).slice(1)).toEqual(['Jane Doe,1234,', 'Jane Doe,1234,']);
+        expect(result.blankGradeCount).toBe(2);
+    });
+
+    it('does not treat numbers outside 1-10 as grades (#688)', () => {
+        const result = buildGradebookPresetCsv('magister', [
+            { ...row, grade: '10.5' },
+            { ...row, grade: '0,5' },
+            { ...row, grade: '10' },
+        ])!;
+        expect(result.csv.trim().split(/\r?\n/).slice(1)).toEqual([
+            '1234,Jane Doe,',
+            '1234,Jane Doe,',
+            '1234,Jane Doe,10',
+        ]);
+        expect(result.blankGradeCount).toBe(2);
     });
 
     it('writes a decimal comma in a semicolon-separated file for Dutch Excel (#688)', () => {

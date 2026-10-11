@@ -289,7 +289,7 @@ describe('TestListPage', () => {
         (mockUseApp as Record<string, unknown>).studentTests = [];
     });
 
-    it('exports test results in a gradebook preset and warns about approximate grades (#607)', async () => {
+    it('exports test results in a gradebook preset and warns about blank grades (#607)', async () => {
         (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
         mockSaveAs.mockClear();
         mockShowToast.mockClear();
@@ -316,10 +316,7 @@ describe('TestListPage', () => {
             [mockStudent],
             mockGradeScale
         );
-        expect(mockShowToast).toHaveBeenCalledWith(
-            expect.stringMatching(/^exportPage\.csv_grades_approximate/),
-            'warning'
-        );
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
         expect(mockShowToast).toHaveBeenCalledWith(
             expect.stringMatching(/^exportPage\.csv_missing_student_numbers/),
             'warning'
