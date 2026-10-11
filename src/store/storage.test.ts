@@ -108,6 +108,16 @@ describe('loadStore', () => {
         expect(store.rubrics[0].id).toBe('r1');
     });
 
+    it('fills defaults into settings saved before defaultFormat existed (#706)', () => {
+        localStorage.setItem(
+            'rm_settings',
+            JSON.stringify({ language: 'en', theme: 'light', defaultGradeScaleId: 'letter-10' })
+        );
+        const store = loadStore();
+        expect(store.settings.defaultFormat.fontFamily).toBe(DEFAULT_FORMAT.fontFamily);
+        expect(store.settings.defaultGradeScaleId).toBe('letter-10');
+    });
+
     it('gracefully handles corrupted localStorage data', () => {
         localStorage.setItem('rm_rubrics', 'not-json{{{');
         const store = loadStore();
