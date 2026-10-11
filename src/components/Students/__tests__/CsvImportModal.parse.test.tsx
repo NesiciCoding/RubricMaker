@@ -49,6 +49,16 @@ describe('CsvImportModal parsing real files (#657)', () => {
         expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Anna Z', email: 'a@x.nl', classId: 'class-1' });
     });
 
+    it('keeps a valid UTF-8 file as UTF-8 when it contains a literal replacement character (#657)', async () => {
+        const file = new File(['Name,Note\n王小明,ok\nJosé Müller,broken \uFFFD char\n'], 'students.csv', {
+            type: 'text/csv',
+        });
+        render(<CsvImportModal file={file} onClose={vi.fn()} onSuccess={vi.fn()} />);
+
+        expect(await screen.findByText('王小明')).toBeInTheDocument();
+        expect(screen.getByText('José Müller')).toBeInTheDocument();
+    });
+
     it('re-reads a Windows-1252 file so accented names survive (#657)', async () => {
         const file = cp1252File('Naam;Klas\nJosé Müller;Class A\nFrançois Ærø;Class A\n');
         render(<CsvImportModal file={file} onClose={vi.fn()} onSuccess={vi.fn()} />);
