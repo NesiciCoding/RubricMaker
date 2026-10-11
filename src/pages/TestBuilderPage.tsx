@@ -79,12 +79,6 @@ export default function TestBuilderPage() {
     const { addFlashcardDeck } = useFlashcards();
 
     const existing = id ? tests.find((tst) => tst.id === id) : undefined;
-    // Reflects the saved test, not unsaved edits: it lists what keeps it from being assigned.
-    const savedBlockers = React.useMemo(() => {
-        if (!existing) return null;
-        const blockers = testAssignBlockers(existing);
-        return blockers.noQuestions || blockers.entries.length > 0 ? blockers : null;
-    }, [existing]);
     const notFound = !!id && !existing;
     const generatedState = !existing
         ? (location.state as {
@@ -124,6 +118,13 @@ export default function TestBuilderPage() {
     const [placementEngine, setPlacementEngine] = useState<NonNullable<Test['placementEngine']>>(
         existing?.placementEngine ?? 'mst'
     );
+    // Built from the unsaved draft so problems show before the first save; "no questions" only
+    // matters once the test exists, otherwise a blank builder would open with a warning.
+    const draftBlockers = React.useMemo(() => {
+        const blockers = testAssignBlockers({ questions, mode, placementEngine });
+        const noQuestions = blockers.noQuestions && !!existing;
+        return noQuestions || blockers.entries.length > 0 ? { noQuestions, entries: blockers.entries } : null;
+    }, [questions, mode, placementEngine, existing]);
     const [generatorMinLevel, setGeneratorMinLevel] = useState<CefrLevel>(
         existing?.generatorConfig?.minCefrLevel ?? 'A1'
     );
@@ -593,7 +594,7 @@ export default function TestBuilderPage() {
                 }
             >
                 <div style={{ minWidth: 0 }}>
-                    {savedBlockers && (
+                    {draftBlockers && (
                         <div
                             role="status"
                             className="card"
@@ -604,8 +605,8 @@ export default function TestBuilderPage() {
                                 {t('tests.issues_title')}
                             </p>
                             <ul style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.85rem' }}>
-                                {savedBlockers.noQuestions && <li>{t('tests.issue_no_questions')}</li>}
-                                {savedBlockers.entries.map((entry) => (
+                                {draftBlockers.noQuestions && <li>{t('tests.issue_no_questions')}</li>}
+                                {draftBlockers.entries.map((entry) => (
                                     <li key={entry.questionId}>
                                         <strong>{t('tests.issue_question', { number: entry.number })}:</strong>{' '}
                                         {entry.issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
