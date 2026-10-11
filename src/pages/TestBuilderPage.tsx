@@ -36,6 +36,7 @@ import EssayEditor from '../components/Editor/EssayEditor';
 import QuestionBankModal from '../components/Tests/QuestionBankModal';
 import TagFilterChips from '../components/Tests/TagFilterChips';
 import { cloneBankItemIntoTest, newQuestion } from '../utils/testQuestionClone';
+import { testAssignBlockers } from '../utils/testQuestionIssues';
 import type {
     Test,
     TestQuestion,
@@ -94,6 +95,7 @@ export default function TestBuilderPage() {
 
     const [name, setName] = useState(existing?.name ?? generated?.name ?? '');
     const [nameError, setNameError] = useState('');
+    const [durationError, setDurationError] = useState('');
     const [description, setDescription] = useState(existing?.description ?? '');
     const [questions, setQuestions] = useState<TestQuestion[]>(existing?.questions ?? generated?.questions ?? []);
     const [showBankModal, setShowBankModal] = useState(false);
@@ -116,6 +118,13 @@ export default function TestBuilderPage() {
     const [placementEngine, setPlacementEngine] = useState<NonNullable<Test['placementEngine']>>(
         existing?.placementEngine ?? 'mst'
     );
+    // Built from the unsaved draft so problems show before the first save; "no questions" only
+    // matters once the test exists, otherwise a blank builder would open with a warning.
+    const draftBlockers = React.useMemo(() => {
+        const blockers = testAssignBlockers({ questions, mode, placementEngine });
+        const noQuestions = blockers.noQuestions && !!existing;
+        return noQuestions || blockers.entries.length > 0 ? { noQuestions, entries: blockers.entries } : null;
+    }, [questions, mode, placementEngine, existing]);
     const [generatorMinLevel, setGeneratorMinLevel] = useState<CefrLevel>(
         existing?.generatorConfig?.minCefrLevel ?? 'A1'
     );
@@ -457,12 +466,12 @@ export default function TestBuilderPage() {
         setNameError('');
 
         const trimmedDuration = durationMinutes.trim();
-        const parsedDuration =
-            trimmedDuration === ''
-                ? undefined
-                : Number.isFinite(Number(trimmedDuration)) && Number(trimmedDuration) > 0
-                  ? Number(trimmedDuration)
-                  : undefined;
+        const parsedDuration = trimmedDuration === '' ? undefined : Number(trimmedDuration);
+        if (parsedDuration !== undefined && !(Number.isFinite(parsedDuration) && parsedDuration > 0)) {
+            setDurationError(t('tests.duration_invalid'));
+            return;
+        }
+        setDurationError('');
 
         const sanitizedSections = sections.map((s) =>
             s.routing ? { ...s, routing: { ...s.routing, thresholdPct: clampThresholdPct(s.routing.thresholdPct) } } : s
@@ -501,16 +510,24 @@ export default function TestBuilderPage() {
             printFooter: printText.printFooter,
         };
 
+        // Incomplete questions don't block saving a draft, only assigning it (TestListPage).
+        const blockers = testAssignBlockers(payload);
+        const hasBlockers = blockers.noQuestions || blockers.entries.length > 0;
+        const notifySaved = () =>
+            hasBlockers
+                ? showToast(t('tests.saved_with_issues', { count: blockers.entries.length || 1 }), 'warning')
+                : showToast(t('tests.save_success'), 'success');
+
         if (existing) {
             updateTest({ ...existing, ...payload, updatedAt: new Date().toISOString() });
-            showToast(t('tests.save_success'), 'success');
+            notifySaved();
             flushSync(() => setIsDirty(false));
         } else {
             const created = addTest(payload);
             // Flush only after the create succeeds, and before navigate so
             // useBlocker doesn't see stale isDirty=true.
             flushSync(() => setIsDirty(false));
-            showToast(t('tests.save_success'), 'success');
+            notifySaved();
             navigate(`/tests/${created.id}`, { replace: true });
         }
     }
@@ -577,6 +594,27 @@ export default function TestBuilderPage() {
                 }
             >
                 <div style={{ minWidth: 0 }}>
+                    {draftBlockers && (
+                        <div
+                            role="status"
+                            className="card"
+                            style={{ marginBottom: 20, borderColor: 'var(--yellow)', background: 'var(--bg-elevated)' }}
+                        >
+                            <p style={{ margin: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <AlertCircle size={15} style={{ color: 'var(--yellow)' }} aria-hidden="true" />
+                                {t('tests.issues_title')}
+                            </p>
+                            <ul style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.85rem' }}>
+                                {draftBlockers.noQuestions && <li>{t('tests.issue_no_questions')}</li>}
+                                {draftBlockers.entries.map((entry) => (
+                                    <li key={entry.questionId}>
+                                        <strong>{t('tests.issue_question', { number: entry.number })}:</strong>{' '}
+                                        {entry.issues.map((issue) => t(`tests.issue_${issue}`)).join(' ')}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <div
                         className="card"
                         data-tour="tb-details"
@@ -586,6 +624,8 @@ export default function TestBuilderPage() {
                             <label htmlFor="test-name">{t('tests.name_label')}</label>
                             <input
                                 id="test-name"
+                                aria-invalid={nameError ? true : undefined}
+                                aria-describedby={nameError ? 'test-name-error' : undefined}
                                 value={name}
                                 onChange={(e) => {
                                     setName(e.target.value);
@@ -594,7 +634,10 @@ export default function TestBuilderPage() {
                                 placeholder={t('tests.name_placeholder')}
                             />
                             {nameError && (
-                                <p style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}>
+                                <p
+                                    id="test-name-error"
+                                    style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}
+                                >
                                     <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                                     {nameError}
                                 </p>
@@ -690,9 +733,23 @@ export default function TestBuilderPage() {
                                     type="number"
                                     min={1}
                                     value={durationMinutes}
-                                    onChange={(e) => setDurationMinutes(e.target.value)}
+                                    onChange={(e) => {
+                                        setDurationMinutes(e.target.value);
+                                        if (durationError) setDurationError('');
+                                    }}
+                                    aria-invalid={durationError ? true : undefined}
+                                    aria-describedby={durationError ? 'test-duration-error' : undefined}
                                     placeholder={t('tests.duration_placeholder')}
                                 />
+                                {durationError && (
+                                    <p
+                                        id="test-duration-error"
+                                        style={{ color: 'var(--red)', fontSize: '0.8rem', marginTop: 4 }}
+                                    >
+                                        <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                        {durationError}
+                                    </p>
+                                )}
                             </div>
                             <div className="form-group" style={{ marginBottom: 0, flex: '1 1 200px' }}>
                                 <label htmlFor="test-grade-scale">{t('tests.grade_scale_label')}</label>
