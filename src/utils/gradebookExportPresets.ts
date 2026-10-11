@@ -10,12 +10,15 @@ export interface GradebookExportRow {
     percentage: number;
     /** The grade the app shows for this result: the label from the rubric's grade scale */
     grade: string;
+    /** An attempt the student hasn't finished: exported with an empty grade, never a partial score */
+    inProgress?: boolean;
 }
 
 export interface GradebookPresetCsv {
     csv: string;
     /** Rows whose grade-scale label isn't a 1-10 number, exported with an empty grade */
     blankGradeCount: number;
+    inProgressCount: number;
     missingNumberCount: number;
 }
 
@@ -43,6 +46,7 @@ export function buildGradebookPresetCsv(
     // A letter grade has no faithful 1-10 equivalent without the school's cesuur, and a guessed
     // number would be imported as an official grade, so those cells stay empty for the teacher.
     const gradeOf = (row: GradebookExportRow) => {
+        if (row.inProgress) return '';
         const grade = numericLabel(row.grade);
         if (grade === null) {
             blankGradeCount++;
@@ -58,6 +62,7 @@ export function buildGradebookPresetCsv(
     return {
         csv,
         blankGradeCount,
+        inProgressCount: rows.filter((r) => r.inProgress).length,
         missingNumberCount: rows.filter((r) => !r.studentNumber.trim()).length,
     };
 }

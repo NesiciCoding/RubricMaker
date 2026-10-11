@@ -245,6 +245,8 @@ export default function TestListPage() {
                     );
                 if (preset.blankGradeCount > 0)
                     showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
+                if (preset.inProgressCount > 0)
+                    showToast(t('exportPage.csv_grades_in_progress', { count: preset.inProgressCount }), 'warning');
             } else {
                 const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold, scale);
                 downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
