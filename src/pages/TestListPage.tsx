@@ -252,7 +252,10 @@ export default function TestListPage() {
     async function handleDelete(testId: string, testName: string) {
         const ok = await confirm({
             title: t('tests.delete_test_title'),
-            message: t('tests.delete_test_warning', { name: testName }),
+            message: t('tests.delete_test_warning', {
+                name: testName,
+                count: studentTests.filter((st) => st.testId === testId).length,
+            }),
             confirmLabel: t('common.delete'),
         });
         if (ok) deleteTest(testId);
