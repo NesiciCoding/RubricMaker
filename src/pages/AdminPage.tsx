@@ -3,6 +3,7 @@ import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
+import { downloadCsv } from '../utils/csvDownload';
 import { isLastAdminError } from '../utils/roleChangeError';
 import { useTranslation, Trans } from 'react-i18next';
 import {
@@ -1647,10 +1648,7 @@ function AuditTab() {
             ],
             CSV_UNPARSE_OPTIONS
         );
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-        a.download = `audit_log_${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
+        downloadCsv(csv, `audit_log_${new Date().toISOString().slice(0, 10)}.csv`);
     }
 
     if (!dbStatus.isConnected) {

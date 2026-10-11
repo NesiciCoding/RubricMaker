@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookMarked, Download, FileUp, Layers } from 'lucide-react';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../../utils/csvOptions';
-import { saveAs } from 'file-saver';
+import { downloadCsv } from '../../utils/csvDownload';
 import CefrBadge from '../CEFR/CefrBadge';
 import VocabCefrDistributionChart from '../Statistics/VocabCefrDistributionChart';
 import WordnetDownloadModal from './WordnetDownloadModal';
@@ -86,8 +86,8 @@ export default function TextScreeningPanel() {
             [t('vocabProfile.csv_column_word')]: w.word,
             [t('vocabProfile.csv_column_level')]: w.level,
         }));
-        saveAs(
-            new Blob([Papa.unparse(rows, CSV_UNPARSE_OPTIONS)], { type: 'text/csv;charset=utf-8;' }),
+        downloadCsv(
+            Papa.unparse(rows, CSV_UNPARSE_OPTIONS),
             `${t('vocabProfile.screen_csv_filename')}_${targetLevel}.csv`
         );
     }
