@@ -3,16 +3,37 @@ import {
     sanitizeFilename,
     formatPointsRange,
     stripHtmlTags,
+    createUniqueFilenames,
     stripCommentHtml,
     stripHtmlKeepLineBreaks,
     promptToHtml,
 } from './exportDataPrep';
 
 describe('sanitizeFilename', () => {
-    it('keeps letters and digits, replacing everything else with underscores', () => {
-        expect(sanitizeFilename('My Rubric! (final)')).toBe('My_Rubric___final_');
+    it('keeps letters and digits, turning each run of anything else into one underscore', () => {
+        expect(sanitizeFilename('My Rubric! (final)')).toBe('My_Rubric_final_');
         expect(sanitizeFilename('A1')).toBe('A1');
-        expect(sanitizeFilename('café & tea')).toBe('caf____tea');
+        expect(sanitizeFilename('a/b\\c:d')).toBe('a_b_c_d');
+    });
+
+    it('keeps letters of every script and composes decomposed accents (#692)', () => {
+        expect(sanitizeFilename('Zoë Müller-Åberg')).toBe('Zoë_Müller_Åberg');
+        expect(sanitizeFilename('Zoe\u0308')).toBe('Zoë');
+        expect(sanitizeFilename('محمد علي')).toBe('محمد_علي');
+        expect(sanitizeFilename('王小明')).toBe('王小明');
+        expect(sanitizeFilename('हिन्दी')).toBe('हिन्दी');
+    });
+});
+
+describe('createUniqueFilenames (#692)', () => {
+    it('numbers repeated names before the extension, ignoring case', () => {
+        const claim = createUniqueFilenames();
+        expect(claim('Ana_essay.docx')).toBe('Ana_essay.docx');
+        expect(claim('Ana_essay.docx')).toBe('Ana_essay_2.docx');
+        expect(claim('ana_ESSAY.docx')).toBe('ana_ESSAY_3.docx');
+        expect(claim('Ana_essay.md')).toBe('Ana_essay.md');
+        expect(claim('README')).toBe('README');
+        expect(claim('README')).toBe('README_2');
     });
 });
 

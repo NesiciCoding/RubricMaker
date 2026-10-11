@@ -107,6 +107,17 @@ describe('periodReportExport', () => {
         expect(saveAs).toHaveBeenCalledTimes(2);
     });
 
+    it('gives students whose names reduce to the same file name distinct files (#692)', async () => {
+        await exportPeriodReportsBatch([
+            { ...baseInput, student: { ...baseInput.student, name: 'Li Wei' } },
+            { ...baseInput, student: { ...baseInput.student, id: 's2', name: 'Li  Wei' } },
+        ]);
+        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual([
+            'Li_Wei_period_report.docx',
+            'Li_Wei_period_report_2.docx',
+        ]);
+    });
+
     it('handles entries with no comments in the feedback section', async () => {
         const noCommentSr = { ...mockSr, overallComment: '', entries: [{ ...mockSr.entries[0], comment: '' }] };
         await exportPeriodReport({
@@ -477,6 +488,17 @@ describe('exportReportCard', () => {
     it('exportReportCardsBatch calls saveAs once per student', async () => {
         await exportReportCardsBatch([fullReportCard, emptyReportCard]);
         expect(saveAs).toHaveBeenCalledTimes(2);
+    });
+
+    it('numbers report cards of students with the same name (#692)', async () => {
+        await exportReportCardsBatch([
+            { ...fullReportCard, studentName: 'محمد' },
+            { ...emptyReportCard, studentName: 'محمد' },
+        ]);
+        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual([
+            'محمد_report_card.docx',
+            'محمد_report_card_2.docx',
+        ]);
     });
 
     it('renders a Feedback section from the rubrics section, matching period report behavior', async () => {

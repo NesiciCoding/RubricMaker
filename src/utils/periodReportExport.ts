@@ -25,7 +25,7 @@ import type {
 } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import { buildDocxStyles } from './docxExport';
-import { sanitizeFilename, stripCommentHtml } from './exportDataPrep';
+import { createUniqueFilenames, sanitizeFilename, stripCommentHtml } from './exportDataPrep';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
 export interface PeriodReportEntry {
@@ -380,7 +380,11 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
     return blocks;
 }
 
-export async function exportPeriodReport(input: PeriodReportInput, styleTemplate?: ExportTemplate): Promise<void> {
+export async function exportPeriodReport(
+    input: PeriodReportInput,
+    styleTemplate?: ExportTemplate,
+    claimFilename: (name: string) => string = (name) => name
+): Promise<void> {
     const { student, className, entries, periodLabel, goals } = input;
 
     const sections: ReportCardSection[] = [{ type: 'rubrics', entries }];
@@ -397,15 +401,16 @@ export async function exportPeriodReport(input: PeriodReportInput, styleTemplate
     const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
     const safeName = sanitizeFilename(student.name);
-    saveAs(blob, `${safeName}_period_report.docx`);
+    saveAs(blob, claimFilename(`${safeName}_period_report.docx`));
 }
 
 export async function exportPeriodReportsBatch(
     inputs: PeriodReportInput[],
     styleTemplate?: ExportTemplate
 ): Promise<void> {
+    const claimFilename = createUniqueFilenames();
     for (const input of inputs) {
-        await exportPeriodReport(input, styleTemplate);
+        await exportPeriodReport(input, styleTemplate, claimFilename);
     }
 }
 
@@ -644,19 +649,24 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
     return blocks;
 }
 
-export async function exportReportCard(data: ReportCardData, styleTemplate?: ExportTemplate): Promise<void> {
+export async function exportReportCard(
+    data: ReportCardData,
+    styleTemplate?: ExportTemplate,
+    claimFilename: (name: string) => string = (name) => name
+): Promise<void> {
     const blocks = await buildReportCardSections(data);
     const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
     const blob = await Packer.toBlob(doc);
     const safeName = sanitizeFilename(data.studentName);
-    saveAs(blob, `${safeName}_report_card.docx`);
+    saveAs(blob, claimFilename(`${safeName}_report_card.docx`));
 }
 
 export async function exportReportCardsBatch(
     dataList: ReportCardData[],
     styleTemplate?: ExportTemplate
 ): Promise<void> {
+    const claimFilename = createUniqueFilenames();
     for (const data of dataList) {
-        await exportReportCard(data, styleTemplate);
+        await exportReportCard(data, styleTemplate, claimFilename);
     }
 }

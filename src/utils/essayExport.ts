@@ -29,7 +29,7 @@ import type {
 } from '../types';
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
 import { printHtml, buildRubricHTML } from './pdfExport';
-import { sanitizeFilename } from './exportDataPrep';
+import { createUniqueFilenames, sanitizeFilename } from './exportDataPrep';
 
 type EssayLike = Pick<EssayAssignment, 'title'>;
 
@@ -512,11 +512,16 @@ function essayHtmlHeader(assignment: EssayLike, student: Student, submission: Es
   </div>`;
 }
 
-export async function exportEssayMarkdown(assignment: EssayLike, student: Student, submission: EssaySubmission) {
+export async function exportEssayMarkdown(
+    assignment: EssayLike,
+    student: Student,
+    submission: EssaySubmission,
+    claimFilename: (name: string) => string = (name) => name
+) {
     const md = `# ${assignment.title}\n\n_${essayHeaderLine(assignment, student, submission)}_\n\n${htmlToMarkdown(submission.contentHtml)}\n`;
     saveAs(
         new Blob([md], { type: 'text/markdown' }),
-        `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.md`
+        claimFilename(`${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.md`)
     );
 }
 
@@ -524,7 +529,8 @@ export async function exportEssayDocx(
     assignment: EssayLike,
     student: Student,
     submission: EssaySubmission,
-    styleTemplate?: ExportTemplate
+    styleTemplate?: ExportTemplate,
+    claimFilename: (name: string) => string = (name) => name
 ) {
     const doc = new Document({
         styles: buildDocxStyles(undefined, styleTemplate),
@@ -538,7 +544,7 @@ export async function exportEssayDocx(
         ],
     });
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`);
+    saveAs(blob, claimFilename(`${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`));
 }
 
 export async function exportEssayPdf(
@@ -563,9 +569,11 @@ export async function exportEssaysBatch(
     styleTemplate?: ExportTemplate
 ) {
     if (mode === 'separate') {
+        const claimFilename = createUniqueFilenames();
         for (const { assignment, student, submission } of entries) {
-            if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission);
-            else if (format === 'docx') await exportEssayDocx(assignment, student, submission, styleTemplate);
+            if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission, claimFilename);
+            else if (format === 'docx')
+                await exportEssayDocx(assignment, student, submission, styleTemplate, claimFilename);
             else await exportEssayPdf(assignment, student, submission, styleTemplate);
         }
         return;
