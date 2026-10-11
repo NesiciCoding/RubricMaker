@@ -885,11 +885,47 @@ describe('TestBuilderPage extended', () => {
         expect(screen.queryByText('questionBank.insert_title')).not.toBeInTheDocument();
     });
 
-    it('rejects zero durations and skips an empty content area', () => {
+    it('saves a draft with incomplete questions but lists what is missing (#702)', () => {
+        renderBuilder();
+        fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });
+        fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddTest).toHaveBeenCalled();
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^tests\.saved_with_issues/), 'warning');
+    });
+
+    it('lists what keeps a saved test from being assigned (#702)', () => {
+        mockTests = [
+            {
+                id: 'incomplete',
+                name: 'Incomplete',
+                createdAt: '2024-01-01T00:00:00Z',
+                updatedAt: '2024-01-01T00:00:00Z',
+                questions: [
+                    { id: 'q1', type: 'open', prompt: 'Explain', points: 1 },
+                    { id: 'q2', type: 'numeric', prompt: '2 + 2?', points: 1 },
+                ],
+            } as RmTest,
+        ];
+        renderBuilder('/tests/incomplete');
+        expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
+        expect(screen.getByText(/tests\.issue_question.*"number":2/)).toBeInTheDocument();
+        expect(screen.getByText(/tests\.issue_no_numeric_answer/)).toBeInTheDocument();
+    });
+
+    it('blocks saving with an inline error for a zero or negative time limit (#702)', () => {
         renderBuilder();
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'practice' } });
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Dur' } });
-        fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value: '0' } });
+        for (const value of ['0', '-5']) {
+            fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value } });
+            fireEvent.click(screen.getByText('common.save'));
+            expect(mockAddTest).not.toHaveBeenCalled();
+            expect(screen.getByText('tests.duration_invalid')).toBeInTheDocument();
+            expect(screen.getByLabelText('tests.duration_label')).toHaveAttribute('aria-invalid', 'true');
+        }
+        fireEvent.change(screen.getByLabelText('tests.duration_label'), { target: { value: '' } });
+        expect(screen.queryByText('tests.duration_invalid')).not.toBeInTheDocument();
         fireEvent.click(screen.getByText('common.save'));
         const payload = mockAddTest.mock.calls[0][0];
         expect(payload.durationMinutes).toBeUndefined();
