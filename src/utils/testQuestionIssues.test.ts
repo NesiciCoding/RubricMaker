@@ -62,6 +62,12 @@ describe('testQuestionIssues (#702)', () => {
         expect(
             testQuestionIssues(q({ type: 'hot-text', hotTextPassage: '[[a]] [[b]]', hotTextCorrectIndices: [5] }))
         ).toEqual(['no_correct_fragment']);
+        expect(
+            testQuestionIssues(q({ type: 'hot-text', hotTextPassage: '[[a]] [[b]]', hotTextCorrectIndices: [-1] }))
+        ).toEqual(['no_correct_fragment']);
+        expect(
+            testQuestionIssues(q({ type: 'hot-text', hotTextPassage: '[[a]] [[b]]', hotTextCorrectIndices: [1] }))
+        ).toEqual([]);
     });
 
     it('checks the answer data of the remaining scored types', () => {
