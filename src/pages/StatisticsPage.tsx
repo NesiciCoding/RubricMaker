@@ -9,6 +9,7 @@ import BloomsPyramidChart from '../components/Statistics/BloomsPyramidChart';
 import FrameworkRoseChart from '../components/Statistics/FrameworkRoseChart';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
+import { downloadCsv, uniqueColumnLabels } from '../utils/csvDownload';
 import { saveAs } from 'file-saver';
 import Topbar from '../components/Layout/Topbar';
 import PageTour from '../components/Tour/PageTour';
@@ -596,17 +597,21 @@ export default function StatisticsPage() {
                 'Max Points': summary.maxRawScore,
             };
             const snap = sr.rubricSnapshot || rubric;
-            snap.criteria.forEach((c: RubricCriterion) => {
+            const criterionLabels = uniqueColumnLabels(
+                snap.criteria.map((c) => c.title),
+                (position) => `#${position}`
+            );
+            snap.criteria.forEach((c: RubricCriterion, ci: number) => {
                 const entry = sr.entries.find((e) => e.criterionId === c.id);
                 const pts = entry ? calcEntryPoints(entry, c) : 0;
-                base[`Criterion: ${c.title}`] = pts;
-                base[`Criterion: ${c.title} (Comment)`] = entry?.comment ?? '';
+                base[`Criterion: ${criterionLabels[ci]}`] = pts;
+                base[`Criterion: ${criterionLabels[ci]} (Comment)`] = entry?.comment ?? '';
             });
             return base;
         });
         const csv = Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
         const filename = `${t('statistics.csv_filename')}_${sanitizeFilename(rubric.name)}.csv`;
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
+        downloadCsv(csv, filename);
     }
 
     // ── Criterion chart (bar or radar) shared renderer ────────────────────────

@@ -397,6 +397,54 @@ describe('ExportPage coverage', () => {
         expect(global.URL.createObjectURL).toHaveBeenCalled();
     });
 
+    it('writes a BOM, an ISO date and a column per criterion even when titles repeat (#684)', async () => {
+        appOverrides = {
+            rubrics: [
+                {
+                    ...mockRubric,
+                    criteria: [
+                        mockRubric.criteria[0],
+                        { ...mockRubric.criteria[1], title: 'Content' },
+                        { ...mockRubric.criteria[2], title: '  ' },
+                    ],
+                },
+                mockRubric2,
+            ],
+            studentRubrics: [
+                baseSr({
+                    id: 'sr1',
+                    entries: [
+                        { criterionId: 'c1', levelId: null, overridePoints: 85, checkedSubItems: [], comment: 'one' },
+                        { criterionId: 'c2', levelId: null, selectedPoints: 40, checkedSubItems: [], comment: 'two' },
+                    ],
+                    gradedAt: '2024-01-15T10:00:00Z',
+                }),
+            ],
+        };
+        renderPage();
+        openSection('exportPage.rubric_students_section_title');
+        fireEvent.click(screen.getByText('exportPage.select_all'));
+        await act(async () => {
+            fireEvent.click(screen.getByText(/exportPage.csv_export_count/));
+        });
+        const blob = vi.mocked(global.URL.createObjectURL).mock.calls.at(-1)![0] as Blob;
+        const bytes = new Uint8Array(
+            await new Promise<ArrayBuffer>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as ArrayBuffer);
+                reader.readAsArrayBuffer(blob);
+            })
+        );
+        expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+        const [header, row] = new TextDecoder().decode(bytes.slice(3)).split('\r\n');
+        expect(header).toContain('Criterion: Content (1) (Score)');
+        expect(header).toContain('Criterion: Content (2) (Score)');
+        expect(header).toContain('Criterion: #3 (Score)');
+        expect(row).toContain('2024-01-15');
+        expect(row).toContain('85');
+        expect(row).toContain('40');
+    });
+
     it('exports a preset CSV and returns early', async () => {
         renderPage();
         openSection('exportPage.rubric_students_section_title');

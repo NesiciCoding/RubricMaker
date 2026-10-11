@@ -219,9 +219,9 @@ export default function TestListPage() {
         try {
             const { buildTestResultsCsv } = await import('../utils/testExportPresets');
             const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold);
-            const { saveAs } = await import('file-saver');
+            const { downloadCsv } = await import('../utils/csvDownload');
             const { sanitizeFilename } = await import('../utils/exportDataPrep');
-            saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(test.name)}_results.csv`);
+            downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
             const uniqueStudentCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
             logAuditEvent('export', 'export_test_summary_csv', 'test', test.id, {
                 count: uniqueStudentCount,

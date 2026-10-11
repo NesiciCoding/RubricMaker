@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { saveAs } from 'file-saver';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
+import { csvDate, downloadCsv, uniqueColumnLabels } from '../utils/csvDownload';
 import { logAuditEvent } from '../services/database/AuditLogger';
 import { storageSync } from '../services/database';
 import PageTour from '../components/Tour/PageTour';
@@ -413,10 +414,7 @@ export default function ExportPage() {
             }))
         );
         if (presetCsv !== null) {
-            saveAs(
-                new Blob([presetCsv], { type: 'text/csv;charset=utf-8;' }),
-                `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`
-            );
+            downloadCsv(presetCsv, `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`);
             logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
                 count: toExport.length,
                 preset: gradebookPreset,
@@ -424,12 +422,16 @@ export default function ExportPage() {
             return;
         }
 
+        const criterionLabels = uniqueColumnLabels(
+            rubric.criteria.map((c) => c.title),
+            (position) => `#${position}`
+        );
         const data = toExport.map(({ sr, student, summary }) => {
             const row: Record<string, string | number> = {
                 'Student Name': student!.name,
                 Email: student!.email || '',
                 'Rubric Name': rubric.name,
-                'Date Graded': sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : '',
+                'Date Graded': csvDate(sr.gradedAt),
                 'Score %': summary!.modifiedPercentage.toFixed(1),
                 'Letter Grade': summary!.letterGrade,
                 'Raw Points': summary!.rawScore,
@@ -441,7 +443,7 @@ export default function ExportPage() {
                 'Overall Comment': sr.overallComment || '',
             };
 
-            rubric.criteria.forEach((c) => {
+            rubric.criteria.forEach((c, ci) => {
                 const entry = sr.entries.find((e) => e.criterionId === c.id);
                 const snapshotC = (sr.rubricSnapshot || rubric).criteria.find((sc) => sc.id === c.id) || c;
                 let score = '';
@@ -461,8 +463,8 @@ export default function ExportPage() {
                     }
                 }
 
-                row[`Criterion: ${c.title} (Score)`] = score;
-                row[`Criterion: ${c.title} (Comment)`] = entry?.comment || '';
+                row[`Criterion: ${criterionLabels[ci]} (Score)`] = score;
+                row[`Criterion: ${criterionLabels[ci]} (Comment)`] = entry?.comment || '';
             });
 
             return row;
@@ -470,7 +472,7 @@ export default function ExportPage() {
 
         const Papa = await import('papaparse');
         const csv = Papa.unparse(data, CSV_UNPARSE_OPTIONS);
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `${sanitizeFilename(rubric.name)}_grades.csv`);
+        downloadCsv(csv, `${sanitizeFilename(rubric.name)}_grades.csv`);
         logAuditEvent('export', 'export_csv', 'rubric', rubric.id, { count: toExport.length });
     }
 

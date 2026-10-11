@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Download, BookOpen, Users, Gauge, Map, Layers } from 'lucide-react';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
-import { saveAs } from 'file-saver';
+import { downloadCsv } from '../utils/csvDownload';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import ClassFilterChips from '../components/ui/ClassFilterChips';
@@ -99,7 +99,7 @@ export default function VocabularyDashboardPage() {
         const csv = Papa.unparse(csvRows, CSV_UNPARSE_OPTIONS);
         const suffix = band ?? t('vocabProfile.csv_band_all');
         const filename = `${t('vocabProfile.csv_filename')}_${suffix}.csv`;
-        saveAs(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
+        downloadCsv(csv, filename);
     }
 
     function handleSeedDeck() {
