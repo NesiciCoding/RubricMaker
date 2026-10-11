@@ -61,12 +61,21 @@ export default function EssayListPage() {
         }
     }
 
+    // Offline (pasted-code) submissions come from the hydrated essaySubmissions; online hand-ins
+    // (essay_submissions via submit-essay) are added via useOnlineEssaySubmissions — otherwise the
+    // count would stay 0 for portal submissions.
+    const submittedCount = (teacherKey: string) =>
+        new Set([
+            ...essaySubmissions.filter((s) => s.teacherKey === teacherKey).map((s) => s.assignmentStudentId),
+            ...(onlineEssaySubmissions.get(teacherKey) ?? []),
+        ]).size;
+
     async function handleDelete(teacherKey: string, title: string) {
         const ok = await confirm({
             title: t('essays.delete_essay_title'),
             message: t('essays.delete_essay_warning', {
                 name: title,
-                count: essaySubmissions.filter((s) => s.teacherKey === teacherKey).length,
+                count: submittedCount(teacherKey),
             }),
             confirmLabel: t('common.delete'),
         });
@@ -123,16 +132,7 @@ export default function EssayListPage() {
                                     {groups.map(({ teacherKey, rows }, idx) => {
                                         const first = rows[0];
                                         const rubric = rubrics.find((r) => r.id === first.rubricId);
-                                        // Offline (pasted-code) submissions come from the hydrated
-                                        // essaySubmissions; online hand-ins (essay_submissions via
-                                        // submit-essay) are added via useOnlineEssaySubmissions —
-                                        // otherwise the count would stay 0 for portal submissions.
-                                        const submittedCount = new Set([
-                                            ...essaySubmissions
-                                                .filter((s) => s.teacherKey === teacherKey)
-                                                .map((s) => s.assignmentStudentId),
-                                            ...(onlineEssaySubmissions.get(teacherKey) ?? []),
-                                        ]).size;
+                                        const submitted = submittedCount(teacherKey);
                                         return (
                                             <Draggable
                                                 key={teacherKey}
@@ -246,7 +246,7 @@ export default function EssayListPage() {
                                                                         // v8 ignore next line — grouped rows always have at least one row
                                                                         rows.length
                                                                             ? Math.round(
-                                                                                  (submittedCount / rows.length) * 100
+                                                                                  (submitted / rows.length) * 100
                                                                               )
                                                                             : 0
                                                                     }
@@ -266,8 +266,7 @@ export default function EssayListPage() {
                                                                             width: `${
                                                                                 // v8 ignore next line — grouped rows always have at least one row
                                                                                 rows.length
-                                                                                    ? (submittedCount / rows.length) *
-                                                                                      100
+                                                                                    ? (submitted / rows.length) * 100
                                                                                     : 0
                                                                             }%`,
                                                                             background: 'var(--green, #22c55e)',
@@ -275,7 +274,7 @@ export default function EssayListPage() {
                                                                     />
                                                                 </div>
                                                                 <span className="text-muted text-xs">
-                                                                    {submittedCount}/{rows.length}
+                                                                    {submitted}/{rows.length}
                                                                 </span>
                                                             </div>
                                                         </div>
