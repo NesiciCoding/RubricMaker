@@ -54,7 +54,8 @@ test.describe('Rubric CRUD', () => {
         await expect(appPage.getByRole('dialog')).toBeVisible();
         await list.confirmDelete();
 
-        await expect(appPage.getByText('Rubric To Delete')).not.toBeVisible({ timeout: 5_000 });
+        // exact: the Undo toast also mentions the name ("Deleted “Rubric To Delete”.")
+        await expect(appPage.getByText('Rubric To Delete', { exact: true })).not.toBeVisible({ timeout: 5_000 });
     });
 
     test('cancel delete keeps the rubric', async ({ appPage, seedStorage }) => {

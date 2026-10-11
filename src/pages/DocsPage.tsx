@@ -755,7 +755,7 @@ function RubricsTab() {
                     {t('docs.rb_builder_intro')}
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 16 }}>
-                    {t('docs.rb_duplicate_body')}
+                    {t('docs.rb_duplicate_body')} {t('docs.rb_delete_body')}
                 </p>
                 <InfoBox>
                     {t('docs.rb_builder_views_prefix')} <strong>{t('docs.rb_builder_views_form')}</strong>{' '}
