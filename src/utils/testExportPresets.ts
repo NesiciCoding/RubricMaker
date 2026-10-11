@@ -1,15 +1,60 @@
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from './csvOptions';
-import type { Student, StudentTest, Test } from '../types';
+import type { GradeScale, Student, StudentTest, Test } from '../types';
+import type { GradebookExportRow } from './gradebookExportPresets';
+import { calcLetterGrade } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
 import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
 import { describeTestCefr, pickLatestAttempt } from './testAnswerText';
 
-/** Mirrors the rawPoints + adjustmentPoints → percentage formula TestResultsPage.tsx uses for a student's displayed score. */
-function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: number): number {
+/** The rawPoints + adjustmentPoints TestResultsPage.tsx shows as a student's score. */
+function studentPoints(test: Test, studentTest: StudentTest): number {
     const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
-    const adjustmentPoints = studentTest.adjustmentPoints ?? 0;
-    return calcTestPercentage(rawPoints + adjustmentPoints, maxPoints);
+    return rawPoints + (studentTest.adjustmentPoints ?? 0);
+}
+
+/** Mirrors the points → percentage formula TestResultsPage.tsx uses for a student's displayed score. */
+function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: number): number {
+    return calcTestPercentage(studentPoints(test, studentTest), maxPoints);
+}
+
+const STATUS_LABELS: Record<StudentTest['status'], string> = {
+    in_progress: 'In progress',
+    submitted: 'Submitted',
+    graded: 'Graded',
+};
+
+/** One canonical attempt per student: the latest, so a practice test with several attempts yields one row. */
+function latestAttempts(test: Test, studentTests: StudentTest[]): StudentTest[] {
+    const attemptsByStudent = new Map<string, StudentTest[]>();
+    for (const st of studentTests) {
+        if (st.testId !== test.id) continue;
+        const attempts = attemptsByStudent.get(st.studentId) ?? [];
+        attempts.push(st);
+        attemptsByStudent.set(st.studentId, attempts);
+    }
+    // attemptsByStudent groups only this test's submissions, so each list is non-empty.
+    return Array.from(attemptsByStudent.values()).map((attempts) => pickLatestAttempt(attempts)!);
+}
+
+/** Rows for the Magister/SOMtoday gradebook presets, graded with the scale the results page uses. */
+export function buildTestGradebookRows(
+    test: Test,
+    studentTests: StudentTest[],
+    students: Student[],
+    scale: GradeScale | null
+): GradebookExportRow[] {
+    const maxPoints = calcTestMaxPoints(test);
+    return latestAttempts(test, studentTests).map((studentTest) => {
+        const student = students.find((s) => s.id === studentTest.studentId);
+        const percentage = studentPercentage(test, studentTest, maxPoints);
+        return {
+            studentName: student?.name ?? '',
+            studentNumber: student?.studentNumber ?? '',
+            percentage,
+            grade: scale ? calcLetterGrade(percentage, scale) : '',
+        };
+    });
 }
 
 /**
@@ -24,22 +69,13 @@ export function buildTestResultsCsv(
     test: Test,
     studentTests: StudentTest[],
     students: Student[],
-    achieveThreshold?: number
+    achieveThreshold?: number,
+    scale: GradeScale | null = null
 ): string {
     const maxPoints = calcTestMaxPoints(test);
     const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
-    const relevant = studentTests.filter((st) => st.testId === test.id);
 
-    const attemptsByStudent = new Map<string, StudentTest[]>();
-    for (const st of relevant) {
-        const attempts = attemptsByStudent.get(st.studentId) ?? [];
-        attempts.push(st);
-        attemptsByStudent.set(st.studentId, attempts);
-    }
-
-    const rows = Array.from(attemptsByStudent.values()).map((attempts) => {
-        // attemptsByStudent groups only this test's submissions, so the list is always non-empty here.
-        const studentTest = pickLatestAttempt(attempts)!;
+    const rows = latestAttempts(test, studentTests).map((studentTest) => {
         const student = students.find((s) => s.id === studentTest.studentId);
         // Scope the breakdowns to just the canonical attempt's own answers — passing the full
         // studentTests array here would blend earlier attempts' answers into the accuracy
@@ -51,7 +87,11 @@ export function buildTestResultsCsv(
             'Student Name': student?.name ?? '',
             'Student Number': student?.studentNumber ?? '',
             'Score %': studentPercentage(test, studentTest, maxPoints).toFixed(1),
+            Points: studentPoints(test, studentTest),
+            'Max Points': maxPoints,
         };
+        if (scale) row['Grade'] = calcLetterGrade(studentPercentage(test, studentTest, maxPoints), scale);
+        row['Status'] = STATUS_LABELS[studentTest.status];
 
         if (hasCefr) {
             row['CEFR'] = describeTestCefr(test, studentTest, achieveThreshold) ?? '';
