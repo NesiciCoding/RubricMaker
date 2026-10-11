@@ -33,7 +33,12 @@ import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
 import { sanitizeFilename } from '../utils/exportDataPrep';
 import type { ReportCardConfig, Student, StudentRubric } from '../types';
-import { buildGradebookPresetCsv, GRADEBOOK_PRESET_IDS, type GradebookPresetId } from '../utils/gradebookExportPresets';
+import {
+    buildGradebookPresetCsv,
+    GRADEBOOK_PRESET_IDS,
+    type DecimalSeparator,
+    type GradebookPresetId,
+} from '../utils/gradebookExportPresets';
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
@@ -95,6 +100,8 @@ export default function ExportPage() {
     const rubric = rubrics.find((r) => r.id === selectedRubricId);
 
     const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
+    // Magister and SOMtoday are Dutch systems, whose Excel reads 7,5 and treats 7.5 as text.
+    const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
     const [padForDoubleSided, setPadForDoubleSided] = useState(false);
     const [orientation, setOrientation] = useState<'portrait' | 'landscape' | undefined>(undefined);
     const [showBulkComment, setShowBulkComment] = useState(false);
@@ -405,16 +412,22 @@ export default function ExportPage() {
         // v8 ignore next 1 -- disabled whenever nothing is selected
         if (toExport.length === 0) return;
 
-        const presetCsv = buildGradebookPresetCsv(
+        const preset = buildGradebookPresetCsv(
             gradebookPreset,
             toExport.map(({ student, summary }) => ({
                 studentName: student!.name,
                 studentNumber: student!.studentNumber || '',
                 percentage: summary!.modifiedPercentage,
-            }))
+                grade: summary!.letterGrade,
+            })),
+            gradebookDecimal
         );
-        if (presetCsv !== null) {
-            downloadCsv(presetCsv, `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`);
+        if (preset !== null) {
+            downloadCsv(preset.csv, `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`);
+            if (preset.missingNumberCount > 0)
+                showToast(t('exportPage.csv_missing_student_numbers', { count: preset.missingNumberCount }), 'warning');
+            if (preset.blankGradeCount > 0)
+                showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
             logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
                 count: toExport.length,
                 preset: gradebookPreset,
@@ -859,6 +872,18 @@ export default function ExportPage() {
                                             </option>
                                         ))}
                                     </select>
+                                    {gradebookPreset !== 'generic' && (
+                                        <select
+                                            aria-label={t('exportPage.csv_decimal_label')}
+                                            className="form-control"
+                                            style={{ fontSize: '0.8rem', padding: '4px 6px', width: 'auto' }}
+                                            value={gradebookDecimal}
+                                            onChange={(e) => setGradebookDecimal(e.target.value as DecimalSeparator)}
+                                        >
+                                            <option value="comma">{t('exportPage.csv_decimal_comma')}</option>
+                                            <option value="dot">{t('exportPage.csv_decimal_dot')}</option>
+                                        </select>
+                                    )}
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         disabled={!rubric || exporting || selectedStudentIds.size === 0}

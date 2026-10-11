@@ -456,6 +456,26 @@ describe('ExportPage coverage', () => {
         expect(global.URL.createObjectURL).toHaveBeenCalled();
     });
 
+    it('warns about blank grades and missing student numbers in a gradebook preset (#688)', async () => {
+        mockShowToast.mockClear();
+        appOverrides = { students: [{ ...mockStudent, studentNumber: undefined }, mockStudent2, orphanStudent] };
+        renderPage();
+        openSection('exportPage.rubric_students_section_title');
+        expect(screen.queryByLabelText('exportPage.csv_decimal_label')).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('exportPage.csv_preset_label'), { target: { value: 'magister' } });
+        expect(screen.getByLabelText('exportPage.csv_decimal_label')).toHaveValue('comma');
+        fireEvent.click(screen.getByText('exportPage.select_all'));
+        await act(async () => {
+            fireEvent.click(screen.getByText(/exportPage.csv_export_count/));
+        });
+        // The mocked scale grades with letters.
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
+        expect(mockShowToast).toHaveBeenCalledWith(
+            expect.stringMatching(/^exportPage\.csv_missing_student_numbers/),
+            'warning'
+        );
+    });
+
     it('bulk-marks not handed in and bulk-appends a comment', async () => {
         const saveStudentRubric = vi.fn();
         appOverrides = { saveStudentRubric };
