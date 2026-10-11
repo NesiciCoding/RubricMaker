@@ -224,7 +224,7 @@ describe('RubricList extended', () => {
             target: { value: 'not-a-valid-code' },
         });
         fireEvent.click(screen.getByText('Import rubric'));
-        expect(screen.getByText('Invalid share code. Make sure you pasted the full code.')).toBeInTheDocument();
+        expect(screen.getByText('rubricList.share_code_invalid')).toBeInTheDocument();
         expect(mockAddRubric).not.toHaveBeenCalled();
     });
 

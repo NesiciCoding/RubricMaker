@@ -46,7 +46,7 @@ import { encodeRubricShareCode, decodeRubricShareCode } from '../utils/rubricImp
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
 import { sortByDisplayOrder, reorderDisplayOrder, displayOrderAfter } from '../utils/displayOrder';
-import { cloneRubricForCopy } from '../utils/rubricClone';
+import { cloneRubricForCopy, type RubricInput } from '../utils/rubricClone';
 import { getCohortStudentIds, isAllCohorts, ALL_COHORTS } from '../utils/cohortAggregator';
 import CohortFilter from '../components/CohortFilter';
 
@@ -59,7 +59,7 @@ export default function RubricList() {
     const { classes } = useClasses();
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
 
-    const { rubrics, addRubric, updateRubric, deleteRubric } = useAuthoring();
+    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric } = useAuthoring();
     const { settings } = useSettings();
 
     const [search, setSearch] = useState('');
@@ -191,26 +191,35 @@ export default function RubricList() {
         setTimeout(() => setCopiedId(null), 2000);
     }
 
+    // An exported grade scale id only means something in the workspace it came from.
+    function rubricFromImport(parsed: ParsedRubric): RubricInput {
+        const knownScale = gradeScales.some((g) => g.id === parsed.gradeScaleId);
+        return {
+            name: parsed.name || t('rubricList.imported_rubric_name'),
+            subject: parsed.subject || '',
+            description: parsed.description || '',
+            criteria: parsed.criteria,
+            gradeScaleId: knownScale ? parsed.gradeScaleId! : settings.defaultGradeScaleId,
+            format: parsed.format ?? DEFAULT_FORMAT,
+            scoringMode: parsed.scoringMode ?? 'weighted-percentage',
+            totalMaxPoints: parsed.totalMaxPoints ?? 100,
+            attachmentIds: [],
+            cefrTargetLevel: parsed.cefrTargetLevel,
+            cefrSkill: parsed.cefrSkill,
+            cefrAchieveThreshold: parsed.cefrAchieveThreshold,
+            ...(parsed.vocabularyItems && { vocabularyItems: parsed.vocabularyItems }),
+        };
+    }
+
     function handleImportFromCode() {
         try {
-            const parsed = decodeRubricShareCode(pastedCode);
-            const newR = addRubric({
-                name: parsed.name || 'Imported Rubric',
-                subject: parsed.subject || '',
-                description: parsed.description || '',
-                criteria: parsed.criteria,
-                gradeScaleId: parsed.gradeScaleId || settings.defaultGradeScaleId,
-                format: parsed.format || DEFAULT_FORMAT,
-                scoringMode: parsed.scoringMode || 'weighted-percentage',
-                totalMaxPoints: parsed.totalMaxPoints ?? 100,
-                attachmentIds: [],
-            });
+            const newR = addRubric(rubricFromImport(decodeRubricShareCode(pastedCode)));
             setShowCodeImport(false);
             setPastedCode('');
             setCodeImportError(null);
             navigate(`/rubrics/${newR.id}`);
         } catch {
-            setCodeImportError('Invalid share code. Make sure you pasted the full code.');
+            setCodeImportError(t('rubricList.share_code_invalid'));
         }
     }
 
@@ -272,17 +281,7 @@ export default function RubricList() {
     }
 
     function handleImport(parsed: ParsedRubric & { name: string; subject: string }) {
-        const newR = addRubric({
-            name: parsed.name || 'Imported Rubric',
-            subject: parsed.subject || '',
-            description: parsed.description || '',
-            criteria: parsed.criteria,
-            gradeScaleId: settings.defaultGradeScaleId,
-            format: DEFAULT_FORMAT,
-            scoringMode: 'weighted-percentage',
-            totalMaxPoints: 100,
-            attachmentIds: [],
-        });
+        const newR = addRubric(rubricFromImport(parsed));
         setShowImport(false);
         navigate(`/rubrics/${newR.id}`);
     }

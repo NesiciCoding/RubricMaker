@@ -343,7 +343,7 @@ describe('RubricList coverage', () => {
         fireEvent.click(screen.getByText('Import rubric'));
         expect(mockAddRubric).toHaveBeenCalledWith(
             expect.objectContaining({
-                name: 'Imported Rubric',
+                name: 'rubricList.imported_rubric_name',
                 subject: '',
                 gradeScaleId: 'gs1',
                 format: DEFAULT_FORMAT,
@@ -511,7 +511,9 @@ it('imports a rubric with empty fields via the import modal fallbacks', () => {
     renderPage();
     fireEvent.click(screen.getByText('rubricList.import_rubric'));
     fireEvent.click(screen.getByText('Do Import Empty'));
-    expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ name: 'Imported Rubric', subject: '' }));
+    expect(mockAddRubric).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'rubricList.imported_rubric_name', subject: '' })
+    );
     expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new-r');
 });
 

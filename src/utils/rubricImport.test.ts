@@ -682,7 +682,8 @@ describe('parseJsonToRubric — edge case branches', () => {
         const first = result.criteria[0];
         expect(first.title).toBe('Untitled Criterion');
         expect(first.description).toBe('');
-        expect(first.weight).toBe(0);
+        // No criterion states a weight, so they share 100% instead of all importing as 0% (#699).
+        expect(first.weight).toBe(50);
         expect(first.linkedStandard).toBeUndefined();
         expect(first.linkedStandards).toBeUndefined();
         expect(first.levels).toHaveLength(1);
@@ -691,8 +692,12 @@ describe('parseJsonToRubric — edge case branches', () => {
         expect(first.levels[0].maxPoints).toBe(0);
         expect(first.levels[0].subItems).toHaveLength(0);
         const second = result.criteria[1];
-        expect(second.weight).toBe(0);
+        expect(second.weight).toBe(50);
         expect(second.levels).toHaveLength(0);
+        expect(result.warnings).toContainEqual({
+            key: 'importRubric.warn_json_no_levels',
+            params: { title: 'No levels at all' },
+        });
     });
 
     it('applies defaults for sub-items with no label and non-numeric points', async () => {

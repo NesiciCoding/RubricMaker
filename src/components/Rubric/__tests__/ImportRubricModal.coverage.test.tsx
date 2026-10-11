@@ -179,7 +179,8 @@ describe('ImportRubricModal coverage', () => {
         expect(onImport).toHaveBeenCalledWith({
             ...empty,
             criteria: parsed.criteria,
-            name: 'Imported Rubric',
+            // The empty name is passed through; RubricList supplies the translated fallback.
+            name: '',
             subject: 'Dutch',
         });
         r2.unmount();
