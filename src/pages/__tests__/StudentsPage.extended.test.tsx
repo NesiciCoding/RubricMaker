@@ -600,6 +600,61 @@ describe('StudentsPage extended', () => {
         expect(mockAddStudent).toHaveBeenCalledWith(expect.objectContaining({ name: 'Grace', classId: 'c1' }));
     });
 
+    it('blocks saving a student with an invalid email (#668)', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('studentsPage.add_student')[0]);
+        fireEvent.change(screen.getByLabelText('studentsPage.form_full_name'), { target: { value: 'Grace' } });
+        const emailInput = screen.getByLabelText('studentsPage.form_email');
+        fireEvent.change(emailInput, { target: { value: 'not-an-email' } });
+        const save = screen.getAllByText('studentsPage.add_student').at(-1)!.closest('button')!;
+        expect(save).toBeDisabled();
+        expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByText('studentsPage.form_email_invalid')).toBeInTheDocument();
+        fireEvent.click(save);
+        expect(mockAddStudent).not.toHaveBeenCalled();
+
+        fireEvent.change(emailInput, { target: { value: ' grace@school.nl ' } });
+        expect(save).not.toBeDisabled();
+        fireEvent.click(save);
+        expect(mockAddStudent).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Grace', email: 'grace@school.nl', classId: 'c1' })
+        );
+    });
+
+    it('warns when the class already has a student with that name (#668)', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('studentsPage.add_student')[0]);
+        fireEvent.change(screen.getByLabelText('studentsPage.form_full_name'), { target: { value: ' alice ' } });
+        expect(
+            screen.getByText('studentsPage.form_duplicate_warning:{"name":"Alice","className":"Class A"}')
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getAllByText('studentsPage.add_student').at(-1)!);
+        expect(mockAddStudent).toHaveBeenCalledWith(expect.objectContaining({ name: 'alice', classId: 'c1' }));
+    });
+
+    it('does not flag the student being edited as their own duplicate (#668)', () => {
+        renderPage();
+        const aliceRow = screen.getAllByRole('row').find((r) => within(r).queryByText('Alice'))!;
+        fireEvent.click(within(aliceRow).getByLabelText('studentsPage.action_edit_student'));
+        expect(screen.queryByText(/studentsPage\.form_duplicate_warning/)).not.toBeInTheDocument();
+    });
+
+    it('exports the class and student number so the CSV re-imports (#668)', async () => {
+        renderPage();
+        fireEvent.click(screen.getByText('studentsPage.export_csv'));
+        const blob = h.saveAs.mock.calls.at(-1)![0] as Blob;
+        const bytes = new Uint8Array(
+            await new Promise<ArrayBuffer>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as ArrayBuffer);
+                reader.readAsArrayBuffer(blob);
+            })
+        );
+        const [header, firstRow] = new TextDecoder().decode(bytes.slice(3)).split('\r\n');
+        expect(header).toBe('name,email,class,student_number');
+        expect(firstRow).toBe('Alice,alice@example.com,Class A,');
+    });
+
     it('renames a class with a non-track year and a color', () => {
         renderPage();
         fireEvent.click(screen.getAllByLabelText('studentsPage.action_class_menu')[0]);
