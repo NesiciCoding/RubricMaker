@@ -126,6 +126,7 @@ vi.mock('../../utils/pdfExport', () => ({
 const mockBuildTestResultsCsv = vi.fn((..._args: unknown[]) => 'Student Name,Score %\nAlice,100.0');
 const mockBuildTestGradebookRows = vi.fn((..._args: unknown[]) => [
     { studentName: 'Alice', studentNumber: '', percentage: 100, grade: 'A' },
+    { studentName: 'Bob', studentNumber: '42', percentage: 40, grade: '', inProgress: true },
 ]);
 vi.mock('../../utils/testExportPresets', () => ({
     buildTestResultsCsv: (...args: unknown[]) => mockBuildTestResultsCsv(...args),
@@ -289,7 +290,7 @@ describe('TestListPage', () => {
         (mockUseApp as Record<string, unknown>).studentTests = [];
     });
 
-    it('exports test results in a gradebook preset and warns about blank grades (#607)', async () => {
+    it('exports test results in a gradebook preset and warns about blank and unfinished grades (#607)', async () => {
         (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
         mockSaveAs.mockClear();
         mockShowToast.mockClear();
@@ -317,6 +318,10 @@ describe('TestListPage', () => {
             mockGradeScale
         );
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
+        expect(mockShowToast).toHaveBeenCalledWith(
+            expect.stringMatching(/^exportPage\.csv_grades_in_progress/),
+            'warning'
+        );
         expect(mockShowToast).toHaveBeenCalledWith(
             expect.stringMatching(/^exportPage\.csv_missing_student_numbers/),
             'warning'

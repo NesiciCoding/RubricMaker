@@ -4,19 +4,8 @@ import type { GradeScale, Student, StudentTest, Test } from '../types';
 import type { GradebookExportRow } from './gradebookExportPresets';
 import { calcLetterGrade } from './gradeCalc';
 import { calcQuestionBreakdowns, calcSkillBreakdowns } from './testSummaryAggregator';
-import { calcStudentTestRawPoints, calcTestMaxPoints, calcTestPercentage } from './testCalc';
+import { scoreStudentTest } from './studentTestScore';
 import { describeTestCefr, pickLatestAttempt } from './testAnswerText';
-
-/** The rawPoints + adjustmentPoints TestResultsPage.tsx shows as a student's score. */
-function studentPoints(test: Test, studentTest: StudentTest): number {
-    const rawPoints = studentTest.rawTotalPoints ?? calcStudentTestRawPoints(test, studentTest.answers);
-    return rawPoints + (studentTest.adjustmentPoints ?? 0);
-}
-
-/** Mirrors the points → percentage formula TestResultsPage.tsx uses for a student's displayed score. */
-function studentPercentage(test: Test, studentTest: StudentTest, maxPoints: number): number {
-    return calcTestPercentage(studentPoints(test, studentTest), maxPoints);
-}
 
 const STATUS_LABELS: Record<StudentTest['status'], string> = {
     in_progress: 'In progress',
@@ -44,15 +33,16 @@ export function buildTestGradebookRows(
     students: Student[],
     scale: GradeScale | null
 ): GradebookExportRow[] {
-    const maxPoints = calcTestMaxPoints(test);
     return latestAttempts(test, studentTests).map((studentTest) => {
         const student = students.find((s) => s.id === studentTest.studentId);
-        const percentage = studentPercentage(test, studentTest, maxPoints);
+        const { percentage } = scoreStudentTest(test, studentTest);
+        const inProgress = studentTest.status === 'in_progress';
         return {
             studentName: student?.name ?? '',
             studentNumber: student?.studentNumber ?? '',
             percentage,
-            grade: scale ? calcLetterGrade(percentage, scale) : '',
+            grade: scale && !inProgress ? calcLetterGrade(percentage, scale) : '',
+            ...(inProgress && { inProgress }),
         };
     });
 }
@@ -72,7 +62,6 @@ export function buildTestResultsCsv(
     achieveThreshold?: number,
     scale: GradeScale | null = null
 ): string {
-    const maxPoints = calcTestMaxPoints(test);
     const hasCefr = !!test.cefrTargetLevel || test.mode === 'placement';
 
     const rows = latestAttempts(test, studentTests).map((studentTest) => {
@@ -83,14 +72,15 @@ export function buildTestResultsCsv(
         const questionBreakdowns = calcQuestionBreakdowns(studentTest.studentId, [studentTest], test);
         const skillBreakdowns = calcSkillBreakdowns(studentTest.studentId, [studentTest], test);
 
+        const score = scoreStudentTest(test, studentTest);
         const row: Record<string, string | number> = {
             'Student Name': student?.name ?? '',
             'Student Number': student?.studentNumber ?? '',
-            'Score %': studentPercentage(test, studentTest, maxPoints).toFixed(1),
-            Points: studentPoints(test, studentTest),
-            'Max Points': maxPoints,
+            'Score %': score.percentage.toFixed(1),
+            Points: score.totalPoints,
+            'Max Points': score.maxPoints,
         };
-        if (scale) row['Grade'] = calcLetterGrade(studentPercentage(test, studentTest, maxPoints), scale);
+        if (scale) row['Grade'] = calcLetterGrade(score.percentage, scale);
         row['Status'] = STATUS_LABELS[studentTest.status];
 
         if (hasCefr) {
