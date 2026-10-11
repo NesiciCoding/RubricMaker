@@ -89,7 +89,8 @@ export function testQuestionIssues(q: TestQuestion): TestQuestionIssue[] {
         case 'hot-text': {
             const count = parseHotTextFragments(q.hotTextPassage ?? '').filter((s) => s.type === 'fragment').length;
             if (count === 0) issues.push('no_fragments');
-            else if (!(q.hotTextCorrectIndices ?? []).some((i) => i < count)) issues.push('no_correct_fragment');
+            else if (!(q.hotTextCorrectIndices ?? []).some((i) => i >= 0 && i < count))
+                issues.push('no_correct_fragment');
             break;
         }
         case 'sentence-builder':
