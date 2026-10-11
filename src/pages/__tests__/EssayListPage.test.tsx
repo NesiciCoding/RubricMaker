@@ -86,6 +86,11 @@ vi.mock('../../context/AppContext', () => ({
     usePlatform: () => makeAppContextMock(),
 }));
 
+let mockOnlineSubmissions = new Map<string, Set<string>>();
+vi.mock('../../hooks/useOnlineEssaySubmissions', () => ({
+    useOnlineEssaySubmissions: () => mockOnlineSubmissions,
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
@@ -96,6 +101,7 @@ vi.mock('react-i18next', () => ({
 describe('EssayListPage', () => {
     beforeEach(() => {
         appOverrides = {};
+        mockOnlineSubmissions = new Map();
         mockNavigate.mockClear();
         mockDeleteEssayGroup.mockClear();
     });
@@ -143,6 +149,18 @@ describe('EssayListPage', () => {
     it('says how many submissions go with the essay in the delete dialog (#710)', async () => {
         const { default: EssayListPage } = await import('../EssayListPage');
         renderWithRouter(<EssayListPage />);
+        await act(async () => {
+            fireEvent.click(screen.getByTitle('tests.action_delete'));
+        });
+        expect(screen.getByText(/^essays\.delete_essay_warning/)).toHaveTextContent('"count":1');
+    });
+
+    it('counts online hand-ins in the delete dialog the same way as the group card (#710)', async () => {
+        appOverrides = { essaySubmissions: [] };
+        mockOnlineSubmissions = new Map([['tk1', new Set(['s1'])]]);
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+        expect(screen.getByText('1/1')).toBeInTheDocument();
         await act(async () => {
             fireEvent.click(screen.getByTitle('tests.action_delete'));
         });
