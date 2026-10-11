@@ -604,7 +604,7 @@ export default function StatisticsPage() {
             snap.criteria.forEach((c: RubricCriterion, ci: number) => {
                 const entry = sr.entries.find((e) => e.criterionId === c.id);
                 const pts = entry ? calcEntryPoints(entry, c) : 0;
-                base[`Criterion: ${criterionLabels[ci]}`] = pts;
+                base[`Criterion: ${criterionLabels[ci]} (Score)`] = pts;
                 base[`Criterion: ${criterionLabels[ci]} (Comment)`] = entry?.comment ?? '';
             });
             return base;
