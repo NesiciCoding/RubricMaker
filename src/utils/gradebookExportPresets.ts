@@ -14,8 +14,8 @@ export interface GradebookExportRow {
 
 export interface GradebookPresetCsv {
     csv: string;
-    /** Rows whose grade-scale label isn't a number, so the grade was converted from the percentage instead */
-    approximateCount: number;
+    /** Rows whose grade-scale label isn't a 1-10 number, exported with an empty grade */
+    blankGradeCount: number;
     missingNumberCount: number;
 }
 
@@ -24,13 +24,9 @@ export const GRADEBOOK_PRESET_IDS: GradebookPresetId[] = ['generic', 'magister',
 /** A grade-scale label that is already a 1-10 number ("8", "7,5", "6.8"), kept as written. */
 function numericLabel(label: string): string | null {
     const normalized = label.trim().replace(',', '.');
-    return /^(10|[1-9])(\.\d+)?$/.test(normalized) ? normalized : null;
-}
-
-// ponytail: only used when the rubric's scale has non-numeric labels (A-F, '<6'); linear
-// 1 + pct/100*9, not a school's cesuur, which is why those rows are reported as approximate.
-function linearDutchGrade(percentage: number): string {
-    return (1 + (percentage / 100) * 9).toFixed(1);
+    if (!/^\d+(\.\d+)?$/.test(normalized)) return null;
+    const value = Number(normalized);
+    return value >= 1 && value <= 10 ? normalized : null;
 }
 
 /**
@@ -43,12 +39,14 @@ export function buildGradebookPresetCsv(
     decimal: DecimalSeparator = 'dot'
 ): GradebookPresetCsv | null {
     if (preset === 'generic') return null;
-    let approximateCount = 0;
+    let blankGradeCount = 0;
+    // A letter grade has no faithful 1-10 equivalent without the school's cesuur, and a guessed
+    // number would be imported as an official grade, so those cells stay empty for the teacher.
     const gradeOf = (row: GradebookExportRow) => {
-        let grade = numericLabel(row.grade);
+        const grade = numericLabel(row.grade);
         if (grade === null) {
-            approximateCount++;
-            grade = linearDutchGrade(row.percentage);
+            blankGradeCount++;
+            return '';
         }
         return decimal === 'comma' ? grade.replace('.', ',') : grade;
     };
@@ -59,7 +57,7 @@ export function buildGradebookPresetCsv(
     const csv = Papa.unparse(records, { ...CSV_UNPARSE_OPTIONS, delimiter: decimal === 'comma' ? ';' : ',' });
     return {
         csv,
-        approximateCount,
+        blankGradeCount,
         missingNumberCount: rows.filter((r) => !r.studentNumber.trim()).length,
     };
 }
