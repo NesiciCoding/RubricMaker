@@ -316,4 +316,47 @@ describe('test results points, grade and status (#607)', () => {
         ]);
         expect(buildTestGradebookRows(test, studentTests, students, null)[0].grade).toBe('');
     });
+
+    it('leaves an unfinished attempt ungraded in the gradebook rows instead of grading its partial answers', () => {
+        const inProgress = { ...studentTests[0], status: 'in_progress' as const };
+        expect(buildTestGradebookRows(test, [inProgress], students, scale)).toEqual([
+            { studentName: 'Jane Doe', studentNumber: '1234', percentage: 50, grade: '', inProgress: true },
+        ]);
+    });
+
+    it('scores a generator placement run from the questions it asked, like the results page', () => {
+        const asked = (id: string): Test['questions'][number] => ({
+            id,
+            prompt: id,
+            type: 'multiple-choice',
+            points: 2,
+            options: [
+                { id: 'right', text: 'Right', isCorrect: true },
+                { id: 'wrong', text: 'Wrong', isCorrect: false },
+            ],
+        });
+        const generatorTest: Test = { ...test, mode: 'placement', placementEngine: 'generator', questions: [] };
+        const run: StudentTest = {
+            id: 'gen1',
+            testId: 'test1',
+            studentId: 's1',
+            answers: [
+                { questionId: 'g1', response: 'right' },
+                { questionId: 'g2', response: 'wrong' },
+            ],
+            askedQuestionSnapshots: [asked('g1'), asked('g2')],
+            levelPath: [
+                { sectionId: 'B1', level: 'B1', questionId: 'g1', correct: true },
+                { sectionId: 'B2', level: 'B2', questionId: 'g2', correct: false },
+            ],
+            status: 'graded',
+            startedAt: '2024-01-02T00:00:00.000Z',
+        };
+        expect(buildTestGradebookRows(generatorTest, [run], students, scale)[0]).toMatchObject({
+            percentage: 50,
+            grade: '8',
+        });
+        const [, row] = buildTestResultsCsv(generatorTest, [run], students, undefined, scale).trim().split('\r\n');
+        expect(row.startsWith('Jane Doe,1234,50.0,2,4,8,Graded')).toBe(true);
+    });
 });

@@ -46,6 +46,13 @@ describe('buildGradebookPresetCsv', () => {
         expect(result.csv).toContain('1234;Jane Doe;7,5');
     });
 
+    it('leaves an unfinished attempt empty and counts it apart from non-numeric grades', () => {
+        const result = buildGradebookPresetCsv('magister', [row, { ...row, grade: '', inProgress: true }])!;
+        expect(result.csv.trim().split(/\r?\n/).slice(1)).toEqual(['1234,Jane Doe,8', '1234,Jane Doe,']);
+        expect(result.inProgressCount).toBe(1);
+        expect(result.blankGradeCount).toBe(0);
+    });
+
     it('counts rows without a student number (#688)', () => {
         const result = buildGradebookPresetCsv('magister', [row, { ...row, studentNumber: '' }])!;
         expect(result.missingNumberCount).toBe(1);
