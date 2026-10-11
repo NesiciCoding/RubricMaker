@@ -22,5 +22,14 @@ export function uniqueColumnLabels(titles: string[], fallback: (position: number
     const labels = titles.map((title, i) => title.trim() || fallback(i + 1));
     const counts = new Map<string, number>();
     for (const label of labels) counts.set(label.toLowerCase(), (counts.get(label.toLowerCase()) ?? 0) + 1);
-    return labels.map((label, i) => ((counts.get(label.toLowerCase()) ?? 0) > 1 ? `${label} (${i + 1})` : label));
+    // Titles that are already unique keep their name, so a numbered repeat must not take one (e.g. a real "Content (1)").
+    const taken = new Set(labels.filter((label) => counts.get(label.toLowerCase()) === 1).map((l) => l.toLowerCase()));
+    return labels.map((label, i) => {
+        if (counts.get(label.toLowerCase()) === 1) return label;
+        let n = i + 1;
+        let candidate = `${label} (${n})`;
+        while (taken.has(candidate.toLowerCase())) candidate = `${label} (${++n})`;
+        taken.add(candidate.toLowerCase());
+        return candidate;
+    });
 }

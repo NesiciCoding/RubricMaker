@@ -495,6 +495,23 @@ describe('StatisticsPage extended', () => {
         expect(h.saveAs.mock.calls.length).toBe(before);
     });
 
+    it('labels criterion score columns so a title ending in "(Comment)" cannot overwrite them (#684)', async () => {
+        renderPage();
+        await waitForCharts();
+        fireEvent.click(screen.getByText('statistics.download_csv'));
+        const blob = h.saveAs.mock.calls.at(-1)![0] as Blob;
+        const bytes = new Uint8Array(
+            await new Promise<ArrayBuffer>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as ArrayBuffer);
+                reader.readAsArrayBuffer(blob);
+            })
+        );
+        const header = new TextDecoder().decode(bytes.slice(3)).split('\r\n')[0];
+        expect(header).toContain('Criterion: Content (Score)');
+        expect(header).toContain('Criterion: Content (Comment)');
+    });
+
     it('opens and closes the fullscreen criterion chart via button, Escape and overlay', async () => {
         renderPage();
         await waitForCharts();
