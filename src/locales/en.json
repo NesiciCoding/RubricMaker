@@ -3281,7 +3281,7 @@
         "gs_step3_body_prefix": "Go to",
         "gs_step3_body_students": "Students",
         "gs_step3_body_add": "+ Add Student",
-        "gs_step3_body_rest": "and fill in their name. Group students into classes by setting the Class field. You can also import from a CSV or a Magister export — the importer auto-detects Dutch column names and, if \"Update existing students\" is checked, will update matching records instead of creating duplicates. Moving a student to a new class (manually, or via a re-import that detects a class transfer) keeps a \"Past classes\" trail on their profile — none of their grading history is lost. When \"Update existing students\" is on, you'll see a confirmation summarizing how many students will transfer class and how many will be archived before anything is applied — useful for promoting a whole class to the next year.",
+        "gs_step3_body_rest": "and fill in their name. Group students into classes by setting the Class field. You can also import from a CSV or a Magister export — the importer auto-detects Dutch column names and, if \"Update existing students\" is checked, will update matching records instead of creating duplicates. Moving a student to a new class (manually, or via a re-import that detects a class transfer) keeps a \"Past classes\" trail on their profile — none of their grading history is lost. When \"Update existing students\" is on, you'll see a confirmation summarizing how many students will transfer class and how many will be archived before anything is applied — useful for promoting a whole class to the next year. Files saved by Excel as \"CSV (semicolon)\" on Windows keep their accents, spaces around column names are ignored, and the importer warns you when no row has a name in the mapped columns.",
         "gs_step4_title": "Grade a student",
         "gs_step4_body_prefix": "Open any rubric from the Rubrics page. Click the student's name to open the grading view. Click each criterion level, add comments, attach files, and click",
         "gs_step4_body_save_next": "Save & Next",
@@ -4029,6 +4029,7 @@
         "empty": "Empty",
         "err_empty": "The CSV file is empty.",
         "err_no_columns": "Could not detect any columns in the CSV file.",
+        "err_no_importable_rows": "None of the rows has a name in the mapped columns, so nothing would be imported. Check the column mapping.",
         "err_parse": "Failed to parse CSV: {{message}}",
         "active_class_default": "Active Class (Default)"
     },

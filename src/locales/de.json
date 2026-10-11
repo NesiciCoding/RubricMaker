@@ -3281,7 +3281,7 @@
         "gs_step3_body_prefix": "Gehe zu",
         "gs_step3_body_students": "Schüler",
         "gs_step3_body_add": "+ Schüler hinzufügen",
-        "gs_step3_body_rest": "und gib den Namen ein. Gruppiere Schüler über das Feld Klasse in Klassen. Du kannst auch aus einer CSV- oder Magister-Export importieren — der Importer erkennt automatisch niederländische Spaltennamen, und wenn „Bestehende Schüler aktualisieren“ aktiviert ist, werden passende Datensätze aktualisiert statt Duplikate zu erstellen. Das Verschieben eines Schülers in eine neue Klasse (manuell oder per Re-Import, der einen Klassenwechsel erkennt) hinterlässt eine Spur „Frühere Klassen“ im Profil — keine Bewertungshistorie geht verloren. Wenn „Bestehende Schüler aktualisieren“ aktiviert ist, siehst du eine Bestätigung mit einer Zusammenfassung, wie viele Schüler die Klasse wechseln und wie viele archiviert werden, bevor irgendetwas angewendet wird — nützlich, um eine ganze Klasse ins nächste Jahr zu befördern.",
+        "gs_step3_body_rest": "und gib den Namen ein. Gruppiere Schüler über das Feld Klasse in Klassen. Du kannst auch aus einer CSV-Datei oder einem Magister-Export importieren — der Importer erkennt automatisch niederländische Spaltennamen, und wenn „Bestehende Schüler aktualisieren“ aktiviert ist, werden passende Datensätze aktualisiert statt Duplikate zu erstellen. Das Verschieben eines Schülers in eine neue Klasse (manuell oder per Re-Import, der einen Klassenwechsel erkennt) hinterlässt eine Spur „Frühere Klassen“ im Profil — keine Bewertungshistorie geht verloren. Wenn „Bestehende Schüler aktualisieren“ aktiviert ist, siehst du eine Bestätigung mit einer Zusammenfassung, wie viele Schüler die Klasse wechseln und wie viele archiviert werden, bevor irgendetwas angewendet wird — nützlich, um eine ganze Klasse ins nächste Jahr zu befördern. Dateien, die Excel unter Windows als „CSV (Semikolon)“ speichert, behalten ihre Akzente, Leerzeichen um Spaltennamen werden ignoriert, und der Import warnt, wenn keine Zeile einen Namen in den zugeordneten Spalten hat.",
         "gs_step4_title": "Einen Schüler bewerten",
         "gs_step4_body_prefix": "Öffne eine beliebige Rubrik von der Seite Rubriken. Klicke auf den Namen des Schülers, um die Bewertungsansicht zu öffnen. Klicke jede Kriteriumstufe an, füge Kommentare hinzu, hänge Dateien an und klicke auf",
         "gs_step4_body_save_next": "Speichern & weiter",
@@ -4031,6 +4031,7 @@
         "empty": "Leer",
         "err_empty": "Die CSV-Datei ist leer.",
         "err_no_columns": "Es konnten keine Spalten in der CSV-Datei erkannt werden.",
+        "err_no_importable_rows": "Keine Zeile enthält einen Namen in den zugeordneten Spalten, daher würde nichts importiert. Prüfe die Spaltenzuordnung.",
         "err_parse": "CSV konnte nicht verarbeitet werden: {{message}}",
         "active_class_default": "Aktive Klasse (Standard)"
     },

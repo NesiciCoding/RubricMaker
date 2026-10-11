@@ -3281,7 +3281,7 @@
         "gs_step3_body_prefix": "Ga naar",
         "gs_step3_body_students": "Leerlingen",
         "gs_step3_body_add": "+ Leerling toevoegen",
-        "gs_step3_body_rest": "en vul de naam in. Groepeer leerlingen in klassen via het veld Klas. Je kunt ook importeren vanuit een CSV of een Magister-export — de importer herkent automatisch Nederlandse kolomnamen en, als \"Bestaande leerlingen bijwerken\" is aangevinkt, worden overeenkomende gegevens bijgewerkt in plaats van duplicaten aan te maken. Het verplaatsen van een leerling naar een nieuwe klas (handmatig, of via een herimport die een klaswissel detecteert) houdt een spoor van \"vorige klassen\" bij op het profiel — er gaat geen beoordelingsgeschiedenis verloren. Als \"Bestaande leerlingen bijwerken\" is ingeschakeld, zie je een bevestiging met een samenvatting van hoeveel leerlingen van klas wisselen en hoeveel er worden gearchiveerd voordat er iets wordt toegepast — handig om een hele klas naar het volgende jaar te bevorderen.",
+        "gs_step3_body_rest": "en vul de naam in. Groepeer leerlingen in klassen via het veld Klas. Je kunt ook importeren vanuit een CSV of een Magister-export — de importer herkent automatisch Nederlandse kolomnamen en, als \"Bestaande leerlingen bijwerken\" is aangevinkt, worden overeenkomende gegevens bijgewerkt in plaats van duplicaten aan te maken. Het verplaatsen van een leerling naar een nieuwe klas (handmatig, of via een herimport die een klaswissel detecteert) houdt een spoor van \"vorige klassen\" bij op het profiel — er gaat geen beoordelingsgeschiedenis verloren. Als \"Bestaande leerlingen bijwerken\" is ingeschakeld, zie je een bevestiging met een samenvatting van hoeveel leerlingen van klas wisselen en hoeveel er worden gearchiveerd voordat er iets wordt toegepast — handig om een hele klas naar het volgende jaar te bevorderen. Bestanden die Excel op Windows als \"CSV (puntkomma)\" opslaat behouden hun accenten, spaties rond kolomnamen worden genegeerd en de importer waarschuwt als geen enkele rij een naam heeft in de gekoppelde kolommen.",
         "gs_step4_title": "Beoordeel een leerling",
         "gs_step4_body_prefix": "Open een rubriek vanaf de pagina Rubrieken. Klik op de naam van de leerling om het beoordelingsscherm te openen. Klik op elk criteriumniveau, voeg opmerkingen toe, voeg bestanden toe en klik op",
         "gs_step4_body_save_next": "Opslaan & volgende",
@@ -4031,6 +4031,7 @@
         "empty": "Leeg",
         "err_empty": "Het CSV-bestand is leeg.",
         "err_no_columns": "Kon geen kolommen detecteren in het CSV-bestand.",
+        "err_no_importable_rows": "Geen enkele rij heeft een naam in de gekoppelde kolommen, dus er zou niets worden geïmporteerd. Controleer de kolomkoppeling.",
         "err_parse": "Kan CSV niet verwerken: {{message}}",
         "active_class_default": "Actieve klas (standaard)"
     },

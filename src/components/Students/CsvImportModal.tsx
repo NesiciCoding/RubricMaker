@@ -25,6 +25,21 @@ type ColumnMap = CsvColumnMap;
 
 type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
+function isValidUtf8(bytes: ArrayBuffer): boolean {
+    try {
+        new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function hasReplacementChars(data: Record<string, string>[]): boolean {
+    return data.some((row) =>
+        Object.entries(row).some(([k, v]) => k.includes('\uFFFD') || (typeof v === 'string' && v.includes('\uFFFD')))
+    );
+}
+
 export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { t } = useTranslation();
     const { addStudent, updateStudent, deleteStudent, students } = useStudents();
@@ -50,77 +65,105 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     );
 
     useEffect(() => {
-        Papa.parse<Record<string, string>>(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                const data = results.data;
-                if (data.length === 0) {
-                    setError(t('csv.err_empty'));
-                    return;
-                }
-                const detectedHeaders = Object.keys(/* v8 ignore next 1 */ data[0] || {}).map((k) => k.trim());
-                if (detectedHeaders.length === 0) {
-                    setError(t('csv.err_no_columns'));
-                    return;
-                }
-
-                setParsedData(data);
-                setHeaders(detectedHeaders);
-
-                // Auto-map common headers
-                const autoMap: ColumnMap = { fullName: '', firstName: '', lastName: '', email: '', className: '' };
-                // Detect known CSV formats (Clever, OneRoster)
-                const hasCleverFormat =
-                    detectedHeaders.some((h) => h === 'Email') &&
-                    detectedHeaders.some((h) => h === 'First_Name') &&
-                    detectedHeaders.some((h) => h === 'Last_Name');
-
-                const hasOneRosterFormat =
-                    detectedHeaders.some((h) => h === 'givenName') &&
-                    detectedHeaders.some((h) => h === 'familyName') &&
-                    detectedHeaders.some((h) => h === 'email');
-
-                // Map Clever format
-                if (hasCleverFormat) {
-                    /* v8 ignore start -- hasCleverFormat guarantees Email/First_Name/Last_Name are present */
-                    autoMap.email = detectedHeaders.find((h) => h === 'Email') || '';
-                    autoMap.firstName = detectedHeaders.find((h) => h === 'First_Name') || '';
-                    autoMap.lastName = detectedHeaders.find((h) => h === 'Last_Name') || '';
-                    /* v8 ignore stop */
-                    const schoolIdx = detectedHeaders.findIndex((h) => h === 'Last_Known_School_Name');
-                    if (schoolIdx !== -1) {
-                        autoMap.className = detectedHeaders[schoolIdx];
+        let cancelled = false;
+        const parse = (encoding?: string) =>
+            Papa.parse<Record<string, string>>(file, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: (h) => h.trim(),
+                encoding,
+                complete: (results) => {
+                    const data = results.data;
+                    if (encoding || !hasReplacementChars(data)) {
+                        if (!cancelled) applyParsed(data);
+                        return;
                     }
-                    setDetectedFormat('clever');
-                    setMapping(autoMap);
-                    return;
-                }
+                    // Excel's "CSV (;)" export on Windows is cp1252, which decodes to U+FFFD as UTF-8 —
+                    // but a UTF-8 file can also hold a literal U+FFFD, so only invalid bytes mean cp1252.
+                    file.arrayBuffer().then(
+                        (bytes) => {
+                            if (cancelled) return;
+                            if (isValidUtf8(bytes)) applyParsed(data);
+                            else parse('windows-1252');
+                        },
+                        () => {
+                            if (!cancelled) parse('windows-1252');
+                        }
+                    );
+                },
+                error: (err) => {
+                    if (!cancelled) setError(t('csv.err_parse', { message: err.message }));
+                },
+            });
 
-                // Map OneRoster format
-                if (hasOneRosterFormat) {
-                    /* v8 ignore start -- hasOneRosterFormat guarantees email/givenName/familyName are present */
-                    autoMap.email = detectedHeaders.find((h) => h === 'email') || '';
-                    autoMap.firstName = detectedHeaders.find((h) => h === 'givenName') || '';
-                    autoMap.lastName = detectedHeaders.find((h) => h === 'familyName') || '';
-                    /* v8 ignore stop */
-                    const classIdx = detectedHeaders.findIndex((h) => h === 'className' || h === 'classSourcedId');
-                    if (classIdx !== -1) {
-                        autoMap.className = detectedHeaders[classIdx];
-                    }
-                    setDetectedFormat('oneroster');
-                    setMapping(autoMap);
-                    return;
-                }
+        const applyParsed = (data: Record<string, string>[]) => {
+            if (data.length === 0) {
+                setError(t('csv.err_empty'));
+                return;
+            }
+            const detectedHeaders = Object.keys(/* v8 ignore next 1 */ data[0] || {}).map((k) => k.trim());
+            if (detectedHeaders.length === 0) {
+                setError(t('csv.err_no_columns'));
+                return;
+            }
 
-                // Generic format detection (incl. Dutch Magister headers: voornaam/roepnaam, achternaam, klas)
-                setDetectedFormat('generic');
-                setMapping(autoMapCsvHeaders(detectedHeaders));
-            },
-            error: (err) => {
-                setError(t('csv.err_parse', { message: err.message }));
-            },
-        });
+            setParsedData(data);
+            setHeaders(detectedHeaders);
+
+            // Auto-map common headers
+            const autoMap: ColumnMap = { fullName: '', firstName: '', lastName: '', email: '', className: '' };
+            // Detect known CSV formats (Clever, OneRoster)
+            const hasCleverFormat =
+                detectedHeaders.some((h) => h === 'Email') &&
+                detectedHeaders.some((h) => h === 'First_Name') &&
+                detectedHeaders.some((h) => h === 'Last_Name');
+
+            const hasOneRosterFormat =
+                detectedHeaders.some((h) => h === 'givenName') &&
+                detectedHeaders.some((h) => h === 'familyName') &&
+                detectedHeaders.some((h) => h === 'email');
+
+            // Map Clever format
+            if (hasCleverFormat) {
+                /* v8 ignore start -- hasCleverFormat guarantees Email/First_Name/Last_Name are present */
+                autoMap.email = detectedHeaders.find((h) => h === 'Email') || '';
+                autoMap.firstName = detectedHeaders.find((h) => h === 'First_Name') || '';
+                autoMap.lastName = detectedHeaders.find((h) => h === 'Last_Name') || '';
+                /* v8 ignore stop */
+                const schoolIdx = detectedHeaders.findIndex((h) => h === 'Last_Known_School_Name');
+                if (schoolIdx !== -1) {
+                    autoMap.className = detectedHeaders[schoolIdx];
+                }
+                setDetectedFormat('clever');
+                setMapping(autoMap);
+                return;
+            }
+
+            // Map OneRoster format
+            if (hasOneRosterFormat) {
+                /* v8 ignore start -- hasOneRosterFormat guarantees email/givenName/familyName are present */
+                autoMap.email = detectedHeaders.find((h) => h === 'email') || '';
+                autoMap.firstName = detectedHeaders.find((h) => h === 'givenName') || '';
+                autoMap.lastName = detectedHeaders.find((h) => h === 'familyName') || '';
+                /* v8 ignore stop */
+                const classIdx = detectedHeaders.findIndex((h) => h === 'className' || h === 'classSourcedId');
+                if (classIdx !== -1) {
+                    autoMap.className = detectedHeaders[classIdx];
+                }
+                setDetectedFormat('oneroster');
+                setMapping(autoMap);
+                return;
+            }
+
+            // Generic format detection (incl. Dutch Magister headers: voornaam/roepnaam, achternaam, klas)
+            setDetectedFormat('generic');
+            setMapping(autoMapCsvHeaders(detectedHeaders));
+        };
+
+        parse();
+        return () => {
+            cancelled = true;
+        };
     }, [file]);
 
     const getPreviewRows = () => {
@@ -211,6 +254,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     };
 
     const hasNameMapping = mapping.fullName || (mapping.firstName && mapping.lastName);
+    const noImportableRows = !!hasNameMapping && !parsedData.some((row) => extractCsvName(row, mapping) !== '');
     const previewRows = getPreviewRows();
 
     return (
@@ -364,6 +408,25 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             </div>
                         </div>
 
+                        {noImportableRows && (
+                            <div
+                                role="alert"
+                                style={{
+                                    display: 'flex',
+                                    gap: 8,
+                                    alignItems: 'center',
+                                    color: 'var(--red, #ef4444)',
+                                    background: 'var(--red-soft, #fee2e2)',
+                                    borderRadius: 8,
+                                    padding: '10px 14px',
+                                    fontSize: '0.875rem',
+                                    marginBottom: 16,
+                                }}
+                            >
+                                <AlertTriangle size={15} aria-hidden="true" />
+                                {t('csv.err_no_importable_rows')}
+                            </div>
+                        )}
                         {hasNameMapping && (
                             <div>
                                 <h4
@@ -455,7 +518,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                             {t('csv.cancel')}
                         </button>
                         {!error && headers.length > 0 && (
-                            <button className="btn btn-primary" disabled={!hasNameMapping} onClick={startImport}>
+                            <button
+                                className="btn btn-primary"
+                                disabled={!hasNameMapping || noImportableRows}
+                                onClick={startImport}
+                            >
                                 <CheckCircle size={15} /> {t('csv.import_btn', { count: parsedData.length })}
                             </button>
                         )}
