@@ -4032,7 +4032,7 @@
         "err_empty": "Le fichier CSV est vide.",
         "err_no_columns": "Impossible de détecter des colonnes dans le fichier CSV.",
         "err_no_importable_rows": "Aucune ligne ne contient de nom dans les colonnes associées : rien ne serait importé. Vérifiez l’association des colonnes.",
-        "summary_skipped": "ignorés",
+        "summary_skipped": "ignoré(s)",
         "skipped_title_one": "{{count}} ligne n’est pas importée",
         "skipped_title_other": "{{count}} lignes ne sont pas importées",
         "skipped_row": "Ligne {{row}} ({{label}}) : {{reason}}",
