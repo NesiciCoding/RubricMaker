@@ -43,6 +43,7 @@ import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
+import { GRADEBOOK_PRESET_IDS, type DecimalSeparator, type GradebookPresetId } from '../utils/gradebookExportPresets';
 import { testAssignBlockers } from '../utils/testQuestionIssues';
 
 export default function TestListPage() {
@@ -56,6 +57,7 @@ export default function TestListPage() {
         tests,
         studentTests,
         settings,
+        gradeScales,
     } = useStoreSelector((s) => ({
         students: s.students,
         classes: s.classes,
@@ -63,6 +65,7 @@ export default function TestListPage() {
         tests: s.tests,
         studentTests: s.studentTests,
         settings: s.settings,
+        gradeScales: s.gradeScales,
     }));
     // The roster domain hooks filtered soft-deleted rows; archived students must not
     // appear in cohort filters or per-student statistics.
@@ -103,6 +106,8 @@ export default function TestListPage() {
     const [examExportTestId, setExamExportTestId] = useState<string | null>(null);
     const [exportScope, setExportScope] = useState<'single' | 'batch'>('single');
     const [exportStudentId, setExportStudentId] = useState<string>('');
+    const [gradebookPreset, setGradebookPreset] = useState<GradebookPresetId>('generic');
+    const [gradebookDecimal, setGradebookDecimal] = useState<DecimalSeparator>('comma');
     const [exporting, setExporting] = useState(false);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
 
@@ -218,11 +223,34 @@ export default function TestListPage() {
         if (relevantStudentTests.length === 0) return;
         setExporting(true);
         try {
-            const { buildTestResultsCsv } = await import('../utils/testExportPresets');
-            const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold);
+            const { buildTestResultsCsv, buildTestGradebookRows } = await import('../utils/testExportPresets');
+            const { buildGradebookPresetCsv } = await import('../utils/gradebookExportPresets');
             const { downloadCsv } = await import('../utils/csvDownload');
             const { sanitizeFilename } = await import('../utils/exportDataPrep');
-            downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
+            // Same scale resolution as TestResultsPage, so the CSV grade matches the one shown there.
+            const scaleId = test.gradeScaleId ?? settings.defaultGradeScaleId;
+            const scale =
+                scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0] ?? null);
+            const preset = buildGradebookPresetCsv(
+                gradebookPreset,
+                buildTestGradebookRows(test, studentTests, students, scale),
+                gradebookDecimal
+            );
+            if (preset) {
+                downloadCsv(preset.csv, `${sanitizeFilename(test.name)}_${gradebookPreset}_results.csv`);
+                if (preset.missingNumberCount > 0)
+                    showToast(
+                        t('exportPage.csv_missing_student_numbers', { count: preset.missingNumberCount }),
+                        'warning'
+                    );
+                if (preset.blankGradeCount > 0)
+                    showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
+                if (preset.inProgressCount > 0)
+                    showToast(t('exportPage.csv_grades_in_progress', { count: preset.inProgressCount }), 'warning');
+            } else {
+                const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold, scale);
+                downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);
+            }
             const uniqueStudentCount = new Set(relevantStudentTests.map((st) => st.studentId)).size;
             logAuditEvent('export', 'export_test_summary_csv', 'test', test.id, {
                 count: uniqueStudentCount,
@@ -934,17 +962,76 @@ export default function TestListPage() {
                                                                             {t('tests.export.export_text')}
                                                                         </button>
                                                                         {exportScope === 'batch' && (
-                                                                            <button
-                                                                                type="button"
-                                                                                className="btn btn-secondary btn-sm"
-                                                                                disabled={exporting}
-                                                                                onClick={() =>
-                                                                                    handleExportTestResultsCsv(test)
-                                                                                }
-                                                                            >
-                                                                                <FileDown size={14} />{' '}
-                                                                                {t('tests.export.export_csv')}
-                                                                            </button>
+                                                                            <>
+                                                                                <select
+                                                                                    aria-label={t(
+                                                                                        'exportPage.csv_preset_label'
+                                                                                    )}
+                                                                                    className="form-control"
+                                                                                    style={{
+                                                                                        fontSize: '0.8rem',
+                                                                                        padding: '4px 6px',
+                                                                                        width: 'auto',
+                                                                                    }}
+                                                                                    value={gradebookPreset}
+                                                                                    onChange={(e) =>
+                                                                                        setGradebookPreset(
+                                                                                            e.target
+                                                                                                .value as GradebookPresetId
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    {GRADEBOOK_PRESET_IDS.map((id) => (
+                                                                                        <option key={id} value={id}>
+                                                                                            {t(
+                                                                                                `exportPage.csv_preset_${id}`
+                                                                                            )}
+                                                                                        </option>
+                                                                                    ))}
+                                                                                </select>
+                                                                                {gradebookPreset !== 'generic' && (
+                                                                                    <select
+                                                                                        aria-label={t(
+                                                                                            'exportPage.csv_decimal_label'
+                                                                                        )}
+                                                                                        className="form-control"
+                                                                                        style={{
+                                                                                            fontSize: '0.8rem',
+                                                                                            padding: '4px 6px',
+                                                                                            width: 'auto',
+                                                                                        }}
+                                                                                        value={gradebookDecimal}
+                                                                                        onChange={(e) =>
+                                                                                            setGradebookDecimal(
+                                                                                                e.target
+                                                                                                    .value as DecimalSeparator
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <option value="comma">
+                                                                                            {t(
+                                                                                                'exportPage.csv_decimal_comma'
+                                                                                            )}
+                                                                                        </option>
+                                                                                        <option value="dot">
+                                                                                            {t(
+                                                                                                'exportPage.csv_decimal_dot'
+                                                                                            )}
+                                                                                        </option>
+                                                                                    </select>
+                                                                                )}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="btn btn-secondary btn-sm"
+                                                                                    disabled={exporting}
+                                                                                    onClick={() =>
+                                                                                        handleExportTestResultsCsv(test)
+                                                                                    }
+                                                                                >
+                                                                                    <FileDown size={14} />{' '}
+                                                                                    {t('tests.export.export_csv')}
+                                                                                </button>
+                                                                            </>
                                                                         )}
                                                                     </div>
                                                                 </div>

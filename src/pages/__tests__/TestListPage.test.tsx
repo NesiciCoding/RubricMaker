@@ -124,8 +124,13 @@ vi.mock('../../utils/pdfExport', () => ({
 }));
 
 const mockBuildTestResultsCsv = vi.fn((..._args: unknown[]) => 'Student Name,Score %\nAlice,100.0');
+const mockBuildTestGradebookRows = vi.fn((..._args: unknown[]) => [
+    { studentName: 'Alice', studentNumber: '', percentage: 100, grade: 'A' },
+    { studentName: 'Bob', studentNumber: '42', percentage: 40, grade: '', inProgress: true },
+]);
 vi.mock('../../utils/testExportPresets', () => ({
     buildTestResultsCsv: (...args: unknown[]) => mockBuildTestResultsCsv(...args),
+    buildTestGradebookRows: (...args: unknown[]) => mockBuildTestGradebookRows(...args),
 }));
 
 const mockSaveAs = vi.fn();
@@ -274,8 +279,53 @@ describe('TestListPage', () => {
         fireEvent.click(screen.getByText('tests.export.export_csv'));
 
         await waitFor(() => expect(mockSaveAs).toHaveBeenCalledTimes(1));
-        expect(mockBuildTestResultsCsv).toHaveBeenCalledWith(mockTest, [mockStudentTest], [mockStudent], undefined);
+        expect(mockBuildTestResultsCsv).toHaveBeenCalledWith(
+            mockTest,
+            [mockStudentTest],
+            [mockStudent],
+            undefined,
+            mockGradeScale
+        );
         expect(mockSaveAs.mock.calls[0][1]).toBe('Vocabulary_Quiz_results.csv');
+        (mockUseApp as Record<string, unknown>).studentTests = [];
+    });
+
+    it('exports test results in a gradebook preset and warns about blank and unfinished grades (#607)', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [mockStudentTest];
+        mockSaveAs.mockClear();
+        mockShowToast.mockClear();
+        const { default: TestListPage } = await import('../TestListPage');
+        render(
+            <MemoryRouter>
+                <TestListPage />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByTitle('tests.results.action_results'));
+        const scopeSelect = screen
+            .getAllByRole('combobox')
+            .find((el) => within(el).queryByText('tests.export.scope_batch')) as HTMLSelectElement;
+        fireEvent.change(scopeSelect, { target: { value: 'batch' } });
+        fireEvent.change(screen.getByLabelText('exportPage.csv_preset_label'), { target: { value: 'magister' } });
+        expect(screen.getByLabelText('exportPage.csv_decimal_label')).toHaveValue('comma');
+        fireEvent.click(screen.getByText('tests.export.export_csv'));
+
+        await waitFor(() => expect(mockSaveAs).toHaveBeenCalledTimes(1));
+        expect(mockSaveAs.mock.calls[0][1]).toBe('Vocabulary_Quiz_magister_results.csv');
+        expect(mockBuildTestGradebookRows).toHaveBeenCalledWith(
+            mockTest,
+            [mockStudentTest],
+            [mockStudent],
+            mockGradeScale
+        );
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
+        expect(mockShowToast).toHaveBeenCalledWith(
+            expect.stringMatching(/^exportPage\.csv_grades_in_progress/),
+            'warning'
+        );
+        expect(mockShowToast).toHaveBeenCalledWith(
+            expect.stringMatching(/^exportPage\.csv_missing_student_numbers/),
+            'warning'
+        );
         (mockUseApp as Record<string, unknown>).studentTests = [];
     });
 

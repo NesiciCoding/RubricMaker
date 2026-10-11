@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildTestResultsCsv } from './testExportPresets';
+import { buildTestResultsCsv, buildTestGradebookRows } from './testExportPresets';
 import { initTestI18n } from '../test-utils/initI18n';
-import type { Student, StudentTest, Test } from '../types';
+import type { GradeScale, Student, StudentTest, Test } from '../types';
 
 beforeAll(async () => {
     await initTestI18n();
@@ -146,7 +146,7 @@ describe('buildTestResultsCsv', () => {
         // Score %, Q1/Q2 accuracy, and the "Present simple" skill accuracy must all come from
         // attempt 2 alone (100% across the board) — not blended with attempt 1's wrong answer
         // (which would drag Q1/skill accuracy down to 50% while Score % stayed at 100%).
-        expect(miaRows[0]).toBe('Mia Lee,9999,100.0,100,100,100');
+        expect(miaRows[0]).toBe('Mia Lee,9999,100.0,2,2,Graded,100,100,100');
     });
 
     it('tie-breaks submissions with the same attemptNumber by submission time, newest wins', () => {
@@ -279,5 +279,84 @@ describe('buildTestResultsCsv', () => {
         ];
         const csv = buildTestResultsCsv(test, ghost, students);
         expect(csv).toContain(',,0.0');
+    });
+});
+
+describe('test results points, grade and status (#607)', () => {
+    const scale: GradeScale = {
+        id: 'nl',
+        name: 'Dutch',
+        type: 'custom',
+        ranges: [
+            { min: 50, max: 100, label: '8', color: '#000' },
+            { min: 0, max: 49, label: '4', color: '#000' },
+        ],
+    };
+
+    it('adds points, max points, grade and status columns', () => {
+        const inProgress = { ...studentTests[1], status: 'in_progress' as const };
+        const csv = buildTestResultsCsv(test, [studentTests[0], inProgress], students, undefined, scale);
+        const [header, jane, john] = csv.trim().split('\r\n');
+        expect(header.startsWith('Student Name,Student Number,Score %,Points,Max Points,Grade,Status')).toBe(true);
+        expect(jane.startsWith('Jane Doe,1234,50.0,1,2,8,Graded')).toBe(true);
+        expect(john.startsWith('John Roe,5678,0.0,0,2,4,In progress')).toBe(true);
+    });
+
+    it('leaves the grade column out for a test without a grade scale', () => {
+        const header = buildTestResultsCsv(test, studentTests, students).split('\r\n')[0];
+        expect(header).not.toContain('Grade');
+        expect(header).toContain('Status');
+    });
+
+    it('builds one gradebook preset row per student from the latest attempt', () => {
+        expect(buildTestGradebookRows(test, [...studentTests, ...multiAttemptStudentTests], students, scale)).toEqual([
+            { studentName: 'Jane Doe', studentNumber: '1234', percentage: 50, grade: '8' },
+            { studentName: 'John Roe', studentNumber: '5678', percentage: 0, grade: '4' },
+            { studentName: 'Mia Lee', studentNumber: '9999', percentage: 100, grade: '8' },
+        ]);
+        expect(buildTestGradebookRows(test, studentTests, students, null)[0].grade).toBe('');
+    });
+
+    it('leaves an unfinished attempt ungraded in the gradebook rows instead of grading its partial answers', () => {
+        const inProgress = { ...studentTests[0], status: 'in_progress' as const };
+        expect(buildTestGradebookRows(test, [inProgress], students, scale)).toEqual([
+            { studentName: 'Jane Doe', studentNumber: '1234', percentage: 50, grade: '', inProgress: true },
+        ]);
+    });
+
+    it('scores a generator placement run from the questions it asked, like the results page', () => {
+        const asked = (id: string): Test['questions'][number] => ({
+            id,
+            prompt: id,
+            type: 'multiple-choice',
+            points: 2,
+            options: [
+                { id: 'right', text: 'Right', isCorrect: true },
+                { id: 'wrong', text: 'Wrong', isCorrect: false },
+            ],
+        });
+        const generatorTest: Test = { ...test, mode: 'placement', placementEngine: 'generator', questions: [] };
+        const run: StudentTest = {
+            id: 'gen1',
+            testId: 'test1',
+            studentId: 's1',
+            answers: [
+                { questionId: 'g1', response: 'right' },
+                { questionId: 'g2', response: 'wrong' },
+            ],
+            askedQuestionSnapshots: [asked('g1'), asked('g2')],
+            levelPath: [
+                { sectionId: 'B1', level: 'B1', questionId: 'g1', correct: true },
+                { sectionId: 'B2', level: 'B2', questionId: 'g2', correct: false },
+            ],
+            status: 'graded',
+            startedAt: '2024-01-02T00:00:00.000Z',
+        };
+        expect(buildTestGradebookRows(generatorTest, [run], students, scale)[0]).toMatchObject({
+            percentage: 50,
+            grade: '8',
+        });
+        const [, row] = buildTestResultsCsv(generatorTest, [run], students, undefined, scale).trim().split('\r\n');
+        expect(row.startsWith('Jane Doe,1234,50.0,2,4,8,Graded')).toBe(true);
     });
 });
