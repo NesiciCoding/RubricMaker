@@ -887,8 +887,11 @@ describe('TestBuilderPage extended', () => {
 
     it('saves a draft with incomplete questions but lists what is missing (#702)', () => {
         renderBuilder();
+        expect(screen.queryByText('tests.issues_title')).not.toBeInTheDocument();
         fireEvent.change(screen.getByLabelText('tests.name_label'), { target: { value: 'Draft test' } });
         fireEvent.click(screen.getAllByText(/tests.add_question/)[0]);
+        expect(screen.getByText('tests.issues_title')).toBeInTheDocument();
+        expect(screen.getByText(/tests\.issue_question.*"number":1/)).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.save'));
         expect(mockAddTest).toHaveBeenCalled();
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^tests\.saved_with_issues/), 'warning');
