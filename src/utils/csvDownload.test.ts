@@ -33,4 +33,10 @@ describe('uniqueColumnLabels (#684)', () => {
             'Style',
         ]);
     });
+
+    it('never hands a repeated title a label another criterion already uses', () => {
+        const labels = uniqueColumnLabels(['Content', 'Content', 'Content (1)'], (p) => `#${p}`);
+        expect(labels).toEqual(['Content (2)', 'Content (3)', 'Content (1)']);
+        expect(new Set(labels.map((l) => l.toLowerCase())).size).toBe(labels.length);
+    });
 });
