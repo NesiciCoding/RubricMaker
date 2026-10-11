@@ -35,27 +35,53 @@ export function extractCsvName(row: Record<string, string>, mapping: CsvColumnMa
     return [f, l].filter(Boolean).join(' ');
 }
 
-/** Pure matching pass: decides, for each CSV row, whether it creates a student, updates one, or transfers one — without mutating app state. */
-export function matchCsvRows(
+export type CsvSkipReason = 'no_name' | 'no_class' | 'duplicate';
+
+export interface SkippedCsvRow {
+    /** Spreadsheet row number, counting the header as row 1 (rows after a dropped blank line shift up). */
+    row: number;
+    name: string;
+    email: string;
+    reason: CsvSkipReason;
+    /** For duplicates: the row this one repeats. */
+    duplicateOf?: number;
+}
+
+export interface CsvImportPlan {
+    rows: MatchedImportRow[];
+    skipped: SkippedCsvRow[];
+}
+
+/**
+ * Pure matching pass: decides, for each CSV row, whether it creates a student, updates one, or transfers one — without
+ * mutating app state — and reports every row it leaves out with the reason. Rows only count as duplicates when name,
+ * email and class all repeat, so siblings sharing a guardian's email are each imported.
+ */
+export function planCsvImport(
     parsedData: Record<string, string>[],
     mapping: CsvColumnMap,
     classes: Class[],
     students: Student[],
     defaultClassId: string
-): MatchedImportRow[] {
+): CsvImportPlan {
     const classMap = new Map<string, string>();
     classes.forEach((c) => classMap.set(c.name.toLowerCase().trim(), c.id));
 
-    const seenCsvKeys = new Set<string>();
+    const firstRowForKey = new Map<string, number>();
     const processedIds = new Set<string>();
     const rows: MatchedImportRow[] = [];
+    const skipped: SkippedCsvRow[] = [];
 
-    for (const row of parsedData) {
+    parsedData.forEach((row, i) => {
+        const rowNumber = i + 2;
         const name = extractCsvName(row, mapping);
-        if (!name) continue;
+        const email = cell(row, mapping.email);
+        if (!name) {
+            skipped.push({ row: rowNumber, name, email, reason: 'no_name' });
+            return;
+        }
 
-        const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
-        const classNameToMap = mapping.className && row[mapping.className] ? String(row[mapping.className]).trim() : '';
+        const classNameToMap = cell(row, mapping.className);
 
         let existingClassId: string | null = defaultClassId || null;
         let newClassName: string | null = null;
@@ -68,35 +94,47 @@ export function matchCsvRows(
                 existingClassId = null;
             }
         }
-        if (!existingClassId && !newClassName) continue;
+        if (!existingClassId && !newClassName) {
+            skipped.push({ row: rowNumber, name, email, reason: 'no_class' });
+            return;
+        }
 
         const nameLower = name.toLowerCase();
         const emailLower = email.toLowerCase();
         const dedupeTarget = existingClassId ?? `new:${newClassName!.toLowerCase()}`;
-        const csvKey = emailLower ? `email:${emailLower}` : `class:${dedupeTarget}|name:${nameLower}`;
-        if (seenCsvKeys.has(csvKey)) continue;
-        seenCsvKeys.add(csvKey);
+        const csvKey = `class:${dedupeTarget}|name:${nameLower}|email:${emailLower}`;
+        const duplicateOf = firstRowForKey.get(csvKey);
+        if (duplicateOf !== undefined) {
+            skipped.push({ row: rowNumber, name, email, reason: 'duplicate', duplicateOf });
+            return;
+        }
+        firstRowForKey.set(csvKey, rowNumber);
 
+        const sameName = (s: Student) => !processedIds.has(s.id) && s.name.toLowerCase().trim() === nameLower;
+        // A shared email alone (siblings, a guardian's address) never identifies the student — the name must match too.
         const matchedStudent =
-            (existingClassId
-                ? students.find(
-                      (s) =>
-                          !processedIds.has(s.id) &&
-                          s.classId === existingClassId &&
-                          s.name.toLowerCase().trim() === nameLower
-                  )
-                : undefined) ??
+            (existingClassId ? students.find((s) => sameName(s) && s.classId === existingClassId) : undefined) ??
             (emailLower
-                ? students.find((s) => !processedIds.has(s.id) && s.email?.toLowerCase().trim() === emailLower)
+                ? students.find((s) => sameName(s) && s.email?.toLowerCase().trim() === emailLower)
                 : undefined) ??
             null;
 
         if (matchedStudent) processedIds.add(matchedStudent.id);
 
         rows.push({ name, email, newClassName, existingClassId, matchedStudent });
-    }
+    });
 
-    return rows;
+    return { rows, skipped };
+}
+
+export function matchCsvRows(
+    parsedData: Record<string, string>[],
+    mapping: CsvColumnMap,
+    classes: Class[],
+    students: Student[],
+    defaultClassId: string
+): MatchedImportRow[] {
+    return planCsvImport(parsedData, mapping, classes, students, defaultClassId).rows;
 }
 
 export interface ImportSummary {
