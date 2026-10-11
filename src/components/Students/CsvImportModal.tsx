@@ -25,6 +25,15 @@ type ColumnMap = CsvColumnMap;
 
 type DetectedFormat = 'generic' | 'clever' | 'oneroster' | null;
 
+function isValidUtf8(bytes: ArrayBuffer): boolean {
+    try {
+        new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 function hasReplacementChars(data: Record<string, string>[]): boolean {
     return data.some((row) =>
         Object.entries(row).some(([k, v]) => k.includes('\uFFFD') || (typeof v === 'string' && v.includes('\uFFFD')))
@@ -56,6 +65,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     );
 
     useEffect(() => {
+        let cancelled = false;
         const parse = (encoding?: string) =>
             Papa.parse<Record<string, string>>(file, {
                 header: true,
@@ -64,15 +74,25 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 encoding,
                 complete: (results) => {
                     const data = results.data;
-                    // Excel's "CSV (;)" export on Windows is cp1252, which decodes to U+FFFD as UTF-8.
-                    if (!encoding && hasReplacementChars(data)) {
-                        parse('windows-1252');
+                    if (encoding || !hasReplacementChars(data)) {
+                        if (!cancelled) applyParsed(data);
                         return;
                     }
-                    applyParsed(data);
+                    // Excel's "CSV (;)" export on Windows is cp1252, which decodes to U+FFFD as UTF-8 —
+                    // but a UTF-8 file can also hold a literal U+FFFD, so only invalid bytes mean cp1252.
+                    file.arrayBuffer().then(
+                        (bytes) => {
+                            if (cancelled) return;
+                            if (isValidUtf8(bytes)) applyParsed(data);
+                            else parse('windows-1252');
+                        },
+                        () => {
+                            if (!cancelled) parse('windows-1252');
+                        }
+                    );
                 },
                 error: (err) => {
-                    setError(t('csv.err_parse', { message: err.message }));
+                    if (!cancelled) setError(t('csv.err_parse', { message: err.message }));
                 },
             });
 
@@ -141,6 +161,9 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         };
 
         parse();
+        return () => {
+            cancelled = true;
+        };
     }, [file]);
 
     const getPreviewRows = () => {
