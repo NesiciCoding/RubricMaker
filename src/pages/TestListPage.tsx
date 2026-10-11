@@ -243,8 +243,8 @@ export default function TestListPage() {
                         t('exportPage.csv_missing_student_numbers', { count: preset.missingNumberCount }),
                         'warning'
                     );
-                if (preset.approximateCount > 0)
-                    showToast(t('exportPage.csv_grades_approximate', { count: preset.approximateCount }), 'warning');
+                if (preset.blankGradeCount > 0)
+                    showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
             } else {
                 const csv = buildTestResultsCsv(test, studentTests, students, settings.cefrAchieveThreshold, scale);
                 downloadCsv(csv, `${sanitizeFilename(test.name)}_results.csv`);

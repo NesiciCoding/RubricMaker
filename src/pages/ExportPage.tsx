@@ -426,8 +426,8 @@ export default function ExportPage() {
             downloadCsv(preset.csv, `${sanitizeFilename(rubric.name)}_${gradebookPreset}_grades.csv`);
             if (preset.missingNumberCount > 0)
                 showToast(t('exportPage.csv_missing_student_numbers', { count: preset.missingNumberCount }), 'warning');
-            if (preset.approximateCount > 0)
-                showToast(t('exportPage.csv_grades_approximate', { count: preset.approximateCount }), 'warning');
+            if (preset.blankGradeCount > 0)
+                showToast(t('exportPage.csv_grades_blank', { count: preset.blankGradeCount }), 'warning');
             logAuditEvent('export', 'export_csv', 'rubric', rubric.id, {
                 count: toExport.length,
                 preset: gradebookPreset,
