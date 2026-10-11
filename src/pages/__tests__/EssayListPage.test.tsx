@@ -139,4 +139,13 @@ describe('EssayListPage', () => {
         });
         expect(mockDeleteEssayGroup).toHaveBeenCalledWith('tk1');
     });
+
+    it('says how many submissions go with the essay in the delete dialog (#710)', async () => {
+        const { default: EssayListPage } = await import('../EssayListPage');
+        renderWithRouter(<EssayListPage />);
+        await act(async () => {
+            fireEvent.click(screen.getByTitle('tests.action_delete'));
+        });
+        expect(screen.getByText(/^essays\.delete_essay_warning/)).toHaveTextContent('"count":1');
+    });
 });
