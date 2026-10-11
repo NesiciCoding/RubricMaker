@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { Upload, CheckCircle, X, AlertTriangle, Table } from 'lucide-react';
@@ -8,8 +8,9 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import {
     autoMapCsvHeaders,
     extractCsvName,
-    matchCsvRows,
+    planCsvImport,
     summarizeImport,
+    type SkippedCsvRow,
     type CsvColumnMap,
     type ImportSummary,
     type MatchedImportRow,
@@ -39,6 +40,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const { settings } = useSettings();
 
     const [parsedData, setParsedData] = useState<Record<string, string>[]>([]);
+    const [skippedAtImport, setSkippedAtImport] = useState<SkippedCsvRow[]>([]);
     const [headers, setHeaders] = useState<string[]>([]);
     const [detectedFormat, setDetectedFormat] = useState<DetectedFormat>(null);
     const [mapping, setMapping] = useState<ColumnMap>({
@@ -59,7 +61,8 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         const parse = (encoding?: string) =>
             Papa.parse<Record<string, string>>(file, {
                 header: true,
-                skipEmptyLines: true,
+                // 'greedy' also drops delimiter-only rows (`;;;`) that Excel leaves below the data.
+                skipEmptyLines: 'greedy',
                 transformHeader: (h) => h.trim(),
                 encoding,
                 complete: (results) => {
@@ -220,9 +223,15 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
         setSummary({ created, updated, transferred, removed });
     };
 
+    const defaultClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
+    const plan = useMemo(
+        () => planCsvImport(parsedData, mapping, classes, students, defaultClassId),
+        [parsedData, mapping, classes, students, defaultClassId]
+    );
+
     const startImport = () => {
-        const defaultClassId = classes.find((c) => c.id === settings.activeClassId)?.id ?? classes[0]?.id ?? '';
-        const rows = matchCsvRows(parsedData, mapping, classes, students, defaultClassId);
+        const { rows } = plan;
+        setSkippedAtImport(plan.skipped);
         if (syncMode) {
             setPendingImport({ rows, preview: summarizeImport(rows, students, syncMode) });
         } else {
@@ -233,6 +242,11 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
     const hasNameMapping = mapping.fullName || (mapping.firstName && mapping.lastName);
     const noImportableRows = !!hasNameMapping && !parsedData.some((row) => extractCsvName(row, mapping) !== '');
     const previewRows = getPreviewRows();
+    const skippedRows = summary ? skippedAtImport : hasNameMapping && !noImportableRows ? plan.skipped : [];
+    const skipReason = (s: SkippedCsvRow) =>
+        s.reason === 'duplicate'
+            ? t('csv.skip_reason_duplicate', { row: s.duplicateOf })
+            : t(`csv.skip_reason_${s.reason}`);
 
     return (
         <Modal titleId="csv-import-title" onClose={onClose} maxWidth={640}>
@@ -467,9 +481,44 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                                 {summary.removed} {t('csv.summary_removed')}
                             </span>
                         )}
+                        {skippedAtImport.length > 0 && (
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+                                {skippedAtImport.length} {t('csv.summary_skipped')}
+                            </span>
+                        )}
                     </div>
                 </div>
             ) : null}
+
+            {skippedRows.length > 0 && (
+                <div className="modal-body" style={{ paddingTop: 0 }}>
+                    <div
+                        role="status"
+                        style={{
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            padding: '10px 14px',
+                            fontSize: '0.82rem',
+                        }}
+                    >
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                            {t('csv.skipped_title', { count: skippedRows.length })}
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: 18, maxHeight: 140, overflowY: 'auto' }}>
+                            {skippedRows.map((s) => (
+                                <li key={s.row}>
+                                    {t('csv.skipped_row', {
+                                        row: s.row,
+                                        label: s.name || s.email || t('csv.empty'),
+                                        reason: skipReason(s),
+                                    })}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
 
             <div className="modal-footer">
                 {summary ? (
@@ -497,10 +546,10 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                         {!error && headers.length > 0 && (
                             <button
                                 className="btn btn-primary"
-                                disabled={!hasNameMapping || noImportableRows}
+                                disabled={!hasNameMapping || plan.rows.length === 0}
                                 onClick={startImport}
                             >
-                                <CheckCircle size={15} /> {t('csv.import_btn', { count: parsedData.length })}
+                                <CheckCircle size={15} /> {t('csv.import_btn', { count: plan.rows.length })}
                             </button>
                         )}
                     </>

@@ -35,6 +35,12 @@ const CSV_TRANSLATIONS: Record<string, string> = {
     'csv.err_no_columns': 'Could not detect any columns in the CSV file.',
     'csv.err_parse': 'Failed to parse CSV: {{message}}',
     'csv.active_class_default': 'Active Class (Default)',
+    'csv.summary_skipped': 'skipped',
+    'csv.skipped_title': '{{count}} not imported',
+    'csv.skipped_row': 'Row {{row}} ({{label}}): {{reason}}',
+    'csv.skip_reason_no_name': 'no name',
+    'csv.skip_reason_no_class': 'no class',
+    'csv.skip_reason_duplicate': 'repeats row {{row}}',
 };
 
 vi.mock('react-i18next', () => ({
@@ -149,7 +155,7 @@ describe('CsvImportModal', () => {
     it('disables the import button until a name mapping is selected', () => {
         parseImpl = (_file, opts) => opts.complete({ data: [{ Foo: 'bar', Bar: 'baz' }] });
         render(<CsvImportModal {...baseProps} />);
-        const importBtn = screen.getByRole('button', { name: /import 1 student/i });
+        const importBtn = screen.getByRole('button', { name: /import \d+ students?/i });
         expect(importBtn).toBeDisabled();
         expect(screen.queryByText('Data Preview (First 3 rows)')).not.toBeInTheDocument();
 
@@ -230,7 +236,8 @@ describe('CsvImportModal', () => {
                 ],
             });
         render(<CsvImportModal {...baseProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
+        expect(screen.getByText('Row 2 (noname@school.com): no name')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
 
         expect(mockAddStudent).toHaveBeenCalledTimes(1);
         expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Carl Carlson', email: '', classId: 'class-1' });
@@ -253,11 +260,9 @@ describe('CsvImportModal', () => {
         mockClasses = [];
         parseImpl = (_file, opts) => opts.complete({ data: [{ Name: 'Dana Doe', Email: '', Class: '' }] });
         render(<CsvImportModal {...baseProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /import 1 student/i }));
+        expect(screen.getByRole('button', { name: /import 0 students/i })).toBeDisabled();
+        expect(screen.getByText('Row 2 (Dana Doe): no class')).toBeInTheDocument();
         expect(mockAddStudent).not.toHaveBeenCalled();
-        // Summary is shown; click Done to trigger onSuccess
-        fireEvent.click(screen.getByRole('button', { name: /done/i }));
-        expect(baseProps.onSuccess).toHaveBeenCalled();
     });
 
     it('matches an existing class case-insensitively and does not create a duplicate', () => {
@@ -303,19 +308,42 @@ describe('CsvImportModal', () => {
         expect(screen.getByText(/moved between classes/i)).toBeInTheDocument();
     });
 
-    it('does not double-update a student when the same email appears twice in the CSV', () => {
-        mockStudents = [{ id: 'student-1', name: 'Alice Anderson', email: 'alice@school.com', classId: 'class-1' }];
+    it('imports a sibling who shares an email instead of overwriting the existing student (#653)', () => {
+        mockStudents = [{ id: 'student-1', name: 'Sam Smit', email: 'parent@x.nl', classId: 'class-1' }];
         parseImpl = (_file, opts) =>
             opts.complete({
                 data: [
-                    { Name: 'Alice Anderson', Email: 'alice@school.com', Class: 'Class A' },
-                    { Name: 'Alice A', Email: 'alice@school.com', Class: 'Class A' },
+                    { Name: 'Sam Smit', Email: 'parent@x.nl', Class: 'Class A' },
+                    { Name: 'Tess Smit', Email: 'parent@x.nl', Class: 'Class A' },
                 ],
             });
         render(<CsvImportModal {...baseProps} />);
         fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
         expect(mockUpdateStudent).toHaveBeenCalledTimes(1);
-        expect(mockAddStudent).not.toHaveBeenCalled(); // second row is skipped (same email)
+        expect(mockUpdateStudent).toHaveBeenCalledWith(expect.objectContaining({ id: 'student-1', name: 'Sam Smit' }));
+        expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Tess Smit', email: 'parent@x.nl', classId: 'class-1' });
+    });
+
+    it('lists skipped rows with reasons, counts only importable rows, and reports skips after importing (#653)', () => {
+        parseImpl = (_file, opts) =>
+            opts.complete({
+                data: [
+                    { Name: 'Twin A', Email: '', Class: 'Class A' },
+                    { Name: 'Twin A', Email: '', Class: 'Class A' },
+                    { Name: '', Email: '', Class: '' },
+                    { Name: 'Twin B', Email: '', Class: 'Class A' },
+                ],
+            });
+        render(<CsvImportModal {...baseProps} />);
+
+        expect(screen.getByText('2 not imported')).toBeInTheDocument();
+        expect(screen.getByText('Row 3 (Twin A): repeats row 2')).toBeInTheDocument();
+        expect(screen.getByText('Row 4 (Empty): no name')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /import 2 students/i }));
+        expect(mockAddStudent).toHaveBeenCalledTimes(2);
+        expect(screen.getByText(/2 skipped/)).toBeInTheDocument();
+        expect(screen.getByText('Row 3 (Twin A): repeats row 2')).toBeInTheDocument();
     });
 
     it('removes unmatched students from imported classes when sync mode is enabled', () => {

@@ -73,4 +73,13 @@ describe('CsvImportModal parsing real files (#657)', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent('csv.err_no_importable_rows');
         expect(importButton()).toBeDisabled();
     });
+
+    it('drops delimiter-only rows instead of previewing and counting them (#653)', async () => {
+        const file = new File(['Naam;Klas\nAnna Z;Class A\n;;\n ; \n'], 'students.csv', { type: 'text/csv' });
+        render(<CsvImportModal file={file} onClose={vi.fn()} onSuccess={vi.fn()} />);
+
+        expect(await screen.findByText('Anna Z')).toBeInTheDocument();
+        expect(importButton()).toHaveTextContent('csv.import_btn{"count":1}');
+        expect(screen.queryByText('csv.empty')).not.toBeInTheDocument();
+    });
 });

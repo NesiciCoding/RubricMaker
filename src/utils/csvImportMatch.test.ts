@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { autoMapCsvHeaders, extractCsvName, matchCsvRows, summarizeImport } from './csvImportMatch';
+import { autoMapCsvHeaders, extractCsvName, matchCsvRows, planCsvImport, summarizeImport } from './csvImportMatch';
 import type { Class, Student } from '../types';
 
 const mapping = { fullName: 'Name', firstName: '', lastName: '', email: 'Email', className: 'Class' };
@@ -67,6 +67,66 @@ describe('matchCsvRows + summarizeImport', () => {
             'c1'
         );
         expect(rows).toHaveLength(1);
+    });
+});
+
+describe('planCsvImport (#653)', () => {
+    it('reports every skipped row with its reason and the row it repeats', () => {
+        const { rows, skipped } = planCsvImport(
+            [
+                { Name: 'Bob', Email: '', Class: '8A' },
+                { Name: 'bob', Email: '', Class: '8A' },
+                { Name: '', Email: 'x@x.com', Class: '8A' },
+                { Name: 'Bob', Email: '', Class: '9A' },
+            ],
+            mapping,
+            classes,
+            [],
+            'c1'
+        );
+        expect(rows.map((r) => r.existingClassId)).toEqual(['c1', 'c2']);
+        expect(skipped).toEqual([
+            { row: 3, name: 'bob', email: '', reason: 'duplicate', duplicateOf: 2 },
+            { row: 4, name: '', email: 'x@x.com', reason: 'no_name' },
+        ]);
+    });
+
+    it('skips rows with no class to land in', () => {
+        const { rows, skipped } = planCsvImport([{ Name: 'Bob', Email: '', Class: '' }], mapping, [], [], '');
+        expect(rows).toEqual([]);
+        expect(skipped).toEqual([{ row: 2, name: 'Bob', email: '', reason: 'no_class' }]);
+    });
+
+    it('keeps siblings who share a guardian email as separate students', () => {
+        const existing: Student[] = [{ id: 's1', name: 'Sam', email: 'parent@x.nl', classId: 'c1' }];
+        const { rows, skipped } = planCsvImport(
+            [
+                { Name: 'Sam', Email: 'parent@x.nl', Class: '8A' },
+                { Name: 'Tess', Email: 'parent@x.nl', Class: '8A' },
+            ],
+            mapping,
+            classes,
+            existing,
+            'c1'
+        );
+        expect(skipped).toEqual([]);
+        expect(rows.map((r) => [r.name, r.matchedStudent?.id ?? null])).toEqual([
+            ['Sam', 's1'],
+            ['Tess', null],
+        ]);
+    });
+
+    it('does not move or rename an existing sibling when only the other one is listed', () => {
+        const existing: Student[] = [{ id: 's1', name: 'Sam', email: 'parent@x.nl', classId: 'c1' }];
+        const rows = matchCsvRows(
+            [{ Name: 'Tess', Email: 'parent@x.nl', Class: '9A' }],
+            mapping,
+            classes,
+            existing,
+            'c1'
+        );
+        expect(rows[0].matchedStudent).toBeNull();
+        expect(summarizeImport(rows, existing, false)).toEqual({ created: 1, updated: 0, transferred: 0, removed: 0 });
     });
 });
 
