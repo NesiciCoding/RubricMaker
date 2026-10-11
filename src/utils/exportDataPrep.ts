@@ -1,8 +1,25 @@
 import DOMPurify from 'dompurify';
 
-/** Filesystem-safe filename fragment — collapses anything but letters/digits into underscores. */
+/** Filesystem-safe filename fragment: letters (any script), combining marks and digits stay, every other run becomes one underscore. */
 export function sanitizeFilename(name: string): string {
-    return name.replace(/[^a-z0-9]/gi, '_');
+    return name.normalize('NFC').replace(/[^\p{L}\p{M}\p{N}]+/gu, '_');
+}
+
+/**
+ * Hands out file names that are unique within one batch, numbering repeats before the extension
+ * (a.docx, a_2.docx). Case-insensitive, since Windows and macOS file systems are.
+ */
+export function createUniqueFilenames(): (name: string) => string {
+    const used = new Set<string>();
+    return (name) => {
+        const dot = name.lastIndexOf('.');
+        const stem = dot > 0 ? name.slice(0, dot) : name;
+        const ext = dot > 0 ? name.slice(dot) : '';
+        let candidate = name;
+        for (let n = 2; used.has(candidate.toLowerCase()); n++) candidate = `${stem}_${n}${ext}`;
+        used.add(candidate.toLowerCase());
+        return candidate;
+    };
 }
 
 /** `min-max` range label, collapsed to a single number when they're equal (e.g. single-point levels). */
