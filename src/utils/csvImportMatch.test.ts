@@ -231,3 +231,22 @@ describe('autoMapCsvHeaders (#682)', () => {
         expect(rows[0].name).toBe('Anna Jansen');
     });
 });
+
+describe('student numbers on import (#668)', () => {
+    it('maps the exported student_number column and the Magister Leerlingnummer column', () => {
+        expect(autoMapCsvHeaders(['name', 'email', 'class', 'student_number']).studentNumber).toBe('student_number');
+        expect(autoMapCsvHeaders(['Naam', 'Leerlingnummer']).studentNumber).toBe('Leerlingnummer');
+        expect(autoMapCsvHeaders(['Name', 'Email'])).not.toHaveProperty('studentNumber');
+    });
+
+    it('carries the student number onto the planned row', () => {
+        const { rows } = planCsvImport(
+            [{ Name: 'Bob', Email: '', Class: '8A', Nr: ' 1234 ' }],
+            { ...mapping, studentNumber: 'Nr' },
+            classes,
+            [],
+            ''
+        );
+        expect(rows[0].studentNumber).toBe('1234');
+    });
+});
