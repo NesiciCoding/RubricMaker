@@ -456,7 +456,7 @@ describe('ExportPage coverage', () => {
         expect(global.URL.createObjectURL).toHaveBeenCalled();
     });
 
-    it('warns about approximate grades and missing student numbers in a gradebook preset (#688)', async () => {
+    it('warns about blank grades and missing student numbers in a gradebook preset (#688)', async () => {
         mockShowToast.mockClear();
         appOverrides = { students: [{ ...mockStudent, studentNumber: undefined }, mockStudent2, orphanStudent] };
         renderPage();
@@ -469,10 +469,7 @@ describe('ExportPage coverage', () => {
             fireEvent.click(screen.getByText(/exportPage.csv_export_count/));
         });
         // The mocked scale grades with letters.
-        expect(mockShowToast).toHaveBeenCalledWith(
-            expect.stringMatching(/^exportPage\.csv_grades_approximate/),
-            'warning'
-        );
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^exportPage\.csv_grades_blank/), 'warning');
         expect(mockShowToast).toHaveBeenCalledWith(
             expect.stringMatching(/^exportPage\.csv_missing_student_numbers/),
             'warning'
