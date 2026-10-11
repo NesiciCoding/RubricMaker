@@ -64,7 +64,10 @@ export default function EssayListPage() {
     async function handleDelete(teacherKey: string, title: string) {
         const ok = await confirm({
             title: t('essays.delete_essay_title'),
-            message: t('essays.delete_essay_warning', { name: title }),
+            message: t('essays.delete_essay_warning', {
+                name: title,
+                count: essaySubmissions.filter((s) => s.teacherKey === teacherKey).length,
+            }),
             confirmLabel: t('common.delete'),
         });
         if (ok) deleteEssayGroup(teacherKey);
