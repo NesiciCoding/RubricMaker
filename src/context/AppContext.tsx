@@ -38,6 +38,7 @@ import {
     markMigrationPending,
     isMigrationSkippedForSession,
 } from '../store/storage';
+import { withSettingsDefaults } from '../utils/settingsDefaults';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
 import { mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
@@ -84,7 +85,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // choice can't drift out of sync between call sites the way it caused this
     // bug in the first place.
     const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean) => {
-        const merged = { ...mergedIn, classes: sanitizeClassYears(mergedIn.classes) };
+        const merged = {
+            ...mergedIn,
+            classes: sanitizeClassYears(mergedIn.classes),
+            settings: withSettingsDefaults(mergedIn.settings),
+        };
         dispatch({ type: 'SET_ALL', payload: merged });
         // Every call site hydrates with seedDiffBaseline=true — a false path is unreachable.
         /* v8 ignore next */

@@ -36,11 +36,13 @@ import type {
     NotificationDismissal,
     ComparativeMatchup,
 } from '../types';
-import { DEFAULT_FORMAT } from '../types';
+import { DEFAULT_SETTINGS, withSettingsDefaults } from '../utils/settingsDefaults';
 import { nanoid } from '../utils/nanoid';
 import { mergeRestoredSettings, withoutProtectedSettings } from '../utils/backupSettings';
 import { SCHOOL_YEARS } from '../data/schoolYears';
 import { putSnapshot, getSnapshot, clearSnapshots, isCloudHydrated } from '../services/snapshotCache';
+
+export { DEFAULT_SETTINGS, withSettingsDefaults };
 
 /**
  * `Class.year` used to be free text; classes carrying a pre-Phase-15.1 value that doesn't match
@@ -89,14 +91,6 @@ export const DEFAULT_GRADE_SCALES: GradeScale[] = [
         ],
     },
 ];
-
-export const DEFAULT_SETTINGS: AppSettings = {
-    defaultGradeScaleId: 'letter-10',
-    theme: 'light',
-    language: 'en',
-    accentColor: '',
-    defaultFormat: DEFAULT_FORMAT,
-};
 
 // ─── Default Comment Bank ──────────────────────────────────────────────────────
 
@@ -1188,7 +1182,7 @@ export function loadStore(): StoreData {
         studentRubrics: load<StudentRubric[]>(KEYS.studentRubrics, []),
         attachments: load<Attachment[]>(KEYS.attachments, []),
         gradeScales: seededGradeScales,
-        settings: load<AppSettings>(KEYS.settings, DEFAULT_SETTINGS),
+        settings: withSettingsDefaults(load<Partial<AppSettings>>(KEYS.settings, DEFAULT_SETTINGS)),
         favoriteStandards: load<LinkedStandard[]>(KEYS.favoriteStandards, []),
         commentBank,
         exportTemplates: load<ExportTemplate[]>(KEYS.exportTemplates, []),

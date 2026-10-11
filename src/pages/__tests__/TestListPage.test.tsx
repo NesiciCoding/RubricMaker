@@ -427,6 +427,27 @@ describe('TestListPage', () => {
         await waitFor(() => expect(mockDeleteTest).toHaveBeenCalledWith('t1'));
     });
 
+    it('refuses to assign a test with incomplete or no questions and says why (#702)', async () => {
+        (mockUseApp as Record<string, unknown>).tests = [
+            { ...mockTest, questions: [{ id: 'q1', prompt: 'Sum?', type: 'numeric', points: 1 }] },
+        ];
+        await loadPage();
+        fireEvent.click(screen.getByTitle('tests.action_assign'));
+        expect(mockShowToast).toHaveBeenCalledWith(expect.stringMatching(/^tests\.assign_blocked.*"count":1/), 'error');
+        expect(screen.queryByText(/tests.assignment_modal_title/)).not.toBeInTheDocument();
+    });
+
+    it('says how many student results go with the test in the delete dialog (#710)', async () => {
+        (mockUseApp as Record<string, unknown>).studentTests = [
+            mockStudentTest,
+            { ...mockStudentTest, id: 'st2', studentId: 's2' },
+            { ...mockStudentTest, id: 'st3', testId: 'other-test' },
+        ];
+        await loadPage();
+        fireEvent.click(screen.getByTitle('tests.action_delete'));
+        expect(screen.getByText(/^tests\.delete_test_warning/)).toHaveTextContent('"count":2');
+    });
+
     it('shows due-date, SEB, submitted and average badges on the card', async () => {
         (mockUseApp as Record<string, unknown>).tests = [
             {
