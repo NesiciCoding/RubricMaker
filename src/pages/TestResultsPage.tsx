@@ -7,16 +7,10 @@ import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
-import {
-    calcTestMaxPoints,
-    calcStudentTestRawPoints,
-    calcTestPercentage,
-    autoScoreResponse,
-    withAskedQuestionSnapshots,
-} from '../utils/testCalc';
-import { isStagedTest, maxPointsForPath, sectionQuestions, scoreSectionPct } from '../utils/placementRouting';
+import { calcTestMaxPoints, calcStudentTestRawPoints, calcTestPercentage, autoScoreResponse } from '../utils/testCalc';
+import { scoreSectionPct } from '../utils/placementRouting';
 import { clamp } from '../utils/clamp';
-import { usesLevelPathEstimate, staircaseMaxPoints } from '../utils/placementStaircase';
+import { scoreStudentTest } from '../utils/studentTestScore';
 import { estimatePlacement } from '../utils/placementResult';
 import { calcLetterGrade, calcGradeColor } from '../utils/gradeCalc';
 import { stripHtmlTags } from '../utils/exportDataPrep';
@@ -418,35 +412,16 @@ export default function TestResultsPage() {
     const [savedCommentFor, setSavedCommentFor] = useState<string | null>(null);
 
     const sectionPath = studentTest?.sectionPath;
-    const staged = !!test && isStagedTest(test) && !!sectionPath?.length;
     const levelPath = studentTest?.levelPath;
-    const isStaircase = !!test && usesLevelPathEstimate(test) && !!levelPath?.length;
-    // A generator-engine (27.1) run's asked questions are pulled live from the bank, never
-    // authored into test.questions — score/display against the submission's own snapshot of them.
-    const scoredTest = test && studentTest ? withAskedQuestionSnapshots(test, studentTest) : test;
+    const score = test && studentTest ? scoreStudentTest(test, studentTest) : null;
+    const staged = score?.staged ?? false;
+    const isStaircase = score?.isStaircase ?? false;
+    const scoredTest = score?.scoredTest ?? test;
     const allQuestions = scoredTest?.questions ?? [];
     const placementEstimate = test && studentTest ? estimatePlacement(test, studentTest) : null;
-
-    const maxPoints = test
-        ? staged && sectionPath
-            ? maxPointsForPath(test, sectionPath)
-            : isStaircase && levelPath
-              ? staircaseMaxPoints(allQuestions, levelPath)
-              : calcTestMaxPoints(test)
-        : 0;
-
-    // For a staged (placement) submission, only the sections the student actually saw
-    // count — the other branch's questions were never presented and would otherwise
-    // show up as unanswered. Same idea for a staircase/generator run: only the questions
-    // actually asked count.
-    const pathQuestions =
-        test && staged && sectionPath
-            ? sectionPath.flatMap((id) => sectionQuestions(test, id))
-            : test && isStaircase && levelPath
-              ? levelPath
-                    .map((step) => allQuestions.find((q) => q.id === step.questionId))
-                    .filter((q): q is TestQuestion => !!q)
-              : (test?.questions ?? []);
+    const maxPoints = score?.maxPoints ?? (test ? calcTestMaxPoints(test) : 0);
+    const pathQuestions = score?.pathQuestions ?? test?.questions ?? [];
+    const pathQuestionIds = new Set(pathQuestions.map((q) => q.id));
 
     const answersById = new Map((studentTest?.answers ?? []).map((a) => [a.questionId, a]));
     const effectiveAnswers = pathQuestions.map((question) => ({
@@ -454,26 +429,10 @@ export default function TestResultsPage() {
         answer: answersById.get(question.id),
     }));
 
-    // For a staged/staircase submission, points must be scored only from the path the student
-    // actually took — including off-path answers (or a stale rawTotalPoints) would let points
-    // from a section/level the student never routed through inflate the path-scoped percentage.
-    const pathQuestionIds = new Set(pathQuestions.map((q) => q.id));
-    const rawPoints =
-        !test || !scoredTest
-            ? 0
-            : staged || isStaircase
-              ? calcStudentTestRawPoints(
-                    scoredTest,
-                    /* v8 ignore next -- provably dead: staged path rendering requires answers to exist */
-                    (studentTest?.answers ?? []).filter((a) => pathQuestionIds.has(a.questionId))
-                )
-              : studentTest
-                ? (studentTest.rawTotalPoints ?? calcStudentTestRawPoints(scoredTest, studentTest.answers))
-                : 0;
-
-    const adjustmentPoints = studentTest?.adjustmentPoints ?? 0;
-    const totalPoints = clamp(rawPoints + adjustmentPoints, 0, maxPoints);
-    const percentage = calcTestPercentage(totalPoints, maxPoints);
+    const rawPoints = score?.rawPoints ?? 0;
+    const adjustmentPoints = score?.adjustmentPoints ?? 0;
+    const totalPoints = score?.totalPoints ?? 0;
+    const percentage = score?.percentage ?? 0;
 
     const scaleId = test?.gradeScaleId ?? settings.defaultGradeScaleId;
     const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0] ?? null);
