@@ -43,6 +43,7 @@ import { isGeneratorTest } from '../utils/placementGenerator';
 import CohortFilter from '../components/CohortFilter';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import { calcClassAveragePercentage } from '../utils/testCalc';
+import { testAssignBlockers } from '../utils/testQuestionIssues';
 
 export default function TestListPage() {
     const { t } = useTranslation();
@@ -249,10 +250,20 @@ export default function TestListPage() {
         navigate(`/tests/${newTest.id}`);
     }
 
+    function requestAssign(test: Test) {
+        const { noQuestions, entries } = testAssignBlockers(test);
+        if (noQuestions) showToast(t('tests.assign_blocked_empty'), 'error');
+        else if (entries.length > 0) showToast(t('tests.assign_blocked', { count: entries.length }), 'error');
+        else setAssigningTestId(test.id);
+    }
+
     async function handleDelete(testId: string, testName: string) {
         const ok = await confirm({
             title: t('tests.delete_test_title'),
-            message: t('tests.delete_test_warning', { name: testName }),
+            message: t('tests.delete_test_warning', {
+                name: testName,
+                count: studentTests.filter((st) => st.testId === testId).length,
+            }),
             confirmLabel: t('common.delete'),
         });
         if (ok) deleteTest(testId);
@@ -357,7 +368,7 @@ export default function TestListPage() {
                                                         title={t('tests.action_assign')}
                                                         aria-label={t('tests.action_assign')}
                                                         disabled={test.questions.length === 0 && !isGeneratorTest(test)}
-                                                        onClick={() => setAssigningTestId(test.id)}
+                                                        onClick={() => requestAssign(test)}
                                                     >
                                                         <Send size={14} />
                                                     </button>
@@ -609,7 +620,7 @@ export default function TestListPage() {
                                                                         test.questions.length === 0 &&
                                                                         !isGeneratorTest(test)
                                                                     }
-                                                                    onClick={() => setAssigningTestId(test.id)}
+                                                                    onClick={() => requestAssign(test)}
                                                                 >
                                                                     <Send size={14} />
                                                                 </button>

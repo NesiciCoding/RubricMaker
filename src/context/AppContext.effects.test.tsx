@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { AppProvider, usePlatform } from './AppContext';
+import { AppProvider, usePlatform, useSettings } from './AppContext';
 import { useStoreSelector } from './useStore';
 import * as storage from '../store/storage';
 import type { StoreData } from '../store/storage';
@@ -803,6 +803,35 @@ describe('AppContext startup effects', () => {
         });
         expect(storageSync.hydrate).toHaveBeenCalled();
         expect(storage.saveRubrics).toHaveBeenCalled();
+    });
+
+    it('fills defaults into cloud settings that predate defaultFormat (#706)', async () => {
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: { isConnected: Mock; hydrate: Mock };
+        };
+        const { defaultFormat: _dropped, ...legacySettings } = mockEmptyState().settings;
+        vi.mocked(storageSync.hydrate).mockResolvedValue({
+            data: { ...mockEmptyState(), settings: legacySettings },
+            error: null,
+        });
+        let settings: ReturnType<typeof useSettings>['settings'] | null = null;
+        function SettingsProbe() {
+            settings = useSettings().settings;
+            return null;
+        }
+        render(
+            <AppProvider>
+                <SettingsProbe />
+            </AppProvider>
+        );
+        await act(async () => {});
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
+        await act(async () => {
+            reconnectHandlers.forEach((h) => h());
+        });
+        expect(storageSync.hydrate).toHaveBeenCalled();
+        expect(settings!.defaultFormat.fontFamily).toBeTruthy();
+        expect(settings!.theme).toBe('dark');
     });
 
     it('merges a hydrate that outlived its timeout once it lands, and warns if it failed', async () => {
