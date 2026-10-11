@@ -4034,7 +4034,7 @@
         "err_empty": "El archivo CSV está vacío.",
         "err_no_columns": "No se detectaron columnas en el archivo CSV.",
         "err_no_importable_rows": "Ninguna fila tiene un nombre en las columnas asignadas, así que no se importaría nada. Revisa la asignación de columnas.",
-        "summary_skipped": "omitidos",
+        "summary_skipped": "omitido(s)",
         "skipped_title_one": "{{count}} fila no se importa",
         "skipped_title_other": "{{count}} filas no se importan",
         "skipped_row": "Fila {{row}} ({{label}}): {{reason}}",
