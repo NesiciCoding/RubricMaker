@@ -669,7 +669,11 @@
         "share_shared_with": "Geteilt mit",
         "share_btn": "Teilen",
         "speaking_select_student": "🎙 Sprechen…",
-        "action_unshare": "Freigabe entfernen"
+        "action_unshare": "Freigabe entfernen",
+        "code_import_button": "Aus Code importieren",
+        "code_import_title": "Aus Freigabecode importieren",
+        "code_import_desc": "Füge einen Freigabecode oder Vorschaulink ein, der aus einer anderen RubricMaker-Instanz kopiert wurde.",
+        "code_import_submit": "Rubrik importieren"
     },
     "tests": {
         "not_found": "Test nicht gefunden.",
@@ -1874,7 +1878,10 @@
         "standards_step_copy": "Kopieren Sie Ihren API-Schlüssel aus dem Entwickler-Dashboard",
         "standards_step_cors": "Fügen Sie Ihre App-URL zur <1>CORS Allowed Origins</1>-Liste hinzu",
         "standards_step_paste": "Fügen Sie den Schlüssel unter <1>Einstellungen → Standards-Integration</1> ein",
-        "not_found": "Diese Rubrik wurde nicht gefunden. Möglicherweise wurde sie gelöscht."
+        "not_found": "Diese Rubrik wurde nicht gefunden. Möglicherweise wurde sie gelöscht.",
+        "label_cefr_skill": "GER-Fertigkeit:",
+        "label_level_description": "Beschreibung der Stufe",
+        "label_sub_item": "Unterpunkt"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -4479,5 +4486,11 @@
         "retry": "Erneut versuchen",
         "upload_failed": "Das Hochladen ist fehlgeschlagen, es wurde noch nichts in dein Konto übertragen. Deine Daten sind weiterhin in diesem Browser.",
         "upload_success": "Deine lokalen Daten wurden in dein Konto hochgeladen."
+    },
+    "vocabulary": {
+        "phrase_label": "Wort oder Ausdruck",
+        "notes_label": "Notizen",
+        "category_label": "Kategorie",
+        "criterion_label": "Verknüpftes Kriterium"
     }
 }

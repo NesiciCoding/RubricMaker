@@ -140,6 +140,15 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                             onDragLeave={() => setDragging(false)}
                             onDrop={onDrop}
                             onClick={() => inputRef.current?.click()}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    inputRef.current?.click();
+                                }
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-describedby="import-rubric-accepts"
                             style={{
                                 border: `2px dashed ${dragging ? 'var(--accent)' : 'var(--border)'}`,
                                 borderRadius: 12,
@@ -151,12 +160,20 @@ export default function ImportRubricModal({ onClose, onImport }: Props) {
                                 marginBottom: 16,
                             }}
                         >
-                            <FileText size={36} style={{ color: 'var(--text-dim)', marginBottom: 10 }} />
+                            <FileText
+                                size={36}
+                                style={{ color: 'var(--text-dim)', marginBottom: 10 }}
+                                aria-hidden="true"
+                            />
                             <div style={{ fontWeight: 600, marginBottom: 6 }}>{t('importRubric.dropzone')}</div>
-                            <div className="text-muted text-sm">{t('importRubric.accepts')}</div>
+                            <div id="import-rubric-accepts" className="text-muted text-sm">
+                                {t('importRubric.accepts')}
+                            </div>
                             <input
                                 ref={inputRef}
                                 type="file"
+                                tabIndex={-1}
+                                aria-hidden="true"
                                 accept=".docx,.pdf,.json"
                                 style={{ display: 'none' }}
                                 onChange={onInputChange}

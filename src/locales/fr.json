@@ -669,7 +669,11 @@
         "share_shared_with": "Partagé avec",
         "share_btn": "Partager",
         "speaking_select_student": "🎙 Expression orale…",
-        "action_unshare": "Supprimer le partage"
+        "action_unshare": "Supprimer le partage",
+        "code_import_button": "Importer depuis un code",
+        "code_import_title": "Importer depuis un code de partage",
+        "code_import_desc": "Collez un code de partage ou un lien d'aperçu copié depuis une autre instance de RubricMaker.",
+        "code_import_submit": "Importer la rubrique"
     },
     "tests": {
         "not_found": "Test introuvable.",
@@ -1874,7 +1878,10 @@
         "standards_step_copy": "Copiez votre clé API depuis le tableau de bord développeur",
         "standards_step_cors": "Ajoutez l'URL de votre application à la liste <1>CORS Allowed Origins</1>",
         "standards_step_paste": "Collez la clé dans <1>Paramètres → Intégration des référentiels</1>",
-        "not_found": "Cette rubrique est introuvable. Elle a peut-être été supprimée."
+        "not_found": "Cette rubrique est introuvable. Elle a peut-être été supprimée.",
+        "label_cefr_skill": "Compétence CECRL :",
+        "label_level_description": "Description du niveau",
+        "label_sub_item": "Sous-élément"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -4479,5 +4486,11 @@
         "retry": "Réessayer",
         "upload_failed": "Le téléversement a échoué : rien n'a encore été transféré vers votre compte. Vos données sont toujours dans ce navigateur.",
         "upload_success": "Vos données locales ont été téléversées vers votre compte."
+    },
+    "vocabulary": {
+        "phrase_label": "Mot ou expression",
+        "notes_label": "Notes",
+        "category_label": "Catégorie",
+        "criterion_label": "Critère lié"
     }
 }

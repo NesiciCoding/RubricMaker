@@ -976,8 +976,9 @@ function RubricBuilderEditor() {
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div data-tour="rb-meta" className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.name_label')}</label>
+                                    <label htmlFor="rb-name">{t('rubricBuilder.name_label')}</label>
                                     <input
+                                        id="rb-name"
                                         type="text"
                                         value={name}
                                         onChange={(e) => {
@@ -995,8 +996,9 @@ function RubricBuilderEditor() {
                                     )}
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.label_subject')}</label>
+                                    <label htmlFor="rb-subject">{t('rubricBuilder.label_subject')}</label>
                                     <input
+                                        id="rb-subject"
                                         type="text"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
@@ -1005,8 +1007,9 @@ function RubricBuilderEditor() {
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginTop: 12 }}>
-                                <label>{t('rubricBuilder.label_description')}</label>
+                                <label htmlFor="rb-description">{t('rubricBuilder.label_description')}</label>
                                 <textarea
+                                    id="rb-description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder={t('rubricBuilder.placeholder_description')}
@@ -1484,8 +1487,9 @@ function RubricBuilderEditor() {
                                     }[]
                                 ).map(({ label, key, min, max }) => (
                                     <div className="form-group" key={key}>
-                                        <label>{label}</label>
+                                        <label htmlFor={`rb-format-${key}`}>{label}</label>
                                         <input
+                                            id={`rb-format-${key}`}
                                             type="number"
                                             value={format[key]}
                                             min={min}
@@ -1507,10 +1511,11 @@ function RubricBuilderEditor() {
                                     }[]
                                 ).map(({ label, key }) => (
                                     <div className="form-group" key={key}>
-                                        <label>{label}</label>
+                                        <label htmlFor={`rb-format-${key}`}>{label}</label>
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                             <input
                                                 type="color"
+                                                aria-label={label}
                                                 value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
                                                 style={{
@@ -1522,6 +1527,7 @@ function RubricBuilderEditor() {
                                                 }}
                                             />
                                             <input
+                                                id={`rb-format-${key}`}
                                                 type="text"
                                                 value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
@@ -1531,8 +1537,9 @@ function RubricBuilderEditor() {
                                     </div>
                                 ))}
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_font_family')}</label>
+                                    <label htmlFor="rb-format-font">{t('rubricBuilder.format_font_family')}</label>
                                     <select
+                                        id="rb-format-font"
                                         value={format.fontFamily}
                                         onChange={(e) => setFormat((f) => ({ ...f, fontFamily: e.target.value }))}
                                     >
@@ -1549,8 +1556,9 @@ function RubricBuilderEditor() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_level_order')}</label>
+                                    <label htmlFor="rb-format-order">{t('rubricBuilder.format_level_order')}</label>
                                     <select
+                                        id="rb-format-order"
                                         value={format.levelOrder}
                                         onChange={(e) =>
                                             setFormat((f) => ({
@@ -1566,8 +1574,11 @@ function RubricBuilderEditor() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_orientation')}</label>
+                                    <label htmlFor="rb-format-orientation">
+                                        {t('rubricBuilder.format_orientation')}
+                                    </label>
                                     <select
+                                        id="rb-format-orientation"
                                         /* v8 ignore next -- orientation is required on RubricFormat */
                                         value={format.orientation || 'portrait'}
                                         onChange={(e) =>
@@ -1590,6 +1601,12 @@ function RubricBuilderEditor() {
                                                     key={align}
                                                     className={`btn btn-sm ${format.headerTextAlign === align ? 'btn-secondary' : 'btn-ghost'}`}
                                                     onClick={() => setFormat((f) => ({ ...f, headerTextAlign: align }))}
+                                                    aria-label={t(
+                                                        align === 'center'
+                                                            ? 'editor.align_centre'
+                                                            : `editor.align_${align}`
+                                                    )}
+                                                    aria-pressed={format.headerTextAlign === align}
                                                     style={{ flex: 1, textTransform: 'capitalize' }}
                                                 >
                                                     {align === 'left' ? (
@@ -2595,6 +2612,7 @@ function RubricWysiwygEditor({
                 onChange={(e) => setName(e.target.value)}
                 onInput={handleInput}
                 placeholder={t('rubricBuilder.placeholder_name')}
+                aria-label={t('rubricBuilder.name_label')}
                 style={{ ...textareaStyle, fontSize: '1.8em', fontWeight: 700, marginBottom: 16, width: '100%' }}
                 className="hover-border"
             />
@@ -2668,6 +2686,7 @@ function RubricWysiwygEditor({
                                         onChange={(e) => updateLevelColumn(i, { label: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_level_name')}
+                                        aria-label={t('rubricBuilder.placeholder_level_name')}
                                         style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
                                         className="hover-border"
                                     />
@@ -2826,6 +2845,7 @@ function RubricWysiwygEditor({
                                         onChange={(e) => updateCriterion(c.id, { title: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_criterion_name')}
+                                        aria-label={t('rubricBuilder.label_criterion')}
                                         style={{ ...textareaStyle, fontWeight: 600 }}
                                         className="hover-border"
                                     />
@@ -2837,6 +2857,7 @@ function RubricWysiwygEditor({
                                             onBlur={() => setEditingCell(null)}
                                             onInput={handleInput}
                                             placeholder={t('rubricBuilder.placeholder_criterion_description')}
+                                            aria-label={t('rubricBuilder.placeholder_criterion_description')}
                                             style={{
                                                 ...textareaStyle,
                                                 fontSize: '0.8em',
@@ -2906,6 +2927,7 @@ function RubricWysiwygEditor({
                                                     onBlur={() => setEditingCell(null)}
                                                     onInput={handleInput}
                                                     placeholder={t('rubricBuilder.placeholder_level_description')}
+                                                    aria-label={t('rubricBuilder.label_level_description')}
                                                     style={{ ...textareaStyle, minHeight: 60 }}
                                                     className="hover-border"
                                                 />
@@ -2981,6 +3003,7 @@ function RubricWysiwygEditor({
                                         type="number"
                                         value={c.weight}
                                         onChange={(e) => updateCriterion(c.id, { weight: Number(e.target.value) })}
+                                        aria-label={t('rubricBuilder.label_weight')}
                                         style={{ ...inputStyle, width: 44, textAlign: 'center' }}
                                         className="hover-border"
                                     />
@@ -3006,6 +3029,7 @@ function RubricWysiwygEditor({
                                 <select
                                     className="btn btn-ghost btn-sm"
                                     style={{ padding: '0 8px', maxWidth: 160 }}
+                                    aria-label={t('rubricBuilder.action_insert_from_bank')}
                                     defaultValue=""
                                     onChange={(e) => {
                                         if (!e.target.value) return;

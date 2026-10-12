@@ -669,7 +669,11 @@
         "share_shared_with": "Gedeeld met",
         "share_btn": "Delen",
         "speaking_select_student": "🎙 Spreken…",
-        "action_unshare": "Delen opheffen"
+        "action_unshare": "Delen opheffen",
+        "code_import_button": "Importeren uit code",
+        "code_import_title": "Importeren uit deelcode",
+        "code_import_desc": "Plak een deelcode of voorbeeldlink die is gekopieerd uit een andere RubricMaker-installatie.",
+        "code_import_submit": "Rubriek importeren"
     },
     "tests": {
         "not_found": "Toets niet gevonden.",
@@ -1874,7 +1878,10 @@
         "standards_step_copy": "Kopieer je API-sleutel uit het ontwikkelaarsdashboard",
         "standards_step_cors": "Voeg je app-URL toe aan de <1>CORS Allowed Origins</1>-lijst",
         "standards_step_paste": "Plak de sleutel in <1>Instellingen → Standaardenintegratie</1>",
-        "not_found": "Deze rubriek is niet gevonden. Mogelijk is hij verwijderd."
+        "not_found": "Deze rubriek is niet gevonden. Mogelijk is hij verwijderd.",
+        "label_cefr_skill": "ERK-vaardigheid:",
+        "label_level_description": "Beschrijving van het niveau",
+        "label_sub_item": "Subonderdeel"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -4479,5 +4486,11 @@
         "retry": "Opnieuw proberen",
         "upload_failed": "Het uploaden is mislukt, dus er is nog niets naar je account gegaan. Je gegevens staan nog in deze browser.",
         "upload_success": "Je lokale gegevens zijn naar je account geüpload."
+    },
+    "vocabulary": {
+        "phrase_label": "Woord of woordgroep",
+        "notes_label": "Notities",
+        "category_label": "Categorie",
+        "criterion_label": "Gekoppeld criterium"
     }
 }

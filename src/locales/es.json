@@ -669,7 +669,11 @@
         "share_shared_with": "Compartido con",
         "share_btn": "Compartir",
         "speaking_select_student": "🎙 Expresión oral…",
-        "action_unshare": "Eliminar acceso"
+        "action_unshare": "Eliminar acceso",
+        "code_import_button": "Importar desde código",
+        "code_import_title": "Importar desde código compartido",
+        "code_import_desc": "Pega un código compartido o un enlace de vista previa copiado de otra instancia de RubricMaker.",
+        "code_import_submit": "Importar rúbrica"
     },
     "tests": {
         "not_found": "Prueba no encontrada.",
@@ -1874,7 +1878,10 @@
         "standards_step_copy": "Copia tu clave API desde el panel de desarrollador",
         "standards_step_cors": "Añade la URL de tu app a la lista <1>CORS Allowed Origins</1>",
         "standards_step_paste": "Pega la clave en <1>Ajustes → Integración de estándares</1>",
-        "not_found": "No se ha encontrado esta rúbrica. Puede que se haya eliminado."
+        "not_found": "No se ha encontrado esta rúbrica. Puede que se haya eliminado.",
+        "label_cefr_skill": "Destreza MCER:",
+        "label_level_description": "Descripción del nivel",
+        "label_sub_item": "Subelemento"
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -4479,5 +4486,11 @@
         "retry": "Reintentar",
         "upload_failed": "La subida ha fallado, así que todavía no se ha movido nada a tu cuenta. Tus datos siguen en este navegador.",
         "upload_success": "Tus datos locales se han subido a tu cuenta."
+    },
+    "vocabulary": {
+        "phrase_label": "Palabra o expresión",
+        "notes_label": "Notas",
+        "category_label": "Categoría",
+        "criterion_label": "Criterio vinculado"
     }
 }
