@@ -513,7 +513,7 @@
         "tab_administration": "Verwaltung",
         "tab_administration_locked": "Verwaltung (Administratorzugriff erforderlich)",
         "admin_password_required": "Passwort erforderlich",
-        "admin_no_pin_warning": "Es ist kein Administratorpasswort festgelegt — jeder kann zu Administrator wechseln. Legen Sie im <1>Tab Verwaltung</1> ein Passwort fest, um den Zugriff einzuschränken.",
+        "admin_no_pin_warning": "Es ist kein Administratorpasswort festgelegt — jeder kann zu Administrator wechseln. Legen Sie im <2>Tab Verwaltung</2> ein Passwort fest, um den Zugriff einzuschränken.",
         "sample_template": "Beispielvorlage",
         "admin_card_desc": "Verwalten Sie Benutzer, Schulen, Datenbanksynchronisierung, Integrationen und Datenaufbewahrung.",
         "import_backup_warning": "Das Importieren einer Sicherung <1>überschreibt alle aktuellen Daten</1>. Diese Aktion kann nicht rückgängig gemacht werden.",

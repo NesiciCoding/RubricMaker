@@ -513,7 +513,7 @@
         "tab_administration": "Administration",
         "tab_administration_locked": "Administration (admin access required)",
         "admin_password_required": "Password required",
-        "admin_no_pin_warning": "No admin password is set — anyone can switch to Administrator. Set a password in the <1>Administration tab</1> to restrict access.",
+        "admin_no_pin_warning": "No admin password is set — anyone can switch to Administrator. Set a password in the <2>Administration tab</2> to restrict access.",
         "sample_template": "Sample template",
         "admin_card_desc": "Manage users, schools, database sync, integrations, and data retention.",
         "import_backup_warning": "Importing a backup will <1>overwrite all current data</1>. This action cannot be undone.",

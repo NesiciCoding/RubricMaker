@@ -513,7 +513,7 @@
         "tab_administration": "Administración",
         "tab_administration_locked": "Administración (requiere acceso de administrador)",
         "admin_password_required": "Contraseña requerida",
-        "admin_no_pin_warning": "No hay contraseña de administrador — cualquiera puede cambiar a Administrador. Establezca una contraseña en la <1>pestaña Administración</1> para restringir el acceso.",
+        "admin_no_pin_warning": "No hay contraseña de administrador — cualquiera puede cambiar a Administrador. Establezca una contraseña en la <2>pestaña Administración</2> para restringir el acceso.",
         "sample_template": "Plantilla de ejemplo",
         "admin_card_desc": "Gestione usuarios, escuelas, sincronización de la base de datos, integraciones y retención de datos.",
         "import_backup_warning": "Importar una copia de seguridad <1>sobrescribirá todos los datos actuales</1>. Esta acción no se puede deshacer.",

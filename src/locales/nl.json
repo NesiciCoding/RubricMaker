@@ -513,7 +513,7 @@
         "tab_administration": "Beheer",
         "tab_administration_locked": "Beheer (beheerderstoegang vereist)",
         "admin_password_required": "Wachtwoord vereist",
-        "admin_no_pin_warning": "Er is geen beheerderswachtwoord ingesteld — iedereen kan naar Beheerder overschakelen. Stel een wachtwoord in op het <1>tabblad Beheer</1> om de toegang te beperken.",
+        "admin_no_pin_warning": "Er is geen beheerderswachtwoord ingesteld — iedereen kan naar Beheerder overschakelen. Stel een wachtwoord in op het <2>tabblad Beheer</2> om de toegang te beperken.",
         "sample_template": "Voorbeeldsjabloon",
         "admin_card_desc": "Beheer gebruikers, scholen, databasesynchronisatie, integraties en gegevensbewaring.",
         "import_backup_warning": "Een back-up importeren <1>overschrijft alle huidige gegevens</1>. Deze actie kan niet ongedaan worden gemaakt.",

@@ -513,7 +513,7 @@
         "tab_administration": "Administration",
         "tab_administration_locked": "Administration (accès administrateur requis)",
         "admin_password_required": "Mot de passe requis",
-        "admin_no_pin_warning": "Aucun mot de passe administrateur n'est défini — n'importe qui peut passer en Administrateur. Définissez un mot de passe dans l'<1>onglet Administration</1> pour restreindre l'accès.",
+        "admin_no_pin_warning": "Aucun mot de passe administrateur n'est défini — n'importe qui peut passer en Administrateur. Définissez un mot de passe dans l'<2>onglet Administration</2> pour restreindre l'accès.",
         "sample_template": "Modèle d'exemple",
         "admin_card_desc": "Gérez les utilisateurs, les écoles, la synchronisation de la base de données, les intégrations et la conservation des données.",
         "import_backup_warning": "L'importation d'une sauvegarde <1>écrase toutes les données actuelles</1>. Cette action est irréversible.",
