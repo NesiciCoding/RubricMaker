@@ -4,7 +4,8 @@
  * Exports a rubric to DOCX using a user-uploaded blank template.
  * Option A approach: extract column header labels + header colour from the
  * uploaded template, then build the output document with the existing `docx`
- * library, preserving those styling cues.
+ * library, preserving those styling cues. Only the blank rubric Word export uses
+ * it; graded per-student DOCX exports keep the built-in layout.
  */
 
 import {
@@ -27,6 +28,32 @@ import { orderedLevels } from './gradeCalc';
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+export const DEFAULT_TEMPLATE_HEADER_COLOR = '#1e3a5f';
+
+/** docx only accepts a 6-digit hex fill; anything else (3-digit, `auto`, names) must never reach it. */
+export function toDocxFill(value: string | undefined): string | undefined {
+    const hex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value?.trim() ?? '')?.[1];
+    if (!hex) return undefined;
+    return (hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex).toUpperCase();
+}
+
+/** Mammoth drops cell shading, so the header colour is read from the first table row's `w:shd` in the raw XML. */
+async function readHeaderFill(arrayBuffer: ArrayBuffer): Promise<string | undefined> {
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const xml = await zip.file('word/document.xml')?.async('text');
+    if (!xml) return undefined;
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length > 0) return undefined;
+    const firstRow = doc.getElementsByTagNameNS(W_NS, 'tbl')[0]?.getElementsByTagNameNS(W_NS, 'tr')[0];
+    for (const shd of Array.from(firstRow?.getElementsByTagNameNS(W_NS, 'shd') ?? [])) {
+        const fill = toDocxFill(shd.getAttributeNS(W_NS, 'fill') ?? undefined);
+        if (fill) return fill;
+    }
+    return undefined;
+}
+
 export async function parseTemplateHeaders(file: File): Promise<{
     levelHeaders: string[];
     headerColor: string;
@@ -39,7 +66,7 @@ export async function parseTemplateHeaders(file: File): Promise<{
     const doc = parser.parseFromString(result.value, 'text/html');
 
     const table = doc.querySelector('table');
-    if (!table) return { levelHeaders: [], headerColor: '#1e3a5f' };
+    if (!table) return { levelHeaders: [], headerColor: DEFAULT_TEMPLATE_HEADER_COLOR };
 
     // First row = level headers; skip first cell (criterion column)
     const headerRow = table.querySelector('tr');
@@ -51,13 +78,8 @@ export async function parseTemplateHeaders(file: File): Promise<{
         .map((td) => td.textContent?.trim() ?? '')
         .filter(Boolean);
 
-    // Try to detect a background colour from inline style or class (basic extraction)
-    let headerColor = '#1e3a5f';
-    const style = (headerRow as HTMLElement)?.getAttribute('style') ?? '';
-    const match = style.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6}|rgb\([^)]+\))/i);
-    if (match) headerColor = match[1];
-
-    return { levelHeaders, headerColor };
+    const fill = await readHeaderFill(arrayBuffer).catch(() => undefined);
+    return { levelHeaders, headerColor: fill ? `#${fill}` : DEFAULT_TEMPLATE_HEADER_COLOR };
 }
 
 // ─── Export ────────────────────────────────────────────────────────────────────
@@ -75,7 +97,8 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
         template.levelHeaders.length === rubricLevelLabels.length && template.levelHeaders.length > 0;
 
     const levelLabels = useTemplateHeaders ? template.levelHeaders : rubricLevelLabels;
-    const headerBg = (template.headerColor ?? fmt.headerColor).replace('#', '');
+    const headerBg =
+        toDocxFill(template.headerColor) ?? toDocxFill(fmt.headerColor) ?? toDocxFill(DEFAULT_TEMPLATE_HEADER_COLOR)!;
 
     // ── Header Row ──────────────────────────────────────────────────────────────
     const headerRow = new TableRow({
