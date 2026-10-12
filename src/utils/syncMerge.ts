@@ -1,4 +1,5 @@
 import type { StoreData, PendingWrite } from '../store/storage';
+import type { StudentRubric } from '../types';
 
 export interface MergeCollectionOptions<T> {
     getId(x: T): string;
@@ -253,4 +254,48 @@ export function mergeStoreData(local: StoreData, remote: Partial<StoreData>, pen
     }
 
     return merged;
+}
+
+function gradeTime(sr: StudentRubric): number {
+    return parseTime(sr.updatedAt) ?? parseTime(sr.gradedAt) ?? Number.NEGATIVE_INFINITY;
+}
+
+/**
+ * A grade saved before the student's existing grade has loaded (offline boot, late hydrate, the
+ * async IndexedDB cache merge) gets a fresh id, so one student can end up with two live grades on
+ * the same rubric. Collapse each such set into one record: the most recent edit wins, but it keeps
+ * the oldest record's id so the cloud row, storage paths and links already pointing at it survive.
+ * Peer reviews (including second-marker grades), separate rounds and soft-deleted grades are never
+ * merged. `dropped` lists the records that were folded away, so callers can delete them remotely.
+ */
+export function dedupeStudentRubrics(records: StudentRubric[]): {
+    records: StudentRubric[];
+    dropped: StudentRubric[];
+} {
+    const groups = new Map<string, StudentRubric[]>();
+    for (const sr of records) {
+        if (sr.isPeerReview || sr.deletedAt) continue;
+        const key = `${sr.studentId}\u0000${sr.rubricId}\u0000${sr.round ?? ''}`;
+        const group = groups.get(key);
+        if (group) group.push(sr);
+        else groups.set(key, [sr]);
+    }
+
+    const replacements = new Map<string, StudentRubric>();
+    const dropped: StudentRubric[] = [];
+    for (const group of groups.values()) {
+        if (group.length < 2) continue;
+        const byAge = [...group].sort((a, b) => gradeTime(a) - gradeTime(b) || a.id.localeCompare(b.id));
+        const oldest = byAge[0];
+        const newest = byAge[byAge.length - 1];
+        replacements.set(oldest.id, { ...newest, id: oldest.id });
+        dropped.push(...byAge.slice(1));
+    }
+    if (dropped.length === 0) return { records, dropped };
+
+    const droppedIds = new Set(dropped.map((sr) => sr.id));
+    return {
+        records: records.filter((sr) => !droppedIds.has(sr.id)).map((sr) => replacements.get(sr.id) ?? sr),
+        dropped,
+    };
 }

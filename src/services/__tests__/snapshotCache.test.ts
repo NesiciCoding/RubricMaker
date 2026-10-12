@@ -55,9 +55,21 @@ describe('snapshotCache', () => {
 
     it('MERGE_CACHED_STUDENT_RUBRICS only adds ids missing from state', () => {
         const state = { studentRubrics: [sr('a', { overallComment: 'live' })] } as StoreData;
-        const next = reducer(state, { type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: [sr('a'), sr('b')] });
+        const other = sr('b', { studentId: 's2' });
+        const next = reducer(state, { type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: [sr('a'), other] });
         expect(next.studentRubrics.map((x) => x.id)).toEqual(['a', 'b']);
         expect(next.studentRubrics[0].overallComment).toBe('live');
-        expect(reducer(next, { type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: [sr('b')] })).toBe(next);
+        expect(reducer(next, { type: 'MERGE_CACHED_STUDENT_RUBRICS', payload: [other] })).toBe(next);
+    });
+
+    it('MERGE_CACHED_STUDENT_RUBRICS folds a cached grade into one saved meanwhile for the same student (#799)', () => {
+        const savedMeanwhile = sr('temp', { overallComment: 'typed before the cache loaded', updatedAt: '2026-02-01' });
+        const cached = sr('cached', { overallComment: 'old', updatedAt: '2026-01-01' });
+        const next = reducer({ studentRubrics: [savedMeanwhile] } as StoreData, {
+            type: 'MERGE_CACHED_STUDENT_RUBRICS',
+            payload: [cached],
+        });
+        expect(next.studentRubrics).toHaveLength(1);
+        expect(next.studentRubrics[0]).toMatchObject({ id: 'cached', overallComment: 'typed before the cache loaded' });
     });
 });

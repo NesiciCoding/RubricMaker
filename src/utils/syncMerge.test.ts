@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeCollection, mergeStoreData } from './syncMerge';
+import { dedupeStudentRubrics, mergeCollection, mergeStoreData } from './syncMerge';
 import type { StoreData, PendingWrite } from '../store/storage';
 import type {
     Rubric,
@@ -738,5 +738,54 @@ describe('mergeStoreData', () => {
             const result = mergeStoreData(local, remote, []);
             expect(result[c.key]).toEqual([c.remote]);
         }
+    });
+});
+
+describe('dedupeStudentRubrics (#799)', () => {
+    const grade = (id: string, extra: Partial<StudentRubric> = {}): StudentRubric => ({
+        id,
+        rubricId: 'r1',
+        studentId: 's1',
+        isPeerReview: false,
+        overallComment: id,
+        entries: [],
+        ...extra,
+    });
+
+    it('returns the same array when nothing is duplicated', () => {
+        const records = [grade('a'), grade('b', { studentId: 's2' }), grade('c', { rubricId: 'r2' })];
+        const result = dedupeStudentRubrics(records);
+        expect(result.records).toBe(records);
+        expect(result.dropped).toEqual([]);
+    });
+
+    it("keeps the newest edit under the oldest record's id, in the oldest record's position", () => {
+        const cloud = grade('cloud', { updatedAt: '2026-10-01T00:00:00Z' });
+        const other = grade('other', { studentId: 's2' });
+        const offline = grade('offline', { updatedAt: '2026-10-02T00:00:00Z' });
+        const { records, dropped } = dedupeStudentRubrics([cloud, other, offline]);
+        expect(records.map((r) => r.id)).toEqual(['cloud', 'other']);
+        expect(records[0]).toEqual({ ...offline, id: 'cloud' });
+        expect(dropped).toEqual([offline]);
+    });
+
+    it('collapses three copies and falls back to gradedAt, then id, for ordering', () => {
+        const a = grade('a', { gradedAt: '2026-01-03T00:00:00Z' });
+        const b = grade('b');
+        const c = grade('c', { gradedAt: '2026-01-02T00:00:00Z' });
+        const { records, dropped } = dedupeStudentRubrics([a, b, c]);
+        expect(records).toEqual([{ ...a, id: 'b' }]);
+        expect(dropped.map((r) => r.id)).toEqual(['c', 'a']);
+    });
+
+    it('never merges peer reviews, separate rounds or soft-deleted grades', () => {
+        const records = [
+            grade('teacher'),
+            grade('peer', { isPeerReview: true, gradedBy: 's9' }),
+            grade('second-marker', { isPeerReview: true, gradedBy: 'colleague' }),
+            grade('round2', { round: 2 }),
+            grade('deleted', { deletedAt: '2026-01-01T00:00:00Z' }),
+        ];
+        expect(dedupeStudentRubrics(records)).toEqual({ records, dropped: [] });
     });
 });

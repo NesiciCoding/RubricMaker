@@ -40,7 +40,7 @@ import {
 } from '../store/storage';
 import { withSettingsDefaults } from '../utils/settingsDefaults';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
-import { mergeStoreData } from '../utils/syncMerge';
+import { dedupeStudentRubrics, mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
 import { isRtlLanguage } from '../utils/rtlLanguages';
@@ -85,8 +85,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // choice can't drift out of sync between call sites the way it caused this
     // bug in the first place.
     const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean) => {
+        const { records: studentRubrics, dropped } = dedupeStudentRubrics(mergedIn.studentRubrics);
         const merged = {
             ...mergedIn,
+            studentRubrics,
             classes: sanitizeClassYears(mergedIn.classes),
             settings: withSettingsDefaults(mergedIn.settings),
         };
@@ -95,6 +97,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         /* v8 ignore next */
         if (seedDiffBaseline) {
             prevStateRef.current = merged;
+        }
+        // The pre-dedupe records go into the diff baseline so the delta sync deletes the folded-away
+        // duplicates from the cloud and pushes the kept record's new content; otherwise every
+        // hydrate would bring the duplicates back.
+        if (dropped.length > 0) {
+            const before = new Map(mergedIn.studentRubrics.map((sr) => [sr.id, sr]));
+            const touched = new Set(dropped.map((sr) => sr.id));
+            for (const sr of studentRubrics) if (before.get(sr.id) !== sr) touched.add(sr.id);
+            const baseline = prevStateRef.current;
+            prevStateRef.current = {
+                ...baseline,
+                studentRubrics: [
+                    ...baseline.studentRubrics.filter((sr) => !touched.has(sr.id)),
+                    ...mergedIn.studentRubrics.filter((sr) => touched.has(sr.id)),
+                ],
+            };
         }
     }, []);
     // The connected-session student rubric cache lives in IndexedDB, which can only be read
