@@ -3956,7 +3956,7 @@
         "an_vocab_analytics_title": "Leseniveau und akademischer Wortschatz",
         "an_vocab_analytics_info": "Die Wortschatzniveaus stammen aus den CEFR-J- und offenen GER-Wortlisten; die akademische Abdeckung wird anhand der AWL (Coxhead) und NAWL gemessen. Der Abgleich erfolgt regelbasiert und offline — prüfen Sie die Ergebnisse, bevor Sie sich darauf verlassen.",
         "gr_scan_title": "Handschriftliche Arbeit scannen",
-        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert.",
+        "gr_scan_body": "Wähle im Feedback-Bereich eines Kriteriums „Handschrift scannen“, um eine Papierantwort mit der Gerätekamera zu fotografieren oder ein Foto bzw. ein gescanntes PDF zu importieren. Der Text wird auf deinem Gerät erkannt (nichts wird hochgeladen); du prüfst und korrigierst ihn — die unsichersten Wörter sind markiert — und er wird in dein Feedback eingefügt. Dies ist ein Werkzeug nur für Lehrkräfte; Schülerinnen und Schüler laden nie Scans hoch. Das Bild wird nur zur Erkennung verwendet und nicht gespeichert. Die Erkennungs-Engine und die Sprachdaten werden beim ersten Scan einmalig von cdn.jsdelivr.net heruntergeladen, daher braucht der erste Scan (und der erste Scan nach dem Leeren des Browser-Caches) eine Internetverbindung; blockiert das Schulnetz diese Seite, bitte die IT, sie freizugeben.",
         "rb_live_monitor_item_sort": "Spalten sortieren und gruppieren — ordnen Sie die Fragespalten nach Abschnitt, GER-Niveau, Fragetyp, verknüpfter Grammatik/Standard oder kumulativer Klassenpunktzahl, auch mehrere Regeln kombiniert.",
         "rb_live_monitor_item_placement": "Adaptive Einstufungsansicht — Staircase- und Generator-Tests geben jedem Schüler andere Fragen; das Raster richtet sich daher am GER-Niveau aus: ein Genauigkeitsbalken je Niveau und Schüler, mit dem geschätzten Niveau in einer eigenen Spalte vor den Niveau-Spalten.",
         "rb_tests_exam_export_label": "Prüfungsheft exportieren:",
@@ -4394,7 +4394,7 @@
     "scan": {
         "button": "Handschrift scannen",
         "title": "Handschriftliche Arbeit scannen",
-        "privacy_note": "Die Texterkennung läuft auf diesem Gerät — das Bild wird nie hochgeladen. Die Erkennung ist ein erster Entwurf; prüfe die markierten Wörter vor dem Einfügen.",
+        "privacy_note": "Die Texterkennung läuft auf diesem Gerät — das Bild wird nie hochgeladen. Die Erkennung ist ein erster Entwurf; prüfe die markierten Wörter vor dem Einfügen. Die Erkennungs-Engine wird beim ersten Scan heruntergeladen, daher braucht der erste Scan eine Internetverbindung.",
         "hint_label": "Was scannst du?",
         "hint_auto": "Automatisch (gemischtes Layout)",
         "hint_single_column": "Eine Textspalte",
@@ -4414,7 +4414,9 @@
         "review_label": "Text prüfen und korrigieren",
         "check_words": "Unsicherste Wörter — bitte prüfen:",
         "rescan": "Erneut scannen",
-        "insert": "In Feedback einfügen"
+        "insert": "In Feedback einfügen",
+        "error_engine_unavailable": "Die Handschrifterkennung konnte nicht geladen werden. Sie wird beim ersten Scan heruntergeladen – prüfe deine Internetverbindung (oder bitte die IT, cdn.jsdelivr.net freizugeben) und versuche es erneut.",
+        "error_generic": "Die Texterkennung ist fehlgeschlagen. Versuche es erneut mit einem schärferen, gut ausgeleuchteten Foto."
     },
     "tooltips": {
         "copy_user_id": "Benutzer-ID kopieren",

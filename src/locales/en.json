@@ -3954,7 +3954,7 @@
         "an_vocab_analytics_title": "Reading level & academic vocabulary",
         "an_vocab_analytics_info": "Vocabulary levels come from the CEFR-J and open CEFR word lists; academic coverage is measured against the AWL (Coxhead) and NAWL. All matching is rule-based and offline — review results before relying on them.",
         "gr_scan_title": "Scan handwritten work",
-        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored.",
+        "gr_scan_body": "In the feedback panel for a criterion, choose \"Scan handwriting\" to photograph a paper answer with your device camera or import a photo or scanned PDF. The text is recognised on your device (nothing is uploaded); you review and correct it — the least-confident words are highlighted — and it is inserted into your feedback. This is a teacher-only tool; students never upload scans. The image is used only for recognition and is not stored. The recognition engine and language data are downloaded once from cdn.jsdelivr.net the first time you scan, so the first scan (and the first scan after the browser cache is cleared) needs an internet connection; if your school network blocks that site, ask IT to allow it.",
         "rb_live_monitor_item_sort": "Sort & group columns — reorder the question columns by section, CEFR level, question type, linked grammar/standard, or cumulative class score, combining several rules at once.",
         "rb_live_monitor_item_placement": "Adaptive placement view — staircase and generator placement runs give every student different questions, so the grid aligns on CEFR level instead: a per-level accuracy bar per student, with their estimated level in a separate column before the level columns.",
         "rb_tests_exam_export_label": "Exam booklet export:",
@@ -4394,7 +4394,7 @@
     "scan": {
         "button": "Scan handwriting",
         "title": "Scan handwritten work",
-        "privacy_note": "Text recognition runs on this device — the image is never uploaded. Recognition is a first draft; check the highlighted words before inserting.",
+        "privacy_note": "Text recognition runs on this device — the image is never uploaded. Recognition is a first draft; check the highlighted words before inserting. The recognition engine is downloaded the first time you scan, so the first scan needs an internet connection.",
         "hint_label": "What are you scanning?",
         "hint_auto": "Auto (mixed layout)",
         "hint_single_column": "A single column of text",
@@ -4414,7 +4414,9 @@
         "review_label": "Review & correct the text",
         "check_words": "Least confident words — check these:",
         "rescan": "Scan again",
-        "insert": "Insert into feedback"
+        "insert": "Insert into feedback",
+        "error_engine_unavailable": "The handwriting-recognition engine could not be loaded. It is downloaded the first time you scan, so check your internet connection (or ask IT to allow cdn.jsdelivr.net) and try again.",
+        "error_generic": "Text recognition failed. Try again with a sharper, well-lit photo."
     },
     "tooltips": {
         "copy_user_id": "Copy user ID",

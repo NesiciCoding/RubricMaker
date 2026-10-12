@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import type { Attachment } from '../types';
 import { type PSM } from 'tesseract.js';
 import { resolveOcrLanguages } from './ocrLanguage';
+import { OcrUnavailableError } from './ocrErrors';
 import { Oem, type CaptureHint, psmForCaptureHint, buildUserWords, buildUserPatterns } from './ocrConfig';
 
 export class UnsupportedFormatError extends Error {
@@ -149,7 +150,12 @@ export async function recognizeImage(dataUrl: string, opts: RecognizeImageOption
     const langs = resolveOcrLanguages(opts.langs);
     const tesseract = await import('tesseract.js');
     const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
-    const worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
+    let worker: Awaited<ReturnType<typeof tesseract.createWorker>>;
+    try {
+        worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
+    } catch (err) {
+        throw new OcrUnavailableError(err);
+    }
     try {
         // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect
         // via reinitialize() after the worker's first load — setParameters silently ignores

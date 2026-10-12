@@ -18,6 +18,7 @@ vi.mock('tesseract.js', () => ({
 
 import { PSM } from 'tesseract.js';
 import { recognizeImage, extractText } from './textExtraction';
+import { OcrUnavailableError } from './ocrErrors';
 
 beforeEach(() => {
     recognize.mockReset();
@@ -49,6 +50,15 @@ describe('recognizeImage', () => {
         expect(result.words).toHaveLength(2);
         expect(result.words[0]).toEqual({ text: 'hi', confidence: 0.8, bbox: { x0: 0, y0: 0, x1: 1, y1: 1 } });
         expect(terminate).toHaveBeenCalledTimes(1);
+    });
+
+    it('wraps a failed engine start (e.g. offline importScripts) in OcrUnavailableError', async () => {
+        const cause = new Error('NetworkError: Failed to execute importScripts');
+        createWorkerSpy.mockRejectedValueOnce(cause);
+        const err = await recognizeImage(imageUrl).catch((e: unknown) => e);
+        expect(err).toBeInstanceOf(OcrUnavailableError);
+        expect((err as Error).cause).toBe(cause);
+        expect(recognize).not.toHaveBeenCalled();
     });
 
     it('resolves languages and requests the LSTM engine', async () => {

@@ -3956,7 +3956,7 @@
         "an_vocab_analytics_title": "Leesniveau en academische woordenschat",
         "an_vocab_analytics_info": "Woordenschatniveaus komen uit de CEFR-J- en open ERK-woordenlijsten; academische dekking wordt gemeten tegen de AWL (Coxhead) en NAWL. Alle matching is regelgebaseerd en offline — controleer de resultaten voordat je erop vertrouwt.",
         "gr_scan_title": "Handgeschreven werk scannen",
-        "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard.",
+        "gr_scan_body": "Kies in het feedbackpaneel van een criterium \"Handschrift scannen\" om een papieren antwoord met je camera te fotograferen of een foto of gescande pdf te importeren. De tekst wordt op je apparaat herkend (er wordt niets geüpload); je controleert en corrigeert hem — de minst betrouwbare woorden zijn gemarkeerd — en hij wordt in je feedback ingevoegd. Dit is een tool alleen voor docenten; leerlingen uploaden nooit scans. De afbeelding wordt alleen voor herkenning gebruikt en wordt niet bewaard. De herkenningsengine en taalgegevens worden bij de eerste scan eenmalig gedownload van cdn.jsdelivr.net, dus voor de eerste scan (en de eerste scan nadat de browsercache is gewist) heb je internet nodig; blokkeert het schoolnetwerk die site, vraag dan de ICT-afdeling om hem toe te staan.",
         "rb_live_monitor_item_sort": "Kolommen sorteren en groeperen — orden de vraagkolommen op sectie, ERK-niveau, vraagtype, gekoppelde grammatica/standaard of cumulatieve klasscore, met meerdere regels tegelijk.",
         "rb_live_monitor_item_placement": "Adaptieve plaatsingsweergave — staircase- en generatortoetsen geven elke leerling andere vragen, dus het raster lijnt uit op ERK-niveau: een nauwkeurigheidsbalk per niveau per leerling, met hun geschatte niveau in een aparte kolom vóór de niveaukolommen.",
         "rb_tests_exam_export_label": "Examenboekje exporteren:",
@@ -4394,7 +4394,7 @@
     "scan": {
         "button": "Handschrift scannen",
         "title": "Handgeschreven werk scannen",
-        "privacy_note": "Tekstherkenning gebeurt op dit apparaat — de afbeelding wordt nooit geüpload. Herkenning is een eerste versie; controleer de gemarkeerde woorden voordat je invoegt.",
+        "privacy_note": "Tekstherkenning gebeurt op dit apparaat — de afbeelding wordt nooit geüpload. Herkenning is een eerste versie; controleer de gemarkeerde woorden voordat je invoegt. De herkenningsengine wordt bij de eerste scan gedownload, dus voor de eerste scan heb je internet nodig.",
         "hint_label": "Wat scan je?",
         "hint_auto": "Automatisch (gemengde opmaak)",
         "hint_single_column": "Eén tekstkolom",
@@ -4414,7 +4414,9 @@
         "review_label": "Controleer en corrigeer de tekst",
         "check_words": "Minst betrouwbare woorden — controleer deze:",
         "rescan": "Opnieuw scannen",
-        "insert": "In feedback invoegen"
+        "insert": "In feedback invoegen",
+        "error_engine_unavailable": "De handschriftherkenning kon niet worden geladen. Die wordt bij de eerste scan gedownload, dus controleer je internetverbinding (of vraag de ICT-afdeling om cdn.jsdelivr.net toe te staan) en probeer het opnieuw.",
+        "error_generic": "Tekstherkenning is mislukt. Probeer het opnieuw met een scherpere, goed belichte foto."
     },
     "tooltips": {
         "copy_user_id": "Gebruikers-ID kopiëren",

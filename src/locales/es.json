@@ -3956,7 +3956,7 @@
         "an_vocab_analytics_title": "Nivel de lectura y vocabulario académico",
         "an_vocab_analytics_info": "Los niveles de vocabulario provienen de las listas CEFR-J y MCER abiertas; la cobertura académica se mide con la AWL (Coxhead) y la NAWL. Toda la correspondencia se basa en reglas y es sin conexión — revisa los resultados antes de confiar en ellos.",
         "gr_scan_title": "Escanear trabajo manuscrito",
-        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena.",
+        "gr_scan_body": "En el panel de retroalimentación de un criterio, elige «Escanear escritura» para fotografiar una respuesta en papel con la cámara del dispositivo o importar una foto o un PDF escaneado. El texto se reconoce en tu dispositivo (no se sube nada); lo revisas y corriges —las palabras menos fiables aparecen resaltadas— y se inserta en tu retroalimentación. Es una herramienta solo para docentes; el alumnado nunca sube escaneos. La imagen se usa solo para el reconocimiento y no se almacena. El motor de reconocimiento y los datos de idioma se descargan una sola vez desde cdn.jsdelivr.net la primera vez que escaneas, así que el primer escaneo (y el primero tras borrar la caché del navegador) necesita conexión a internet; si la red del centro bloquea ese sitio, pide al departamento de informática que lo permita.",
         "rb_live_monitor_item_sort": "Ordenar y agrupar columnas — reordena las columnas de preguntas por sección, nivel MCER, tipo de pregunta, gramática/estándar vinculado o puntuación acumulada de la clase, combinando varias reglas.",
         "rb_live_monitor_item_placement": "Vista de colocación adaptativa — las pruebas de escalera y de generador dan preguntas distintas a cada alumno, así que la cuadrícula se alinea por nivel MCER: una barra de acierto por nivel y alumno, con su nivel estimado en una columna aparte antes de las columnas de nivel.",
         "rb_tests_exam_export_label": "Exportación del cuadernillo de examen:",
@@ -4394,7 +4394,7 @@
     "scan": {
         "button": "Escanear escritura",
         "title": "Escanear trabajo manuscrito",
-        "privacy_note": "El reconocimiento de texto se ejecuta en este dispositivo: la imagen nunca se sube. El reconocimiento es un primer borrador; revisa las palabras resaltadas antes de insertar.",
+        "privacy_note": "El reconocimiento de texto se ejecuta en este dispositivo: la imagen nunca se sube. El reconocimiento es un primer borrador; revisa las palabras resaltadas antes de insertar. El motor de reconocimiento se descarga la primera vez que escaneas, así que el primer escaneo necesita conexión a internet.",
         "hint_label": "¿Qué estás escaneando?",
         "hint_auto": "Automático (diseño mixto)",
         "hint_single_column": "Una sola columna de texto",
@@ -4414,7 +4414,9 @@
         "review_label": "Revisa y corrige el texto",
         "check_words": "Palabras menos fiables: revísalas:",
         "rescan": "Escanear de nuevo",
-        "insert": "Insertar en la retroalimentación"
+        "insert": "Insertar en la retroalimentación",
+        "error_engine_unavailable": "No se pudo cargar el motor de reconocimiento de escritura. Se descarga la primera vez que escaneas, así que comprueba tu conexión a internet (o pide a informática que permita cdn.jsdelivr.net) e inténtalo de nuevo.",
+        "error_generic": "El reconocimiento de texto ha fallado. Inténtalo de nuevo con una foto más nítida y bien iluminada."
     },
     "tooltips": {
         "copy_user_id": "Copiar ID de usuario",

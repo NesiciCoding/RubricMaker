@@ -6,6 +6,8 @@ import { useCameraCapture } from '../../hooks/useCameraCapture';
 import { importScanFiles } from '../../utils/scanImport';
 import { fileToDataUrl } from '../../utils/fileToDataUrl';
 import { recognizeImage, type OcrResult, type OcrWord } from '../../utils/textExtraction';
+import { OcrUnavailableError } from '../../utils/ocrErrors';
+import { logEvent } from '../../services/logging/clientLogger';
 import { confidenceBand, lowConfidenceWords, type ConfidenceBand } from '../../utils/ocrReview';
 import type { CaptureHint } from '../../utils/ocrConfig';
 
@@ -77,11 +79,21 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
                 setPhase('review');
             } catch (err) {
                 if (cancelledRef.current) return;
-                setErrorMsg(err instanceof Error ? err.message : String(err));
+                if (err instanceof OcrUnavailableError) {
+                    setErrorMsg(t('scan.error_engine_unavailable'));
+                } else {
+                    logEvent(
+                        'error',
+                        'scan_ocr_failed',
+                        { message: err instanceof Error ? err.message : String(err) },
+                        'error'
+                    );
+                    setErrorMsg(t('scan.error_generic'));
+                }
                 setPhase('error');
             }
         },
-        [defaultLang, captureHint, userWords]
+        [defaultLang, captureHint, userWords, t]
     );
 
     const startCamera = useCallback(async () => {
@@ -143,7 +155,7 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
             titleId="scan-dialog-title"
             onClose={close}
             maxWidth={720}
-            style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+            style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 24 }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <ScanLine size={20} style={{ color: 'var(--accent)' }} />
