@@ -5,18 +5,26 @@
 #
 # ⚠  This OVERWRITES all current data.
 #
-# The target stack must already be migrated (`docker-compose up -d` runs db_migrate) to at least
+# The target stack must already be migrated (`docker compose up -d` runs db_migrate) to at least
 # the migrations the backup was taken at; the restore refuses otherwise. The database part runs in
 # a single transaction with ON_ERROR_STOP: it either replaces every row or changes nothing.
 # Tables, GRANTs, RLS policies, triggers and the realtime publication are left as the migrations
 # created them, so the API keeps working after a restore.
 #
-# DB_EXEC overrides how psql reaches the database (default: the compose `db` service).
+# DB_EXEC overrides how psql reaches the database (default: the compose `db` service, via
+# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume.
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/compose.sh
+source "$SCRIPT_DIR/lib/compose.sh"
+
 BACKUP_DIR="${1:-}"
-DB_EXEC="${DB_EXEC:-docker-compose exec -T db}"
+if [[ -z "${DB_EXEC:-}" ]]; then
+    require_compose
+    DB_EXEC="$COMPOSE exec -T db"
+fi
 
 if [ -z "$BACKUP_DIR" ]; then
     echo "Usage: $0 <backup-dir>"
@@ -53,7 +61,7 @@ missing=$(comm -23 <(sort "$BACKUP_DIR/migrations.txt") <(echo "$applied" | sort
 if [ -n "$missing" ]; then
     echo "Error: this stack is missing migrations the backup was taken with:"
     echo "$missing" | sed 's/^/  - /'
-    echo "Update the app and run 'docker-compose up -d db_migrate' first."
+    echo "Update the app and run 'docker compose up -d db_migrate' first."
     exit 1
 fi
 
@@ -62,6 +70,23 @@ echo ""
 read -rp "This will overwrite all current data. Continue? [y/N] " confirm || confirm=""
 [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
 echo ""
+
+# ── Storage, staged ───────────────────────────────────────────────────────────
+# The archive is unpacked next to the live files first, so a corrupt archive fails here — before
+# the database is touched — and the live uploads are only replaced once it has unpacked cleanly.
+STAGING=.restore-staging
+storage_sh() {
+    docker run --rm -v "$STORAGE_VOLUME":/data "$@"
+}
+cleanup_staging() {
+    storage_sh alpine rm -rf "/data/$STAGING" >/dev/null 2>&1 || true
+}
+trap cleanup_staging ERR
+
+echo "▶  Unpacking uploaded files..."
+storage_sh -i alpine sh -c "set -e; rm -rf /data/$STAGING; mkdir /data/$STAGING; tar xzf - -C /data/$STAGING; test -d /data/$STAGING/data" \
+    < "$BACKUP_DIR/storage.tar.gz"
+echo "   ✓ Archive unpacked"
 
 # ── Database ──────────────────────────────────────────────────────────────────
 echo "▶  Restoring database..."
@@ -83,15 +108,12 @@ SQL
 } | psql_db --single-transaction -q -o /dev/null
 echo "   ✓ Database restored"
 
-# ── Storage ───────────────────────────────────────────────────────────────────
+# ── Storage, swap in ──────────────────────────────────────────────────────────
 echo "▶  Restoring uploaded files..."
-docker run --rm \
-    -v rubricmaker_storage-data:/data \
-    -i alpine \
-    sh -c "rm -rf /data/* && tar xzf - -C /" \
-    < "$BACKUP_DIR/storage.tar.gz"
+storage_sh alpine sh -c "set -e; find /data -mindepth 1 -maxdepth 1 ! -name $STAGING -exec rm -rf {} +; find /data/$STAGING/data -mindepth 1 -maxdepth 1 -exec mv {} /data/ \\;; rm -rf /data/$STAGING"
+trap - ERR
 echo "   ✓ Storage restored"
 
 echo ""
 echo "✓ Restore complete. Restart the app if it was running:"
-echo "  docker-compose restart app"
+echo "  docker compose restart app"

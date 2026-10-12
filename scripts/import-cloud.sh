@@ -1,8 +1,8 @@
 #!/bin/bash
 # RubricMaker — import a Supabase Cloud export (from export-cloud.sh) into
-# the self-hosted docker-compose stack.
+# the self-hosted Docker Compose stack.
 #
-# Run this ON THE SERVER, after `docker-compose up -d --build` has finished
+# Run this ON THE SERVER, after `docker compose up -d --build` has finished
 # and db_migrate has applied all migrations to a FRESH database.
 #
 # Usage:
@@ -13,7 +13,7 @@
 #   ./scripts/import-cloud.sh <export-dir> --verify-only    # print the row-vs-file check again
 #
 # Files are uploaded through the Storage HTTP API at $STORAGE_URL (default: SITE_URL from .env,
-# else http://localhost:8000) with SERVICE_ROLE_KEY from .env. Uploads use x-upsert, so re-running
+# else http://localhost:8080) with SERVICE_ROLE_KEY from .env. Uploads use x-upsert, so re-running
 # --storage-only is safe. See docs/SELF_HOSTING_OPS.md → "Migrating from Supabase Cloud".
 
 set -euo pipefail
@@ -21,6 +21,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/storage-paths.sh
 source "$SCRIPT_DIR/lib/storage-paths.sh"
+# shellcheck source=lib/compose.sh
+source "$SCRIPT_DIR/lib/compose.sh"
+require_compose
 ENV_FILE="${SCRIPT_DIR}/../.env"
 
 usage() {
@@ -73,13 +76,13 @@ if [[ -n "$LOAD_FILES" && ! -f "$MANIFEST" ]]; then
   LOAD_FILES=""
 fi
 if [[ -n "$LOAD_FILES" ]]; then
-  STORAGE_URL="${STORAGE_URL:-${SITE_URL:-http://localhost:8000}}"
+  STORAGE_URL="${STORAGE_URL:-${SITE_URL:-http://localhost:8080}}"
   STORAGE_URL="${STORAGE_URL%/}"
   SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:?SERVICE_ROLE_KEY is not set (expected in .env)}"
 fi
 
 psql_db() {
-  docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U supabase_admin postgres "$@"
+  $COMPOSE exec -T db psql -X -v ON_ERROR_STOP=1 -U supabase_admin postgres "$@"
 }
 
 # Matches only the Supabase pooler directives and the injected SET line —
@@ -99,7 +102,7 @@ if [[ -n "$LOAD_ROWS" ]]; then
     echo "▶  Skipping auth import (--skip-auth)"
   else
     echo "▶  Importing auth users..."
-    grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
+    grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | $COMPOSE exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
     echo "   ✓ Auth users imported"
   fi
 
@@ -107,7 +110,7 @@ if [[ -n "$LOAD_ROWS" ]]; then
   {
     printf '%s\n' 'DELETE FROM public.site_config;'
     grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/public-data.sql"
-  } | docker compose exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
+  } | $COMPOSE exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
   echo "   ✓ Application data imported"
 fi
 
@@ -188,7 +191,7 @@ echo "   (Voice-feedback audio is referenced from inside grade records and is co
 if [[ -n "$LOAD_ROWS" ]]; then
   echo ""
   echo "▶  Restarting auth so GoTrue picks up the imported users..."
-  docker compose restart auth
+  $COMPOSE restart auth
   echo ""
   echo "✓ Import complete. Teachers can now sign in on the new instance with"
   echo "  the same email they used on Supabase Cloud (a fresh OTP code will be sent)."

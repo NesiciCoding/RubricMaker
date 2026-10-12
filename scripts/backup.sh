@@ -12,14 +12,22 @@
 # RLS policies, triggers and the realtime publication come from the migrations the target stack
 # runs (db_migrate), so a restore never has to recreate them — see restore.sh.
 #
-# DB_EXEC overrides how pg_dump/psql reach the database (default: the compose `db` service).
+# DB_EXEC overrides how pg_dump/psql reach the database (default: the compose `db` service, via
+# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume.
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/compose.sh
+source "$SCRIPT_DIR/lib/compose.sh"
 
 BACKUP_ROOT="${1:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUT="$BACKUP_ROOT/$TIMESTAMP"
-DB_EXEC="${DB_EXEC:-docker-compose exec -T db}"
+if [[ -z "${DB_EXEC:-}" ]]; then
+    require_compose
+    DB_EXEC="$COMPOSE exec -T db"
+fi
 
 mkdir -p "$OUT"
 
@@ -43,7 +51,7 @@ echo "   ✓ data.sql ($(du -sh "$OUT/data.sql" | cut -f1)), $(wc -l < "$OUT/mig
 # ── Storage (uploaded attachments and DOCX templates) ─────────────────────────
 echo "▶  Archiving uploaded files..."
 docker run --rm \
-    -v rubricmaker_storage-data:/data:ro \
+    -v "$STORAGE_VOLUME":/data:ro \
     alpine \
     tar czf - -C / data \
     > "$OUT/storage.tar.gz"
