@@ -2341,7 +2341,8 @@
         "tab_empty_progress": "Noch keine Fortschrittsdaten — sie erscheinen, sobald deine Arbeit bewertet wurde.",
         "brand_name": "Rubric Maker",
         "grade_withheld": "Nur Feedback — Note noch nicht freigegeben",
-        "switch_back_to_teacher": "Zurück zur Lehrkraft-Rolle"
+        "switch_back_to_teacher": "Zurück zur Lehrkraft-Rolle",
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % auf {{scale}}"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",
