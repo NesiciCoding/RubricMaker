@@ -1308,14 +1308,7 @@ export default function StatisticsPage() {
                                     </div>
                                 )}
 
-                                <div
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: 20,
-                                        marginBottom: 20,
-                                    }}
-                                >
+                                <div className="grid-2" style={{ gap: 20, marginBottom: 20 }}>
                                     {/* Score distribution — Letter grade or percentage bucket */}
                                     <div className="card">
                                         <div
