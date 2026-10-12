@@ -301,6 +301,7 @@ export default function TestListPage() {
         <>
             <PageTour {...tour.tourProps} />
             <Topbar
+                classSelector
                 title={t('tests.list_title')}
                 actions={
                     <>

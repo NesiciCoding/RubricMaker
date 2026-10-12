@@ -3792,7 +3792,7 @@
         "gs_search_item_filters": "Type type:test or class:5A to narrow results to one type or class",
         "gs_search_item_year_track": "Type year:jaar-3 or track:havo to filter by school year or VO track, or just type \"havo\" as free text",
         "gs_search_item_grade_shortcut": "Type a student's name and a rubric's name together (e.g. \"Anna vocabulary quiz\") to jump straight to that student's grading page for that rubric",
-        "gs_search_item_active_class": "The class selector next to the search icon sets your active class app-wide — Statistics and other pages follow it automatically",
+        "gs_search_item_active_class": "The class selector in the top bar sets your active class. It appears on the Dashboard, Students, Rubrics, Tests and Statistics pages, which follow it: the class chips on the Dashboard and Students pages select that class, Statistics filters to it, and new test assignments and roster imports default to it",
         "gs_search_item_portal": "Students get their own search on the portal page, scoped to their own graded rubrics, assigned tests/essays, and flashcard decks",
         "an_stats_item_custom_views": "Custom Views — a gallery of recommended charts you can show/hide and recolor, with PNG export",
         "an_stats_item_elo_chart": "In the student view, a placement-progress chart plots the student's estimated CEFR level across their placement-test attempts on an Elo-rating scale, with a colored band per level.",

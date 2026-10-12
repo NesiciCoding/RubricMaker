@@ -3794,7 +3794,7 @@
         "gs_search_item_filters": "Escribe type:test o class:5A para limitar los resultados a un tipo o clase",
         "gs_search_item_year_track": "Escribe year:jaar-3 o track:havo para filtrar por año escolar o trayectoria VO, o simplemente escribe \"havo\" como texto libre",
         "gs_search_item_grade_shortcut": "Escribe el nombre de un alumno y el de una rúbrica juntos (p. ej. \"Anna prueba de vocabulario\") para ir directamente a la página de calificación de ese alumno para esa rúbrica",
-        "gs_search_item_active_class": "El selector de clase junto al icono de búsqueda fija tu clase activa en toda la app — Estadísticas y otras páginas la siguen automáticamente",
+        "gs_search_item_active_class": "El selector de clase de la barra superior fija tu clase activa. Aparece en el Panel y en las páginas Alumnos, Rúbricas, Pruebas y Estadísticas, que lo siguen: las fichas de clase del Panel y de Alumnos seleccionan esa clase, Estadísticas filtra por ella, y las nuevas asignaciones de pruebas e importaciones de listas la usan por defecto",
         "gs_search_item_portal": "Los alumnos tienen su propia búsqueda en la página del portal, limitada a sus propias rúbricas calificadas, pruebas/ensayos asignados y mazos de tarjetas didácticas",
         "an_stats_item_custom_views": "Vistas personalizadas — una galería de gráficos recomendados que puedes mostrar/ocultar y recolorear, con exportación a PNG",
         "an_stats_item_elo_chart": "En la vista por estudiante, un gráfico de progreso de colocación traza el nivel MCER estimado del estudiante a lo largo de sus intentos de colocación en una escala de puntuación Elo, con una banda de color por nivel.",

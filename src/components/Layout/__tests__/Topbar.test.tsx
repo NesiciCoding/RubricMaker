@@ -108,8 +108,13 @@ describe('Topbar', () => {
         mockTheme = 'dark';
     });
 
-    it('renders a class selector bound to settings.activeClassId', () => {
+    it('hides the class selector on pages that do not scope by class (#661)', () => {
         render(<Topbar title="Test" />);
+        expect(screen.queryByLabelText('search.active_class_label')).toBeNull();
+    });
+
+    it('renders a class selector bound to settings.activeClassId', () => {
+        render(<Topbar title="Test" classSelector />);
         const select = screen.getByLabelText('search.active_class_label') as HTMLSelectElement;
         expect(select.value).toBe('');
         fireEvent.change(select, { target: { value: 'c2' } });
