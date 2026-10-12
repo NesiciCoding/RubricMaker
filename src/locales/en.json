@@ -244,7 +244,8 @@
         "preview": "Preview",
         "refresh": "Refresh",
         "password": "Password",
-        "unknown_error": "Unknown error"
+        "unknown_error": "Unknown error",
+        "done": "Done"
     },
     "slip_sheet": {
         "class_slips_one": "Class slips — {{count}} student",
@@ -1636,7 +1637,12 @@
         "password_slip_title": "Login slips — {{count}} students",
         "password_slip_columns": "columns",
         "password_slip_item_error": "Could not generate — retry from the Students page.",
-        "password_slip_partial_failure": "Could not generate a password for {{count}} student(s). Retry them from the Students page."
+        "password_slip_partial_failure": "Could not generate a password for {{count}} student(s). Retry them from the Students page.",
+        "no_students_match": "No students match your search.",
+        "add_student_hint": "Add students to this class to start grading.",
+        "delete_student_title": "Delete student",
+        "delete_student_confirmation": "Are you sure you want to delete <1>{{studentName}}</1>?",
+        "delete_student_warning": "This will permanently delete all grades and rubrics associated with this student."
     },
     "gradeStudent": {
         "group_grade_banner": "Group grade — saving will also copy these scores and comments to: {{names}}",
@@ -1738,7 +1744,10 @@
         "points_before_modifier": "Points before the modifier",
         "criteria_graded_one": "{{graded}}/{{count}} criterion",
         "criteria_graded_other": "{{graded}}/{{count}} criteria",
-        "footer_options": "Grade options"
+        "footer_options": "Grade options",
+        "student_attachments": "Student files",
+        "rubric_attachments": "Rubric materials",
+        "no_attachments": "No attachments."
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -1896,7 +1905,7 @@
         "drag_reorder_level": "Drag to reorder level: {{name}}",
         "untitled": "Untitled",
         "name_label": "Rubric Name *",
-        "standards_step_register": "Register at <1>commonstandardsproject.com</1>",
+        "standards_step_register": "Register at <2>commonstandardsproject.com</2>",
         "standards_step_copy": "Copy your API key from the developer dashboard",
         "standards_step_cors": "Add your app URL to the <1>CORS Allowed Origins</1> list",
         "standards_step_paste": "Paste the key in <1>Settings → Standards Integration</1>",
@@ -1916,7 +1925,9 @@
         "md_modal_tip": "Just type the asterisks around your words. The formatting is applied as soon as you click outside the text box.",
         "points_unit": "pts",
         "criteria_count_one": "{{count}} criterion",
-        "criteria_count_other": "{{count}} criteria"
+        "criteria_count_other": "{{count}} criteria",
+        "name_required": "Rubric name is required.",
+        "standards_modal_desc": "To link academic standards you need a <2>Common Standards Project API key</2>."
     },
     "peerReview": {
         "round_label": "Round",
@@ -2589,7 +2600,9 @@
         "loading_preview": "Loading preview…",
         "size_limit_hint": "up to {{limit}} per file",
         "too_large": "\"{{name}}\" was not added: it is larger than the {{limit}} limit.",
-        "too_large_local_hint": "Without a database connection files are stored in this browser, which has little room. Connect to a database to attach larger files."
+        "too_large_local_hint": "Without a database connection files are stored in this browser, which has little room. Connect to a database to attach larger files.",
+        "delete_title": "Delete attachment",
+        "delete_message": "This attachment will be permanently removed."
     },
     "exportPage": {
         "rubric_section_title": "Rubric Export",
@@ -2805,7 +2818,8 @@
         "rationale_achieved": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — achieved",
         "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing",
         "working_toward": "Working toward {{level}} — not achieved yet",
-        "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold)."
+        "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold).",
+        "standard_no_score": "No score yet"
     },
     "learningPath": {
         "page_title": "Learning Path",
@@ -2848,7 +2862,45 @@
         "verdict_too_hard": "Too hard",
         "above_target": "Above level — pre-teach:",
         "awl_nawl_attribution": "Academic vocabulary from the AWL (Coxhead) and the NAWL (Browne, Culligan & Phillips; CC BY-SA 4.0).",
-        "grammar_engine_ud": "Linked structures were checked with the grammar parser — a range indicator, not a grade."
+        "grammar_engine_ud": "Linked structures were checked with the grammar parser — a range indicator, not a grade.",
+        "title": "Document Analysis",
+        "source_label": "Source document",
+        "paste_transcript": "Paste a transcript instead",
+        "paste_transcript_short": "Paste transcript",
+        "transcript_placeholder": "Paste the student's transcript here… (useful for audio/video recordings)",
+        "no_attachments": "No attachments for this student",
+        "audio_video_note": "Audio and video files cannot be automatically transcribed (no server-side processing). Use \"Paste transcript\" to analyse the spoken content.",
+        "no_vocab_items": "This rubric has no vocabulary items yet. Add them in the Rubric Builder → Vocabulary section.",
+        "privacy_heading": "Privacy notice",
+        "privacy_body": "Grammar checking is powered by",
+        "privacy_detail": "The extracted text of this document will be sent to LanguageTool's servers (api.languagetool.org) for grammar analysis. Do not use this feature if the document contains sensitive personal data.",
+        "privacy_policy_link": "LanguageTool Privacy Policy",
+        "retry": "Retry Analysis",
+        "run": "Extract & Analyse",
+        "analysing": "Analysing…",
+        "items_found": "items found",
+        "grammar_issues": "grammar issues",
+        "truncated_title": "Document exceeded 20 KB — only the first 20 KB was checked for grammar",
+        "truncated_short": "partial",
+        "apply_all": "Apply all found",
+        "re_analyse": "Re-analyse",
+        "vocabulary_results": "Vocabulary & Grammar Detection",
+        "applied": "Applied",
+        "apply": "Apply",
+        "grammar_errors": "Grammar Issues",
+        "via": "via",
+        "suggestion": "Suggestion",
+        "more_errors": "more issues not shown",
+        "extracted_text": "Extracted text",
+        "no_text": "(no text extracted)",
+        "cefr_profile": "CEFR Text Profile",
+        "vocab_distribution": "Vocabulary level distribution",
+        "no_vocab_matched": "No vocabulary matched the CEFR-J wordlist.",
+        "notable_words": "Notable words:",
+        "grammar_structures": "Grammar structures",
+        "no_grammar_detected": "No advanced grammar structures detected.",
+        "cefrj_attribution": "Vocabulary levels based on CEFR-J (Tono Laboratory, TUFS).",
+        "open_panel": "Analyse student document"
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} overdue)",
@@ -3051,7 +3103,8 @@
         "role_last_admin": "This is the last administrator. Promote another user to administrator first.",
         "audit_col_actor": "Actor",
         "audit_col_details": "Details",
-        "audit_actor_system": "System"
+        "audit_actor_system": "System",
+        "db_required": "Connect a database to use this feature."
     },
     "essay_assignment": {
         "modal_title": "Essay Assignment — {{name}}",
@@ -3120,7 +3173,8 @@
         "not_found": "This essay could not be found. It may have been deleted.",
         "error_title_required": "Give the essay a title.",
         "error_positive_whole_number": "Enter a whole number greater than 0, or leave it empty.",
-        "error_min_exceeds_max": "The maximum must be at least the minimum word count."
+        "error_min_exceeds_max": "The maximum must be at least the minimum word count.",
+        "dev_open_as_student": "Open as student (dev only)"
     },
     "tts": {
         "read_prompt": "Read assignment prompt aloud",
@@ -3931,7 +3985,9 @@
         "gr_scoring_item_nhi": "Not handed in (settings-cog menu): marks the work as missing and leaves it out of statistics, the dashboard and the student portal. If the student already has a grade you are asked to confirm, and an existing overall comment is kept. A banner on the grading page offers \"Undo not handed in\"; scoring and saving the late work clears the mark automatically.",
         "ce_overview_item_achieved": "Achieved vs. working toward: a level only counts as achieved once the student's average reaches the rubric's achievement threshold. Below that, the Students list, the CEFR overview and the Dashboard show the level as a dashed badge (\"working toward\"), and class-level cards count achieved levels only.",
         "gr_unsaved_note": "Leaving a grading page with unsaved changes — through the sidebar, the Back button or by closing the tab — asks you to confirm first. Comparative grading and peer review work the same way. Save, Save & Next and Not handed in save before moving on, so they never ask.",
-        "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric."
+        "rb_import_export_item_docx": "Import from Word or PDF: upload a .docx or .pdf rubric table (criteria in rows, levels in columns). Points follow the header — e.g. \"Good (3 pts)\" or \"Weak (1-2 pts)\" — or, without points, the level names, so a Poor → Excellent table gives Excellent the most points. Percentages next to a criterion (\"Content 40%\") become its weight. The preview shows every level's points and every criterion's weight, plus a warning for anything it had to guess; check them before clicking Create Rubric.",
+        "rb_cohort_filtering_title": "Filter rubrics by cohort",
+        "rb_cohort_filtering_body": "Use the cohort filter on the Rubrics page to show only the rubrics you have graded students with in the selected cohort. Choose 'All cohorts' to see every rubric again."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -4549,7 +4605,23 @@
         "phrase_label": "Word or phrase",
         "notes_label": "Notes",
         "category_label": "Category",
-        "criterion_label": "Linked criterion"
+        "criterion_label": "Linked criterion",
+        "filter_all": "All",
+        "import_csv": "Import from CSV",
+        "select": "Select",
+        "deselect_all": "Deselect all",
+        "select_all": "Select all",
+        "delete_selected": "Delete",
+        "empty": "No items yet. Add phrases below.",
+        "phrase_placeholder": "Word or phrase…",
+        "no_criterion": "— No criterion —",
+        "notes_placeholder": "Notes (optional)…",
+        "add_item": "Add item",
+        "add": "Add",
+        "section_title": "Vocabulary & Grammar List",
+        "items": "items",
+        "section_help": "Add words, phrases, or grammar structures to detect when analysing student documents. Link items to rubric criteria to auto-check them during grading.",
+        "save_first": "Save the rubric first to manage vocabulary items."
     },
     "sharedFeedback": {
         "invalid_title": "This feedback link can't be opened",

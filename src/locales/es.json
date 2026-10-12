@@ -244,7 +244,8 @@
         "preview": "Vista previa",
         "refresh": "Actualizar",
         "password": "Contraseña",
-        "unknown_error": "Error desconocido"
+        "unknown_error": "Error desconocido",
+        "done": "Listo"
     },
     "slip_sheet": {
         "class_slips_one": "Fichas de clase — {{count}} estudiante",
@@ -1636,7 +1637,12 @@
         "password_slip_title": "Fichas de acceso — {{count}} estudiantes",
         "password_slip_columns": "columnas",
         "password_slip_item_error": "No se pudo generar — reinténtalo desde la página de Estudiantes.",
-        "password_slip_partial_failure": "No se pudo generar una contraseña para {{count}} estudiante(s). Reinténtalo desde la página de Estudiantes."
+        "password_slip_partial_failure": "No se pudo generar una contraseña para {{count}} estudiante(s). Reinténtalo desde la página de Estudiantes.",
+        "no_students_match": "Ningún alumno coincide con su búsqueda.",
+        "add_student_hint": "Añada alumnos a esta clase para empezar a calificar.",
+        "delete_student_title": "Eliminar alumno",
+        "delete_student_confirmation": "¿Seguro que quiere eliminar a <1>{{studentName}}</1>?",
+        "delete_student_warning": "Se eliminarán de forma permanente todas las calificaciones y rúbricas asociadas a este alumno."
     },
     "gradeStudent": {
         "group_grade_banner": "Calificación grupal — al guardar también se copiarán estas puntuaciones y comentarios a: {{names}}",
@@ -1738,7 +1744,10 @@
         "points_before_modifier": "Puntos antes del modificador",
         "criteria_graded_one": "{{graded}}/{{count}} criterio",
         "criteria_graded_other": "{{graded}}/{{count}} criterios",
-        "footer_options": "Opciones de calificación"
+        "footer_options": "Opciones de calificación",
+        "student_attachments": "Archivos del alumno",
+        "rubric_attachments": "Materiales de la rúbrica",
+        "no_attachments": "Sin archivos adjuntos."
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -1896,7 +1905,7 @@
         "drag_reorder_level": "Arrastrar para reordenar el nivel: {{name}}",
         "untitled": "Sin título",
         "name_label": "Nombre de la rúbrica *",
-        "standards_step_register": "Regístrate en <1>commonstandardsproject.com</1>",
+        "standards_step_register": "Regístrate en <2>commonstandardsproject.com</2>",
         "standards_step_copy": "Copia tu clave API desde el panel de desarrollador",
         "standards_step_cors": "Añade la URL de tu app a la lista <1>CORS Allowed Origins</1>",
         "standards_step_paste": "Pega la clave en <1>Ajustes → Integración de estándares</1>",
@@ -1916,7 +1925,9 @@
         "md_modal_tip": "Escriba los asteriscos alrededor de sus palabras. El formato se aplica en cuanto haga clic fuera del cuadro de texto.",
         "points_unit": "pts",
         "criteria_count_one": "{{count}} criterio",
-        "criteria_count_other": "{{count}} criterios"
+        "criteria_count_other": "{{count}} criterios",
+        "name_required": "El nombre de la rúbrica es obligatorio.",
+        "standards_modal_desc": "Para vincular estándares académicos necesita una <2>clave API de Common Standards Project</2>."
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -2589,7 +2600,9 @@
         "loading_preview": "Cargando vista previa…",
         "size_limit_hint": "hasta {{limit}} por archivo",
         "too_large": "«{{name}}» no se añadió: supera el límite de {{limit}}.",
-        "too_large_local_hint": "Sin conexión a una base de datos, los archivos se guardan en este navegador, que tiene poco espacio. Conéctate a una base de datos para adjuntar archivos más grandes."
+        "too_large_local_hint": "Sin conexión a una base de datos, los archivos se guardan en este navegador, que tiene poco espacio. Conéctate a una base de datos para adjuntar archivos más grandes.",
+        "delete_title": "Eliminar archivo adjunto",
+        "delete_message": "Este archivo adjunto se eliminará de forma permanente."
     },
     "exportPage": {
         "rubric_section_title": "Exportación de Rúbrica",
@@ -2805,7 +2818,8 @@
         "rationale_achieved": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — logrado",
         "rationale_developing": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — en desarrollo",
         "working_toward": "Trabajando hacia {{level}}: aún no alcanzado",
-        "legend_developing": "Las insignias rellenas son niveles alcanzados. Una insignia discontinua significa que el alumno aún trabaja hacia ese nivel (por debajo del umbral de logro)."
+        "legend_developing": "Las insignias rellenas son niveles alcanzados. Una insignia discontinua significa que el alumno aún trabaja hacia ese nivel (por debajo del umbral de logro).",
+        "standard_no_score": "Aún sin puntuación"
     },
     "learningPath": {
         "page_title": "Ruta de aprendizaje",
@@ -2848,7 +2862,45 @@
         "verdict_too_hard": "Demasiado difícil",
         "above_target": "Por encima del nivel — pre-enseñar:",
         "awl_nawl_attribution": "Vocabulario académico de la AWL (Coxhead) y la NAWL (Browne, Culligan y Phillips; CC BY-SA 4.0).",
-        "grammar_engine_ud": "Las estructuras vinculadas se comprobaron con el analizador gramatical: un indicador de alcance, no una calificación."
+        "grammar_engine_ud": "Las estructuras vinculadas se comprobaron con el analizador gramatical: un indicador de alcance, no una calificación.",
+        "title": "Análisis del documento",
+        "source_label": "Documento de origen",
+        "paste_transcript": "Pegar una transcripción en su lugar",
+        "paste_transcript_short": "Pegar transcripción",
+        "transcript_placeholder": "Pegue aquí la transcripción del alumno… (útil para grabaciones de audio/vídeo)",
+        "no_attachments": "No hay archivos adjuntos para este alumno",
+        "audio_video_note": "Los archivos de audio y vídeo no se pueden transcribir automáticamente (sin procesamiento en el servidor). Use «Pegar transcripción» para analizar el contenido oral.",
+        "no_vocab_items": "Esta rúbrica aún no tiene elementos de vocabulario. Añádalos en el editor de rúbricas → sección Vocabulario.",
+        "privacy_heading": "Aviso de privacidad",
+        "privacy_body": "La revisión gramatical funciona con",
+        "privacy_detail": "El texto extraído de este documento se enviará a los servidores de LanguageTool (api.languagetool.org) para el análisis gramatical. No use esta función si el documento contiene datos personales sensibles.",
+        "privacy_policy_link": "Política de privacidad de LanguageTool",
+        "retry": "Reintentar el análisis",
+        "run": "Extraer y analizar",
+        "analysing": "Analizando…",
+        "items_found": "elementos encontrados",
+        "grammar_issues": "problemas gramaticales",
+        "truncated_title": "El documento supera los 20 KB: solo se revisó la gramática de los primeros 20 KB",
+        "truncated_short": "parcial",
+        "apply_all": "Aplicar todos los encontrados",
+        "re_analyse": "Volver a analizar",
+        "vocabulary_results": "Detección de vocabulario y gramática",
+        "applied": "Aplicado",
+        "apply": "Aplicar",
+        "grammar_errors": "Problemas gramaticales",
+        "via": "mediante",
+        "suggestion": "Sugerencia",
+        "more_errors": "problemas más no mostrados",
+        "extracted_text": "Texto extraído",
+        "no_text": "(no se extrajo texto)",
+        "cefr_profile": "Perfil MCER del texto",
+        "vocab_distribution": "Distribución de niveles de vocabulario",
+        "no_vocab_matched": "Ningún vocabulario coincidió con la lista de palabras CEFR-J.",
+        "notable_words": "Palabras destacadas:",
+        "grammar_structures": "Estructuras gramaticales",
+        "no_grammar_detected": "No se detectaron estructuras gramaticales avanzadas.",
+        "cefrj_attribution": "Niveles de vocabulario basados en CEFR-J (Tono Laboratory, TUFS).",
+        "open_panel": "Analizar el documento del alumno"
     },
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
@@ -3051,7 +3103,8 @@
         "role_last_admin": "Es el último administrador. Primero nombra administrador a otro usuario.",
         "audit_col_actor": "Realizado por",
         "audit_col_details": "Detalles",
-        "audit_actor_system": "Sistema"
+        "audit_actor_system": "Sistema",
+        "db_required": "Conecte una base de datos para usar esta función."
     },
     "essay_assignment": {
         "modal_title": "Tarea de ensayo — {{name}}",
@@ -3120,7 +3173,8 @@
         "not_found": "No se ha encontrado este ensayo. Puede que se haya eliminado.",
         "error_title_required": "Ponle un título al ensayo.",
         "error_positive_whole_number": "Introduce un número entero mayor que 0 o déjalo vacío.",
-        "error_min_exceeds_max": "El máximo debe ser al menos igual al número mínimo de palabras."
+        "error_min_exceeds_max": "El máximo debe ser al menos igual al número mínimo de palabras.",
+        "dev_open_as_student": "Abrir como alumno (solo dev)"
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
@@ -3448,8 +3502,8 @@
         "rb_view_toggle_title": "Vista de tarjetas o lista",
         "rb_view_toggle_body": "Usa el conmutador Tarjetas / Lista en la parte superior derecha de la página de Rúbricas para alternar entre la cuadrícula visual de tarjetas y una tabla de datos compacta. La lista muestra para cada rúbrica la asignatura, el número de criterios y niveles, los estudiantes calificados y el nivel MCER objetivo como columnas — útil cuando tienes muchas rúbricas. Arrastrar para reordenar permanece en la vista de tarjetas.",
         "rb_tests_view_toggle_body": "Al igual que las Rúbricas, la página de Pruebas tiene un conmutador Tarjetas / Lista en la parte superior derecha. Cada tarjeta de prueba muestra ahora cuántas entregas tiene y la puntuación media de la clase en su frente; la vista de lista presenta esos mismos números como columnas.",
-        "rb_cohort_filtering_title": "Filtrado por cohorte",
-        "rb_cohort_filtering_body": "Las listas de Rúbricas, Pruebas y Redacciones tienen un filtro de año/itinerario junto a la búsqueda. Una cohorte es cada estudiante que comparte ese año/itinerario ahora o en cualquier clase anterior por la que haya pasado, de modo que una rúbrica o prueba sigue visible para una cohorte aunque algunos estudiantes cambien de clase. La reordenación manual se desactiva mientras un filtro de cohorte esté activo, ya que las posiciones arrastradas no se pueden aplicar de forma clara al orden completo sin filtrar.",
+        "rb_cohort_filtering_title": "Filtrar rúbricas por cohorte",
+        "rb_cohort_filtering_body": "Use el filtro de cohorte de la página Rúbricas para mostrar solo las rúbricas con las que ha calificado a alumnos de la cohorte elegida. Elija «Todas las cohortes» para volver a ver todas las rúbricas.",
         "rb_tests_title": "Pruebas y cuestionarios",
         "rb_tests_intro": "Crea pruebas y cuestionarios desde la página",
         "rb_tests_intro_page": "Pruebas",
@@ -4551,7 +4605,23 @@
         "phrase_label": "Palabra o expresión",
         "notes_label": "Notas",
         "category_label": "Categoría",
-        "criterion_label": "Criterio vinculado"
+        "criterion_label": "Criterio vinculado",
+        "filter_all": "Todos",
+        "import_csv": "Importar desde CSV",
+        "select": "Seleccionar",
+        "deselect_all": "Deseleccionar todo",
+        "select_all": "Seleccionar todo",
+        "delete_selected": "Eliminar",
+        "empty": "Aún no hay elementos. Añada expresiones abajo.",
+        "phrase_placeholder": "Palabra o expresión…",
+        "no_criterion": "— Sin criterio —",
+        "notes_placeholder": "Notas (opcional)…",
+        "add_item": "Añadir elemento",
+        "add": "Añadir",
+        "section_title": "Lista de vocabulario y gramática",
+        "items": "elementos",
+        "section_help": "Añada palabras, expresiones o estructuras gramaticales que se detectarán al analizar documentos de alumnos. Vincule elementos a criterios de la rúbrica para marcarlos automáticamente al calificar.",
+        "save_first": "Guarde primero la rúbrica para gestionar los elementos de vocabulario."
     },
     "sharedFeedback": {
         "invalid_title": "No se puede abrir este enlace de comentarios",

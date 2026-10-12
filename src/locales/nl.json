@@ -244,7 +244,8 @@
         "preview": "Voorbeeld",
         "refresh": "Vernieuwen",
         "password": "Wachtwoord",
-        "unknown_error": "Onbekende fout"
+        "unknown_error": "Onbekende fout",
+        "done": "Klaar"
     },
     "slip_sheet": {
         "class_slips_one": "Klasstroken — {{count}} leerling",
@@ -1636,7 +1637,12 @@
         "password_slip_title": "Inlogstrookjes — {{count}} leerlingen",
         "password_slip_columns": "kolommen",
         "password_slip_item_error": "Genereren mislukt — opnieuw proberen via de Leerlingenpagina.",
-        "password_slip_partial_failure": "Kon geen wachtwoord genereren voor {{count}} leerling(en). Probeer het opnieuw via de Leerlingenpagina."
+        "password_slip_partial_failure": "Kon geen wachtwoord genereren voor {{count}} leerling(en). Probeer het opnieuw via de Leerlingenpagina.",
+        "no_students_match": "Geen leerlingen gevonden die overeenkomen met uw zoekopdracht.",
+        "add_student_hint": "Voeg leerlingen aan deze klas toe om te beginnen met beoordelen.",
+        "delete_student_title": "Leerling verwijderen",
+        "delete_student_confirmation": "Weet u zeker dat u <1>{{studentName}}</1> wilt verwijderen?",
+        "delete_student_warning": "Hiermee worden alle beoordelingen en rubrics van deze leerling definitief verwijderd."
     },
     "gradeStudent": {
         "group_grade_banner": "Groepscijfer — opslaan kopieert deze scores en opmerkingen ook naar: {{names}}",
@@ -1738,7 +1744,10 @@
         "points_before_modifier": "Punten vóór de aanpassing",
         "criteria_graded_one": "{{graded}}/{{count}} criterium",
         "criteria_graded_other": "{{graded}}/{{count}} criteria",
-        "footer_options": "Beoordelingsopties"
+        "footer_options": "Beoordelingsopties",
+        "student_attachments": "Bestanden van de leerling",
+        "rubric_attachments": "Rubricmateriaal",
+        "no_attachments": "Geen bijlagen."
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -1896,7 +1905,7 @@
         "drag_reorder_level": "Sleep om niveau te herordenen: {{name}}",
         "untitled": "Naamloos",
         "name_label": "Rubricnaam *",
-        "standards_step_register": "Registreer op <1>commonstandardsproject.com</1>",
+        "standards_step_register": "Registreer op <2>commonstandardsproject.com</2>",
         "standards_step_copy": "Kopieer je API-sleutel uit het ontwikkelaarsdashboard",
         "standards_step_cors": "Voeg je app-URL toe aan de <1>CORS Allowed Origins</1>-lijst",
         "standards_step_paste": "Plak de sleutel in <1>Instellingen → Standaardenintegratie</1>",
@@ -1916,7 +1925,9 @@
         "md_modal_tip": "Typ de sterretjes rond uw woorden. De opmaak wordt toegepast zodra u buiten het tekstvak klikt.",
         "points_unit": "ptn",
         "criteria_count_one": "{{count}} criterium",
-        "criteria_count_other": "{{count}} criteria"
+        "criteria_count_other": "{{count}} criteria",
+        "name_required": "Een rubricnaam is verplicht.",
+        "standards_modal_desc": "Om onderwijsstandaarden te koppelen hebt u een <2>Common Standards Project API-sleutel</2> nodig."
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -2589,7 +2600,9 @@
         "loading_preview": "Voorbeeld laden…",
         "size_limit_hint": "tot {{limit}} per bestand",
         "too_large": "\"{{name}}\" is niet toegevoegd: het is groter dan de limiet van {{limit}}.",
-        "too_large_local_hint": "Zonder databaseverbinding worden bestanden in deze browser opgeslagen, waar weinig ruimte is. Maak verbinding met een database om grotere bestanden toe te voegen."
+        "too_large_local_hint": "Zonder databaseverbinding worden bestanden in deze browser opgeslagen, waar weinig ruimte is. Maak verbinding met een database om grotere bestanden toe te voegen.",
+        "delete_title": "Bijlage verwijderen",
+        "delete_message": "Deze bijlage wordt definitief verwijderd."
     },
     "exportPage": {
         "rubric_section_title": "Rubriekexport",
@@ -2805,7 +2818,8 @@
         "rationale_achieved": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — behaald",
         "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling",
         "working_toward": "Werkt toe naar {{level}} — nog niet behaald",
-        "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel)."
+        "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel).",
+        "standard_no_score": "Nog geen score"
     },
     "learningPath": {
         "page_title": "Leerpad",
@@ -2848,7 +2862,45 @@
         "verdict_too_hard": "Te moeilijk",
         "above_target": "Boven niveau — voorbespreken:",
         "awl_nawl_attribution": "Academische woordenschat uit de AWL (Coxhead) en de NAWL (Browne, Culligan & Phillips; CC BY-SA 4.0).",
-        "grammar_engine_ud": "Gekoppelde structuren zijn gecontroleerd met de grammaticaparser — een indicatie van het bereik, geen cijfer."
+        "grammar_engine_ud": "Gekoppelde structuren zijn gecontroleerd met de grammaticaparser — een indicatie van het bereik, geen cijfer.",
+        "title": "Documentanalyse",
+        "source_label": "Brondocument",
+        "paste_transcript": "Plak in plaats daarvan een transcript",
+        "paste_transcript_short": "Transcript plakken",
+        "transcript_placeholder": "Plak hier het transcript van de leerling… (handig voor audio- en video-opnames)",
+        "no_attachments": "Geen bijlagen voor deze leerling",
+        "audio_video_note": "Audio- en videobestanden kunnen niet automatisch worden getranscribeerd (geen verwerking op de server). Gebruik \"Transcript plakken\" om de gesproken inhoud te analyseren.",
+        "no_vocab_items": "Deze rubric heeft nog geen woordenschatitems. Voeg ze toe in de Rubricbouwer → sectie Woordenschat.",
+        "privacy_heading": "Privacyverklaring",
+        "privacy_body": "De grammaticacontrole wordt geleverd door",
+        "privacy_detail": "De geëxtraheerde tekst van dit document wordt voor grammaticacontrole naar de servers van LanguageTool (api.languagetool.org) gestuurd. Gebruik deze functie niet als het document gevoelige persoonsgegevens bevat.",
+        "privacy_policy_link": "Privacybeleid van LanguageTool",
+        "retry": "Analyse opnieuw proberen",
+        "run": "Extraheren en analyseren",
+        "analysing": "Bezig met analyseren…",
+        "items_found": "items gevonden",
+        "grammar_issues": "grammaticaproblemen",
+        "truncated_title": "Document groter dan 20 KB — alleen de eerste 20 KB is op grammatica gecontroleerd",
+        "truncated_short": "gedeeltelijk",
+        "apply_all": "Alle gevonden toepassen",
+        "re_analyse": "Opnieuw analyseren",
+        "vocabulary_results": "Herkenning van woordenschat en grammatica",
+        "applied": "Toegepast",
+        "apply": "Toepassen",
+        "grammar_errors": "Grammaticaproblemen",
+        "via": "via",
+        "suggestion": "Suggestie",
+        "more_errors": "meer problemen niet getoond",
+        "extracted_text": "Geëxtraheerde tekst",
+        "no_text": "(geen tekst geëxtraheerd)",
+        "cefr_profile": "ERK-tekstprofiel",
+        "vocab_distribution": "Verdeling van woordenschatniveaus",
+        "no_vocab_matched": "Geen woordenschat kwam overeen met de CEFR-J-woordenlijst.",
+        "notable_words": "Opvallende woorden:",
+        "grammar_structures": "Grammaticale structuren",
+        "no_grammar_detected": "Geen gevorderde grammaticale structuren gevonden.",
+        "cefrj_attribution": "Woordenschatniveaus gebaseerd op CEFR-J (Tono Laboratory, TUFS).",
+        "open_panel": "Leerlingdocument analyseren"
     },
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
@@ -3051,7 +3103,8 @@
         "role_last_admin": "Dit is de laatste beheerder. Maak eerst een andere gebruiker beheerder.",
         "audit_col_actor": "Uitgevoerd door",
         "audit_col_details": "Details",
-        "audit_actor_system": "Systeem"
+        "audit_actor_system": "Systeem",
+        "db_required": "Koppel een database om deze functie te gebruiken."
     },
     "essay_assignment": {
         "modal_title": "Essay-opdracht — {{name}}",
@@ -3120,7 +3173,8 @@
         "not_found": "Dit essay is niet gevonden. Mogelijk is het verwijderd.",
         "error_title_required": "Geef het essay een titel.",
         "error_positive_whole_number": "Voer een geheel getal groter dan 0 in, of laat het leeg.",
-        "error_min_exceeds_max": "Het maximum moet minstens gelijk zijn aan het minimum aantal woorden."
+        "error_min_exceeds_max": "Het maximum moet minstens gelijk zijn aan het minimum aantal woorden.",
+        "dev_open_as_student": "Openen als leerling (alleen dev)"
     },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",
@@ -3448,8 +3502,8 @@
         "rb_view_toggle_title": "Kaart- of lijstweergave",
         "rb_view_toggle_body": "Gebruik de knop Kaarten / Lijst rechtsboven op de pagina Rubrieken om te wisselen tussen het visuele kaartenraster en een compacte gegevenstabel. De lijst toont per rubriek het vak, het aantal criteria en niveaus, het aantal beoordeelde leerlingen en het CEFR-doelniveau als kolommen — handig zodra je veel rubrieken hebt. Slepen om te herordenen blijft in de kaartweergave.",
         "rb_tests_view_toggle_body": "Net als bij Rubrieken heeft de pagina Toetsen rechtsboven een knop Kaarten / Lijst. Elke toetskaart toont nu op de voorkant hoeveel inzendingen er zijn en het klassengemiddelde; de lijstweergave toont diezelfde cijfers als kolommen.",
-        "rb_cohort_filtering_title": "Cohortfiltering",
-        "rb_cohort_filtering_body": "De lijsten Rubrieken, Toetsen en Essays hebben naast zoeken een jaar/niveau-filter. Een cohort bestaat uit elke leerling die dat jaar/niveau nu of in een eerdere klas had — zo blijft een rubriek of toets zichtbaar voor een cohort, ook als sommige leerlingen naar een andere klas overstappen. Handmatig herordenen is uitgeschakeld zolang een cohortfilter actief is, omdat versleepte posities niet eenduidig op de volledige ongefilterde volgorde kunnen worden toegepast.",
+        "rb_cohort_filtering_title": "Rubrics filteren op cohort",
+        "rb_cohort_filtering_body": "Gebruik het cohortfilter op de pagina Rubrics om alleen de rubrics te tonen waarmee u leerlingen uit het gekozen cohort hebt beoordeeld. Kies 'Alle cohorten' om weer alle rubrics te zien.",
         "rb_tests_title": "Toetsen & quizzes",
         "rb_tests_intro": "Bouw toetsen en quizzes vanaf de pagina",
         "rb_tests_intro_page": "Toetsen",
@@ -4551,7 +4605,23 @@
         "phrase_label": "Woord of woordgroep",
         "notes_label": "Notities",
         "category_label": "Categorie",
-        "criterion_label": "Gekoppeld criterium"
+        "criterion_label": "Gekoppeld criterium",
+        "filter_all": "Alle",
+        "import_csv": "Importeren uit CSV",
+        "select": "Selecteren",
+        "deselect_all": "Alles deselecteren",
+        "select_all": "Alles selecteren",
+        "delete_selected": "Verwijderen",
+        "empty": "Nog geen items. Voeg hieronder zinnen toe.",
+        "phrase_placeholder": "Woord of zin…",
+        "no_criterion": "— Geen criterium —",
+        "notes_placeholder": "Notities (optioneel)…",
+        "add_item": "Item toevoegen",
+        "add": "Toevoegen",
+        "section_title": "Woordenschat- en grammaticalijst",
+        "items": "items",
+        "section_help": "Voeg woorden, zinnen of grammaticale structuren toe die bij het analyseren van leerlingdocumenten worden herkend. Koppel items aan rubriccriteria om ze tijdens het beoordelen automatisch af te vinken.",
+        "save_first": "Sla de rubric eerst op om woordenschatitems te beheren."
     },
     "sharedFeedback": {
         "invalid_title": "Deze feedbacklink kan niet worden geopend",

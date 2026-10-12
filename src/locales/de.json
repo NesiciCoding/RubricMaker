@@ -244,7 +244,8 @@
         "preview": "Vorschau",
         "refresh": "Aktualisieren",
         "password": "Passwort",
-        "unknown_error": "Unbekannter Fehler"
+        "unknown_error": "Unbekannter Fehler",
+        "done": "Fertig"
     },
     "slip_sheet": {
         "class_slips_one": "Klassenzettel — {{count}} Schüler",
@@ -1636,7 +1637,12 @@
         "password_slip_title": "Login-Zettel — {{count}} Schüler",
         "password_slip_columns": "Spalten",
         "password_slip_item_error": "Generierung fehlgeschlagen — auf der Schüler-Seite erneut versuchen.",
-        "password_slip_partial_failure": "Für {{count}} Schüler konnte kein Passwort generiert werden. Auf der Schüler-Seite erneut versuchen."
+        "password_slip_partial_failure": "Für {{count}} Schüler konnte kein Passwort generiert werden. Auf der Schüler-Seite erneut versuchen.",
+        "no_students_match": "Keine Schüler entsprechen Ihrer Suche.",
+        "add_student_hint": "Fügen Sie dieser Klasse Schüler hinzu, um mit dem Bewerten zu beginnen.",
+        "delete_student_title": "Schüler löschen",
+        "delete_student_confirmation": "Möchten Sie <1>{{studentName}}</1> wirklich löschen?",
+        "delete_student_warning": "Dadurch werden alle Bewertungen und Raster dieses Schülers dauerhaft gelöscht."
     },
     "gradeStudent": {
         "group_grade_banner": "Gruppennote — beim Speichern werden diese Punkte und Kommentare auch kopiert an: {{names}}",
@@ -1738,7 +1744,10 @@
         "points_before_modifier": "Punkte vor der Anpassung",
         "criteria_graded_one": "{{graded}}/{{count}} Kriterium",
         "criteria_graded_other": "{{graded}}/{{count}} Kriterien",
-        "footer_options": "Bewertungsoptionen"
+        "footer_options": "Bewertungsoptionen",
+        "student_attachments": "Dateien des Schülers",
+        "rubric_attachments": "Rastermaterialien",
+        "no_attachments": "Keine Anhänge."
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -1896,7 +1905,7 @@
         "drag_reorder_level": "Ziehen, um Niveau neu zu ordnen: {{name}}",
         "untitled": "Unbenannt",
         "name_label": "Rubric-Name *",
-        "standards_step_register": "Registrieren Sie sich auf <1>commonstandardsproject.com</1>",
+        "standards_step_register": "Registrieren Sie sich auf <2>commonstandardsproject.com</2>",
         "standards_step_copy": "Kopieren Sie Ihren API-Schlüssel aus dem Entwickler-Dashboard",
         "standards_step_cors": "Fügen Sie Ihre App-URL zur <1>CORS Allowed Origins</1>-Liste hinzu",
         "standards_step_paste": "Fügen Sie den Schlüssel unter <1>Einstellungen → Standards-Integration</1> ein",
@@ -1916,7 +1925,9 @@
         "md_modal_tip": "Setzen Sie die Sternchen einfach um Ihre Wörter. Die Formatierung wird angewendet, sobald Sie außerhalb des Textfelds klicken.",
         "points_unit": "Pkt.",
         "criteria_count_one": "{{count}} Kriterium",
-        "criteria_count_other": "{{count}} Kriterien"
+        "criteria_count_other": "{{count}} Kriterien",
+        "name_required": "Ein Rastername ist erforderlich.",
+        "standards_modal_desc": "Um Bildungsstandards zu verknüpfen, benötigen Sie einen <2>Common Standards Project API-Schlüssel</2>."
     },
     "peerReview": {
         "round_label": "Runde",
@@ -2589,7 +2600,9 @@
         "loading_preview": "Vorschau wird geladen…",
         "size_limit_hint": "bis zu {{limit}} pro Datei",
         "too_large": "„{{name}}“ wurde nicht hinzugefügt: Die Datei ist größer als das Limit von {{limit}}.",
-        "too_large_local_hint": "Ohne Datenbankverbindung werden Dateien in diesem Browser gespeichert, der wenig Platz hat. Verbinden Sie sich mit einer Datenbank, um größere Dateien anzuhängen."
+        "too_large_local_hint": "Ohne Datenbankverbindung werden Dateien in diesem Browser gespeichert, der wenig Platz hat. Verbinden Sie sich mit einer Datenbank, um größere Dateien anzuhängen.",
+        "delete_title": "Anhang löschen",
+        "delete_message": "Dieser Anhang wird dauerhaft entfernt."
     },
     "exportPage": {
         "rubric_section_title": "Rubrik-Export",
@@ -2805,7 +2818,8 @@
         "rationale_achieved": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — erreicht",
         "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau",
         "working_toward": "Arbeitet auf {{level}} hin — noch nicht erreicht",
-        "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle)."
+        "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle).",
+        "standard_no_score": "Noch keine Punktzahl"
     },
     "learningPath": {
         "page_title": "Lernpfad",
@@ -2848,7 +2862,45 @@
         "verdict_too_hard": "Zu schwer",
         "above_target": "Über dem Niveau — vorentlasten:",
         "awl_nawl_attribution": "Akademischer Wortschatz aus der AWL (Coxhead) und der NAWL (Browne, Culligan & Phillips; CC BY-SA 4.0).",
-        "grammar_engine_ud": "Verknüpfte Strukturen wurden mit dem Grammatikparser geprüft — ein Bandbreiten-Indikator, keine Note."
+        "grammar_engine_ud": "Verknüpfte Strukturen wurden mit dem Grammatikparser geprüft — ein Bandbreiten-Indikator, keine Note.",
+        "title": "Dokumentanalyse",
+        "source_label": "Quelldokument",
+        "paste_transcript": "Stattdessen ein Transkript einfügen",
+        "paste_transcript_short": "Transkript einfügen",
+        "transcript_placeholder": "Fügen Sie hier das Transkript des Schülers ein… (nützlich für Audio-/Videoaufnahmen)",
+        "no_attachments": "Keine Anhänge für diesen Schüler",
+        "audio_video_note": "Audio- und Videodateien können nicht automatisch transkribiert werden (keine serverseitige Verarbeitung). Verwenden Sie „Transkript einfügen“, um den gesprochenen Inhalt zu analysieren.",
+        "no_vocab_items": "Dieses Raster enthält noch keine Wortschatzeinträge. Fügen Sie sie im Raster-Editor → Abschnitt Wortschatz hinzu.",
+        "privacy_heading": "Datenschutzhinweis",
+        "privacy_body": "Die Grammatikprüfung erfolgt durch",
+        "privacy_detail": "Der extrahierte Text dieses Dokuments wird zur Grammatikanalyse an die Server von LanguageTool (api.languagetool.org) gesendet. Verwenden Sie diese Funktion nicht, wenn das Dokument sensible personenbezogene Daten enthält.",
+        "privacy_policy_link": "Datenschutzerklärung von LanguageTool",
+        "retry": "Analyse erneut versuchen",
+        "run": "Extrahieren und analysieren",
+        "analysing": "Wird analysiert…",
+        "items_found": "Einträge gefunden",
+        "grammar_issues": "Grammatikprobleme",
+        "truncated_title": "Dokument größer als 20 KB — nur die ersten 20 KB wurden auf Grammatik geprüft",
+        "truncated_short": "teilweise",
+        "apply_all": "Alle gefundenen anwenden",
+        "re_analyse": "Erneut analysieren",
+        "vocabulary_results": "Wortschatz- und Grammatikerkennung",
+        "applied": "Angewendet",
+        "apply": "Anwenden",
+        "grammar_errors": "Grammatikprobleme",
+        "via": "über",
+        "suggestion": "Vorschlag",
+        "more_errors": "weitere Probleme nicht angezeigt",
+        "extracted_text": "Extrahierter Text",
+        "no_text": "(kein Text extrahiert)",
+        "cefr_profile": "GER-Textprofil",
+        "vocab_distribution": "Verteilung der Wortschatzniveaus",
+        "no_vocab_matched": "Kein Wortschatz stimmte mit der CEFR-J-Wortliste überein.",
+        "notable_words": "Auffällige Wörter:",
+        "grammar_structures": "Grammatikstrukturen",
+        "no_grammar_detected": "Keine fortgeschrittenen Grammatikstrukturen erkannt.",
+        "cefrj_attribution": "Wortschatzniveaus basierend auf CEFR-J (Tono Laboratory, TUFS).",
+        "open_panel": "Schülerdokument analysieren"
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
@@ -2951,7 +3003,8 @@
         "not_found": "Dieser Aufsatz wurde nicht gefunden. Möglicherweise wurde er gelöscht.",
         "error_title_required": "Geben Sie dem Aufsatz einen Titel.",
         "error_positive_whole_number": "Geben Sie eine ganze Zahl größer als 0 ein oder lassen Sie das Feld leer.",
-        "error_min_exceeds_max": "Das Maximum muss mindestens so hoch sein wie die Mindestwortzahl."
+        "error_min_exceeds_max": "Das Maximum muss mindestens so hoch sein wie die Mindestwortzahl.",
+        "dev_open_as_student": "Als Schüler öffnen (nur Dev)"
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",
@@ -3130,7 +3183,8 @@
         "role_last_admin": "Dies ist der letzte Administrator. Machen Sie zuerst eine andere Person zum Administrator.",
         "audit_col_actor": "Ausgeführt von",
         "audit_col_details": "Details",
-        "audit_actor_system": "System"
+        "audit_actor_system": "System",
+        "db_required": "Verbinden Sie eine Datenbank, um diese Funktion zu nutzen."
     },
     "essay": {
         "email_gate_title": "Geben Sie Ihre Schul-E-Mail-Adresse ein",
@@ -3448,8 +3502,8 @@
         "rb_view_toggle_title": "Karten- oder Listenansicht",
         "rb_view_toggle_body": "Verwende die Umschaltung Karten / Liste oben rechts auf der Rubrikenseite, um zwischen dem visuellen Kartenraster und einer kompakten Datentabelle zu wechseln. Die Liste zeigt für jede Rubrik das Fach, die Anzahl der Kriterien und Stufen, die benoteten Schüler und die GER-Zielstufe als Spalten — praktisch, sobald du viele Rubriken hast. Das Neuordnen per Ziehen bleibt in der Kartenansicht.",
         "rb_tests_view_toggle_body": "Wie bei den Rubriken hat die Testseite oben rechts eine Umschaltung Karten / Liste. Jede Testkarte zeigt jetzt auf der Vorderseite die Anzahl der Abgaben und den Klassendurchschnitt; die Listenansicht stellt dieselben Werte als Spalten dar.",
-        "rb_cohort_filtering_title": "Kohortenfilterung",
-        "rb_cohort_filtering_body": "Die Listen Rubriken, Tests und Aufsätze haben neben der Suche einen Jahrgangs-/Profilfilter. Eine Kohorte umfasst jeden Schüler, der diesen Jahrgang/dieses Profil aktuell oder in einer früheren Klasse hatte – so bleibt eine Rubrik oder ein Test für eine Kohorte sichtbar, selbst wenn einige Schüler in eine andere Klasse wechseln. Manuelles Neuordnen ist deaktiviert, solange ein Kohortenfilter aktiv ist, da gezogene Positionen sich nicht eindeutig auf die vollständige ungefilterte Reihenfolge übertragen lassen.",
+        "rb_cohort_filtering_title": "Raster nach Kohorte filtern",
+        "rb_cohort_filtering_body": "Verwenden Sie den Kohortenfilter auf der Seite Raster, um nur die Raster anzuzeigen, mit denen Sie Schüler der gewählten Kohorte bewertet haben. Wählen Sie „Alle Kohorten“, um wieder alle Raster zu sehen.",
         "rb_tests_title": "Tests & Quizze",
         "rb_tests_intro": "Erstelle Tests und Quizze auf der Seite",
         "rb_tests_intro_page": "Tests",
@@ -4551,7 +4605,23 @@
         "phrase_label": "Wort oder Ausdruck",
         "notes_label": "Notizen",
         "category_label": "Kategorie",
-        "criterion_label": "Verknüpftes Kriterium"
+        "criterion_label": "Verknüpftes Kriterium",
+        "filter_all": "Alle",
+        "import_csv": "Aus CSV importieren",
+        "select": "Auswählen",
+        "deselect_all": "Alle abwählen",
+        "select_all": "Alle auswählen",
+        "delete_selected": "Löschen",
+        "empty": "Noch keine Einträge. Fügen Sie unten Ausdrücke hinzu.",
+        "phrase_placeholder": "Wort oder Ausdruck…",
+        "no_criterion": "— Kein Kriterium —",
+        "notes_placeholder": "Notizen (optional)…",
+        "add_item": "Eintrag hinzufügen",
+        "add": "Hinzufügen",
+        "section_title": "Wortschatz- und Grammatikliste",
+        "items": "Einträge",
+        "section_help": "Fügen Sie Wörter, Ausdrücke oder Grammatikstrukturen hinzu, die bei der Analyse von Schülerdokumenten erkannt werden sollen. Verknüpfen Sie Einträge mit Rasterkriterien, um sie beim Bewerten automatisch abzuhaken.",
+        "save_first": "Speichern Sie zuerst das Raster, um Wortschatzeinträge zu verwalten."
     },
     "sharedFeedback": {
         "invalid_title": "Dieser Feedback-Link kann nicht geöffnet werden",
