@@ -2888,7 +2888,10 @@
         "import_wrong_essay": "Dieser Einreichungscode gehört zu einem anderen Aufsatz.",
         "import_success": "Einreichung importiert",
         "copy_link": "Link kopieren",
-        "not_found": "Dieser Aufsatz wurde nicht gefunden. Möglicherweise wurde er gelöscht."
+        "not_found": "Dieser Aufsatz wurde nicht gefunden. Möglicherweise wurde er gelöscht.",
+        "error_title_required": "Geben Sie dem Aufsatz einen Titel.",
+        "error_positive_whole_number": "Geben Sie eine ganze Zahl größer als 0 ein oder lassen Sie das Feld leer.",
+        "error_min_exceeds_max": "Das Maximum muss mindestens so hoch sein wie die Mindestwortzahl."
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",

@@ -2888,7 +2888,10 @@
         "import_wrong_essay": "Ce code de soumission appartient à un autre essai.",
         "import_success": "Soumission importée",
         "copy_link": "Copier le lien",
-        "not_found": "Cet essai est introuvable. Il a peut-être été supprimé."
+        "not_found": "Cet essai est introuvable. Il a peut-être été supprimé.",
+        "error_title_required": "Donnez un titre à l'essai.",
+        "error_positive_whole_number": "Saisissez un nombre entier supérieur à 0, ou laissez le champ vide.",
+        "error_min_exceeds_max": "Le maximum doit être au moins égal au nombre minimum de mots."
     },
     "tts": {
         "read_prompt": "Lire la consigne à voix haute",

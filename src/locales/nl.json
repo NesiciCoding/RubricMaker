@@ -3057,7 +3057,10 @@
         "import_wrong_essay": "Deze inlevercode hoort bij een ander essay.",
         "import_success": "Inlevering geïmporteerd",
         "copy_link": "Link kopiëren",
-        "not_found": "Dit essay is niet gevonden. Mogelijk is het verwijderd."
+        "not_found": "Dit essay is niet gevonden. Mogelijk is het verwijderd.",
+        "error_title_required": "Geef het essay een titel.",
+        "error_positive_whole_number": "Voer een geheel getal groter dan 0 in, of laat het leeg.",
+        "error_min_exceeds_max": "Het maximum moet minstens gelijk zijn aan het minimum aantal woorden."
     },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",

@@ -3057,7 +3057,10 @@
         "import_wrong_essay": "This submission code belongs to a different essay.",
         "import_success": "Submission imported",
         "copy_link": "Copy link",
-        "not_found": "This essay could not be found. It may have been deleted."
+        "not_found": "This essay could not be found. It may have been deleted.",
+        "error_title_required": "Give the essay a title.",
+        "error_positive_whole_number": "Enter a whole number greater than 0, or leave it empty.",
+        "error_min_exceeds_max": "The maximum must be at least the minimum word count."
     },
     "tts": {
         "read_prompt": "Read assignment prompt aloud",
