@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { SupabaseAdapter } from '../SupabaseAdapter';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { SCHOOL_NOT_CHANGED, SupabaseAdapter } from '../SupabaseAdapter';
 import { makeClient, makeSequencedClient, adapterWithClient } from './supabaseTestUtils';
 
 describe('SupabaseAdapter profile methods', () => {
@@ -172,7 +172,7 @@ describe('SupabaseAdapter school methods', () => {
     });
 
     it('updateSchool only patches the provided fields', async () => {
-        const client = makeClient({ data: null, error: null });
+        const client = makeClient({ data: [{ id: 's1' }], error: null });
         const connected = adapterWithClient(client);
 
         const result = await connected.updateSchool('s1', { retentionYears: 7 });
@@ -180,6 +180,37 @@ describe('SupabaseAdapter school methods', () => {
         expect(result).toEqual({ success: true });
         const builder = client.from.mock.results[0].value;
         expect(builder.update).toHaveBeenCalledWith({ retention_years: 7 });
+    });
+
+    it('reports an update or delete that RLS filtered to 0 rows as a failure (#630)', async () => {
+        const client = makeClient({ data: [], error: null });
+        const connected = adapterWithClient(client);
+        expect(await connected.updateSchool('s1', { retentionYears: 7 })).toEqual({
+            success: false,
+            error: SCHOOL_NOT_CHANGED,
+        });
+        expect(await connected.deleteSchool('s1')).toEqual({ success: false, error: SCHOOL_NOT_CHANGED });
+        expect(await adapterWithClient(makeClient({ data: [{ id: 's1' }], error: null })).deleteSchool('s1')).toEqual({
+            success: true,
+        });
+    });
+
+    it('createSchool logs a rollback that could not delete the school row (#630)', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const client = makeSequencedClient({
+            schools: [
+                { data: { id: 's1', name: 'A', created_by: 'user1', retention_years: 3, created_at: '' }, error: null },
+                { data: [], error: null },
+            ],
+            school_members: [{ data: null, error: { message: 'membership boom' } }],
+        });
+        expect(await adapterWithClient(client).createSchool('A', 3)).toBeNull();
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[SupabaseAdapter] createSchool rollback failed',
+            's1',
+            SCHOOL_NOT_CHANGED
+        );
+        errorSpy.mockRestore();
     });
 
     it('deleteSchool surfaces an error result', async () => {
@@ -208,7 +239,7 @@ describe('SupabaseAdapter school methods', () => {
 
     it('removeSchoolMember deletes membership and clears the profile school link', async () => {
         const client = makeSequencedClient({
-            school_members: [{ data: null, error: null }],
+            school_members: [{ data: [{ profile_id: 'u1' }], error: null }],
             profiles: [{ data: null, error: null }],
         });
 
@@ -220,7 +251,7 @@ describe('SupabaseAdapter school methods', () => {
     it('removeSchoolMember re-inserts membership if clearing the profile link fails, and reports both errors on rollback failure', async () => {
         const client = makeSequencedClient({
             school_members: [
-                { data: null, error: null }, // delete
+                { data: [{ profile_id: 'u1' }], error: null }, // delete
                 { data: null, error: { message: 'rollback boom' } }, // rollback re-insert
             ],
             profiles: [{ data: null, error: { message: 'profile boom' } }],
@@ -232,5 +263,14 @@ describe('SupabaseAdapter school methods', () => {
             success: false,
             error: 'profile boom; rollback failed: rollback boom',
         });
+    });
+
+    it('removeSchoolMember reports a membership delete that matched no row (#630)', async () => {
+        const client = makeSequencedClient({ school_members: [{ data: [], error: null }] });
+        expect(await adapterWithClient(client).removeSchoolMember('s1', 'u1')).toEqual({
+            success: false,
+            error: SCHOOL_NOT_CHANGED,
+        });
+        expect(client.from).toHaveBeenCalledTimes(1);
     });
 });

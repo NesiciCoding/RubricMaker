@@ -104,6 +104,13 @@ export function UsersTab() {
         const result = await updateUserRole(user.id, newRole);
         if (result.success) {
             setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u)));
+            showToast(
+                t('admin.role_change_done', {
+                    name: user.displayName ?? user.email ?? '—',
+                    role: t(`admin.role_${newRole}`),
+                }),
+                'success'
+            );
         } else if (isLastAdminError(result.error)) {
             showToast(t('admin.role_last_admin'), 'error');
         } else {
@@ -186,12 +193,13 @@ export function UsersTab() {
 
 // ─── Schools tab ──────────────────────────────────────────────────────────────
 
-function SchoolsTab() {
+export function SchoolsTab() {
     const { t } = useTranslation();
     const dbStatus = useDbStatus();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { fetchSchools, createSchool, updateSchool, deleteSchool, fetchSchoolMembers, removeSchoolMember } =
         usePlatform();
+    const { showToast } = useToast();
 
     const [schools, setSchools] = useState<SchoolType[]>([]);
     const [loading, setLoading] = useState(true);
@@ -231,7 +239,10 @@ function SchoolsTab() {
         if (s) {
             setNewName('');
             setNewRetention(3);
+            showToast(t('admin.school_created'), 'success');
             await load();
+        } else {
+            showToast(t('admin.school_create_failed'), 'error');
         }
         setCreating(false);
     }
@@ -239,7 +250,11 @@ function SchoolsTab() {
     async function handleUpdateRetention(schoolId: string) {
         const years = editRetention[schoolId];
         if (!years || !Number.isFinite(years) || years < 1 || years > 20) return;
-        await updateSchool(schoolId, { retentionYears: Math.round(years) });
+        const result = await updateSchool(schoolId, { retentionYears: Math.round(years) });
+        showToast(
+            result.success ? t('admin.retention_saved') : t('admin.retention_save_failed'),
+            result.success ? 'success' : 'error'
+        );
         await load();
     }
 
@@ -249,7 +264,11 @@ function SchoolsTab() {
             message: t('admin.btn_delete_confirm'),
         });
         if (!ok) return;
-        await deleteSchool(schoolId);
+        const result = await deleteSchool(schoolId);
+        showToast(
+            result.success ? t('admin.school_deleted') : t('admin.school_delete_failed'),
+            result.success ? 'success' : 'error'
+        );
         await load();
     }
 
@@ -265,8 +284,20 @@ function SchoolsTab() {
         }
     }
 
-    async function handleRemoveMember(schoolId: string, profileId: string) {
-        await removeSchoolMember(schoolId, profileId);
+    async function handleRemoveMember(schoolId: string, member: DbUser) {
+        const ok = await confirm({
+            title: t('admin.remove_member_confirm_title'),
+            message: t('admin.remove_member_confirm', { name: member.displayName ?? member.email ?? member.id }),
+            confirmLabel: t('admin.btn_remove_member'),
+            cancelLabel: t('common.cancel'),
+            danger: true,
+        });
+        if (!ok) return;
+        const result = await removeSchoolMember(schoolId, member.id);
+        showToast(
+            result.success ? t('admin.member_removed') : t('admin.member_remove_failed'),
+            result.success ? 'success' : 'error'
+        );
         const m = await fetchSchoolMembers(schoolId);
         setMembers((prev) => ({ ...prev, [schoolId]: m }));
     }
@@ -425,10 +456,12 @@ function SchoolsTab() {
                                     <span style={{ flex: 1, fontSize: '0.875rem', color: 'var(--text)' }}>
                                         {m.email ?? m.id}
                                     </span>
-                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{m.role}</span>
+                                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                        {t(`admin.role_${m.role}`)}
+                                    </span>
                                     <button
                                         className="btn btn-secondary btn-sm"
-                                        onClick={() => handleRemoveMember(s.id, m.id)}
+                                        onClick={() => handleRemoveMember(s.id, m)}
                                     >
                                         {t('admin.btn_remove_member')}
                                     </button>
@@ -1401,19 +1434,22 @@ function IntegrationsTab() {
 
 // ─── Data tab (student anonymization) ────────────────────────────────────────
 
-function DataTab() {
+export function DataTab() {
     const { t } = useTranslation();
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const { students, anonymizeStudent, deleteStudent } = useStudents();
+    const { classes } = useClasses();
+    const { showToast } = useToast();
 
     const [search, setSearch] = useState('');
+    const [classFilter, setClassFilter] = useState('');
 
-    const filtered = search.trim()
-        ? students.filter((s) => {
-              const q = search.toLowerCase();
-              return s.name.toLowerCase().includes(q) || (s.email ?? '').toLowerCase().includes(q);
-          })
-        : students;
+    const q = search.trim().toLowerCase();
+    const filtered = students.filter(
+        (s) =>
+            (!classFilter || s.classId === classFilter) &&
+            (!q || s.name.toLowerCase().includes(q) || (s.email ?? '').toLowerCase().includes(q))
+    );
 
     async function handleAnonymize(id: string) {
         const ok = await confirm({
@@ -1422,6 +1458,7 @@ function DataTab() {
         });
         if (!ok) return;
         anonymizeStudent(id);
+        showToast(t('admin.anonymize_done'), 'success');
     }
 
     async function handleDelete(id: string) {
@@ -1431,6 +1468,7 @@ function DataTab() {
         });
         if (!ok) return;
         deleteStudent(id);
+        showToast(t('admin.delete_student_done'), 'success');
     }
 
     return (
@@ -1453,8 +1491,23 @@ function DataTab() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder={t('admin.data_search_placeholder')}
+                    aria-label={t('admin.data_search_placeholder')}
                 />
             </div>
+            <select
+                className="input"
+                style={{ maxWidth: 360 }}
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                aria-label={t('admin.data_class_filter')}
+            >
+                <option value="">{t('admin.data_all_classes')}</option>
+                {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                        {c.name}
+                    </option>
+                ))}
+            </select>
 
             {filtered.length === 0 && (
                 <p style={{ color: 'var(--text-muted)' }}>
@@ -1522,12 +1575,15 @@ function DataTab() {
 
 // ─── Retention tab ────────────────────────────────────────────────────────────
 
-function RetentionTab() {
+export function RetentionTab() {
     const { t } = useTranslation();
+    const dbStatus = useDbStatus();
     return (
         <div style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div>
-                <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>{t('admin.retention_desc')}</p>
+                <p style={{ color: 'var(--text)', lineHeight: 1.6 }}>
+                    {dbStatus.isConnected ? t('admin.retention_desc') : t('admin.retention_desc_local')}
+                </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 8 }}>
                     {t('admin.retention_per_school')}
                 </p>

@@ -64,6 +64,7 @@ describe('AdminPage UsersTab role changes (#629)', () => {
 
         await waitFor(() => expect(updateUserRole).toHaveBeenCalledWith('u-teacher', 'admin'));
         await waitFor(() => expect(screen.getAllByRole('combobox')[1]).toHaveValue('admin'));
+        expect(showToast).toHaveBeenCalledWith(expect.stringContaining('admin.role_change_done'), 'success');
     });
 
     it('explains the last-admin guard instead of showing the raw database error', async () => {

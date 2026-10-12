@@ -49,6 +49,9 @@ import type { DatabaseConfig, DbUser, SyncResult } from './types';
 import type { ConvergedPlacementSession } from '../../utils/placementRecovery';
 import { nanoid } from '../../utils/nanoid';
 
+/** A school write that RLS silently filtered to 0 rows (not permitted, or already gone). */
+export const SCHOOL_NOT_CHANGED = 'school_not_changed';
+
 export class SupabaseAdapter {
     private client: SupabaseClient | null = null;
     private userId: string | null = null;
@@ -395,7 +398,7 @@ export class SupabaseAdapter {
             .from('school_members')
             .insert({ school_id: data.id, profile_id: this.userId });
         if (memberError) {
-            await this.client.from('schools').delete().eq('id', data.id);
+            await this.rollbackSchool(data.id, false);
             return null;
         }
 
@@ -404,8 +407,7 @@ export class SupabaseAdapter {
             .update({ school_id: data.id })
             .eq('id', this.userId);
         if (profileError) {
-            await this.client.from('school_members').delete().eq('school_id', data.id).eq('profile_id', this.userId);
-            await this.client.from('schools').delete().eq('id', data.id);
+            await this.rollbackSchool(data.id, true);
             return null;
         }
 
@@ -435,19 +437,33 @@ export class SupabaseAdapter {
         return { success: true };
     }
 
+    /** Undo a half-created school. Logged when it fails, since that leaves an orphan school row. */
+    private async rollbackSchool(schoolId: string, removeMembership: boolean): Promise<void> {
+        if (!this.client || !this.userId) return;
+        if (removeMembership) {
+            await this.client.from('school_members').delete().eq('school_id', schoolId).eq('profile_id', this.userId);
+        }
+        const result = await this.deleteSchool(schoolId);
+        if (!result.success) console.error('[SupabaseAdapter] createSchool rollback failed', schoolId, result.error);
+    }
+
+    // RLS hides rows the caller may not change, so a refused update/delete matches 0 rows without an
+    // error; selecting the touched ids turns that into a failure the UI can report.
     async updateSchool(schoolId: string, updates: { name?: string; retentionYears?: number }): Promise<SyncResult> {
         if (!this.client) return { success: false, error: 'Not connected' };
         const patch: Record<string, unknown> = {};
         if (updates.name !== undefined) patch.name = updates.name;
         if (updates.retentionYears !== undefined) patch.retention_years = updates.retentionYears;
-        const { error } = await this.client.from('schools').update(patch).eq('id', schoolId);
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.client.from('schools').update(patch).eq('id', schoolId).select('id');
+        if (error) return { success: false, error: error.message };
+        return data && data.length > 0 ? { success: true } : { success: false, error: SCHOOL_NOT_CHANGED };
     }
 
     async deleteSchool(schoolId: string): Promise<SyncResult> {
         if (!this.client) return { success: false, error: 'Not connected' };
-        const { error } = await this.client.from('schools').delete().eq('id', schoolId);
-        return error ? { success: false, error: error.message } : { success: true };
+        const { data, error } = await this.client.from('schools').delete().eq('id', schoolId).select('id');
+        if (error) return { success: false, error: error.message };
+        return data && data.length > 0 ? { success: true } : { success: false, error: SCHOOL_NOT_CHANGED };
     }
 
     async fetchSchoolMembers(schoolId: string): Promise<(import('./types').DbUser & { joinedAt: string })[]> {
@@ -476,12 +492,14 @@ export class SupabaseAdapter {
 
     async removeSchoolMember(schoolId: string, profileId: string): Promise<SyncResult> {
         if (!this.client) return { success: false, error: 'Not connected' };
-        const { error } = await this.client
+        const { data: removed, error } = await this.client
             .from('school_members')
             .delete()
             .eq('school_id', schoolId)
-            .eq('profile_id', profileId);
+            .eq('profile_id', profileId)
+            .select('profile_id');
         if (error) return { success: false, error: error.message };
+        if (!removed || removed.length === 0) return { success: false, error: SCHOOL_NOT_CHANGED };
         const { error: profileError } = await this.client
             .from('profiles')
             .update({ school_id: null })
