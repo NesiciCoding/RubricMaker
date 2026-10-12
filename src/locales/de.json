@@ -4501,5 +4501,28 @@
         "notes_label": "Notizen",
         "category_label": "Kategorie",
         "criterion_label": "Verknüpftes Kriterium"
+    },
+    "sharedFeedback": {
+        "invalid_title": "Dieser Feedback-Link kann nicht geöffnet werden",
+        "invalid_body": "Der Link ist unvollständig oder beschädigt. Bitte deine Lehrkraft, ihn erneut zu senden.",
+        "graded_on": "Bewertet am {{date}}",
+        "grade_label": "Note:",
+        "points": "{{score}} / {{max}} Punkte",
+        "feedback_only_notice": "Deine Lehrkraft hat Feedback freigegeben. Deine Note wird sichtbar, sobald sie veröffentlicht ist.",
+        "your_level": "Deine Stufe",
+        "levels_label": "Stufen für {{criterion}}",
+        "audio_feedback": "Audio-Feedback",
+        "audio_feedback_for": "Audio-Feedback zu {{criterion}}",
+        "overall_feedback": "Gesamtfeedback",
+        "footer": "Erstellt mit RubricMaker · Fragen? Wende dich an deine Lehrkraft."
+    },
+    "rubricPreview": {
+        "invalid_title": "Dieser Rubrik-Link kann nicht geöffnet werden",
+        "invalid_body": "Der Link ist unvollständig oder beschädigt. Bitte deine Lehrkraft, ihn erneut zu senden.",
+        "badge": "Bewertungsrubrik",
+        "weight": "Gewichtung: {{weight}} %",
+        "points_single": "{{points}} Pkt.",
+        "points_range": "{{min}}–{{max}} Pkt.",
+        "footer": "Erstellt mit RubricMaker · Sieh dir diese Rubrik an, bevor du deine Arbeit abgibst."
     }
 }

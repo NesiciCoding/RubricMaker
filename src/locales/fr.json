@@ -4501,5 +4501,28 @@
         "notes_label": "Notes",
         "category_label": "Catégorie",
         "criterion_label": "Critère lié"
+    },
+    "sharedFeedback": {
+        "invalid_title": "Ce lien de retour ne peut pas être ouvert",
+        "invalid_body": "Le lien est incomplet ou endommagé. Demande à ton enseignant de le renvoyer.",
+        "graded_on": "Noté le {{date}}",
+        "grade_label": "Note :",
+        "points": "{{score}} / {{max}} points",
+        "feedback_only_notice": "Ton enseignant a partagé des commentaires. Ta note sera visible dès qu'elle sera publiée.",
+        "your_level": "Ton niveau",
+        "levels_label": "Niveaux pour {{criterion}}",
+        "audio_feedback": "Commentaire audio",
+        "audio_feedback_for": "Commentaire audio pour {{criterion}}",
+        "overall_feedback": "Commentaire général",
+        "footer": "Créé avec RubricMaker · Des questions ? Demande à ton enseignant."
+    },
+    "rubricPreview": {
+        "invalid_title": "Ce lien de rubrique ne peut pas être ouvert",
+        "invalid_body": "Le lien est incomplet ou endommagé. Demande à ton enseignant de le renvoyer.",
+        "badge": "Rubrique d'évaluation",
+        "weight": "Pondération : {{weight}} %",
+        "points_single": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "footer": "Créé avec RubricMaker · Consulte cette rubrique avant de rendre ton travail."
     }
 }
