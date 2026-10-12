@@ -352,6 +352,7 @@ export function reducer(state: StoreData, action: Action): StoreData {
                         globalModifier: payload.globalModifier,
                         overallComment: payload.overallComment,
                         rubricSnapshot: payload.rubricSnapshot,
+                        gradeScaleSnapshot: payload.gradeScaleSnapshot,
                         gradedAt: payload.gradedAt,
                         updatedAt: payload.updatedAt,
                     };

@@ -757,6 +757,8 @@ export interface StudentRubric {
     selfAssessedAt?: string;
     /** Snapshot of the rubric at the time of grading to ensure historical grades do not break */
     rubricSnapshot?: Rubric;
+    /** Grade scale at the time of grading, so editing the scale later doesn't rewrite this grade's letter */
+    gradeScaleSnapshot?: GradeScale;
     /**
      * Links sibling StudentRubric records graded together as one group submission. Saving any
      * member with the same groupId fans its entries out to the rest of the group, scoped per

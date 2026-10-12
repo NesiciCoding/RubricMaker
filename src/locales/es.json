@@ -1747,7 +1747,18 @@
         "footer_options": "Opciones de calificación",
         "student_attachments": "Archivos del alumno",
         "rubric_attachments": "Materiales de la rúbrica",
-        "no_attachments": "Sin archivos adjuntos."
+        "no_attachments": "Sin archivos adjuntos.",
+        "version_banner_rubric_one": "Esta calificación usa la rúbrica tal como era al calificar. Desde entonces ha cambiado {{count}} criterio.",
+        "version_banner_rubric_other": "Esta calificación usa la rúbrica tal como era al calificar. Desde entonces han cambiado {{count}} criterios.",
+        "version_banner_scale": "Esta calificación conserva la escala con la que se puso; la escala se ha modificado desde entonces.",
+        "version_banner_scale_too": "La escala de calificación también se ha modificado.",
+        "version_show_changes": "Ver cambios",
+        "regrade_latest_action": "Recalificar con la última versión",
+        "regrade_latest_title": "¿Recalificar con la última versión?",
+        "regrade_latest_message": "Las puntuaciones se mantienen donde el criterio y el nivel siguen existiendo. Los niveles eliminados se vacían y los criterios nuevos quedan sin calificar. Se usa la escala actual. Guarda para conservar el resultado.",
+        "regrade_latest_done": "Ahora se califica con la última versión. Guarda para conservarla.",
+        "regrade_latest_done_cleared_one": "Ahora se califica con la última versión: {{count}} criterio necesita un nivel nuevo. Guarda para conservarla.",
+        "regrade_latest_done_cleared_other": "Ahora se califica con la última versión: {{count}} criterios necesitan un nivel nuevo. Guarda para conservarla."
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -3885,7 +3896,7 @@
         "da_admin_item_audit": "Pestaña Registro de auditoría — registro filtrable y paginado de quién hizo qué, con detalles: cambios de rol, pertenencia y cambios de centro, uso compartido de rúbricas/clases, cambios en la configuración del sitio, restablecimientos de contraseña, «Eliminar todos mis datos», calificaciones guardadas y exportaciones. Los cambios sensibles los registra la propia base de datos, solo cuando el cambio se ha aplicado de verdad. Los administradores ven todas las entradas; el profesorado, solo las suyas. Se conservan 3 años (admin), 1 año (calificaciones) o 1 mes (exportación/acceso) y luego se eliminan automáticamente.",
         "da_settings_title": "Configuración",
         "da_settings_item_theme": "Tema — oscuro / claro, selector de color de acento, 8 ajustes rápidos predefinidos, o elige un paquete de tema con nombre (Academy, Nature, Midnight, Warm, Slate, Rose) que establece con un clic la tipografía, el acento y el color de exportación.",
-        "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada. Cada escala necesita un rango que empiece en 0 % para que toda puntuación reciba una nota.",
+        "da_settings_item_scales": "Escalas de notas — crea escalas personalizadas (1–10, A–F, etc.) y establece una predeterminada. Cada escala necesita un rango que empiece en 0 % para que toda puntuación reciba una nota. Editar una escala no cambia las calificaciones ya guardadas con ella; conservan su escala hasta que las recalifiques.",
         "da_settings_item_lang": "Idioma — inglés, neerlandés, francés, alemán, español.",
         "da_settings_item_tour": "Recorrido guiado — reiniciar el recorrido de incorporación.",
         "da_settings_item_backup": "Copia de seguridad / restauración — descargar o subir el JSON completo del conjunto de datos.",
@@ -3987,7 +3998,9 @@
         "gr_scoring_item_nhi": "No entregado (menú de ajustes): marca el trabajo como ausente y lo excluye de las estadísticas, el panel y el portal del alumno. Si el alumno ya tiene una calificación, se pide confirmación y se conserva el comentario general existente. Un aviso en la página de calificación permite deshacer la marca; calificar y guardar el trabajo tardío quita la marca automáticamente.",
         "ce_overview_item_achieved": "Alcanzado o en progreso: un nivel solo cuenta como alcanzado cuando la media del alumno llega al umbral de logro de la rúbrica. Por debajo, la lista de alumnos, la vista MCER y el panel muestran el nivel con una insignia discontinua («trabajando hacia»), y las tarjetas de clase solo cuentan niveles alcanzados.",
         "gr_unsaved_note": "Al salir de una página de calificación con cambios sin guardar —desde la barra lateral, el botón Atrás o cerrando la pestaña— se pide confirmación primero. La calificación comparativa y la evaluación entre pares funcionan igual. Guardar, Guardar y siguiente y No entregado guardan antes de continuar, así que no preguntan nada.",
-        "rb_import_export_item_docx": "Importar desde Word o PDF: sube una tabla de rúbrica en .docx o .pdf (criterios en filas, niveles en columnas). Los puntos siguen el encabezado —p. ej. «Bien (3 pts)» o «Débil (1-2 pts)»— o, sin puntos, los nombres de los niveles, de modo que una tabla Insuficiente → Excelente da más puntos a Excelente. Un porcentaje junto a un criterio («Contenido 40 %») pasa a ser su peso. La vista previa muestra los puntos de cada nivel y el peso de cada criterio, con un aviso para todo lo que tuvo que estimar; revísalos antes de pulsar Crear rúbrica."
+        "rb_import_export_item_docx": "Importar desde Word o PDF: sube una tabla de rúbrica en .docx o .pdf (criterios en filas, niveles en columnas). Los puntos siguen el encabezado —p. ej. «Bien (3 pts)» o «Débil (1-2 pts)»— o, sin puntos, los nombres de los niveles, de modo que una tabla Insuficiente → Excelente da más puntos a Excelente. Un porcentaje junto a un criterio («Contenido 40 %») pasa a ser su peso. La vista previa muestra los puntos de cada nivel y el peso de cada criterio, con un aviso para todo lo que tuvo que estimar; revísalos antes de pulsar Crear rúbrica.",
+        "gr_rubric_version_title": "El trabajo calificado conserva su versión de rúbrica",
+        "gr_rubric_version_body": "Una calificación guardada conserva la rúbrica y la escala con las que se puso, así que los cambios posteriores en la rúbrica o en la escala nunca cambian sin aviso una calificación ni la nota que ve el alumno. Si vuelves a abrir una calificación cuya rúbrica o escala ha cambiado desde entonces, un aviso lo indica: Ver cambios muestra las diferencias y Recalificar con la última versión pasa la calificación a la rúbrica y la escala actuales; las puntuaciones se mantienen donde el criterio y el nivel siguen existiendo, los niveles eliminados se vacían para que los vuelvas a elegir y nada cambia hasta que guardes. Para pasar todas las calificaciones de una rúbrica a la vez, elige Actualizar calificaciones cuando el editor de rúbricas lo pregunte tras guardar un cambio."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

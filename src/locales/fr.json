@@ -1747,7 +1747,18 @@
         "footer_options": "Options de notation",
         "student_attachments": "Fichiers de l'élève",
         "rubric_attachments": "Documents de la grille",
-        "no_attachments": "Aucune pièce jointe."
+        "no_attachments": "Aucune pièce jointe.",
+        "version_banner_rubric_one": "Cette note utilise la grille telle qu'elle était lors de la notation. {{count}} critère a changé depuis.",
+        "version_banner_rubric_other": "Cette note utilise la grille telle qu'elle était lors de la notation. {{count}} critères ont changé depuis.",
+        "version_banner_scale": "Cette note conserve le barème avec lequel elle a été attribuée ; le barème a été modifié depuis.",
+        "version_banner_scale_too": "Le barème a aussi été modifié.",
+        "version_show_changes": "Voir les modifications",
+        "regrade_latest_action": "Renoter avec la dernière version",
+        "regrade_latest_title": "Renoter avec la dernière version ?",
+        "regrade_latest_message": "Les scores sont conservés lorsque le critère et le niveau existent encore. Les niveaux supprimés sont effacés et les nouveaux critères ne sont pas encore notés. Le barème actuel est utilisé. Enregistrez pour conserver le résultat.",
+        "regrade_latest_done": "Notation sur la dernière version. Enregistrez pour la conserver.",
+        "regrade_latest_done_cleared_one": "Notation sur la dernière version — {{count}} critère doit recevoir un nouveau niveau. Enregistrez pour la conserver.",
+        "regrade_latest_done_cleared_other": "Notation sur la dernière version — {{count}} critères doivent recevoir un nouveau niveau. Enregistrez pour la conserver."
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -3885,7 +3896,7 @@
         "da_admin_item_audit": "Onglet Journal d'audit — journal filtrable et paginé indiquant qui a fait quoi, avec les détails : changements de rôle, adhésion et modifications d'école, partage de grilles/classes, modifications des paramètres du site, réinitialisations de mot de passe, « Supprimer toutes mes données », notes enregistrées et exports. Les changements sensibles sont enregistrés par la base de données elle-même, uniquement s'ils ont réellement eu lieu. Les admins voient toutes les entrées, les enseignants les leurs. Conservation : 3 ans (admin), 1 an (notes), 1 mois (export/authentification), puis suppression automatique.",
         "da_settings_title": "Paramètres",
         "da_settings_item_theme": "Thème — sombre / clair, sélecteur de couleur d'accent, 8 préréglages rapides, ou choisissez un ensemble de thème nommé (Academy, Nature, Midnight, Warm, Slate, Rose) qui définit en un clic la police, l'accent et la couleur d'export.",
-        "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut. Chaque échelle doit avoir une plage commençant à 0 % pour que chaque score reçoive une note.",
+        "da_settings_item_scales": "Barèmes — créez des échelles personnalisées (1–10, A–F, etc.) et définissez une valeur par défaut. Chaque échelle doit avoir une plage commençant à 0 % pour que chaque score reçoive une note. Modifier un barème ne change pas les notes déjà enregistrées avec lui ; elles conservent leur barème jusqu'à ce que vous les renotiez.",
         "da_settings_item_lang": "Langue — anglais, néerlandais, français, allemand, espagnol.",
         "da_settings_item_tour": "Visite guidée — relancer la visite d'intégration.",
         "da_settings_item_backup": "Sauvegarde / restauration — télécharger ou téléverser le JSON complet de l'ensemble de données.",
@@ -3987,7 +3998,9 @@
         "gr_scoring_item_nhi": "Non rendu (menu des réglages) : marque le travail comme manquant et l'exclut des statistiques, du tableau de bord et du portail élève. Si l'élève a déjà une note, une confirmation est demandée et le commentaire général existant est conservé. Un bandeau sur la page de correction permet d'annuler la marque ; noter et enregistrer le travail rendu en retard retire la marque automatiquement.",
         "ce_overview_item_achieved": "Atteint ou visé : un niveau ne compte comme atteint que lorsque la moyenne de l'élève atteint le seuil de réussite de la grille. En dessous, la liste des élèves, l'aperçu CECRL et le tableau de bord affichent le niveau avec un badge en pointillés (« vise »), et les cartes de classe ne comptent que les niveaux atteints.",
         "gr_unsaved_note": "Quitter une page de correction avec des modifications non enregistrées — par la barre latérale, le bouton Retour ou en fermant l'onglet — demande d'abord une confirmation. La correction comparative et l'évaluation par les pairs fonctionnent de la même manière. Enregistrer, Enregistrer et suivant et Non rendu enregistrent avant de continuer, sans rien demander.",
-        "rb_import_export_item_docx": "Import depuis Word ou PDF : téléversez un tableau de grille en .docx ou .pdf (critères en lignes, niveaux en colonnes). Les points suivent l'en-tête — p. ex. « Bien (3 pts) » ou « Faible (1-2 pts) » — ou, sans points, les noms des niveaux : un tableau Insuffisant → Excellent donne le plus de points à Excellent. Un pourcentage à côté d'un critère (« Contenu 40 % ») devient sa pondération. L'aperçu affiche les points de chaque niveau et la pondération de chaque critère, avec un avertissement pour tout ce qui a dû être deviné ; vérifiez-les avant de cliquer sur Créer la grille."
+        "rb_import_export_item_docx": "Import depuis Word ou PDF : téléversez un tableau de grille en .docx ou .pdf (critères en lignes, niveaux en colonnes). Les points suivent l'en-tête — p. ex. « Bien (3 pts) » ou « Faible (1-2 pts) » — ou, sans points, les noms des niveaux : un tableau Insuffisant → Excellent donne le plus de points à Excellent. Un pourcentage à côté d'un critère (« Contenu 40 % ») devient sa pondération. L'aperçu affiche les points de chaque niveau et la pondération de chaque critère, avec un avertissement pour tout ce qui a dû être deviné ; vérifiez-les avant de cliquer sur Créer la grille.",
+        "gr_rubric_version_title": "Le travail noté conserve sa version de grille",
+        "gr_rubric_version_body": "Une note enregistrée conserve la grille et le barème avec lesquels elle a été attribuée : les modifications ultérieures de la grille ou du barème ne changent donc jamais en silence une note ou la lettre que voit l'élève. Si vous rouvrez une note dont la grille ou le barème a changé depuis, un bandeau l'indique : Voir les modifications liste les différences, et Renoter avec la dernière version passe la note sur la grille et le barème actuels — les scores sont conservés lorsque le critère et le niveau existent encore, les niveaux supprimés sont effacés pour que vous les choisissiez à nouveau, et rien ne change avant l'enregistrement. Pour mettre à jour toutes les notes d'une grille en une fois, choisissez Mettre à jour les notes quand l'éditeur de grille le propose après l'enregistrement d'une modification."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

@@ -1747,7 +1747,18 @@
         "footer_options": "Bewertungsoptionen",
         "student_attachments": "Dateien des Schülers",
         "rubric_attachments": "Rastermaterialien",
-        "no_attachments": "Keine Anhänge."
+        "no_attachments": "Keine Anhänge.",
+        "version_banner_rubric_one": "Diese Bewertung nutzt das Raster in der Fassung zum Zeitpunkt der Bewertung. Seitdem hat sich {{count}} Kriterium geändert.",
+        "version_banner_rubric_other": "Diese Bewertung nutzt das Raster in der Fassung zum Zeitpunkt der Bewertung. Seitdem haben sich {{count}} Kriterien geändert.",
+        "version_banner_scale": "Diese Bewertung behält die Notenskala, mit der sie vergeben wurde; die Skala wurde seitdem geändert.",
+        "version_banner_scale_too": "Auch die Notenskala wurde geändert.",
+        "version_show_changes": "Änderungen anzeigen",
+        "regrade_latest_action": "Mit neuester Fassung neu bewerten",
+        "regrade_latest_title": "Mit der neuesten Fassung neu bewerten?",
+        "regrade_latest_message": "Punkte bleiben erhalten, wo Kriterium und Stufe noch existieren. Entfernte Stufen werden geleert, neue Kriterien sind noch unbewertet. Die aktuelle Notenskala wird verwendet. Speichern, um das Ergebnis zu behalten.",
+        "regrade_latest_done": "Jetzt wird mit der neuesten Fassung bewertet. Zum Behalten speichern.",
+        "regrade_latest_done_cleared_one": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterium braucht eine neue Stufe. Zum Behalten speichern.",
+        "regrade_latest_done_cleared_other": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterien brauchen eine neue Stufe. Zum Behalten speichern."
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -3885,7 +3896,7 @@
         "da_admin_item_audit": "Registerkarte Audit-Protokoll — filterbares, seitenweises Protokoll, wer was getan hat, mit Details: Rollenänderungen, Schulmitgliedschaft und Schuländerungen, Freigabe von Rastern/Klassen, Änderungen der Website-Einstellungen, Passwort-Zurücksetzungen, „Alle meine Datenbankdaten löschen“, gespeicherte Bewertungen und Exporte. Sensible Änderungen protokolliert die Datenbank selbst, nur wenn die Änderung tatsächlich wirksam wurde. Admins sehen alle Einträge, Lehrkräfte nur ihre eigenen. Aufbewahrung: 3 Jahre (Admin), 1 Jahr (Noten), 1 Monat (Export/Anmeldung), danach automatische Löschung.",
         "da_settings_title": "Einstellungen",
         "da_settings_item_theme": "Theme — Dunkel / Hell, Akzentfarbwähler, 8 schnelle Voreinstellungen, oder wähle ein benanntes Theme-Bundle (Academy, Nature, Midnight, Warm, Slate, Rose), das mit einem Klick Schriftart, Akzent und Exportfarbe festlegt.",
-        "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest. Jede Skala braucht einen Bereich ab 0 %, damit jedes Ergebnis eine Note erhält.",
+        "da_settings_item_scales": "Notenskalen — erstelle benutzerdefinierte Skalen (1–10, A–F usw.) und lege eine Standardeinstellung fest. Jede Skala braucht einen Bereich ab 0 %, damit jedes Ergebnis eine Note erhält. Das Bearbeiten einer Skala ändert bereits gespeicherte Bewertungen nicht; sie behalten ihre Skala, bis du sie neu bewertest.",
         "da_settings_item_lang": "Sprache — Englisch, Niederländisch, Französisch, Deutsch, Spanisch.",
         "da_settings_item_tour": "Geführte Tour — die Einführungstour neu starten.",
         "da_settings_item_backup": "Sichern / Wiederherstellen — das vollständige Datensatz-JSON herunterladen oder hochladen.",
@@ -3987,7 +3998,9 @@
         "gr_scoring_item_nhi": "Nicht abgegeben (Zahnradmenü): markiert die Arbeit als fehlend und lässt sie in Statistiken, Dashboard und Schülerportal außen vor. Hat die Person bereits eine Bewertung, wird um Bestätigung gebeten, und ein vorhandener Gesamtkommentar bleibt erhalten. Ein Hinweis auf der Bewertungsseite macht die Markierung rückgängig; die verspätete Arbeit bewerten und speichern hebt die Markierung automatisch auf.",
         "ce_overview_item_achieved": "Erreicht vs. arbeitet darauf hin: Ein Niveau gilt erst als erreicht, wenn der Durchschnitt der Person die Erreichungsschwelle des Rasters erreicht. Darunter zeigen die Schülerliste, die GER-Übersicht und das Dashboard das Niveau als gestricheltes Abzeichen („arbeitet darauf hin“), und Klassenkarten zählen nur erreichte Niveaus.",
         "gr_unsaved_note": "Wenn Sie eine Bewertungsseite mit nicht gespeicherten Änderungen verlassen — über die Seitenleiste, die Zurück-Schaltfläche oder durch Schließen des Tabs —, werden Sie zuerst um Bestätigung gebeten. Vergleichendes Bewerten und Peer-Review funktionieren genauso. Speichern, Speichern & Weiter und Nicht abgegeben speichern vorher und fragen daher nicht.",
-        "rb_import_export_item_docx": "Import aus Word oder PDF: Laden Sie eine Rastertabelle als .docx oder .pdf hoch (Kriterien in Zeilen, Stufen in Spalten). Die Punkte folgen der Kopfzeile — z. B. „Gut (3 P.)“ oder „Schwach (1-2 P.)“ — oder, ohne Punkte, den Stufennamen, sodass eine Tabelle von Mangelhaft → Ausgezeichnet die meisten Punkte an Ausgezeichnet vergibt. Prozentangaben neben einem Kriterium („Inhalt 40 %“) werden zu dessen Gewichtung. Die Vorschau zeigt die Punkte jeder Stufe und die Gewichtung jedes Kriteriums sowie eine Warnung für alles Geschätzte; prüfen Sie sie, bevor Sie auf Rubric erstellen klicken."
+        "rb_import_export_item_docx": "Import aus Word oder PDF: Laden Sie eine Rastertabelle als .docx oder .pdf hoch (Kriterien in Zeilen, Stufen in Spalten). Die Punkte folgen der Kopfzeile — z. B. „Gut (3 P.)“ oder „Schwach (1-2 P.)“ — oder, ohne Punkte, den Stufennamen, sodass eine Tabelle von Mangelhaft → Ausgezeichnet die meisten Punkte an Ausgezeichnet vergibt. Prozentangaben neben einem Kriterium („Inhalt 40 %“) werden zu dessen Gewichtung. Die Vorschau zeigt die Punkte jeder Stufe und die Gewichtung jedes Kriteriums sowie eine Warnung für alles Geschätzte; prüfen Sie sie, bevor Sie auf Rubric erstellen klicken.",
+        "gr_rubric_version_title": "Bewertete Arbeiten behalten ihre Rasterfassung",
+        "gr_rubric_version_body": "Eine gespeicherte Bewertung behält das Raster und die Notenskala, mit denen sie vergeben wurde. Spätere Änderungen am Raster oder an der Skala verändern daher nie unbemerkt eine Bewertung oder die Note, die Schüler sehen. Öffnest du eine Bewertung, deren Raster oder Skala sich seitdem geändert hat, weist ein Banner darauf hin: Änderungen anzeigen listet die Unterschiede auf, und Mit neuester Fassung neu bewerten überträgt die Bewertung auf das aktuelle Raster und die aktuelle Skala — Punkte bleiben erhalten, wo Kriterium und Stufe noch existieren, entfernte Stufen werden zur Neuauswahl geleert, und nichts ändert sich, bevor du speicherst. Um alle Bewertungen eines Rasters auf einmal umzustellen, wähle Noten aktualisieren, wenn der Raster-Editor nach dem Speichern einer Änderung danach fragt."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

@@ -228,6 +228,9 @@ export function calcGradeSummary(
     scale: GradeScale | null,
     rubric?: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'>
 ): GradeSummary {
+    // A grade keeps the scale it was given with; only records saved before snapshots existed fall
+    // back to the caller's (live) scale.
+    const gradeScale = sr.gradeScaleSnapshot ?? scale;
     const raw = calcRawScore(sr.entries, criteria);
     const calculatedMax = calcMaxRawScore(criteria);
 
@@ -263,8 +266,8 @@ export function calcGradeSummary(
         percentage: pct,
         modifiedPercentage: modified,
         modifiedPoints,
-        letterGrade: scale ? calcLetterGrade(modified, scale) : '—',
-        gradeColor: scale ? calcGradeColor(modified, scale) : '#6b7280',
+        letterGrade: gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
+        gradeColor: gradeScale ? calcGradeColor(modified, gradeScale) : '#6b7280',
         gradedCount,
         totalCriteria: criteria.length,
     };

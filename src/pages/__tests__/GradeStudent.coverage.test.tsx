@@ -19,6 +19,7 @@ import type {
     Rubric,
     RubricCriterion,
     Student,
+    StudentRubric,
 } from '../../types';
 
 // ---- Hoisted mock state (vi.mock factories are hoisted above imports) ----
@@ -2117,5 +2118,112 @@ describe('GradeStudent coverage', () => {
         fireEvent.click(screen.getByText('coGrading.action_co_grade'));
         await waitFor(() => expect(screen.getByRole('option', { name: 'jones@school.edu' })).toBeInTheDocument());
         expect(screen.getByRole('option', { name: 'u3' })).toBeInTheDocument();
+    });
+});
+
+describe('GradeStudent rubric version (#639)', () => {
+    const editedRubric: Rubric = {
+        ...mockRubric,
+        criteria: [
+            {
+                ...mockRubric.criteria[0],
+                levels: [
+                    { id: 'l1', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] },
+                    { id: 'l3', label: 'Solid', minPoints: 60, maxPoints: 89, description: '', subItems: [] },
+                ],
+            },
+        ],
+    };
+    const editedScale: GradeScale = { ...mockGradeScale, ranges: [{ min: 0, max: 100, label: 'B', color: '#000' }] };
+
+    beforeEach(async () => {
+        Element.prototype.scrollIntoView = vi.fn();
+        mockSaveStudentRubric.mockClear();
+        mockShowToast.mockClear();
+        mockRubricsArr[0] = mockRubric;
+        mockGradeScalesArr[0] = mockGradeScale;
+        GradeStudentComp = (await import('../GradeStudent')).default;
+    });
+
+    afterEach(() => {
+        mockRubricsArr[0] = mockRubric;
+        mockGradeScalesArr[0] = mockGradeScale;
+        mockStudentRubricsArr = [];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+    });
+
+    function seed(sr: Record<string, unknown>) {
+        mockStudentRubricsArr = [{ ...baseSR, ...sr }] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+    }
+
+    it('shows no banner when the graded snapshot matches the live rubric and scale', () => {
+        seed({ rubricSnapshot: mockRubric, gradeScaleSnapshot: mockGradeScale });
+        renderPage();
+        expect(screen.queryByText('gradeStudent.regrade_latest_action')).not.toBeInTheDocument();
+    });
+
+    it('keeps the graded version, lists the changes and regrades on the latest version on request', async () => {
+        mockRubricsArr[0] = editedRubric;
+        seed({ rubricSnapshot: mockRubric, gradeScaleSnapshot: mockGradeScale });
+        renderPage();
+
+        expect(screen.getByText('gradeStudent.version_banner_rubric:{"count":1}')).toBeInTheDocument();
+        // Still showing the level the student was graded on, which the live rubric no longer has.
+        expect(screen.getAllByText('Good').length).toBeGreaterThan(0);
+
+        fireEvent.click(screen.getByText('gradeStudent.version_show_changes'));
+        expect(screen.getByText('rubricBuilder.version_diff')).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('common.close'));
+
+        fireEvent.click(screen.getByText('gradeStudent.regrade_latest_action'));
+        const buttons = await screen.findAllByText('gradeStudent.regrade_latest_action');
+        fireEvent.click(buttons[buttons.length - 1]);
+
+        await waitFor(() =>
+            expect(mockShowToast).toHaveBeenCalledWith(
+                'gradeStudent.regrade_latest_done_cleared:{"count":1}',
+                'warning'
+            )
+        );
+        expect(screen.queryByText('gradeStudent.version_show_changes')).not.toBeInTheDocument();
+        expect(screen.getAllByText('Solid').length).toBeGreaterThan(0);
+
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        const saved = mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric;
+        expect(saved.rubricSnapshot?.criteria[0].levels.map((l) => l.id)).toEqual(['l1', 'l3']);
+        expect(saved.entries[0].levelId).toBeNull();
+        expect(saved.gradeScaleSnapshot).toEqual(mockGradeScale);
+    });
+
+    it('cancelling the regrade keeps the graded version', async () => {
+        mockRubricsArr[0] = editedRubric;
+        seed({ rubricSnapshot: mockRubric });
+        renderPage();
+        fireEvent.click(screen.getByText('gradeStudent.regrade_latest_action'));
+        fireEvent.click(await screen.findByText('common.cancel'));
+        await waitFor(() => expect(screen.getByText('gradeStudent.version_show_changes')).toBeInTheDocument());
+        expect(mockShowToast).not.toHaveBeenCalled();
+    });
+
+    it('keeps the saved grade scale when the scale is edited, and regrading adopts the new one', async () => {
+        mockGradeScalesArr[0] = editedScale;
+        seed({ rubricSnapshot: mockRubric, gradeScaleSnapshot: mockGradeScale });
+        renderPage();
+
+        expect(screen.getByText('gradeStudent.version_banner_scale')).toBeInTheDocument();
+        expect(screen.queryByText('gradeStudent.version_show_changes')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByText('gradeStudent.action_save')[0]);
+        expect((mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric).gradeScaleSnapshot).toEqual(
+            mockGradeScale
+        );
+
+        fireEvent.click(screen.getByText('gradeStudent.regrade_latest_action'));
+        const buttons = await screen.findAllByText('gradeStudent.regrade_latest_action');
+        fireEvent.click(buttons[buttons.length - 1]);
+        await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('gradeStudent.regrade_latest_done', 'success'));
+        fireEvent.click(screen.getAllByText(/gradeStudent\.action_save/)[0]);
+        expect((mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric).gradeScaleSnapshot).toEqual(editedScale);
     });
 });

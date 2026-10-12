@@ -1747,7 +1747,18 @@
         "footer_options": "Beoordelingsopties",
         "student_attachments": "Bestanden van de leerling",
         "rubric_attachments": "Rubricmateriaal",
-        "no_attachments": "Geen bijlagen."
+        "no_attachments": "Geen bijlagen.",
+        "version_banner_rubric_one": "Deze beoordeling gebruikt de rubric zoals die was bij het beoordelen. Sindsdien is {{count}} criterium gewijzigd.",
+        "version_banner_rubric_other": "Deze beoordeling gebruikt de rubric zoals die was bij het beoordelen. Sindsdien zijn {{count}} criteria gewijzigd.",
+        "version_banner_scale": "Deze beoordeling houdt de cijferschaal waarmee ze is gegeven; de schaal is sindsdien aangepast.",
+        "version_banner_scale_too": "De cijferschaal is ook aangepast.",
+        "version_show_changes": "Wijzigingen tonen",
+        "regrade_latest_action": "Opnieuw beoordelen op nieuwste versie",
+        "regrade_latest_title": "Opnieuw beoordelen op de nieuwste versie?",
+        "regrade_latest_message": "Scores blijven staan waar het criterium en het niveau nog bestaan. Verwijderde niveaus worden leeggemaakt en nieuwe criteria zijn nog niet beoordeeld. De huidige cijferschaal wordt gebruikt. Sla op om het resultaat te bewaren.",
+        "regrade_latest_done": "Je beoordeelt nu op de nieuwste versie. Sla op om dit te bewaren.",
+        "regrade_latest_done_cleared_one": "Je beoordeelt nu op de nieuwste versie — {{count}} criterium heeft een nieuw niveau nodig. Sla op om dit te bewaren.",
+        "regrade_latest_done_cleared_other": "Je beoordeelt nu op de nieuwste versie — {{count}} criteria hebben een nieuw niveau nodig. Sla op om dit te bewaren."
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -3885,7 +3896,7 @@
         "da_admin_item_audit": "Tabblad Auditlog — filterbaar logboek per pagina met wie wat deed, inclusief details: rolwijzigingen, schoollidmaatschap en schoolwijzigingen, delen van rubrics/klassen, wijzigingen in site-instellingen, wachtwoordresets, \"Al mijn databasegegevens verwijderen\", opgeslagen cijfers en exports. Gevoelige wijzigingen worden door de database zelf vastgelegd, alleen als de wijziging echt is doorgevoerd. Beheerders zien alle regels, docenten alleen hun eigen. Regels worden 3 jaar (beheer), 1 jaar (cijfers) of 1 maand (export/inloggen) bewaard en daarna automatisch verwijderd.",
         "da_settings_title": "Instellingen",
         "da_settings_item_theme": "Thema — donker / licht, accentkleurkiezer, 8 snelle voorinstellingen, of kies een benoemde themabundel (Academy, Nature, Midnight, Warm, Slate, Rose) die met één klik lettertype, accent en exportkleur instelt.",
-        "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in. Elke schaal heeft een bereik nodig dat bij 0% begint, zodat elke score een cijfer krijgt.",
+        "da_settings_item_scales": "Cijferschalen — maak aangepaste schalen (1–10, A–F, enz.) en stel een standaard in. Elke schaal heeft een bereik nodig dat bij 0% begint, zodat elke score een cijfer krijgt. Een schaal aanpassen verandert reeds opgeslagen beoordelingen niet; die houden hun schaal tot je ze opnieuw beoordeelt.",
         "da_settings_item_lang": "Taal — Engels, Nederlands, Frans, Duits, Spaans.",
         "da_settings_item_tour": "Geleide rondleiding — start de onboarding-rondleiding opnieuw.",
         "da_settings_item_backup": "Backup / herstel — download of upload de volledige dataset-JSON.",
@@ -3987,7 +3998,9 @@
         "gr_scoring_item_nhi": "Niet ingeleverd (tandwielmenu): markeert het werk als ontbrekend en laat het buiten statistieken, het dashboard en het leerlingportaal. Heeft de leerling al een cijfer, dan wordt om bevestiging gevraagd en blijft een bestaande algemene opmerking staan. Een melding op de beoordelingspagina biedt \"Niet ingeleverd ongedaan maken\"; het te late werk beoordelen en opslaan haalt de markering automatisch weg.",
         "ce_overview_item_achieved": "Behaald vs. werkt toe naar: een niveau telt pas als behaald wanneer het gemiddelde van de leerling de behaaldrempel van de rubric haalt. Daaronder tonen de leerlingenlijst, het CEFR-overzicht en het dashboard het niveau als gestippeld label (\"werkt toe naar\"), en de klaskaarten tellen alleen behaalde niveaus.",
         "gr_unsaved_note": "Verlaat je een beoordelingspagina met niet-opgeslagen wijzigingen — via de zijbalk, de knop Terug of door het tabblad te sluiten — dan wordt eerst om bevestiging gevraagd. Vergelijkend beoordelen en peer review werken hetzelfde. Opslaan, Opslaan & volgende en Niet ingeleverd slaan eerst op en vragen dus niets.",
-        "rb_import_export_item_docx": "Importeren uit Word of pdf: upload een rubrictabel als .docx of .pdf (criteria in rijen, niveaus in kolommen). De punten volgen de kop — bijv. \"Goed (3 pnt)\" of \"Zwak (1-2 pnt)\" — of, zonder punten, de niveaunamen, zodat een tabel van Onvoldoende → Uitstekend de meeste punten aan Uitstekend geeft. Percentages naast een criterium (\"Inhoud 40%\") worden de weging. Het voorbeeld toont de punten van elk niveau en de weging van elk criterium, plus een waarschuwing voor alles wat geschat moest worden; controleer ze voordat je op Rubric maken klikt."
+        "rb_import_export_item_docx": "Importeren uit Word of pdf: upload een rubrictabel als .docx of .pdf (criteria in rijen, niveaus in kolommen). De punten volgen de kop — bijv. \"Goed (3 pnt)\" of \"Zwak (1-2 pnt)\" — of, zonder punten, de niveaunamen, zodat een tabel van Onvoldoende → Uitstekend de meeste punten aan Uitstekend geeft. Percentages naast een criterium (\"Inhoud 40%\") worden de weging. Het voorbeeld toont de punten van elk niveau en de weging van elk criterium, plus een waarschuwing voor alles wat geschat moest worden; controleer ze voordat je op Rubric maken klikt.",
+        "gr_rubric_version_title": "Beoordeeld werk houdt zijn rubricversie",
+        "gr_rubric_version_body": "Een opgeslagen beoordeling houdt de rubric en cijferschaal waarmee ze is gegeven, zodat latere wijzigingen aan de rubric of de schaal nooit ongemerkt een beoordeling of het cijfer dat de leerling ziet veranderen. Open je een beoordeling waarvan de rubric of schaal sindsdien is gewijzigd, dan meldt een banner dat: Wijzigingen tonen laat zien wat er anders is, en Opnieuw beoordelen op nieuwste versie zet de beoordeling over naar de huidige rubric en schaal — scores blijven staan waar het criterium en het niveau nog bestaan, verwijderde niveaus worden leeggemaakt zodat je opnieuw kunt kiezen, en er verandert niets tot je opslaat. Wil je alle beoordelingen van een rubric in één keer overzetten, kies dan Cijfers bijwerken wanneer de Rubricbouwer daarom vraagt nadat je een wijziging opslaat."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

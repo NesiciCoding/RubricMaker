@@ -353,8 +353,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         // v8 ignore next 1 -- the save button only renders once every student/score pair is set
         if (!srA || !srB || !studentA || !studentB || !rubric) return;
         const snap = JSON.parse(JSON.stringify(rubric));
-        const savedSrA = { ...srA, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
-        const savedSrB = { ...srB, gradedAt: new Date().toISOString(), rubricSnapshot: snap };
+        const snapScaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
+        const snapScale =
+            snapScaleId === 'none' ? null : (gradeScales.find((g) => g.id === snapScaleId) ?? gradeScales[0]);
+        const gradeScaleSnapshot = snapScale ? JSON.parse(JSON.stringify(snapScale)) : undefined;
+        const gradedAt = new Date().toISOString();
+        const savedSrA = { ...srA, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
+        const savedSrB = { ...srB, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
         saveStudentRubric(savedSrA);
         saveStudentRubric(savedSrB);
         // Only a completed (saved) comparison counts against the per-student cap — an abandoned
