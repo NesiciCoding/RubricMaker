@@ -6,7 +6,7 @@ import type { AppSettings } from '../../../types';
 import type { StoreData } from '../../../store/storage';
 import Sidebar from '../Sidebar';
 
-let mockUserRole: string = 'user';
+let mockUserRole: string | undefined = 'user';
 let mockNotificationCount = 0;
 let mockModerationCount = 0;
 const mockSignOut = vi.fn();
@@ -131,6 +131,12 @@ describe('Sidebar', () => {
 
     it('shows admin link for admin user', () => {
         mockUserRole = 'admin';
+        renderSidebar();
+        expect(screen.getByText('admin.title')).toBeInTheDocument();
+    });
+
+    it('shows admin link when the role is unset, matching what Settings shows (#641)', () => {
+        mockUserRole = undefined;
         renderSidebar();
         expect(screen.getByText('admin.title')).toBeInTheDocument();
     });

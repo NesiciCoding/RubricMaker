@@ -35,6 +35,7 @@ import { useNotificationFeed } from '../../hooks/useNotificationFeed';
 import { usePageTourRegistry } from '../../context/TourContext';
 import { usePlatform } from '../../context/AppContext';
 import { isLocalMode } from '../../store/storage';
+import { resolveUserRole } from '../../utils/userRole';
 
 interface SidebarProps {
     mobileOpen?: boolean;
@@ -77,7 +78,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         userRole: s.settings.userRole,
     }));
 
-    const isAdmin = userRole === 'admin';
+    const isAdmin = resolveUserRole(userRole) === 'admin';
     const location = useLocation();
 
     // Same active-filtering the roster domain hooks applied: soft-deleted (archived)
