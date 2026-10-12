@@ -16,6 +16,19 @@ import { encodeEssayAssignment } from '../utils/shareCode';
 import { decodeEssaySubmission } from '../utils/shareCode';
 import type { EssayAssignment } from '../types';
 import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../utils/dateInput';
+import { validateEssayConfig } from '../utils/essayUtils';
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+
+function FieldError({ id, messageKey }: { id: string; messageKey?: string }) {
+    const { t } = useTranslation();
+    if (!messageKey) return null;
+    return (
+        <div id={id} role="alert" className="text-xs" style={{ color: 'var(--red)', marginTop: 4 }}>
+            {t(messageKey)}
+        </div>
+    );
+}
 
 export default function EssayBuilderPage() {
     const { teacherKey: teacherKeyParam } = useParams<{ teacherKey?: string }>();
@@ -68,6 +81,24 @@ export default function EssayBuilderPage() {
 
     const teacherKeyRef = useMemo(() => teacherKeyParam ?? nanoid(), [teacherKeyParam]);
 
+    // A new essay only persists once students are assigned, so leaving with typed edits loses them.
+    const formSnapshot = JSON.stringify([
+        title,
+        prompt,
+        rubricId,
+        minWords,
+        maxWords,
+        timeLimitMinutes,
+        requireSEB,
+        readOnlyAfterSubmit,
+        expiresAt,
+    ]);
+    const [savedSnapshot, setSavedSnapshot] = useState(formSnapshot);
+    const { dialogProps: unsavedDialogProps, allowNavigation } = useUnsavedChangesGuard(formSnapshot !== savedSnapshot);
+    const [showTitleError, setShowTitleError] = useState(false);
+    const configErrors = validateEssayConfig({ title, minWords, maxWords, timeLimitMinutes });
+    const configInvalid = Object.keys(configErrors).length > 0;
+
     const [pickClassOpen, setPickClassOpen] = useState(false);
     const [assignTargets, setAssignTargets] = useState<{ id: string; name: string }[] | null>(null);
     const [slipSheetData, setSlipSheetData] = useState<{
@@ -98,7 +129,10 @@ export default function EssayBuilderPage() {
     const handleSave = useCallback(() => {
         /* v8 ignore next -- provably dead: the save button only renders when `existing` exists, which requires teacherKeyParam */
         if (!teacherKeyParam) return;
+        setShowTitleError(true);
+        if (configInvalid) return;
         updateEssayGroup(teacherKeyParam, buildPatch());
+        setSavedSnapshot(formSnapshot);
         showToast(t('essays.save'), 'success');
         // buildPatch/updateEssayGroup/showToast are intentionally excluded (stable
         // context refs / intentionally recreated); `t` IS included so the save-toast
@@ -115,6 +149,8 @@ export default function EssayBuilderPage() {
         requireSEB,
         readOnlyAfterSubmit,
         expiresAt,
+        configInvalid,
+        formSnapshot,
         t,
     ]);
 
@@ -131,7 +167,10 @@ export default function EssayBuilderPage() {
 
     const handleAssignToStudents = useCallback(
         (assignment: EssayAssignment, classStudents: { id: string; name: string }[]) => {
-            if (teacherKeyParam) updateEssayGroup(teacherKeyParam, buildPatch());
+            if (teacherKeyParam) {
+                updateEssayGroup(teacherKeyParam, buildPatch());
+                setSavedSnapshot(formSnapshot);
+            }
 
             const alreadyAssigned = new Set(rows.map((r) => r.studentId));
             const newRows = classStudents
@@ -149,10 +188,11 @@ export default function EssayBuilderPage() {
             setAssignTargets(null);
 
             if (!teacherKeyParam) {
+                allowNavigation();
                 navigate(`/essays/${teacherKeyRef}`, { replace: true });
             }
         },
-        [teacherKeyParam, rows, addEssayAssignments, navigate, teacherKeyRef] // eslint-disable-line react-hooks/exhaustive-deps
+        [teacherKeyParam, rows, addEssayAssignments, navigate, teacherKeyRef, formSnapshot, allowNavigation] // eslint-disable-line react-hooks/exhaustive-deps
     );
 
     const buildEssayLink = useCallback(
@@ -254,14 +294,20 @@ export default function EssayBuilderPage() {
                 <div className="card" data-tour="eb-prompt">
                     <h3 style={{ marginTop: 0 }}>{t('essays.prompt_editor_label')}</h3>
                     <div className="form-group">
-                        <label className="form-label">{t('essays.title_label')}</label>
+                        <label className="form-label" htmlFor="eb-title">
+                            {t('essays.title_label')}
+                        </label>
                         <input
+                            id="eb-title"
                             type="text"
                             className="form-input"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder={t('essays.title_label')}
+                            aria-invalid={(showTitleError && !!configErrors.title) || undefined}
+                            aria-describedby={showTitleError && configErrors.title ? 'eb-title-error' : undefined}
                         />
+                        <FieldError id="eb-title-error" messageKey={showTitleError ? configErrors.title : undefined} />
                     </div>
                     <div className="form-group">
                         <label className="form-label" htmlFor="eb-prompt-body">
@@ -284,11 +330,15 @@ export default function EssayBuilderPage() {
                             <input
                                 id="eb-min-words"
                                 type="number"
-                                min={0}
+                                min={1}
+                                step={1}
                                 className="form-input"
                                 value={minWords}
                                 onChange={(e) => setMinWords(e.target.value)}
+                                aria-invalid={!!configErrors.minWords || undefined}
+                                aria-describedby={configErrors.minWords ? 'eb-min-words-error' : undefined}
                             />
+                            <FieldError id="eb-min-words-error" messageKey={configErrors.minWords} />
                         </div>
                         <div className="form-group" style={{ flex: '1 1 140px' }}>
                             <label className="form-label" htmlFor="eb-max-words">
@@ -297,11 +347,15 @@ export default function EssayBuilderPage() {
                             <input
                                 id="eb-max-words"
                                 type="number"
-                                min={0}
+                                min={1}
+                                step={1}
                                 className="form-input"
                                 value={maxWords}
                                 onChange={(e) => setMaxWords(e.target.value)}
+                                aria-invalid={!!configErrors.maxWords || undefined}
+                                aria-describedby={configErrors.maxWords ? 'eb-max-words-error' : undefined}
                             />
+                            <FieldError id="eb-max-words-error" messageKey={configErrors.maxWords} />
                         </div>
                         <div className="form-group" style={{ flex: '1 1 140px' }}>
                             <label className="form-label" htmlFor="eb-time-limit">
@@ -310,11 +364,15 @@ export default function EssayBuilderPage() {
                             <input
                                 id="eb-time-limit"
                                 type="number"
-                                min={0}
+                                min={1}
+                                step={1}
                                 className="form-input"
                                 value={timeLimitMinutes}
                                 onChange={(e) => setTimeLimitMinutes(e.target.value)}
+                                aria-invalid={!!configErrors.timeLimitMinutes || undefined}
+                                aria-describedby={configErrors.timeLimitMinutes ? 'eb-time-limit-error' : undefined}
                             />
+                            <FieldError id="eb-time-limit-error" messageKey={configErrors.timeLimitMinutes} />
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -439,8 +497,11 @@ export default function EssayBuilderPage() {
                     )}
                     <button
                         className="btn btn-primary btn-sm"
-                        onClick={() => setPickClassOpen(true)}
-                        disabled={!rubricId || !title.trim()}
+                        onClick={() => {
+                            setShowTitleError(true);
+                            if (!configInvalid) setPickClassOpen(true);
+                        }}
+                        disabled={!rubricId}
                     >
                         <UserPlus size={15} /> {t('essays.assign_to_students')}
                     </button>
@@ -577,6 +638,7 @@ export default function EssayBuilderPage() {
                     </div>
                 </Modal>
             )}
+            <ConfirmDialog {...unsavedDialogProps} />
         </>
     );
 }

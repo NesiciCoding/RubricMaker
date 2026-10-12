@@ -43,3 +43,25 @@ describe('EssayAssignmentModal prompt pre-fill', () => {
         expect(screen.getByLabelText(/prompt_label/)).toHaveValue('');
     });
 });
+
+describe('EssayAssignmentModal word limits (#676)', () => {
+    it('disables assigning while the minimum exceeds the maximum', () => {
+        const onAssign = vi.fn();
+        render(
+            <EssayAssignmentModal
+                rubricId="rubric1"
+                rubricName="Writing Test"
+                studentId="student1"
+                studentName="Jane"
+                onClose={() => {}}
+                onOpenSlipSheet={() => {}}
+                onAssignToStudents={onAssign}
+                classStudents={[{ id: 'student1', name: 'Jane' }]}
+                initialValues={{ title: 'Essay', minWords: 500, maxWords: 100 }}
+            />
+        );
+        expect(screen.getByText('essays.error_min_exceeds_max')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'essays.assign_to_students' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /essay_assignment.copy_link/ })).toBeDisabled();
+    });
+});

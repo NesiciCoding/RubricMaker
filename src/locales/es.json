@@ -3057,7 +3057,10 @@
         "import_wrong_essay": "Este código de entrega pertenece a otro ensayo.",
         "import_success": "Entrega importada",
         "copy_link": "Copiar enlace",
-        "not_found": "No se ha encontrado este ensayo. Puede que se haya eliminado."
+        "not_found": "No se ha encontrado este ensayo. Puede que se haya eliminado.",
+        "error_title_required": "Ponle un título al ensayo.",
+        "error_positive_whole_number": "Introduce un número entero mayor que 0 o déjalo vacío.",
+        "error_min_exceeds_max": "El máximo debe ser al menos igual al número mínimo de palabras."
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",

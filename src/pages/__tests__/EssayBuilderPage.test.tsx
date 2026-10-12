@@ -1,5 +1,6 @@
 import React from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { decodeEssayAssignment } from '../../utils/shareCode';
@@ -186,6 +187,63 @@ describe('EssayBuilderPage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
         // The assignment modal opens for the first un-assigned class student (Alice).
         expect(screen.getByText('essay_assignment.modal_title:{"name":"Alice"}')).toBeInTheDocument();
+    });
+
+    it('blocks saving an empty title with an inline message (#676)', async () => {
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        renderWithRouter(<EssayBuilderPage />);
+        fireEvent.change(screen.getByLabelText('essays.title_label'), { target: { value: '  ' } });
+        fireEvent.click(screen.getByText('essays.save'));
+        expect(mockUpdateEssayGroup).not.toHaveBeenCalled();
+        expect(mockShowToast).not.toHaveBeenCalled();
+        expect(screen.getByText('essays.error_title_required')).toBeInTheDocument();
+        expect(screen.getByLabelText('essays.title_label')).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('blocks saving and assigning when the minimum exceeds the maximum (#676)', async () => {
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        renderWithRouter(<EssayBuilderPage />);
+        fireEvent.change(screen.getByLabelText('essay_assignment.min_words_label'), { target: { value: '500' } });
+        fireEvent.change(screen.getByLabelText('essay_assignment.max_words_label'), { target: { value: '100' } });
+        expect(screen.getByText('essays.error_min_exceeds_max')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('essays.save'));
+        expect(mockUpdateEssayGroup).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByText('essays.assign_to_students'));
+        expect(screen.queryByText('essays.pick_class_title')).toBeNull();
+    });
+
+    it('rejects zero and fractional limits (#676)', async () => {
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        renderWithRouter(<EssayBuilderPage />);
+        fireEvent.change(screen.getByLabelText('essay_assignment.time_limit_label'), { target: { value: '0' } });
+        expect(screen.getByText('essays.error_positive_whole_number')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('essays.save'));
+        expect(mockUpdateEssayGroup).not.toHaveBeenCalled();
+    });
+
+    it('asks before leaving a new essay with typed edits, and not when untouched (#676)', async () => {
+        routeParams = {};
+        const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
+        const makeRouter = () =>
+            createMemoryRouter(
+                [
+                    { path: '/essays/new', element: <EssayBuilderPage /> },
+                    { path: '/essays', element: <div>essay list</div> },
+                ],
+                { initialEntries: ['/essays/new'] }
+            );
+        const untouched = makeRouter();
+        const { unmount } = render(<RouterProvider router={untouched} />);
+        await act(() => untouched.navigate('/essays'));
+        expect(screen.getByText('essay list')).toBeInTheDocument();
+        unmount();
+
+        const router = makeRouter();
+        render(<RouterProvider router={router} />);
+        fireEvent.change(screen.getByLabelText('essays.title_label'), { target: { value: 'Draft' } });
+        await act(() => router.navigate('/essays'));
+        expect(await screen.findByText('common.unsaved_title')).toBeInTheDocument();
+        expect(screen.queryByText('essay list')).toBeNull();
     });
 
     it('opens the import-submission modal', async () => {
