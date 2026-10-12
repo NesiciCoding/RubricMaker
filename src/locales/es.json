@@ -2341,7 +2341,8 @@
         "tab_empty_progress": "Aún no hay datos de progreso: aparecerán cuando se califique tu trabajo.",
         "brand_name": "Rubric Maker",
         "grade_withheld": "Solo comentarios — calificación aún no publicada",
-        "switch_back_to_teacher": "Volver al rol de docente"
+        "switch_back_to_teacher": "Volver al rol de docente",
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % en {{scale}}"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",

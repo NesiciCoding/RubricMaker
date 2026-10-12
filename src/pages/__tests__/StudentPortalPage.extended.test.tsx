@@ -629,6 +629,18 @@ describe('StudentPortalPage extended coverage', () => {
         await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
     });
 
+    it('grade cards show the level reached per criterion and explain the letter grade (#622)', async () => {
+        mockAppValue.studentRubrics = [mockGradedRubric];
+        renderAt('s1');
+        fireEvent.change(screen.getByLabelText('studentPortal.search_placeholder'), { target: { value: 'Essay' } });
+        fireEvent.click(await screen.findByText('Essay Rubric'));
+        expect(
+            screen.getByText('studentPortal.letter_grade_range:{"grade":"A","min":0,"max":100,"scale":"Letter"}')
+        ).toBeInTheDocument();
+        // c2 has a level but no comment: the old card showed nothing for it.
+        expect(screen.getAllByText(/^sharedFeedback\.your_level/).length).toBeGreaterThanOrEqual(2);
+    });
+
     it('renders the self-assessment stat card when self-assessments exist', () => {
         mockAppValue.selfAssessments = [mockSelfAssessment];
         renderAt('s1');

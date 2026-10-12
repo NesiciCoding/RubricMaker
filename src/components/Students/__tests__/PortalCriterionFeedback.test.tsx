@@ -1,0 +1,82 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { PortalCriterionFeedback } from '../PortalCriterionFeedback';
+import type { Rubric } from '../../../types';
+
+vi.mock('react-i18next', () => ({
+    useTranslation: () => ({
+        t: (key: string, opts?: Record<string, unknown>) => (opts ? `${key}:${JSON.stringify(opts)}` : key),
+    }),
+}));
+
+vi.mock('../../../hooks/useFeedbackAudioSrc', () => ({
+    useFeedbackAudioSrc: (dataUrl?: string, path?: string) => dataUrl ?? (path ? `signed:${path}` : undefined),
+}));
+
+const level = (id: string, label: string, description = '') => ({
+    id,
+    label,
+    minPoints: 0,
+    maxPoints: 1,
+    description,
+    subItems: [],
+});
+
+const rubric = {
+    criteria: [
+        { id: 'c1', title: 'Content', description: '', weight: 50, levels: [level('l1', 'Strong', 'Clear argument')] },
+        { id: 'c2', title: 'Language', description: '', weight: 30, levels: [level('l2', 'Basic')] },
+        { id: 'c3', title: 'Layout', description: '', weight: 20, levels: [level('l3', 'Good')] },
+    ],
+} as unknown as Pick<Rubric, 'criteria'>;
+
+describe('PortalCriterionFeedback (#622)', () => {
+    it('shows the level reached even when the criterion has no comment', () => {
+        render(
+            <PortalCriterionFeedback
+                rubric={rubric}
+                entries={[{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }]}
+            />
+        );
+        expect(screen.getByText('Content')).toBeInTheDocument();
+        expect(screen.getByText(/sharedFeedback.your_level.*Strong/)).toBeInTheDocument();
+        expect(screen.getByText('Clear argument')).toBeInTheDocument();
+        expect(screen.queryByText('Language')).toBeNull();
+    });
+
+    it('plays inline and storage-backed voice feedback with an accessible name', () => {
+        render(
+            <PortalCriterionFeedback
+                rubric={rubric}
+                entries={[
+                    {
+                        criterionId: 'c2',
+                        levelId: null,
+                        checkedSubItems: [],
+                        comment: 'Watch tenses',
+                        audioDataUrl: 'data:audio/webm;base64,AA',
+                    },
+                    {
+                        criterionId: 'c3',
+                        levelId: null,
+                        checkedSubItems: [],
+                        comment: '',
+                        audioStoragePath: 'u/clip.webm',
+                    },
+                ]}
+            />
+        );
+        const players = document.querySelectorAll('audio');
+        expect(players).toHaveLength(2);
+        expect(players[0]).toHaveAttribute('src', 'data:audio/webm;base64,AA');
+        expect(players[1]).toHaveAttribute('src', 'signed:u/clip.webm');
+        expect(players[0].getAttribute('aria-label')).toContain('sharedFeedback.audio_feedback_for');
+        expect(screen.getByText('Watch tenses')).toBeInTheDocument();
+    });
+
+    it('renders nothing when no criterion has a level, comment or audio', () => {
+        const { container } = render(<PortalCriterionFeedback rubric={rubric} entries={[]} />);
+        expect(container).toBeEmptyDOMElement();
+    });
+});

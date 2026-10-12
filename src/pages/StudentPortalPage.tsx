@@ -65,6 +65,7 @@ import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
 import StudentDecksSection from '../components/Students/StudentDecksSection';
+import { PortalCriterionFeedback } from '../components/Students/PortalCriterionFeedback';
 import { nanoid } from '../utils/nanoid';
 import type {
     EssayAssignment,
@@ -79,6 +80,7 @@ import type {
     NewsFlash,
     NewsFlashRead,
     InterventionFlag,
+    GradeScale,
 } from '../types';
 import { isLocalMode } from '../store/storage';
 
@@ -279,6 +281,18 @@ export default function StudentPortalPage() {
 
     const student = students.find((s) => s.id === studentId);
     const cls = classes.find((c) => c.id === student?.classId);
+
+    // A bare letter means little to a student; name the band it stands for on its scale.
+    function letterGradeExplanation(letter: string, scale: GradeScale | undefined): string {
+        const range = scale?.ranges.find((r) => r.label === letter);
+        if (!scale || !range) return letter;
+        return t('studentPortal.letter_grade_range', {
+            grade: letter,
+            min: range.min,
+            max: range.max,
+            scale: scale.name,
+        });
+    }
 
     const history = useMemo(() => {
         if (!student) return [];
@@ -1352,7 +1366,7 @@ export default function StudentPortalPage() {
                                                 </div>
                                                 {h.summary.letterGrade && (
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {h.summary.letterGrade}
+                                                        {letterGradeExplanation(h.summary.letterGrade, h.scale)}
                                                     </div>
                                                 )}
                                             </div>
@@ -1373,39 +1387,7 @@ export default function StudentPortalPage() {
                                             <span>{h.sr.overallComment}</span>
                                         </div>
                                     )}
-                                    {/* Criterion-level feedback */}
-                                    {h.sr.entries.some((e) => e.comment) && (
-                                        <div
-                                            style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}
-                                        >
-                                            {h.sr.entries
-                                                .filter((e) => e.comment)
-                                                .map((e) => {
-                                                    const criterion = h.rubric.criteria.find(
-                                                        (c: { id: string }) => c.id === e.criterionId
-                                                    );
-                                                    return (
-                                                        <div
-                                                            key={e.criterionId}
-                                                            style={{
-                                                                fontSize: '0.8rem',
-                                                                padding: '6px 10px',
-                                                                background: 'var(--bg)',
-                                                                borderRadius: 6,
-                                                                borderLeft: '3px solid var(--accent)',
-                                                            }}
-                                                        >
-                                                            {criterion && (
-                                                                <span style={{ fontWeight: 600, marginRight: 6 }}>
-                                                                    {criterion.title}:
-                                                                </span>
-                                                            )}
-                                                            {e.comment}
-                                                        </div>
-                                                    );
-                                                })}
-                                        </div>
-                                    )}
+                                    <PortalCriterionFeedback rubric={h.rubric} entries={h.sr.entries} />
 
                                     {/* Self-assessment */}
                                     {!h.sr.notHandedIn && (

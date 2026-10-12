@@ -2341,7 +2341,8 @@
         "tab_empty_progress": "Nog geen voortgangsgegevens — deze verschijnen zodra je werk is beoordeeld.",
         "brand_name": "Rubric Maker",
         "grade_withheld": "Alleen feedback — cijfer nog niet vrijgegeven",
-        "switch_back_to_teacher": "Terug naar docent"
+        "switch_back_to_teacher": "Terug naar docent",
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}}% op {{scale}}"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
