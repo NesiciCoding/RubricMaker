@@ -158,7 +158,7 @@ describe('EssayBuilderPage', () => {
         routeParams = { teacherKey: 'missing' };
         const { default: EssayBuilderPage } = await import('../EssayBuilderPage');
         renderWithRouter(<EssayBuilderPage />);
-        expect(screen.getByText('essays.no_essays')).toBeInTheDocument();
+        expect(screen.getByText('essays.not_found')).toBeInTheDocument();
     });
 
     it('renders the new-essay form when no teacherKey is present', async () => {

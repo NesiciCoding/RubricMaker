@@ -1873,7 +1873,8 @@
         "standards_step_register": "Registreer op <1>commonstandardsproject.com</1>",
         "standards_step_copy": "Kopieer je API-sleutel uit het ontwikkelaarsdashboard",
         "standards_step_cors": "Voeg je app-URL toe aan de <1>CORS Allowed Origins</1>-lijst",
-        "standards_step_paste": "Plak de sleutel in <1>Instellingen → Standaardenintegratie</1>"
+        "standards_step_paste": "Plak de sleutel in <1>Instellingen → Standaardenintegratie</1>",
+        "not_found": "Deze rubriek is niet gevonden. Mogelijk is hij verwijderd."
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -3055,7 +3056,8 @@
         "import_error": "Deze code kon niet worden gelezen. Controleer de code en probeer het opnieuw.",
         "import_wrong_essay": "Deze inlevercode hoort bij een ander essay.",
         "import_success": "Inlevering geïmporteerd",
-        "copy_link": "Link kopiëren"
+        "copy_link": "Link kopiëren",
+        "not_found": "Dit essay is niet gevonden. Mogelijk is het verwijderd."
     },
     "tts": {
         "read_prompt": "Lees de opdrachtprompt voor",
@@ -3549,7 +3551,6 @@
         "gr_kwt_title": "Zinsomvorming met kernwoord",
         "gr_kwt_body": "FCE/CAE-deel 4: leerlingen maken een tweede zin met gat af met het kernwoord ongewijzigd, binnen een woordlimiet (standaard 2–5, kernwoord inbegrepen) met een live teller. Schrijf elk geaccepteerd antwoord met // tussen de twee beoordeelde delen; elk deel dat in de juiste volgorde voorkomt levert een gelijk deel van de punten op en een antwoord buiten de limiet scoort 0.",
         "gr_word_formation_title": "Woordvorming",
-        "gr_word_formation_body": "FCE/CAE-deel 3: vink \"Woordvorming\" aan bij een invulvraag en schrijf elk stamwoord tussen haakjes achter zijn gat, bv. her {{happiness}}(HAPPY). De score is gelijk aan een gewone invulvraag. Per gat stelt de editor afgeleide vormen voor: voorvoegsel-/achtervoegselkandidaten die in de CEFR-woordenlijst staan, plus door compromise gegenereerde verbuigingen (die niet per se in die lijst staan). Klik er een aan om hem toe te voegen.",
         "gr_word_formation_body": "FCE/CAE-deel 3: vink \"Woordvorming\" aan bij een invulvraag en schrijf elk stamwoord tussen haakjes achter zijn gat, bv. her {{happiness}}(HAPPY). De score is gelijk aan een gewone invulvraag; per gat stelt de editor afgeleide vormen voor (alleen woorden uit de CEFR-woordenlijst) die je met een klik toevoegt.",
         "gr_error_correction_title": "Fouten verbeteren",
         "gr_error_correction_body": "Proeflees-opdrachten: markeer selecteerbare fragmenten in de tekst met [[dubbele haken]], schrijf een fout als [[fout|goed]] en een correct fragment als [[goed]]. Leerlingen klikken de delen aan die volgens hen fout zijn en typen een verbetering; elke fout levert één punt op voor het vinden en één voor een juiste verbetering. Optioneel kost elk onterecht geselecteerd fragment een punt. Leerlingen krijgen de verbeteringen nooit te zien.",

@@ -1873,7 +1873,8 @@
         "standards_step_register": "Regístrate en <1>commonstandardsproject.com</1>",
         "standards_step_copy": "Copia tu clave API desde el panel de desarrollador",
         "standards_step_cors": "Añade la URL de tu app a la lista <1>CORS Allowed Origins</1>",
-        "standards_step_paste": "Pega la clave en <1>Ajustes → Integración de estándares</1>"
+        "standards_step_paste": "Pega la clave en <1>Ajustes → Integración de estándares</1>",
+        "not_found": "No se ha encontrado esta rúbrica. Puede que se haya eliminado."
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -3055,7 +3056,8 @@
         "import_error": "No se pudo leer este código. Compruébalo e inténtalo de nuevo.",
         "import_wrong_essay": "Este código de entrega pertenece a otro ensayo.",
         "import_success": "Entrega importada",
-        "copy_link": "Copiar enlace"
+        "copy_link": "Copiar enlace",
+        "not_found": "No se ha encontrado este ensayo. Puede que se haya eliminado."
     },
     "tts": {
         "read_prompt": "Leer instrucción en voz alta",
@@ -3549,7 +3551,6 @@
         "gr_kwt_title": "Transformación con palabra clave",
         "gr_kwt_body": "Estilo FCE/CAE parte 4: los alumnos completan una segunda frase con hueco usando la palabra clave sin cambios, dentro de un límite de palabras (2–5 por defecto, palabra clave incluida) con contador en vivo. Escribe cada respuesta aceptada con // entre sus dos partes puntuables; cada parte hallada en el orden correcto da una parte igual de los puntos y una respuesta fuera del límite vale 0.",
         "gr_word_formation_title": "Formación de palabras",
-        "gr_word_formation_body": "Estilo FCE/CAE parte 3: marca «Formación de palabras» en una pregunta de completar y escribe cada palabra base entre paréntesis tras su hueco, p. ej. her {{happiness}}(HAPPY). La puntuación es la de una pregunta de completar normal. Para cada hueco el editor sugiere formas derivadas: candidatas con prefijo/sufijo que existen en la lista CEFR, más flexiones generadas por compromise (que quizá no estén en esa lista). Haz clic en una para añadirla.",
         "gr_word_formation_body": "Estilo FCE/CAE parte 3: marca «Formación de palabras» en una pregunta de completar y escribe cada palabra base entre paréntesis tras su hueco, p. ej. her {{happiness}}(HAPPY). La puntuación es la de una pregunta de completar normal; para cada hueco el editor sugiere formas derivadas (solo palabras de la lista CEFR) que añades con un clic.",
         "gr_error_correction_title": "Corrección de errores",
         "gr_error_correction_body": "Tareas de corrección: marca los fragmentos seleccionables del texto con [[corchetes dobles]]; un error se escribe [[mal|bien]] y un fragmento correcto [[correcto]]. Los alumnos hacen clic en las partes que creen erróneas y escriben una corrección; cada error da un punto por encontrarlo y otro por corregirlo bien. Opcionalmente cada fragmento seleccionado por error resta un punto. Los alumnos nunca reciben las correcciones.",

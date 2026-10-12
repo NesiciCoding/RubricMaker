@@ -1873,7 +1873,8 @@
         "standards_step_register": "Registrieren Sie sich auf <1>commonstandardsproject.com</1>",
         "standards_step_copy": "Kopieren Sie Ihren API-Schlüssel aus dem Entwickler-Dashboard",
         "standards_step_cors": "Fügen Sie Ihre App-URL zur <1>CORS Allowed Origins</1>-Liste hinzu",
-        "standards_step_paste": "Fügen Sie den Schlüssel unter <1>Einstellungen → Standards-Integration</1> ein"
+        "standards_step_paste": "Fügen Sie den Schlüssel unter <1>Einstellungen → Standards-Integration</1> ein",
+        "not_found": "Diese Rubrik wurde nicht gefunden. Möglicherweise wurde sie gelöscht."
     },
     "peerReview": {
         "round_label": "Runde",
@@ -2886,7 +2887,8 @@
         "import_error": "Dieser Code konnte nicht gelesen werden. Bitte überprüfen Sie ihn und versuchen Sie es erneut.",
         "import_wrong_essay": "Dieser Einreichungscode gehört zu einem anderen Aufsatz.",
         "import_success": "Einreichung importiert",
-        "copy_link": "Link kopieren"
+        "copy_link": "Link kopieren",
+        "not_found": "Dieser Aufsatz wurde nicht gefunden. Möglicherweise wurde er gelöscht."
     },
     "tts": {
         "read_prompt": "Aufgabenstellung vorlesen",
@@ -3549,7 +3551,6 @@
         "gr_kwt_title": "Umformung mit Schlüsselwort",
         "gr_kwt_body": "Im Stil von FCE/CAE Teil 4: Schüler vervollständigen einen zweiten Satz mit Lücke mit unverändertem Schlüsselwort innerhalb eines Wortlimits (Standard 2–5, Schlüsselwort eingeschlossen) mit Live-Zähler. Schreibe jede akzeptierte Antwort mit // zwischen ihren zwei bewerteten Teilen; jeder Teil in der richtigen Reihenfolge bringt einen gleichen Anteil der Punkte, eine Antwort außerhalb des Limits ergibt 0.",
         "gr_word_formation_title": "Wortbildung",
-        "gr_word_formation_body": "Im Stil von FCE/CAE Teil 3: Hake bei einer Lückenfrage „Wortbildung“ an und schreibe jedes Stammwort in Klammern hinter seine Lücke, z. B. her {{happiness}}(HAPPY). Die Bewertung entspricht einer normalen Lückenfrage. Für jede Lücke schlägt der Editor abgeleitete Formen vor: Affix-Kandidaten, die in der CEFR-Wortliste stehen, plus von compromise erzeugte Flexionsformen (die nicht unbedingt in dieser Liste stehen). Per Klick hinzufügen.",
         "gr_word_formation_body": "Im Stil von FCE/CAE Teil 3: Hake bei einer Lückenfrage „Wortbildung“ an und schreibe jedes Stammwort in Klammern hinter seine Lücke, z. B. her {{happiness}}(HAPPY). Die Bewertung entspricht einer normalen Lückenfrage; für jede Lücke schlägt der Editor abgeleitete Formen vor (nur Wörter aus der CEFR-Wortliste), die du per Klick hinzufügst.",
         "gr_error_correction_title": "Fehlerkorrektur",
         "gr_error_correction_body": "Korrekturlese-Aufgaben: Markiere auswählbare Fragmente im Text mit [[doppelten Klammern]]; ein Fehler wird als [[falsch|richtig]] geschrieben, ein korrektes Fragment als [[korrekt]]. Schüler klicken die Teile an, die sie für falsch halten, und tippen eine Korrektur; jeder Fehler bringt einen Punkt fürs Finden und einen für eine richtige Korrektur. Optional kostet jedes fälschlich gewählte Fragment einen Punkt. Schüler erhalten die Korrekturen nie.",
