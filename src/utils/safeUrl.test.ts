@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeLinkUrl, safeHref } from './safeUrl';
+import { normalizeLinkUrl, safeHref, safeAudioDataUrl } from './safeUrl';
 
 describe('safeHref', () => {
     it('keeps http, https and mailto links', () => {
@@ -49,5 +49,21 @@ describe('normalizeLinkUrl', () => {
     it('treats empty input as no link', () => {
         expect(normalizeLinkUrl('  ')).toBeUndefined();
         expect(normalizeLinkUrl(null)).toBeUndefined();
+    });
+});
+
+describe('safeAudioDataUrl', () => {
+    it('keeps a recorded audio data URL', () => {
+        const url = 'data:audio/webm;codecs=opus;base64,GkXfo0==';
+        expect(safeAudioDataUrl(url)).toBe(url);
+        expect(safeAudioDataUrl('data:audio/mp4;base64,AAAA')).toBe('data:audio/mp4;base64,AAAA');
+    });
+
+    it('rejects other schemes and non-audio data URLs', () => {
+        expect(safeAudioDataUrl('javascript:alert(1)')).toBeUndefined();
+        expect(safeAudioDataUrl('data:text/html;base64,PHNjcmlwdD4=')).toBeUndefined();
+        expect(safeAudioDataUrl('https://evil.example/a.mp3')).toBeUndefined();
+        expect(safeAudioDataUrl(undefined)).toBeUndefined();
+        expect(safeAudioDataUrl('')).toBeUndefined();
     });
 });

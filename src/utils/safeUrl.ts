@@ -30,3 +30,11 @@ export function normalizeLinkUrl(raw: string | undefined | null): string | undef
     const { hostname } = new URL(href);
     return hostname === 'localhost' || hostname.includes('.') ? href : undefined;
 }
+
+// Recorded feedback travels inside share links as a base64 data URL; anything else in that field
+// came from a hand-edited link and must not reach an element's src.
+const AUDIO_DATA_URL = /^data:audio\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*,/i;
+
+export function safeAudioDataUrl(raw: string | undefined | null): string | undefined {
+    return raw && AUDIO_DATA_URL.test(raw) ? raw : undefined;
+}
