@@ -16,6 +16,7 @@ import type { QuestionBankItem, CefrLevel, QuestionBankSkill, TestQuestion, Test
 import QuestionBankImportModal from './QuestionBankImportModal';
 import QuestionBankItemEditorModal from './QuestionBankItemEditorModal';
 import TagFilterChips from './TagFilterChips';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 
 interface QuestionBankManagerProps {
     /** When set, items render as pick targets (insert-from-bank) instead of a plain manager list. */
@@ -304,7 +305,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                         <option value="">{t('questionBank.filter_type_any')}</option>
                         {QUESTION_TYPES.map((type) => (
                             <option key={type} value={type}>
-                                {t(`tests.question_type_${type.replace(/-/g, '_')}`)}
+                                {t(questionTypeLabelKey(type))}
                             </option>
                         ))}
                     </select>
@@ -495,7 +496,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                                     ? t('questionBank.section_bundle_meta', {
                                                           count: item.section.questions.length,
                                                       })
-                                                    : `${t(`tests.question_type_${(item.question?.type ?? 'multiple-choice').replace(/-/g, '_')}`)} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
+                                                    : `${t(questionTypeLabelKey(item.question?.type ?? 'multiple-choice'))} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
                                                 {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                             </div>
                                             <div style={{ fontSize: '0.95rem', marginTop: 4 }}>

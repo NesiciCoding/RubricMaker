@@ -22,6 +22,7 @@ import { parseErrorPicks, parsePlacedWords } from '../utils/answerResponseParser
 import RubricTaskScorer from '../components/Tests/RubricTaskScorer';
 import OpenAnswerInsightsPanel from '../components/Tests/OpenAnswerInsightsPanel';
 import { blankRubricEntries, rubricAnswerPoints } from '../utils/rubricTaskScoring';
+import { questionTypeLabelKey } from '../utils/questionTypeKey';
 import CommentBankModal from '../components/Comments/CommentBankModal';
 import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubric, ScoreEntry } from '../types';
 
@@ -820,7 +821,7 @@ export default function TestResultsPage() {
                                     <div style={{ flex: 1 }}>
                                         <div className="text-muted text-xs">
                                             {t('tests.question_number', { number: index + 1 })} ·{' '}
-                                            {t(`tests.question_type_${question.type.replace('-', '_')}`)} ·{' '}
+                                            {t(questionTypeLabelKey(question.type))} ·{' '}
                                             {t('tests.total_points', { points: question.points })}
                                         </div>
                                         <div style={{ fontWeight: 600, marginTop: 4 }}>{promptPreview(question)}</div>

@@ -42,6 +42,7 @@ import { encodeAudioResponse, parseAudioResponse } from '../utils/audioResponseC
 import { autoScoreResponse } from '../utils/testCalc';
 import { fileToDataUrl } from '../utils/fileToDataUrl';
 import { enqueueSubmission, removeSubmission, pendingSubmissions, isAlreadySubmitted } from '../utils/testSubmitOutbox';
+import { questionTypeHelpKey } from '../utils/questionTypeKey';
 import type {
     TestAnswer,
     TestAssignmentContent,
@@ -1624,8 +1625,8 @@ function QuestionCard({
                     question.type === 'hot-text' ||
                     question.type === 'matrix' ||
                     isCloze) && (
-                    <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_student_title`)}>
-                        {t(`tests.help.${question.type.replace('-', '_')}_student_body`)}
+                    <HelpPopover title={t(questionTypeHelpKey(question.type, 'student', 'title'))}>
+                        {t(questionTypeHelpKey(question.type, 'student', 'body'))}
                     </HelpPopover>
                 )}
             </div>

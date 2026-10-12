@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
 import { parseQuestionBankFile, type ImportWarning, type ParsedQuestionBankItem } from '../../utils/questionBankImport';
 import { plainQuestionPromptText } from '../../utils/clozeParse';
+import { questionTypeLabelKey } from '../../utils/questionTypeKey';
 
 interface Props {
     onImport: (items: ParsedQuestionBankItem[]) => void;
@@ -128,7 +129,7 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                                               const type = q.type ?? 'multiple-choice';
                                               const points = q.points ?? 0;
                                               /* v8 ignore stop */
-                                              return `${t(`tests.question_type_${type.replace(/-/g, '_')}`)} · ${t('tests.total_points', { points })}`;
+                                              return `${t(questionTypeLabelKey(type))} · ${t('tests.total_points', { points })}`;
                                           })()}
                                     {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                 </div>
