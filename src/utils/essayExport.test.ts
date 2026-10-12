@@ -135,3 +135,47 @@ describe('htmlToDocxChildren with non-hex colors', () => {
         ).not.toThrow();
     });
 });
+
+describe('htmlToDocxChildren links and right-to-left text (#695)', () => {
+    async function documentXml(html: string) {
+        const { Document, Packer } = await import('docx');
+        const JSZip = (await import('jszip')).default;
+        const doc = new Document({ sections: [{ children: htmlToDocxChildren(html) }] });
+        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+        return {
+            body: await zip.file('word/document.xml')!.async('string'),
+            rels: await zip.file('word/_rels/document.xml.rels')!.async('string'),
+        };
+    }
+
+    it('keeps a link as a real hyperlink to its URL', async () => {
+        const { body, rels } = await documentXml('<p>Read <a href="https://example.com/a?b=1">this article</a>.</p>');
+        expect(body).toContain('<w:hyperlink');
+        expect(body).toContain('this article');
+        expect(rels).toContain('Target="https://example.com/a?b=1"');
+        expect(rels).toContain('TargetMode="External"');
+    });
+
+    it('drops the link but keeps the text for unsafe hrefs', async () => {
+        const { body, rels } = await documentXml('<p><a href="javascript:alert(1)">click</a></p>');
+        expect(body).not.toContain('<w:hyperlink');
+        expect(body).toContain('click');
+        expect(rels).not.toContain('javascript:');
+    });
+
+    it('marks dir="rtl" paragraphs and their runs as right-to-left', async () => {
+        const { body } = await documentXml('<p dir="rtl">مرحبا بالعالم</p><p>Hello</p>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(1);
+        expect(body).toContain('<w:rtl/>');
+    });
+
+    it('follows the first strong character for dir="auto"', async () => {
+        const { body } = await documentXml('<p dir="auto">שלום world</p><p dir="auto">Hello שלום</p>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(1);
+    });
+
+    it('marks right-to-left list items and headings', async () => {
+        const { body } = await documentXml('<h2 dir="rtl">عنوان</h2><ul><li><p dir="rtl">بند</p></li></ul>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(2);
+    });
+});
