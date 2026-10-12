@@ -114,6 +114,28 @@ function newCriterion(weight: number): RubricCriterion {
 }
 
 export default function RubricBuilder() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    const found = useStoreSelector((s) => !id || s.rubrics.some((r) => r.id === id));
+    if (found) return <RubricBuilderEditor />;
+    return (
+        <>
+            <Topbar title={t('rubricBuilder.edit_rubric')} />
+            <div className="page-content fade-in">
+                <div className="empty-state">
+                    <FileText size={40} aria-hidden="true" />
+                    <h3>{t('rubricBuilder.not_found')}</h3>
+                    <button className="btn btn-secondary" onClick={() => navigate('/rubrics')}>
+                        <ArrowLeft size={16} /> {t('common.back')}
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function RubricBuilderEditor() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();

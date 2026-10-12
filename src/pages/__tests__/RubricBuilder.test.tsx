@@ -484,6 +484,23 @@ describe('RubricBuilder', () => {
         return renderEdit();
     }
 
+    it('shows a not-found state instead of the editor for an unknown id (#720)', () => {
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/doesnotexist'],
+        });
+        render(<RouterProvider router={router} />);
+        expect(screen.getByText('rubricBuilder.not_found')).toBeInTheDocument();
+        expect(screen.queryByText('rubricBuilder.action_save')).toBeNull();
+        fireEvent.click(screen.getByText('common.back'));
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics');
+    });
+
+    it('opens the editor for an existing id', () => {
+        renderEdit();
+        expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
+        expect(screen.queryByText('rubricBuilder.not_found')).toBeNull();
+    });
+
     it('renders the new-rubric form with one default criterion', () => {
         renderNew();
         expect(screen.getByText('rubricBuilder.new_rubric')).toBeInTheDocument();

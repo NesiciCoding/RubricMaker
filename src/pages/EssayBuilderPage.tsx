@@ -207,8 +207,8 @@ export default function EssayBuilderPage() {
                 <Topbar title={t('essays.builder_title_edit')} />
                 <div className="page-content fade-in">
                     <div className="empty-state">
-                        <FileText size={40} />
-                        <h3>{t('essays.no_essays')}</h3>
+                        <FileText size={40} aria-hidden="true" />
+                        <h3>{t('essays.not_found')}</h3>
                         <button className="btn btn-secondary" onClick={() => navigate('/essays')}>
                             <ArrowLeft size={16} /> {t('common.back')}
                         </button>
