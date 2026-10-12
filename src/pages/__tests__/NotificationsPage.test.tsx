@@ -9,12 +9,14 @@ import type {
 } from '../../hooks/useNotificationFeed';
 
 const overdueItem: OverdueGradingNotification = {
-    id: 'overdue_grading:s1',
+    id: 'overdue_grading:test:t1',
     type: 'overdue_grading',
-    entityId: 's1',
-    studentId: 's1',
-    studentName: 'Alice',
+    entityId: 'test:t1',
+    kind: 'test',
+    title: 'Alice',
+    waitingCount: 3,
     daysSince: 10,
+    path: '/tests/t1/results/st1',
     fingerprint: '2024-01-01T00:00:00Z',
     sortKey: '2024-01-01T00:00:00Z',
 };
@@ -158,12 +160,13 @@ describe('NotificationsPage', () => {
         expect(screen.getByText('Bob')).toBeInTheDocument();
     });
 
-    it('navigates to the student profile when viewing an overdue-grading item', async () => {
+    it('opens the oldest waiting submission when viewing an overdue-grading item (#665)', async () => {
         mockFeed = { items: [overdueItem], overdueItems: [overdueItem], messageItems: [], moderationItems: [] };
         const { default: NotificationsPage } = await import('../NotificationsPage');
         renderWithRouter(<NotificationsPage />);
+        expect(screen.getByText(/notifications\.waiting_count/)).toBeInTheDocument();
         fireEvent.click(screen.getByText('notifications.action_view'));
-        expect(mockNavigate).toHaveBeenCalledWith('/students/s1');
+        expect(mockNavigate).toHaveBeenCalledWith('/tests/t1/results/st1');
     });
 
     it('dismisses an overdue-grading item', async () => {

@@ -164,13 +164,17 @@ export default function NotificationBell() {
                                     key={item.id}
                                     type="button"
                                     onClick={() => {
-                                        navigate(`/students/${item.studentId}`);
+                                        navigate(item.path);
                                         setOpen(false);
                                     }}
                                     style={rowStyle}
                                 >
-                                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>
-                                        {item.studentName}
+                                    <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, minWidth: 0 }}>
+                                        {item.title}
+                                        <span className="text-muted" style={{ fontSize: 12 }}>
+                                            {' · '}
+                                            {t('notifications.waiting_count', { count: item.waitingCount })}
+                                        </span>
                                     </span>
                                     <span
                                         style={{

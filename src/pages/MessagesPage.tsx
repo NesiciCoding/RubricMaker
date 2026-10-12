@@ -19,7 +19,7 @@ const CONTEXT_BADGE_KEY: Record<MessageContextType, string> = {
 export default function MessagesPage() {
     const { t } = useTranslation();
     const tour = usePageTourState('messages');
-    const { students } = useStudents();
+    const { students, archivedStudents = [] } = useStudents();
 
     const { messages, sendMessage, markMessageReadByTeacher, notifyStudentMessage } = useEssays();
     const { settings } = useSettings();
@@ -177,6 +177,14 @@ export default function MessagesPage() {
                         {threads.map((thread) => {
                             const key = threadKey(thread);
                             const student = students.find((s) => s.id === thread.studentId);
+                            const archived = student
+                                ? undefined
+                                : archivedStudents.find((s) => s.id === thread.studentId);
+                            const studentLabel = student
+                                ? student.name
+                                : archived
+                                  ? t('messages.archived_student', { name: archived.name })
+                                  : t('messages.unknown_student');
                             const expanded = expandedKey === key;
                             return (
                                 <div key={key} className="card">
@@ -209,7 +217,7 @@ export default function MessagesPage() {
                                                         }}
                                                     />
                                                 )}
-                                                <h3 style={{ margin: 0 }}>{student?.name ?? thread.studentId}</h3>
+                                                <h3 style={{ margin: 0 }}>{studentLabel}</h3>
                                                 <span className="badge badge-secondary">
                                                     {thread.contextLabel ?? t(CONTEXT_BADGE_KEY[thread.contextType])}
                                                 </span>

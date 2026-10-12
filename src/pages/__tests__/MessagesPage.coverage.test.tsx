@@ -15,6 +15,7 @@ const mockSettings: AppSettings = {
 };
 
 const mockStudents: Student[] = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+const mockArchivedStudents: Student[] = [];
 
 const mockMessages: Message[] = [
     {
@@ -76,6 +77,7 @@ const mockNotifyStudentMessage = vi.fn();
 const makeAppContextMock = () => ({
     messages: mockMessages,
     students: mockStudents,
+    archivedStudents: mockArchivedStudents,
     studentRubrics: [],
     settings: mockSettings,
     sendMessage: mockSendMessage,
@@ -112,8 +114,9 @@ describe('MessagesPage coverage', () => {
         const { default: MessagesPage } = await import('../MessagesPage');
         renderWithRouter(<MessagesPage />);
 
-        // fallback name for the unknown student, fallback badge for general
-        expect(screen.getByText('ghost')).toBeInTheDocument();
+        // An unknown student gets a translated label instead of the raw id (#665).
+        expect(screen.getByText('messages.unknown_student')).toBeInTheDocument();
+        expect(screen.queryByText('ghost')).toBeNull();
         expect(screen.getByText('messages.context_general')).toBeInTheDocument();
         expect(screen.getByText('messages.context_essay')).toBeInTheDocument();
 
@@ -132,6 +135,17 @@ describe('MessagesPage coverage', () => {
         // covered by m1 unread + the essay note read on the first expansion)
         fireEvent.click(rubricThreadButton);
         expect(screen.getAllByText('Here is why.').length).toBeGreaterThan(0);
+    });
+
+    it('labels an archived student by name instead of their id (#665)', async () => {
+        mockArchivedStudents.push({ id: 'ghost', name: 'Gina', classId: 'c1', archivedAt: '2026-01-01T00:00:00Z' });
+        try {
+            const { default: MessagesPage } = await import('../MessagesPage');
+            renderWithRouter(<MessagesPage />);
+            expect(screen.getByText('messages.archived_student:{"name":"Gina"}')).toBeInTheDocument();
+        } finally {
+            mockArchivedStudents.length = 0;
+        }
     });
 
     it('starts a new general thread with notifications on and cancels it', async () => {

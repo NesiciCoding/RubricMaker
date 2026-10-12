@@ -31,13 +31,15 @@ export default function NotificationsPage() {
     );
 
     function detailFor(item: NotificationFeedItem): string {
-        if (item.type === 'overdue_grading') return t('notifications.days_ago', { count: item.daysSince });
+        if (item.type === 'overdue_grading') {
+            return `${t('notifications.waiting_count', { count: item.waitingCount })} · ${t('notifications.days_ago', { count: item.daysSince })}`;
+        }
         if (item.type === 'unread_message') return t('notifications.unread_count', { count: item.unreadCount });
         return item.pendingDays !== null ? t('coGrading.pending_days', { count: item.pendingDays }) : '';
     }
 
     function viewTarget(item: NotificationFeedItem): string {
-        if (item.type === 'overdue_grading') return `/students/${item.studentId}`;
+        if (item.type === 'overdue_grading') return item.path;
         if (item.type === 'unread_message') return '/messages';
         return '/moderation';
     }
@@ -137,7 +139,7 @@ export default function NotificationsPage() {
                                                     whiteSpace: 'nowrap',
                                                 }}
                                             >
-                                                {item.studentName}
+                                                {item.type === 'overdue_grading' ? item.title : item.studentName}
                                             </div>
                                             <div className="text-muted text-xs">
                                                 {t(`notifications.filter_${item.type}`)} · {detailFor(item)}
