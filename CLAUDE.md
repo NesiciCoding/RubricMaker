@@ -11,7 +11,7 @@ Key domains:
 - **Analytics** — per-class and per-student charts, CEFR proficiency tracking
 - **CEFR / Language assessment** — proficiency levels, speaking sessions, self-assessment
 - **Essay writing** — TipTap rich-text editor, submission codes, peer review
-- **Export** — PDF, DOCX (with mail-merge templates), CSV
+- **Export** — PDF, DOCX (styled by uploaded table/style templates), CSV
 - **Document analysis** — OCR via Tesseract.js, DOCX parsing via Mammoth
 
 ## Commands
@@ -265,7 +265,7 @@ Non-exhaustive — pointers to the modules most likely to matter across files. F
 | `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions       |
 | `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                     |
 | `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                       |
-| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and mail-merge DOCX, PDF)                                                      |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                 |
 | `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                              |
 | `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                       |
 | `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                             |

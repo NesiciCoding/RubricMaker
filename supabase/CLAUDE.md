@@ -75,7 +75,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 ## Storage buckets
 
 - `attachments` — file attachments for grading (DOCX, PDF, images), `003_storage_buckets.sql`
-- `export-templates` — mail-merge DOCX templates, `003_storage_buckets.sql`
+- `export-templates` — uploaded DOCX export templates (rubric table / style), `003_storage_buckets.sql`
 - `essays` — essay submission files, `008_essay_tables.sql`
 - `recordings` — speaking-assessment audio recordings, `034_recordings_storage.sql`
 - `feedback-audio` — per-criterion voice-feedback audio, kept out of `student_rubrics.data` jsonb (perf, issue #275); the `ScoreEntry` holds only `audioStoragePath`. `069_feedback_audio_storage.sql`. Students get a long-TTL signed URL minted by the teacher at `/feedback/:code` share-link generation time (no anonymous bucket access).
@@ -124,7 +124,7 @@ Current functions:
 | `messages`                  | Student <-> teacher Q&A threads (migration 050), grouped client-side by `(student_id, context_type, context_id)`; portal-authenticated students only                                                                                                                                              |
 | `peer_reviews`              | Peer review entries on essay submissions                                                                                                                                                                                                                                                          |
 | `comment_bank`              | Shared/library comment bank entries                                                                                                                                                                                                                                                               |
-| `export_templates`          | Mail-merge DOCX template metadata                                                                                                                                                                                                                                                                 |
+| `export_templates`          | Uploaded DOCX export template metadata                                                                                                                                                                                                                                                            |
 | `favorite_standards`        | User-starred Common Standards (CCSS/NGSS) entries                                                                                                                                                                                                                                                 |
 | `self_assessments`          | Student CEFR self-assessment records                                                                                                                                                                                                                                                              |
 | `speaking_sessions`         | Speaking assessment session records                                                                                                                                                                                                                                                               |
