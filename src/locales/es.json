@@ -2342,7 +2342,9 @@
         "brand_name": "Rubric Maker",
         "grade_withheld": "Solo comentarios — calificación aún no publicada",
         "switch_back_to_teacher": "Volver al rol de docente",
-        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % en {{scale}}"
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % en {{scale}}",
+        "back_to_portal": "Volver al portal",
+        "privacy_link": "Privacidad y protección de datos"
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",

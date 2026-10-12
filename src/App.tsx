@@ -189,7 +189,10 @@ export default function App() {
                                 </OwnPortalGuard>
                             }
                         />
-                        <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route
+                            path="/privacy"
+                            element={<PrivacyPage studentPortalPath={`/portal/${linkedStudent.id}`} />}
+                        />
                         <Route path="*" element={<Navigate to={`/portal/${linkedStudent.id}`} replace />} />
                     </Routes>
                 </Suspense>

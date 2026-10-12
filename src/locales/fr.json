@@ -2342,7 +2342,9 @@
         "brand_name": "Rubric Maker",
         "grade_withheld": "Commentaires uniquement — note pas encore publiée",
         "switch_back_to_teacher": "Revenir au rôle enseignant",
-        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % sur {{scale}}"
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % sur {{scale}}",
+        "back_to_portal": "Retour au portail",
+        "privacy_link": "Confidentialité et protection des données"
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
