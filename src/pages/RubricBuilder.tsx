@@ -965,7 +965,7 @@ function RubricBuilderEditor() {
                     className="rubric-builder-layout"
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: showFormat ? '1fr 300px' : '1fr',
+                        gridTemplateColumns: showFormat ? 'minmax(0, 1fr) 300px' : 'minmax(0, 1fr)',
                         gap: 24,
                         alignItems: 'start',
                     }}
@@ -1289,6 +1289,7 @@ function RubricBuilderEditor() {
                                     <div
                                         style={{
                                             display: 'flex',
+                                            flexWrap: 'wrap',
                                             alignItems: 'center',
                                             gap: 8,
                                             padding: '6px 12px',
@@ -1328,6 +1329,8 @@ function RubricBuilderEditor() {
                             data-tour="rb-criteria-section"
                             style={{
                                 display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 8,
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 marginBottom: 14,
@@ -1335,7 +1338,7 @@ function RubricBuilderEditor() {
                             }}
                         >
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
-                            <div style={{ display: 'flex', gap: 8 }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {criteria.length > 1 &&
                                     (collapsedCriteria.size === criteria.length ? (
                                         <button

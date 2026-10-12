@@ -116,6 +116,7 @@ export default memo(function CriterionCard({
                 >
                     {/* Criterion header */}
                     <div
+                        className="criterion-header"
                         style={{
                             display: 'flex',
                             gap: 10,
@@ -161,14 +162,8 @@ export default memo(function CriterionCard({
                                 <ChevronDown size={14} />
                             </button>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <div
-                                className="grid-2"
-                                style={{
-                                    gap: 10,
-                                    gridTemplateColumns: '1fr 1fr auto',
-                                }}
-                            >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="grid-2 criterion-meta-grid" style={{ gap: 10 }}>
                                 <div className="form-group">
                                     <label htmlFor={`${uid}-title`}>{t('rubricBuilder.label_criterion')}</label>
                                     <input
@@ -570,7 +565,7 @@ export default memo(function CriterionCard({
                                 </div>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                        <div className="criterion-header-actions" style={{ display: 'flex', gap: 4, marginTop: 20 }}>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
                                 style={{ color: 'var(--text-dim)' }}
