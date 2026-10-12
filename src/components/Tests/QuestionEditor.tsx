@@ -52,6 +52,7 @@ import { generateCloze, type ClozeStrategy } from '../../utils/clozeGenerators';
 import { CEFR_LEVELS } from '../../data/cefrDescriptors';
 import { cefrEloRange, LEVEL_TO_ELO } from '../../utils/placementStaircase';
 import { grammarItemToFrameworkDescriptor } from '../../data/grammarStandards';
+import { questionTypeHelpKey, questionTypeLabelKey } from '../../utils/questionTypeKey';
 import type {
     TestQuestion,
     TestQuestionType,
@@ -558,7 +559,7 @@ export default function QuestionEditor({
                     >
                         {QUESTION_TYPES.map((type) => (
                             <option key={type} value={type}>
-                                {t(`tests.question_type_${type.replace(/-/g, '_')}`)}
+                                {t(questionTypeLabelKey(type))}
                             </option>
                         ))}
                     </select>
@@ -688,8 +689,8 @@ export default function QuestionEditor({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <label>
                         {t('tests.options_label')}{' '}
-                        <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_teacher_title`)}>
-                            {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
+                        <HelpPopover title={t(questionTypeHelpKey(question.type, 'teacher', 'title'))}>
+                            {t(questionTypeHelpKey(question.type, 'teacher', 'body'))}
                         </HelpPopover>
                     </label>
                     {(question.options ?? []).map((option) => {
@@ -935,8 +936,8 @@ export default function QuestionEditor({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <label>
                         {t('tests.cloze_syntax_label')}{' '}
-                        <HelpPopover title={t(`tests.help.${question.type.replace('-', '_')}_teacher_title`)}>
-                            {t(`tests.help.${question.type.replace('-', '_')}_teacher_body`)}
+                        <HelpPopover title={t(questionTypeHelpKey(question.type, 'teacher', 'title'))}>
+                            {t(questionTypeHelpKey(question.type, 'teacher', 'body'))}
                         </HelpPopover>
                     </label>
                     {(() => {
