@@ -337,11 +337,11 @@ describe('RubricList coverage', () => {
             scoringMode: undefined as never,
             totalMaxPoints: undefined as never,
         };
-        fireEvent.click(screen.getByText('Import from code'));
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
         fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: encodeRubricShareCode(minimal) },
         });
-        fireEvent.click(screen.getByText('Import rubric'));
+        fireEvent.click(screen.getByText('rubricList.code_import_submit'));
         expect(mockAddRubric).toHaveBeenCalledWith(
             expect.objectContaining({
                 name: 'rubricList.imported_rubric_name',
@@ -354,15 +354,16 @@ describe('RubricList coverage', () => {
         );
     });
 
-    it('closes the code-import modal via overlay and cancel button', () => {
+    it('closes the code-import modal via Escape and the cancel button (#703)', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Import from code'));
-        fireEvent.click(document.querySelector('.modal-overlay') as HTMLElement);
-        expect(screen.queryByPlaceholderText('Paste share code here…')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
+        const dialog = screen.getByRole('dialog', { name: 'rubricList.code_import_title' });
+        fireEvent.keyDown(dialog, { key: 'Escape' });
+        expect(screen.queryByPlaceholderText('tooltips.paste_share_code')).not.toBeInTheDocument();
 
-        fireEvent.click(screen.getByText('Import from code'));
-        fireEvent.click(screen.getByText('Cancel'));
-        expect(screen.queryByPlaceholderText('Paste share code here…')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
+        fireEvent.click(within(screen.getByRole('dialog')).getByText('common.cancel'));
+        expect(screen.queryByPlaceholderText('tooltips.paste_share_code')).not.toBeInTheDocument();
     });
 
     it('closes the differentiate modal via overlay, close button, and picks a CEFR level', () => {

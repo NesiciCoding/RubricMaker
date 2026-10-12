@@ -205,11 +205,11 @@ describe('RubricList extended', () => {
 
     it('imports a rubric from a valid share code and navigates to it', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Import from code'));
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
         fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: encodeRubricShareCode(mockRubric) },
         });
-        fireEvent.click(screen.getByText('Import rubric'));
+        fireEvent.click(screen.getByText('rubricList.code_import_submit'));
 
         expect(mockAddRubric).toHaveBeenCalledWith(
             expect.objectContaining({ name: 'Essay Rubric', subject: 'English', criteria: [] })
@@ -219,11 +219,11 @@ describe('RubricList extended', () => {
 
     it('shows an error for an invalid share code', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Import from code'));
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
         fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
             target: { value: 'not-a-valid-code' },
         });
-        fireEvent.click(screen.getByText('Import rubric'));
+        fireEvent.click(screen.getByText('rubricList.code_import_submit'));
         expect(screen.getByText('rubricList.share_code_invalid')).toBeInTheDocument();
         expect(mockAddRubric).not.toHaveBeenCalled();
     });

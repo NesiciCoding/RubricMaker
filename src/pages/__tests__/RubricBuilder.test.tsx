@@ -1,3 +1,4 @@
+import { axe } from 'jest-axe';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -499,6 +500,21 @@ describe('RubricBuilder', () => {
         renderEdit();
         expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
         expect(screen.queryByText('rubricBuilder.not_found')).toBeNull();
+    });
+
+    it('gives every form control an accessible name in the form, format, vocabulary and designer views (#703)', async () => {
+        renderEdit();
+        // axe accepts a placeholder as a name; strip them so only real labels count.
+        const unnamed = async () => {
+            document.querySelectorAll('[placeholder]').forEach((el) => el.removeAttribute('placeholder'));
+            const results = await axe(document.body, { runOnly: ['label', 'select-name'] });
+            return results.violations.flatMap((v) => (v.nodes as { html: string }[]).map((n) => n.html.slice(0, 120)));
+        };
+        fireEvent.click(screen.getByText('FORMAT'));
+        fireEvent.click(screen.getByText('Vocabulary & Grammar List'));
+        expect(await unnamed()).toEqual([]);
+        fireEvent.click(screen.getByText('rubricBuilder.action_designer_view'));
+        expect(await unnamed()).toEqual([]);
     });
 
     it('renders the new-rubric form with one default criterion', () => {

@@ -268,10 +268,12 @@ export default function VocabularyListEditor({
                                         value={item.phrase}
                                         onChange={(e) => handleInlineUpdate(item, { phrase: e.target.value })}
                                         placeholder={t('vocabulary.phrase_placeholder', 'Word or phrase…')}
+                                        aria-label={t('vocabulary.phrase_label')}
                                     />
                                     <select
                                         className="input"
                                         style={{ width: 140 }}
+                                        aria-label={t('vocabulary.category_label')}
                                         value={item.category}
                                         onChange={(e) =>
                                             handleInlineUpdate(item, { category: e.target.value as VocabularyCategory })
@@ -286,6 +288,7 @@ export default function VocabularyListEditor({
                                     <select
                                         className="input"
                                         style={{ width: 180 }}
+                                        aria-label={t('vocabulary.criterion_label')}
                                         value={item.linkedCriterionId ?? ''}
                                         onChange={(e) =>
                                             handleInlineUpdate(item, { linkedCriterionId: e.target.value || undefined })
@@ -308,6 +311,7 @@ export default function VocabularyListEditor({
                                             handleInlineUpdate(item, { notes: e.target.value || undefined })
                                         }
                                         placeholder={t('vocabulary.notes_placeholder', 'Notes (optional)…')}
+                                        aria-label={t('vocabulary.notes_label')}
                                     />
                                     <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>
                                         {t('common.done', 'Done')}
@@ -340,6 +344,7 @@ export default function VocabularyListEditor({
                                             handleInlineUpdate(item, { definition: e.target.value || undefined })
                                         }
                                         placeholder={t('cambridge.definition_placeholder')}
+                                        aria-label={t('cambridge.definition_placeholder')}
                                     />
                                     <button
                                         className="btn btn-ghost btn-sm"
@@ -429,10 +434,12 @@ export default function VocabularyListEditor({
                         onChange={(e) => setNewPhrase(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                         placeholder={t('vocabulary.phrase_placeholder', 'Word or phrase…')}
+                        aria-label={t('vocabulary.phrase_label')}
                     />
                     <select
                         className="input"
                         style={{ width: 140 }}
+                        aria-label={t('vocabulary.category_label')}
                         value={newCategory}
                         onChange={(e) => setNewCategory(e.target.value as VocabularyCategory)}
                     >
@@ -445,6 +452,7 @@ export default function VocabularyListEditor({
                     <select
                         className="input"
                         style={{ width: 180 }}
+                        aria-label={t('vocabulary.criterion_label')}
                         value={newCriterionId}
                         onChange={(e) => setNewCriterionId(e.target.value)}
                     >
@@ -463,6 +471,7 @@ export default function VocabularyListEditor({
                         value={newNotes}
                         onChange={(e) => setNewNotes(e.target.value)}
                         placeholder={t('vocabulary.notes_placeholder', 'Notes (optional)…')}
+                        aria-label={t('vocabulary.notes_label')}
                     />
                     <button className="btn btn-primary" onClick={handleAdd} disabled={!newPhrase.trim()}>
                         <Plus size={16} />

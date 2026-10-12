@@ -382,7 +382,7 @@ export default function RubricList() {
                                 setCodeImportError(null);
                             }}
                         >
-                            <ClipboardPaste size={15} /> Import from code
+                            <ClipboardPaste size={15} /> {t('rubricList.code_import_button')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)}>
                             <Upload size={15} /> {t('rubricList.import_rubric')}
@@ -1268,69 +1268,79 @@ export default function RubricList() {
                 )}
 
                 {showCodeImport && (
-                    <div className="modal-overlay" onClick={() => setShowCodeImport(false)}>
-                        <div className="modal" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <ClipboardPaste size={18} /> Import from share code
-                                </h3>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    aria-label={t('common.close')}
-                                    onClick={() => setShowCodeImport(false)}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ marginBottom: 14, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                    Paste a share code that was copied from another RubricMaker instance.
-                                </p>
-                                <textarea
-                                    autoFocus
-                                    value={pastedCode}
-                                    onChange={(e) => {
-                                        setPastedCode(e.target.value);
-                                        setCodeImportError(null);
-                                    }}
-                                    placeholder={t('tooltips.paste_share_code')}
-                                    style={{
-                                        width: '100%',
-                                        minHeight: 120,
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.8rem',
-                                        resize: 'vertical',
-                                    }}
-                                />
-                                {codeImportError && (
-                                    <div
-                                        style={{
-                                            marginTop: 10,
-                                            color: 'var(--red)',
-                                            fontSize: '0.875rem',
-                                            background: 'var(--red-soft)',
-                                            padding: '8px 12px',
-                                            borderRadius: 6,
-                                        }}
-                                    >
-                                        {codeImportError}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => setShowCodeImport(false)}>
-                                    Cancel
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    disabled={!pastedCode.trim()}
-                                    onClick={handleImportFromCode}
-                                >
-                                    <Check size={15} /> Import rubric
-                                </button>
-                            </div>
+                    <Modal titleId="share-code-import-title" onClose={() => setShowCodeImport(false)} maxWidth={560}>
+                        <div className="modal-header">
+                            <h3 id="share-code-import-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <ClipboardPaste size={18} aria-hidden="true" /> {t('rubricList.code_import_title')}
+                            </h3>
+                            <button
+                                className="btn btn-ghost btn-icon"
+                                aria-label={t('common.close')}
+                                onClick={() => setShowCodeImport(false)}
+                            >
+                                <X size={16} />
+                            </button>
                         </div>
-                    </div>
+                        <div className="modal-body">
+                            <p
+                                id="share-code-import-desc"
+                                style={{ marginBottom: 14, color: 'var(--text-muted)', fontSize: '0.9rem' }}
+                            >
+                                {t('rubricList.code_import_desc')}
+                            </p>
+                            <textarea
+                                autoFocus
+                                value={pastedCode}
+                                onChange={(e) => {
+                                    setPastedCode(e.target.value);
+                                    setCodeImportError(null);
+                                }}
+                                aria-label={t('rubricList.code_import_title')}
+                                aria-describedby={
+                                    codeImportError
+                                        ? 'share-code-import-desc share-code-import-error'
+                                        : 'share-code-import-desc'
+                                }
+                                aria-invalid={!!codeImportError || undefined}
+                                placeholder={t('tooltips.paste_share_code')}
+                                style={{
+                                    width: '100%',
+                                    minHeight: 120,
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.8rem',
+                                    resize: 'vertical',
+                                }}
+                            />
+                            {codeImportError && (
+                                <div
+                                    id="share-code-import-error"
+                                    role="alert"
+                                    style={{
+                                        marginTop: 10,
+                                        color: 'var(--red)',
+                                        fontSize: '0.875rem',
+                                        background: 'var(--red-soft)',
+                                        padding: '8px 12px',
+                                        borderRadius: 6,
+                                    }}
+                                >
+                                    {codeImportError}
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowCodeImport(false)}>
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                disabled={!pastedCode.trim()}
+                                onClick={handleImportFromCode}
+                            >
+                                <Check size={15} /> {t('rubricList.code_import_submit')}
+                            </button>
+                        </div>
+                    </Modal>
                 )}
             </div>
 

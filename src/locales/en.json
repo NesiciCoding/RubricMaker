@@ -669,7 +669,11 @@
         "share_shared_with": "Shared with",
         "share_btn": "Share",
         "speaking_select_student": "🎙 Speaking…",
-        "action_unshare": "Remove share"
+        "action_unshare": "Remove share",
+        "code_import_button": "Import from code",
+        "code_import_title": "Import from share code",
+        "code_import_desc": "Paste a share code or preview link that was copied from another RubricMaker instance.",
+        "code_import_submit": "Import rubric"
     },
     "tests": {
         "not_found": "Test not found.",
@@ -1874,7 +1878,10 @@
         "standards_step_copy": "Copy your API key from the developer dashboard",
         "standards_step_cors": "Add your app URL to the <1>CORS Allowed Origins</1> list",
         "standards_step_paste": "Paste the key in <1>Settings → Standards Integration</1>",
-        "not_found": "This rubric could not be found. It may have been deleted."
+        "not_found": "This rubric could not be found. It may have been deleted.",
+        "label_cefr_skill": "CEFR skill:",
+        "label_level_description": "Level description",
+        "label_sub_item": "Sub-item"
     },
     "peerReview": {
         "round_label": "Round",
@@ -4477,5 +4484,11 @@
         "retry": "Try again",
         "upload_failed": "The upload failed, so nothing was moved to your account yet. Your data is still in this browser.",
         "upload_success": "Your local data was uploaded to your account."
+    },
+    "vocabulary": {
+        "phrase_label": "Word or phrase",
+        "notes_label": "Notes",
+        "category_label": "Category",
+        "criterion_label": "Linked criterion"
     }
 }
