@@ -1,6 +1,17 @@
 import React from 'react';
-import { Shield, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Shield, ExternalLink, ArrowLeft } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
+
+// Accent-coloured link text fell to 1.1–2.2:1 on some themes; body text colour with an accent
+// underline keeps the contrast of the surrounding copy (#619).
+const LINK_STYLE: React.CSSProperties = {
+    color: 'var(--text)',
+    textDecoration: 'underline',
+    textDecorationColor: 'var(--accent)',
+    textUnderlineOffset: 2,
+};
 
 /**
  * Renders the Privacy & AVG/GDPR informational page for Rubric Maker.
@@ -9,325 +20,332 @@ import Topbar from '../components/Layout/Topbar';
  * (local and optional Supabase), legal bases, retention and erasure procedures, data portability,
  * handling of audio data, supervisory authority contact, and open-source attributions.
  *
+ * Students see it without the teacher topbar (no class selector, search or menu) and with a way
+ * back to their portal, passed as `studentPortalPath`.
+ *
  * @returns A React element containing the privacy and data-protection content for display in the app.
  */
-export default function PrivacyPage() {
-    return (
-        <>
-            <Topbar title="Privacy & AVG/GDPR" />
-            <div className="page-content fade-in" style={{ maxWidth: 860 }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 28 }}>
-                    <div
-                        style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 10,
-                            background: 'var(--accent-soft)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Shield size={22} style={{ color: 'var(--accent)' }} />
+export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?: string } = {}) {
+    const { t } = useTranslation();
+    const title = 'Privacy & AVG/GDPR';
+    const content = (
+        <div className="page-content fade-in" style={{ maxWidth: 860 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 28 }}>
+                <div
+                    style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 10,
+                        background: 'var(--accent-soft)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Shield size={22} style={{ color: 'var(--accent)' }} />
+                </div>
+                <div>
+                    <h2 style={{ margin: 0 }}>Privacy &amp; Gegevensbescherming</h2>
+                    <p className="text-muted text-sm" style={{ margin: '4px 0 0' }}>
+                        This document explains how Rubric Maker handles personal data in accordance with the General
+                        Data Protection Regulation (GDPR) and the Dutch implementation, the Algemene Verordening
+                        Gegevensbescherming (AVG).
+                    </p>
+                </div>
+            </div>
+
+            {/* 1. Controller */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>1. Verwerkingsverantwoordelijke / Data Controller</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    Rubric Maker is a tool-only application — it does not operate its own servers by default. The{' '}
+                    <strong>teacher or educational institution</strong> that deploys and uses this application acts as
+                    the data controller under AVG Article 4(7). If your school uses a centrally hosted instance, the
+                    responsible party is the school or its designated IT department, who should have a{' '}
+                    <em>verwerkersovereenkomst</em> (data processing agreement) with any sub-processors (e.g. Supabase).
+                </p>
+            </div>
+
+            {/* 2. Personal data */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>2. Welke persoonsgegevens worden verwerkt?</h3>
+                <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
+                    The following categories of personal data may be stored:
+                </p>
+                <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Category</th>
+                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Data fields</th>
+                            <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Sensitivity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {[
+                            ['Student identity', 'Name (required), email address (optional)', 'Personal data'],
+                            ['Grades & feedback', 'Criterion scores, written comments, overall grade', 'Personal data'],
+                            ['Self-assessments', 'Student self-ratings, reflection text', 'Personal data'],
+                            [
+                                'Speaking sessions',
+                                'Criterion grades, pronunciation marks, criterion audio recordings',
+                                'Special (audio/biometric)',
+                            ],
+                            ['Peer reviews', 'Scores and comments submitted by peers', 'Personal data'],
+                            ['Uploaded work', 'Essay text, documents, images uploaded as evidence', 'Personal data'],
+                            [
+                                'Document analysis',
+                                'Extracted essay text, detected vocabulary, grammar errors',
+                                'Personal data',
+                            ],
+                            [
+                                'Teacher settings',
+                                'UI preferences, API keys for external services',
+                                'Non-personal (no student data)',
+                            ],
+                        ].map(([cat, fields, sens]) => (
+                            <tr key={cat} style={{ borderBottom: '1px solid var(--border)' }}>
+                                <td style={{ padding: '8px 8px', verticalAlign: 'top', fontWeight: 500 }}>{cat}</td>
+                                <td style={{ padding: '8px 8px', verticalAlign: 'top', color: 'var(--text-muted)' }}>
+                                    {fields}
+                                </td>
+                                <td style={{ padding: '8px 8px', verticalAlign: 'top' }}>
+                                    <span
+                                        className={`badge ${sens.startsWith('Special') ? 'badge-red' : 'badge-blue'}`}
+                                        style={{ fontSize: '0.75rem' }}
+                                    >
+                                        {sens}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* 3. Storage modes */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>3. Waar worden gegevens opgeslagen?</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Lokale opslag (standaard)</div>
+                        <p className="text-sm text-muted" style={{ margin: 0 }}>
+                            By default, all data is stored exclusively in the teacher's browser (localStorage) and is
+                            not sent to any Rubric Maker server. Two optional features are the exception: document
+                            analysis sends essay text to LanguageTool, and the vocabulary lookup sends individual words
+                            to the Free Dictionary API (see the Open-source attributions below). Aside from those, data
+                            never leaves the device automatically.
+                        </p>
                     </div>
-                    <div>
-                        <h2 style={{ margin: 0 }}>Privacy &amp; Gegevensbescherming</h2>
-                        <p className="text-muted text-sm" style={{ margin: '4px 0 0' }}>
-                            This document explains how Rubric Maker handles personal data in accordance with the General
-                            Data Protection Regulation (GDPR) and the Dutch implementation, the Algemene Verordening
-                            Gegevensbescherming (AVG).
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Database (Supabase) — optioneel</div>
+                        <p className="text-sm text-muted" style={{ margin: 0 }}>
+                            When a Supabase connection is configured (Admin &gt; Database), data is also stored in a
+                            PostgreSQL database hosted by Supabase, Inc. For AVG compliance, schools should create their
+                            Supabase project in an <strong>EU region such as Frankfurt (eu-central-1)</strong>; when an
+                            EU region is selected, stored data stays within the EU/EEA. Supabase is SOC 2 Type II
+                            certified and provides a Data Processing Addendum (DPA) at{' '}
+                            <a
+                                href="https://supabase.com/privacy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={LINK_STYLE}
+                            >
+                                supabase.com/privacy <ExternalLink size={10} />
+                            </a>
+                            .
                         </p>
                     </div>
                 </div>
+            </div>
 
-                {/* 1. Controller */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>1. Verwerkingsverantwoordelijke / Data Controller</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        Rubric Maker is a tool-only application — it does not operate its own servers by default. The{' '}
-                        <strong>teacher or educational institution</strong> that deploys and uses this application acts
-                        as the data controller under AVG Article 4(7). If your school uses a centrally hosted instance,
-                        the responsible party is the school or its designated IT department, who should have a{' '}
-                        <em>verwerkersovereenkomst</em> (data processing agreement) with any sub-processors (e.g.
-                        Supabase).
-                    </p>
-                </div>
-
-                {/* 2. Personal data */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>2. Welke persoonsgegevens worden verwerkt?</h3>
-                    <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
-                        The following categories of personal data may be stored:
-                    </p>
-                    <table style={{ width: '100%', fontSize: '0.85rem', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Category</th>
-                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Data fields</th>
-                                <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 600 }}>Sensitivity</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {[
-                                ['Student identity', 'Name (required), email address (optional)', 'Personal data'],
-                                [
-                                    'Grades & feedback',
-                                    'Criterion scores, written comments, overall grade',
-                                    'Personal data',
-                                ],
-                                ['Self-assessments', 'Student self-ratings, reflection text', 'Personal data'],
-                                [
-                                    'Speaking sessions',
-                                    'Criterion grades, pronunciation marks, criterion audio recordings',
-                                    'Special (audio/biometric)',
-                                ],
-                                ['Peer reviews', 'Scores and comments submitted by peers', 'Personal data'],
-                                [
-                                    'Uploaded work',
-                                    'Essay text, documents, images uploaded as evidence',
-                                    'Personal data',
-                                ],
-                                [
-                                    'Document analysis',
-                                    'Extracted essay text, detected vocabulary, grammar errors',
-                                    'Personal data',
-                                ],
-                                [
-                                    'Teacher settings',
-                                    'UI preferences, API keys for external services',
-                                    'Non-personal (no student data)',
-                                ],
-                            ].map(([cat, fields, sens]) => (
-                                <tr key={cat} style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <td style={{ padding: '8px 8px', verticalAlign: 'top', fontWeight: 500 }}>{cat}</td>
-                                    <td
-                                        style={{ padding: '8px 8px', verticalAlign: 'top', color: 'var(--text-muted)' }}
-                                    >
-                                        {fields}
-                                    </td>
-                                    <td style={{ padding: '8px 8px', verticalAlign: 'top' }}>
-                                        <span
-                                            className={`badge ${sens.startsWith('Special') ? 'badge-red' : 'badge-blue'}`}
-                                            style={{ fontSize: '0.75rem' }}
-                                        >
-                                            {sens}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* 3. Storage modes */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>3. Waar worden gegevens opgeslagen?</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
-                            <div style={{ fontWeight: 600, marginBottom: 4 }}>Lokale opslag (standaard)</div>
-                            <p className="text-sm text-muted" style={{ margin: 0 }}>
-                                By default, all data is stored exclusively in the teacher's browser (localStorage) and
-                                is not sent to any Rubric Maker server. Two optional features are the exception:
-                                document analysis sends essay text to LanguageTool, and the vocabulary lookup sends
-                                individual words to the Free Dictionary API (see the Open-source attributions below).
-                                Aside from those, data never leaves the device automatically.
-                            </p>
-                        </div>
-                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '12px 16px' }}>
-                            <div style={{ fontWeight: 600, marginBottom: 4 }}>Database (Supabase) — optioneel</div>
-                            <p className="text-sm text-muted" style={{ margin: 0 }}>
-                                When a Supabase connection is configured (Admin &gt; Database), data is also stored in a
-                                PostgreSQL database hosted by Supabase, Inc. For AVG compliance, schools should create
-                                their Supabase project in an <strong>EU region such as Frankfurt (eu-central-1)</strong>
-                                ; when an EU region is selected, stored data stays within the EU/EEA. Supabase is SOC 2
-                                Type II certified and provides a Data Processing Addendum (DPA) at{' '}
-                                <a
-                                    href="https://supabase.com/privacy"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: 'var(--accent)' }}
-                                >
-                                    supabase.com/privacy <ExternalLink size={10} />
-                                </a>
-                                .
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. Legal basis */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>4. Rechtsgrondslag — AVG Art. 6</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        The processing of student data for assessment purposes is based on{' '}
-                        <strong>gerechtvaardigd belang</strong> (legitimate interest, AVG Art. 6(1)(f)) — specifically,
-                        the educational institution's interest in assessing student learning and providing feedback.
-                        Teachers are advised to include Rubric Maker data processing in their school's privacy
-                        documentation (<em>privacybeleid</em>). For processing sensitive categories of data (audio
-                        recordings), explicit consent from students (or parents/guardians for minors) is recommended
-                        under AVG Art. 9.
-                    </p>
-                </div>
-
-                {/* 5. Data retention */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>5. Bewaartermijn / Data Retention</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        Rubric Maker does not impose automatic data expiry. Teachers are responsible for deleting
-                        student records at the end of each academic year or when a student leaves. Deleting a student
-                        record from the application (Students page) permanently removes all associated grades,
-                        assessments, attachments, and analysis results from both local storage and the database (cascade
-                        delete).
-                    </p>
-                </div>
-
-                {/* 6. Right to erasure */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>6. Recht op verwijdering — AVG Art. 17</h3>
-                    <p className="text-sm" style={{ marginBottom: 8 }}>
-                        Students (or their legal guardians) may request erasure of their data. To fulfil this request:
-                    </p>
-                    <ol className="text-sm" style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
-                        <li>
-                            Navigate to <strong>Students</strong>, find the student, and click{' '}
-                            <strong>Delete student</strong>. This removes all associated data from local storage and, if
-                            connected, from the database.
-                        </li>
-                        <li>
-                            If multiple teachers have shared access to the student's data, each teacher must delete from
-                            their own account.
-                        </li>
-                        <li>
-                            For full database erasure of a teacher's own account: go to{' '}
-                            <strong>Admin &gt; Database &gt; Delete all my database data</strong>.
-                        </li>
-                    </ol>
-                </div>
-
-                {/* 7. Data portability */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>7. Recht op dataportabiliteit — AVG Art. 20</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        Teachers can export a complete JSON backup of all data via{' '}
-                        <strong>Settings &gt; Export backup</strong>. This backup can be used to migrate to another
-                        instance of Rubric Maker or to fulfil a data portability request. For database users, data can
-                        also be exported directly from the Supabase dashboard.
-                    </p>
-                </div>
-
-                {/* 8. Audio data */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>8. Audiogegevens (spreekopdrachten)</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        The speaking-session feature records short audio clips per criterion using the browser's
-                        built-in recorder (MediaRecorder). These recordings are stored within Rubric Maker — locally, or
-                        in the configured database — and are accessible only to the grading teacher; this feature does
-                        not send them to any third-party transcription service. Separately, the optional voice-grading
-                        feature (dictating grades by voice) uses the browser's Web Speech API (SpeechRecognition); in
-                        some browsers, including Google Chrome, the captured audio is sent to the browser vendor's
-                        servers for transcription. Schools should inform students that audio may be recorded and stored
-                        during speaking assessments.
-                    </p>
-                </div>
-
-                {/* 9. Supervisory authority */}
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>9. Toezichthouder</h3>
-                    <p className="text-sm" style={{ margin: 0 }}>
-                        In the Netherlands, the supervisory authority for data protection is the{' '}
-                        <strong>Autoriteit Persoonsgegevens (AP)</strong>. You can file a complaint or find further
-                        guidance at{' '}
-                        <a
-                            href="https://www.autoriteitpersoonsgegevens.nl"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: 'var(--accent)' }}
-                        >
-                            autoriteitpersoonsgegevens.nl <ExternalLink size={10} />
-                        </a>
-                        .
-                    </p>
-                </div>
-
-                {/* 10. Contact */}
-                <div
-                    className="card"
-                    style={{ marginBottom: 20, borderLeft: '4px solid var(--accent-soft, #3b82f640)' }}
-                >
-                    <h3 style={{ marginBottom: 8 }}>10. Contact &amp; Functionaris Gegevensbescherming (FG)</h3>
-                    <p className="text-sm text-muted" style={{ margin: 0 }}>
-                        For data-related questions, contact your school's Data Protection Officer (Functionaris
-                        Gegevensbescherming). If your institution has not appointed an FG, contact the teacher or IT
-                        department responsible for this Rubric Maker instance.
-                    </p>
-                </div>
-
-                <div className="card" style={{ marginBottom: 20 }}>
-                    <h3 style={{ marginBottom: 12 }}>Open-source attributions</h3>
-                    <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
-                        Rubric Maker uses the following third-party datasets and services for CEFR text profiling:
-                    </p>
-                    <ul className="text-sm" style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
-                        <li>
-                            <strong>CEFR-J Vocabulary & Grammar Profiles</strong> — Tono Laboratory, Tokyo University of
-                            Foreign Studies (TUFS). Used for offline CEFR-level word and grammar analysis.{' '}
-                            <a
-                                href="https://github.com/openlanguageprofiles/olp-en-cefrj"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: 'var(--accent)' }}
-                            >
-                                github.com/openlanguageprofiles/olp-en-cefrj <ExternalLink size={10} />
-                            </a>
-                        </li>
-                        <li>
-                            <strong>LanguageTool</strong> — Grammar checking (when document analysis is used, text is
-                            sent to api.languagetool.org).{' '}
-                            <a
-                                href="https://languagetool.org/legal/privacy"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: 'var(--accent)' }}
-                            >
-                                LanguageTool Privacy Policy <ExternalLink size={10} />
-                            </a>
-                        </li>
-                        <li>
-                            <strong>Free Dictionary API</strong> — Optional online word lookup (definition, phonetic,
-                            part of speech) triggered per word from the Rubric Builder vocabulary panel. The looked-up
-                            word is sent to api.dictionaryapi.dev; no key or account is required.{' '}
-                            <a
-                                href="https://dictionaryapi.dev/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: 'var(--accent)' }}
-                            >
-                                dictionaryapi.dev <ExternalLink size={10} />
-                            </a>
-                        </li>
-                        <li>
-                            <strong>MyMemory translation</strong> — Optional word translation when you seed a flashcard
-                            deck from a text in a non-English interface language. Only the individual looked-up words
-                            (never the text itself) are sent to api.mymemory.translated.net, together with this
-                            deployment's contact email address (admin@rubricmaker.nl) to raise the free daily limit; no
-                            key or account is required.{' '}
-                            <a
-                                href="https://mymemory.translated.net/doc/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: 'var(--accent)' }}
-                            >
-                                MyMemory <ExternalLink size={10} />
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <p className="text-muted text-xs" style={{ textAlign: 'center', marginTop: 16 }}>
-                    Last updated: September 2026 · Rubric Maker is open-source software provided as-is. Compliance with
-                    AVG/GDPR remains the responsibility of the deploying institution.
+            {/* 4. Legal basis */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>4. Rechtsgrondslag — AVG Art. 6</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    The processing of student data for assessment purposes is based on{' '}
+                    <strong>gerechtvaardigd belang</strong> (legitimate interest, AVG Art. 6(1)(f)) — specifically, the
+                    educational institution's interest in assessing student learning and providing feedback. Teachers
+                    are advised to include Rubric Maker data processing in their school's privacy documentation (
+                    <em>privacybeleid</em>). For processing sensitive categories of data (audio recordings), explicit
+                    consent from students (or parents/guardians for minors) is recommended under AVG Art. 9.
                 </p>
             </div>
+
+            {/* 5. Data retention */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>5. Bewaartermijn / Data Retention</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    Rubric Maker does not impose automatic data expiry. Teachers are responsible for deleting student
+                    records at the end of each academic year or when a student leaves. Deleting a student record from
+                    the application (Students page) permanently removes all associated grades, assessments, attachments,
+                    and analysis results from both local storage and the database (cascade delete).
+                </p>
+            </div>
+
+            {/* 6. Right to erasure */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>6. Recht op verwijdering — AVG Art. 17</h3>
+                <p className="text-sm" style={{ marginBottom: 8 }}>
+                    Students (or their legal guardians) may request erasure of their data. To fulfil this request:
+                </p>
+                <ol className="text-sm" style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
+                    <li>
+                        Navigate to <strong>Students</strong>, find the student, and click{' '}
+                        <strong>Delete student</strong>. This removes all associated data from local storage and, if
+                        connected, from the database.
+                    </li>
+                    <li>
+                        If multiple teachers have shared access to the student's data, each teacher must delete from
+                        their own account.
+                    </li>
+                    <li>
+                        For full database erasure of a teacher's own account: go to{' '}
+                        <strong>Admin &gt; Database &gt; Delete all my database data</strong>.
+                    </li>
+                </ol>
+            </div>
+
+            {/* 7. Data portability */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>7. Recht op dataportabiliteit — AVG Art. 20</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    Teachers can export a complete JSON backup of all data via{' '}
+                    <strong>Settings &gt; Export backup</strong>. This backup can be used to migrate to another instance
+                    of Rubric Maker or to fulfil a data portability request. For database users, data can also be
+                    exported directly from the Supabase dashboard.
+                </p>
+            </div>
+
+            {/* 8. Audio data */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>8. Audiogegevens (spreekopdrachten)</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    The speaking-session feature records short audio clips per criterion using the browser's built-in
+                    recorder (MediaRecorder). These recordings are stored within Rubric Maker — locally, or in the
+                    configured database — and are accessible only to the grading teacher; this feature does not send
+                    them to any third-party transcription service. Separately, the optional voice-grading feature
+                    (dictating grades by voice) uses the browser's Web Speech API (SpeechRecognition); in some browsers,
+                    including Google Chrome, the captured audio is sent to the browser vendor's servers for
+                    transcription. Schools should inform students that audio may be recorded and stored during speaking
+                    assessments.
+                </p>
+            </div>
+
+            {/* 9. Supervisory authority */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>9. Toezichthouder</h3>
+                <p className="text-sm" style={{ margin: 0 }}>
+                    In the Netherlands, the supervisory authority for data protection is the{' '}
+                    <strong>Autoriteit Persoonsgegevens (AP)</strong>. You can file a complaint or find further guidance
+                    at{' '}
+                    <a
+                        href="https://www.autoriteitpersoonsgegevens.nl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={LINK_STYLE}
+                    >
+                        autoriteitpersoonsgegevens.nl <ExternalLink size={10} />
+                    </a>
+                    .
+                </p>
+            </div>
+
+            {/* 10. Contact */}
+            <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--accent-soft, #3b82f640)' }}>
+                <h3 style={{ marginBottom: 8 }}>10. Contact &amp; Functionaris Gegevensbescherming (FG)</h3>
+                <p className="text-sm text-muted" style={{ margin: 0 }}>
+                    For data-related questions, contact your school's Data Protection Officer (Functionaris
+                    Gegevensbescherming). If your institution has not appointed an FG, contact the teacher or IT
+                    department responsible for this Rubric Maker instance.
+                </p>
+            </div>
+
+            <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ marginBottom: 12 }}>Open-source attributions</h3>
+                <p className="text-sm text-muted" style={{ marginBottom: 12 }}>
+                    Rubric Maker uses the following third-party datasets and services for CEFR text profiling:
+                </p>
+                <ul className="text-sm" style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8 }}>
+                    <li>
+                        <strong>CEFR-J Vocabulary & Grammar Profiles</strong> — Tono Laboratory, Tokyo University of
+                        Foreign Studies (TUFS). Used for offline CEFR-level word and grammar analysis.{' '}
+                        <a
+                            href="https://github.com/openlanguageprofiles/olp-en-cefrj"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={LINK_STYLE}
+                        >
+                            github.com/openlanguageprofiles/olp-en-cefrj <ExternalLink size={10} />
+                        </a>
+                    </li>
+                    <li>
+                        <strong>LanguageTool</strong> — Grammar checking (when document analysis is used, text is sent
+                        to api.languagetool.org).{' '}
+                        <a
+                            href="https://languagetool.org/legal/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={LINK_STYLE}
+                        >
+                            LanguageTool Privacy Policy <ExternalLink size={10} />
+                        </a>
+                    </li>
+                    <li>
+                        <strong>Free Dictionary API</strong> — Optional online word lookup (definition, phonetic, part
+                        of speech) triggered per word from the Rubric Builder vocabulary panel. The looked-up word is
+                        sent to api.dictionaryapi.dev; no key or account is required.{' '}
+                        <a
+                            href="https://dictionaryapi.dev/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={LINK_STYLE}
+                        >
+                            dictionaryapi.dev <ExternalLink size={10} />
+                        </a>
+                    </li>
+                    <li>
+                        <strong>MyMemory translation</strong> — Optional word translation when you seed a flashcard deck
+                        from a text in a non-English interface language. Only the individual looked-up words (never the
+                        text itself) are sent to api.mymemory.translated.net, together with this deployment's contact
+                        email address (admin@rubricmaker.nl) to raise the free daily limit; no key or account is
+                        required.{' '}
+                        <a
+                            href="https://mymemory.translated.net/doc/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={LINK_STYLE}
+                        >
+                            MyMemory <ExternalLink size={10} />
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <p className="text-muted text-xs" style={{ textAlign: 'center', marginTop: 16 }}>
+                Last updated: September 2026 · Rubric Maker is open-source software provided as-is. Compliance with
+                AVG/GDPR remains the responsibility of the deploying institution.
+            </p>
+        </div>
+    );
+
+    if (studentPortalPath) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+                <header className="topbar">
+                    <Link to={studentPortalPath} className="btn btn-ghost btn-sm">
+                        <ArrowLeft size={15} aria-hidden="true" /> {t('studentPortal.back_to_portal')}
+                    </Link>
+                    <span className="topbar-title">{title}</span>
+                </header>
+                <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>{content}</main>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <Topbar title={title} />
+            {content}
         </>
     );
 }

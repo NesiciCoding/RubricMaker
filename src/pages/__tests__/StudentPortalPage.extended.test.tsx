@@ -641,6 +641,11 @@ describe('StudentPortalPage extended coverage', () => {
         expect(screen.getAllByText(/^sharedFeedback\.your_level/).length).toBeGreaterThanOrEqual(2);
     });
 
+    it('links to the privacy page from the portal footer (#619)', () => {
+        renderAt('s1');
+        expect(screen.getByRole('link', { name: 'studentPortal.privacy_link' })).toHaveAttribute('href', '/privacy');
+    });
+
     it('renders the self-assessment stat card when self-assessments exist', () => {
         mockAppValue.selfAssessments = [mockSelfAssessment];
         renderAt('s1');

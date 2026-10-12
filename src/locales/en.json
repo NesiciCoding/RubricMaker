@@ -2342,7 +2342,9 @@
         "brand_name": "Rubric Maker",
         "grade_withheld": "Feedback only — grade not released yet",
         "switch_back_to_teacher": "Switch back to teacher",
-        "letter_grade_range": "{{grade}} = {{min}}–{{max}}% on {{scale}}"
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}}% on {{scale}}",
+        "back_to_portal": "Back to portal",
+        "privacy_link": "Privacy & data protection"
     },
     "selfAssess": {
         "title": "CEFR Self-Assessment",

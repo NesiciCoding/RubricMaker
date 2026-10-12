@@ -2342,7 +2342,9 @@
         "brand_name": "Rubric Maker",
         "grade_withheld": "Nur Feedback — Note noch nicht freigegeben",
         "switch_back_to_teacher": "Zurück zur Lehrkraft-Rolle",
-        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % auf {{scale}}"
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}} % auf {{scale}}",
+        "back_to_portal": "Zurück zum Portal",
+        "privacy_link": "Datenschutz"
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",

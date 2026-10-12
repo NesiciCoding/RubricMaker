@@ -1439,6 +1439,11 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
             </div>
+            <footer style={{ textAlign: 'center', marginTop: 32, fontSize: '0.8rem' }}>
+                <Link to="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+                    {t('studentPortal.privacy_link')}
+                </Link>
+            </footer>
         </div>
     );
 }

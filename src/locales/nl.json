@@ -2342,7 +2342,9 @@
         "brand_name": "Rubric Maker",
         "grade_withheld": "Alleen feedback — cijfer nog niet vrijgegeven",
         "switch_back_to_teacher": "Terug naar docent",
-        "letter_grade_range": "{{grade}} = {{min}}–{{max}}% op {{scale}}"
+        "letter_grade_range": "{{grade}} = {{min}}–{{max}}% op {{scale}}",
+        "back_to_portal": "Terug naar portaal",
+        "privacy_link": "Privacy & gegevensbescherming"
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
