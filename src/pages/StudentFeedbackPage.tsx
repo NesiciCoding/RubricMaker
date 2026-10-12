@@ -1,297 +1,277 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Check } from 'lucide-react';
 import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 
 export default function StudentFeedbackPage() {
     const { code } = useParams<{ code: string }>();
+    const { t, i18n } = useTranslation();
     const data = code ? decodeFeedbackCode(code) : null;
 
+    useEffect(() => {
+        if (!data) return;
+        const previous = document.title;
+        document.title = data.rubric.name;
+        return () => {
+            document.title = previous;
+        };
+    }, [data?.rubric.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
     if (!data) {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#f8fafc',
-                    padding: 24,
-                }}
-            >
-                <div style={{ maxWidth: 480, textAlign: 'center' }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                    <h2 style={{ marginBottom: 8 }}>Invalid or expired link</h2>
-                    <p style={{ color: '#64748b' }}>
-                        This feedback link is no longer valid. Please ask your teacher for a new link.
-                    </p>
-                </div>
-            </div>
-        );
+        return <SharedPageInvalid title={t('sharedFeedback.invalid_title')} body={t('sharedFeedback.invalid_body')} />;
     }
 
     const { sr, rubric, student, scale } = data;
     const summary = calcGradeSummary(sr, rubric.criteria, scale);
     const fmt = rubric.format;
+    // The rubric's accent only tints borders and backgrounds; text keeps the theme colours so a light
+    // accent never drops below contrast.
     const accentColor = fmt?.accentColor ?? '#6366f1';
     const showGrade = !sr.feedbackOnly;
+    const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                background: '#f8fafc',
-                padding: '24px 16px',
-                fontFamily: fmt?.fontFamily ?? 'Inter, system-ui, sans-serif',
-            }}
-        >
-            <div style={{ maxWidth: 760, margin: '0 auto' }}>
-                {/* Header */}
+        <SharedPageShell fontFamily={fmt?.fontFamily} maxWidth={760} footer={t('sharedFeedback.footer')}>
+            <header style={sharedCardStyle}>
                 <div
                     style={{
-                        background: '#fff',
-                        borderRadius: 12,
-                        padding: 24,
-                        marginBottom: 16,
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        flexWrap: 'wrap',
+                        gap: 16,
                     }}
                 >
-                    <div
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            flexWrap: 'wrap',
-                            gap: 16,
-                        }}
-                    >
-                        <div>
-                            <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>
-                                {rubric.name}
-                            </h1>
-                            {rubric.subject && (
-                                <div style={{ color: '#64748b', marginTop: 4, fontSize: '0.9rem' }}>
-                                    {rubric.subject}
-                                </div>
-                            )}
-                            <div style={{ marginTop: 10, fontSize: '1rem', color: '#1e293b' }}>
-                                <strong>{student.name}</strong>
-                                {student.email && (
-                                    <span style={{ color: '#64748b', marginLeft: 8, fontSize: '0.85rem' }}>
-                                        {student.email}
-                                    </span>
-                                )}
+                    <div>
+                        <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text)' }}>
+                            {rubric.name}
+                        </h1>
+                        {rubric.subject && (
+                            <div style={{ color: 'var(--text-muted)', marginTop: 4, fontSize: '0.9rem' }}>
+                                {rubric.subject}
                             </div>
-                            {sr.gradedAt && (
-                                <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: 4 }}>
-                                    Graded: {new Date(sr.gradedAt).toLocaleDateString()}
-                                </div>
+                        )}
+                        <div style={{ marginTop: 10, fontSize: '1rem', color: 'var(--text)' }}>
+                            <strong>{student.name}</strong>
+                            {student.email && (
+                                <span style={{ color: 'var(--text-muted)', marginInlineStart: 8, fontSize: '0.85rem' }}>
+                                    {student.email}
+                                </span>
                             )}
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            {showGrade && scale && (
+                        {sr.gradedAt && (
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 4 }}>
+                                {t('sharedFeedback.graded_on', {
+                                    date: new Date(sr.gradedAt).toLocaleDateString(i18n.language, {
+                                        dateStyle: 'long',
+                                    }),
+                                })}
+                            </div>
+                        )}
+                    </div>
+                    {showGrade && (
+                        <div style={{ textAlign: 'end' }}>
+                            {scale && (
                                 <div
                                     style={{
                                         fontSize: '2.8rem',
                                         fontWeight: 800,
-                                        color: summary.gradeColor,
+                                        color: 'var(--text)',
                                         lineHeight: 1,
+                                        borderBottom: `4px solid ${summary.gradeColor}`,
+                                        display: 'inline-block',
                                     }}
                                 >
+                                    <span className="sr-only">{t('sharedFeedback.grade_label')} </span>
                                     {summary.letterGrade}
                                 </div>
                             )}
-                            {showGrade && (
-                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#374151', marginTop: 2 }}>
-                                    {summary.modifiedPercentage.toFixed(1)}%
-                                </div>
-                            )}
-                            {showGrade && (
-                                <div style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: 2 }}>
-                                    {summary.rawScore} / {summary.maxRawScore} pts
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {sr.feedbackOnly && (
-                        <div
-                            style={{
-                                marginTop: 14,
-                                padding: '8px 14px',
-                                background: '#fef9c3',
-                                borderRadius: 8,
-                                border: '1px solid #fde047',
-                                fontSize: '0.85rem',
-                                color: '#854d0e',
-                            }}
-                        >
-                            Your teacher has released feedback. Your grade will be visible when it is published.
+                            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)', marginTop: 6 }}>
+                                {percentFormat.format(summary.modifiedPercentage)}%
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                {t('sharedFeedback.points', { score: summary.rawScore, max: summary.maxRawScore })}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Per-criterion feedback */}
-                {rubric.criteria.map((criterion) => {
-                    const entry = sr.entries.find((e) => e.criterionId === criterion.id);
-                    const selectedLevel = criterion.levels.find((l) => l.id === entry?.levelId);
-
-                    return (
-                        <div
-                            key={criterion.id}
-                            style={{
-                                background: '#fff',
-                                borderRadius: 12,
-                                padding: 20,
-                                marginBottom: 12,
-                                border: '1px solid #e2e8f0',
-                                boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-start',
-                                    marginBottom: 14,
-                                    flexWrap: 'wrap',
-                                    gap: 8,
-                                }}
-                            >
-                                <div>
-                                    <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b' }}>
-                                        {criterion.title}
-                                    </div>
-                                    {criterion.description && (
-                                        <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: 2 }}>
-                                            {criterion.description}
-                                        </div>
-                                    )}
-                                </div>
-                                {selectedLevel && (
-                                    <span
-                                        style={{
-                                            background: accentColor + '22',
-                                            color: accentColor,
-                                            border: `1.5px solid ${accentColor}`,
-                                            borderRadius: 20,
-                                            padding: '3px 12px',
-                                            fontSize: '0.82rem',
-                                            fontWeight: 700,
-                                            whiteSpace: 'nowrap',
-                                        }}
-                                    >
-                                        {selectedLevel.label}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Level pills */}
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    gap: 6,
-                                    flexWrap: 'wrap',
-                                    marginBottom: selectedLevel?.description || entry?.comment ? 12 : 0,
-                                }}
-                            >
-                                {criterion.levels.map((level) => {
-                                    const isSelected = level.id === entry?.levelId;
-                                    return (
-                                        <div
-                                            key={level.id}
-                                            style={{
-                                                padding: '6px 12px',
-                                                borderRadius: 8,
-                                                fontSize: '0.82rem',
-                                                border: isSelected ? `2px solid ${accentColor}` : '1.5px solid #e2e8f0',
-                                                background: isSelected ? accentColor + '18' : '#f8fafc',
-                                                color: isSelected ? accentColor : '#64748b',
-                                                fontWeight: isSelected ? 700 : 400,
-                                            }}
-                                        >
-                                            {level.label}
-                                            {isSelected && level.description && (
-                                                <div
-                                                    style={{
-                                                        marginTop: 4,
-                                                        fontSize: '0.78rem',
-                                                        color: '#475569',
-                                                        fontWeight: 400,
-                                                        maxWidth: 280,
-                                                    }}
-                                                >
-                                                    {level.description}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {entry?.comment && (
-                                <div
-                                    style={{
-                                        marginTop: 8,
-                                        padding: '10px 14px',
-                                        background: '#f8fafc',
-                                        borderRadius: 8,
-                                        borderLeft: `3px solid ${accentColor}`,
-                                        fontSize: '0.88rem',
-                                        color: '#475569',
-                                        lineHeight: 1.6,
-                                    }}
-                                >
-                                    {entry.comment}
-                                </div>
-                            )}
-                            {entry?.audioDataUrl && (
-                                <div style={{ marginTop: 8 }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: 4 }}>
-                                        Audio feedback:
-                                    </div>
-                                    <audio controls src={entry.audioDataUrl} style={{ width: '100%', height: 32 }} />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-
-                {/* Overall comment */}
-                {sr.overallComment && (
-                    <div
+                {sr.feedbackOnly && (
+                    <p
+                        role="note"
                         style={{
-                            background: '#fff',
-                            borderRadius: 12,
-                            padding: 20,
-                            marginBottom: 12,
-                            border: '1px solid #e2e8f0',
-                            boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+                            margin: '14px 0 0',
+                            padding: '8px 14px',
+                            background: 'color-mix(in srgb, var(--yellow, #eab308) 14%, var(--bg-card))',
+                            borderRadius: 8,
+                            border: '1px solid color-mix(in srgb, var(--yellow, #eab308) 55%, transparent)',
+                            fontSize: '0.85rem',
+                            color: 'var(--text)',
                         }}
                     >
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 8, color: '#1e293b' }}>
-                            Overall Feedback
-                        </div>
-                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                            {sr.overallComment}
-                        </p>
-                    </div>
+                        {t('sharedFeedback.feedback_only_notice')}
+                    </p>
                 )}
+            </header>
 
-                {/* Footer */}
-                <div
-                    style={{
-                        textAlign: 'center',
-                        color: '#94a3b8',
-                        fontSize: '0.75rem',
-                        marginTop: 24,
-                        paddingBottom: 24,
-                    }}
-                >
-                    Generated by RubricMaker · For questions, contact your teacher
-                </div>
-            </div>
-        </div>
+            {rubric.criteria.map((criterion) => {
+                const entry = sr.entries.find((e) => e.criterionId === criterion.id);
+                const selectedLevel = criterion.levels.find((l) => l.id === entry?.levelId);
+                const headingId = `feedback-criterion-${criterion.id}`;
+
+                return (
+                    <section key={criterion.id} aria-labelledby={headingId} style={{ ...sharedCardStyle, padding: 20 }}>
+                        <div
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                marginBottom: 14,
+                                flexWrap: 'wrap',
+                                gap: 8,
+                            }}
+                        >
+                            <div>
+                                <h2
+                                    id={headingId}
+                                    style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: 'var(--text)' }}
+                                >
+                                    {criterion.title}
+                                </h2>
+                                {criterion.description && (
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 2 }}>
+                                        {criterion.description}
+                                    </div>
+                                )}
+                            </div>
+                            {selectedLevel && (
+                                <span
+                                    style={{
+                                        background: `color-mix(in srgb, ${accentColor} 14%, var(--bg-card))`,
+                                        color: 'var(--text)',
+                                        border: `1.5px solid ${accentColor}`,
+                                        borderRadius: 20,
+                                        padding: '3px 12px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {t('sharedFeedback.your_level')}: {selectedLevel.label}
+                                </span>
+                            )}
+                        </div>
+
+                        <ul
+                            aria-label={t('sharedFeedback.levels_label', { criterion: criterion.title })}
+                            style={{
+                                listStyle: 'none',
+                                padding: 0,
+                                margin: 0,
+                                display: 'flex',
+                                gap: 6,
+                                flexWrap: 'wrap',
+                                marginBottom: selectedLevel?.description || entry?.comment ? 12 : 0,
+                            }}
+                        >
+                            {criterion.levels.map((level) => {
+                                const isSelected = level.id === entry?.levelId;
+                                return (
+                                    <li
+                                        key={level.id}
+                                        aria-current={isSelected ? 'true' : undefined}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: 8,
+                                            fontSize: '0.85rem',
+                                            border: isSelected
+                                                ? `2px solid ${accentColor}`
+                                                : '1.5px solid var(--border)',
+                                            background: isSelected
+                                                ? `color-mix(in srgb, ${accentColor} 12%, var(--bg-card))`
+                                                : 'var(--bg-elevated)',
+                                            color: isSelected ? 'var(--text)' : 'var(--text-muted)',
+                                            fontWeight: isSelected ? 700 : 400,
+                                        }}
+                                    >
+                                        {isSelected && (
+                                            <>
+                                                <Check
+                                                    size={13}
+                                                    aria-hidden="true"
+                                                    style={{ verticalAlign: '-2px', marginInlineEnd: 4 }}
+                                                />
+                                                <span className="sr-only">{t('sharedFeedback.your_level')}: </span>
+                                            </>
+                                        )}
+                                        {level.label}
+                                        {isSelected && level.description && (
+                                            <div
+                                                style={{
+                                                    marginTop: 4,
+                                                    fontSize: '0.8rem',
+                                                    color: 'var(--text)',
+                                                    fontWeight: 400,
+                                                    maxWidth: 280,
+                                                }}
+                                            >
+                                                {level.description}
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+
+                        {entry?.comment && (
+                            <div
+                                style={{
+                                    marginTop: 8,
+                                    padding: '10px 14px',
+                                    background: 'var(--bg-elevated)',
+                                    borderRadius: 8,
+                                    borderInlineStart: `3px solid ${accentColor}`,
+                                    fontSize: '0.9rem',
+                                    color: 'var(--text)',
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                {entry.comment}
+                            </div>
+                        )}
+                        {entry?.audioDataUrl && (
+                            <div style={{ marginTop: 8 }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                                    {t('sharedFeedback.audio_feedback')}
+                                </div>
+                                <audio
+                                    controls
+                                    src={entry.audioDataUrl}
+                                    aria-label={t('sharedFeedback.audio_feedback_for', { criterion: criterion.title })}
+                                    style={{ width: '100%', height: 32 }}
+                                />
+                            </div>
+                        )}
+                    </section>
+                );
+            })}
+
+            {sr.overallComment && (
+                <section aria-labelledby="feedback-overall" style={{ ...sharedCardStyle, padding: 20 }}>
+                    <h2
+                        id="feedback-overall"
+                        style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}
+                    >
+                        {t('sharedFeedback.overall_feedback')}
+                    </h2>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', lineHeight: 1.6 }}>
+                        {sr.overallComment}
+                    </p>
+                </section>
+            )}
+        </SharedPageShell>
     );
 }

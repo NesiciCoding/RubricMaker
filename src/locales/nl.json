@@ -4501,5 +4501,28 @@
         "notes_label": "Notities",
         "category_label": "Categorie",
         "criterion_label": "Gekoppeld criterium"
+    },
+    "sharedFeedback": {
+        "invalid_title": "Deze feedbacklink kan niet worden geopend",
+        "invalid_body": "De link is onvolledig of beschadigd. Vraag je docent om hem opnieuw te sturen.",
+        "graded_on": "Beoordeeld op {{date}}",
+        "grade_label": "Cijfer:",
+        "points": "{{score}} / {{max}} punten",
+        "feedback_only_notice": "Je docent heeft feedback gedeeld. Je cijfer wordt zichtbaar zodra het wordt gepubliceerd.",
+        "your_level": "Jouw niveau",
+        "levels_label": "Niveaus voor {{criterion}}",
+        "audio_feedback": "Gesproken feedback",
+        "audio_feedback_for": "Gesproken feedback bij {{criterion}}",
+        "overall_feedback": "Algemene feedback",
+        "footer": "Gemaakt met RubricMaker · Vragen? Stel ze aan je docent."
+    },
+    "rubricPreview": {
+        "invalid_title": "Deze rubrieklink kan niet worden geopend",
+        "invalid_body": "De link is onvolledig of beschadigd. Vraag je docent om hem opnieuw te sturen.",
+        "badge": "Beoordelingsrubriek",
+        "weight": "Weging: {{weight}}%",
+        "points_single": "{{points}} ptn",
+        "points_range": "{{min}}–{{max}} ptn",
+        "footer": "Gemaakt met RubricMaker · Bekijk deze rubriek voordat je je werk inlevert."
     }
 }

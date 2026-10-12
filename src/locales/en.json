@@ -4499,5 +4499,28 @@
         "notes_label": "Notes",
         "category_label": "Category",
         "criterion_label": "Linked criterion"
+    },
+    "sharedFeedback": {
+        "invalid_title": "This feedback link can't be opened",
+        "invalid_body": "The link is incomplete or damaged. Ask your teacher to send it again.",
+        "graded_on": "Graded on {{date}}",
+        "grade_label": "Grade:",
+        "points": "{{score}} / {{max}} points",
+        "feedback_only_notice": "Your teacher has released feedback. Your grade will be visible when it is published.",
+        "your_level": "Your level",
+        "levels_label": "Levels for {{criterion}}",
+        "audio_feedback": "Audio feedback",
+        "audio_feedback_for": "Audio feedback for {{criterion}}",
+        "overall_feedback": "Overall feedback",
+        "footer": "Made with RubricMaker · Questions? Ask your teacher."
+    },
+    "rubricPreview": {
+        "invalid_title": "This rubric link can't be opened",
+        "invalid_body": "The link is incomplete or damaged. Ask your teacher to send it again.",
+        "badge": "Assessment rubric",
+        "weight": "Weight: {{weight}}%",
+        "points_single": "{{points}} pts",
+        "points_range": "{{min}}–{{max}} pts",
+        "footer": "Made with RubricMaker · Review this rubric before you hand in your work."
     }
 }
