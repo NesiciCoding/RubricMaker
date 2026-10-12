@@ -1818,7 +1818,31 @@ select.input-error {
     gap: 16px;
 }
 
+.criterion-meta-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
 @media (max-width: 640px) {
+    .rubric-builder-layout {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .criterion-meta-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* The card's action icons take their own row so the fields get the full width. */
+    .criterion-header {
+        flex-wrap: wrap;
+    }
+
+    .criterion-header-actions {
+        order: -1;
+        flex: 1 1 100%;
+        justify-content: flex-end;
+        margin-top: 0 !important;
+    }
+
     .grid-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

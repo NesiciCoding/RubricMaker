@@ -33,4 +33,10 @@ describe('phone-width layout rules', () => {
         expect(phone).toMatch(/\.grid-4 \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
         expect(phone).toMatch(/\.grid-2,\s*\.grid-3 \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
     });
+
+    it('reflows the rubric builder to one column with the criterion actions on their own row (#656)', () => {
+        expect(phone).toMatch(/\.rubric-builder-layout \{[^}]*grid-template-columns: minmax\(0, 1fr\) !important/);
+        expect(phone).toMatch(/\.criterion-meta-grid \{[^}]*grid-template-columns: minmax\(0, 1fr\) !important/);
+        expect(phone).toMatch(/\.criterion-header \{[^}]*flex-wrap: wrap/);
+    });
 });
