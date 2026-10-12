@@ -39,6 +39,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { isLocalMode } from '../store/storage';
 import { useDbStatus } from '../hooks/useDbStatus';
 import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
+import { resolveUserRole } from '../utils/userRole';
 import { exportFullBackup } from '../store/storage';
 import { hasFloorRange } from '../utils/gradeCalc';
 import { seedDemoData } from '../utils/seedDemoData';
@@ -52,14 +53,6 @@ import { VO_TRACK_LABELS } from '../data/voTracks';
 type Tab = 'general' | 'teaching' | 'administration';
 
 // ─── Role helpers ──────────────────────────────────────────────────────────────
-
-const VALID_ROLES = new Set<string>(['admin', 'teacher', 'student']);
-
-function normalizeStoredRole(raw: string | undefined): UserRole {
-    if (raw === 'user') return 'teacher';
-    if (raw && VALID_ROLES.has(raw)) return raw as UserRole;
-    return 'admin';
-}
 
 const ROLE_META: Record<
     UserRole,
@@ -136,7 +129,7 @@ export default function SettingsPage() {
     const dbStatus = useDbStatus();
 
     // ─── Role state ─────────────────────────────────────────────────────────────
-    const role = normalizeStoredRole(settings.userRole);
+    const role = resolveUserRole(settings.userRole);
     const isAdmin = role === 'admin';
     const isUserPlus = role === 'admin' || role === 'teacher'; // teaching features
 

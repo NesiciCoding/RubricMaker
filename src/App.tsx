@@ -15,6 +15,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
 import { isLocalMode } from './store/storage';
+import { resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
@@ -123,9 +124,9 @@ export default function App() {
     // Student portal: explicit 'student' role OR email matches a student record for any
     // non-admin user (handles first-time sign-ins before the DB trigger can assign the role).
     // Local mode has no sign-in, so there the role setting alone decides (#623).
-    const autoLinkStudent =
-        linkedStudent !== null && settings.userRole !== 'admin' && !(isLocalMode() && settings.userRole === 'teacher');
-    if (settings.userRole === 'student' || autoLinkStudent) {
+    const role = resolveUserRole(settings.userRole);
+    const autoLinkStudent = linkedStudent !== null && role !== 'admin' && !(isLocalMode() && role === 'teacher');
+    if (role === 'student' || autoLinkStudent) {
         if (!linkedStudent) {
             return (
                 <div
@@ -299,9 +300,7 @@ export default function App() {
                                     <Route path="/settings" element={<SettingsPage />} />
                                     <Route
                                         path="/admin"
-                                        element={
-                                            settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
-                                        }
+                                        element={role === 'admin' ? <AdminPage /> : <Navigate to="/" replace />}
                                     />
                                     <Route path="/docs" element={<DocsPage />} />
                                     <Route path="/privacy" element={<PrivacyPage />} />
