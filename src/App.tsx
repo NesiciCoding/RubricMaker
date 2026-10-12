@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader, GraduationCap } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
+import { OwnPortalGuard } from './components/auth/OwnPortalGuard';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
@@ -172,8 +173,22 @@ export default function App() {
                 <PageViewLogger />
                 <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
-                        <Route path="/portal/:studentId" element={<StudentPortalPage />} />
-                        <Route path="/portal/:studentId/flashcards/:deckId" element={<StudentFlashcardStudyPage />} />
+                        <Route
+                            path="/portal/:studentId"
+                            element={
+                                <OwnPortalGuard ownStudentId={linkedStudent.id}>
+                                    <StudentPortalPage />
+                                </OwnPortalGuard>
+                            }
+                        />
+                        <Route
+                            path="/portal/:studentId/flashcards/:deckId"
+                            element={
+                                <OwnPortalGuard ownStudentId={linkedStudent.id}>
+                                    <StudentFlashcardStudyPage />
+                                </OwnPortalGuard>
+                            }
+                        />
                         <Route path="/privacy" element={<PrivacyPage />} />
                         <Route path="*" element={<Navigate to={`/portal/${linkedStudent.id}`} replace />} />
                     </Routes>
