@@ -1715,7 +1715,10 @@
         "nhi_confirm_action": "Markeren als niet ingeleverd",
         "nhi_banner": "Gemarkeerd als niet ingeleverd — dit werk telt niet mee in statistieken, het dashboard en het leerlingportaal. Een cijfer geven en opslaan haalt de markering weg.",
         "nhi_undo": "Niet ingeleverd ongedaan maken",
-        "points_before_modifier": "Punten vóór de aanpassing"
+        "points_before_modifier": "Punten vóór de aanpassing",
+        "criteria_graded_one": "{{graded}}/{{count}} criterium",
+        "criteria_graded_other": "{{graded}}/{{count}} criteria",
+        "footer_options": "Beoordelingsopties"
     },
     "rubricBuilder": {
         "action_back": "Terug",

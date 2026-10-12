@@ -39,4 +39,11 @@ describe('phone-width layout rules', () => {
         expect(phone).toMatch(/\.criterion-meta-grid \{[^}]*grid-template-columns: minmax\(0, 1fr\) !important/);
         expect(phone).toMatch(/\.criterion-header \{[^}]*flex-wrap: wrap/);
     });
+
+    it('keeps the grading footer to two rows with Save pinned to the end (#660)', () => {
+        expect(css).toMatch(/\.grade-footer-actions \{[^}]*flex-shrink: 0;[^}]*margin-inline-start: auto/);
+        expect(phone).toMatch(/\.grade-footer-options \{[^}]*display: none/);
+        expect(phone).toMatch(/\.grade-footer-options\.open \{[^}]*display: flex/);
+        expect(phone).toMatch(/\.grade-footer-options-toggle \{[^}]*display: inline-flex/);
+    });
 });

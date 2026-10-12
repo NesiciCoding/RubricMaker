@@ -990,6 +990,61 @@ select.input-error {
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
 }
 
+.grade-footer-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+}
+
+.grade-footer-options,
+.grade-footer-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.grade-footer-actions {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+}
+
+/* Only phones collapse the two checkboxes behind a toggle. */
+.grade-footer-options-toggle {
+    display: none;
+}
+
+/* Phones: summary on one row, then the options toggle and Save; the checkboxes open in their
+   own row on demand so the footer stays under ~100px and Save is never pushed off-screen (#660). */
+@media (max-width: 640px) {
+    .grade-footer {
+        gap: 6px 10px;
+        padding: 8px 12px;
+    }
+
+    .grade-footer-summary {
+        flex: 1 1 100%;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .grade-footer-options-toggle {
+        display: inline-flex;
+    }
+
+    .grade-footer-options {
+        display: none;
+        order: 3;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .grade-footer-options.open {
+        display: flex;
+    }
+}
+
 /* ─── Level selection cards ──────────────────────────────────────────────────── */
 .level-btn {
     flex: 1;

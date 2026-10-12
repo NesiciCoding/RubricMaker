@@ -1715,7 +1715,10 @@
         "nhi_confirm_action": "Marquer comme non rendu",
         "nhi_banner": "Marqué comme non rendu — ce travail est exclu des statistiques, du tableau de bord et du portail élève. Noter et enregistrer retire cette marque.",
         "nhi_undo": "Annuler « non rendu »",
-        "points_before_modifier": "Points avant le modificateur"
+        "points_before_modifier": "Points avant le modificateur",
+        "criteria_graded_one": "{{graded}}/{{count}} critère",
+        "criteria_graded_other": "{{graded}}/{{count}} critères",
+        "footer_options": "Options de notation"
     },
     "rubricBuilder": {
         "action_back": "Retour",

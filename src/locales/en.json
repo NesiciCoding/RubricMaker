@@ -1715,7 +1715,10 @@
         "nhi_confirm_action": "Mark not handed in",
         "nhi_banner": "Marked as not handed in — this work is left out of statistics, the dashboard and the student portal. Scoring and saving a grade clears the mark.",
         "nhi_undo": "Undo not handed in",
-        "points_before_modifier": "Points before the modifier"
+        "points_before_modifier": "Points before the modifier",
+        "criteria_graded_one": "{{graded}}/{{count}} criterion",
+        "criteria_graded_other": "{{graded}}/{{count}} criteria",
+        "footer_options": "Grade options"
     },
     "rubricBuilder": {
         "action_back": "Back",
