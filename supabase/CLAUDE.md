@@ -37,7 +37,7 @@ All tables have RLS enabled. The pattern is:
 
 - Users can only access rows they own (matched by `auth.uid() = user_id`).
 - Public/shared data uses specific policies defined per table.
-- The `site_config` table has its own access rules (see `012_site_config.sql`).
+- The `site_config` table has its own access rules (see `012_site_config.sql`): signed-in users read every key, logged-out visitors only `auth_providers` (`088_site_config_anon_providers.sql`) because other values can hold API keys. Provider configuration is documented in `docs/SELF_HOSTING_OPS.md` → Login providers.
 
 When adding a table, always:
 

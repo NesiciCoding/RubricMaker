@@ -176,6 +176,29 @@ The job only emails teachers who opted in via Settings → Email Digest (`digest
 
 ---
 
+## Login providers
+
+The sign-in page shows one button per provider listed in the `auth_providers` row of
+`public.site_config` (a JSON array). The default is every supported provider:
+
+```sql
+SELECT value FROM public.site_config WHERE key = 'auth_providers';
+-- ["google", "azure_personal", "azure_ad", "email"]
+```
+
+To hide a provider, update the array in the SQL editor (Supabase Studio or `psql`). There is no
+admin screen for this yet:
+
+```sql
+UPDATE public.site_config SET value = '["google", "email"]' WHERE key = 'auth_providers';
+```
+
+Valid entries are `google`, `azure_personal`, `azure_ad` and `email`. A provider listed here must
+also be enabled under Authentication → Providers in Supabase, or its button signs in to nothing.
+Logged-out visitors can read only this one key (migration 088); the rest of `site_config` is
+readable by signed-in users only. If the row cannot be read, the page falls back to showing every
+provider.
+
 ## Log Rotation
 
 The observability stack (see [OBSERVABILITY_HESTIACP.md](OBSERVABILITY_HESTIACP.md)) uses Loki with a 168-hour (7-day) retention window. For raw web-server logs on HestiaCP/Virtualmin, `logrotate` is configured automatically by the control panel. Verify with:
