@@ -60,6 +60,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
             <span className="topbar-title">{title}</span>
             {classes.length > 0 && (
                 <select
+                    className="topbar-class-select"
                     aria-label={t('search.active_class_label')}
                     value={settings.activeClassId ?? ''}
                     onChange={(e) => updateSettings({ activeClassId: e.target.value || undefined })}
@@ -73,8 +74,8 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     ))}
                 </select>
             )}
-            <div className="topbar-actions">
-                {actions}
+            {actions && <div className="topbar-actions">{actions}</div>}
+            <div className="topbar-global">
                 <button
                     ref={searchBtnRef}
                     className="btn btn-ghost btn-icon"
@@ -92,6 +93,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     className="btn btn-ghost btn-icon"
                     onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
                     title={t('common.toggle_theme')}
+                    aria-label={t('common.toggle_theme')}
                 >
                     {settings.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>

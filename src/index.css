@@ -449,6 +449,50 @@ h3 {
     min-width: 0;
 }
 
+.topbar-global {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Phones: the page's own actions move to a second, wrapping row so Save/Back/Export stay
+   visible instead of scrolling out of a strip with no cue; search, bell and theme stay
+   beside the title (#652). */
+@media (max-width: 640px) {
+    .topbar {
+        height: auto;
+        min-height: var(--topbar-h);
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .topbar-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .topbar-class-select {
+        order: 3;
+        flex: 1 1 100%;
+        max-width: none !important;
+    }
+
+    .topbar-actions {
+        order: 4;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+
+    .topbar-actions > div {
+        flex-wrap: wrap;
+    }
+}
+
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 .btn {
     display: inline-flex;
@@ -1770,8 +1814,19 @@ select.input-error {
 
 .grid-4 {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
+}
+
+@media (max-width: 640px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @keyframes pulse {

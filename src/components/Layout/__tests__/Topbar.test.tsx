@@ -65,6 +65,21 @@ describe('Topbar', () => {
         expect(screen.getByText('Action')).toBeInTheDocument();
     });
 
+    it('keeps search, notifications and theme outside the page actions so they never wrap away (#652)', () => {
+        const { container } = render(<Topbar title="Test" actions={<button>Save</button>} />);
+        const actions = container.querySelector('.topbar-actions')!;
+        const global = container.querySelector('.topbar-global')!;
+        expect(actions).toContainElement(screen.getByText('Save'));
+        expect(global).toContainElement(screen.getByLabelText('search.open_search'));
+        expect(global).toContainElement(screen.getByTestId('notification-bell'));
+        expect(global).toContainElement(screen.getByLabelText('common.toggle_theme'));
+    });
+
+    it('omits the page-actions row when a page has no actions', () => {
+        const { container } = render(<Topbar title="Test" />);
+        expect(container.querySelector('.topbar-actions')).toBeNull();
+    });
+
     it('renders without actions', () => {
         const { container } = render(<Topbar title="No Actions" />);
         expect(container.firstChild).toBeTruthy();
