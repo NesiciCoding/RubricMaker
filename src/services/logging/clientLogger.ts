@@ -9,7 +9,7 @@ export interface ClientLoggerContext {
     userId?: string;
 }
 
-interface LogRow {
+export interface LogRow {
     session_id: string;
     role: string | null;
     school_id: string | null;
@@ -28,6 +28,32 @@ const MAX_BUFFER_SIZE = 20;
 const MAX_QUEUED_SIZE = 200;
 
 const sessionId = STRESS_TEST_LOGGING_ENABLED ? crypto.randomUUID() : '';
+
+// Character limits; migration 089 rejects rows over 4x these in bytes, and one rejected row fails
+// the whole batch insert.
+const LIMITS = { name: 128, path: 512, role: 32, schoolId: 64 };
+const MAX_META_CHARS = 2048;
+
+function clamp(value: string | null, max: number): string | null {
+    return value !== null && value.length > max ? value.slice(0, max) : value;
+}
+
+/** Keep a row inside the server's size limits (#638) so it is never rejected. */
+export function boundLogRow(row: LogRow): LogRow {
+    let meta = row.meta;
+    if (meta) {
+        const size = JSON.stringify(meta).length;
+        if (size > MAX_META_CHARS) meta = { truncated: true, size };
+    }
+    return {
+        ...row,
+        role: clamp(row.role, LIMITS.role),
+        school_id: clamp(row.school_id, LIMITS.schoolId),
+        name: clamp(row.name, LIMITS.name) ?? '',
+        path: clamp(row.path, LIMITS.path),
+        meta,
+    };
+}
 
 let client: SupabaseClient | null = null;
 let context: ClientLoggerContext = {};
@@ -63,17 +89,19 @@ export function logEvent(
     path?: string
 ): void {
     if (!STRESS_TEST_LOGGING_ENABLED) return;
-    buffer.push({
-        session_id: sessionId,
-        role: context.role ?? null,
-        school_id: context.schoolId ?? null,
-        user_id: context.userId ?? null,
-        category,
-        name,
-        level,
-        path: path ?? (currentPath() || null),
-        meta: meta ?? null,
-    });
+    buffer.push(
+        boundLogRow({
+            session_id: sessionId,
+            role: context.role ?? null,
+            school_id: context.schoolId ?? null,
+            user_id: context.userId ?? null,
+            category,
+            name,
+            level,
+            path: path ?? (currentPath() || null),
+            meta: meta ?? null,
+        })
+    );
     if (buffer.length > MAX_QUEUED_SIZE) buffer = buffer.slice(-MAX_QUEUED_SIZE);
     if (buffer.length >= MAX_BUFFER_SIZE) flush();
 }
