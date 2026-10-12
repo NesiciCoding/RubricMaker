@@ -1715,7 +1715,10 @@
         "nhi_confirm_action": "Als nicht abgegeben markieren",
         "nhi_banner": "Als nicht abgegeben markiert — diese Arbeit zählt nicht in Statistiken, Dashboard und Schülerportal. Bewerten und Speichern hebt die Markierung auf.",
         "nhi_undo": "„Nicht abgegeben“ rückgängig machen",
-        "points_before_modifier": "Punkte vor der Anpassung"
+        "points_before_modifier": "Punkte vor der Anpassung",
+        "criteria_graded_one": "{{graded}}/{{count}} Kriterium",
+        "criteria_graded_other": "{{graded}}/{{count}} Kriterien",
+        "footer_options": "Bewertungsoptionen"
     },
     "rubricBuilder": {
         "action_back": "Zurück",

@@ -24,6 +24,7 @@ import {
     Trash2,
     LayoutGrid,
     Rows3,
+    SlidersHorizontal,
 } from 'lucide-react';
 import PageTour from '../components/Tour/PageTour';
 import Topbar from '../components/Layout/Topbar';
@@ -199,6 +200,7 @@ export default function GradeStudent() {
         };
     });
 
+    const [showFooterOptions, setShowFooterOptions] = useState(false);
     const [feedbackOnly, setFeedbackOnly] = useState<boolean>(existingSR?.feedbackOnly ?? false);
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
@@ -1706,6 +1708,7 @@ export default function GradeStudent() {
                                                                                 }
                                                                                 style={{
                                                                                     flex: 1,
+                                                                                    minWidth: 0,
                                                                                     accentColor: fmt.accentColor,
                                                                                 }}
                                                                             />
@@ -1714,6 +1717,7 @@ export default function GradeStudent() {
                                                                                     fontSize: '0.75em',
                                                                                     fontWeight: 600,
                                                                                     minWidth: 24,
+                                                                                    flexShrink: 0,
                                                                                     textAlign: 'right',
                                                                                 }}
                                                                             >
@@ -2329,7 +2333,7 @@ export default function GradeStudent() {
                     aria-live="polite"
                     aria-label={t('gradeStudent.aria_grade_summary')}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+                    <div className="grade-footer-summary">
                         {scale && (
                             <span
                                 className="grade-chip"
@@ -2359,11 +2363,29 @@ export default function GradeStudent() {
                             {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {summary.gradedCount}/{summary.totalCriteria}{' '}
-                            {t('gradeStudent.table_criterion').toLowerCase()}
+                            {t('gradeStudent.criteria_graded', {
+                                graded: summary.gradedCount,
+                                count: summary.totalCriteria,
+                            })}
                         </span>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                        type="button"
+                        className={`btn btn-sm btn-icon grade-footer-options-toggle ${
+                            feedbackOnly || isAnchor ? 'btn-secondary' : 'btn-ghost'
+                        }`}
+                        aria-expanded={showFooterOptions}
+                        aria-controls="grade-footer-options"
+                        aria-label={t('gradeStudent.footer_options')}
+                        title={t('gradeStudent.footer_options')}
+                        onClick={() => setShowFooterOptions((v) => !v)}
+                    >
+                        <SlidersHorizontal size={14} aria-hidden="true" />
+                    </button>
+                    <div
+                        id="grade-footer-options"
+                        className={`grade-footer-options${showFooterOptions ? ' open' : ''}`}
+                    >
                         <label
                             style={{
                                 display: 'flex',
@@ -2441,6 +2463,8 @@ export default function GradeStudent() {
                                     : t('gradeStudent.anchor_panel_title')}
                             </button>
                         )}
+                    </div>
+                    <div className="grade-footer-actions">
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
                                 <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}
