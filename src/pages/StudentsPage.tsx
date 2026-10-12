@@ -32,6 +32,7 @@ import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
 import { downloadCsv } from '../utils/csvDownload';
+import { findDuplicateStudent, isValidEmail, studentExportRows } from '../utils/studentValidation';
 import CsvImportModal from '../components/Students/CsvImportModal';
 import StudentPasswordSlipSheet, { type PasswordSlip } from '../components/Students/StudentPasswordSlipSheet';
 import { useTranslation, Trans } from 'react-i18next';
@@ -627,17 +628,27 @@ export default function StudentsPage() {
         [students, isAllCohorts, selectedSet, studentSearch, sortKey, sortDir, derivedByStudent]
     );
 
+    const studentFormClassId = editStudent
+        ? editStudentClassId
+        : editStudentClassId || singleClassId || classes[0]?.id || '';
+    const emailInvalid = email.trim() !== '' && !isValidEmail(email);
+    const duplicateStudent = showAddModal
+        ? findDuplicateStudent(students, name, studentFormClassId, editStudent?.id)
+        : undefined;
+
     function handleAddStudent() {
-        /* v8 ignore next -- the submit button is disabled while the name is empty */
-        if (!name.trim()) return;
+        /* v8 ignore next -- the submit button is disabled while the name is empty or the email is invalid */
+        if (!name.trim() || emailInvalid) return;
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim();
         if (editStudent) {
             const prev = students.find((s) => s.id === editStudent.id)!;
             const isTransfer = prev.classId !== editStudentClassId;
             const targetClass = classes.find((c) => c.id === editStudentClassId);
             updateStudent({
                 ...prev,
-                name,
-                email,
+                name: trimmedName,
+                email: trimmedEmail,
                 classId: editStudentClassId,
                 voTrack: targetClass?.voTrack ? editStudentTrack || undefined : undefined,
                 readAloudAccommodation: editStudentReadAloud || undefined,
@@ -654,9 +665,9 @@ export default function StudentsPage() {
             });
         } else {
             addStudent({
-                name,
-                email,
-                classId: editStudentClassId || singleClassId || classes[0]?.id || '',
+                name: trimmedName,
+                email: trimmedEmail,
+                classId: studentFormClassId,
                 readAloudAccommodation: editStudentReadAloud || undefined,
             });
         }
@@ -686,8 +697,7 @@ export default function StudentsPage() {
     }
 
     function exportCSV() {
-        const rows = filteredStudents.map((s) => ({ name: s.name, email: s.email ?? '' }));
-        const csv = Papa.unparse(rows, CSV_UNPARSE_OPTIONS);
+        const csv = Papa.unparse(studentExportRows(filteredStudents, classes), CSV_UNPARSE_OPTIONS);
         downloadCsv(csv, 'students.csv');
     }
 
@@ -1434,8 +1444,23 @@ export default function StudentsPage() {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder={t('studentsPage.form_name_placeholder')}
+                                        aria-describedby={duplicateStudent ? 'student-name-duplicate' : undefined}
                                         autoFocus
                                     />
+                                    {duplicateStudent && (
+                                        <p
+                                            id="student-name-duplicate"
+                                            role="status"
+                                            className="text-xs"
+                                            style={{ margin: '4px 0 0', color: 'var(--yellow, #b45309)' }}
+                                        >
+                                            {t('studentsPage.form_duplicate_warning', {
+                                                name: duplicateStudent.name,
+                                                className:
+                                                    classes.find((c) => c.id === duplicateStudent.classId)?.name ?? '',
+                                            })}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 12 }}>
                                     <label htmlFor="student-email">{t('studentsPage.form_email')}</label>
@@ -1445,7 +1470,18 @@ export default function StudentsPage() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder={t('studentsPage.form_email_placeholder')}
+                                        aria-invalid={emailInvalid || undefined}
+                                        aria-describedby={emailInvalid ? 'student-email-error' : undefined}
                                     />
+                                    {emailInvalid && (
+                                        <p
+                                            id="student-email-error"
+                                            className="text-xs"
+                                            style={{ margin: '4px 0 0', color: 'var(--red, #ef4444)' }}
+                                        >
+                                            {t('studentsPage.form_email_invalid')}
+                                        </p>
+                                    )}
                                 </div>
                                 {(editStudent || !singleClassId) && (
                                     <div className="form-group">
@@ -1525,7 +1561,11 @@ export default function StudentsPage() {
                                 >
                                     {t('common.cancel')}
                                 </button>
-                                <button className="btn btn-primary" onClick={handleAddStudent} disabled={!name.trim()}>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleAddStudent}
+                                    disabled={!name.trim() || emailInvalid}
+                                >
                                     {editStudent
                                         ? t('studentsPage.action_save_changes')
                                         : t('studentsPage.add_student')}

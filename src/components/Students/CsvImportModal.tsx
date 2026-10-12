@@ -210,6 +210,7 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                     ...prev,
                     name: row.name,
                     email: row.email || prev.email,
+                    studentNumber: row.studentNumber || prev.studentNumber,
                     classId: targetClassId,
                     pastClassMemberships: isTransfer
                         ? [
@@ -229,7 +230,12 @@ export default function CsvImportModal({ file, onClose, onSuccess }: Props) {
                 return;
             }
 
-            addStudent({ name: row.name, email: row.email, classId: targetClassId });
+            addStudent({
+                name: row.name,
+                email: row.email,
+                classId: targetClassId,
+                ...(row.studentNumber && { studentNumber: row.studentNumber }),
+            });
             created++;
         });
 

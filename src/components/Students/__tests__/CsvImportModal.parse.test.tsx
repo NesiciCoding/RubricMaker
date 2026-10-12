@@ -49,6 +49,22 @@ describe('CsvImportModal parsing real files (#657)', () => {
         expect(mockAddStudent).toHaveBeenCalledWith({ name: 'Anna Z', email: 'a@x.nl', classId: 'class-1' });
     });
 
+    it('round-trips the roster export: class and student number survive the import (#668)', async () => {
+        const file = new File(['name,email,class,student_number\nAnna Z,a@x.nl,Class A,1234\n'], 'students.csv', {
+            type: 'text/csv',
+        });
+        render(<CsvImportModal file={file} onClose={vi.fn()} onSuccess={vi.fn()} />);
+
+        expect(await screen.findByText('Anna Z')).toBeInTheDocument();
+        fireEvent.click(importButton());
+        expect(mockAddStudent).toHaveBeenCalledWith({
+            name: 'Anna Z',
+            email: 'a@x.nl',
+            classId: 'class-1',
+            studentNumber: '1234',
+        });
+    });
+
     it('keeps a valid UTF-8 file as UTF-8 when it contains a literal replacement character (#657)', async () => {
         const file = new File(['Name,Note\n王小明,ok\nJosé Müller,broken \uFFFD char\n'], 'students.csv', {
             type: 'text/csv',

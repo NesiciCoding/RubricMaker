@@ -6,6 +6,7 @@ export type CsvColumnMap = {
     lastName: string;
     email: string;
     className: string;
+    studentNumber?: string;
     /** A full-name column kept aside when first + last name win, for rows where one of them is blank. */
     fullNameFallback?: string;
 };
@@ -13,6 +14,7 @@ export type CsvColumnMap = {
 export interface MatchedImportRow {
     name: string;
     email: string;
+    studentNumber: string;
     /** Set when the row's class name doesn't exist yet and needs to be created on apply. */
     newClassName: string | null;
     /** Set when the row targets an existing class. */
@@ -121,7 +123,14 @@ export function planCsvImport(
 
         if (matchedStudent) processedIds.add(matchedStudent.id);
 
-        rows.push({ name, email, newClassName, existingClassId, matchedStudent });
+        rows.push({
+            name,
+            email,
+            studentNumber: cell(row, mapping.studentNumber),
+            newClassName,
+            existingClassId,
+            matchedStudent,
+        });
     });
 
     return { rows, skipped };
@@ -236,6 +245,10 @@ export function autoMapCsvHeaders(headers: string[]): CsvColumnMap {
     const firstName = find(FIRST_NAME_HEADERS, ['first name', 'given name', 'voornaam', 'roepnaam']);
     const lastName = find(LAST_NAME_HEADERS, ['last name', 'surname', 'family name', 'achternaam']);
     const fullNameColumn = find(FULL_NAME_HEADERS, ['full name', 'volledige naam']);
+    const studentNumber = find(
+        ['student number', 'studentnumber', 'leerlingnummer'],
+        ['student number', 'leerlingnummer']
+    );
     const separate = Boolean(firstName && lastName);
     return {
         fullName: separate ? '' : fullNameColumn,
@@ -244,5 +257,6 @@ export function autoMapCsvHeaders(headers: string[]): CsvColumnMap {
         ...(separate && fullNameColumn ? { fullNameFallback: fullNameColumn } : {}),
         email: find(['email', 'e mail', 'mail', 'email address'], ['email', 'e mail']),
         className: find(['class', 'klas', 'group', 'course', 'groep'], ['class', 'course', 'group', 'klas', 'groep']),
+        ...(studentNumber ? { studentNumber } : {}),
     };
 }
