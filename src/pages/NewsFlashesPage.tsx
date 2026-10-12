@@ -19,13 +19,12 @@ import Topbar from '../components/Layout/Topbar';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
-import { useToast } from '../hooks/useToast';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import TiptapEditor from '../components/Editor/TiptapEditor';
 import { htmlToPlainText } from '../hooks/useTTS';
 import type { CefrLevel, NewsFlash, NewsFlashKind, NewsFlashLinkedResourceType } from '../types';
-import { safeHref } from '../utils/safeUrl';
+import { normalizeLinkUrl } from '../utils/safeUrl';
 
 const EMPTY_CONTENT_HTML = '<p></p>';
 
@@ -65,7 +64,6 @@ function emptyDraft(): DraftState {
 
 export default function NewsFlashesPage() {
     const { t, i18n } = useTranslation();
-    const { showToast } = useToast();
     const tour = usePageTourState('news');
     const {
         students: allStudents,
@@ -89,15 +87,18 @@ export default function NewsFlashesPage() {
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [draft, setDraft] = useState<DraftState | null>(null);
+    const [urlError, setUrlError] = useState(false);
     const [expandedReadsFor, setExpandedReadsFor] = useState<string | null>(null);
 
     const sorted = [...newsFlashes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     function openCreate() {
         setDraft(emptyDraft());
+        setUrlError(false);
     }
 
     function openEdit(flash: NewsFlash) {
+        setUrlError(false);
         setDraft({
             id: flash.id,
             title: flash.title,
@@ -115,8 +116,9 @@ export default function NewsFlashesPage() {
     function handleSave() {
         /* v8 ignore next -- the Save button is disabled while the title is empty */
         if (!draft || !draft.title.trim()) return;
-        if (draft.url.trim() && !safeHref(draft.url)) {
-            showToast(t('newsFlashes.error_invalid_url'), 'error');
+        const url = normalizeLinkUrl(draft.url);
+        if (draft.url.trim() && !url) {
+            setUrlError(true);
             return;
         }
         const isContentEmpty = htmlToPlainText(draft.content).length === 0;
@@ -124,7 +126,7 @@ export default function NewsFlashesPage() {
             title: draft.title.trim(),
             summary: draft.summary.trim(),
             content: isContentEmpty ? undefined : draft.content,
-            url: safeHref(draft.url),
+            url,
             kind: draft.kind,
             tags: draft.tags
                 .split(',')
@@ -236,11 +238,11 @@ export default function NewsFlashesPage() {
                                             </div>
                                             <div className="text-muted text-xs" style={{ marginTop: 8 }}>
                                                 {new Date(flash.createdAt).toLocaleDateString(i18n.language)}
-                                                {safeHref(flash.url) && (
+                                                {normalizeLinkUrl(flash.url) && (
                                                     <>
                                                         {' · '}
                                                         <a
-                                                            href={safeHref(flash.url)}
+                                                            href={normalizeLinkUrl(flash.url)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                         >
@@ -373,11 +375,33 @@ export default function NewsFlashesPage() {
                         <label htmlFor="nf-url">{t('newsFlashes.field_url')}</label>
                         <input
                             id="nf-url"
-                            type="url"
+                            type="text"
+                            inputMode="url"
+                            autoComplete="url"
                             placeholder="https://…"
                             value={draft.url}
-                            onChange={(e) => setDraft({ ...draft, url: e.target.value })}
+                            aria-invalid={urlError || undefined}
+                            aria-describedby={urlError ? 'nf-url-error' : undefined}
+                            onChange={(e) => {
+                                setDraft({ ...draft, url: e.target.value });
+                                setUrlError(false);
+                            }}
+                            onBlur={() => {
+                                const url = normalizeLinkUrl(draft.url);
+                                if (url && url !== draft.url) setDraft({ ...draft, url });
+                                else if (draft.url.trim() && !url) setUrlError(true);
+                            }}
                         />
+                        {urlError && (
+                            <div
+                                id="nf-url-error"
+                                role="alert"
+                                className="text-xs"
+                                style={{ color: 'var(--red)', marginTop: 4 }}
+                            >
+                                {t('newsFlashes.error_invalid_url')}
+                            </div>
+                        )}
                     </div>
                     <div className="grid-2" style={{ gap: 12 }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
