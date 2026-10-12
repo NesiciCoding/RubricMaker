@@ -14,6 +14,7 @@ import {
     ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
+import i18n from 'i18next';
 import type {
     Student,
     StudentRubric,
@@ -27,6 +28,8 @@ import { calcGradeSummary } from './gradeCalc';
 import { buildDocxStyles } from './docxExport';
 import { createUniqueFilenames, sanitizeFilename, stripCommentHtml } from './exportDataPrep';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
+
+const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
 export interface PeriodReportEntry {
     sr: StudentRubric;
@@ -157,7 +160,11 @@ function dataCell(text: string, pct = 25, fill?: string): TableCell {
 function buildGoalsTable(goals: LearningGoalAggregate[]): Table {
     const goalRows: TableRow[] = [
         new TableRow({
-            children: [headerCell('Goal', 50), headerCell('Average', 20), headerCell('Progress', 30)],
+            children: [
+                headerCell(docLabel('goal'), 50),
+                headerCell(docLabel('average'), 20),
+                headerCell(docLabel('progress'), 30),
+            ],
         }),
         ...goals.map((g) => {
             const pct = normalizePct(g.averagePercentage);
@@ -230,7 +237,7 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
         blocks.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: 'Period average: ', bold: true, size: 22 }),
+                    new TextRun({ text: `${docLabel('period_average')} `, bold: true, size: 22 }),
                     new TextRun({ text: `${avg.toFixed(1)}%`, size: 22 }),
                     new TextRun({ text: `   ${spark}`, size: 22, color: '6B7280', font: 'Courier New' }),
                 ],
@@ -242,7 +249,7 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
     if (summaries.length >= 2) {
         blocks.push(
             new Paragraph({
-                text: 'Grade Trend',
+                text: docLabel('grade_trend'),
                 heading: HeadingLevel.HEADING_2,
                 spacing: { before: 160, after: 120 },
             })
@@ -295,16 +302,20 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
     }
 
     blocks.push(
-        new Paragraph({ text: 'Grades', heading: HeadingLevel.HEADING_2, spacing: { before: 280, after: 120 } })
+        new Paragraph({
+            text: docLabel('grades'),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 280, after: 120 },
+        })
     );
 
     const tableRows: TableRow[] = [
         new TableRow({
             children: [
-                headerCell('Assignment', 40),
-                headerCell('Date', 20),
-                headerCell('Score', 20),
-                headerCell('Grade', 20),
+                headerCell(docLabel('assignment'), 40),
+                headerCell(docLabel('date'), 20),
+                headerCell(docLabel('score'), 20),
+                headerCell(docLabel('grade'), 20),
             ],
         }),
         ...summaries.map((s) => {
@@ -335,7 +346,11 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
     const withComments = summaries.filter((s) => s.sr.overallComment || s.sr.entries.some((e) => e.comment));
     if (withComments.length > 0) {
         blocks.push(
-            new Paragraph({ text: 'Feedback', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } })
+            new Paragraph({
+                text: docLabel('feedback'),
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 360, after: 120 },
+            })
         );
 
         for (const s of withComments) {
@@ -424,14 +439,18 @@ function bucketColor(bucket: 'strong' | 'developing' | 'weak'): string {
 
 function buildStandardsSection(section: Extract<ReportCardSection, { type: 'standards' }>): (Paragraph | Table)[] {
     const blocks: (Paragraph | Table)[] = [
-        new Paragraph({ text: 'Standards', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+        new Paragraph({
+            text: docLabel('standards'),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 360, after: 120 },
+        }),
     ];
 
     const allStandards = section.standardSets.flatMap((set) => set.standards);
     if (allStandards.length === 0) {
         blocks.push(
             new Paragraph({
-                children: [new TextRun({ text: 'No standards coverage recorded.', size: 20, color: '6B7280' })],
+                children: [new TextRun({ text: docLabel('no_standards'), size: 20, color: '6B7280' })],
                 spacing: { after: 120 },
             })
         );
@@ -449,7 +468,11 @@ function buildStandardsSection(section: Extract<ReportCardSection, { type: 'stan
 
         const rows: TableRow[] = [
             new TableRow({
-                children: [headerCell('Standard', 60), headerCell('Avg Score', 20), headerCell('Count', 20)],
+                children: [
+                    headerCell(docLabel('standard'), 60),
+                    headerCell(docLabel('avg_score'), 20),
+                    headerCell(docLabel('count'), 20),
+                ],
             }),
             ...set.standards.map((s) => {
                 const pct = normalizePct(s.avgScore);
@@ -471,14 +494,18 @@ function buildStandardsSection(section: Extract<ReportCardSection, { type: 'stan
 
 function buildCefrSection(section: Extract<ReportCardSection, { type: 'cefr' }>): (Paragraph | Table)[] {
     const blocks: (Paragraph | Table)[] = [
-        new Paragraph({ text: 'CEFR Overview', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+        new Paragraph({
+            text: docLabel('cefr_overview'),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 360, after: 120 },
+        }),
     ];
 
     const { overview } = section;
     if (overview.cells.length === 0) {
         blocks.push(
             new Paragraph({
-                children: [new TextRun({ text: 'No CEFR data recorded.', size: 20, color: '6B7280' })],
+                children: [new TextRun({ text: docLabel('no_cefr'), size: 20, color: '6B7280' })],
                 spacing: { after: 120 },
             })
         );
@@ -488,10 +515,10 @@ function buildCefrSection(section: Extract<ReportCardSection, { type: 'cefr' }>)
     const rows: TableRow[] = [
         new TableRow({
             children: [
-                headerCell('Skill', 25),
-                headerCell('Level', 15),
-                headerCell('Status', 30),
-                headerCell('Confidence', 30),
+                headerCell(docLabel('skill'), 25),
+                headerCell(docLabel('level'), 15),
+                headerCell(docLabel('status'), 30),
+                headerCell(docLabel('confidence'), 30),
             ],
         }),
         ...overview.cells.map((cell) => {
@@ -517,14 +544,18 @@ function buildCefrSection(section: Extract<ReportCardSection, { type: 'cefr' }>)
 
 function buildTestSummarySection(section: Extract<ReportCardSection, { type: 'testSummary' }>): (Paragraph | Table)[] {
     const blocks: (Paragraph | Table)[] = [
-        new Paragraph({ text: 'Test Summary', heading: HeadingLevel.HEADING_2, spacing: { before: 360, after: 120 } }),
+        new Paragraph({
+            text: docLabel('test_summary'),
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 360, after: 120 },
+        }),
     ];
 
     const { overview } = section;
     if (overview.skills.length === 0 && overview.questions.length === 0) {
         blocks.push(
             new Paragraph({
-                children: [new TextRun({ text: 'No test data available.', size: 20, color: '6B7280' })],
+                children: [new TextRun({ text: docLabel('no_tests'), size: 20, color: '6B7280' })],
                 spacing: { after: 120 },
             })
         );
@@ -534,7 +565,11 @@ function buildTestSummarySection(section: Extract<ReportCardSection, { type: 'te
     if (overview.skills.length > 0) {
         const rows: TableRow[] = [
             new TableRow({
-                children: [headerCell('Skill / Standard', 50), headerCell('Accuracy', 25), headerCell('Sample', 25)],
+                children: [
+                    headerCell(docLabel('skill_standard'), 50),
+                    headerCell(docLabel('accuracy'), 25),
+                    headerCell(docLabel('sample'), 25),
+                ],
             }),
             ...overview.skills.map((skill) => {
                 const pct = normalizePct(skill.accuracyPct);
@@ -598,14 +633,12 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
                 if (summaries.length === 0) {
                     blocks.push(
                         new Paragraph({
-                            text: 'Grades',
+                            text: docLabel('grades'),
                             heading: HeadingLevel.HEADING_2,
                             spacing: { before: 280, after: 120 },
                         }),
                         new Paragraph({
-                            children: [
-                                new TextRun({ text: 'No graded rubrics in this period.', size: 20, color: '6B7280' }),
-                            ],
+                            children: [new TextRun({ text: docLabel('no_grades'), size: 20, color: '6B7280' })],
                             spacing: { after: 120 },
                         })
                     );
@@ -620,7 +653,7 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
             case 'learningGoals': {
                 blocks.push(
                     new Paragraph({
-                        text: 'Learning Goals',
+                        text: docLabel('learning_goals'),
                         heading: HeadingLevel.HEADING_2,
                         spacing: { before: 360, after: 120 },
                     })
@@ -628,7 +661,7 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
                 if (section.goals.length === 0) {
                     blocks.push(
                         new Paragraph({
-                            children: [new TextRun({ text: 'No learning goals tracked.', size: 20, color: '6B7280' })],
+                            children: [new TextRun({ text: docLabel('no_goals'), size: 20, color: '6B7280' })],
                             spacing: { after: 120 },
                         })
                     );

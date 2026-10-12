@@ -485,6 +485,7 @@ export default function StudentPortalPage() {
         );
     }
 
+    const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const avgScore =
         scoredHistory.length > 0 ? scoredHistory.reduce((acc, h) => acc + h.score, 0) / scoredHistory.length : null;
     const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${student.id}`;
@@ -890,7 +891,7 @@ export default function StudentPortalPage() {
                             <StatCard
                                 icon={<TrendingUp size={16} />}
                                 label={t('studentPortal.stat_average')}
-                                value={`${avgScore.toFixed(1)}%`}
+                                value={`${percentFormat.format(avgScore)}%`}
                             />
                         )}
                         {selfAssess.length > 0 && (
@@ -1362,7 +1363,7 @@ export default function StudentPortalPage() {
                                         ) : (
                                             <div style={{ textAlign: 'right' }}>
                                                 <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                                                    {h.summary.modifiedPercentage.toFixed(1)}%
+                                                    {percentFormat.format(h.summary.modifiedPercentage)}%
                                                 </div>
                                                 {h.summary.letterGrade && (
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>

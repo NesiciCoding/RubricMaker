@@ -22,9 +22,12 @@ import {
     ShadingType,
 } from 'docx';
 import { saveAs } from 'file-saver';
+import i18n from 'i18next';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
 import { orderedLevels } from './gradeCalc';
+
+const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
@@ -110,7 +113,12 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                 children: [
                     new Paragraph({
                         children: [
-                            new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                            new TextRun({
+                                text: docLabel('criterion'),
+                                bold: true,
+                                color: 'FFFFFF',
+                                size: fmt.fontSize * 2,
+                            }),
                         ],
                     }),
                 ],
@@ -171,7 +179,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                   new Paragraph({
                                       children: [
                                           new TextRun({
-                                              text: `Weight: ${c.weight}%`,
+                                              text: docLabel('weight', { weight: c.weight }),
                                               size: (fmt.fontSize - 2) * 2,
                                               color: '888888',
                                           }),
@@ -191,7 +199,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                 new TextRun({ text: '[ ] ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({
-                                    text: ` (${si.minPoints ?? 0}-${max} pts)`,
+                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
                                     size: (fmt.fontSize - 3) * 2,
                                     color: '888888',
                                 }),
@@ -213,7 +221,12 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                           spacing: { before: 80 },
                                           children: [
                                               new TextRun({
-                                                  text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
+                                                  text: docLabel('points', {
+                                                      points:
+                                                          l.minPoints === l.maxPoints
+                                                              ? l.maxPoints
+                                                              : `${l.minPoints}–${l.maxPoints}`,
+                                                  }),
                                                   bold: true,
                                                   size: (fmt.fontSize - 2) * 2,
                                               }),
@@ -274,7 +287,10 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                               new Paragraph({
                                   children: [
                                       new TextRun({
-                                          text: `Note: Template column count (${template.levelHeaders.length}) did not match rubric levels (${rubricLevelLabels.length}); rubric level labels were used instead.`,
+                                          text: docLabel('template_mismatch_note', {
+                                              templateCount: template.levelHeaders.length,
+                                              rubricCount: rubricLevelLabels.length,
+                                          }),
                                           color: '888888',
                                           italics: true,
                                           size: 18,

@@ -364,7 +364,7 @@ describe('ExportPage coverage', () => {
             fireEvent.click(screen.getByTitle('tooltips.copy_feedback_link'));
         });
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
-        expect(mockShowToast).toHaveBeenCalledWith('Feedback link copied to clipboard', 'success');
+        expect(mockShowToast).toHaveBeenCalledWith('exportPage.feedback_link_copied', 'success');
         await act(async () => {
             fireEvent.click(screen.getByTitle('tooltips.open_as_student'));
         });

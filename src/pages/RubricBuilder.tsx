@@ -864,7 +864,7 @@ function RubricBuilderEditor() {
                             </button>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
-                            <Settings size={15} /> FORMAT
+                            <Settings size={15} /> {t('rubricBuilder.action_format')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowPreview(!showPreview)}>
                             <Eye size={15} /> {t('rubricBuilder.action_preview')}
@@ -1087,10 +1087,10 @@ function RubricBuilderEditor() {
                                             min={1}
                                             value={totalMaxPoints}
                                             onChange={(e) => setTotalMaxPoints(Number(e.target.value))}
-                                            placeholder="e.g. 100"
+                                            placeholder={t('rubricBuilder.total_points_placeholder')}
                                         />
                                         <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                            Grade = rawScore / {totalMaxPoints} × 100%
+                                            {t('rubricBuilder.total_points_formula', { max: totalMaxPoints })}
                                         </div>
                                     </div>
                                 )}
@@ -1725,7 +1725,7 @@ function RubricBuilderEditor() {
                                                 color: 'var(--text-muted)',
                                             }}
                                         >
-                                            Standards:
+                                            {t('rubricBuilder.preview_standards_label')}
                                             <div
                                                 style={{
                                                     display: 'flex',
@@ -1740,14 +1740,14 @@ function RubricBuilderEditor() {
                                                     onClick={() => setShowPreviewStdDesc(false)}
                                                     style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                                                 >
-                                                    Code
+                                                    {t('rubricBuilder.preview_standards_code')}
                                                 </button>
                                                 <button
                                                     className={`btn btn-sm ${showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                                     onClick={() => setShowPreviewStdDesc(true)}
                                                     style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                                                 >
-                                                    Description
+                                                    {t('rubricBuilder.preview_standards_description')}
                                                 </button>
                                             </div>
                                         </div>
@@ -1880,15 +1880,18 @@ function RubricBuilderEditor() {
                             <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
                             <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
                                 <li>
-                                    <code>**bold**</code> for <strong>bold text</strong>
+                                    <Trans i18nKey="rubricBuilder.md_bold_hint">
+                                        <code>**bold**</code> for <strong>bold text</strong>
+                                    </Trans>
                                 </li>
                                 <li>
-                                    <code>*italic*</code> for <em>italic text</em>
+                                    <Trans i18nKey="rubricBuilder.md_italic_hint">
+                                        <code>*italic*</code> for <em>italic text</em>
+                                    </Trans>
                                 </li>
                             </ul>
                             <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
-                                Just type the asterisks around your words. The formatting will apply as soon as you
-                                click outside the text box!
+                                {t('rubricBuilder.md_modal_tip')}
                             </p>
                         </div>
                         <div className="modal-footer">
@@ -1998,8 +2001,10 @@ function RubricBuilderEditor() {
                                                     )}
                                                 </div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                    {new Date(v.savedAt).toLocaleString()} ·{' '}
-                                                    {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
+                                                    {new Date(v.savedAt).toLocaleString(i18n.language)} ·{' '}
+                                                    {t('rubricBuilder.criteria_count', {
+                                                        count: v.snapshot.criteria.length,
+                                                    })}
                                                 </div>
                                             </div>
                                             <button
@@ -2126,7 +2131,7 @@ function RubricPreviewTable({
                             >
                                 {h.label}
                                 {format.showPoints
-                                    ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)`
+                                    ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''} ${t('rubricBuilder.points_unit')})`
                                     : ''}
                             </th>
                         ))}
@@ -2207,7 +2212,7 @@ function RubricPreviewTable({
                                         >
                                             {l.subItems.map((si) => (
                                                 <li key={si.id}>
-                                                    {si.label} ({si.points}pts)
+                                                    {si.label} ({si.points} {t('rubricBuilder.points_unit')})
                                                     {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                         <div
                                                             style={{
@@ -2560,7 +2565,7 @@ function RubricWysiwygEditor({
                             color: 'var(--text-muted)',
                         }}
                     >
-                        Standards:
+                        {t('rubricBuilder.preview_standards_label')}
                         <div
                             style={{
                                 display: 'flex',
@@ -2575,14 +2580,14 @@ function RubricWysiwygEditor({
                                 onClick={() => setShowStdDesc(false)}
                                 style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                             >
-                                Code
+                                {t('rubricBuilder.preview_standards_code')}
                             </button>
                             <button
                                 className={`btn btn-sm ${showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                 onClick={() => setShowStdDesc(true)}
                                 style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                             >
-                                Description
+                                {t('rubricBuilder.preview_standards_description')}
                             </button>
                         </div>
                     </div>
@@ -2759,7 +2764,7 @@ function RubricWysiwygEditor({
                                                     />
                                                 </>
                                             )}
-                                            pts)
+                                            {t('rubricBuilder.points_unit')})
                                         </div>
                                     )}
                                 </div>
@@ -2953,7 +2958,7 @@ function RubricWysiwygEditor({
                                                 >
                                                     {l.subItems.map((si) => (
                                                         <li key={si.id}>
-                                                            {si.label} ({si.points}pts)
+                                                            {si.label} ({si.points} {t('rubricBuilder.points_unit')})
                                                             {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                                 <div
                                                                     style={{

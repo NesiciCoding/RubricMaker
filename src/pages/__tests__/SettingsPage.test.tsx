@@ -143,7 +143,7 @@ describe('SettingsPage', () => {
     it('renders the General tab by default', () => {
         renderPage();
         expect(screen.getByText('settings.title')).toBeInTheDocument();
-        expect(screen.getByText('General')).toBeInTheDocument();
+        expect(screen.getByText('settings.tab_general')).toBeInTheDocument();
     });
 
     it('changes the language', () => {
@@ -155,7 +155,7 @@ describe('SettingsPage', () => {
 
     it('switches to the Teaching tab and adds a grade scale', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         expect(screen.getByText('settings.grade_scales')).toBeInTheDocument();
         fireEvent.click(screen.getByText('settings.action_new_scale'));
         expect(mockAddGradeScale).toHaveBeenCalledWith(
@@ -165,7 +165,7 @@ describe('SettingsPage', () => {
 
     it('opens and closes the comment bank modal from the Teaching tab', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         fireEvent.click(screen.getByText('settings.action_manage_comments'));
         expect(screen.getByTestId('comment-bank-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Modal'));
@@ -174,7 +174,7 @@ describe('SettingsPage', () => {
 
     it('opens and closes the template upload modal from the Teaching tab', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         fireEvent.click(screen.getByText('settings.action_upload_template'));
         expect(screen.getByTestId('template-upload-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Upload'));
@@ -183,13 +183,13 @@ describe('SettingsPage', () => {
 
     it('shows the empty state for mastery targets on the Teaching tab', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         expect(screen.getByText('settings.mastery_targets_empty')).toBeInTheDocument();
     });
 
     it('opens the mastery target modal from the add button', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         fireEvent.click(screen.getByText('settings.mastery_target_add_title'));
         expect(screen.getByTestId('mastery-target-modal')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Close Mastery Modal'));
@@ -207,7 +207,7 @@ describe('SettingsPage', () => {
             targetPercentage: 80,
         });
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         expect(screen.getByText('Reads and interprets literary texts')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.edit'));
         expect(screen.getByTestId('mastery-target-modal')).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe('SettingsPage', () => {
             targetPercentage: 80,
         });
         renderPage();
-        fireEvent.click(screen.getByText('Teaching'));
+        fireEvent.click(screen.getByText('settings.tab_teaching'));
         fireEvent.click(screen.getByText('common.delete'));
         const dialog = screen.getByRole('dialog');
         expect(within(dialog).getByText('settings.mastery_target_delete_confirm')).toBeInTheDocument();
@@ -235,9 +235,12 @@ describe('SettingsPage', () => {
 
     it('switches to the Administration tab (admin role)', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Administration'));
+        fireEvent.click(screen.getByText('settings.tab_administration'));
         // Smoke check: the tab switch itself exercises the admin-only render branch.
-        expect(screen.getByRole('tab', { name: 'Administration' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('tab', { name: 'settings.tab_administration' })).toHaveAttribute(
+            'aria-selected',
+            'true'
+        );
     });
 
     it('renders role switch buttons on the General tab', () => {

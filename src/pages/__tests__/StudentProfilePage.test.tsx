@@ -187,7 +187,7 @@ describe('StudentProfilePage', () => {
 
     it('navigates back to the students list', () => {
         renderAt('unknown-id');
-        fireEvent.click(screen.getByText('Back'));
+        fireEvent.click(screen.getByText('common.back'));
         expect(mockNavigate).toHaveBeenCalledWith('/students');
     });
 

@@ -316,7 +316,7 @@ export default function StudentProfilePage() {
                     title={t('tooltips.student_profile')}
                     actions={
                         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/students')}>
-                            <ArrowLeft size={14} /> Back
+                            <ArrowLeft size={14} /> {t('common.back')}
                         </button>
                     }
                 />
@@ -330,6 +330,7 @@ export default function StudentProfilePage() {
     const avgScore = history.length > 0 ? history.reduce((acc, h) => acc + h.score, 0) / history.length : 0;
 
     const highestScore = history.length > 0 ? Math.max(...history.map((h) => h.score)) : 0;
+    const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     function handleCopySALink(rubricId: string) {
         const url = `${window.location.origin}/rubrics/${rubricId}/self-assess/${student!.id}`;
@@ -451,10 +452,10 @@ export default function StudentProfilePage() {
                         <h2 style={{ margin: '0 0 6px', fontSize: '1.6rem' }}>{student.name}</h2>
                         <div style={{ display: 'flex', gap: 16, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <User size={14} /> {student.email || 'No email provided'}
+                                <User size={14} /> {student.email || t('studentProfile.no_email')}
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <FileText size={14} /> {cls?.name || 'Unknown Class'}
+                                <FileText size={14} /> {cls?.name || t('studentProfile.unknown_class')}
                                 {cls?.voTrack && (
                                     <span
                                         style={{
@@ -765,18 +766,18 @@ export default function StudentProfilePage() {
                             <div className="grid-3" style={{ marginBottom: 24 }}>
                                 <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
                                     <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
-                                        {avgScore.toFixed(1)}%
+                                        {percentFormat.format(avgScore)}%
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                        Average Score
+                                        {t('studentProfile.stat_average')}
                                     </div>
                                 </div>
                                 <div className="card" style={{ borderTop: '3px solid var(--green)' }}>
                                     <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green)' }}>
-                                        {highestScore.toFixed(1)}%
+                                        {percentFormat.format(highestScore)}%
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                        Highest Score
+                                        {t('studentProfile.stat_highest')}
                                     </div>
                                 </div>
                                 <div className="card" style={{ borderTop: '3px solid var(--purple)' }}>
@@ -784,7 +785,7 @@ export default function StudentProfilePage() {
                                         {history.length}
                                     </div>
                                     <div className="text-muted text-sm" style={{ marginTop: 4 }}>
-                                        Rubrics Graded
+                                        {t('studentProfile.stat_rubrics_graded')}
                                     </div>
                                 </div>
                             </div>
@@ -792,7 +793,7 @@ export default function StudentProfilePage() {
                             {history.length > 1 && (
                                 <div className="card" style={{ marginBottom: 24 }}>
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <TrendingUp size={18} /> Performance Timeline
+                                        <TrendingUp size={18} /> {t('studentProfile.timeline_title')}
                                     </h3>
                                     <Suspense fallback={<div style={{ height: 260 }} />}>
                                         <ProfileTimelineChart history={history} />

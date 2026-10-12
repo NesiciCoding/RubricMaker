@@ -378,7 +378,10 @@ export default function SettingsPage() {
         const scale = gradeScales.find((g) => g.id === scaleId);
         /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
-        updateGradeScale({ ...scale, ranges: [...scale.ranges, { min: 0, max: 0, label: 'New', color: '#6b7280' }] });
+        updateGradeScale({
+            ...scale,
+            ranges: [...scale.ranges, { min: 0, max: 0, label: t('settings.grade_range_new'), color: '#6b7280' }],
+        });
     }
 
     function removeRange(scaleId: string, idx: number) {
@@ -474,7 +477,7 @@ export default function SettingsPage() {
                         onClick={() => handleTabClick('general')}
                         aria-selected={activeTab === 'general'}
                     >
-                        <Settings size={15} aria-hidden="true" /> General
+                        <Settings size={15} aria-hidden="true" /> {t('settings.tab_general')}
                     </button>
 
                     {isUserPlus && (
@@ -484,7 +487,7 @@ export default function SettingsPage() {
                             onClick={() => handleTabClick('teaching')}
                             aria-selected={activeTab === 'teaching'}
                         >
-                            <BookOpen size={15} aria-hidden="true" /> Teaching
+                            <BookOpen size={15} aria-hidden="true" /> {t('settings.tab_teaching')}
                         </button>
                     )}
 
@@ -493,10 +496,12 @@ export default function SettingsPage() {
                         className={`settings-tab${activeTab === 'administration' ? ' active' : ''}${!isAdmin ? ' tab-locked' : ''}`}
                         onClick={() => handleTabClick('administration')}
                         aria-selected={activeTab === 'administration'}
-                        aria-label={!isAdmin ? 'Administration (admin access required)' : 'Administration'}
+                        aria-label={
+                            !isAdmin ? t('settings.tab_administration_locked') : t('settings.tab_administration')
+                        }
                     >
                         {isAdmin ? <Shield size={15} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
-                        Administration
+                        {t('settings.tab_administration')}
                     </button>
                 </nav>
 
@@ -542,7 +547,11 @@ export default function SettingsPage() {
                                         {r === 'student' && <GraduationCap size={13} aria-hidden="true" />}
                                         {t(ROLE_META[r].labelKey)}
                                         {r === 'admin' && settings.adminPin && role !== 'admin' && (
-                                            <Lock size={11} aria-label="password required" style={{ marginLeft: 2 }} />
+                                            <Lock
+                                                size={11}
+                                                aria-label={t('settings.admin_password_required')}
+                                                style={{ marginLeft: 2 }}
+                                            />
                                         )}
                                     </button>
                                 ))}
@@ -555,18 +564,21 @@ export default function SettingsPage() {
                                         style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}
                                         aria-hidden="true"
                                     />
-                                    No admin password is set — anyone can switch to Administrator. Set a password in the{' '}
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        style={{ padding: '0 4px', fontSize: 'inherit' }}
-                                        onClick={() => {
-                                            if (isAdmin) setActiveTab('administration');
-                                            else requestRoleSwitch('admin');
-                                        }}
-                                    >
-                                        Administration tab
-                                    </button>{' '}
-                                    to restrict access.
+                                    <Trans i18nKey="settings.admin_no_pin_warning">
+                                        No admin password is set — anyone can switch to Administrator. Set a password in
+                                        the{' '}
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            style={{ padding: '0 4px', fontSize: 'inherit' }}
+                                            onClick={() => {
+                                                if (isAdmin) setActiveTab('administration');
+                                                else requestRoleSwitch('admin');
+                                            }}
+                                        >
+                                            Administration tab
+                                        </button>{' '}
+                                        to restrict access.
+                                    </Trans>
                                 </p>
                             )}
                         </div>
@@ -1591,7 +1603,7 @@ export default function SettingsPage() {
                                         className="btn btn-secondary btn-sm"
                                         style={{ textDecoration: 'none' }}
                                     >
-                                        <Download size={14} aria-hidden="true" /> Sample Template
+                                        <Download size={14} aria-hidden="true" /> {t('settings.sample_template')}
                                     </a>
                                     <button
                                         className="btn btn-primary btn-sm"
@@ -1850,7 +1862,7 @@ export default function SettingsPage() {
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontWeight: 600, marginBottom: 2 }}>{t('admin.title')}</div>
                                         <p className="text-muted text-sm" style={{ margin: 0 }}>
-                                            Manage users, schools, database sync, integrations, and data retention.
+                                            {t('settings.admin_card_desc')}
                                         </p>
                                     </div>
                                     <Link
@@ -1899,8 +1911,10 @@ export default function SettingsPage() {
                                             style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }}
                                             aria-hidden="true"
                                         />
-                                        Importing a backup will <strong>overwrite all current data</strong>. This action
-                                        cannot be undone.
+                                        <Trans i18nKey="settings.import_backup_warning">
+                                            Importing a backup will <strong>overwrite all current data</strong>. This
+                                            action cannot be undone.
+                                        </Trans>
                                     </div>
                                 </div>
 
@@ -2136,7 +2150,7 @@ export default function SettingsPage() {
                                                         className="badge badge-blue"
                                                         style={{ marginLeft: 'auto', flexShrink: 0 }}
                                                     >
-                                                        Current
+                                                        {t('settings.role_current')}
                                                     </span>
                                                 )}
                                             </div>
@@ -2402,8 +2416,8 @@ export default function SettingsPage() {
                 >
                     <div className="modal-header">
                         <h3 id="pin-dialog-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Shield size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" /> Switch to
-                            Administrator
+                            <Shield size={16} style={{ color: 'var(--accent)' }} aria-hidden="true" />{' '}
+                            {t('settings.admin_switch_to')}
                         </h3>
                         <button
                             className="btn btn-ghost btn-icon btn-sm"
@@ -2419,7 +2433,7 @@ export default function SettingsPage() {
                     </div>
                     <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
                         <p className="text-muted text-sm" style={{ margin: 0 }}>
-                            Enter the admin password to switch to the Administrator role.
+                            {t('settings.admin_pin_dialog_desc')}
                         </p>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <label htmlFor="pin-dialog-input">{t('settings.admin_password_label')}</label>
@@ -2452,7 +2466,7 @@ export default function SettingsPage() {
                             </div>
                             {pinError && (
                                 <div id="pin-error" className="text-xs" style={{ color: 'var(--red)', marginTop: 4 }}>
-                                    Incorrect password. Please try again.
+                                    {t('settings.admin_pin_incorrect')}
                                 </div>
                             )}
                         </div>
@@ -2465,10 +2479,10 @@ export default function SettingsPage() {
                                     setPinError(false);
                                 }}
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button className="btn btn-primary" onClick={() => void confirmPinAndSwitch()}>
-                                <Shield size={14} aria-hidden="true" /> Confirm
+                                <Shield size={14} aria-hidden="true" /> {t('common.confirm')}
                             </button>
                         </div>
                     </div>

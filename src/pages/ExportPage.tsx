@@ -758,9 +758,12 @@ export default function ExportPage() {
                                     onChange={(e) => updateSettings({ exportTemplateId: e.target.value || undefined })}
                                 >
                                     <option value="">{t('exportPage.template_default_option')}</option>
-                                    {tableTemplates.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name} ({t.levelHeaders.length} levels)
+                                    {tableTemplates.map((tpl) => (
+                                        <option key={tpl.id} value={tpl.id}>
+                                            {t('exportPage.template_option', {
+                                                name: tpl.name,
+                                                count: tpl.levelHeaders.length,
+                                            })}
                                         </option>
                                     ))}
                                 </select>
@@ -1064,7 +1067,7 @@ export default function ExportPage() {
                                         <span
                                             style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}
                                         >
-                                            {selectedStudentIds.size} selected —
+                                            {t('exportPage.bulk_selected_count', { count: selectedStudentIds.size })} —
                                         </span>
                                         <button className="btn btn-secondary btn-sm" onClick={handleBulkMarkNHI}>
                                             <XCircle size={13} /> {t('exportPage.bulk_nhi')}
@@ -1234,7 +1237,7 @@ export default function ExportPage() {
                                                                 if (!url) return;
                                                                 navigator.clipboard.writeText(url);
                                                                 showToast(
-                                                                    'Feedback link copied to clipboard',
+                                                                    t('exportPage.feedback_link_copied'),
                                                                     'success'
                                                                 );
                                                             }}

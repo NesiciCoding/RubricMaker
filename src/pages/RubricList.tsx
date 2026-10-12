@@ -799,15 +799,19 @@ export default function RubricList() {
                                                             }}
                                                         >
                                                             <span className="badge badge-blue">
-                                                                {r.criteria.length} {t('rubricList.criteria_count')}
+                                                                {t('rubricList.criteria_badge', {
+                                                                    count: r.criteria.length,
+                                                                })}
                                                             </span>
                                                             <span className="badge badge-purple">
-                                                                {r.criteria[0]?.levels.length ?? 0}{' '}
-                                                                {t('rubricList.levels_count')}
+                                                                {t('rubricList.levels_badge', {
+                                                                    count: r.criteria[0]?.levels.length ?? 0,
+                                                                })}
                                                             </span>
                                                             <span className="badge badge-green">
-                                                                {gradedStudents.length}{' '}
-                                                                {t('rubricList.students_graded_count')}
+                                                                {t('rubricList.students_graded_badge', {
+                                                                    count: gradedStudents.length,
+                                                                })}
                                                             </span>
                                                             {r.cefrTargetLevel && (
                                                                 <CefrBadge level={r.cefrTargetLevel} size="sm" />
@@ -1248,7 +1252,7 @@ export default function RubricList() {
                                         ))}
                                     </div>
                                     <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-                                        Variant will be named:{' '}
+                                        {t('rubricList.variant_name_label')}{' '}
                                         <strong style={{ color: 'var(--text)' }}>
                                             {rubrics.find((r) => r.id === differentiateId)?.name} (
                                             {VO_TRACK_LABELS[diffTrack]})
