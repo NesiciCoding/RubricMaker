@@ -264,6 +264,13 @@ describe('GradeStudent', () => {
         expect(toggle).toHaveClass('btn-secondary');
     });
 
+    it('wraps the Save & Next first name in a truncating span titled with the full name (#660)', () => {
+        renderPage();
+        const name = document.querySelector('.grade-footer-actions .grade-footer-next-name')!;
+        expect(name).toHaveTextContent('Bob');
+        expect(name).toHaveAttribute('title', 'Bob');
+    });
+
     it('counts graded criteria with a plural-aware key (#660)', () => {
         renderPage();
         expect(screen.getByText(/^gradeStudent\.criteria_graded:\{"graded":\d+,"count":\d+\}$/)).toBeInTheDocument();
