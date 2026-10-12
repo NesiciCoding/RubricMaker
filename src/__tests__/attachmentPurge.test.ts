@@ -56,6 +56,7 @@ describe('isMetadataOnlyRow', () => {
 
 describe('scripts/delete-old-attachments.sh', () => {
     const script = path.resolve(__dirname, '..', '..', 'scripts', 'delete-old-attachments.sh');
+    let lastStatus = 0;
 
     function runScript(rows: string, scanRows = '', scanRowsWithoutFile = '', extraEnv: Record<string, string> = {}) {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rm-purge-'));
@@ -83,19 +84,26 @@ printf '%s' "\${STUB_HTTP:-200}"
 `,
             { mode: 0o755 }
         );
-        execFileSync('bash', [script], {
-            env: {
-                ...process.env,
-                PATH: `${bin}:${process.env.PATH}`,
-                SERVICE_ROLE_KEY: 'test-key',
-                SITE_URL: 'http://stub.local',
-                STUB_ROWS: rows,
-                STUB_SCAN_ROWS: scanRows,
-                STUB_SCAN_NO_FILE: scanRowsWithoutFile,
-                ...extraEnv,
-            },
-            stdio: 'pipe',
-        });
+        lastStatus = 0;
+        try {
+            execFileSync('bash', [script], {
+                env: {
+                    ...process.env,
+                    PATH: `${bin}:${process.env.PATH}`,
+                    // The stub above, not a real `docker compose` the machine may have installed.
+                    COMPOSE: 'docker-compose',
+                    SERVICE_ROLE_KEY: 'test-key',
+                    SITE_URL: 'http://stub.local',
+                    STUB_ROWS: rows,
+                    STUB_SCAN_ROWS: scanRows,
+                    STUB_SCAN_NO_FILE: scanRowsWithoutFile,
+                    ...extraEnv,
+                },
+                stdio: 'pipe',
+            });
+        } catch (err) {
+            lastStatus = (err as { status?: number }).status ?? -1;
+        }
         return fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '';
     }
 
@@ -108,6 +116,7 @@ printf '%s' "\${STUB_HTTP:-200}"
     it('deletes a valid row through the storage API and then the database', () => {
         const calls = runScript(`good_1|${OWNER}/good_1|${OWNER}\n`);
         expect(calls).toContain(`/storage/v1/object/attachments/${OWNER}/good_1`);
+        expect(lastStatus).toBe(0);
         expect(calls).toContain("DELETE FROM public.attachments WHERE id IN ('good_1')");
     });
 
@@ -171,6 +180,8 @@ printf '%s' "\${STUB_HTTP:-200}"
         const calls = runScript('', fullBatch, '', { STUB_HTTP: '500' });
         expect(calls.split('\n').filter((line) => line.startsWith('CURL'))).toHaveLength(100);
         expect(calls).not.toContain('DELETE FROM public.scan_metadata');
+        // #645: a run that purged nothing because storage refused every delete must fail loudly.
+        expect(lastStatus).toBe(1);
     });
 
     it('runs each sweep independently and skips an unsafe scan row', () => {
