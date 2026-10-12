@@ -661,6 +661,7 @@ export default function StatisticsPage() {
                 onStartRequest={() => setTourRun(true)}
             />
             <Topbar
+                classSelector
                 title={t('statistics.title')}
                 actions={
                     <>

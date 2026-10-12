@@ -3794,7 +3794,7 @@
         "gs_search_item_filters": "Tapez type:test ou class:5A pour limiter les résultats à un type ou une classe",
         "gs_search_item_year_track": "Tapez year:jaar-3 ou track:havo pour filtrer par année scolaire ou filière VO, ou tapez simplement \"havo\" en texte libre",
         "gs_search_item_grade_shortcut": "Tapez le nom d'un élève et le nom d'une grille ensemble (ex. \"Anna quiz de vocabulaire\") pour accéder directement à la page de notation de cet élève pour cette grille",
-        "gs_search_item_active_class": "Le sélecteur de classe près de l'icône de recherche définit votre classe active pour toute l'application — Statistiques et autres pages la suivent automatiquement",
+        "gs_search_item_active_class": "Le sélecteur de classe de la barre supérieure définit votre classe active. Il apparaît sur le tableau de bord et les pages Élèves, Rubriques, Tests et Statistiques, qui le suivent : les puces de classe du tableau de bord et de la page Élèves sélectionnent cette classe, Statistiques filtre sur elle, et les nouvelles attributions de tests et importations de listes l'utilisent par défaut",
         "gs_search_item_portal": "Les élèves ont leur propre recherche sur la page portail, limitée à leurs propres grilles notées, tests/essais assignés et paquets de cartes mémoire",
         "an_stats_item_custom_views": "Vues personnalisées — une galerie de graphiques recommandés que vous pouvez afficher/masquer et recolorer, avec export PNG",
         "an_stats_item_elo_chart": "Dans la vue par élève, un graphique de progression du placement trace le niveau CECR estimé de l'élève au fil de ses tentatives de placement sur une échelle de score Elo, avec une bande colorée par niveau.",

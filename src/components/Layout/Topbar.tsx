@@ -9,6 +9,8 @@ import GlobalSearch from '../Search/GlobalSearch';
 interface TopbarProps {
     title: string;
     actions?: ReactNode;
+    /** Show the active-class selector. Only pages that scope their content by settings.activeClassId pass this (#661). */
+    classSelector?: boolean;
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -18,7 +20,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
     return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
 }
 
-export default function Topbar({ title, actions }: TopbarProps) {
+export default function Topbar({ title, actions, classSelector = false }: TopbarProps) {
     const { classes = [] } = useClasses();
 
     const { settings, updateSettings } = useSettings();
@@ -58,7 +60,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                 <Menu size={20} aria-hidden="true" />
             </button>
             <span className="topbar-title">{title}</span>
-            {classes.length > 0 && (
+            {classSelector && classes.length > 0 && (
                 <select
                     className="topbar-class-select"
                     aria-label={t('search.active_class_label')}

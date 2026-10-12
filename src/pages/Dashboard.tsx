@@ -30,6 +30,7 @@ import { aggregateClassCriterionAverages } from '../utils/classCriterionAggregat
 import { getGrammarRecommendations } from '../utils/learningPathAggregator';
 import { nanoid } from '../utils/nanoid';
 import { useToast } from '../hooks/useToast';
+import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { formatShortDate } from '../utils/dateInput';
 
 function dayKey(iso: string): string {
@@ -145,40 +146,11 @@ export default function Dashboard() {
     // pattern: an empty selection means "all classes", seeded from the remembered single active
     // class. Reusing settings.activeClassId keeps this filter in sync with the "Class CEFR —
     // Writing" panel further down the page, which already reads that same setting.
-    const initialCohorts =
-        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
-    const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
-    // Until the teacher touches the chips, keep adopting settings.activeClassId (which can
-    // change out from under us via a later hydration/sync) instead of writing our initial,
-    // possibly-stale snapshot of it back to settings.
-    const hasUserSelectedCohorts = React.useRef(false);
-    const isAllCohorts = selectedCohorts.length === 0;
-    const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
-
-    function toggleCohort(id: string) {
-        hasUserSelectedCohorts.current = true;
-        setSelectedCohorts((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-    }
-
-    function selectAllCohorts() {
-        hasUserSelectedCohorts.current = true;
-        setSelectedCohorts([]);
-    }
-
-    React.useEffect(() => {
-        if (classes.length === 0) return;
-        if (!hasUserSelectedCohorts.current) {
-            setSelectedCohorts(
-                settings.activeClassId && classes.some((c) => c.id === settings.activeClassId)
-                    ? [settings.activeClassId]
-                    : []
-            );
-            return;
-        }
-        if (singleClassId !== settings.activeClassId) {
-            updateSettings({ activeClassId: singleClassId });
-        }
-    }, [classes, singleClassId, settings.activeClassId, updateSettings]);
+    const { selectedCohorts, toggleCohort, selectAllCohorts, isAllCohorts } = useActiveClassCohorts({
+        activeClassId: settings.activeClassId,
+        classes,
+        setActiveClassId: (activeClassId) => updateSettings({ activeClassId }),
+    });
 
     const snapshotStudents = useMemo(
         () => students.filter((s) => isAllCohorts || selectedCohorts.includes(s.classId)),
@@ -421,6 +393,7 @@ export default function Dashboard() {
     return (
         <>
             <Topbar
+                classSelector
                 title={t('dashboard.title')}
                 actions={
                     <button className="btn btn-primary btn-sm" onClick={() => navigate('/rubrics/new')}>

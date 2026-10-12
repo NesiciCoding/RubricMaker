@@ -368,6 +368,7 @@ export default function RubricList() {
         <>
             <PageTour {...tour.tourProps} />
             <Topbar
+                classSelector
                 title={t('rubricList.title')}
                 actions={
                     <>

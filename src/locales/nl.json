@@ -3794,7 +3794,7 @@
         "gs_search_item_filters": "Typ type:test of class:5A om resultaten te beperken tot één type of klas",
         "gs_search_item_year_track": "Typ year:jaar-3 of track:havo om te filteren op leerjaar of VO-niveau, of typ gewoon \"havo\" als vrije tekst",
         "gs_search_item_grade_shortcut": "Typ de naam van een leerling en een rubric samen (bijv. \"Anna woordenschattoets\") om direct naar de beoordelingspagina van die leerling voor die rubric te springen",
-        "gs_search_item_active_class": "De klasselector naast het zoekicoon stelt je actieve klas in voor de hele app — Statistieken en andere pagina's volgen deze automatisch",
+        "gs_search_item_active_class": "De klasselector in de bovenbalk stelt je actieve klas in. Hij staat op het Dashboard en de pagina's Leerlingen, Rubrieken, Toetsen en Statistieken, die hem volgen: de klaschips op het Dashboard en Leerlingen selecteren die klas, Statistieken filtert erop, en nieuwe toetstoewijzingen en klaslijstimports gebruiken hem standaard",
         "gs_search_item_portal": "Leerlingen krijgen hun eigen zoekfunctie op de portalpagina, beperkt tot hun eigen beoordeelde rubrics, toegewezen toetsen/essays en flashcarddecks",
         "an_stats_item_custom_views": "Aangepaste weergaven — een galerij met aanbevolen grafieken die je kunt tonen/verbergen en herkleuren, met PNG-export",
         "an_stats_item_elo_chart": "In de leerlingweergave toont een plaatsingsvoortgangsgrafiek het geschatte ERK-niveau van de leerling over diens plaatsingspogingen op een Elo-schaal, met een gekleurde band per niveau.",
