@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useAssessment, useAuthoring, useEssays, useGrading, useStudents } from '../context/AppContext';
-import { useOverdueStudents } from './useOverdueStudents';
+import { usePendingGrading } from './usePendingGrading';
 import { groupMessageThreads, MessageThread } from '../utils/messageThreads';
 import { DEFAULT_MODERATION_THRESHOLD_PERCENT, getModerationQueue } from '../utils/coGradingModerationQueue';
 import type { NotificationDismissalType } from '../types';
@@ -9,7 +9,8 @@ import type { NotificationDismissalType } from '../types';
  * Single source of truth for every "notification-worthy" signal in the app (roadmap
  * Phase 30), consumed by NotificationBell, Sidebar's badge, and NotificationsPage so
  * the three can't drift out of sync. Merges three independently-computed sources —
- * overdue grading (useOverdueStudents), unread messages (groupMessageThreads), and
+ * overdue grading (usePendingGrading: handed-in work waiting past the threshold, one item
+ * per test or essay), unread messages (groupMessageThreads), and
  * moderation-pending (getModerationQueue, same defaults Sidebar.tsx's badge already
  * uses — no colleagueIds resolution here, matching that existing simplification) —
  * filtered against persisted dismissals for the two types that have them.
@@ -21,25 +22,32 @@ import type { NotificationDismissalType } from '../types';
 
 interface BaseNotificationItem {
     id: string;
+    sortKey: string; // ISO-ish string; ascending sort = oldest first
+}
+
+interface StudentNotificationItem extends BaseNotificationItem {
     studentId: string;
     studentName: string;
-    sortKey: string; // ISO-ish string; ascending sort = oldest first
 }
 
 export interface OverdueGradingNotification extends BaseNotificationItem {
     type: 'overdue_grading';
-    entityId: string; // studentId
-    fingerprint: string; // lastGradedAt
-    daysSince: number;
+    entityId: string; // `test:<testId>` | `essay:<teacherKey>`
+    fingerprint: string; // newest submittedAt in the group
+    kind: 'test' | 'essay';
+    title: string;
+    waitingCount: number;
+    daysSince: number; // oldest submission
+    path: string;
 }
 
-export interface UnreadMessageNotification extends BaseNotificationItem {
+export interface UnreadMessageNotification extends StudentNotificationItem {
     type: 'unread_message';
     unreadCount: number;
     thread: MessageThread;
 }
 
-export interface ModerationPendingNotification extends BaseNotificationItem {
+export interface ModerationPendingNotification extends StudentNotificationItem {
     type: 'moderation_pending';
     entityId: string; // secondMarkerEntry.id
     fingerprint: string; // secondMarkerEntry.gradedAt
@@ -65,7 +73,7 @@ export interface UseNotificationFeedResult {
 }
 
 export function useNotificationFeed(): UseNotificationFeedResult {
-    const { overdueStudents, threshold } = useOverdueStudents();
+    const { pendingGroups, threshold } = usePendingGrading();
     // Defaulted rather than required: NotificationBell (and so this hook) renders on
     // nearly every page via Topbar, so any test double that predates this hook may not
     // stub every one of these collections.
@@ -90,24 +98,29 @@ export function useNotificationFeed(): UseNotificationFeedResult {
 
     const overdueItems = useMemo<OverdueGradingNotification[]>(
         () =>
-            overdueStudents
-                .filter((s) => !isDismissed('overdue_grading', s.studentId, s.lastGradedAt))
-                .map((s) => ({
-                    id: `overdue_grading:${s.studentId}`,
+            pendingGroups
+                .filter((g) => !isDismissed('overdue_grading', g.key, g.newestSubmittedAt))
+                .map((g) => ({
+                    id: `overdue_grading:${g.key}`,
                     type: 'overdue_grading' as const,
-                    entityId: s.studentId,
-                    studentId: s.studentId,
-                    studentName: s.studentName,
-                    daysSince: s.daysSince,
-                    fingerprint: s.lastGradedAt,
-                    sortKey: s.lastGradedAt,
-                }))
-                .sort((a, b) => a.sortKey.localeCompare(b.sortKey)),
-        [overdueStudents, isDismissed]
+                    entityId: g.key,
+                    fingerprint: g.newestSubmittedAt,
+                    kind: g.kind,
+                    title: g.title,
+                    waitingCount: g.studentIds.length,
+                    daysSince: g.daysWaiting,
+                    path: g.path,
+                    sortKey: g.oldestSubmittedAt,
+                })),
+        [pendingGroups, isDismissed]
     );
 
     const messageItems = useMemo<UnreadMessageNotification[]>(() => {
-        const threads = groupMessageThreads(messages).filter((t) => t.unreadByTeacher > 0);
+        // Only active students count: an archived student's thread stays readable in Messages but
+        // must not keep the badge up.
+        const threads = groupMessageThreads(messages).filter(
+            (t) => t.unreadByTeacher > 0 && students.some((s) => s.id === t.studentId)
+        );
         return threads
             .map((thread) => {
                 const student = students.find((s) => s.id === thread.studentId);

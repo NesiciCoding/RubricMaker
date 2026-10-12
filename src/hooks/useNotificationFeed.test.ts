@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Message, Rubric, Student, StudentRubric } from '../types';
+import type { EssaySubmission, Message, Rubric, Student, StudentRubric, StudentTest } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { useNotificationFeed } from './useNotificationFeed';
 
@@ -13,6 +13,10 @@ let mockStudentRubrics: StudentRubric[] = [];
 let mockPeerReviews: StudentRubric[] = [];
 let mockRubrics: Rubric[] = [];
 let mockMessages: Message[] = [];
+let mockStudentTests: StudentTest[] = [];
+let mockEssaySubmissions: Array<
+    Pick<EssaySubmission, 'teacherKey' | 'assignmentStudentId' | 'assignmentRubricId' | 'submittedAt'>
+> = [];
 let mockNotificationDismissals: Array<{ id: string; type: string; entityId: string; fingerprint: string }> = [];
 const mockDismissNotification = vi.fn();
 const mockMarkMessageReadByTeacher = vi.fn();
@@ -23,6 +27,10 @@ const makeAppContextMock = () => ({
     peerReviews: mockPeerReviews,
     rubrics: mockRubrics,
     messages: mockMessages,
+    tests: [{ id: 't1', name: 'Unit test' }],
+    studentTests: mockStudentTests,
+    essaySubmissions: mockEssaySubmissions,
+    essayAssignments: [],
     notificationDismissals: mockNotificationDismissals,
     settings: { overdueReminderThreshold: 7 },
     dismissNotification: mockDismissNotification,
@@ -95,6 +103,8 @@ describe('useNotificationFeed', () => {
         mockPeerReviews = [];
         mockRubrics = [];
         mockMessages = [];
+        mockStudentTests = [];
+        mockEssaySubmissions = [];
         mockNotificationDismissals = [];
         mockDismissNotification.mockClear();
         mockMarkMessageReadByTeacher.mockClear();
@@ -107,89 +117,63 @@ describe('useNotificationFeed', () => {
     });
 
     describe('overdue grading', () => {
-        it('surfaces an overdue student', () => {
-            mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-            mockStudentRubrics = [
-                {
-                    id: 'sr1',
-                    rubricId: 'r1',
-                    studentId: 's1',
-                    entries: [],
-                    overallComment: '',
-                    isPeerReview: false,
-                    gradedAt: daysAgo(10),
-                } as StudentRubric,
+        const submitted = (id: string, studentId: string, submittedAt: string): StudentTest =>
+            ({ id, testId: 't1', studentId, status: 'submitted', submittedAt }) as StudentTest;
+
+        it('surfaces handed-in work waiting past the threshold, one item per test', () => {
+            mockStudents = [
+                { id: 's1', name: 'Alice', classId: 'c1' },
+                { id: 's2', name: 'Bob', classId: 'c1' },
             ];
+            mockStudentTests = [submitted('st1', 's1', daysAgo(10)), submitted('st2', 's2', daysAgo(8))];
             const { result } = renderHook(() => useNotificationFeed());
             expect(result.current.overdueItems).toHaveLength(1);
-            expect(result.current.overdueItems[0].studentName).toBe('Alice');
+            expect(result.current.overdueItems[0]).toMatchObject({
+                title: 'Unit test',
+                waitingCount: 2,
+                daysSince: 10,
+                path: '/tests/t1/results/st1',
+            });
             expect(result.current.count).toBe(1);
         });
 
-        it('hides an overdue student whose current fingerprint matches a dismissal', () => {
+        it('does not flag students who were graded long ago but have nothing handed in (#665)', () => {
             mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-            const gradedAt = daysAgo(10);
             mockStudentRubrics = [
                 {
                     id: 'sr1',
                     rubricId: 'r1',
                     studentId: 's1',
-                    entries: [],
-                    overallComment: '',
                     isPeerReview: false,
-                    gradedAt,
+                    gradedAt: daysAgo(30),
                 } as StudentRubric,
-            ];
-            mockNotificationDismissals = [
-                { id: 'overdue_grading:s1', type: 'overdue_grading', entityId: 's1', fingerprint: gradedAt },
             ];
             const { result } = renderHook(() => useNotificationFeed());
             expect(result.current.overdueItems).toHaveLength(0);
         });
 
-        it('resurfaces a dismissed student once regraded and overdue again (stale fingerprint)', () => {
-            mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-            mockStudentRubrics = [
-                {
-                    id: 'sr1',
-                    rubricId: 'r1',
-                    studentId: 's1',
-                    entries: [],
-                    overallComment: '',
-                    isPeerReview: false,
-                    gradedAt: daysAgo(20),
-                } as StudentRubric,
+        it('hides a dismissed group until more work is handed in', () => {
+            mockStudents = [
+                { id: 's1', name: 'Alice', classId: 'c1' },
+                { id: 's2', name: 'Bob', classId: 'c1' },
             ];
-            // Dismissed against an older gradedAt than the student's current one.
+            const first = daysAgo(10);
+            mockStudentTests = [submitted('st1', 's1', first)];
             mockNotificationDismissals = [
-                {
-                    id: 'overdue_grading:s1',
-                    type: 'overdue_grading',
-                    entityId: 's1',
-                    fingerprint: daysAgo(30),
-                },
+                { id: 'overdue_grading:test:t1', type: 'overdue_grading', entityId: 'test:t1', fingerprint: first },
             ];
-            const { result } = renderHook(() => useNotificationFeed());
-            expect(result.current.overdueItems).toHaveLength(1);
+            expect(renderHook(() => useNotificationFeed()).result.current.overdueItems).toHaveLength(0);
+            mockStudentTests = [submitted('st1', 's1', first), submitted('st2', 's2', daysAgo(8))];
+            expect(renderHook(() => useNotificationFeed()).result.current.overdueItems).toHaveLength(1);
         });
 
         it('dismiss() calls dismissNotification with the item type, entityId, and fingerprint', () => {
             mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-            const gradedAt = daysAgo(10);
-            mockStudentRubrics = [
-                {
-                    id: 'sr1',
-                    rubricId: 'r1',
-                    studentId: 's1',
-                    entries: [],
-                    overallComment: '',
-                    isPeerReview: false,
-                    gradedAt,
-                } as StudentRubric,
-            ];
+            const submittedAt = daysAgo(10);
+            mockStudentTests = [submitted('st1', 's1', submittedAt)];
             const { result } = renderHook(() => useNotificationFeed());
             result.current.dismiss(result.current.overdueItems[0]);
-            expect(mockDismissNotification).toHaveBeenCalledWith('overdue_grading', 's1', gradedAt);
+            expect(mockDismissNotification).toHaveBeenCalledWith('overdue_grading', 'test:t1', submittedAt);
         });
     });
 
@@ -304,21 +288,13 @@ describe('useNotificationFeed', () => {
 
         it('dismissAll("overdue_grading") dismisses every currently-visible overdue item', () => {
             mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-            const gradedAt = daysAgo(10);
-            mockStudentRubrics = [
-                {
-                    id: 'sr1',
-                    rubricId: 'r1',
-                    studentId: 's1',
-                    entries: [],
-                    overallComment: '',
-                    isPeerReview: false,
-                    gradedAt,
-                } as StudentRubric,
+            const submittedAt = daysAgo(10);
+            mockStudentTests = [
+                { id: 'st1', testId: 't1', studentId: 's1', status: 'submitted', submittedAt } as StudentTest,
             ];
             const { result } = renderHook(() => useNotificationFeed());
             result.current.dismissAll('overdue_grading');
-            expect(mockDismissNotification).toHaveBeenCalledWith('overdue_grading', 's1', gradedAt);
+            expect(mockDismissNotification).toHaveBeenCalledWith('overdue_grading', 'test:t1', submittedAt);
         });
 
         it('dismissAll("moderation_pending") dismisses every currently-visible moderation item', () => {
@@ -336,7 +312,7 @@ describe('useNotificationFeed', () => {
         });
     });
 
-    it('handles message threads and moderation items from unknown students', () => {
+    it('keeps unknown or archived students out of the message badge but still lists their moderation items', () => {
         mockMessages = [
             {
                 id: 'm1',
@@ -375,7 +351,7 @@ describe('useNotificationFeed', () => {
         ];
         const { result } = renderHook(() => useNotificationFeed());
 
-        expect(result.current.messageItems[0].studentName).toBe('ghost');
+        expect(result.current.messageItems).toHaveLength(0);
         expect(result.current.moderationItems).toHaveLength(1);
         expect(result.current.moderationItems[0].studentName).toBe('ghost');
         expect(result.current.moderationItems[0].pendingDays).toBeNull();
@@ -461,8 +437,20 @@ describe('useNotificationFeed', () => {
         const { result } = renderHook(() => useNotificationFeed());
         expect(result.current.messageItems[0].studentId).toBe('s2');
         expect(result.current.moderationItems[0].studentId).toBe('s1');
-        expect(result.current.overdueItems).toHaveLength(2);
-        expect(result.current.overdueItems[0].studentName).toBe('Dan');
+        mockStudentTests = [
+            {
+                id: 'st-new',
+                testId: 't1',
+                studentId: 's3',
+                status: 'submitted',
+                submittedAt: daysAgo(8),
+            } as StudentTest,
+        ];
+        mockEssaySubmissions = [
+            { teacherKey: 'k1', assignmentStudentId: 's4', assignmentRubricId: 'r9', submittedAt: daysAgo(15) },
+        ];
+        const { result: withOverdue } = renderHook(() => useNotificationFeed());
+        expect(withOverdue.current.overdueItems.map((i) => i.entityId)).toEqual(['essay:k1', 'test:t1']);
     });
 
     it('markAllMessagesRead marks every thread read', () => {
@@ -487,24 +475,14 @@ describe('useNotificationFeed', () => {
     });
 
     it('merges all three sources into one sorted feed', () => {
-        // A separate student (s2) for the overdue signal — s1's own most-recent grade is
-        // `baseline` (1 day ago), which would otherwise suppress its own overdue status.
         mockStudents = [
             { id: 's1', name: 'Alice', classId: 'c1' },
             { id: 's2', name: 'Bob', classId: 'c1' },
         ];
         mockRubrics = [rubric];
-        mockStudentRubrics = [
-            baseline,
-            {
-                id: 'sr-overdue',
-                rubricId: 'r1',
-                studentId: 's2',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(10),
-            } as StudentRubric,
+        mockStudentRubrics = [baseline];
+        mockStudentTests = [
+            { id: 'st1', testId: 't1', studentId: 's2', status: 'submitted', submittedAt: daysAgo(10) } as StudentTest,
         ];
         mockPeerReviews = [secondMarker];
         mockMessages = [
