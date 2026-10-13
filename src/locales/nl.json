@@ -1752,13 +1752,16 @@
         "version_banner_rubric_other": "Deze beoordeling gebruikt de rubric zoals die was bij het beoordelen. Sindsdien zijn {{count}} criteria gewijzigd.",
         "version_banner_scale": "Deze beoordeling houdt de cijferschaal waarmee ze is gegeven; de schaal is sindsdien aangepast.",
         "version_banner_scale_too": "De cijferschaal is ook aangepast.",
+        "version_banner_scoring": "Deze beoordeling gebruikt de rubric zoals die was bij het beoordelen. De score-instellingen zijn sindsdien gewijzigd.",
         "version_show_changes": "Wijzigingen tonen",
         "regrade_latest_action": "Opnieuw beoordelen op nieuwste versie",
         "regrade_latest_title": "Opnieuw beoordelen op de nieuwste versie?",
         "regrade_latest_message": "Scores blijven staan waar het criterium en het niveau nog bestaan. Verwijderde niveaus worden leeggemaakt en nieuwe criteria zijn nog niet beoordeeld. De huidige cijferschaal wordt gebruikt. Sla op om het resultaat te bewaren.",
         "regrade_latest_done": "Je beoordeelt nu op de nieuwste versie. Sla op om dit te bewaren.",
         "regrade_latest_done_cleared_one": "Je beoordeelt nu op de nieuwste versie — {{count}} criterium heeft een nieuw niveau nodig. Sla op om dit te bewaren.",
-        "regrade_latest_done_cleared_other": "Je beoordeelt nu op de nieuwste versie — {{count}} criteria hebben een nieuw niveau nodig. Sla op om dit te bewaren."
+        "regrade_latest_done_cleared_other": "Je beoordeelt nu op de nieuwste versie — {{count}} criteria hebben een nieuw niveau nodig. Sla op om dit te bewaren.",
+        "regrade_latest_done_removed_one": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderd criterium blijft bewaard. Sla op om dit te behouden.",
+        "regrade_latest_done_removed_other": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderde criteria blijft bewaard. Sla op om dit te behouden."
     },
     "rubricBuilder": {
         "action_back": "Terug",

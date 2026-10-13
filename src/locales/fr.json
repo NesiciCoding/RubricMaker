@@ -1752,13 +1752,16 @@
         "version_banner_rubric_other": "Cette note utilise la grille telle qu'elle était lors de la notation. {{count}} critères ont changé depuis.",
         "version_banner_scale": "Cette note conserve le barème avec lequel elle a été attribuée ; le barème a été modifié depuis.",
         "version_banner_scale_too": "Le barème a aussi été modifié.",
+        "version_banner_scoring": "Cette évaluation utilise le barème tel qu'il était au moment de la notation. Ses paramètres de notation ont changé depuis.",
         "version_show_changes": "Voir les modifications",
         "regrade_latest_action": "Renoter avec la dernière version",
         "regrade_latest_title": "Renoter avec la dernière version ?",
         "regrade_latest_message": "Les scores sont conservés lorsque le critère et le niveau existent encore. Les niveaux supprimés sont effacés et les nouveaux critères ne sont pas encore notés. Le barème actuel est utilisé. Enregistrez pour conserver le résultat.",
         "regrade_latest_done": "Notation sur la dernière version. Enregistrez pour la conserver.",
         "regrade_latest_done_cleared_one": "Notation sur la dernière version — {{count}} critère doit recevoir un nouveau niveau. Enregistrez pour la conserver.",
-        "regrade_latest_done_cleared_other": "Notation sur la dernière version — {{count}} critères doivent recevoir un nouveau niveau. Enregistrez pour la conserver."
+        "regrade_latest_done_cleared_other": "Notation sur la dernière version — {{count}} critères doivent recevoir un nouveau niveau. Enregistrez pour la conserver.",
+        "regrade_latest_done_removed_one": "Notation sur la dernière version — le commentaire de {{count}} critère supprimé est conservé. Enregistrez pour le garder.",
+        "regrade_latest_done_removed_other": "Notation sur la dernière version — les commentaires de {{count}} critères supprimés sont conservés. Enregistrez pour les garder."
     },
     "rubricBuilder": {
         "action_back": "Retour",

@@ -1752,13 +1752,16 @@
         "version_banner_rubric_other": "Esta calificación usa la rúbrica tal como era al calificar. Desde entonces han cambiado {{count}} criterios.",
         "version_banner_scale": "Esta calificación conserva la escala con la que se puso; la escala se ha modificado desde entonces.",
         "version_banner_scale_too": "La escala de calificación también se ha modificado.",
+        "version_banner_scoring": "Esta calificación usa la rúbrica tal como estaba al calificar. Su configuración de puntuación ha cambiado desde entonces.",
         "version_show_changes": "Ver cambios",
         "regrade_latest_action": "Recalificar con la última versión",
         "regrade_latest_title": "¿Recalificar con la última versión?",
         "regrade_latest_message": "Las puntuaciones se mantienen donde el criterio y el nivel siguen existiendo. Los niveles eliminados se vacían y los criterios nuevos quedan sin calificar. Se usa la escala actual. Guarda para conservar el resultado.",
         "regrade_latest_done": "Ahora se califica con la última versión. Guarda para conservarla.",
         "regrade_latest_done_cleared_one": "Ahora se califica con la última versión: {{count}} criterio necesita un nivel nuevo. Guarda para conservarla.",
-        "regrade_latest_done_cleared_other": "Ahora se califica con la última versión: {{count}} criterios necesitan un nivel nuevo. Guarda para conservarla."
+        "regrade_latest_done_cleared_other": "Ahora se califica con la última versión: {{count}} criterios necesitan un nivel nuevo. Guarda para conservarla.",
+        "regrade_latest_done_removed_one": "Ahora se califica con la última versión: se conserva el comentario de {{count}} criterio eliminado. Guarda para mantenerlo.",
+        "regrade_latest_done_removed_other": "Ahora se califica con la última versión: se conservan los comentarios de {{count}} criterios eliminados. Guarda para mantenerlos."
     },
     "rubricBuilder": {
         "action_back": "Volver",

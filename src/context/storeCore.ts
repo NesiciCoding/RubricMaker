@@ -335,10 +335,13 @@ export function reducer(state: StoreData, action: Action): StoreData {
             // sharing groupId, scoped per criterion by RubricCriterion.collaborative (unset/true =
             // fan out, false = stays individually scored per student).
             if (payload.groupId) {
-                const rubric = state.rubrics.find((r) => r.id === payload.rubricId);
-                const collaborativeIds = new Set(
-                    (rubric?.criteria ?? []).filter((c) => c.collaborative !== false).map((c) => c.id)
-                );
+                // Fan-out follows the rubric version the grade is saved against, not the live one: a
+                // criterion's collaborative flag may have changed since this grade was taken.
+                const criteria =
+                    payload.rubricSnapshot?.criteria ??
+                    state.rubrics.find((r) => r.id === payload.rubricId)?.criteria ??
+                    [];
+                const collaborativeIds = new Set(criteria.filter((c) => c.collaborative !== false).map((c) => c.id));
                 next = next.map((sr) => {
                     if (sr.groupId !== payload.groupId || sr.id === payload.id) return sr;
                     const mergedEntries = payload.entries.map((entry) =>

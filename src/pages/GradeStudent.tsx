@@ -40,7 +40,7 @@ import HelpPopover from '../components/Tests/HelpPopover';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
-import { diffRubricVersions } from '../utils/rubricVersionDiff';
+import { diffRubricSettings, diffRubricVersions } from '../utils/rubricVersionDiff';
 import { remapEntriesToRubric, sameGradeScale } from '../utils/gradeSnapshot';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import GradingActionsMenu, { type GradingAction } from '../components/Grading/GradingActionsMenu';
@@ -196,7 +196,14 @@ export default function GradeStudent() {
         () => (snapshotRubric && liveRubric ? diffRubricVersions(snapshotRubric, liveRubric) : []),
         [snapshotRubric, liveRubric]
     );
-    const hasNewerVersion = !regradeOnLatest && !!liveRubric && (rubricChanges.length > 0 || scaleChanged);
+    const rubricSettingChanges = useMemo(
+        () => (snapshotRubric && liveRubric ? diffRubricSettings(snapshotRubric, liveRubric) : []),
+        [snapshotRubric, liveRubric]
+    );
+    const hasNewerVersion =
+        !regradeOnLatest &&
+        !!liveRubric &&
+        (rubricChanges.length > 0 || rubricSettingChanges.length > 0 || scaleChanged);
     const [showVersionDiff, setShowVersionDiff] = useState(false);
 
     const [sr, setSr] = useState(() => {
@@ -522,16 +529,20 @@ export default function GradeStudent() {
             cancelLabel: t('common.cancel'),
         });
         if (!ok) return;
-        const { entries, clearedCount } = remapEntriesToRubric(sr.entries, liveRubric);
+        const { entries, clearedCount, removedCount } = remapEntriesToRubric(sr.entries, liveRubric);
         setSr({ ...sr, entries, gradeScaleSnapshot: liveScale ?? undefined });
         setRegradeOnLatest(true);
         setShowVersionDiff(false);
         setIsDirty(true);
+        // Cleared levels need the teacher's attention first; otherwise note that feedback for
+        // criteria the new version dropped was kept rather than discarded.
         showToast(
             clearedCount > 0
                 ? t('gradeStudent.regrade_latest_done_cleared', { count: clearedCount })
-                : t('gradeStudent.regrade_latest_done'),
-            clearedCount > 0 ? 'warning' : 'success'
+                : removedCount > 0
+                  ? t('gradeStudent.regrade_latest_done_removed', { count: removedCount })
+                  : t('gradeStudent.regrade_latest_done'),
+            clearedCount > 0 ? 'warning' : removedCount > 0 ? 'info' : 'success'
         );
     }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff]);
 
@@ -1017,7 +1028,9 @@ export default function GradeStudent() {
                         <span style={{ flex: 1, minWidth: 200 }}>
                             {rubricChanges.length > 0
                                 ? t('gradeStudent.version_banner_rubric', { count: rubricChanges.length })
-                                : t('gradeStudent.version_banner_scale')}
+                                : scaleChanged
+                                  ? t('gradeStudent.version_banner_scale')
+                                  : t('gradeStudent.version_banner_scoring')}
                             {rubricChanges.length > 0 &&
                                 scaleChanged &&
                                 ` ${t('gradeStudent.version_banner_scale_too')}`}

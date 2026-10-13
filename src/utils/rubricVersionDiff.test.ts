@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diffRubricVersions } from './rubricVersionDiff';
+import { diffRubricSettings, diffRubricVersions } from './rubricVersionDiff';
 import type { Rubric } from '../types';
 
 function makeLevel(id: string, overrides: Partial<Rubric['criteria'][0]['levels'][0]> = {}) {
@@ -134,5 +134,25 @@ describe('diffRubricVersions', () => {
         const diff = diffRubricVersions(from, to);
         expect(diff).toHaveLength(1);
         expect(diff[0].fieldChanges).toEqual([{ field: 'title', from: 'Old title', to: 'New title' }]);
+    });
+});
+
+describe('diffRubricSettings', () => {
+    it('is empty when the rubric-wide settings match', () => {
+        expect(diffRubricSettings(makeSnapshot([]), makeSnapshot([]))).toEqual([]);
+    });
+
+    it('detects a scoring-mode change even when no criterion differs', () => {
+        const from = makeSnapshot([makeCriterion('c1')]);
+        const to = { ...makeSnapshot([makeCriterion('c1')]), scoringMode: 'total-points' as const };
+        expect(diffRubricSettings(from, to)).toEqual([
+            { field: 'scoringMode', from: 'weighted-percentage', to: 'total-points' },
+        ]);
+    });
+
+    it('detects a configured-maximum change', () => {
+        const from = makeSnapshot([]);
+        const to = { ...makeSnapshot([]), totalMaxPoints: 50 };
+        expect(diffRubricSettings(from, to)).toEqual([{ field: 'totalMaxPoints', from: '100', to: '50' }]);
     });
 });

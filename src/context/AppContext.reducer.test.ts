@@ -313,6 +313,55 @@ describe('AppContext reducer — rubrics, students, classes', () => {
         expect(nextSibling.overallComment).toBe('Team');
     });
 
+    it("fans out by the grade's saved rubric version when its collaborative flags differ from the live rubric", () => {
+        // The live rubric marks both criteria collaborative...
+        const liveRubric: Rubric = {
+            ...rubric,
+            criteria: [
+                { id: 'shared', title: 'Shared', description: '', weight: 50, levels: [] },
+                { id: 'own', title: 'Own', description: '', weight: 50, levels: [] },
+            ],
+        };
+        // ...but this grade was taken against a version that scored 'own' individually.
+        const savedVersion: Rubric = {
+            ...rubric,
+            criteria: [
+                { id: 'shared', title: 'Shared', description: '', weight: 50, levels: [] },
+                { id: 'own', title: 'Own', description: '', weight: 50, levels: [], collaborative: false },
+            ],
+        };
+        const groupLead: StudentRubric = {
+            id: 'srA',
+            rubricId: 'r1',
+            studentId: 's1',
+            entries: [
+                { criterionId: 'shared', levelId: 'l1', checkedSubItems: [], comment: '' },
+                { criterionId: 'own', levelId: 'l1', checkedSubItems: [], comment: '' },
+            ],
+            overallComment: 'Team',
+            groupId: 'g1',
+            isPeerReview: false,
+            rubricSnapshot: savedVersion,
+        };
+        const sibling: StudentRubric = {
+            ...groupLead,
+            id: 'srB',
+            studentId: 's2',
+            entries: [
+                { criterionId: 'shared', levelId: null, checkedSubItems: [], comment: '' },
+                { criterionId: 'own', levelId: null, checkedSubItems: [], comment: '' },
+            ],
+            overallComment: '',
+        };
+        let state = makeState({ rubrics: [liveRubric], studentRubrics: [groupLead, sibling] });
+        state = run(state, { type: 'SAVE_STUDENT_RUBRIC', payload: groupLead });
+
+        const nextSibling = state.studentRubrics.find((sr) => sr.id === 'srB')!;
+        expect(nextSibling.entries.find((e) => e.criterionId === 'shared')?.levelId).toBe('l1');
+        // The saved version scored 'own' individually, so the sibling keeps its own entry.
+        expect(nextSibling.entries.find((e) => e.criterionId === 'own')?.levelId).toBeNull();
+    });
+
     it('soft-deletes student rubrics by student and by group scope, and restores them', () => {
         const srB: StudentRubric = { ...studentRubric, id: 'srB', studentId: 's2', groupId: 'g1' };
         let state = makeState({ studentRubrics: [{ ...studentRubric, groupId: 'g1' }, srB] });

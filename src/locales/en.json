@@ -1752,13 +1752,16 @@
         "version_banner_rubric_other": "This grade uses the rubric as it was when it was graded. {{count}} criteria have changed since.",
         "version_banner_scale": "This grade keeps the grade scale it was given with; the scale has been edited since.",
         "version_banner_scale_too": "The grade scale has also been edited.",
+        "version_banner_scoring": "This grade uses the rubric as it was when it was graded. Its scoring settings have changed since.",
         "version_show_changes": "Show changes",
         "regrade_latest_action": "Regrade on latest version",
         "regrade_latest_title": "Regrade on the latest version?",
         "regrade_latest_message": "Scores carry over where the criterion and level still exist. Levels that were removed are cleared and new criteria start ungraded. The current grade scale is used. Save to keep the result.",
         "regrade_latest_done": "Now grading on the latest version. Save to keep it.",
         "regrade_latest_done_cleared_one": "Now grading on the latest version — {{count}} criterion needs a new level. Save to keep it.",
-        "regrade_latest_done_cleared_other": "Now grading on the latest version — {{count}} criteria need a new level. Save to keep it."
+        "regrade_latest_done_cleared_other": "Now grading on the latest version — {{count}} criteria need a new level. Save to keep it.",
+        "regrade_latest_done_removed_one": "Now grading on the latest version — feedback for {{count}} removed criterion is kept. Save to keep it.",
+        "regrade_latest_done_removed_other": "Now grading on the latest version — feedback for {{count}} removed criteria is kept. Save to keep it."
     },
     "rubricBuilder": {
         "action_back": "Back",
