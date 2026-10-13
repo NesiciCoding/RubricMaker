@@ -261,17 +261,42 @@ function gradeTime(sr: StudentRubric): number {
 }
 
 /**
+ * Fields another actor can author independently of the teacher's grade — the student's own
+ * self-assessment, and the submission the grade follows. Folding two records must not erase them
+ * just because the record that wins on edit time happens not to carry them.
+ */
+const INDEPENDENTLY_AUTHORED: readonly (keyof StudentRubric)[] = [
+    'submittedAt',
+    'selfAssessmentLevels',
+    'selfAssessmentReflection',
+    'selfAssessedAt',
+];
+
+export interface DedupeOptions {
+    /**
+     * Ids whose queued write is still an upsert, i.e. the cloud has never acknowledged the row.
+     * Those ids are the ones a local save minted, so they must never supply the retained id.
+     */
+    unconfirmedIds?: ReadonlySet<string>;
+}
+
+/**
  * A grade saved before the student's existing grade has loaded (offline boot, late hydrate, the
  * async IndexedDB cache merge) gets a fresh id, so one student can end up with two live grades on
- * the same rubric. Collapse each such set into one record: the most recent edit wins, but it keeps
- * the oldest record's id so the cloud row, storage paths and links already pointing at it survive.
- * Peer reviews (including second-marker grades), separate rounds and soft-deleted grades are never
- * merged. `dropped` lists the records that were folded away, so callers can delete them remotely.
+ * the same rubric. Collapse each such set into one record: the most recent edit wins the content,
+ * but the id of the established record survives so the cloud row, storage paths and links already
+ * pointing at it keep resolving. Peer reviews (including second-marker grades), separate rounds and
+ * soft-deleted grades are never merged. `dropped` lists the records that were folded away, so
+ * callers can delete them remotely.
  */
-export function dedupeStudentRubrics(records: StudentRubric[]): {
+export function dedupeStudentRubrics(
+    records: StudentRubric[],
+    opts: DedupeOptions = {}
+): {
     records: StudentRubric[];
     dropped: StudentRubric[];
 } {
+    const { unconfirmedIds } = opts;
     const groups = new Map<string, StudentRubric[]>();
     for (const sr of records) {
         if (sr.isPeerReview || sr.deletedAt) continue;
@@ -286,10 +311,30 @@ export function dedupeStudentRubrics(records: StudentRubric[]): {
     for (const group of groups.values()) {
         if (group.length < 2) continue;
         const byAge = [...group].sort((a, b) => gradeTime(a) - gradeTime(b) || a.id.localeCompare(b.id));
-        const oldest = byAge[0];
         const newest = byAge[byAge.length - 1];
-        replacements.set(oldest.id, { ...newest, id: oldest.id });
-        dropped.push(...byAge.slice(1));
+        // Which id survives is a question of provenance first and age second: a row whose creation
+        // the cloud never confirmed is the locally minted duplicate, and letting it supply the id
+        // would delete the established row instead — taking its storage paths and links with it.
+        const keeper = [...group].sort(
+            (a, b) =>
+                Number(unconfirmedIds?.has(a.id) ?? false) - Number(unconfirmedIds?.has(b.id) ?? false) ||
+                gradeTime(a) - gradeTime(b) ||
+                a.id.localeCompare(b.id)
+        )[0];
+        // Winning content under the surviving id, then whatever the winner lacks that a sibling
+        // carries: a self-assessment saved on either copy must outlive the fold. Newest first, so
+        // the most recent value of an independently authored field is the one kept.
+        const folded: StudentRubric = { ...newest, id: keeper.id };
+        for (const sr of [...byAge].reverse()) {
+            if (sr.id === newest.id) continue;
+            for (const field of INDEPENDENTLY_AUTHORED) {
+                if (folded[field] === undefined && sr[field] !== undefined) {
+                    Object.assign(folded, { [field]: sr[field] });
+                }
+            }
+        }
+        replacements.set(keeper.id, folded);
+        dropped.push(...byAge.filter((sr) => sr.id !== keeper.id));
     }
     if (dropped.length === 0) return { records, dropped };
 

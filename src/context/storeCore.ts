@@ -100,7 +100,7 @@ export interface PlatformCtx extends StoreActionsCtx {
     t: (key: string, options?: Record<string, unknown>) => string;
     setLandingState: (s: 'checking' | 'show' | 'hide') => void;
     setShowMigrationPrompt: (b: boolean) => void;
-    applyHydrated: (merged: StoreData, seedDiffBaseline: boolean) => void;
+    applyHydrated: (merged: StoreData, seedDiffBaseline: boolean) => StoreData;
 }
 
 export type Action =
