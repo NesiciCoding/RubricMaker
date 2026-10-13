@@ -2811,7 +2811,7 @@
     },
     "notifications": {
         "bell_title": "Meldingen ({{count}} achterstallig)",
-        "panel_title": "Achterstallige Leerlingen",
+        "panel_title": "Achterstallig nakijkwerk",
         "panel_label": "Meldingenpaneel",
         "all_up_to_date": "Geen ingeleverde toets of essay wacht langer dan {{threshold}} dagen op nakijken.",
         "days_ago": "{{count}}d geleden",
@@ -2820,7 +2820,7 @@
         "enable_push": "Browsernotificaties inschakelen",
         "enable_btn": "Inschakelen",
         "permission_denied": "Browsernotificaties geblokkeerd. Sta ze toe in de browserinstellingen.",
-        "browser_title": "RubricMaker — Achterstallige Leerlingen",
+        "browser_title": "RubricMaker — Achterstallig nakijkwerk",
         "clear_all": "Alles verbergen",
         "unread_messages_subtitle": "{{count}} ongelezen berichtdraad(en)",
         "moderation_subtitle": "{{count}} openstaande moderatiebeoordeling(en)",

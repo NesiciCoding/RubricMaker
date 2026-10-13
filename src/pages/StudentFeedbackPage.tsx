@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 
 export default function StudentFeedbackPage() {
@@ -119,6 +120,7 @@ export default function StudentFeedbackPage() {
 
             {rubric.criteria.map((criterion) => {
                 const entry = sr.entries.find((e) => e.criterionId === criterion.id);
+                const audioSrc = safeAudioDataUrl(entry?.audioDataUrl);
                 const selectedLevel = criterion.levels.find((l) => l.id === entry?.levelId);
                 const headingId = `feedback-criterion-${criterion.id}`;
 
@@ -242,14 +244,14 @@ export default function StudentFeedbackPage() {
                                 {entry.comment}
                             </div>
                         )}
-                        {entry?.audioDataUrl && (
+                        {audioSrc && (
                             <div style={{ marginTop: 8 }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
                                     {t('sharedFeedback.audio_feedback')}
                                 </div>
                                 <audio
                                     controls
-                                    src={entry.audioDataUrl}
+                                    src={audioSrc}
                                     aria-label={t('sharedFeedback.audio_feedback_for', { criterion: criterion.title })}
                                     style={{ width: '100%', height: 32 }}
                                 />
