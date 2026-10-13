@@ -34,17 +34,26 @@ describe('normalizeLinkUrl', () => {
         ['http://example.com', 'http://example.com'],
         ['HTTPS://Example.com/A', 'HTTPS://Example.com/A'],
         ['mailto:a@example.com', 'mailto:a@example.com'],
+        ['mailto:a@example.com?subject=Hi', 'mailto:a@example.com?subject=Hi'],
         ['localhost:5173/x', 'https://localhost:5173/x'],
     ])('normalises %s', (input, expected) => {
         expect(normalizeLinkUrl(input)).toBe(expected);
     });
 
-    it.each(['javascript:alert(1)', 'not a url', 'news', 'https://intranet', 'ftp://example.com', 'data:text/html,x'])(
-        'rejects %s',
-        (value) => {
-            expect(normalizeLinkUrl(value)).toBeUndefined();
-        }
-    );
+    it.each([
+        'javascript:alert(1)',
+        'not a url',
+        'news',
+        'https://intranet',
+        'ftp://example.com',
+        'data:text/html,x',
+        'mailto:hello',
+        'mailto:a@localhost',
+        'https:example.com/x',
+        'http:/example.com',
+    ])('rejects %s', (value) => {
+        expect(normalizeLinkUrl(value)).toBeUndefined();
+    });
 
     it('treats empty input as no link', () => {
         expect(normalizeLinkUrl('  ')).toBeUndefined();
