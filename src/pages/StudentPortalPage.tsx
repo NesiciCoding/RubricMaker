@@ -1388,7 +1388,11 @@ export default function StudentPortalPage() {
                                             <span>{h.sr.overallComment}</span>
                                         </div>
                                     )}
-                                    <PortalCriterionFeedback rubric={h.rubric} entries={h.sr.entries} />
+                                    <PortalCriterionFeedback
+                                        rubric={h.rubric}
+                                        entries={h.sr.entries}
+                                        studentRubricId={h.sr.id}
+                                    />
 
                                     {/* Self-assessment */}
                                     {!h.sr.notHandedIn && (

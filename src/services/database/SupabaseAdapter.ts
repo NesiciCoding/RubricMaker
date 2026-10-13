@@ -1265,6 +1265,36 @@ export class SupabaseAdapter {
         return error ? { success: false, error: error.message } : { success: true };
     }
 
+    /**
+     * Mint a signed URL for a student's own voice feedback on a portal grade card. The bucket is
+     * owner-scoped to the grader's uid, so a student session can't sign the path itself; the
+     * get-feedback-audio-url edge function re-checks read access via student_rubrics RLS and signs
+     * it with the service role. Returns null when unavailable, so the player stays hidden.
+     */
+    async getPortalFeedbackAudioSignedUrl(studentRubricId: string, criterionId: string): Promise<string | null> {
+        if (!this.client || !this.activeUrl) return null;
+        const {
+            data: { session },
+        } = await this.client.auth.getSession();
+        if (!session) return null;
+        try {
+            const response = await fetch(`${this.activeUrl}/functions/v1/get-feedback-audio-url`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                    apikey: this.activeKey ?? '',
+                },
+                body: JSON.stringify({ studentRubricId, criterionId }),
+            });
+            if (!response.ok) return null;
+            const { url } = (await response.json().catch(() => ({}))) as { url?: unknown };
+            return typeof url === 'string' ? url : null;
+        } catch {
+            return null;
+        }
+    }
+
     /** Fetch recording ids for a given speaking session, for cascading deletes. */
     async fetchRecordingIdsForSession(sessionId: string): Promise<string[]> {
         const { data, error } = await this.db()
