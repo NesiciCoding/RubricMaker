@@ -1,10 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import { useFeedbackAudioSrc } from '../../hooks/useFeedbackAudioSrc';
+import { usePortalFeedbackAudioSrc } from '../../hooks/usePortalFeedbackAudioSrc';
 import type { Rubric, ScoreEntry } from '../../types';
 
-function CriterionAudio({ entry, criterionTitle }: { entry: ScoreEntry; criterionTitle: string }) {
+function CriterionAudio({
+    studentRubricId,
+    entry,
+    criterionTitle,
+}: {
+    studentRubricId: string;
+    entry: ScoreEntry;
+    criterionTitle: string;
+}) {
     const { t } = useTranslation();
-    const src = useFeedbackAudioSrc(entry.audioDataUrl, entry.audioStoragePath);
+    const src = usePortalFeedbackAudioSrc(studentRubricId, entry);
     if (!src) return null;
     return (
         <audio
@@ -23,9 +31,11 @@ function CriterionAudio({ entry, criterionTitle }: { entry: ScoreEntry; criterio
 export function PortalCriterionFeedback({
     rubric,
     entries,
+    studentRubricId,
 }: {
     rubric: Pick<Rubric, 'criteria'>;
     entries: ScoreEntry[];
+    studentRubricId: string;
 }) {
     const { t } = useTranslation();
     const rows = rubric.criteria
@@ -71,7 +81,13 @@ export function PortalCriterionFeedback({
                         <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>{level.description}</div>
                     )}
                     {entry?.comment && <div style={{ marginTop: 4 }}>{entry.comment}</div>}
-                    {entry && <CriterionAudio entry={entry} criterionTitle={criterion.title} />}
+                    {entry && (
+                        <CriterionAudio
+                            studentRubricId={studentRubricId}
+                            entry={entry}
+                            criterionTitle={criterion.title}
+                        />
+                    )}
                 </li>
             ))}
         </ul>

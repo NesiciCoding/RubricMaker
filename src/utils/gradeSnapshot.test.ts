@@ -75,8 +75,8 @@ describe('sameGradeScale', () => {
 });
 
 describe('remapEntriesToRubric', () => {
-    it('keeps surviving levels, clamps points, drops stale sub-items and starts new criteria ungraded', () => {
-        const { entries, clearedCount } = remapEntriesToRubric(
+    it('keeps surviving levels, clamps points, drops stale sub-items, starts new criteria ungraded and retains removed criteria', () => {
+        const { entries, clearedCount, removedCount } = remapEntriesToRubric(
             [
                 entry({
                     levelId: 'hi',
@@ -85,11 +85,12 @@ describe('remapEntriesToRubric', () => {
                     subItemScores: { si1: 1, gone: 2 },
                     comment: 'keep me',
                 }),
-                entry({ criterionId: 'c2', levelId: 'any' }),
+                entry({ criterionId: 'c2', levelId: 'any', comment: 'old criterion feedback' }),
             ],
             rubric
         );
         expect(clearedCount).toBe(0);
+        expect(removedCount).toBe(1);
         expect(entries).toEqual([
             entry({
                 levelId: 'hi',
@@ -99,21 +100,46 @@ describe('remapEntriesToRubric', () => {
                 comment: 'keep me',
             }),
             entry({ criterionId: 'c3' }),
+            entry({ criterionId: 'c2', levelId: 'any', comment: 'old criterion feedback' }),
         ]);
     });
 
     it('clears a level the new version no longer has and counts it', () => {
-        const { entries, clearedCount } = remapEntriesToRubric(
+        const { entries, clearedCount, removedCount } = remapEntriesToRubric(
             [entry({ levelId: 'removed', selectedPoints: 3, checkedSubItems: ['si1'], comment: 'note' })],
             rubric
         );
         expect(clearedCount).toBe(1);
+        expect(removedCount).toBe(0);
         expect(entries[0]).toMatchObject({
             levelId: null,
             selectedPoints: undefined,
             checkedSubItems: [],
             comment: 'note',
         });
+    });
+
+    it('clears a manual override when its level is gone so the criterion is not still scored', () => {
+        const { entries, clearedCount } = remapEntriesToRubric(
+            [entry({ levelId: 'removed', overridePoints: 7, comment: 'note' })],
+            rubric
+        );
+        expect(clearedCount).toBe(1);
+        expect(entries[0]).toMatchObject({ levelId: null, overridePoints: undefined, comment: 'note' });
+    });
+
+    it('drops a single-point outcome when the destination rubric grades by level', () => {
+        const { entries } = remapEntriesToRubric([entry({ levelId: null, singlePointOutcome: 'meets' })], rubric);
+        expect(entries[0].singlePointOutcome).toBeUndefined();
+    });
+
+    it('keeps a single-point outcome while the destination rubric is still single-point', () => {
+        const singlePointRubric: Rubric = { ...rubric, scoringMode: 'single-point' };
+        const { entries } = remapEntriesToRubric(
+            [entry({ levelId: null, singlePointOutcome: 'exceeds' })],
+            singlePointRubric
+        );
+        expect(entries[0].singlePointOutcome).toBe('exceeds');
     });
 
     it('leaves ungraded entries and points without a selection alone', () => {
