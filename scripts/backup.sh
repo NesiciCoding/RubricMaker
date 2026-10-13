@@ -13,7 +13,8 @@
 # runs (db_migrate), so a restore never has to recreate them — see restore.sh.
 #
 # DB_EXEC overrides how pg_dump/psql reach the database (default: the compose `db` service, via
-# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume.
+# `docker compose` or the older `docker-compose`). STORAGE_VOLUME overrides the uploads volume,
+# which must already exist — the run aborts rather than archiving an empty one.
 
 set -euo pipefail
 
@@ -27,6 +28,16 @@ OUT="$BACKUP_ROOT/$TIMESTAMP"
 if [[ -z "${DB_EXEC:-}" ]]; then
     require_compose
     DB_EXEC="$COMPOSE exec -T db"
+fi
+
+# Refuse to archive a volume that does not exist: `docker run -v` would create an empty one with
+# that name, and the backup would look complete while holding none of the uploaded files.
+if ! docker volume inspect "$STORAGE_VOLUME" >/dev/null 2>&1; then
+    echo "Error: uploads volume '$STORAGE_VOLUME' does not exist."
+    echo "       It is named <compose project>_storage-data, so start the stack (docker compose up -d)"
+    echo "       or set COMPOSE_PROJECT_NAME/STORAGE_VOLUME to the project it actually runs as."
+    echo "       See docs/SELF_HOSTING_OPS.md → Backup and Restore."
+    exit 1
 fi
 
 mkdir -p "$OUT"

@@ -69,8 +69,10 @@ services:
       # redirects and auth cookies use the right external URL.
       GF_SERVER_DOMAIN: "${GRAFANA_DOMAIN:-localhost}"
       GF_SERVER_ROOT_URL: "${GRAFANA_ROOT_URL:-}"
-      # Used by grafana-datasources.yml to provision the client_logs Postgres
-      # datasource. Leave unset to skip it (Loki is still provisioned).
+      # Used by grafana-datasources.yml, which always provisions the client_logs
+      # Postgres datasource. Leave these unset and Grafana still lists it, but
+      # its health check fails until they are set, so its panels cannot query
+      # client_logs (Loki is provisioned either way).
       SUPABASE_DB_HOST: "${SUPABASE_DB_HOST:-}"
       SUPABASE_DB_NAME: "${SUPABASE_DB_NAME:-postgres}"
       SUPABASE_DB_USER: "${SUPABASE_DB_USER:-}"

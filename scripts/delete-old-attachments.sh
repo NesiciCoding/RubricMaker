@@ -14,9 +14,11 @@
 # Usage (run from the project root):
 #   ./scripts/delete-old-attachments.sh
 #
-# Schedule with crontab to run at 02:00 every night:
+# Schedule with crontab to run at 02:00 every night. The redirect means cron has no output to mail,
+# so alert on the exit status too — otherwise a failed cleanup only shows up in the log:
 #   0 2 * * *  cd /path/to/rubricmaker && ./scripts/delete-old-attachments.sh \
-#                >> /var/log/rubricmaker-cleanup.log 2>&1
+#                >> /var/log/rubricmaker-cleanup.log 2>&1 \
+#                || logger -t rubricmaker-cleanup 'attachment cleanup FAILED - see /var/log/rubricmaker-cleanup.log'
 
 set -euo pipefail
 

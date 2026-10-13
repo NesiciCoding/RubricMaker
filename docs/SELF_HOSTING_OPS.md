@@ -24,7 +24,7 @@ A backup directory contains:
 
 `restore.sh` refuses a backup that is missing any of these files.
 
-The scripts use `docker compose` (or the older `docker-compose` when that is all the server has). The uploads volume is `<project>_storage-data`, where the project is `rubricmaker` unless `COMPOSE_PROJECT_NAME` says otherwise; set `STORAGE_VOLUME` to point the scripts at a different volume.
+The scripts use `docker compose` (or the older `docker-compose` when that is all the server has). The uploads volume is `<project>_storage-data`, where the project is resolved the way Compose resolves it: `-p`/`--project-name`, then `COMPOSE_PROJECT_NAME` from the environment or the project's `.env`, then the compose file's `name:` (so `rubricmaker` here). `backup.sh` stops with an error when that volume does not exist instead of archiving an empty one; set `STORAGE_VOLUME` to point the scripts at a different volume.
 
 Tables, GRANTs, RLS policies, triggers (such as the one on `auth.users` that creates profiles) and the realtime publication are **not** in the backup: they come from the migrations the stack runs. A restore therefore never recreates them, and the REST API keeps its `anon`/`authenticated`/`service_role` permissions.
 

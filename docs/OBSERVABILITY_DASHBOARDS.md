@@ -31,16 +31,17 @@ are arriving before debugging the dashboard.
 
 ## 2. Client Diagnostics (`client_logs`)
 
-**Source:** the "Supabase Postgres (client_logs)" datasource, provisioned
-only when `SUPABASE_DB_HOST` (and the other `SUPABASE_DB_*` vars) are set in
-`.env.observability`. Panels populate only while the app is built with
-`VITE_STRESS_TEST_LOGGING=true` — see README → "Stress-test logging" for what
-gets logged and the privacy guarantees (ids/counts/durations only, never
-free-text content).
+**Source:** the "Supabase Postgres (client_logs)" datasource, always listed by
+Grafana. Set `SUPABASE_DB_HOST` (and the other `SUPABASE_DB_*` vars) in
+`.env.observability` so its health check can pass. Panels populate only while
+the app is built with `VITE_STRESS_TEST_LOGGING=true` — see README →
+"Stress-test logging" for what gets logged and the privacy guarantees
+(ids/counts/durations only, never free-text content).
 
-If the Postgres datasource isn't configured, every panel on this dashboard
-shows a "datasource not found" error — that's expected for deployments that
-don't use the stress-test logging feature.
+If those variables are unset the datasource stays listed but its health check
+fails, so these panels cannot query `client_logs` — expected for deployments
+that don't use the stress-test logging feature. The Loki dashboards on this
+stack are unaffected.
 
 | Panel | What it shows |
 |---|---|

@@ -1,8 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(__dirname, '../..');
+const libDir = resolve(root, 'scripts', 'lib');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 
 const compose = read('docker-compose.yml');
@@ -51,11 +54,70 @@ describe('ops scripts', () => {
         expect(read('scripts/lib/compose.sh')).toContain('docker compose version');
     });
 
-    it('derive the uploads volume instead of hard-coding it', () => {
+    it('derive the uploads volume from the effective Compose project', () => {
         for (const { name, body } of scripts) {
             expect(body, name).not.toContain('-v rubricmaker_storage-data');
         }
-        expect(read('scripts/lib/compose.sh')).toMatch(/STORAGE_VOLUME=.*COMPOSE_PROJECT_NAME/);
+        const volume = (env: Record<string, string>) => {
+            const out = spawnSync('bash', ['-c', 'source ./compose.sh; printf %s "$STORAGE_VOLUME"'], {
+                cwd: libDir,
+                encoding: 'utf8',
+                env: { ...process.env, ...env },
+            });
+            expect(out.status, out.stderr).toBe(0);
+            return out.stdout;
+        };
+        // docker-compose.yml pins `name: rubricmaker`.
+        expect(volume({})).toBe('rubricmaker_storage-data');
+        expect(volume({ COMPOSE_PROJECT_NAME: 'school' })).toBe('school_storage-data');
+        // The -p/--project-name flag outranks the environment — missing it is what let backup.sh
+        // archive an empty, differently-named volume while the stack ran elsewhere.
+        expect(volume({ COMPOSE: 'docker compose -p school', COMPOSE_PROJECT_NAME: 'ignored' })).toBe(
+            'school_storage-data'
+        );
+        expect(volume({ COMPOSE: 'docker-compose --project-name=other' })).toBe('other_storage-data');
+        expect(volume({ STORAGE_VOLUME: 'custom-vol' })).toBe('custom-vol');
+    });
+
+    it('read COMPOSE_PROJECT_NAME from the project .env Compose itself loads', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'rm-compose-'));
+        writeFileSync(join(dir, 'docker-compose.yml'), 'name: pinned\nservices: {}\n');
+        writeFileSync(join(dir, '.env'), 'COMPOSE_PROJECT_NAME=fromenv\n');
+        const composeFile = join(dir, 'docker-compose.yml');
+        try {
+            const out = spawnSync('bash', ['-c', 'source ./compose.sh; printf %s "$STORAGE_VOLUME"'], {
+                cwd: libDir,
+                encoding: 'utf8',
+                env: { ...process.env, COMPOSE_FILE: composeFile },
+            });
+            expect(out.status, out.stderr).toBe(0);
+            expect(out.stdout).toBe('fromenv_storage-data');
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it('refuse a backup whose uploads volume is missing instead of archiving an empty one', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'rm-backup-'));
+        const bin = join(dir, 'bin');
+        mkdirSync(bin);
+        // A docker that answers `compose version` but reports the named volume as absent.
+        writeFileSync(join(bin, 'docker'), '#!/bin/bash\n[[ "$1" == volume && "$2" == inspect ]] && exit 1\nexit 0\n', {
+            mode: 0o755,
+        });
+        try {
+            const out = spawnSync('bash', [resolve(root, 'scripts', 'backup.sh'), join(dir, 'backups')], {
+                cwd: dir,
+                encoding: 'utf8',
+                env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+            });
+            expect(out.status).toBe(1);
+            expect(out.stdout).toContain('does not exist');
+            // It fails before writing anything, so no half-empty backup directory is left behind.
+            expect(existsSync(join(dir, 'backups'))).toBe(false);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 
     it('default the storage API to the port the stack listens on', () => {
