@@ -2808,7 +2808,7 @@
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} overdue)",
-        "panel_title": "Overdue Students",
+        "panel_title": "Overdue Grading",
         "panel_label": "Notifications panel",
         "all_up_to_date": "No handed-in test or essay has waited more than {{threshold}} days for grading.",
         "days_ago": "{{count}}d ago",
@@ -2817,7 +2817,7 @@
         "enable_push": "Enable browser notifications",
         "enable_btn": "Enable",
         "permission_denied": "Browser notifications blocked. Allow them in browser settings.",
-        "browser_title": "RubricMaker — Overdue Students",
+        "browser_title": "RubricMaker — Overdue Grading",
         "clear_all": "Clear all",
         "unread_messages_subtitle": "{{count}} unread message thread(s)",
         "moderation_subtitle": "{{count}} pending moderation review(s)",

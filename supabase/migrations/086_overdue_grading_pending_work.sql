@@ -9,7 +9,25 @@
 --   * essays: offline essay submissions with no live, non-peer grade for that student and rubric
 --     given at or after the hand-in, one group per teacherKey;
 --   * archived students are left out.
+--   * practice-mode tests are left out: those attempts are self-checked and never become 'graded'.
 -- ISO-8601 timestamps compare correctly as text, as in the client.
+--
+-- Settings and submissions are client-written jsonb, so every cast goes through a guard: one
+-- malformed value must not abort the RPC and take the whole scheduled digest count down with it.
+
+CREATE OR REPLACE FUNCTION public.try_timestamptz(value text)
+RETURNS timestamptz
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+  RETURN value::timestamptz;
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.try_timestamptz(text) FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.get_overdue_grading_count(target_owner uuid)
 RETURNS int
@@ -19,7 +37,9 @@ SET search_path = public
 AS $$
   WITH threshold AS (
     SELECT now() - (COALESCE(
-      (SELECT (settings->>'overdueReminderThreshold')::int FROM public.user_settings WHERE user_id = target_owner),
+      (SELECT CASE WHEN settings->>'overdueReminderThreshold' ~ '^\d{1,4}$'
+                   THEN (settings->>'overdueReminderThreshold')::int END
+         FROM public.user_settings WHERE user_id = target_owner),
       7
     ) || ' days')::interval AS cutoff
   ),
@@ -33,16 +53,21 @@ AS $$
     FROM public.student_tests st, threshold
     WHERE st.owner_id = target_owner
       AND st.data->>'status' = 'submitted'
-      AND st.data->>'submittedAt' IS NOT NULL
-      AND (st.data->>'submittedAt')::timestamptz <= threshold.cutoff
+      AND public.try_timestamptz(st.data->>'submittedAt') <= threshold.cutoff
       AND st.data->>'studentId' IN (SELECT id FROM active_students)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.tests t
+        WHERE t.id = st.data->>'testId'
+          AND t.owner_id = target_owner
+          AND t.data->>'mode' = 'practice'
+      )
   ),
   waiting_essays AS (
     SELECT DISTINCT es.data->>'teacherKey' AS teacher_key
     FROM public.essay_offline_submissions es, threshold
     WHERE es.owner_id = target_owner
-      AND es.data->>'submittedAt' IS NOT NULL
-      AND (es.data->>'submittedAt')::timestamptz <= threshold.cutoff
+      AND public.try_timestamptz(es.data->>'submittedAt') <= threshold.cutoff
       AND es.data->>'assignmentStudentId' IN (SELECT id FROM active_students)
       AND NOT EXISTS (
         SELECT 1
