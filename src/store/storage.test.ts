@@ -40,6 +40,8 @@ import {
     loadPendingQueue,
     addToPendingQueue,
     removePendingWrites,
+    unconfirmedWriteIds,
+    retargetPendingUpsertToDelete,
     loadTestTimer,
     saveTestTimer,
     clearTestTimer,
@@ -752,6 +754,29 @@ describe('pending sync queue', () => {
         const queue = loadPendingQueue();
         expect(queue).toHaveLength(1);
         expect(queue[0].action).toBe('delete');
+    });
+
+    it('unconfirmedWriteIds lists only the ids still awaiting their first confirmed upload', () => {
+        addToPendingQueue({ entity: 'studentRubric', action: 'upsert', payload: { id: 'sr-temp' } });
+        addToPendingQueue({ entity: 'studentRubric', action: 'delete', payload: null, entityId: 'sr-gone' });
+        addToPendingQueue({ entity: 'rubric', action: 'upsert', payload: { id: 'r1' } });
+        expect(unconfirmedWriteIds('studentRubric')).toEqual(new Set(['sr-temp']));
+    });
+
+    it('retargetPendingUpsertToDelete swaps a queued upsert for the intended delete', () => {
+        addToPendingQueue({ entity: 'studentRubric', action: 'upsert', payload: { id: 'sr-temp' } });
+        retargetPendingUpsertToDelete('studentRubric', 'sr-temp');
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect(queue[0]).toMatchObject({ entity: 'studentRubric', action: 'delete', entityId: 'sr-temp' });
+    });
+
+    it('retargetPendingUpsertToDelete leaves the queue alone when the id is not queued', () => {
+        addToPendingQueue({ entity: 'studentRubric', action: 'upsert', payload: { id: 'sr-temp' } });
+        retargetPendingUpsertToDelete('studentRubric', 'sr-other');
+        const queue = loadPendingQueue();
+        expect(queue).toHaveLength(1);
+        expect(queue[0]).toMatchObject({ action: 'upsert' });
     });
 
     it('removePendingWrites removes entries by id', () => {

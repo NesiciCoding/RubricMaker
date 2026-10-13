@@ -88,6 +88,8 @@ vi.mock('../store/storage', () => ({
     isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(() => loadStoreValue.current ?? mockEmptyState()),
     loadPendingQueue: vi.fn(() => []),
+    unconfirmedWriteIds: vi.fn(() => new Set<string>()),
+    retargetPendingUpsertToDelete: vi.fn(),
     loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     clearLocalData: vi.fn(),
@@ -105,6 +107,7 @@ vi.mock('../store/storage', () => ({
     saveStudents: vi.fn(),
     saveClasses: vi.fn(),
     saveStudentRubrics: vi.fn(),
+    saveStudentRubricsCache: vi.fn(async () => {}),
     saveAttachments: vi.fn(),
     saveGradeScales: vi.fn(),
     saveSettings: vi.fn(),
@@ -904,6 +907,14 @@ describe('AppContext startup effects', () => {
             expect.objectContaining({ id: 'r1_s1_cloud' }),
             'r1_s1_cloud'
         );
+        // The cache writers must persist the reconciled snapshot: flushing the pre-dedupe value
+        // would reload both grades on the next offline boot.
+        expect(vi.mocked(storage.saveStudentRubricsCache)).toHaveBeenCalledWith([
+            expect.objectContaining({ id: 'r1_s1_cloud' }),
+        ]);
+        // The queued upsert that minted the duplicate is retargeted at the delete, so replaying the
+        // queue cannot put the folded row back.
+        expect(vi.mocked(storage.retargetPendingUpsertToDelete)).toHaveBeenCalledWith('studentRubric', 'r1_s1_offline');
         vi.mocked(storage.loadPendingQueue).mockReturnValue([]);
         vi.mocked(storage.loadStore).mockImplementation(() => loadStoreValue.current ?? mockEmptyState());
     });

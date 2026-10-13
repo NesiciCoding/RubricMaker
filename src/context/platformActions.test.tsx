@@ -80,6 +80,8 @@ vi.mock('../store/storage', () => ({
     isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(mockEmptyState),
     loadPendingQueue: vi.fn(() => []),
+    unconfirmedWriteIds: vi.fn(() => new Set<string>()),
+    retargetPendingUpsertToDelete: vi.fn(),
     loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     clearLocalData: vi.fn(),
