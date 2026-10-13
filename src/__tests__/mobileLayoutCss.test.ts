@@ -46,4 +46,11 @@ describe('phone-width layout rules', () => {
         expect(phone).toMatch(/\.grade-footer-options\.open \{[^}]*display: flex/);
         expect(phone).toMatch(/\.grade-footer-options-toggle \{[^}]*display: inline-flex/);
     });
+
+    it('truncates a long next-student name so Save stays on screen (#660)', () => {
+        expect(css).toMatch(
+            /\.grade-footer-next-name \{[^}]*max-width: 12ch;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap/
+        );
+        expect(phone).toMatch(/\.grade-footer-next-name \{[^}]*max-width: 8ch/);
+    });
 });

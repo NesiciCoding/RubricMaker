@@ -10,8 +10,11 @@ vi.mock('react-i18next', () => ({
     }),
 }));
 
-vi.mock('../../../hooks/useFeedbackAudioSrc', () => ({
-    useFeedbackAudioSrc: (dataUrl?: string, path?: string) => dataUrl ?? (path ? `signed:${path}` : undefined),
+vi.mock('../../../hooks/usePortalFeedbackAudioSrc', () => ({
+    usePortalFeedbackAudioSrc: (
+        _studentRubricId: string,
+        entry: { audioDataUrl?: string; audioStoragePath?: string }
+    ) => entry.audioDataUrl ?? (entry.audioStoragePath ? `signed:${entry.audioStoragePath}` : undefined),
 }));
 
 const level = (id: string, label: string, description = '') => ({
@@ -37,6 +40,7 @@ describe('PortalCriterionFeedback (#622)', () => {
             <PortalCriterionFeedback
                 rubric={rubric}
                 entries={[{ criterionId: 'c1', levelId: 'l1', checkedSubItems: [], comment: '' }]}
+                studentRubricId="sr1"
             />
         );
         expect(screen.getByText('Content')).toBeInTheDocument();
@@ -65,6 +69,7 @@ describe('PortalCriterionFeedback (#622)', () => {
                         audioStoragePath: 'u/clip.webm',
                     },
                 ]}
+                studentRubricId="sr1"
             />
         );
         const players = document.querySelectorAll('audio');
@@ -76,7 +81,7 @@ describe('PortalCriterionFeedback (#622)', () => {
     });
 
     it('renders nothing when no criterion has a level, comment or audio', () => {
-        const { container } = render(<PortalCriterionFeedback rubric={rubric} entries={[]} />);
+        const { container } = render(<PortalCriterionFeedback rubric={rubric} entries={[]} studentRubricId="sr1" />);
         expect(container).toBeEmptyDOMElement();
     });
 });
