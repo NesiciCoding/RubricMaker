@@ -17,6 +17,7 @@ export function useActiveClassCohorts({ activeClassId, classes, setActiveClassId
     const knownActive = activeClassId && classes.some((c) => c.id === activeClassId) ? activeClassId : undefined;
     const [selectedCohorts, setSelectedCohorts] = useState<string[]>(knownActive ? [knownActive] : []);
     const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
+    const classKey = classes.map((c) => c.id).join('\u0000');
 
     useEffect(() => {
         if (classes.length === 0) return;
@@ -35,6 +36,15 @@ export function useActiveClassCohorts({ activeClassId, classes, setActiveClassId
         },
         [activeClassId, selectedCohorts, setActiveClassId]
     );
+
+    useEffect(() => {
+        if (classes.length === 0) return;
+        const ids = new Set(classes.map((c) => c.id));
+        const kept = selectedCohorts.filter((id) => ids.has(id));
+        if (kept.length !== selectedCohorts.length) choose(kept);
+        // A deleted class must drop out of the chips, but a selection change alone shouldn't re-run this.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [classKey]);
 
     const toggleCohort = useCallback(
         (id: string) => choose((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),

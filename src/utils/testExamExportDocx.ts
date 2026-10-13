@@ -349,6 +349,7 @@ async function questionParagraphs(
 
     const blocks: (Paragraph | Table)[] = [
         new Paragraph({
+            bidirectional: rich?.leadRtl || undefined,
             children: [
                 new TextRun({ text: `${tx('point_label', { count: question.points })}  `, color: '6b7280', size: 18 }),
                 new TextRun({ text: `${number}  `, bold: true, size: rich?.leadSize }),

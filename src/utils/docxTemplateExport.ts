@@ -25,11 +25,19 @@ import { saveAs } from 'file-saver';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
 import { orderedLevels } from './gradeCalc';
+import { contrastRatio } from './contrastCheck';
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
 
 const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 export const DEFAULT_TEMPLATE_HEADER_COLOR = '#1e3a5f';
+
+const DARK_HEADER_TEXT = '1F2937';
+
+/** A template may shade its header row in any colour, so white labels would vanish on a light fill. */
+export function headerTextColor(fill: string): string {
+    return contrastRatio('#FFFFFF', fill) >= contrastRatio(DARK_HEADER_TEXT, fill) ? 'FFFFFF' : DARK_HEADER_TEXT;
+}
 
 /** docx only accepts a 6-digit hex fill; anything else (3-digit, `auto`, names) must never reach it. */
 export function toDocxFill(value: string | undefined): string | undefined {
@@ -99,6 +107,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
     const levelLabels = useTemplateHeaders ? template.levelHeaders : rubricLevelLabels;
     const headerBg =
         toDocxFill(template.headerColor) ?? toDocxFill(fmt.headerColor) ?? toDocxFill(DEFAULT_TEMPLATE_HEADER_COLOR)!;
+    const headerText = headerTextColor(headerBg);
 
     // ── Header Row ──────────────────────────────────────────────────────────────
     const headerRow = new TableRow({
@@ -110,7 +119,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                 children: [
                     new Paragraph({
                         children: [
-                            new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                            new TextRun({ text: 'Criterion', bold: true, color: headerText, size: fmt.fontSize * 2 }),
                         ],
                     }),
                 ],
@@ -128,9 +137,15 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
                             children: [
-                                new TextRun({ text: label, bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                                new TextRun({ text: label, bold: true, color: headerText, size: fmt.fontSize * 2 }),
                                 ...(pointsStr
-                                    ? [new TextRun({ text: pointsStr, color: 'FFFFFF', size: (fmt.fontSize - 2) * 2 })]
+                                    ? [
+                                          new TextRun({
+                                              text: pointsStr,
+                                              color: headerText,
+                                              size: (fmt.fontSize - 2) * 2,
+                                          }),
+                                      ]
                                     : []),
                             ],
                         }),

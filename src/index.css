@@ -1010,6 +1010,15 @@ select.input-error {
     margin-inline-start: auto;
 }
 
+.grade-footer-next-name {
+    display: inline-block;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
 /* Only phones collapse the two checkboxes behind a toggle. */
 .grade-footer-options-toggle {
     display: none;
@@ -1042,6 +1051,10 @@ select.input-error {
 
     .grade-footer-options.open {
         display: flex;
+    }
+
+    .grade-footer-next-name {
+        max-width: 8ch;
     }
 }
 
