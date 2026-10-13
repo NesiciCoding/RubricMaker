@@ -73,6 +73,28 @@ function diffCriterion(
     return { fieldChanges, levelDiffs: diffLevels(a.levels, b.levels) };
 }
 
+export interface RubricSettingChange {
+    field: 'scoringMode' | 'totalMaxPoints';
+    from: string;
+    to: string;
+}
+
+/**
+ * Rubric-wide settings that live outside the criteria list. Version detection uses these so a
+ * scoring-mode or configured-maximum change still counts as a newer version even when no
+ * criterion differs — otherwise the teacher can never move onto the new scoring configuration.
+ */
+export function diffRubricSettings(from: RubricSnapshot, to: RubricSnapshot): RubricSettingChange[] {
+    const changes: RubricSettingChange[] = [];
+    if (from.scoringMode !== to.scoringMode) {
+        changes.push({ field: 'scoringMode', from: from.scoringMode, to: to.scoringMode });
+    }
+    if (from.totalMaxPoints !== to.totalMaxPoints) {
+        changes.push({ field: 'totalMaxPoints', from: String(from.totalMaxPoints), to: String(to.totalMaxPoints) });
+    }
+    return changes;
+}
+
 export function diffRubricVersions(from: RubricSnapshot, to: RubricSnapshot): CriterionDiff[] {
     const fromById = new Map(from.criteria.map((c) => [c.id, c]));
     const toById = new Map(to.criteria.map((c) => [c.id, c]));

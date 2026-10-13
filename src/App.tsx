@@ -16,7 +16,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
 import { isLocalMode } from './store/storage';
-import { resolveUserRole } from './utils/userRole';
+import { canOpenAdmin, resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
@@ -318,7 +318,13 @@ export default function App() {
                                     <Route path="/settings" element={<SettingsPage />} />
                                     <Route
                                         path="/admin"
-                                        element={role === 'admin' ? <AdminPage /> : <Navigate to="/" replace />}
+                                        element={
+                                            canOpenAdmin(settings.userRole, isLocalMode()) ? (
+                                                <AdminPage />
+                                            ) : (
+                                                <Navigate to="/" replace />
+                                            )
+                                        }
                                     />
                                     <Route path="/docs" element={<DocsPage />} />
                                     <Route path="/privacy" element={<PrivacyPage />} />

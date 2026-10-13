@@ -29,6 +29,15 @@ describe('findPendingGrading (#665)', () => {
         expect(groups).toEqual([]);
     });
 
+    it('leaves practice-mode tests out', () => {
+        const groups = findPendingGrading({
+            ...base,
+            tests: [{ id: 't1', name: 'Drill', mode: 'practice' }],
+            studentTests: [{ id: 'a', testId: 't1', studentId: 's1', status: 'submitted', submittedAt: daysAgo(20) }],
+        });
+        expect(groups).toEqual([]);
+    });
+
     it('groups waiting test submissions per test and links to the oldest', () => {
         const [group] = findPendingGrading({
             ...base,

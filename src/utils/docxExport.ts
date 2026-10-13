@@ -396,7 +396,7 @@ export function buildRubricGridDocxChildren(
                   const profDesc = c.levels[0]?.description ?? c.description ?? '';
 
                   const notYetRuns: TextRun[] = [
-                      new TextRun({ text: outcome === 'not-yet' ? '✗ Not Yet' : '', bold: true }),
+                      new TextRun({ text: outcome === 'not-yet' ? `✗ ${docLabel('not_yet')}` : '', bold: true }),
                   ];
                   if (outcome === 'not-yet' && comment)
                       notYetRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
@@ -407,7 +407,7 @@ export function buildRubricGridDocxChildren(
                       centerRuns.push(new TextRun({ text: `\n${comment}`, break: 1, italics: true }));
 
                   const exceedsRuns: TextRun[] = [
-                      new TextRun({ text: outcome === 'exceeds' ? '▲ Exceeds' : '', bold: true }),
+                      new TextRun({ text: outcome === 'exceeds' ? `▲ ${docLabel('exceeds')}` : '', bold: true }),
                   ];
                   if (outcome === 'exceeds' && comment)
                       exceedsRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
