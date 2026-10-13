@@ -1752,13 +1752,16 @@
         "version_banner_rubric_other": "Diese Bewertung nutzt das Raster in der Fassung zum Zeitpunkt der Bewertung. Seitdem haben sich {{count}} Kriterien geändert.",
         "version_banner_scale": "Diese Bewertung behält die Notenskala, mit der sie vergeben wurde; die Skala wurde seitdem geändert.",
         "version_banner_scale_too": "Auch die Notenskala wurde geändert.",
+        "version_banner_scoring": "Diese Bewertung verwendet das Raster so, wie es bei der Bewertung war. Die Bewertungseinstellungen haben sich seitdem geändert.",
         "version_show_changes": "Änderungen anzeigen",
         "regrade_latest_action": "Mit neuester Fassung neu bewerten",
         "regrade_latest_title": "Mit der neuesten Fassung neu bewerten?",
         "regrade_latest_message": "Punkte bleiben erhalten, wo Kriterium und Stufe noch existieren. Entfernte Stufen werden geleert, neue Kriterien sind noch unbewertet. Die aktuelle Notenskala wird verwendet. Speichern, um das Ergebnis zu behalten.",
         "regrade_latest_done": "Jetzt wird mit der neuesten Fassung bewertet. Zum Behalten speichern.",
         "regrade_latest_done_cleared_one": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterium braucht eine neue Stufe. Zum Behalten speichern.",
-        "regrade_latest_done_cleared_other": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterien brauchen eine neue Stufe. Zum Behalten speichern."
+        "regrade_latest_done_cleared_other": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterien brauchen eine neue Stufe. Zum Behalten speichern.",
+        "regrade_latest_done_removed_one": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entferntem Kriterium bleibt erhalten. Zum Behalten speichern.",
+        "regrade_latest_done_removed_other": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entfernten Kriterien bleibt erhalten. Zum Behalten speichern."
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -2915,7 +2918,7 @@
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
-        "panel_title": "Überfällige Schüler",
+        "panel_title": "Überfällige Bewertungen",
         "panel_label": "Benachrichtigungspanel",
         "all_up_to_date": "Kein abgegebener Test oder Aufsatz wartet länger als {{threshold}} Tage auf die Bewertung.",
         "days_ago": "vor {{count}}T",
@@ -2924,7 +2927,7 @@
         "enable_push": "Browser-Benachrichtigungen aktivieren",
         "enable_btn": "Aktivieren",
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",
-        "browser_title": "RubricMaker — Überfällige Schüler",
+        "browser_title": "RubricMaker — Überfällige Bewertungen",
         "clear_all": "Alle löschen",
         "unread_messages_subtitle": "{{count}} ungelesene Nachrichtenverlauf/-verläufe",
         "moderation_subtitle": "{{count}} ausstehende Moderationsprüfung(en)",

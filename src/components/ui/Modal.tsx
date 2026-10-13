@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 interface Props {
@@ -24,6 +24,11 @@ interface Props {
  */
 export default function Modal({ titleId, onClose, children, maxWidth = 640, style, className, growFrom }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
+    // Radix only restores focus to a Dialog.Trigger, which no consumer renders, so
+    // remember whatever opened the modal and hand focus back to it on close.
+    const [returnFocusTo] = useState(() =>
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+    );
 
     // Anchor the scale-in animation's transform-origin to the trigger's screen
     // position so the modal visibly grows out of the button that opened it.
@@ -48,6 +53,10 @@ export default function Modal({ titleId, onClose, children, maxWidth = 640, styl
                     style={{ maxWidth, ...style }}
                     onInteractOutside={onClose}
                     onEscapeKeyDown={onClose}
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        if (returnFocusTo?.isConnected) returnFocusTo.focus();
+                    }}
                 >
                     {children}
                 </Dialog.Content>
