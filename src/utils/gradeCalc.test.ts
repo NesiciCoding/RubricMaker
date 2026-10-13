@@ -15,6 +15,7 @@ import {
     criterionMaxPointsOrOne,
     criterionPercentage,
     effectiveWeight,
+    effectiveRangeBounds,
 } from './gradeCalc';
 import type { RubricCriterion, ScoreEntry, GradeScale, StudentRubric, Rubric } from '../types';
 import type { GradeSummary } from './gradeCalc';
@@ -266,6 +267,13 @@ describe('gradeCalc utilities', () => {
             expect(calcLetterGrade(85, mockScale)).toBe('B');
             expect(calcLetterGrade(50, mockScale)).toBe('F');
             expect(calcLetterGrade(-10, mockScale)).toBe('—'); // Below all ranges
+        });
+
+        it('describes the percentages each label really covers, up to the next band (#622)', () => {
+            const [a, b, f] = mockScale.ranges;
+            expect(effectiveRangeBounds(b, mockScale)).toEqual({ min: 80, max: 90, maxExclusive: true });
+            expect(effectiveRangeBounds(f, mockScale)).toEqual({ min: 0, max: 80, maxExclusive: true });
+            expect(effectiveRangeBounds(a, mockScale)).toEqual({ min: 90, max: 100, maxExclusive: false });
         });
 
         it('assigns float scores that fall on integer boundaries correctly', () => {

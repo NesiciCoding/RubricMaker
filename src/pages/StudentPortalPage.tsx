@@ -31,7 +31,7 @@ import PageTour from '../components/Tour/PageTour';
 import { STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
-import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
+import { calcGradeSummary, criterionPercentage, effectiveRangeBounds } from '../utils/gradeCalc';
 // Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
 // route chunk stays lean; they render only when their (below-the-fold) sections do.
 const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgressChart'));
@@ -286,10 +286,11 @@ export default function StudentPortalPage() {
     function letterGradeExplanation(letter: string, scale: GradeScale | undefined): string {
         const range = scale?.ranges.find((r) => r.label === letter);
         if (!scale || !range) return letter;
+        const bounds = effectiveRangeBounds(range, scale);
         return t('studentPortal.letter_grade_range', {
             grade: letter,
-            min: range.min,
-            max: range.max,
+            min: bounds.min,
+            max: bounds.maxExclusive ? `<${bounds.max}` : bounds.max,
             scale: scale.name,
         });
     }
