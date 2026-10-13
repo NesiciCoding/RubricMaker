@@ -15,7 +15,7 @@ export interface PendingGradingGroup {
 
 interface Input {
     students: Pick<Student, 'id' | 'archivedAt'>[];
-    tests: Pick<Test, 'id' | 'name'>[];
+    tests: Pick<Test, 'id' | 'name' | 'mode'>[];
     studentTests: Pick<StudentTest, 'id' | 'testId' | 'studentId' | 'status' | 'submittedAt'>[];
     essayAssignments: Pick<EssayAssignment, 'teacherKey' | 'title'>[];
     essaySubmissions: Pick<
@@ -32,7 +32,7 @@ const DAY_MS = 86_400_000;
 /**
  * Work that has been handed in but not graded for at least `thresholdDays`, one group per test or
  * essay (#665). Students who were never assigned anything, or whose work is graded, don't appear;
- * archived students are left out.
+ * archived students and practice-mode tests are left out.
  */
 export function findPendingGrading({
     students,
@@ -81,7 +81,10 @@ export function findPendingGrading({
     for (const st of studentTests) {
         if (st.status !== 'submitted' || !st.submittedAt || !active.has(st.studentId)) continue;
         if (!waitedLongEnough(st.submittedAt)) continue;
-        const title = tests.find((test) => test.id === st.testId)?.name ?? st.testId;
+        const test = tests.find((t) => t.id === st.testId);
+        // Practice attempts are self-checked and never move to 'graded', so they'd sit here forever.
+        if (test?.mode === 'practice') continue;
+        const title = test?.name ?? st.testId;
         add(
             `test:${st.testId}`,
             'test',

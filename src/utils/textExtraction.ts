@@ -148,10 +148,16 @@ function collectWords(data: RecognizeData): OcrWord[] {
  */
 export async function recognizeImage(dataUrl: string, opts: RecognizeImageOptions = {}): Promise<OcrResult> {
     const langs = resolveOcrLanguages(opts.langs);
-    const tesseract = await import('tesseract.js');
-    const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
-    let worker: Awaited<ReturnType<typeof tesseract.createWorker>>;
+    // The import stays lazy so tesseract.js' WASM payload never reaches routes that don't OCR, but
+    // it belongs inside this try: a rejected import (offline first use) is the same engine-load
+    // failure callers already map to the translated "engine unavailable" guidance.
+    type TesseractModule = typeof import('tesseract.js');
+    let tesseract: TesseractModule;
+    let psm: PSM;
+    let worker: Awaited<ReturnType<TesseractModule['createWorker']>>;
     try {
+        tesseract = await import('tesseract.js');
+        psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
         worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
     } catch (err) {
         throw new OcrUnavailableError(err);

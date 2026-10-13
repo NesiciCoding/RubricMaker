@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Document, Packer, Paragraph, ShadingType, Table, TableCell, TableRow } from 'docx';
-import { DEFAULT_TEMPLATE_HEADER_COLOR, parseTemplateHeaders, toDocxFill } from './docxTemplateExport';
+import { DEFAULT_TEMPLATE_HEADER_COLOR, headerTextColor, parseTemplateHeaders, toDocxFill } from './docxTemplateExport';
 
 // mammoth's Node build can't read an ArrayBuffer, so stub its HTML; the shading comes from the real zip.
 const mammothHtml = vi.hoisted(() => ({ value: '' }));
@@ -70,11 +70,26 @@ describe('toDocxFill', () => {
     });
 });
 
+describe('headerTextColor', () => {
+    it('keeps white labels on a dark fill', () => {
+        expect(headerTextColor('1E3A5F')).toBe('FFFFFF');
+        expect(headerTextColor('FF0000')).toBe('FFFFFF');
+    });
+
+    it('switches to dark labels on a light fill so they stay readable', () => {
+        expect(headerTextColor('FFFFFF')).toBe('1F2937');
+        expect(headerTextColor('FFF2CC')).toBe('1F2937');
+    });
+});
+
 const savedBlobs = vi.hoisted(() => [] as Blob[]);
 vi.mock('file-saver', () => ({ saveAs: (blob: Blob) => savedBlobs.push(blob) }));
 
 describe('exportRubricWithTemplate', () => {
-    it('writes a 3-digit template colour as a valid 6-digit header fill', async () => {
+    it.each([
+        ['#f00', 'FF0000', 'FFFFFF'],
+        ['#ffffff', 'FFFFFF', '1F2937'],
+    ])('writes template colour %s as fill %s with readable %s labels', async (headerColor, fill, text) => {
         const { exportRubricWithTemplate } = await import('./docxTemplateExport');
         const { DEFAULT_FORMAT } = await import('../types');
         const JSZip = (await import('jszip')).default;
@@ -115,12 +130,13 @@ describe('exportRubricWithTemplate', () => {
                 size: 0,
                 addedAt: '',
                 levelHeaders: ['Strong', 'Weak'],
-                headerColor: '#f00',
+                headerColor,
             }
         );
         const zip = await JSZip.loadAsync(savedBlobs.at(-1)!);
         const xml = await zip.file('word/document.xml')!.async('string');
-        expect(xml).toContain('w:fill="FF0000"');
+        expect(xml).toContain(`w:fill="${fill}"`);
         expect(xml).toContain('Strong');
+        expect(xml).toContain(`<w:color w:val="${text}"/>`);
     });
 });

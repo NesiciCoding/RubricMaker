@@ -2563,7 +2563,10 @@ export default function GradeStudent() {
                     <div className="grade-footer-actions">
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
-                                <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}
+                                <Save size={14} /> <ChevronRight size={14} />{' '}
+                                <span className="grade-footer-next-name" title={nextStudent.name}>
+                                    {nextStudent.name.split(' ')[0]}
+                                </span>
                             </button>
                         )}
                         <button className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
