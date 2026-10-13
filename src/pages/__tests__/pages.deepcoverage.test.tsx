@@ -499,6 +499,29 @@ describe('StudentFeedbackPage — valid feedback code', () => {
         expect(screen.getByText('sharedFeedback.audio_feedback')).toBeInTheDocument();
         expect(document.querySelector('audio')).toHaveAttribute('aria-label', 'sharedFeedback.audio_feedback_for');
     });
+
+    it('drops an audio source from a hand-edited link that is not a recorded audio data URL', () => {
+        const code = encodeFeedbackCode({
+            sr: {
+                ...mockSr,
+                entries: [
+                    {
+                        criterionId: 'c1',
+                        levelId: 'l2',
+                        checkedSubItems: [],
+                        comment: '',
+                        audioDataUrl: 'javascript:alert(1)',
+                    },
+                ],
+            },
+            rubric: mockRubric,
+            student: mockStudent,
+            scale: mockGradeScale,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(document.querySelector('audio')).toBeNull();
+        expect(screen.queryByText('sharedFeedback.audio_feedback')).toBeNull();
+    });
 });
 
 // ─── PeerReviewView — deeper interactions ────────────────────────────────────

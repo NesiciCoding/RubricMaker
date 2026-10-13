@@ -246,9 +246,12 @@ const FIRST_STRONG_CHAR =
     /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 const RTL_CHAR = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
 
-/** TipTap writes the paragraph direction as `dir`; `auto` follows the first strong character, as browsers do. */
+/**
+ * TipTap writes the paragraph direction as `dir`, and `dir` is inherited, so a list item's paragraph takes the
+ * list's direction. `auto` follows the first strong character, as browsers do.
+ */
 function isRtlBlock(node: Element, parent?: Element): boolean {
-    const dir = (node.getAttribute('dir') ?? parent?.getAttribute('dir'))?.toLowerCase();
+    const dir = (node.closest('[dir]') ?? parent?.closest('[dir]'))?.getAttribute('dir')?.toLowerCase();
     const cssDirection = styleValue(node as HTMLElement, 'direction')?.toLowerCase();
     if (dir === 'rtl' || cssDirection === 'rtl') return true;
     if (dir !== 'auto') return false;
@@ -287,7 +290,8 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): DocxIn
     if (tag === 'BR') return [new TextRun({ break: 1 })];
     if (tag === 'A') {
         const href = safeHref(node.getAttribute('href'));
-        const linkStyle: InlineStyle = { ...style, underline: true, color: style.color ?? '0563C1' };
+        const color = cssColorToHex(styleValue(node, 'color')) ?? style.color ?? '0563C1';
+        const linkStyle: InlineStyle = { ...style, underline: true, color };
         const runs = Array.from(node.childNodes).flatMap((child) => inlineDocxRuns(child, href ? linkStyle : style));
         return href && runs.length > 0 ? [new ExternalHyperlink({ link: href, children: runs })] : runs;
     }
@@ -427,6 +431,7 @@ export function htmlToDocxLead(
     images?: DocxImageMap
 ): {
     leadRuns: DocxInline[];
+    leadRtl?: boolean;
     leadSize?: number;
     leadSpacing?: ReturnType<typeof blockSpacing>;
     rest: (Paragraph | Table)[];
@@ -444,7 +449,7 @@ export function htmlToDocxLead(
         undefined,
         images
     );
-    return { leadRuns, leadSize: leadStyle.size, leadSpacing: blockSpacing(first), rest };
+    return { leadRuns, leadRtl: leadStyle.rtl, leadSize: leadStyle.size, leadSpacing: blockSpacing(first), rest };
 }
 
 /** Converts EssayEditor's TipTap HTML output to docx Paragraph/Table nodes. */

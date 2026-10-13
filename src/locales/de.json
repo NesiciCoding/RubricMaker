@@ -2809,7 +2809,7 @@
     },
     "notifications": {
         "bell_title": "Benachrichtigungen ({{count}} überfällig)",
-        "panel_title": "Überfällige Schüler",
+        "panel_title": "Überfällige Bewertungen",
         "panel_label": "Benachrichtigungspanel",
         "all_up_to_date": "Kein abgegebener Test oder Aufsatz wartet länger als {{threshold}} Tage auf die Bewertung.",
         "days_ago": "vor {{count}}T",
@@ -2818,7 +2818,7 @@
         "enable_push": "Browser-Benachrichtigungen aktivieren",
         "enable_btn": "Aktivieren",
         "permission_denied": "Browser-Benachrichtigungen blockiert. Erlauben Sie sie in den Browser-Einstellungen.",
-        "browser_title": "RubricMaker — Überfällige Schüler",
+        "browser_title": "RubricMaker — Überfällige Bewertungen",
         "clear_all": "Alle löschen",
         "unread_messages_subtitle": "{{count}} ungelesene Nachrichtenverlauf/-verläufe",
         "moderation_subtitle": "{{count}} ausstehende Moderationsprüfung(en)",
