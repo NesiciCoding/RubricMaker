@@ -10,11 +10,8 @@ export function OwnPortalGuard({ ownStudentId, children }: { ownStudentId: strin
     const { studentId } = useParams();
     const { pathname, search } = useLocation();
     if (studentId === ownStudentId) return <>{children}</>;
-    const ownPath = pathname.replace(`/portal/${encodeURIComponent(studentId ?? '')}`, `/portal/${ownStudentId}`);
-    return (
-        <Navigate
-            to={ownPath.startsWith(`/portal/${ownStudentId}`) ? `${ownPath}${search}` : `/portal/${ownStudentId}`}
-            replace
-        />
-    );
+    // Route matching is case-insensitive, so take everything after the `/portal/:studentId` segments
+    // by position rather than by matching the literal prefix.
+    const rest = pathname.split('/').slice(3).filter(Boolean).join('/');
+    return <Navigate to={`/portal/${ownStudentId}${rest ? `/${rest}` : ''}${search}`} replace />;
 }

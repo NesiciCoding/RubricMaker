@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlToMarkdown, htmlToDocxChildren, escapeHtml, cssColorToHex } from './essayExport';
+import { htmlToMarkdown, htmlToDocxChildren, escapeHtml, cssColorToHex, htmlToDocxLead } from './essayExport';
 
 const FIXTURE_HTML = `
 <h1>My Essay</h1>
@@ -177,5 +177,23 @@ describe('htmlToDocxChildren links and right-to-left text (#695)', () => {
     it('marks right-to-left list items and headings', async () => {
         const { body } = await documentXml('<h2 dir="rtl">عنوان</h2><ul><li><p dir="rtl">بند</p></li></ul>');
         expect(body.match(/<w:bidi\/>/g)).toHaveLength(2);
+    });
+
+    it("keeps a link's own colour instead of the default link blue", async () => {
+        const { body } = await documentXml('<p><a href="https://example.com" style="color: #ff0000">red</a></p>');
+        expect(body).toContain('w:val="ff0000"');
+        expect(body).not.toContain('0563C1');
+    });
+
+    it('lets list paragraphs inherit the direction of their list', async () => {
+        const { body } = await documentXml('<ul dir="rtl"><li><p>مرحبا</p></li></ul>');
+        expect(body).toContain('<w:bidi/>');
+    });
+});
+
+describe('htmlToDocxLead direction (#695)', () => {
+    it('reports a right-to-left lead paragraph so the caller can mark it', () => {
+        expect(htmlToDocxLead('<p dir="rtl">سؤال</p>').leadRtl).toBe(true);
+        expect(htmlToDocxLead('<p>Question</p>').leadRtl).toBeFalsy();
     });
 });
