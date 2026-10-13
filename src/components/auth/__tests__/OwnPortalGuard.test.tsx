@@ -57,4 +57,9 @@ describe('OwnPortalGuard', () => {
         renderAt('/portal/liam/flashcards/d1');
         expect(screen.getByText('portal:anna:deck:d1')).toBeInTheDocument();
     });
+
+    it('keeps the sub-route and query when the URL differs in case', () => {
+        renderAt('/PORTAL/liam/flashcards/d1?tab=grades');
+        expect(screen.getByText('portal:anna:deck:d1?tab=grades')).toBeInTheDocument();
+    });
 });

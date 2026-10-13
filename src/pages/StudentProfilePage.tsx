@@ -651,7 +651,7 @@ export default function StudentProfilePage() {
                                                                     color: 'var(--text-muted)',
                                                                 }}
                                                             >
-                                                                {entry.score.toFixed(1)}%
+                                                                {percentFormat.format(entry.score)}%
                                                             </span>
                                                             <button
                                                                 className="btn btn-ghost btn-sm no-print"
@@ -686,7 +686,7 @@ export default function StudentProfilePage() {
                                                                         color: 'var(--text-muted)',
                                                                     }}
                                                                 >
-                                                                    {entry.score.toFixed(1)}%
+                                                                    {percentFormat.format(entry.score)}%
                                                                 </span>
                                                             )}
                                                             <button
@@ -1205,7 +1205,7 @@ export default function StudentProfilePage() {
                                                 </td>
                                                 <td style={{ fontWeight: 500 }}>{h.rubric.name}</td>
                                                 <td>
-                                                    {h.score.toFixed(1)}%{' '}
+                                                    {percentFormat.format(h.score)}%{' '}
                                                     <span className="text-muted text-xs">
                                                         ({h.summary.rawScore}/{h.summary.maxRawScore})
                                                     </span>
@@ -1500,7 +1500,7 @@ export default function StudentProfilePage() {
                                                                         fontSize: '0.85rem',
                                                                     }}
                                                                 >
-                                                                    {summary.modifiedPercentage.toFixed(1)}%
+                                                                    {percentFormat.format(summary.modifiedPercentage)}%
                                                                 </span>
                                                             </>
                                                         )}

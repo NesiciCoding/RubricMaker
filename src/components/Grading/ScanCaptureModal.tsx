@@ -82,12 +82,12 @@ export default function ScanCaptureModal({ defaultLang, userWords, onInsert, onC
                 if (err instanceof OcrUnavailableError) {
                     setErrorMsg(t('scan.error_engine_unavailable'));
                 } else {
-                    logEvent(
-                        'error',
-                        'scan_ocr_failed',
-                        { message: err instanceof Error ? err.message : String(err) },
-                        'error'
-                    );
+                    const message = err instanceof Error ? err.message : String(err);
+                    // logEvent is a no-op unless stress-test logging is enabled, so also surface the
+                    // failure on the console: the modal only shows generic text, leaving this as the
+                    // one record of an unexpected OCR failure when that logging is off.
+                    console.error('[ScanCaptureModal] OCR failed', err);
+                    logEvent('error', 'scan_ocr_failed', { message }, 'error');
                     setErrorMsg(t('scan.error_generic'));
                 }
                 setPhase('error');

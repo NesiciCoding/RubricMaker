@@ -16,8 +16,6 @@ const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.
 // this scan. List a literal key here only if it is intentionally resolved outside en.json.
 const ALLOWED_MISSING = new Set<string>();
 
-const PLURAL_SUFFIXES = ['_zero', '_one', '_two', '_few', '_many', '_other'];
-
 function flattenKeys(obj: Record<string, unknown>, prefix = '', out = new Set<string>()): Set<string> {
     for (const [key, value] of Object.entries(obj)) {
         const keyPath = prefix ? `${prefix}.${key}` : key;
@@ -62,8 +60,10 @@ describe('translation keys used in src/', () => {
     for (const [lang, bundle] of Object.entries(LOCALES)) {
         it(`every literal key exists in ${lang}.json`, () => {
             const defined = flattenKeys(bundle);
-            const isDefined = (key: string) =>
-                defined.has(key) || PLURAL_SUFFIXES.some((suffix) => defined.has(`${key}${suffix}`));
+            // A counted `t()` lookup resolves `<key>_<pluralForm>` and falls back to `_other`, so a
+            // key with plurals is only safe when that fallback exists. Accepting any single suffix
+            // (e.g. only `<key>_one`) hid counts whose `_other` form was never translated.
+            const isDefined = (key: string) => defined.has(key) || defined.has(`${key}_other`);
             const missing = usages
                 .filter(({ key }) => !isDefined(key) && !ALLOWED_MISSING.has(key))
                 .map(({ key, file }) => `${key} (${file})`);

@@ -9,6 +9,9 @@ function makeAdapter() {
     return {
         uploadFeedbackAudio: vi.fn(async (suffix: string) => `user1/${suffix}`),
         getFeedbackAudioSignedUrl: vi.fn(async (path: string) => `https://example.com/${path}?token=abc`),
+        getPortalFeedbackAudioSignedUrl: vi.fn(
+            async (srId: string, cId: string) => `https://portal.example.com/${srId}/${cId}?token=xyz`
+        ),
         deleteFeedbackAudio: vi.fn(async () => ({ success: true })),
     } as unknown as SupabaseAdapter;
 }
@@ -153,5 +156,25 @@ describe('FeedbackAudioSync.resolveUrl', () => {
 
         expect(a).toBe(b);
         expect(adapter.getFeedbackAudioSignedUrl).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('FeedbackAudioSync.resolvePortalUrl', () => {
+    it('resolves through the service-role resolver, keyed by grade and criterion', async () => {
+        const adapter = makeAdapter();
+        const sync = new FeedbackAudioSync(adapter);
+
+        const url = await sync.resolvePortalUrl('sr1', 'c1');
+
+        expect(adapter.getPortalFeedbackAudioSignedUrl).toHaveBeenCalledWith('sr1', 'c1');
+        expect(url).toBe('https://portal.example.com/sr1/c1?token=xyz');
+    });
+
+    it('returns an empty string when the resolver has no URL', async () => {
+        const adapter = makeAdapter();
+        adapter.getPortalFeedbackAudioSignedUrl = vi.fn(async () => null);
+        const sync = new FeedbackAudioSync(adapter);
+
+        expect(await sync.resolvePortalUrl('sr1', 'c1')).toBe('');
     });
 });
