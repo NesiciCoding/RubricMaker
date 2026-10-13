@@ -174,7 +174,7 @@ export default function EssayAssignmentModal({
             void handleSaveToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb]);
+    }, [embedDb, limitsInvalid]);
 
     const handleDownloadSEB = useCallback(() => {
         downloadSebConfig(essayUrl, `essay-${studentName}`);
@@ -525,7 +525,7 @@ export default function EssayAssignmentModal({
                         <input
                             id="ea-essay-link"
                             readOnly
-                            value={essayUrl}
+                            value={limitsInvalid ? '' : essayUrl}
                             style={{
                                 flex: 1,
                                 fontFamily: 'monospace',
