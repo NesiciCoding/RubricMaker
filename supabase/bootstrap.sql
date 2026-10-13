@@ -6308,22 +6308,9 @@ GRANT EXECUTE ON FUNCTION public.get_pending_moderation_count(uuid) TO service_r
 --   * practice-mode tests are left out: those attempts are self-checked and never become 'graded'.
 -- ISO-8601 timestamps compare correctly as text, as in the client.
 --
--- Settings and submissions are client-written jsonb, so every cast goes through a guard: one
--- malformed value must not abort the RPC and take the whole scheduled digest count down with it.
-
-CREATE OR REPLACE FUNCTION public.try_timestamptz(value text)
-RETURNS timestamptz
-LANGUAGE plpgsql
-STABLE
-AS $$
-BEGIN
-  RETURN value::timestamptz;
-EXCEPTION WHEN others THEN
-  RETURN NULL;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.try_timestamptz(text) FROM PUBLIC, anon, authenticated;
+-- Settings and submissions are client-written jsonb, so every cast goes through a guard (the
+-- threshold regex, public.try_timestamptz from 078): one malformed value must not abort the RPC
+-- and take the whole scheduled digest count down with it.
 
 CREATE OR REPLACE FUNCTION public.get_overdue_grading_count(target_owner uuid)
 RETURNS int
