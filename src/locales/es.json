@@ -2852,7 +2852,7 @@
     },
     "notifications": {
         "bell_title": "Notificaciones ({{count}} pendientes)",
-        "panel_title": "Estudiantes Pendientes",
+        "panel_title": "Calificaciones pendientes",
         "panel_label": "Panel de notificaciones",
         "all_up_to_date": "Ninguna prueba o ensayo entregado lleva más de {{threshold}} días esperando calificación.",
         "days_ago": "Hace {{count}}d",
@@ -2861,7 +2861,7 @@
         "enable_push": "Habilitar notificaciones del navegador",
         "enable_btn": "Habilitar",
         "permission_denied": "Notificaciones del navegador bloqueadas. Permítelas en la configuración del navegador.",
-        "browser_title": "RubricMaker — Estudiantes Pendientes",
+        "browser_title": "RubricMaker — Calificaciones pendientes",
         "clear_all": "Borrar todo",
         "unread_messages_subtitle": "{{count}} hilo(s) de mensajes sin leer",
         "moderation_subtitle": "{{count}} revisión(es) de moderación pendiente(s)",

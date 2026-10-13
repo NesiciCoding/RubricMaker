@@ -2852,7 +2852,7 @@
     },
     "notifications": {
         "bell_title": "Notifications ({{count}} en retard)",
-        "panel_title": "Élèves en retard",
+        "panel_title": "Corrections en retard",
         "panel_label": "Panneau de notifications",
         "all_up_to_date": "Aucun test ou essai rendu n'attend d'être corrigé depuis plus de {{threshold}} jours.",
         "days_ago": "il y a {{count}}j",
@@ -2861,7 +2861,7 @@
         "enable_push": "Activer les notifications du navigateur",
         "enable_btn": "Activer",
         "permission_denied": "Notifications du navigateur bloquées. Autorisez-les dans les paramètres du navigateur.",
-        "browser_title": "RubricMaker — Élèves en retard",
+        "browser_title": "RubricMaker — Corrections en retard",
         "clear_all": "Tout effacer",
         "unread_messages_subtitle": "{{count}} fil(s) de message non lu(s)",
         "moderation_subtitle": "{{count}} révision(s) de modération en attente",
