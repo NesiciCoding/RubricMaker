@@ -107,9 +107,9 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
                 // Not seeded: this is the teacher's own owner-scoped connect flow, so a
                 // reflexive re-push of pulled data can't fail RLS the way it can for a
                 // read-only (e.g. student) session — see applyHydrated above.
-                applyHydrated(merged, false);
+                const reconciled = applyHydrated(merged, false);
                 try {
-                    await flushToLocalStorage(merged);
+                    await flushToLocalStorage(reconciled);
                 } catch {
                     showToast(t('toast.storage_full'), 'error');
                 }

@@ -37,6 +37,8 @@ import {
     sanitizeClassYears,
     markMigrationPending,
     isMigrationSkippedForSession,
+    unconfirmedWriteIds,
+    retargetPendingUpsertToDelete,
 } from '../store/storage';
 import { withSettingsDefaults } from '../utils/settingsDefaults';
 import { loadSupabaseConfig, saveSupabaseConfig } from '../services/database/supabaseConfig';
@@ -84,8 +86,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // seeds the diff baseline in the same step. Centralized so the seed/no-seed
     // choice can't drift out of sync between call sites the way it caused this
     // bug in the first place.
-    const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean) => {
-        const { records: studentRubrics, dropped } = dedupeStudentRubrics(mergedIn.studentRubrics);
+    // Returns the reconciled snapshot: the record set here is deduplicated, so a
+    // caller that persists the value it passed in would write the duplicates back
+    // into the local cache and reload them on the next offline boot.
+    const applyHydrated = useCallback((mergedIn: StoreData, seedDiffBaseline: boolean): StoreData => {
+        const { records: studentRubrics, dropped } = dedupeStudentRubrics(mergedIn.studentRubrics, {
+            unconfirmedIds: unconfirmedWriteIds('studentRubric'),
+        });
         const merged = {
             ...mergedIn,
             studentRubrics,
@@ -102,6 +109,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // duplicates from the cloud and pushes the kept record's new content; otherwise every
         // hydrate would bring the duplicates back.
         if (dropped.length > 0) {
+            // A duplicate can also still be queued for upload — the save that minted it failed to
+            // sync. Replaying that upsert would re-create the row this reconcile deletes, so
+            // requeue the op the reconcile actually wants for that id.
+            for (const sr of dropped) retargetPendingUpsertToDelete('studentRubric', sr.id);
             const before = new Map(mergedIn.studentRubrics.map((sr) => [sr.id, sr]));
             const touched = new Set(dropped.map((sr) => sr.id));
             for (const sr of studentRubrics) if (before.get(sr.id) !== sr) touched.add(sr.id);
@@ -114,6 +125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ],
             };
         }
+        return merged;
     }, []);
     // The connected-session student rubric cache lives in IndexedDB, which can only be read
     // asynchronously, so it is merged in after the synchronous localStorage boot.
@@ -278,9 +290,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         // user's data — merge against the freshly wiped store instead.
                         const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                         const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                        applyHydrated(merged, true);
+                        const reconciled = applyHydrated(merged, true);
                         try {
-                            await flushToLocalStorage(merged);
+                            await flushToLocalStorage(reconciled);
                         } catch {
                             showToast(t('toast.storage_full'), 'error');
                         }
@@ -376,9 +388,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 if (cancelled) return;
                 const applyFresh = async (fresh: Partial<StoreData>, changedKeys?: Set<keyof StoreData>) => {
                     const merged = mergeStoreData(currentStateRef.current, fresh, loadPendingQueue());
-                    applyHydrated(merged, true);
+                    const reconciled = applyHydrated(merged, true);
                     try {
-                        await flushToLocalStorage(merged, changedKeys);
+                        await flushToLocalStorage(reconciled, changedKeys);
                     } catch {
                         // quota error — non-fatal on reconnect
                     }
@@ -454,9 +466,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                         if (fresh) {
                             const base = storageSync.didWipeLocalData() ? loadStore() : initialStateRef.current;
                             const merged = mergeStoreData(base, fresh, loadPendingQueue());
-                            applyHydrated(merged, true);
+                            const reconciled = applyHydrated(merged, true);
                             try {
-                                await flushToLocalStorage(merged);
+                                await flushToLocalStorage(reconciled);
                             } catch {
                                 showToast(t('toast.storage_full'), 'error');
                             }

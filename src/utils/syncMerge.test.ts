@@ -788,4 +788,43 @@ describe('dedupeStudentRubrics (#799)', () => {
         ];
         expect(dedupeStudentRubrics(records)).toEqual({ records, dropped: [] });
     });
+
+    it('never hands the identity to a duplicate the cloud has not confirmed', () => {
+        // The temporary grade was minted offline and is still queued for upload; the cloud row was
+        // edited later on another device, so edit time alone would take the temporary id and delete
+        // the established row. The confirmed id has to win instead.
+        const temporary = grade('temporary', { updatedAt: '2026-10-02T00:00:00Z' });
+        const cloud = grade('cloud', { updatedAt: '2026-10-03T00:00:00Z', overallComment: 'edited elsewhere' });
+
+        const { records, dropped } = dedupeStudentRubrics([temporary, cloud], {
+            unconfirmedIds: new Set(['temporary']),
+        });
+
+        expect(records).toEqual([{ ...cloud, id: 'cloud' }]);
+        expect(dropped.map((r) => r.id)).toEqual(['temporary']);
+    });
+
+    it('re-attaches independently authored fields the winning record does not carry', () => {
+        const assessed = grade('assessed', {
+            updatedAt: '2026-10-01T00:00:00Z',
+            submittedAt: '2026-09-30T08:00:00Z',
+            selfAssessmentLevels: { c1: 'A2' },
+            selfAssessmentReflection: 'I rushed the last part',
+            selfAssessedAt: '2026-10-01T12:00:00Z',
+        });
+        const newer = grade('newer', { updatedAt: '2026-10-02T00:00:00Z' });
+
+        const { records } = dedupeStudentRubrics([assessed, newer]);
+
+        expect(records).toEqual([
+            {
+                ...newer,
+                id: 'assessed',
+                submittedAt: '2026-09-30T08:00:00Z',
+                selfAssessmentLevels: { c1: 'A2' },
+                selfAssessmentReflection: 'I rushed the last part',
+                selfAssessedAt: '2026-10-01T12:00:00Z',
+            },
+        ]);
+    });
 });
