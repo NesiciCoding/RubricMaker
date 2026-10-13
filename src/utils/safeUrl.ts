@@ -11,6 +11,7 @@ export function safeHref(raw: string | undefined | null): string | undefined {
 }
 
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
+const MAILTO_ADDRESS = /^mailto:[^\s@?/]+@[^\s@?/.]+(?:\.[^\s@?/.]+)+(?:\?|$)/i;
 const BARE_HOST = /^(?:localhost|[^\s/:?#]+\.[^\s/:?#]+)(?::\d+)?(?:[/?#]|$)/i;
 
 /**
@@ -26,7 +27,11 @@ export function normalizeLinkUrl(raw: string | undefined | null): string | undef
         candidate = `https://${value}`;
     }
     const href = safeHref(candidate);
-    if (!href || href.toLowerCase().startsWith('mailto:')) return href;
+    if (!href) return undefined;
+    if (href.toLowerCase().startsWith('mailto:')) return MAILTO_ADDRESS.test(href) ? href : undefined;
+    // `https:example.com` parses to an external host but a browser resolves the raw string against
+    // the app's own origin, so only the `//` form is accepted.
+    if (!HAS_SCHEME.test(href)) return undefined;
     const { hostname } = new URL(href);
     return hostname === 'localhost' || hostname.includes('.') ? href : undefined;
 }
