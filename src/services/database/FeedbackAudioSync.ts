@@ -74,6 +74,16 @@ export class FeedbackAudioSync {
         return url ?? '';
     }
 
+    /**
+     * Resolve a student-facing grade card's voice feedback. A student session can't sign the
+     * owner-scoped bucket path, so this goes through the get-feedback-audio-url resolver, which
+     * authorizes the caller against the student_rubrics row before signing. Returns '' when there
+     * is nothing to play.
+     */
+    async resolvePortalUrl(studentRubricId: string, criterionId: string): Promise<string> {
+        return (await this.adapter.getPortalFeedbackAudioSignedUrl(studentRubricId, criterionId)) ?? '';
+    }
+
     /** Mint a long-TTL signed URL to embed in a self-contained /feedback/:code share link. */
     async signForShare(storagePath: string): Promise<string | null> {
         return this.adapter.getFeedbackAudioSignedUrl(storagePath, SHARE_URL_TTL_SECONDS);
