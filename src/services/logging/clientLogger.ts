@@ -38,12 +38,26 @@ function clamp(value: string | null, max: number): string | null {
     return value !== null && value.length > max ? value.slice(0, max) : value;
 }
 
+/**
+ * JSON length of `meta`, or null when it cannot be serialized at all (a cyclic value). Logging is a
+ * diagnostic side effect, so this is total: an unserializable payload must not throw back into the
+ * caller that reported the event.
+ */
+function metaSize(meta: Record<string, unknown>): number | null {
+    try {
+        return JSON.stringify(meta).length;
+    } catch {
+        return null;
+    }
+}
+
 /** Keep a row inside the server's size limits (#638) so it is never rejected. */
 export function boundLogRow(row: LogRow): LogRow {
     let meta = row.meta;
     if (meta) {
-        const size = JSON.stringify(meta).length;
-        if (size > MAX_META_CHARS) meta = { truncated: true, size };
+        const size = metaSize(meta);
+        if (size === null) meta = { unserializable: true };
+        else if (size > MAX_META_CHARS) meta = { truncated: true, size };
     }
     return {
         ...row,

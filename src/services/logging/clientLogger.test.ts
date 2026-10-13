@@ -37,6 +37,15 @@ describe('boundLogRow (#638)', () => {
         expect(bounded.meta).toEqual({ truncated: true, size: JSON.stringify(big).length });
     });
 
+    it('replaces cyclic meta with a marker instead of throwing into the caller', () => {
+        const cyclic: Record<string, unknown> = { id: 'x' };
+        cyclic.self = cyclic;
+
+        // A diagnostic call must never interrupt whatever reported the event.
+        expect(() => boundLogRow(row({ meta: cyclic }))).not.toThrow();
+        expect(boundLogRow(row({ meta: cyclic })).meta).toEqual({ unserializable: true });
+    });
+
     it('keeps null fields null', () => {
         expect(boundLogRow(row({ role: null, school_id: null, path: null, meta: null }))).toMatchObject({
             role: null,
