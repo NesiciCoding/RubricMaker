@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countWords, htmlToPlainText } from './essayUtils';
+import { countWords, htmlToPlainText, validateEssayConfig } from './essayUtils';
 
 describe('countWords', () => {
     it('returns 0 for empty string', () => {
@@ -56,5 +56,34 @@ describe('countWords', () => {
 
     it('decodes &amp; last so an escaped entity stays literal text', () => {
         expect(htmlToPlainText('<p>a &amp;lt; b &amp; c</p>')).toBe('a &lt; b & c');
+    });
+});
+
+describe('validateEssayConfig', () => {
+    const valid = { title: 'Essay', minWords: '', maxWords: '', timeLimitMinutes: '' };
+
+    it('accepts empty optional limits and a title', () => {
+        expect(validateEssayConfig(valid)).toEqual({});
+        expect(validateEssayConfig({ ...valid, minWords: '100', maxWords: '100', timeLimitMinutes: '45' })).toEqual({});
+    });
+
+    it('requires a title only when one is being validated', () => {
+        expect(validateEssayConfig({ ...valid, title: '   ' }).title).toBe('essays.error_title_required');
+        expect(validateEssayConfig({ ...valid, title: undefined })).toEqual({});
+    });
+
+    it.each(['0', '-5', '2.5', 'abc'])('rejects %s as a limit', (value) => {
+        const errors = validateEssayConfig({ ...valid, minWords: value, maxWords: value, timeLimitMinutes: value });
+        expect(errors).toEqual({
+            minWords: 'essays.error_positive_whole_number',
+            maxWords: 'essays.error_positive_whole_number',
+            timeLimitMinutes: 'essays.error_positive_whole_number',
+        });
+    });
+
+    it('rejects a minimum above the maximum', () => {
+        expect(validateEssayConfig({ ...valid, minWords: '500', maxWords: '100' })).toEqual({
+            maxWords: 'essays.error_min_exceeds_max',
+        });
     });
 });

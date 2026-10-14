@@ -258,3 +258,17 @@ describe('ImportRubricModal coverage', () => {
         r3.unmount();
     });
 });
+
+describe('ImportRubricModal dropzone keyboard access (#703)', () => {
+    it('is a focusable button that opens the file picker with Enter and Space', () => {
+        render(<ImportRubricModal onClose={vi.fn()} onImport={vi.fn()} />);
+        const dropzone = screen.getByRole('button', { name: new RegExp(trGet('importRubric.dropzone')!) });
+        expect(dropzone).toHaveAttribute('tabindex', '0');
+        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+        const click = vi.spyOn(input, 'click').mockImplementation(() => {});
+        fireEvent.keyDown(dropzone, { key: 'Enter' });
+        fireEvent.keyDown(dropzone, { key: ' ' });
+        fireEvent.keyDown(dropzone, { key: 'a' });
+        expect(click).toHaveBeenCalledTimes(2);
+    });
+});

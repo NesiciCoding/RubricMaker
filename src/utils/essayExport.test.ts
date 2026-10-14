@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htmlToMarkdown, htmlToDocxChildren, escapeHtml, cssColorToHex } from './essayExport';
+import { htmlToMarkdown, htmlToDocxChildren, escapeHtml, cssColorToHex, htmlToDocxLead } from './essayExport';
 
 const FIXTURE_HTML = `
 <h1>My Essay</h1>
@@ -133,5 +133,67 @@ describe('htmlToDocxChildren with non-hex colors', () => {
                 '<p><span style="color: inherit">a</span><mark style="background-color: transparent">b</mark><span style="color: rgb(1,2,3)">c</span></p>'
             )
         ).not.toThrow();
+    });
+});
+
+describe('htmlToDocxChildren links and right-to-left text (#695)', () => {
+    async function documentXml(html: string) {
+        const { Document, Packer } = await import('docx');
+        const JSZip = (await import('jszip')).default;
+        const doc = new Document({ sections: [{ children: htmlToDocxChildren(html) }] });
+        const zip = await JSZip.loadAsync(await Packer.toBuffer(doc));
+        return {
+            body: await zip.file('word/document.xml')!.async('string'),
+            rels: await zip.file('word/_rels/document.xml.rels')!.async('string'),
+        };
+    }
+
+    it('keeps a link as a real hyperlink to its URL', async () => {
+        const { body, rels } = await documentXml('<p>Read <a href="https://example.com/a?b=1">this article</a>.</p>');
+        expect(body).toContain('<w:hyperlink');
+        expect(body).toContain('this article');
+        expect(rels).toContain('Target="https://example.com/a?b=1"');
+        expect(rels).toContain('TargetMode="External"');
+    });
+
+    it('drops the link but keeps the text for unsafe hrefs', async () => {
+        const { body, rels } = await documentXml('<p><a href="javascript:alert(1)">click</a></p>');
+        expect(body).not.toContain('<w:hyperlink');
+        expect(body).toContain('click');
+        expect(rels).not.toContain('javascript:');
+    });
+
+    it('marks dir="rtl" paragraphs and their runs as right-to-left', async () => {
+        const { body } = await documentXml('<p dir="rtl">مرحبا بالعالم</p><p>Hello</p>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(1);
+        expect(body).toContain('<w:rtl/>');
+    });
+
+    it('follows the first strong character for dir="auto"', async () => {
+        const { body } = await documentXml('<p dir="auto">שלום world</p><p dir="auto">Hello שלום</p>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(1);
+    });
+
+    it('marks right-to-left list items and headings', async () => {
+        const { body } = await documentXml('<h2 dir="rtl">عنوان</h2><ul><li><p dir="rtl">بند</p></li></ul>');
+        expect(body.match(/<w:bidi\/>/g)).toHaveLength(2);
+    });
+
+    it("keeps a link's own colour instead of the default link blue", async () => {
+        const { body } = await documentXml('<p><a href="https://example.com" style="color: #ff0000">red</a></p>');
+        expect(body).toContain('w:val="ff0000"');
+        expect(body).not.toContain('0563C1');
+    });
+
+    it('lets list paragraphs inherit the direction of their list', async () => {
+        const { body } = await documentXml('<ul dir="rtl"><li><p>مرحبا</p></li></ul>');
+        expect(body).toContain('<w:bidi/>');
+    });
+});
+
+describe('htmlToDocxLead direction (#695)', () => {
+    it('reports a right-to-left lead paragraph so the caller can mark it', () => {
+        expect(htmlToDocxLead('<p dir="rtl">سؤال</p>').leadRtl).toBe(true);
+        expect(htmlToDocxLead('<p>Question</p>').leadRtl).toBeFalsy();
     });
 });

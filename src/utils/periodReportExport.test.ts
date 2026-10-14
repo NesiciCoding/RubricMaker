@@ -1,4 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import { initTestI18n } from '../test-utils/initI18n';
+
+beforeAll(async () => {
+    await initTestI18n();
+});
 
 vi.mock('docx', () => ({
     Document: vi.fn(),

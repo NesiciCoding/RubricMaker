@@ -492,9 +492,9 @@ describe('StudentProfilePage extended coverage', () => {
         renderAt('s1');
         expect(screen.getByText('60.0%')).toBeInTheDocument();
         expect(screen.getAllByText('90.0%').length).toBeGreaterThan(0);
-        expect(screen.getByText('Average Score')).toBeInTheDocument();
-        expect(screen.getByText('Highest Score')).toBeInTheDocument();
-        expect(screen.getByText('Performance Timeline')).toBeInTheDocument();
+        expect(screen.getByText('studentProfile.stat_average')).toBeInTheDocument();
+        expect(screen.getByText('studentProfile.stat_highest')).toBeInTheDocument();
+        expect(screen.getByText('studentProfile.timeline_title')).toBeInTheDocument();
         expect(screen.getByText('cefr.student_progress_title')).toBeInTheDocument();
         expect(screen.getAllByText('cefr.achieved').length).toBeGreaterThan(0);
         expect(screen.getByText('cefr.developing')).toBeInTheDocument();
@@ -646,10 +646,9 @@ describe('StudentProfilePage extended coverage', () => {
             ],
         });
         renderAt('s2');
-        expect(screen.getByText('Unknown Class')).toBeInTheDocument();
         expect(screen.getByText(/studentProfile\.past_classes/)).toBeInTheDocument();
         expect(screen.getAllByText(/Class A/).length).toBeGreaterThan(0);
-        expect(screen.getByText(/studentProfile\.unknown_class/)).toBeInTheDocument();
+        expect(screen.getAllByText(/studentProfile\.unknown_class/)).toHaveLength(2);
         mockStudentsArr.pop();
     });
 

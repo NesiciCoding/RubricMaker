@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ScanCaptureModal from '../ScanCaptureModal';
 import type { OcrResult } from '../../../utils/textExtraction';
+import { OcrUnavailableError } from '../../../utils/ocrErrors';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (k: string) => k }),
@@ -116,9 +117,18 @@ describe('ScanCaptureModal', () => {
         recognizeImage.mockRejectedValueOnce(new Error('ocr boom'));
         render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);
         pickFile();
-        expect(await screen.findByText('ocr boom')).toBeInTheDocument();
+        expect(await screen.findByText('scan.error_generic')).toBeInTheDocument();
+        expect(screen.queryByText('ocr boom')).not.toBeInTheDocument();
         fireEvent.click(screen.getByText('scan.rescan'));
         expect(screen.getByText('scan.hint_label')).toBeInTheDocument();
+    });
+
+    it('explains that the engine needs a connection when it cannot be loaded', async () => {
+        recognizeImage.mockRejectedValueOnce(new OcrUnavailableError(new Error('NetworkError: importScripts')));
+        render(<ScanCaptureModal defaultLang="eng" onInsert={vi.fn()} onClose={vi.fn()} />);
+        pickFile();
+        expect(await screen.findByText('scan.error_engine_unavailable')).toBeInTheDocument();
+        expect(screen.queryByText(/importScripts/)).not.toBeInTheDocument();
     });
 
     it('passes rubric/roster user words through to recognizeImage', async () => {

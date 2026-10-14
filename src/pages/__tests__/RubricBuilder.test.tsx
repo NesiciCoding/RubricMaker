@@ -1,3 +1,4 @@
+import { axe } from 'jest-axe';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -484,6 +485,38 @@ describe('RubricBuilder', () => {
         return renderEdit();
     }
 
+    it('shows a not-found state instead of the editor for an unknown id (#720)', () => {
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/doesnotexist'],
+        });
+        render(<RouterProvider router={router} />);
+        expect(screen.getByText('rubricBuilder.not_found')).toBeInTheDocument();
+        expect(screen.queryByText('rubricBuilder.action_save')).toBeNull();
+        fireEvent.click(screen.getByText('common.back'));
+        expect(mockNavigate).toHaveBeenCalledWith('/rubrics');
+    });
+
+    it('opens the editor for an existing id', () => {
+        renderEdit();
+        expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
+        expect(screen.queryByText('rubricBuilder.not_found')).toBeNull();
+    });
+
+    it('gives every form control an accessible name in the form, format, vocabulary and designer views (#703)', async () => {
+        renderEdit();
+        // axe accepts a placeholder as a name; strip them so only real labels count.
+        const unnamed = async () => {
+            document.querySelectorAll('[placeholder]').forEach((el) => el.removeAttribute('placeholder'));
+            const results = await axe(document.body, { runOnly: ['label', 'select-name'] });
+            return results.violations.flatMap((v) => (v.nodes as { html: string }[]).map((n) => n.html.slice(0, 120)));
+        };
+        fireEvent.click(screen.getByText('rubricBuilder.action_format'));
+        fireEvent.click(screen.getByText('Vocabulary & Grammar List'));
+        expect(await unnamed()).toEqual([]);
+        fireEvent.click(screen.getByText('rubricBuilder.action_designer_view'));
+        expect(await unnamed()).toEqual([]);
+    });
+
     it('renders the new-rubric form with one default criterion', () => {
         renderNew();
         expect(screen.getByText('rubricBuilder.new_rubric')).toBeInTheDocument();
@@ -545,7 +578,7 @@ describe('RubricBuilder', () => {
         const radios = screen.getAllByRole('radio');
         const totalPointsRadio = radios.find((r) => (r as HTMLInputElement).value === 'total-points')!;
         fireEvent.click(totalPointsRadio);
-        expect(screen.getByPlaceholderText('e.g. 100')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('rubricBuilder.total_points_placeholder')).toBeInTheDocument();
     });
 
     it('sets a CEFR target level, revealing the threshold control', () => {
@@ -563,7 +596,7 @@ describe('RubricBuilder', () => {
 
     it('toggles the format panel and preview panel', () => {
         renderNew();
-        fireEvent.click(screen.getByText('FORMAT'));
+        fireEvent.click(screen.getByText('rubricBuilder.action_format'));
         fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
         // No crash; both panels are optional renders gated by local state.
         expect(screen.getByText('rubricBuilder.new_rubric')).toBeInTheDocument();
@@ -981,7 +1014,7 @@ describe('RubricBuilder', () => {
 
     it('format panel: widths, fonts, orientation, alignment, toggles, and reset', () => {
         renderEdit();
-        fireEvent.click(screen.getByText('FORMAT'));
+        fireEvent.click(screen.getByText('rubricBuilder.action_format'));
         fireEvent.change(screen.getByDisplayValue('200'), { target: { value: '220' } });
         fireEvent.change(screen.getByDisplayValue('14'), { target: { value: '12' } });
         // getByDisplayValue matches the selected option's text for selects.
@@ -1100,17 +1133,23 @@ describe('RubricBuilder', () => {
         fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
         // Point ranges: flat level shows (50pts), ranged level shows (0–89pts).
         // Header text is split across text nodes, so match on cell textContent.
-        expect(screen.getByText((_, el) => el?.textContent === 'Flat (50pts)')).toBeInTheDocument();
-        expect(screen.getByText((_, el) => el?.textContent === 'Range (0–89pts)')).toBeInTheDocument();
+        expect(
+            screen.getByText((_, el) => el?.textContent === 'Flat (50 rubricBuilder.points_unit)')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText((_, el) => el?.textContent === 'Range (0–89 rubricBuilder.points_unit)')
+        ).toBeInTheDocument();
         // Sub-item line and the no-description dash.
-        expect(screen.getAllByText((_, el) => el?.textContent === 'Detail (1pts)').length).toBeGreaterThan(0);
+        expect(
+            screen.getAllByText((_, el) => el?.textContent === 'Detail (1 rubricBuilder.points_unit)').length
+        ).toBeGreaterThan(0);
         expect(screen.getAllByText('—').length).toBeGreaterThan(0);
         // Weight column.
         expect(screen.getAllByText('100%').length).toBeGreaterThan(0);
         // Description toggle swaps standard display.
-        fireEvent.click(screen.getByText('Description'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_description'));
         expect(screen.getByText('A linked standard')).toBeInTheDocument();
-        fireEvent.click(screen.getByText('Code'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_code'));
         expect(screen.getAllByText(/CCSS\.1/).length).toBeGreaterThan(0);
         fireEvent.click(screen.getByText(/rubricBuilder\.action_close/));
         expect(screen.queryByText('rubricBuilder.preview_title')).not.toBeInTheDocument();
@@ -1149,11 +1188,11 @@ describe('RubricBuilder', () => {
         const nameInput = screen.getAllByPlaceholderText('rubricBuilder.placeholder_name')[1];
         fireEvent.input(nameInput, { target: { value: 'Auto Sized' } });
         // Standard badges swap between code and description.
-        fireEvent.click(screen.getByText('Description'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_description'));
         // The standard badges render with the pin emoji prefix, so match loosely.
         expect(grid.getByText(/Legacy standard/)).toBeInTheDocument();
         expect(grid.getByText(/Sub standard/)).toBeInTheDocument();
-        fireEvent.click(screen.getByText('Code'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_code'));
         expect(grid.getByText(/LEG\.1/)).toBeInTheDocument();
         // Formatting-help modal.
         fireEvent.click(screen.getByText('rubricBuilder.action_formatting_help'));
@@ -1391,8 +1430,11 @@ describe('RubricBuilder', () => {
         fireEvent.change(screen.getByLabelText('rubricBuilder.label_grade_scale'), { target: { value: 'none' } });
         const radios = screen.getAllByRole('radio');
         fireEvent.click(radios.find((r) => (r as HTMLInputElement).value === 'total-points')!);
-        fireEvent.change(screen.getByPlaceholderText('e.g. 100'), { target: { value: '50' } });
-        expect(screen.getByText('Grade = rawScore / 50 × 100%')).toBeInTheDocument();
+        fireEvent.change(screen.getByPlaceholderText('rubricBuilder.total_points_placeholder'), {
+            target: { value: '50' },
+        });
+        expect(screen.getByText('rubricBuilder.total_points_formula')).toBeInTheDocument();
+        expect(mockT).toHaveBeenCalledWith('rubricBuilder.total_points_formula', { max: 50 });
         // Saving in total-points mode skips the weighted-weight warning.
         fireEvent.click(screen.getByText('rubricBuilder.action_save'));
         expect(mockAddRubric).toHaveBeenCalledWith(expect.objectContaining({ scoringMode: 'total-points' }));
@@ -1905,7 +1947,7 @@ describe('RubricBuilder', () => {
         // Code view falls back to the guid for a standard without a notation.
         expect(grid.getByText(/guid-only/)).toBeInTheDocument();
         // Description view shows the description.
-        fireEvent.click(screen.getByText('Description'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_description'));
         expect(grid.getByText(/Guid only standard/)).toBeInTheDocument();
         // showWeights false → no weight column; the add-row cell spans accordingly.
         expect(screen.getByText('rubricBuilder.action_add_row')).toBeInTheDocument();
@@ -1932,9 +1974,9 @@ describe('RubricBuilder', () => {
         // The form view behind the modal also shows the legacy badge.
         expect(screen.getAllByText(/LEG\.1/).length).toBeGreaterThan(0);
         // showPoints off renders no point ranges in the header.
-        fireEvent.click(screen.getByText('Description'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_description'));
         expect(screen.getAllByText(/Legacy standard/).length).toBeGreaterThan(1);
-        fireEvent.click(screen.getByText('Code'));
+        fireEvent.click(screen.getByText('rubricBuilder.preview_standards_code'));
         expect(screen.getAllByText(/SUB\.1/).length).toBeGreaterThan(0);
         // The rubric and criterion descriptions render in the preview.
         expect(screen.getByText('A test rubric')).toBeInTheDocument();
@@ -2175,7 +2217,7 @@ describe('RubricBuilder', () => {
         fireEvent.click(screen.getByText('rubricBuilder.action_designer_view'));
         const gridEl = document.querySelector('table.rubric-grid') as HTMLElement;
         expect(gridEl.textContent).toContain('CCSS.1');
-        const descBtns = screen.getAllByText('Description');
+        const descBtns = screen.getAllByText('rubricBuilder.preview_standards_description');
         fireEvent.click(descBtns[descBtns.length - 1]);
         expect(gridEl.textContent).toContain('A linked standard');
     });
@@ -2187,7 +2229,7 @@ describe('RubricBuilder', () => {
         const gridEl = document.querySelector('table.rubric-grid') as HTMLElement;
         expect(gridEl.textContent).toContain('ns1');
         expect(gridEl.textContent).toContain('[ns2]');
-        const descBtns = screen.getAllByText('Description');
+        const descBtns = screen.getAllByText('rubricBuilder.preview_standards_description');
         fireEvent.click(descBtns[descBtns.length - 1]);
         expect(gridEl.textContent).toContain('No notation standard');
         expect(gridEl.textContent).toContain('Sub no notation');
@@ -2201,7 +2243,7 @@ describe('RubricBuilder', () => {
         expect(within(overlay).getByText('[ns2]')).toBeInTheDocument();
         expect(overlay.textContent).toContain('lg1');
         expect(overlay.textContent).toContain('ns1');
-        fireEvent.click(within(overlay).getByText('Description'));
+        fireEvent.click(within(overlay).getByText('rubricBuilder.preview_standards_description'));
         expect(within(overlay).getByText(/Legacy no notation/)).toBeInTheDocument();
         expect(within(overlay).getByText(/No notation standard/)).toBeInTheDocument();
         expect(within(overlay).getByText('Sub no notation')).toBeInTheDocument();

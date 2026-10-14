@@ -449,6 +449,50 @@ h3 {
     min-width: 0;
 }
 
+.topbar-global {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Phones: the page's own actions move to a second, wrapping row so Save/Back/Export stay
+   visible instead of scrolling out of a strip with no cue; search, bell and theme stay
+   beside the title (#652). */
+@media (max-width: 640px) {
+    .topbar {
+        height: auto;
+        min-height: var(--topbar-h);
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .topbar-title {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .topbar-class-select {
+        order: 3;
+        flex: 1 1 100%;
+        max-width: none !important;
+    }
+
+    .topbar-actions {
+        order: 4;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        overflow-x: visible;
+    }
+
+    .topbar-actions > div {
+        flex-wrap: wrap;
+    }
+}
+
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 .btn {
     display: inline-flex;
@@ -944,6 +988,74 @@ select.input-error {
     background: var(--bg-raised);
     border-top: 1px solid var(--border);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.grade-footer-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+}
+
+.grade-footer-options,
+.grade-footer-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.grade-footer-actions {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+}
+
+.grade-footer-next-name {
+    display: inline-block;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+}
+
+/* Only phones collapse the two checkboxes behind a toggle. */
+.grade-footer-options-toggle {
+    display: none;
+}
+
+/* Phones: summary on one row, then the options toggle and Save; the checkboxes open in their
+   own row on demand so the footer stays under ~100px and Save is never pushed off-screen (#660). */
+@media (max-width: 640px) {
+    .grade-footer {
+        gap: 6px 10px;
+        padding: 8px 12px;
+    }
+
+    .grade-footer-summary {
+        flex: 1 1 100%;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .grade-footer-options-toggle {
+        display: inline-flex;
+    }
+
+    .grade-footer-options {
+        display: none;
+        order: 3;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+    }
+
+    .grade-footer-options.open {
+        display: flex;
+    }
+
+    .grade-footer-next-name {
+        max-width: 8ch;
+    }
 }
 
 /* ─── Level selection cards ──────────────────────────────────────────────────── */
@@ -1770,8 +1882,43 @@ select.input-error {
 
 .grid-4 {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
+}
+
+.criterion-meta-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+@media (max-width: 640px) {
+    .rubric-builder-layout {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .criterion-meta-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* The card's action icons take their own row so the fields get the full width. */
+    .criterion-header {
+        flex-wrap: wrap;
+    }
+
+    .criterion-header-actions {
+        order: -1;
+        flex: 1 1 100%;
+        justify-content: flex-end;
+        margin-top: 0 !important;
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 @keyframes pulse {

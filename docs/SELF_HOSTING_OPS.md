@@ -19,19 +19,21 @@ A backup directory contains:
 | ---------------- | --------------------------------------------------------------------------------------------- |
 | `data.sql`       | Rows of the `public`, `auth` and `storage` schemas (`pg_dump --data-only --disable-triggers`) |
 | `migrations.txt` | The migrations applied when the backup was taken                                              |
-| `storage.tar.gz` | The uploaded files (`rubricmaker_storage-data` volume)                                        |
+| `storage.tar.gz` | The uploaded files (`rubricmaker_storage-data` volume, see below)                             |
 | `FORMAT`         | `2`                                                                                           |
 
 `restore.sh` refuses a backup that is missing any of these files.
+
+The scripts use `docker compose` (or the older `docker-compose` when that is all the server has). The uploads volume is `<project>_storage-data`, where the project is resolved the way Compose resolves it: `-p`/`--project-name`, then `COMPOSE_PROJECT_NAME` from the environment or the project's `.env`, then the compose file's `name:` (so `rubricmaker` here). `backup.sh` stops with an error when that volume does not exist instead of archiving an empty one; set `STORAGE_VOLUME` to point the scripts at a different volume.
 
 Tables, GRANTs, RLS policies, triggers (such as the one on `auth.users` that creates profiles) and the realtime publication are **not** in the backup: they come from the migrations the stack runs. A restore therefore never recreates them, and the REST API keeps its `anon`/`authenticated`/`service_role` permissions.
 
 To restore, onto the same server or a new one:
 
-1. Start the stack at the same or a newer app version (`docker-compose up -d`). This runs `db_migrate`.
+1. Start the stack at the same or a newer app version (`docker compose up -d`). This runs `db_migrate`.
 2. Run `./scripts/restore.sh <backup-dir>`. It refuses if the stack lacks a migration the backup was taken with.
-3. The script empties and reloads all tables in a single transaction with `ON_ERROR_STOP`. Any error rolls everything back and the script exits non-zero, so you never end up with a half-restored database.
-4. Run `docker-compose restart app`.
+3. The script first unpacks the uploaded files into a staging folder in the volume, so a corrupt archive stops the restore before anything is changed. It then empties and reloads all tables in a single transaction with `ON_ERROR_STOP`. Any error rolls everything back and the script exits non-zero, so you never end up with a half-restored database. Only after that are the live files swapped for the staged ones.
+4. Run `docker compose restart app`.
 
 Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) are refused. Replaying them dropped every GRANT. Take a new backup with the current script.
 
@@ -40,9 +42,9 @@ Backups made before format 2 (a single `database.sql` dumped with `--no-acl`) ar
 If your VPS provider supports volume snapshots (Hetzner, DigitalOcean, etc.) stop the stack first to avoid partial writes:
 
 ```bash
-docker-compose stop db
+docker compose stop db
 # take snapshot in your provider's control panel
-docker-compose start db
+docker compose start db
 ```
 
 ### JSON export (lightweight, app-level)
@@ -99,15 +101,17 @@ RubricMaker's `docker-compose.yml` pins image versions. To upgrade:
 3. Apply any new migrations:
 
     ```bash
-    docker-compose up -d --build db_migrate
-    docker-compose logs db_migrate
+    docker compose up -d --build db_migrate
+    docker compose logs db_migrate
     ```
 
 4. Restart remaining services:
 
     ```bash
-    docker-compose up -d --build
+    docker compose up -d --build
     ```
+
+`db_migrate` runs once `auth` and `storage` are healthy (it needs the `auth` and `storage` schemas they create), and `app` — the only container with a published port — starts only after `db_migrate` completed successfully. Until then nothing is reachable, so no one can sign up before the trigger that creates profiles exists. If a migration fails, `app` stays down: fix it and re-run `docker compose up -d`.
 
 **Supabase component upgrades** (postgres, auth, rest, storage images) should be done one at a time. Check the [Supabase Docker changelog](https://github.com/supabase/supabase/releases) for breaking changes before bumping image tags.
 
@@ -156,6 +160,10 @@ SELECT jobname, schedule, command, active FROM cron.job;
 SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;
 ```
 
+### Diagnostic log cleanup (`client-logs-cleanup`)
+
+Migration `089_client_logs_bounds.sql` schedules `client-logs-cleanup` at 03:35 every night. It deletes `client_logs` rows (the stress-test diagnostics written when the client build sets `VITE_STRESS_TEST_LOGGING=true`) older than 30 days. The same migration adds a size check that rejects oversized rows. The client logger clamps its fields to fit, so normal logging never hits the limit.
+
 ### Teacher email digest job (`scheduled-digest`)
 
 Migration `059_scheduled_digest.sql` schedules a `teacher-email-digest` cron job that calls the `scheduled-digest` edge function nightly via `pg_net`'s `net.http_post` — the first pg_cron job in this repo that reaches out to an edge function instead of running plain SQL. It needs:
@@ -175,6 +183,29 @@ Migration `059_scheduled_digest.sql` schedules a `teacher-email-digest` cron job
 The job only emails teachers who opted in via Settings → Email Digest (`digestEmailEnabled`); it's a no-op for everyone else.
 
 ---
+
+## Login providers
+
+The sign-in page shows one button per provider listed in the `auth_providers` row of
+`public.site_config` (a JSON array). The default is every supported provider:
+
+```sql
+SELECT value FROM public.site_config WHERE key = 'auth_providers';
+-- ["google", "azure_personal", "azure_ad", "email"]
+```
+
+To hide a provider, update the array in the SQL editor (Supabase Studio or `psql`). There is no
+admin screen for this yet:
+
+```sql
+UPDATE public.site_config SET value = '["google", "email"]' WHERE key = 'auth_providers';
+```
+
+Valid entries are `google`, `azure_personal`, `azure_ad` and `email`. A provider listed here must
+also be enabled under Authentication → Providers in Supabase, or its button signs in to nothing.
+Logged-out visitors can read only this one key (migration 088); the rest of `site_config` is
+readable by signed-in users only. If the row cannot be read, the page falls back to showing every
+provider.
 
 ## Log Rotation
 
@@ -207,9 +238,9 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 | Symptom                       | First steps                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------- |
-| SMTP / OTP email not arriving | Check `docker-compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env` |
-| Cannot log in after restore   | Run `docker-compose up -d db_migrate` to ensure migrations are applied; check `auth` logs     |
-| Storage uploads fail          | Check `docker-compose logs storage`; verify S3/local storage bucket config in `.env`          |
+| SMTP / OTP email not arriving | Check `docker compose logs auth` for SMTP errors; verify `SMTP_HOST/PORT/USER/PASS` in `.env` |
+| Cannot log in after restore   | Run `docker compose up -d db_migrate` to ensure migrations are applied; check `auth` logs     |
+| Storage uploads fail          | Check `docker compose logs storage`; verify S3/local storage bucket config in `.env`          |
 | pg_cron jobs not running      | See "Enabling pg_cron" above; confirm with `SELECT * FROM cron.job`                           |
 | High memory usage             | Check `docker stats`; add connection pooling if `db` has many idle connections                |
 | RLS errors in app             | Run `npm run db:reset` locally to reproduce; check for missing policies in latest migrations  |
@@ -221,7 +252,7 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 Roles live in `public.profiles.role` (`admin`, `teacher`, `student`). Inside the app, role changes are guarded by the `protect_role_changes()` trigger: only an admin can change another user's role, and the last admin cannot be demoted (Admin → Users and Onboarding both refuse it). Since migration `083_role_repair_last_admin.sql`, the same trigger lets an **operator** change any role: a direct database connection (Supabase Studio SQL editor, `psql`) or a request made with the service-role key.
 
-To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: `docker-compose exec db psql -U supabase_admin -d postgres`):
+To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: `docker compose exec db psql -U supabase_admin -d postgres`):
 
 ```sql
 -- Find the account
@@ -233,7 +264,7 @@ UPDATE public.profiles SET role = 'admin' WHERE lower(email) = lower('teacher@sc
 
 The user gets admin rights after reloading the app (or signing out and back in).
 
-**Deployments that have not applied migration 083 yet** still reject the update with "Only admins can change roles". Apply the migrations first (`docker-compose up -d db_migrate`, or `supabase db push`). If that is not possible, wrap the update in a transaction that disables the trigger for that one statement:
+**Deployments that have not applied migration 083 yet** still reject the update with "Only admins can change roles". Apply the migrations first (`docker compose up -d db_migrate`, or `supabase db push`). If that is not possible, wrap the update in a transaction that disables the trigger for that one statement:
 
 ```sql
 BEGIN;

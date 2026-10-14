@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -272,9 +272,11 @@ describe('TestResultsPage extended', () => {
         // cloze gap fills, matching pairs, ordering, categorize, hot-text, audio
         expect(screen.getAllByText(/quick/).length).toBeGreaterThan(0);
         expect(screen.getByText('one')).toBeInTheDocument();
-        // matching right-side labels (grade 'A' also exists on the page, so use the sides)
-        expect(screen.getByText('1')).toBeInTheDocument();
-        expect(screen.getByText('2')).toBeInTheDocument();
+        // matching right-side labels (grade 'A' also exists on the page, so use the sides). Scoped to
+        // the page body: the submitted attempt also puts a "1" badge on the topbar notification bell.
+        const body = within(container.querySelector('.page-content') as HTMLElement);
+        expect(body.getByText('1')).toBeInTheDocument();
+        expect(body.getByText('2')).toBeInTheDocument();
         expect(screen.getByText('1. First')).toBeInTheDocument();
         expect(screen.getByText('Dog')).toBeInTheDocument();
         expect(screen.getByText('Animals')).toBeInTheDocument();

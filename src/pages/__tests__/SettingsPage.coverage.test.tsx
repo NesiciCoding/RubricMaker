@@ -148,7 +148,8 @@ vi.mock('react-i18next', () => ({
         },
         i18n: { language: 'en', changeLanguage: mockChangeLanguage },
     }),
-    Trans: ({ i18nKey }: { i18nKey: string }) => React.createElement('span', null, i18nKey),
+    Trans: ({ i18nKey, children }: { i18nKey: string; children?: React.ReactNode }) =>
+        React.createElement(React.Fragment, null, React.createElement('span', null, i18nKey), children),
 }));
 
 let SettingsPageComp: React.ComponentType;
@@ -162,7 +163,7 @@ function findButtonByText(text: string): HTMLElement {
 }
 
 function goToAdminTab() {
-    fireEvent.click(screen.getByText('Administration'));
+    fireEvent.click(screen.getByText('settings.tab_administration'));
 }
 
 describe('SettingsPage coverage', () => {
@@ -219,9 +220,9 @@ describe('SettingsPage coverage', () => {
 
         it('returns to the General tab from Teaching', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             expect(screen.getByText('settings.grade_scales')).toBeInTheDocument();
-            fireEvent.click(screen.getByRole('tab', { name: 'General' }));
+            fireEvent.click(screen.getByRole('tab', { name: 'settings.tab_general' }));
             expect(screen.queryByText('settings.grade_scales')).not.toBeInTheDocument();
         });
 
@@ -318,7 +319,7 @@ describe('SettingsPage coverage', () => {
         it('changes the default grade scale and the matchup limit', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             fireEvent.change(screen.getByLabelText('settings.default_grade_scale'), { target: { value: 'gs2' } });
             expect(mockUpdateSettings).toHaveBeenCalledWith({ defaultGradeScaleId: 'gs2' });
@@ -330,7 +331,7 @@ describe('SettingsPage coverage', () => {
         it('toggles the notification and digest preferences when DB connected', () => {
             mockDbStatus.isConnected = true;
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const boxes = screen.getAllByRole('checkbox');
             expect(boxes.length).toBe(5);
@@ -348,7 +349,7 @@ describe('SettingsPage coverage', () => {
 
         it('updates the overdue reminder threshold', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.change(screen.getByLabelText('settings.overdue_threshold_label'), { target: { value: '10' } });
             expect(mockUpdateSettings).toHaveBeenCalledWith({ overdueReminderThreshold: 10 });
         });
@@ -357,7 +358,7 @@ describe('SettingsPage coverage', () => {
     describe('grade scale editing details', () => {
         it('renames a scale and edits range bounds and colors', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_edit'));
 
             const nameInput = screen.getAllByRole('textbox').find((i) => (i as HTMLInputElement).value === 'Letter')!;
@@ -389,7 +390,7 @@ describe('SettingsPage coverage', () => {
                 ],
             };
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_edit'));
 
             const table = screen.getByRole('table');
@@ -408,7 +409,7 @@ describe('SettingsPage coverage', () => {
                 ],
             };
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_edit'));
 
             expect(screen.getByText('settings.scale_no_floor_warning')).toBeInTheDocument();
@@ -419,7 +420,7 @@ describe('SettingsPage coverage', () => {
         it('repairs an empty scale with a translated full-range label', () => {
             mockGradeScalesArr[0] = { ...mockGradeScale, ranges: [] };
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_edit'));
 
             fireEvent.click(screen.getByText('settings.action_fix_scale_floor'));
@@ -431,7 +432,7 @@ describe('SettingsPage coverage', () => {
         it('clears the editing state when deleting the scale being edited', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const editButtons = screen.getAllByText('settings.action_edit');
             fireEvent.click(editButtons[1]);
@@ -454,7 +455,7 @@ describe('SettingsPage coverage', () => {
     describe('mastery colors', () => {
         it('seeds three default bands when Customize Colors is clicked', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(screen.getByText('settings.action_customize_mastery_colors'));
             expect(mockUpdateSettings).toHaveBeenCalledWith({
                 masteryColorBands: [
@@ -468,7 +469,7 @@ describe('SettingsPage coverage', () => {
         it('edits an existing band and resets to default colors', () => {
             mockSettings.masteryColorBands = [{ min: 0, max: 49, label: 'Needs work', color: '#ef4444' }];
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const table = screen.getByRole('table');
             const [minInput, maxInput] = within(table).getAllByRole('spinbutton');
@@ -502,7 +503,7 @@ describe('SettingsPage coverage', () => {
             mockTargetsArr.push(target({ id: 't1', voTrack: 'havo' }));
             mockTargetsArr.push(target({ id: 't2' }));
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             expect(screen.getByText('HAVO')).toBeInTheDocument();
             expect(screen.getByText('—')).toBeInTheDocument();
@@ -553,7 +554,7 @@ describe('SettingsPage coverage', () => {
             );
             mockSettings.styleTemplateId = 'st1';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const card = templateCard();
             expect(within(card).getByText('Fancy')).toBeInTheDocument();
@@ -585,7 +586,7 @@ describe('SettingsPage coverage', () => {
             mockExportTemplatesArr.push(styleTemplate({ id: 'st1', name: 'Fancy', headingFont: 'Arial' }));
             mockSettings.styleTemplateId = 'st1';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const card = templateCard();
             fireEvent.click(within(card).getByRole('button', { name: 'common.delete' }));
@@ -595,7 +596,7 @@ describe('SettingsPage coverage', () => {
 
         it('saves an uploaded template through the upload modal', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_upload_template'));
             fireEvent.click(findButtonByText('Mock Save Template'));
             expect(mockAddExportTemplate).toHaveBeenCalledWith(
@@ -661,7 +662,7 @@ describe('SettingsPage coverage', () => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
-            fireEvent.click(screen.getByText('Cancel'));
+            fireEvent.click(screen.getByText('common.cancel'));
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
 
@@ -725,21 +726,21 @@ describe('SettingsPage coverage', () => {
         it('shows the infinite badge when the matchup limit is not positive', () => {
             mockSettings.comparativeMatchupLimit = -5;
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             expect(screen.getByText('settings.comparisons_limit_infinite')).toBeInTheDocument();
         });
 
         it('coerces invalid matchup limit input to 0', () => {
             mockSettings.comparativeMatchupLimit = 5;
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.change(screen.getByLabelText(/comparisons_limit/), { target: { value: 'abc' } });
             expect(mockUpdateSettings).toHaveBeenCalledWith({ comparativeMatchupLimit: 0 });
         });
 
         it('coerces invalid overdue threshold input', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.change(screen.getByLabelText('settings.overdue_threshold_label'), { target: { value: 'abc' } });
             expect(mockUpdateSettings).toHaveBeenCalledWith({ overdueReminderThreshold: 7 });
             fireEvent.change(screen.getByLabelText('settings.overdue_threshold_label'), { target: { value: '-5' } });
@@ -749,7 +750,7 @@ describe('SettingsPage coverage', () => {
         it('shows a translated scale name when a translation exists', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             expect(screen.getByText('Vertaling')).toBeInTheDocument();
         });
 
@@ -769,7 +770,7 @@ describe('SettingsPage coverage', () => {
                 ],
             });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const editButtons = screen.getAllByText('settings.action_edit');
             fireEvent.click(editButtons[1]);
 
@@ -813,7 +814,7 @@ describe('SettingsPage coverage', () => {
         it('renders a table template without a header color', () => {
             mockExportTemplatesArr.push(tableTemplate({ id: 'tb1', name: 'NoHeaderColor', headerColor: undefined }));
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const card = templateCard();
             expect(within(card).getByText('NoHeaderColor')).toBeInTheDocument();
         });
@@ -821,7 +822,7 @@ describe('SettingsPage coverage', () => {
         it('sets a style default when none is active', () => {
             mockExportTemplatesArr.push(styleTemplate({ id: 'st2', name: 'Fancy', headingFont: 'Arial' }));
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const card = templateCard();
             fireEvent.click(within(card).getAllByText('settings.action_set_default')[0]);
             expect(mockUpdateSettings).toHaveBeenCalledWith({ styleTemplateId: 'st2' });
@@ -831,7 +832,7 @@ describe('SettingsPage coverage', () => {
             mockExportTemplatesArr.push(tableTemplate({ id: 'tb1', name: 'Headers' }));
             mockSettings.exportTemplateId = 'tb1';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const card = templateCard();
             fireEvent.click(within(card).getByText('settings.label_default'));
             expect(mockUpdateSettings).toHaveBeenCalledWith({ exportTemplateId: undefined });
@@ -844,7 +845,7 @@ describe('SettingsPage coverage', () => {
             );
             mockSettings.styleTemplateId = 'st1';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const card = templateCard();
             const deleteBtn = within(card)
                 .getAllByRole('button', { name: 'common.delete' })
@@ -858,7 +859,7 @@ describe('SettingsPage coverage', () => {
             mockExportTemplatesArr.push(tableTemplate({ id: 'tb1', name: 'Headers' }));
             mockSettings.exportTemplateId = 'tb1';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             const card = templateCard();
             fireEvent.click(within(card).getByRole('button', { name: 'common.delete' }));
             expect(mockDeleteExportTemplate).toHaveBeenCalledWith('tb1');
@@ -870,7 +871,7 @@ describe('SettingsPage coverage', () => {
         it('closes the delete-scale dialog via its Close button and Escape', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[1]);
             const dialog = screen.getByRole('dialog');
             fireEvent.click(within(dialog).getByRole('button', { name: 'common.close' }));
@@ -892,7 +893,7 @@ describe('SettingsPage coverage', () => {
             };
             mockTargetsArr.push(target);
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[0]);
             const dialog = screen.getByRole('dialog');
             fireEvent.click(within(dialog).getByRole('button', { name: 'common.close' }));

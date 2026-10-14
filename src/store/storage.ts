@@ -1863,6 +1863,36 @@ export function removePendingWrites(ids: string[]): void {
     }
 }
 
+function pendingOpId(op: Pick<PendingWrite, 'payload' | 'entityId'>): string | undefined {
+    return op.entityId ?? (op.payload as { id?: string } | null)?.id;
+}
+
+/**
+ * Ids of `entity` rows whose queued operation is an upsert — the cloud has never acknowledged that
+ * row, so its id is one a local save minted rather than one the cloud already hands out.
+ */
+export function unconfirmedWriteIds(entity: string): Set<string> {
+    const ids = new Set<string>();
+    for (const op of loadPendingQueue()) {
+        if (op.entity !== entity || op.action !== 'upsert') continue;
+        const id = pendingOpId(op);
+        if (id) ids.add(id);
+    }
+    return ids;
+}
+
+/**
+ * Turn a queued upsert for `entity:id` into the delete a reconcile intends, so replaying the queue
+ * cannot resurrect the row that reconcile folded away. No-op when nothing is queued for the id.
+ */
+export function retargetPendingUpsertToDelete(entity: string, id: string): void {
+    const queued = loadPendingQueue().some(
+        (op) => op.entity === entity && op.action === 'upsert' && pendingOpId(op) === id
+    );
+    if (!queued) return;
+    addToPendingQueue({ entity, action: 'delete', payload: null, entityId: id });
+}
+
 // ─── User templates ────────────────────────────────────────────────────────────
 
 export function loadUserTemplates(): UserTemplate[] {

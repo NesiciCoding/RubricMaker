@@ -265,13 +265,13 @@ describe('RubricList', () => {
         try {
             renderPage();
             const importCode = (gradeScaleId: string) => {
-                fireEvent.click(screen.getByText('Import from code'));
+                fireEvent.click(screen.getByText('rubricList.code_import_button'));
                 fireEvent.change(screen.getByPlaceholderText('tooltips.paste_share_code'), {
                     target: {
                         value: `\n  ${encodeRubricShareCode({ ...mockRubric, gradeScaleId, scoringMode: 'total-points', totalMaxPoints: 30 })}\n`,
                     },
                 });
-                fireEvent.click(screen.getByText('Import rubric'));
+                fireEvent.click(screen.getByText('rubricList.code_import_submit'));
             };
             importCode('gs-here');
             expect(mockAddRubric).toHaveBeenLastCalledWith(
@@ -453,7 +453,7 @@ describe('RubricList', () => {
 
     it('opens the code import modal and closes it', () => {
         renderPage();
-        fireEvent.click(screen.getByText('Import from code'));
+        fireEvent.click(screen.getByText('rubricList.code_import_button'));
         expect(screen.getByPlaceholderText('tooltips.paste_share_code')).toBeInTheDocument();
         // Close via aria-label — the code import close button is the only one rendered here.
         fireEvent.click(screen.getByLabelText('common.close'));

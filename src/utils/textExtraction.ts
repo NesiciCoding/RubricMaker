@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import type { Attachment } from '../types';
 import { type PSM } from 'tesseract.js';
 import { resolveOcrLanguages } from './ocrLanguage';
+import { OcrUnavailableError } from './ocrErrors';
 import { Oem, type CaptureHint, psmForCaptureHint, buildUserWords, buildUserPatterns } from './ocrConfig';
 
 export class UnsupportedFormatError extends Error {
@@ -147,9 +148,20 @@ function collectWords(data: RecognizeData): OcrWord[] {
  */
 export async function recognizeImage(dataUrl: string, opts: RecognizeImageOptions = {}): Promise<OcrResult> {
     const langs = resolveOcrLanguages(opts.langs);
-    const tesseract = await import('tesseract.js');
-    const psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
-    const worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
+    // The import stays lazy so tesseract.js' WASM payload never reaches routes that don't OCR, but
+    // it belongs inside this try: a rejected import (offline first use) is the same engine-load
+    // failure callers already map to the translated "engine unavailable" guidance.
+    type TesseractModule = typeof import('tesseract.js');
+    let tesseract: TesseractModule;
+    let psm: PSM;
+    let worker: Awaited<ReturnType<TesseractModule['createWorker']>>;
+    try {
+        tesseract = await import('tesseract.js');
+        psm = opts.psm ?? tesseract.PSM[psmForCaptureHint(opts.captureHint)];
+        worker = await tesseract.createWorker(langs, Oem.LSTM_ONLY);
+    } catch (err) {
+        throw new OcrUnavailableError(err);
+    }
     try {
         // Dictionary seeding needs Tesseract's Init()-time config, so it can only take effect
         // via reinitialize() after the worker's first load — setParameters silently ignores

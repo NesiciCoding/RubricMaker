@@ -200,7 +200,7 @@ describe('SettingsPage extended', () => {
             fireEvent.click(findButtonByText('settings.role_admin_label'));
             const input = screen.getByLabelText('settings.admin_password_label');
             fireEvent.change(input, { target: { value: '1234' } });
-            fireEvent.click(findButtonByText('Confirm'));
+            fireEvent.click(findButtonByText('common.confirm'));
 
             await waitFor(() => expect(mockVerifyPin).toHaveBeenCalledWith('1234', 'rm-pin-v2:salt:hash'));
             await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ userRole: 'admin' }));
@@ -218,9 +218,9 @@ describe('SettingsPage extended', () => {
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
             fireEvent.change(screen.getByLabelText('settings.admin_password_label'), { target: { value: '0000' } });
-            fireEvent.click(findButtonByText('Confirm'));
+            fireEvent.click(findButtonByText('common.confirm'));
 
-            await waitFor(() => expect(screen.getByText('Incorrect password. Please try again.')).toBeInTheDocument());
+            await waitFor(() => expect(screen.getByText('settings.admin_pin_incorrect')).toBeInTheDocument());
             expect(mockUpdateSettings).not.toHaveBeenCalledWith({ userRole: 'admin' });
         });
 
@@ -232,7 +232,7 @@ describe('SettingsPage extended', () => {
 
             fireEvent.click(findButtonByText('settings.role_admin_label'));
             fireEvent.change(screen.getByLabelText('settings.admin_password_label'), { target: { value: '1234' } });
-            fireEvent.click(findButtonByText('Confirm'));
+            fireEvent.click(findButtonByText('common.confirm'));
 
             await waitFor(() => expect(mockUpdateSettings).toHaveBeenCalledWith({ adminPin: 'hashed:1234' }));
             expect(mockUpdateSettings).toHaveBeenCalledWith({ userRole: 'admin' });
@@ -253,7 +253,7 @@ describe('SettingsPage extended', () => {
 
     describe('admin PIN management', () => {
         function goToAdminTab() {
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
         }
 
         it('sets a new admin password', async () => {
@@ -340,7 +340,7 @@ describe('SettingsPage extended', () => {
     describe('backup export/import', () => {
         it('exports a backup file via saveAs', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_export_backup'));
 
             expect(mockExportFullBackup).toHaveBeenCalled();
@@ -356,7 +356,7 @@ describe('SettingsPage extended', () => {
         it('previews a valid backup and confirms the import', async () => {
             mockImportBackup.mockResolvedValue(true);
             renderPage();
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             await importBackupFile(
                 '{"rubrics":[{"id":"r1"}],"students":[{"id":"s1"}],"classes":[],"studentRubrics":[]}'
             );
@@ -373,7 +373,7 @@ describe('SettingsPage extended', () => {
 
         it('lists the settings a restore changes and says the role in the backup is ignored (#633)', async () => {
             renderPage();
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             const theme = mockSettings.theme === 'dark' ? 'light' : 'dark';
             await importBackupFile(JSON.stringify({ settings: { ...mockSettings, theme, userRole: 'student' } }));
 
@@ -387,7 +387,7 @@ describe('SettingsPage extended', () => {
 
         it('says no settings change when the backup has none', async () => {
             renderPage();
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             await importBackupFile('{"rubrics":[]}');
 
             const dialog = await screen.findByRole('dialog');
@@ -397,7 +397,7 @@ describe('SettingsPage extended', () => {
 
         it('shows an error toast for invalid or non-object backup files', async () => {
             renderPage();
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             await importBackupFile('not json');
             await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('toast.import_error', 'error'));
 
@@ -408,7 +408,7 @@ describe('SettingsPage extended', () => {
         it('shows an error toast when the import itself fails', async () => {
             mockImportBackup.mockResolvedValue(false);
             renderPage();
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             await importBackupFile('{"rubrics":[]}');
 
             const dialog = await screen.findByRole('dialog');
@@ -434,7 +434,7 @@ describe('SettingsPage extended', () => {
     describe('grade scale management', () => {
         it('edits range fields and adds/removes ranges', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(findButtonByText('settings.action_edit'));
 
             const labelInput = screen.getAllByDisplayValue('A')[0] as HTMLInputElement;
@@ -444,13 +444,13 @@ describe('SettingsPage extended', () => {
             expect(labels(0)).toEqual(['Excellent']);
 
             fireEvent.click(findButtonByText('settings.action_add_range'));
-            expect(labels(1)).toEqual(['Excellent', 'New']);
+            expect(labels(1)).toEqual(['Excellent', 'settings.grade_range_new']);
 
             // The ranges table contains a per-row delete button; removing the first
             // range leaves only the newly added one.
             const table = screen.getByRole('table');
             fireEvent.click(within(table).getByRole('button', { name: 'common.delete' }));
-            expect(labels(2)).toEqual(['New']);
+            expect(labels(2)).toEqual(['settings.grade_range_new']);
 
             fireEvent.click(findButtonByText('settings.action_collapse'));
             expect(screen.queryByText('settings.label_min_pct')).not.toBeInTheDocument();
@@ -459,7 +459,7 @@ describe('SettingsPage extended', () => {
         it('deletes a non-default grade scale after confirmation', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
 
             const deleteButtons = screen.getAllByRole('button', { name: 'common.delete' });
             fireEvent.click(deleteButtons[1]);
@@ -471,7 +471,7 @@ describe('SettingsPage extended', () => {
 
         it('blocks deleting the default grade scale with a toast', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             fireEvent.click(screen.getAllByRole('button', { name: 'common.delete' })[0]);
 
             expect(mockDeleteGradeScale).not.toHaveBeenCalled();
@@ -480,7 +480,7 @@ describe('SettingsPage extended', () => {
 
         it('falls back to the scale name when no preset translation exists', () => {
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             expect(screen.getByRole('option', { name: 'Letter' })).toBeInTheDocument();
         });
     });
@@ -490,25 +490,25 @@ describe('SettingsPage extended', () => {
             mockSettings.userRole = 'student';
             renderPage();
 
-            expect(screen.queryByText('Teaching')).not.toBeInTheDocument();
-            const adminTab = screen.getByRole('tab', { name: 'Administration (admin access required)' });
+            expect(screen.queryByText('settings.tab_teaching')).not.toBeInTheDocument();
+            const adminTab = screen.getByRole('tab', { name: 'settings.tab_administration_locked' });
             fireEvent.click(adminTab);
             // The downgrade effect immediately resets non-general tabs for non-teacher roles.
-            expect(screen.getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+            expect(screen.getByRole('tab', { name: 'settings.tab_general' })).toHaveAttribute('aria-selected', 'true');
         });
 
         it('resets to the General tab when the role downgrades while on Teaching', () => {
             mockSettings.userRole = 'teacher';
             renderPage();
-            fireEvent.click(screen.getByText('Teaching'));
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
             expect(screen.getByText('settings.grade_scales')).toBeInTheDocument();
 
             // Simulate the role changing from outside (e.g. a sync applying a stored role):
             // the next state change re-renders and the guard effect snaps back to General.
             mockSettings.userRole = 'student';
-            fireEvent.click(screen.getByText('Administration'));
+            fireEvent.click(screen.getByText('settings.tab_administration'));
             expect(screen.queryByText('settings.grade_scales')).not.toBeInTheDocument();
-            expect(screen.getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+            expect(screen.getByRole('tab', { name: 'settings.tab_general' })).toHaveAttribute('aria-selected', 'true');
         });
 
         it('switches role without a PIN prompt when no admin PIN is set', () => {

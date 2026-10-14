@@ -23,6 +23,7 @@ import type {
     RubricCriterion,
 } from '../../types';
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
+import { OcrUnavailableError } from '../../utils/ocrErrors';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
 import { profileText, buildPersistedVocabProfile, estimateLevelFromCounts } from '../../utils/cefrVocabularyProfiler';
@@ -201,11 +202,13 @@ export default function DocumentAnalysisPanel({
             setPhase('done');
         } catch (err) {
             const msg =
-                err instanceof UnsupportedFormatError
-                    ? err.message
-                    : err instanceof Error
+                err instanceof OcrUnavailableError
+                    ? t('scan.error_engine_unavailable')
+                    : err instanceof UnsupportedFormatError
                       ? err.message
-                      : 'An unexpected error occurred.';
+                      : err instanceof Error
+                        ? err.message
+                        : 'An unexpected error occurred.';
             setErrorMsg(msg);
             setPhase('error');
         }
@@ -218,6 +221,7 @@ export default function DocumentAnalysisPanel({
         rubricId,
         handleProgress,
         onSaveResult,
+        t,
     ]);
 
     function applySubItem(item: VocabularyItem, detected: DetectedItem) {

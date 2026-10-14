@@ -296,9 +296,19 @@ describe('RubricPreviewPage — valid rubric code', () => {
         expect(screen.getByText('A test rubric description')).toBeInTheDocument();
     });
 
+    it('renders in a main landmark with the rubric name as the tab title (#659)', async () => {
+        renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(mockRubric)}`, '/preview/:code');
+        expect(screen.getByRole('main')).toBeInTheDocument();
+        expect(screen.getByText('rubricPreview.badge')).toBeInTheDocument();
+        expect(document.title).toBe('Essay Rubric');
+        const { axe } = await import('jest-axe');
+        const results = await axe(document.body, { rules: { 'color-contrast': { enabled: false } } });
+        expect(results.violations).toEqual([]);
+    });
+
     it('falls back to the invalid-link view when no code is provided', () => {
         renderPage(<RubricPreviewPage />, '/preview', '/preview/:code?');
-        expect(screen.getByText('Invalid rubric link')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'rubricPreview.invalid_title' })).toBeInTheDocument();
     });
 
     it('applies default format colors when format fields are missing', () => {
@@ -363,7 +373,8 @@ describe('RubricPreviewPage — valid rubric code', () => {
         };
         renderPage(<RubricPreviewPage />, `/preview/${encodeRubricShareCode(sparseLevelsRubric)}`, '/preview/:code');
         expect(screen.getByText('Fixed')).toBeInTheDocument();
-        expect(screen.getByText('50pt')).toBeInTheDocument();
+        expect(screen.getByText('rubricPreview.points_single')).toBeInTheDocument();
+        expect(screen.getByText('rubricPreview.points_range')).toBeInTheDocument();
     });
 });
 
@@ -378,6 +389,18 @@ describe('StudentFeedbackPage — valid feedback code', () => {
         StudentFeedbackPage = mod.default;
         validCode = encodeFeedbackCode({ sr: mockSr, rubric: mockRubric, student: mockStudent, scale: mockGradeScale });
         vi.clearAllMocks();
+    });
+
+    it('marks the selected level for assistive tech, sits in a main landmark and names the tab (#659)', async () => {
+        renderPage(<StudentFeedbackPage />, `/feedback/${validCode}`, '/feedback/:code');
+        expect(screen.getByRole('main')).toBeInTheDocument();
+        const current = document.querySelectorAll('[aria-current="true"]');
+        expect(current).toHaveLength(1);
+        expect(current[0]).toHaveTextContent('sharedFeedback.your_level');
+        expect(document.title).toBe('Essay Rubric');
+        const { axe } = await import('jest-axe');
+        const results = await axe(document.body, { rules: { 'color-contrast': { enabled: false } } });
+        expect(results.violations).toEqual([]);
     });
 
     it('renders student name', () => {
@@ -421,7 +444,7 @@ describe('StudentFeedbackPage — valid feedback code', () => {
 
     it('falls back to the invalid-link view when no code is provided', () => {
         renderPage(<StudentFeedbackPage />, '/feedback', '/feedback/:code?');
-        expect(screen.getByText('Invalid or expired link')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'sharedFeedback.invalid_title' })).toBeInTheDocument();
     });
 
     it('applies default colors when format fields are missing and shows student email', () => {
@@ -472,8 +495,32 @@ describe('StudentFeedbackPage — valid feedback code', () => {
             scale: mockGradeScale,
         });
         renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
-        expect(screen.getByText(/Your teacher has released feedback/)).toBeInTheDocument();
-        expect(screen.getByText('Audio feedback:')).toBeInTheDocument();
+        expect(screen.getByText('sharedFeedback.feedback_only_notice')).toBeInTheDocument();
+        expect(screen.getByText('sharedFeedback.audio_feedback')).toBeInTheDocument();
+        expect(document.querySelector('audio')).toHaveAttribute('aria-label', 'sharedFeedback.audio_feedback_for');
+    });
+
+    it('drops an audio source from a hand-edited link that is not a recorded audio data URL', () => {
+        const code = encodeFeedbackCode({
+            sr: {
+                ...mockSr,
+                entries: [
+                    {
+                        criterionId: 'c1',
+                        levelId: 'l2',
+                        checkedSubItems: [],
+                        comment: '',
+                        audioDataUrl: 'javascript:alert(1)',
+                    },
+                ],
+            },
+            rubric: mockRubric,
+            student: mockStudent,
+            scale: mockGradeScale,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(document.querySelector('audio')).toBeNull();
+        expect(screen.queryByText('sharedFeedback.audio_feedback')).toBeNull();
     });
 });
 

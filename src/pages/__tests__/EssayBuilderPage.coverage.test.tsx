@@ -198,7 +198,7 @@ describe('EssayBuilderPage coverage', () => {
         routeParams = { teacherKey: 'missing' };
         cleanup();
         renderPage();
-        expect(screen.getByText('essays.no_essays')).toBeInTheDocument();
+        expect(screen.getByText('essays.not_found')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.back'));
         expect(mockNavigate).toHaveBeenCalledWith('/essays');
     });

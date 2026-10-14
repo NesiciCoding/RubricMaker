@@ -1,20 +1,22 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Student, StudentRubric } from '../../types';
+import type { Student, StudentRubric, StudentTest } from '../../types';
 import { useConfirm } from '../useConfirm';
-import { useOverdueStudents } from '../useOverdueStudents';
+import { usePendingGrading } from '../usePendingGrading';
 import { useDbStatus } from '../useDbStatus';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-// Mutable state consumed by the AppContext mock (useOverdueStudents)
+// Mutable state consumed by the AppContext mock (usePendingGrading)
 let mockStudents: Student[] = [];
 let mockStudentRubrics: StudentRubric[] = [];
+let mockStudentTests: StudentTest[] = [];
 let mockThreshold = 7;
 
 const makeAppContextMock = () => ({
     students: mockStudents,
     studentRubrics: mockStudentRubrics,
+    studentTests: mockStudentTests,
     settings: { overdueReminderThreshold: mockThreshold },
 });
 vi.mock('../../context/AppContext', () => ({
@@ -128,160 +130,42 @@ describe('useConfirm', () => {
     });
 });
 
-// ─── useOverdueStudents ───────────────────────────────────────────────────────
+// ─── usePendingGrading ────────────────────────────────────────────────────────
 
 function daysAgo(n: number): string {
     return new Date(Date.now() - n * 86_400_000).toISOString();
 }
 
-describe('useOverdueStudents', () => {
+describe('usePendingGrading', () => {
     beforeEach(() => {
         mockStudents = [];
         mockStudentRubrics = [];
+        mockStudentTests = [];
         mockThreshold = 7;
     });
 
-    it('returns an empty array when there are no student rubrics', () => {
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents).toEqual([]);
+    it('returns no groups when nothing has been handed in', () => {
+        mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
+        mockStudentRubrics = [{ id: 'sr1', rubricId: 'r1', studentId: 's1', gradedAt: daysAgo(30) } as StudentRubric];
+        const { result } = renderHook(() => usePendingGrading());
+        expect(result.current.pendingGroups).toEqual([]);
     });
 
-    it('returns the configured threshold', () => {
+    it('returns the configured threshold, defaulting to 7', () => {
         mockThreshold = 14;
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.threshold).toBe(14);
-    });
-
-    it('defaults threshold to 7 when setting is absent', () => {
+        expect(renderHook(() => usePendingGrading()).result.current.threshold).toBe(14);
         mockThreshold = undefined as unknown as number;
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.threshold).toBe(7);
+        expect(renderHook(() => usePendingGrading()).result.current.threshold).toBe(7);
     });
 
-    it('ignores rubrics without a gradedAt date', () => {
+    it('groups submitted tests that waited past the threshold', () => {
         mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-            } as unknown as StudentRubric,
+        mockStudentTests = [
+            { id: 'st1', testId: 't1', studentId: 's1', status: 'submitted', submittedAt: daysAgo(9) } as StudentTest,
         ];
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents).toEqual([]);
-    });
-
-    it('identifies an overdue student (graded more than threshold days ago)', () => {
-        mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(10),
-            } as StudentRubric,
-        ];
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents).toHaveLength(1);
-        expect(result.current.overdueStudents[0].studentName).toBe('Alice');
-        expect(result.current.overdueStudents[0].daysSince).toBeGreaterThanOrEqual(10);
-    });
-
-    it('does not flag a student graded within the threshold window', () => {
-        mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(3),
-            } as StudentRubric,
-        ];
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents).toHaveLength(0);
-    });
-
-    it('picks the most recent gradedAt when a student has multiple rubrics', () => {
-        mockStudents = [{ id: 's1', name: 'Alice', classId: 'c1' }];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(20),
-            } as StudentRubric,
-            {
-                id: 'sr2',
-                rubricId: 'r2',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(2),
-            } as StudentRubric,
-        ];
-        const { result } = renderHook(() => useOverdueStudents());
-        // Most recent is 2 days ago — within threshold
-        expect(result.current.overdueStudents).toHaveLength(0);
-    });
-
-    it('sorts results by daysSince descending', () => {
-        mockStudents = [
-            { id: 's1', name: 'Alice', classId: 'c1' },
-            { id: 's2', name: 'Bob', classId: 'c1' },
-        ];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 's1',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(8),
-            } as StudentRubric,
-            {
-                id: 'sr2',
-                rubricId: 'r2',
-                studentId: 's2',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(15),
-            } as StudentRubric,
-        ];
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents[0].studentName).toBe('Bob');
-        expect(result.current.overdueStudents[1].studentName).toBe('Alice');
-    });
-
-    it('skips a studentId that has no matching student record', () => {
-        mockStudents = [];
-        mockStudentRubrics = [
-            {
-                id: 'sr1',
-                rubricId: 'r1',
-                studentId: 'ghost',
-                entries: [],
-                overallComment: '',
-                isPeerReview: false,
-                gradedAt: daysAgo(20),
-            } as StudentRubric,
-        ];
-        const { result } = renderHook(() => useOverdueStudents());
-        expect(result.current.overdueStudents).toHaveLength(0);
+        const { result } = renderHook(() => usePendingGrading());
+        expect(result.current.pendingGroups).toHaveLength(1);
+        expect(result.current.pendingGroups[0]).toMatchObject({ key: 'test:t1', studentIds: ['s1'] });
     });
 });
 

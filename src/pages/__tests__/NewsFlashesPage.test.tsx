@@ -149,6 +149,32 @@ describe('NewsFlashesPage', () => {
         );
     });
 
+    it('adds https:// to a link typed without a scheme', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);
+        fireEvent.change(screen.getByLabelText('newsFlashes.field_title'), { target: { value: 'BBC' } });
+        const urlInput = screen.getByLabelText('newsFlashes.field_url');
+        fireEvent.change(urlInput, { target: { value: 'www.bbc.com/news' } });
+        fireEvent.blur(urlInput);
+        expect(urlInput).toHaveValue('https://www.bbc.com/news');
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddNewsFlash).toHaveBeenCalledWith(expect.objectContaining({ url: 'https://www.bbc.com/news' }));
+    });
+
+    it('blocks an invalid link with an inline error until it is edited', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);
+        fireEvent.change(screen.getByLabelText('newsFlashes.field_title'), { target: { value: 'Bad link' } });
+        const urlInput = screen.getByLabelText('newsFlashes.field_url');
+        fireEvent.change(urlInput, { target: { value: 'javascript:alert(1)' } });
+        fireEvent.click(screen.getByText('common.save'));
+        expect(mockAddNewsFlash).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent('newsFlashes.error_invalid_url');
+        expect(urlInput).toHaveAttribute('aria-invalid', 'true');
+        fireEvent.change(urlInput, { target: { value: 'example.com' } });
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
     it('keeps rich-text content when the editor emits HTML', () => {
         renderPage();
         fireEvent.click(screen.getAllByText('newsFlashes.new_flash')[0]);

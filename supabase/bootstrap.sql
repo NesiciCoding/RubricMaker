@@ -6292,6 +6292,215 @@ $$;
 REVOKE ALL ON FUNCTION public.get_pending_moderation_count(uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_pending_moderation_count(uuid) TO service_role;
 
+-- ── 086_overdue_grading_pending_work.sql ──────────────────────────────────────────────────────────────
+
+-- #665: "overdue grading" now means handed-in work that is still waiting for a grade past the
+-- teacher's threshold, counted once per test or essay. It used to count every student whose most
+-- recent grade was older than the threshold, which flagged nearly the whole roster and never
+-- included students who had handed something in but were never graded.
+--
+-- Mirrors findPendingGrading() (src/utils/pendingGrading.ts):
+--   * tests: student_tests rows with status 'submitted' (not yet graded), submittedAt past the
+--     threshold, one group per testId;
+--   * essays: offline essay submissions with no live, non-peer grade for that student and rubric
+--     given at or after the hand-in, one group per teacherKey;
+--   * archived students are left out.
+--   * practice-mode tests are left out: those attempts are self-checked and never become 'graded'.
+-- ISO-8601 timestamps compare correctly as text, as in the client.
+--
+-- Settings and submissions are client-written jsonb, so every cast goes through a guard (the
+-- threshold regex, public.try_timestamptz from 078): one malformed value must not abort the RPC
+-- and take the whole scheduled digest count down with it.
+
+CREATE OR REPLACE FUNCTION public.get_overdue_grading_count(target_owner uuid)
+RETURNS int
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH threshold AS (
+    SELECT now() - (COALESCE(
+      (SELECT CASE WHEN settings->>'overdueReminderThreshold' ~ '^\d{1,4}$'
+                   THEN (settings->>'overdueReminderThreshold')::int END
+         FROM public.user_settings WHERE user_id = target_owner),
+      7
+    ) || ' days')::interval AS cutoff
+  ),
+  active_students AS (
+    SELECT id
+    FROM public.students
+    WHERE owner_id = target_owner AND COALESCE(data->>'archivedAt', '') = ''
+  ),
+  waiting_tests AS (
+    SELECT DISTINCT st.data->>'testId' AS test_id
+    FROM public.student_tests st, threshold
+    WHERE st.owner_id = target_owner
+      AND st.data->>'status' = 'submitted'
+      AND public.try_timestamptz(st.data->>'submittedAt') <= threshold.cutoff
+      AND st.data->>'studentId' IN (SELECT id FROM active_students)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.tests t
+        WHERE t.id = st.data->>'testId'
+          AND t.owner_id = target_owner
+          AND t.data->>'mode' = 'practice'
+      )
+  ),
+  waiting_essays AS (
+    SELECT DISTINCT es.data->>'teacherKey' AS teacher_key
+    FROM public.essay_offline_submissions es, threshold
+    WHERE es.owner_id = target_owner
+      AND public.try_timestamptz(es.data->>'submittedAt') <= threshold.cutoff
+      AND es.data->>'assignmentStudentId' IN (SELECT id FROM active_students)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.student_rubrics sr
+        WHERE sr.grader_id = target_owner
+          AND sr.is_peer_review = false
+          AND sr.student_id = es.data->>'assignmentStudentId'
+          AND sr.rubric_id = es.data->>'assignmentRubricId'
+          AND COALESCE(sr.data->>'deletedAt', '') = ''
+          AND sr.data->>'gradedAt' >= es.data->>'submittedAt'
+      )
+  )
+  SELECT ((SELECT count(*) FROM waiting_tests) + (SELECT count(*) FROM waiting_essays))::int;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_overdue_grading_count(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_overdue_grading_count(uuid) TO service_role;
+
+-- ── 087_school_creator_manage.sql ──────────────────────────────────────────────────────────────
+
+-- #630: a school's creator can manage it. Before this only global admins could update or delete a
+-- school, so a non-admin teacher who created one could not change its retention, and the client's
+-- rollback after a failed membership/profile step (schools.delete()) silently matched 0 rows and
+-- left an orphan school. The creator can now also list the school's members.
+--
+-- The creator check reads public.schools from inside a school_members policy while schools_select
+-- reads school_members, so it goes through a SECURITY DEFINER helper to avoid policy recursion.
+-- Removing other members stays admin-only (or self): the profile reset that goes with it is
+-- governed by the profiles policies.
+
+CREATE OR REPLACE FUNCTION public.is_school_creator(p_school_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.schools
+    WHERE id = p_school_id AND created_by = (SELECT auth.uid())
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_school_creator(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_school_creator(uuid) TO authenticated;
+
+DROP POLICY IF EXISTS schools_update ON public.schools;
+CREATE POLICY schools_update ON public.schools FOR UPDATE TO authenticated
+  USING (public.get_my_role() = 'admin' OR created_by = (SELECT auth.uid()))
+  WITH CHECK (public.get_my_role() = 'admin' OR created_by = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS schools_delete ON public.schools;
+CREATE POLICY schools_delete ON public.schools FOR DELETE TO authenticated
+  USING (public.get_my_role() = 'admin' OR created_by = (SELECT auth.uid()));
+
+DROP POLICY IF EXISTS school_members_select ON public.school_members;
+CREATE POLICY school_members_select ON public.school_members FOR SELECT TO authenticated
+  USING (
+    profile_id = (SELECT auth.uid())
+    OR public.get_my_role() = 'admin'
+    OR public.is_school_creator(school_id)
+  );
+
+-- ── 088_site_config_anon_providers.sql ──────────────────────────────────────────────────────────────
+
+-- #626: the logged-out login page reads site_config.auth_providers to decide which sign-in
+-- buttons to show. 053 granted table privileges to authenticated/service_role only, so on
+-- deployments migrated as postgres (Supabase Cloud, `supabase db push`) the anon role got 42501
+-- and the page fell back to showing every provider.
+--
+-- anon now gets SELECT, but RLS limits it to the one public key: site_config values can hold API
+-- keys (see 081), so anonymous visitors must not read the rest of the table. Signed-in users keep
+-- reading every key as before.
+
+GRANT SELECT ON public.site_config TO anon;
+
+DROP POLICY IF EXISTS "site_config_read_all" ON public.site_config;
+DROP POLICY IF EXISTS site_config_read_authenticated ON public.site_config;
+CREATE POLICY site_config_read_authenticated ON public.site_config FOR SELECT TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS site_config_read_public ON public.site_config;
+CREATE POLICY site_config_read_public ON public.site_config FOR SELECT TO anon
+  USING (key = 'auth_providers');
+
+-- ── 089_client_logs_bounds.sql ──────────────────────────────────────────────────────────────
+
+-- #638: client_logs grew without bound — nothing purged it (unlike audit_logs, 038) and any
+-- signed-in client could insert rows of any size.
+--
+-- 1. Oversized rows are rejected. The limits are in bytes and set at 4x the character limits the
+--    client logger clamps to (src/services/logging/clientLogger.ts), so clamped multibyte text
+--    always fits. NOT VALID: existing rows are left alone; only new writes are checked.
+-- 2. Rows older than 30 days are deleted nightly by pg_cron (enabled in 038). The diagnostics are
+--    for reconstructing a pilot class, not for long-term storage.
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'client_logs_bounded') THEN
+    ALTER TABLE public.client_logs
+      ADD CONSTRAINT client_logs_bounded CHECK (
+        octet_length(session_id) <= 128
+        AND octet_length(category) <= 64
+        AND octet_length(name) <= 512
+        AND octet_length(level) <= 32
+        AND (role IS NULL OR octet_length(role) <= 128)
+        AND (school_id IS NULL OR octet_length(school_id) <= 256)
+        AND (path IS NULL OR octet_length(path) <= 2048)
+        AND (app_version IS NULL OR octet_length(app_version) <= 128)
+        AND (meta IS NULL OR pg_column_size(meta) <= 16384)
+      ) NOT VALID;
+  END IF;
+END;
+$$;
+
+SELECT cron.schedule(
+  'client-logs-cleanup',
+  '35 3 * * *',
+  $$ DELETE FROM public.client_logs WHERE created_at < now() - interval '30 days' $$
+);
+
+-- ── 090_client_logs_server_timestamp.sql ──────────────────────────────────────────────────────────────
+
+-- #638 review follow-up: the 30-day retention sweep in 089 deletes on `created_at`, but that
+-- timestamp was still client-suppliable. The column default only applies when the insert omits it,
+-- and the insert policy (035, tightened in 039) checks `user_id`, not `created_at`, so an
+-- authenticated client could store a row dated in the future that no sweep ever reaches.
+--
+-- The client never sends `created_at` — src/services/logging/clientLogger.ts inserts LogRow,
+-- which has no such field — so pinning it to the server clock on insert only constrains writes that
+-- were trying to opt out of retention. client_logs has no UPDATE or DELETE policy, so an insert
+-- trigger is the whole surface.
+
+create or replace function public.set_client_log_created_at()
+returns trigger language plpgsql as $$
+begin
+  new.created_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists client_logs_created_at_server on public.client_logs;
+create trigger client_logs_created_at_server
+  before insert on public.client_logs
+  for each row execute procedure public.set_client_log_created_at();
+
+-- Rows stored before the trigger existed are pulled back to the server's clock so the nightly
+-- sweep can reach them; only rows that were already evading retention change.
+update public.client_logs set created_at = now() where created_at > now();
+
 -- ── 20260617093844_delete_old_attachments_fn.sql ──────────────────────────────────────────────────────────────
 
 -- Returns attachments whose updated_at has passed the owner's school retention
@@ -6416,5 +6625,10 @@ insert into public._migrations (name) values
     ('083_role_repair_last_admin.sql'),
     ('084_erase_student.sql'),
     ('085_moderation_resolved.sql'),
+    ('086_overdue_grading_pending_work.sql'),
+    ('087_school_creator_manage.sql'),
+    ('088_site_config_anon_providers.sql'),
+    ('089_client_logs_bounds.sql'),
+    ('090_client_logs_server_timestamp.sql'),
     ('20260617093844_delete_old_attachments_fn.sql')
 on conflict (name) do nothing;

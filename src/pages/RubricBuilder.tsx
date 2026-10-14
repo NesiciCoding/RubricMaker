@@ -114,6 +114,28 @@ function newCriterion(weight: number): RubricCriterion {
 }
 
 export default function RubricBuilder() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    const found = useStoreSelector((s) => !id || s.rubrics.some((r) => r.id === id));
+    if (found) return <RubricBuilderEditor />;
+    return (
+        <>
+            <Topbar title={t('rubricBuilder.edit_rubric')} />
+            <div className="page-content fade-in">
+                <div className="empty-state">
+                    <FileText size={40} aria-hidden="true" />
+                    <h3>{t('rubricBuilder.not_found')}</h3>
+                    <button className="btn btn-secondary" onClick={() => navigate('/rubrics')}>
+                        <ArrowLeft size={16} /> {t('common.back')}
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function RubricBuilderEditor() {
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();
@@ -842,7 +864,7 @@ export default function RubricBuilder() {
                             </button>
                         </div>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
-                            <Settings size={15} /> FORMAT
+                            <Settings size={15} /> {t('rubricBuilder.action_format')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowPreview(!showPreview)}>
                             <Eye size={15} /> {t('rubricBuilder.action_preview')}
@@ -943,7 +965,7 @@ export default function RubricBuilder() {
                     className="rubric-builder-layout"
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: showFormat ? '1fr 300px' : '1fr',
+                        gridTemplateColumns: showFormat ? 'minmax(0, 1fr) 300px' : 'minmax(0, 1fr)',
                         gap: 24,
                         alignItems: 'start',
                     }}
@@ -954,8 +976,9 @@ export default function RubricBuilder() {
                             <h3 style={{ marginBottom: 16 }}>{t('rubricBuilder.section_rubric_details')}</h3>
                             <div data-tour="rb-meta" className="grid-2" style={{ gap: 12 }}>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.name_label')}</label>
+                                    <label htmlFor="rb-name">{t('rubricBuilder.name_label')}</label>
                                     <input
+                                        id="rb-name"
                                         type="text"
                                         value={name}
                                         onChange={(e) => {
@@ -973,8 +996,9 @@ export default function RubricBuilder() {
                                     )}
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.label_subject')}</label>
+                                    <label htmlFor="rb-subject">{t('rubricBuilder.label_subject')}</label>
                                     <input
+                                        id="rb-subject"
                                         type="text"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
@@ -983,8 +1007,9 @@ export default function RubricBuilder() {
                                 </div>
                             </div>
                             <div className="form-group" style={{ marginTop: 12 }}>
-                                <label>{t('rubricBuilder.label_description')}</label>
+                                <label htmlFor="rb-description">{t('rubricBuilder.label_description')}</label>
                                 <textarea
+                                    id="rb-description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder={t('rubricBuilder.placeholder_description')}
@@ -1062,10 +1087,10 @@ export default function RubricBuilder() {
                                             min={1}
                                             value={totalMaxPoints}
                                             onChange={(e) => setTotalMaxPoints(Number(e.target.value))}
-                                            placeholder="e.g. 100"
+                                            placeholder={t('rubricBuilder.total_points_placeholder')}
                                         />
                                         <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                            Grade = rawScore / {totalMaxPoints} × 100%
+                                            {t('rubricBuilder.total_points_formula', { max: totalMaxPoints })}
                                         </div>
                                     </div>
                                 )}
@@ -1264,6 +1289,7 @@ export default function RubricBuilder() {
                                     <div
                                         style={{
                                             display: 'flex',
+                                            flexWrap: 'wrap',
                                             alignItems: 'center',
                                             gap: 8,
                                             padding: '6px 12px',
@@ -1303,6 +1329,8 @@ export default function RubricBuilder() {
                             data-tour="rb-criteria-section"
                             style={{
                                 display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 8,
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 marginBottom: 14,
@@ -1310,7 +1338,7 @@ export default function RubricBuilder() {
                             }}
                         >
                             <h2>{t('rubricBuilder.label_criterion')}</h2>
-                            <div style={{ display: 'flex', gap: 8 }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {criteria.length > 1 &&
                                     (collapsedCriteria.size === criteria.length ? (
                                         <button
@@ -1462,8 +1490,9 @@ export default function RubricBuilder() {
                                     }[]
                                 ).map(({ label, key, min, max }) => (
                                     <div className="form-group" key={key}>
-                                        <label>{label}</label>
+                                        <label htmlFor={`rb-format-${key}`}>{label}</label>
                                         <input
+                                            id={`rb-format-${key}`}
                                             type="number"
                                             value={format[key]}
                                             min={min}
@@ -1485,10 +1514,11 @@ export default function RubricBuilder() {
                                     }[]
                                 ).map(({ label, key }) => (
                                     <div className="form-group" key={key}>
-                                        <label>{label}</label>
+                                        <label htmlFor={`rb-format-${key}`}>{label}</label>
                                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                             <input
                                                 type="color"
+                                                aria-label={label}
                                                 value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
                                                 style={{
@@ -1500,6 +1530,7 @@ export default function RubricBuilder() {
                                                 }}
                                             />
                                             <input
+                                                id={`rb-format-${key}`}
                                                 type="text"
                                                 value={format[key]}
                                                 onChange={(e) => setFormat((f) => ({ ...f, [key]: e.target.value }))}
@@ -1509,8 +1540,9 @@ export default function RubricBuilder() {
                                     </div>
                                 ))}
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_font_family')}</label>
+                                    <label htmlFor="rb-format-font">{t('rubricBuilder.format_font_family')}</label>
                                     <select
+                                        id="rb-format-font"
                                         value={format.fontFamily}
                                         onChange={(e) => setFormat((f) => ({ ...f, fontFamily: e.target.value }))}
                                     >
@@ -1527,8 +1559,9 @@ export default function RubricBuilder() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_level_order')}</label>
+                                    <label htmlFor="rb-format-order">{t('rubricBuilder.format_level_order')}</label>
                                     <select
+                                        id="rb-format-order"
                                         value={format.levelOrder}
                                         onChange={(e) =>
                                             setFormat((f) => ({
@@ -1544,8 +1577,11 @@ export default function RubricBuilder() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.format_orientation')}</label>
+                                    <label htmlFor="rb-format-orientation">
+                                        {t('rubricBuilder.format_orientation')}
+                                    </label>
                                     <select
+                                        id="rb-format-orientation"
                                         /* v8 ignore next -- orientation is required on RubricFormat */
                                         value={format.orientation || 'portrait'}
                                         onChange={(e) =>
@@ -1568,6 +1604,12 @@ export default function RubricBuilder() {
                                                     key={align}
                                                     className={`btn btn-sm ${format.headerTextAlign === align ? 'btn-secondary' : 'btn-ghost'}`}
                                                     onClick={() => setFormat((f) => ({ ...f, headerTextAlign: align }))}
+                                                    aria-label={t(
+                                                        align === 'center'
+                                                            ? 'editor.align_centre'
+                                                            : `editor.align_${align}`
+                                                    )}
+                                                    aria-pressed={format.headerTextAlign === align}
                                                     style={{ flex: 1, textTransform: 'capitalize' }}
                                                 >
                                                     {align === 'left' ? (
@@ -1683,7 +1725,7 @@ export default function RubricBuilder() {
                                                 color: 'var(--text-muted)',
                                             }}
                                         >
-                                            Standards:
+                                            {t('rubricBuilder.preview_standards_label')}
                                             <div
                                                 style={{
                                                     display: 'flex',
@@ -1698,14 +1740,14 @@ export default function RubricBuilder() {
                                                     onClick={() => setShowPreviewStdDesc(false)}
                                                     style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                                                 >
-                                                    Code
+                                                    {t('rubricBuilder.preview_standards_code')}
                                                 </button>
                                                 <button
                                                     className={`btn btn-sm ${showPreviewStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                                     onClick={() => setShowPreviewStdDesc(true)}
                                                     style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                                                 >
-                                                    Description
+                                                    {t('rubricBuilder.preview_standards_description')}
                                                 </button>
                                             </div>
                                         </div>
@@ -1838,15 +1880,18 @@ export default function RubricBuilder() {
                             <p style={{ marginBottom: 16 }}>{t('rubricBuilder.md_modal_desc')}</p>
                             <ul style={{ paddingLeft: 20, lineHeight: 2 }}>
                                 <li>
-                                    <code>**bold**</code> for <strong>bold text</strong>
+                                    <Trans i18nKey="rubricBuilder.md_bold_hint">
+                                        <code>**bold**</code> for <strong>bold text</strong>
+                                    </Trans>
                                 </li>
                                 <li>
-                                    <code>*italic*</code> for <em>italic text</em>
+                                    <Trans i18nKey="rubricBuilder.md_italic_hint">
+                                        <code>*italic*</code> for <em>italic text</em>
+                                    </Trans>
                                 </li>
                             </ul>
                             <p style={{ marginTop: 16, fontSize: '0.9em', color: 'var(--text-muted)' }}>
-                                Just type the asterisks around your words. The formatting will apply as soon as you
-                                click outside the text box!
+                                {t('rubricBuilder.md_modal_tip')}
                             </p>
                         </div>
                         <div className="modal-footer">
@@ -1956,8 +2001,10 @@ export default function RubricBuilder() {
                                                     )}
                                                 </div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                    {new Date(v.savedAt).toLocaleString()} ·{' '}
-                                                    {v.snapshot.criteria.length} {t('rubricBuilder.criteria_count')}
+                                                    {new Date(v.savedAt).toLocaleString(i18n.language)} ·{' '}
+                                                    {t('rubricBuilder.criteria_count', {
+                                                        count: v.snapshot.criteria.length,
+                                                    })}
                                                 </div>
                                             </div>
                                             <button
@@ -2084,7 +2131,7 @@ function RubricPreviewTable({
                             >
                                 {h.label}
                                 {format.showPoints
-                                    ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''}pts)`
+                                    ? ` (${h.minPoints}${h.minPoints !== h.maxPoints ? `–${h.maxPoints}` : ''} ${t('rubricBuilder.points_unit')})`
                                     : ''}
                             </th>
                         ))}
@@ -2165,7 +2212,7 @@ function RubricPreviewTable({
                                         >
                                             {l.subItems.map((si) => (
                                                 <li key={si.id}>
-                                                    {si.label} ({si.points}pts)
+                                                    {si.label} ({si.points} {t('rubricBuilder.points_unit')})
                                                     {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                         <div
                                                             style={{
@@ -2518,7 +2565,7 @@ function RubricWysiwygEditor({
                             color: 'var(--text-muted)',
                         }}
                     >
-                        Standards:
+                        {t('rubricBuilder.preview_standards_label')}
                         <div
                             style={{
                                 display: 'flex',
@@ -2533,14 +2580,14 @@ function RubricWysiwygEditor({
                                 onClick={() => setShowStdDesc(false)}
                                 style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                             >
-                                Code
+                                {t('rubricBuilder.preview_standards_code')}
                             </button>
                             <button
                                 className={`btn btn-sm ${showStdDesc ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                 onClick={() => setShowStdDesc(true)}
                                 style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                             >
-                                Description
+                                {t('rubricBuilder.preview_standards_description')}
                             </button>
                         </div>
                     </div>
@@ -2573,6 +2620,7 @@ function RubricWysiwygEditor({
                 onChange={(e) => setName(e.target.value)}
                 onInput={handleInput}
                 placeholder={t('rubricBuilder.placeholder_name')}
+                aria-label={t('rubricBuilder.name_label')}
                 style={{ ...textareaStyle, fontSize: '1.8em', fontWeight: 700, marginBottom: 16, width: '100%' }}
                 className="hover-border"
             />
@@ -2646,6 +2694,7 @@ function RubricWysiwygEditor({
                                         onChange={(e) => updateLevelColumn(i, { label: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_level_name')}
+                                        aria-label={t('rubricBuilder.placeholder_level_name')}
                                         style={{ ...textareaStyle, textAlign: 'center', fontWeight: 'bold' }}
                                         className="hover-border"
                                     />
@@ -2715,7 +2764,7 @@ function RubricWysiwygEditor({
                                                     />
                                                 </>
                                             )}
-                                            pts)
+                                            {t('rubricBuilder.points_unit')})
                                         </div>
                                     )}
                                 </div>
@@ -2804,6 +2853,7 @@ function RubricWysiwygEditor({
                                         onChange={(e) => updateCriterion(c.id, { title: e.target.value })}
                                         onInput={handleInput}
                                         placeholder={t('rubricBuilder.placeholder_criterion_name')}
+                                        aria-label={t('rubricBuilder.label_criterion')}
                                         style={{ ...textareaStyle, fontWeight: 600 }}
                                         className="hover-border"
                                     />
@@ -2815,6 +2865,7 @@ function RubricWysiwygEditor({
                                             onBlur={() => setEditingCell(null)}
                                             onInput={handleInput}
                                             placeholder={t('rubricBuilder.placeholder_criterion_description')}
+                                            aria-label={t('rubricBuilder.placeholder_criterion_description')}
                                             style={{
                                                 ...textareaStyle,
                                                 fontSize: '0.8em',
@@ -2884,6 +2935,7 @@ function RubricWysiwygEditor({
                                                     onBlur={() => setEditingCell(null)}
                                                     onInput={handleInput}
                                                     placeholder={t('rubricBuilder.placeholder_level_description')}
+                                                    aria-label={t('rubricBuilder.label_level_description')}
                                                     style={{ ...textareaStyle, minHeight: 60 }}
                                                     className="hover-border"
                                                 />
@@ -2906,7 +2958,7 @@ function RubricWysiwygEditor({
                                                 >
                                                     {l.subItems.map((si) => (
                                                         <li key={si.id}>
-                                                            {si.label} ({si.points}pts)
+                                                            {si.label} ({si.points} {t('rubricBuilder.points_unit')})
                                                             {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                                 <div
                                                                     style={{
@@ -2959,6 +3011,7 @@ function RubricWysiwygEditor({
                                         type="number"
                                         value={c.weight}
                                         onChange={(e) => updateCriterion(c.id, { weight: Number(e.target.value) })}
+                                        aria-label={t('rubricBuilder.label_weight')}
                                         style={{ ...inputStyle, width: 44, textAlign: 'center' }}
                                         className="hover-border"
                                     />
@@ -2984,6 +3037,7 @@ function RubricWysiwygEditor({
                                 <select
                                     className="btn btn-ghost btn-sm"
                                     style={{ padding: '0 8px', maxWidth: 160 }}
+                                    aria-label={t('rubricBuilder.action_insert_from_bank')}
                                     defaultValue=""
                                     onChange={(e) => {
                                         if (!e.target.value) return;

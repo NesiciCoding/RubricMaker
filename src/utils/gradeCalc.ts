@@ -198,6 +198,23 @@ export function hasFloorRange(ranges: GradeRange[]): boolean {
     return ranges.some((r) => r.min <= 0);
 }
 
+/**
+ * The percentages a range's label actually covers. Grades are assigned by lower bound only, so a
+ * range ends just below the next higher `min` (a 89.7% B on an 80–89 band), not at its own `max`.
+ */
+export function effectiveRangeBounds(
+    range: GradeRange,
+    scale: GradeScale
+): { min: number; max: number; maxExclusive: boolean } {
+    const nextMin = scale.ranges.reduce<number | undefined>(
+        (best, r) => (r.min > range.min && (best === undefined || r.min < best) ? r.min : best),
+        undefined
+    );
+    return nextMin === undefined
+        ? { min: range.min, max: range.max, maxExclusive: false }
+        : { min: range.min, max: nextMin, maxExclusive: true };
+}
+
 export function calcLetterGrade(percentage: number, scale: GradeScale): string {
     return matchRange(percentage, scale)?.label ?? '—';
 }
@@ -228,6 +245,9 @@ export function calcGradeSummary(
     scale: GradeScale | null,
     rubric?: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'>
 ): GradeSummary {
+    // A grade keeps the scale it was given with; only records saved before snapshots existed fall
+    // back to the caller's (live) scale.
+    const gradeScale = sr.gradeScaleSnapshot ?? scale;
     const raw = calcRawScore(sr.entries, criteria);
     const calculatedMax = calcMaxRawScore(criteria);
 
@@ -263,8 +283,8 @@ export function calcGradeSummary(
         percentage: pct,
         modifiedPercentage: modified,
         modifiedPoints,
-        letterGrade: scale ? calcLetterGrade(modified, scale) : '—',
-        gradeColor: scale ? calcGradeColor(modified, scale) : '#6b7280',
+        letterGrade: gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
+        gradeColor: gradeScale ? calcGradeColor(modified, gradeScale) : '#6b7280',
         gradedCount,
         totalCriteria: criteria.length,
     };

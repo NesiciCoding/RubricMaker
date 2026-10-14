@@ -10,11 +10,13 @@ import { useTranslation } from 'react-i18next';
 import { Loader, GraduationCap } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
+import { OwnPortalGuard } from './components/auth/OwnPortalGuard';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
 import { isLocalMode } from './store/storage';
+import { canOpenAdmin, resolveUserRole } from './utils/userRole';
 import { RemountOnParam } from './components/ui/RemountOnParam';
 
 // react-joyride only runs the onboarding tour inside the dashboard, never on the landing
@@ -123,9 +125,9 @@ export default function App() {
     // Student portal: explicit 'student' role OR email matches a student record for any
     // non-admin user (handles first-time sign-ins before the DB trigger can assign the role).
     // Local mode has no sign-in, so there the role setting alone decides (#623).
-    const autoLinkStudent =
-        linkedStudent !== null && settings.userRole !== 'admin' && !(isLocalMode() && settings.userRole === 'teacher');
-    if (settings.userRole === 'student' || autoLinkStudent) {
+    const role = resolveUserRole(settings.userRole);
+    const autoLinkStudent = linkedStudent !== null && role !== 'admin' && !(isLocalMode() && role === 'teacher');
+    if (role === 'student' || autoLinkStudent) {
         if (!linkedStudent) {
             return (
                 <div
@@ -171,9 +173,26 @@ export default function App() {
                 <PageViewLogger />
                 <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
-                        <Route path="/portal/:studentId" element={<StudentPortalPage />} />
-                        <Route path="/portal/:studentId/flashcards/:deckId" element={<StudentFlashcardStudyPage />} />
-                        <Route path="/privacy" element={<PrivacyPage />} />
+                        <Route
+                            path="/portal/:studentId"
+                            element={
+                                <OwnPortalGuard ownStudentId={linkedStudent.id}>
+                                    <StudentPortalPage />
+                                </OwnPortalGuard>
+                            }
+                        />
+                        <Route
+                            path="/portal/:studentId/flashcards/:deckId"
+                            element={
+                                <OwnPortalGuard ownStudentId={linkedStudent.id}>
+                                    <StudentFlashcardStudyPage />
+                                </OwnPortalGuard>
+                            }
+                        />
+                        <Route
+                            path="/privacy"
+                            element={<PrivacyPage studentPortalPath={`/portal/${linkedStudent.id}`} />}
+                        />
                         <Route path="*" element={<Navigate to={`/portal/${linkedStudent.id}`} replace />} />
                     </Routes>
                 </Suspense>
@@ -300,7 +319,11 @@ export default function App() {
                                     <Route
                                         path="/admin"
                                         element={
-                                            settings.userRole === 'admin' ? <AdminPage /> : <Navigate to="/" replace />
+                                            canOpenAdmin(settings.userRole, isLocalMode()) ? (
+                                                <AdminPage />
+                                            ) : (
+                                                <Navigate to="/" replace />
+                                            )
                                         }
                                     />
                                     <Route path="/docs" element={<DocsPage />} />

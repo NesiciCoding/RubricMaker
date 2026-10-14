@@ -9,6 +9,8 @@ import GlobalSearch from '../Search/GlobalSearch';
 interface TopbarProps {
     title: string;
     actions?: ReactNode;
+    /** Show the active-class selector. Only pages that scope their content by settings.activeClassId pass this (#661). */
+    classSelector?: boolean;
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -18,7 +20,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
     return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable;
 }
 
-export default function Topbar({ title, actions }: TopbarProps) {
+export default function Topbar({ title, actions, classSelector = false }: TopbarProps) {
     const { classes = [] } = useClasses();
 
     const { settings, updateSettings } = useSettings();
@@ -58,8 +60,9 @@ export default function Topbar({ title, actions }: TopbarProps) {
                 <Menu size={20} aria-hidden="true" />
             </button>
             <span className="topbar-title">{title}</span>
-            {classes.length > 0 && (
+            {classSelector && classes.length > 0 && (
                 <select
+                    className="topbar-class-select"
                     aria-label={t('search.active_class_label')}
                     value={settings.activeClassId ?? ''}
                     onChange={(e) => updateSettings({ activeClassId: e.target.value || undefined })}
@@ -73,8 +76,8 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     ))}
                 </select>
             )}
-            <div className="topbar-actions">
-                {actions}
+            {actions && <div className="topbar-actions">{actions}</div>}
+            <div className="topbar-global">
                 <button
                     ref={searchBtnRef}
                     className="btn btn-ghost btn-icon"
@@ -92,6 +95,7 @@ export default function Topbar({ title, actions }: TopbarProps) {
                     className="btn btn-ghost btn-icon"
                     onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
                     title={t('common.toggle_theme')}
+                    aria-label={t('common.toggle_theme')}
                 >
                     {settings.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                 </button>

@@ -37,7 +37,7 @@ All tables have RLS enabled. The pattern is:
 
 - Users can only access rows they own (matched by `auth.uid() = user_id`).
 - Public/shared data uses specific policies defined per table.
-- The `site_config` table has its own access rules (see `012_site_config.sql`).
+- The `site_config` table has its own access rules (see `012_site_config.sql`): signed-in users read every key, logged-out visitors only `auth_providers` (`088_site_config_anon_providers.sql`) because other values can hold API keys. Provider configuration is documented in `docs/SELF_HOSTING_OPS.md` → Login providers.
 
 When adding a table, always:
 
@@ -68,6 +68,10 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 
 - `audit_logs` (038) holds client entries (`logAuditEvent`, fire-and-forget: exports, grade saves) and server entries. Sensitive changes are written by AFTER triggers (081) through `write_audit_entry()`, in the same transaction as the change and only when a row really changed: role and school changes on `profiles`, `school_members` add/remove, `schools` create/update/delete, `rubric_shares` and `class_members` grants, `sharedWithSchool` toggles on `rubrics`/`comment_bank`, and `site_config` changes (key only, never the value). Don't add a client-side `logAuditEvent` for these. `erase_my_data()` (080) and the `set-student-password` edge function write their own entries.
 
+## Client diagnostics log
+
+- `client_logs` (035, 072) holds the stress-test diagnostics the client writes when built with `VITE_STRESS_TEST_LOGGING=true`. `089_client_logs_bounds.sql` adds a `NOT VALID` size check (`client_logs_bounded`, byte limits 4x the character limits `boundLogRow` in `src/services/logging/clientLogger.ts` clamps to — keep the two in step) and the nightly `client-logs-cleanup` pg_cron job that deletes rows older than 30 days.
+
 ## Retention job
 
 - `anonymize_overdue_students()` runs nightly at 02:00 via pg_cron (scheduled in 038, rewritten in 078). It anonymizes students whose latest `student_rubrics.gradedAt` (any grader) is older than their teacher's school `retention_years`; a teacher's school comes from `profiles.school_id` or `school_members`. Students with a grade whose `gradedAt` cannot be parsed are skipped rather than anonymized. Each run writes one `audit_logs` row (`action = 'retention_anonymize'`, with `anonymized`/`failed`/`skipped_unreadable_date` counts). `e2e/specs/49-retention-anonymization.spec.ts` and `src/__tests__/retentionAnonymization.test.ts` guard it — keep them passing when touching `students`/`student_rubrics` columns.
@@ -75,7 +79,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 ## Storage buckets
 
 - `attachments` — file attachments for grading (DOCX, PDF, images), `003_storage_buckets.sql`
-- `export-templates` — mail-merge DOCX templates, `003_storage_buckets.sql`
+- `export-templates` — uploaded DOCX export templates (rubric table / style), `003_storage_buckets.sql`
 - `essays` — essay submission files, `008_essay_tables.sql`
 - `recordings` — speaking-assessment audio recordings, `034_recordings_storage.sql`
 - `feedback-audio` — per-criterion voice-feedback audio, kept out of `student_rubrics.data` jsonb (perf, issue #275); the `ScoreEntry` holds only `audioStoragePath`. `069_feedback_audio_storage.sql`. Students get a long-TTL signed URL minted by the teacher at `/feedback/:code` share-link generation time (no anonymous bucket access).
@@ -124,7 +128,7 @@ Current functions:
 | `messages`                  | Student <-> teacher Q&A threads (migration 050), grouped client-side by `(student_id, context_type, context_id)`; portal-authenticated students only                                                                                                                                              |
 | `peer_reviews`              | Peer review entries on essay submissions                                                                                                                                                                                                                                                          |
 | `comment_bank`              | Shared/library comment bank entries                                                                                                                                                                                                                                                               |
-| `export_templates`          | Mail-merge DOCX template metadata                                                                                                                                                                                                                                                                 |
+| `export_templates`          | Uploaded DOCX export template metadata                                                                                                                                                                                                                                                            |
 | `favorite_standards`        | User-starred Common Standards (CCSS/NGSS) entries                                                                                                                                                                                                                                                 |
 | `self_assessments`          | Student CEFR self-assessment records                                                                                                                                                                                                                                                              |
 | `speaking_sessions`         | Speaking assessment session records                                                                                                                                                                                                                                                               |

@@ -28,6 +28,7 @@ import { getStudentsTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
+import { useActiveClassCohorts } from '../hooks/useActiveClassCohorts';
 import { useToast } from '../hooks/useToast';
 import Papa from 'papaparse';
 import { CSV_UNPARSE_OPTIONS } from '../utils/csvOptions';
@@ -324,20 +325,12 @@ export default function StudentsPage() {
     const dbStatus = useDbStatus();
     const { showToast } = useToast();
 
-    // Cohort-chip selection: an empty selection means "All classes" (combined roster).
-    // Seeded from the remembered single active class, if any.
-    const initialCohorts =
-        settings.activeClassId && classes.some((c) => c.id === settings.activeClassId) ? [settings.activeClassId] : [];
-    const [selectedCohorts, setSelectedCohorts] = useState<string[]>(initialCohorts);
+    const { selectedCohorts, setSelectedCohorts, toggleCohort, isAllCohorts, singleClassId } = useActiveClassCohorts({
+        activeClassId: settings.activeClassId,
+        classes,
+        setActiveClassId: (activeClassId) => updateSettings({ activeClassId }),
+    });
     const selectedSet = useMemo(() => new Set(selectedCohorts), [selectedCohorts]);
-    const isAllCohorts = selectedCohorts.length === 0;
-    // Contract for settings.activeClassId (read app-wide as "one class, or unset = all"):
-    // a concrete id ONLY when exactly one cohort is selected; otherwise undefined.
-    const singleClassId = selectedCohorts.length === 1 ? selectedCohorts[0] : undefined;
-
-    function toggleCohort(id: string) {
-        setSelectedCohorts((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-    }
 
     const sortedClasses = sortByDisplayOrder(classes);
     function handleClassDragEnd(result: DropResult) {
@@ -347,14 +340,6 @@ export default function StudentsPage() {
         }
     }
 
-    // Preserve the singular activeClassId contract: write a class only on single-select, else clear it.
-    // Skip while classes are still loading, so we don't clear the remembered class before the seed resolves.
-    React.useEffect(() => {
-        if (classes.length === 0) return;
-        if (singleClassId !== settings.activeClassId) {
-            updateSettings({ activeClassId: singleClassId });
-        }
-    }, [classes.length, singleClassId, settings.activeClassId, updateSettings]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editStudent, setEditStudent] = useState<null | { id: string; name: string; email: string }>(null);
     const [passwordSlips, setPasswordSlips] = useState<PasswordSlip[] | null>(null);
@@ -743,6 +728,7 @@ export default function StudentsPage() {
                 onStartRequest={() => setTourRun(true)}
             />
             <Topbar
+                classSelector
                 title={t('studentsPage.title')}
                 actions={
                     <>

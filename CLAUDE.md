@@ -11,7 +11,7 @@ Key domains:
 - **Analytics** — per-class and per-student charts, CEFR proficiency tracking
 - **CEFR / Language assessment** — proficiency levels, speaking sessions, self-assessment
 - **Essay writing** — TipTap rich-text editor, submission codes, peer review
-- **Export** — PDF, DOCX (with mail-merge templates), CSV
+- **Export** — PDF, DOCX (styled by uploaded table/style templates), CSV
 - **Document analysis** — OCR via Tesseract.js, DOCX parsing via Mammoth
 
 ## Commands
@@ -87,7 +87,7 @@ When a Supabase connection is live, `localStorage` is no longer a permanent dupl
 
 Do not reintroduce code that writes a full entity array to `localStorage` unconditionally — gate it through `isOffline()` (or the existing pending-queue mechanism) so a connected session doesn't keep a redundant local copy.
 
-Conflict resolution for concurrent edits from different devices lives in `src/utils/syncMerge.ts` (per-record conflicts resolve last-write-wins by `updatedAt`, with in-flight pending-queue edits protected from being clobbered by a stale hydrate) and `src/utils/syncDiff.ts` (diffs a collection before/after a merge). Do not hand-roll merge logic elsewhere.
+Conflict resolution for concurrent edits from different devices lives in `src/utils/syncMerge.ts` (per-record conflicts resolve last-write-wins by `updatedAt`, with in-flight pending-queue edits protected from being clobbered by a stale hydrate) and `src/utils/syncDiff.ts` (diffs a collection before/after a merge). `dedupeStudentRubrics` (also in `syncMerge.ts`) folds two live grades for the same student/rubric/round — e.g. one saved before the cloud grade loaded — into one; `applyHydrated` and the IndexedDB cache merge apply it, and the folded-away row is deleted remotely via the delta sync. Do not hand-roll merge logic elsewhere.
 
 `src/services/database/` (adapters, `StorageSync`, `@supabase/supabase-js` itself) is dynamically imported via `loadDb()`/`getDb()` in `src/services/database/lazyDb.ts` rather than imported at module scope everywhere — this keeps the Supabase client chunk (~450KB) out of routes/components that never need a DB connection (e.g. `LoginButtons`). Route-level pages that always need sync (`RubricList`, `AdminPage`, etc.) can import `services/database` directly since they're already code-split by React Router lazy-loading. Prefer `loadDb()`/`getDb()` for anything rendered outside a specific lazy-loaded route.
 
@@ -158,6 +158,7 @@ Write no comments unless the _why_ is non-obvious. Never describe what the code 
 - Do not mock `localStorage` globally; tests use the jsdom implementation.
 - Keep coverage above the thresholds: 65% lines/statements, 60% functions, 58% branches (`vite.config.ts`).
 - `src/locales/__tests__/` asserts every non-English locale has the same key set as `en.json` for at least the `cambridge` namespace — new locale keys that are only added to `en.json` will fail this test.
+- `src/locales/__tests__/usedKeys.test.ts` scans `src/` for literal `t('…')` / `i18nKey="…"` keys and fails when any of them is missing from one of the five locale files (plural `_one`/`_other` variants count). An inline English default in `t('key', 'Default')` does not exempt a key.
 - E2E specs (`e2e/specs/*.spec.ts`, Playwright) use a Page Object Model in `e2e/pages/` and shared fixtures/factories in `e2e/fixtures/`. Specs that require a live Supabase connection are excluded from the default `chromium`/`firefox` projects in `playwright.config.ts` and only run via `npm run e2e:supabase`.
 - `src/__tests__/playwrightProjects.test.ts` guards the Playwright wiring: every spec in `e2e/specs/` must be run by at least one project, and `npm run e2e:*` scripts may only reference projects that exist. Keep `playwright.config.ts` project lists and this test in sync when adding/renaming specs or projects.
 - **Flaky-spec quarantine**: a spec that flakes intermittently should be added to `e2e/quarantine.json` (`[{ "spec": "04-grading.spec.ts", "since": "2026-08-11", "reason": "…" }]`) rather than deleted — it is then excluded from every gating project (see `playwright.config.ts`) so it can't block CI, and the weekly `Quarantine Check` workflow re-tests it (3 clean runs, `--project=quarantine`) and opens a PR to unquarantine it once it's stable. Quarantine is only validated against the default browser projects; don't quarantine a spec that needs the Supabase stack unless it's debugged.
@@ -265,7 +266,7 @@ Non-exhaustive — pointers to the modules most likely to matter across files. F
 | `supabase/functions/_shared/*.ts`                                     | Scoring, placement routing, staircase/Elo, seeded shuffle — shared by client and edge functions       |
 | `src/utils/masteryProfileAggregator.ts` / `learningPathAggregator.ts` | Cross-domain grammar mastery and rule-based (no AI) learning-path recommendations                     |
 | `src/utils/globalSearch.ts`                                           | Token-aware (`type:`/`class:`/`year:`/`track:`) app-wide search                                       |
-| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and mail-merge DOCX, PDF)                                                      |
+| `src/utils/docxExport.ts` / `docxTemplateExport.ts` / `pdfExport.ts`  | Export generation (raw and template-styled DOCX, PDF)                                                 |
 | `src/utils/textExtraction.ts`                                         | OCR (Tesseract) + DOCX parsing (Mammoth)                                                              |
 | `src/utils/flashcardScheduler.ts`                                     | Thin `ts-fsrs` wrapper (FSRS spaced repetition)                                                       |
 | `src/services/standardsApi.ts`                                        | Common Standards Project API (CCSS, NGSS)                                                             |

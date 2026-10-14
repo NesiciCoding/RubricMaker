@@ -10,6 +10,7 @@ import type { EssayAssignment, EssayTemplate } from '../../types';
 import { useDbStatus } from '../../hooks/useDbStatus';
 import { loadSupabaseConfig } from '../../services/database';
 import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../../utils/dateInput';
+import { validateEssayConfig } from '../../utils/essayUtils';
 
 interface Props {
     rubricId: string;
@@ -132,6 +133,9 @@ export default function EssayAssignmentModal({
         ]
     );
 
+    const limitErrors = validateEssayConfig({ minWords, maxWords, timeLimitMinutes });
+    const limitsInvalid = Object.keys(limitErrors).length > 0;
+
     const essayUrl = buildShareUrl('essay', encodeEssayAssignment(buildAssignment(studentId)));
 
     const handleCopyLink = useCallback(() => {
@@ -166,11 +170,11 @@ export default function EssayAssignmentModal({
     // click left a window where a teacher could hand out a link before the row existed
     // — the student would then hit "Assignment not found" on submit.
     useEffect(() => {
-        if (embedDb && onSaveAssignment && !saved && !saving) {
+        if (embedDb && onSaveAssignment && !saved && !saving && !limitsInvalid) {
             void handleSaveToDb();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [embedDb]);
+    }, [embedDb, limitsInvalid]);
 
     const handleDownloadSEB = useCallback(() => {
         downloadSebConfig(essayUrl, `essay-${studentName}`);
@@ -302,11 +306,24 @@ export default function EssayAssignmentModal({
                         <input
                             id="ea-min-words"
                             type="number"
-                            min={0}
+                            min={1}
+                            step={1}
                             value={minWords}
                             onChange={(e) => setMinWords(e.target.value)}
                             placeholder={t('essay_assignment.number_placeholder')}
+                            aria-invalid={!!limitErrors.minWords || undefined}
+                            aria-describedby={limitErrors.minWords ? 'ea-min-words-error' : undefined}
                         />
+                        {limitErrors.minWords && (
+                            <div
+                                id="ea-min-words-error"
+                                role="alert"
+                                className="text-xs"
+                                style={{ color: 'var(--red)', marginTop: 4 }}
+                            >
+                                {t(limitErrors.minWords)}
+                            </div>
+                        )}
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                         <label htmlFor="ea-max-words">
@@ -318,11 +335,24 @@ export default function EssayAssignmentModal({
                         <input
                             id="ea-max-words"
                             type="number"
-                            min={0}
+                            min={1}
+                            step={1}
                             value={maxWords}
                             onChange={(e) => setMaxWords(e.target.value)}
                             placeholder={t('essay_assignment.number_placeholder')}
+                            aria-invalid={!!limitErrors.maxWords || undefined}
+                            aria-describedby={limitErrors.maxWords ? 'ea-max-words-error' : undefined}
                         />
+                        {limitErrors.maxWords && (
+                            <div
+                                id="ea-max-words-error"
+                                role="alert"
+                                className="text-xs"
+                                style={{ color: 'var(--red)', marginTop: 4 }}
+                            >
+                                {t(limitErrors.maxWords)}
+                            </div>
+                        )}
                     </div>
                     <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                         <label htmlFor="ea-time-limit">
@@ -335,10 +365,23 @@ export default function EssayAssignmentModal({
                             id="ea-time-limit"
                             type="number"
                             min={1}
+                            step={1}
                             value={timeLimitMinutes}
                             onChange={(e) => setTimeLimitMinutes(e.target.value)}
                             placeholder={t('essay_assignment.number_placeholder')}
+                            aria-invalid={!!limitErrors.timeLimitMinutes || undefined}
+                            aria-describedby={limitErrors.timeLimitMinutes ? 'ea-time-limit-error' : undefined}
                         />
+                        {limitErrors.timeLimitMinutes && (
+                            <div
+                                id="ea-time-limit-error"
+                                role="alert"
+                                className="text-xs"
+                                style={{ color: 'var(--red)', marginTop: 4 }}
+                            >
+                                {t(limitErrors.timeLimitMinutes)}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -445,7 +488,7 @@ export default function EssayAssignmentModal({
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={handleSaveToDb}
-                            disabled={saving || saved}
+                            disabled={saving || saved || limitsInvalid}
                         >
                             {saved ? (
                                 <>
@@ -482,7 +525,7 @@ export default function EssayAssignmentModal({
                         <input
                             id="ea-essay-link"
                             readOnly
-                            value={essayUrl}
+                            value={limitsInvalid ? '' : essayUrl}
                             style={{
                                 flex: 1,
                                 fontFamily: 'monospace',
@@ -490,7 +533,12 @@ export default function EssayAssignmentModal({
                                 color: 'var(--text-muted)',
                             }}
                         />
-                        <button className="btn btn-secondary btn-sm" onClick={handleCopyLink} style={{ flexShrink: 0 }}>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleCopyLink}
+                            disabled={limitsInvalid}
+                            style={{ flexShrink: 0 }}
+                        >
                             {copied ? <Check size={14} /> : <Copy size={14} />}
                             {copied ? t('essay_assignment.copied') : t('essay_assignment.copy')}
                         </button>
@@ -524,6 +572,7 @@ export default function EssayAssignmentModal({
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={handleSaveTemplate}
+                        disabled={limitsInvalid}
                         title={t('essay_assignment.save_template_title')}
                     >
                         {templateSaved ? (
@@ -538,19 +587,23 @@ export default function EssayAssignmentModal({
                     </button>
                 )}
                 {classStudents.length > 1 && (
-                    <button className="btn btn-secondary btn-sm" onClick={handlePrintSlips}>
+                    <button className="btn btn-secondary btn-sm" onClick={handlePrintSlips} disabled={limitsInvalid}>
                         {t('essay_assignment.print_slips', { count: classStudents.length })}
                     </button>
                 )}
-                <button className="btn btn-secondary btn-sm" onClick={handleDownloadSEB}>
+                <button className="btn btn-secondary btn-sm" onClick={handleDownloadSEB} disabled={limitsInvalid}>
                     <Download size={14} /> {t('essay_assignment.download_seb')}
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={handleCopyLink}>
+                <button className="btn btn-secondary btn-sm" onClick={handleCopyLink} disabled={limitsInvalid}>
                     {copied ? <Check size={14} /> : <Copy size={14} />}
                     {copied ? t('essay_assignment.link_copied') : t('essay_assignment.copy_link')}
                 </button>
                 {onAssignToStudents && (
-                    <button className="btn btn-primary btn-sm" onClick={handleAssignToStudents}>
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={handleAssignToStudents}
+                        disabled={limitsInvalid}
+                    >
                         {t('essays.assign_to_students')}
                     </button>
                 )}

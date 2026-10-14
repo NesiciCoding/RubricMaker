@@ -24,6 +24,8 @@ import {
     Trash2,
     LayoutGrid,
     Rows3,
+    SlidersHorizontal,
+    History,
 } from 'lucide-react';
 import PageTour from '../components/Tour/PageTour';
 import Topbar from '../components/Layout/Topbar';
@@ -37,6 +39,9 @@ import EssaySlipSheet from '../components/Essay/EssaySlipSheet';
 import HelpPopover from '../components/Tests/HelpPopover';
 import Modal from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
+import { diffRubricSettings, diffRubricVersions } from '../utils/rubricVersionDiff';
+import { remapEntriesToRubric, sameGradeScale } from '../utils/gradeSnapshot';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import GradingActionsMenu, { type GradingAction } from '../components/Grading/GradingActionsMenu';
 import GradingGrid from '../components/Grading/GradingGrid';
@@ -131,7 +136,18 @@ export default function GradeStudent() {
 
     const existingSR = studentRubrics.find((sr) => sr.rubricId === rubricId && sr.studentId === studentId);
     const liveRubric = rubrics.find((r) => r.id === rubricId);
-    const rubric = existingSR?.rubricSnapshot || liveRubric;
+    const snapshotRubric = existingSR?.rubricSnapshot;
+    // A graded record stays on the rubric version it was graded with until the teacher opts in to
+    // regrading it on the current version.
+    const [regradeOnLatest, setRegradeOnLatest] = useState(false);
+    const rubric = regradeOnLatest ? (liveRubric ?? snapshotRubric) : snapshotRubric || liveRubric;
+    const resolveScale = (r: typeof rubric) => {
+        const id = r?.gradeScaleId ?? settings.defaultGradeScaleId;
+        return id === 'none' ? null : (gradeScales.find((g) => g.id === id) ?? gradeScales[0]);
+    };
+    const liveScale = resolveScale(liveRubric ?? rubric);
+    const scale = regradeOnLatest ? liveScale : (existingSR?.gradeScaleSnapshot ?? resolveScale(rubric));
+    const scaleChanged = !!existingSR?.gradeScaleSnapshot && !sameGradeScale(existingSR.gradeScaleSnapshot, liveScale);
     const student = students.find((s) => s.id === studentId);
     const classStudents = useMemo(
         () => students.filter((s) => s.classId === student?.classId).map((s) => ({ id: s.id, name: s.name })),
@@ -176,8 +192,19 @@ export default function GradeStudent() {
         [saveEssayAssignment, addEssayAssignments, matchedEssayAssignmentForRubric]
     );
 
-    const scaleId = rubric?.gradeScaleId ?? settings.defaultGradeScaleId;
-    const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
+    const rubricChanges = useMemo(
+        () => (snapshotRubric && liveRubric ? diffRubricVersions(snapshotRubric, liveRubric) : []),
+        [snapshotRubric, liveRubric]
+    );
+    const rubricSettingChanges = useMemo(
+        () => (snapshotRubric && liveRubric ? diffRubricSettings(snapshotRubric, liveRubric) : []),
+        [snapshotRubric, liveRubric]
+    );
+    const hasNewerVersion =
+        !regradeOnLatest &&
+        !!liveRubric &&
+        (rubricChanges.length > 0 || rubricSettingChanges.length > 0 || scaleChanged);
+    const [showVersionDiff, setShowVersionDiff] = useState(false);
 
     const [sr, setSr] = useState(() => {
         if (existingSR) return existingSR;
@@ -199,6 +226,7 @@ export default function GradeStudent() {
         };
     });
 
+    const [showFooterOptions, setShowFooterOptions] = useState(false);
     const [feedbackOnly, setFeedbackOnly] = useState<boolean>(existingSR?.feedbackOnly ?? false);
     const [isAnchor, setIsAnchor] = useState<boolean>(existingSR?.isAnchor ?? false);
     const [showAnchorPanel, setShowAnchorPanel] = useState(false);
@@ -354,6 +382,7 @@ export default function GradeStudent() {
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
             gradedAt: new Date().toISOString(),
         });
         setSaved(true);
@@ -380,6 +409,7 @@ export default function GradeStudent() {
     }, [
         sr,
         rubric,
+        scale,
         nothingScored,
         confirmSaveNothingScored,
         saveStudentRubric,
@@ -413,6 +443,7 @@ export default function GradeStudent() {
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
             gradedAt: new Date().toISOString(),
         });
         setIsDirty(false);
@@ -422,6 +453,7 @@ export default function GradeStudent() {
     }, [
         sr,
         rubric,
+        scale,
         saveStudentRubric,
         nextStudent,
         navigate,
@@ -458,6 +490,7 @@ export default function GradeStudent() {
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
+            gradeScaleSnapshot: scale ? JSON.parse(JSON.stringify(scale)) : undefined,
             gradedAt: new Date().toISOString(),
         };
         saveStudentRubric(nhiSR);
@@ -471,6 +504,7 @@ export default function GradeStudent() {
     }, [
         sr,
         rubric,
+        scale,
         saveStudentRubric,
         nextStudent,
         navigate,
@@ -484,6 +518,33 @@ export default function GradeStudent() {
         cannedNhiComment,
         allowNavigation,
     ]);
+
+    const handleRegradeOnLatest = useCallback(async () => {
+        /* v8 ignore next -- the banner only renders with a saved record and a live rubric */
+        if (!sr || !liveRubric) return;
+        const ok = await confirm({
+            title: t('gradeStudent.regrade_latest_title'),
+            message: t('gradeStudent.regrade_latest_message'),
+            confirmLabel: t('gradeStudent.regrade_latest_action'),
+            cancelLabel: t('common.cancel'),
+        });
+        if (!ok) return;
+        const { entries, clearedCount, removedCount } = remapEntriesToRubric(sr.entries, liveRubric);
+        setSr({ ...sr, entries, gradeScaleSnapshot: liveScale ?? undefined });
+        setRegradeOnLatest(true);
+        setShowVersionDiff(false);
+        setIsDirty(true);
+        // Cleared levels need the teacher's attention first; otherwise note that feedback for
+        // criteria the new version dropped was kept rather than discarded.
+        showToast(
+            clearedCount > 0
+                ? t('gradeStudent.regrade_latest_done_cleared', { count: clearedCount })
+                : removedCount > 0
+                  ? t('gradeStudent.regrade_latest_done_removed', { count: removedCount })
+                  : t('gradeStudent.regrade_latest_done'),
+            clearedCount > 0 ? 'warning' : removedCount > 0 ? 'info' : 'success'
+        );
+    }, [sr, liveRubric, liveScale, confirm, t, showToast, setRegradeOnLatest, setShowVersionDiff]);
 
     const handleUndoNotHandedIn = useCallback(() => {
         /* v8 ignore next -- the banner only renders for a loaded not-handed-in record */
@@ -944,6 +1005,43 @@ export default function GradeStudent() {
                         <span style={{ flex: 1, minWidth: 200 }}>{t('gradeStudent.nhi_banner')}</span>
                         <button className="btn btn-secondary btn-sm" onClick={handleUndoNotHandedIn}>
                             {t('gradeStudent.nhi_undo')}
+                        </button>
+                    </div>
+                )}
+
+                {hasNewerVersion && (
+                    <div
+                        role="status"
+                        className="card no-print"
+                        style={{
+                            marginBottom: 16,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            flexWrap: 'wrap',
+                            fontSize: '0.85rem',
+                            borderColor: 'var(--accent)',
+                            background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                        }}
+                    >
+                        <History size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} aria-hidden="true" />
+                        <span style={{ flex: 1, minWidth: 200 }}>
+                            {rubricChanges.length > 0
+                                ? t('gradeStudent.version_banner_rubric', { count: rubricChanges.length })
+                                : scaleChanged
+                                  ? t('gradeStudent.version_banner_scale')
+                                  : t('gradeStudent.version_banner_scoring')}
+                            {rubricChanges.length > 0 &&
+                                scaleChanged &&
+                                ` ${t('gradeStudent.version_banner_scale_too')}`}
+                        </span>
+                        {rubricChanges.length > 0 && (
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowVersionDiff(true)}>
+                                {t('gradeStudent.version_show_changes')}
+                            </button>
+                        )}
+                        <button className="btn btn-secondary btn-sm" onClick={() => void handleRegradeOnLatest()}>
+                            {t('gradeStudent.regrade_latest_action')}
                         </button>
                     </div>
                 )}
@@ -1706,6 +1804,7 @@ export default function GradeStudent() {
                                                                                 }
                                                                                 style={{
                                                                                     flex: 1,
+                                                                                    minWidth: 0,
                                                                                     accentColor: fmt.accentColor,
                                                                                 }}
                                                                             />
@@ -1714,6 +1813,7 @@ export default function GradeStudent() {
                                                                                     fontSize: '0.75em',
                                                                                     fontWeight: 600,
                                                                                     minWidth: 24,
+                                                                                    flexShrink: 0,
                                                                                     textAlign: 'right',
                                                                                 }}
                                                                             >
@@ -2329,7 +2429,7 @@ export default function GradeStudent() {
                     aria-live="polite"
                     aria-label={t('gradeStudent.aria_grade_summary')}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
+                    <div className="grade-footer-summary">
                         {scale && (
                             <span
                                 className="grade-chip"
@@ -2359,11 +2459,29 @@ export default function GradeStudent() {
                             {t('gradeStudent.table_points')}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {summary.gradedCount}/{summary.totalCriteria}{' '}
-                            {t('gradeStudent.table_criterion').toLowerCase()}
+                            {t('gradeStudent.criteria_graded', {
+                                graded: summary.gradedCount,
+                                count: summary.totalCriteria,
+                            })}
                         </span>
                     </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                        type="button"
+                        className={`btn btn-sm btn-icon grade-footer-options-toggle ${
+                            feedbackOnly || isAnchor ? 'btn-secondary' : 'btn-ghost'
+                        }`}
+                        aria-expanded={showFooterOptions}
+                        aria-controls="grade-footer-options"
+                        aria-label={t('gradeStudent.footer_options')}
+                        title={t('gradeStudent.footer_options')}
+                        onClick={() => setShowFooterOptions((v) => !v)}
+                    >
+                        <SlidersHorizontal size={14} aria-hidden="true" />
+                    </button>
+                    <div
+                        id="grade-footer-options"
+                        className={`grade-footer-options${showFooterOptions ? ' open' : ''}`}
+                    >
                         <label
                             style={{
                                 display: 'flex',
@@ -2441,9 +2559,14 @@ export default function GradeStudent() {
                                     : t('gradeStudent.anchor_panel_title')}
                             </button>
                         )}
+                    </div>
+                    <div className="grade-footer-actions">
                         {nextStudent && (
                             <button className="btn btn-secondary btn-sm" onClick={handleSaveAndNext}>
-                                <Save size={14} /> <ChevronRight size={14} /> {nextStudent.name.split(' ')[0]}
+                                <Save size={14} /> <ChevronRight size={14} />{' '}
+                                <span className="grade-footer-next-name" title={nextStudent.name}>
+                                    {nextStudent.name.split(' ')[0]}
+                                </span>
                             </button>
                         )}
                         <button className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`} onClick={handleSave}>
@@ -2451,6 +2574,13 @@ export default function GradeStudent() {
                         </button>
                     </div>
                 </div>
+            )}
+            {showVersionDiff && snapshotRubric && liveRubric && (
+                <RubricVersionDiffModal
+                    from={snapshotRubric}
+                    to={liveRubric}
+                    onClose={() => setShowVersionDiff(false)}
+                />
             )}
             <ConfirmDialog {...swipeConfirmProps} />
             <ConfirmDialog {...nhiConfirmProps} />

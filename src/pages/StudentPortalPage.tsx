@@ -31,7 +31,7 @@ import PageTour from '../components/Tour/PageTour';
 import { STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
-import { calcGradeSummary, criterionPercentage } from '../utils/gradeCalc';
+import { calcGradeSummary, criterionPercentage, effectiveRangeBounds } from '../utils/gradeCalc';
 // Charts pull in recharts (~297KB) — lazy-loaded so the student-facing portal's initial
 // route chunk stays lean; they render only when their (below-the-fold) sections do.
 const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgressChart'));
@@ -65,6 +65,7 @@ import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
 import StudentDecksSection from '../components/Students/StudentDecksSection';
+import { PortalCriterionFeedback } from '../components/Students/PortalCriterionFeedback';
 import { nanoid } from '../utils/nanoid';
 import type {
     EssayAssignment,
@@ -79,6 +80,7 @@ import type {
     NewsFlash,
     NewsFlashRead,
     InterventionFlag,
+    GradeScale,
 } from '../types';
 import { isLocalMode } from '../store/storage';
 
@@ -280,6 +282,19 @@ export default function StudentPortalPage() {
     const student = students.find((s) => s.id === studentId);
     const cls = classes.find((c) => c.id === student?.classId);
 
+    // A bare letter means little to a student; name the band it stands for on its scale.
+    function letterGradeExplanation(letter: string, scale: GradeScale | undefined): string {
+        const range = scale?.ranges.find((r) => r.label === letter);
+        if (!scale || !range) return letter;
+        const bounds = effectiveRangeBounds(range, scale);
+        return t('studentPortal.letter_grade_range', {
+            grade: letter,
+            min: bounds.min,
+            max: bounds.maxExclusive ? `<${bounds.max}` : bounds.max,
+            scale: scale.name,
+        });
+    }
+
     const history = useMemo(() => {
         if (!student) return [];
         const srs = studentRubrics.filter(
@@ -471,6 +486,7 @@ export default function StudentPortalPage() {
         );
     }
 
+    const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const avgScore =
         scoredHistory.length > 0 ? scoredHistory.reduce((acc, h) => acc + h.score, 0) / scoredHistory.length : null;
     const portalUrl = `${window.location.origin}${window.location.pathname}#/portal/${student.id}`;
@@ -876,7 +892,7 @@ export default function StudentPortalPage() {
                             <StatCard
                                 icon={<TrendingUp size={16} />}
                                 label={t('studentPortal.stat_average')}
-                                value={`${avgScore.toFixed(1)}%`}
+                                value={`${percentFormat.format(avgScore)}%`}
                             />
                         )}
                         {selfAssess.length > 0 && (
@@ -1348,11 +1364,11 @@ export default function StudentPortalPage() {
                                         ) : (
                                             <div style={{ textAlign: 'right' }}>
                                                 <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                                                    {h.summary.modifiedPercentage.toFixed(1)}%
+                                                    {percentFormat.format(h.summary.modifiedPercentage)}%
                                                 </div>
                                                 {h.summary.letterGrade && (
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {h.summary.letterGrade}
+                                                        {letterGradeExplanation(h.summary.letterGrade, h.scale)}
                                                     </div>
                                                 )}
                                             </div>
@@ -1373,39 +1389,11 @@ export default function StudentPortalPage() {
                                             <span>{h.sr.overallComment}</span>
                                         </div>
                                     )}
-                                    {/* Criterion-level feedback */}
-                                    {h.sr.entries.some((e) => e.comment) && (
-                                        <div
-                                            style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}
-                                        >
-                                            {h.sr.entries
-                                                .filter((e) => e.comment)
-                                                .map((e) => {
-                                                    const criterion = h.rubric.criteria.find(
-                                                        (c: { id: string }) => c.id === e.criterionId
-                                                    );
-                                                    return (
-                                                        <div
-                                                            key={e.criterionId}
-                                                            style={{
-                                                                fontSize: '0.8rem',
-                                                                padding: '6px 10px',
-                                                                background: 'var(--bg)',
-                                                                borderRadius: 6,
-                                                                borderLeft: '3px solid var(--accent)',
-                                                            }}
-                                                        >
-                                                            {criterion && (
-                                                                <span style={{ fontWeight: 600, marginRight: 6 }}>
-                                                                    {criterion.title}:
-                                                                </span>
-                                                            )}
-                                                            {e.comment}
-                                                        </div>
-                                                    );
-                                                })}
-                                        </div>
-                                    )}
+                                    <PortalCriterionFeedback
+                                        rubric={h.rubric}
+                                        entries={h.sr.entries}
+                                        studentRubricId={h.sr.id}
+                                    />
 
                                     {/* Self-assessment */}
                                     {!h.sr.notHandedIn && (
@@ -1457,6 +1445,11 @@ export default function StudentPortalPage() {
                     </Section>
                 )}
             </div>
+            <footer style={{ textAlign: 'center', marginTop: 32, fontSize: '0.8rem' }}>
+                <Link to="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+                    {t('studentPortal.privacy_link')}
+                </Link>
+            </footer>
         </div>
     );
 }

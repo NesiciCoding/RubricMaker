@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Plus,
@@ -79,6 +79,7 @@ export default memo(function CriterionCard({
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
+    const uid = useId();
 
     function toggleSubItems(levelKey: string) {
         setExpandedSubItems((prev) => {
@@ -115,6 +116,7 @@ export default memo(function CriterionCard({
                 >
                     {/* Criterion header */}
                     <div
+                        className="criterion-header"
                         style={{
                             display: 'flex',
                             gap: 10,
@@ -160,17 +162,12 @@ export default memo(function CriterionCard({
                                 <ChevronDown size={14} />
                             </button>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <div
-                                className="grid-2"
-                                style={{
-                                    gap: 10,
-                                    gridTemplateColumns: '1fr 1fr auto',
-                                }}
-                            >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="grid-2 criterion-meta-grid" style={{ gap: 10 }}>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.label_criterion')}</label>
+                                    <label htmlFor={`${uid}-title`}>{t('rubricBuilder.label_criterion')}</label>
                                     <input
+                                        id={`${uid}-title`}
                                         type="text"
                                         value={criterion.title}
                                         onChange={(e) =>
@@ -182,8 +179,11 @@ export default memo(function CriterionCard({
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.placeholder_criterion_description')}</label>
+                                    <label htmlFor={`${uid}-description`}>
+                                        {t('rubricBuilder.placeholder_criterion_description')}
+                                    </label>
                                     <input
+                                        id={`${uid}-description`}
                                         type="text"
                                         value={criterion.description}
                                         onChange={(e) =>
@@ -195,8 +195,9 @@ export default memo(function CriterionCard({
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('rubricBuilder.label_weight')}</label>
+                                    <label htmlFor={`${uid}-weight`}>{t('rubricBuilder.label_weight')}</label>
                                     <input
+                                        id={`${uid}-weight`}
                                         type="number"
                                         value={criterion.weight}
                                         min={0}
@@ -367,10 +368,15 @@ export default memo(function CriterionCard({
                                     marginTop: 8,
                                 }}
                             >
-                                <span className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
-                                    CEFR skill:
-                                </span>
+                                <label
+                                    htmlFor={`${uid}-cefr-skill`}
+                                    className="text-xs text-muted"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                >
+                                    {t('rubricBuilder.label_cefr_skill')}
+                                </label>
                                 <select
+                                    id={`${uid}-cefr-skill`}
                                     value={criterion.cefrSkill ?? ''}
                                     onChange={(e) =>
                                         onUpdateCriterion(criterion.id, {
@@ -559,7 +565,7 @@ export default memo(function CriterionCard({
                                 </div>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: 4, marginTop: 20 }}>
+                        <div className="criterion-header-actions" style={{ display: 'flex', gap: 4, marginTop: 20 }}>
                             <button
                                 className="btn btn-ghost btn-icon btn-sm"
                                 style={{ color: 'var(--text-dim)' }}
@@ -657,6 +663,7 @@ export default memo(function CriterionCard({
                                         });
                                     }}
                                     placeholder={t('rubricBuilder.single_point_descriptor_placeholder')}
+                                    aria-label={t('rubricBuilder.single_point_descriptor_label')}
                                     rows={4}
                                     style={{
                                         width: '100%',
@@ -678,6 +685,7 @@ export default memo(function CriterionCard({
                                 <input
                                     type="number"
                                     min={0}
+                                    aria-label={t('rubricBuilder.single_point_meets_points')}
                                     value={criterion.levels[0]?.maxPoints ?? 1}
                                     onChange={(e) =>
                                         onUpdateLevel(criterion.id, criterion.levels[0]?.id ?? '', {
@@ -774,6 +782,9 @@ export default memo(function CriterionCard({
                                                                             placeholder={t(
                                                                                 'rubricBuilder.placeholder_level_name'
                                                                             )}
+                                                                            aria-label={t(
+                                                                                'rubricBuilder.placeholder_level_name'
+                                                                            )}
                                                                         />
                                                                         {criterion.levels.length > 1 && (
                                                                             <button
@@ -820,6 +831,9 @@ export default memo(function CriterionCard({
                                                                             </div>
                                                                             <input
                                                                                 type="number"
+                                                                                aria-label={t(
+                                                                                    'rubricBuilder.label_min_pts'
+                                                                                )}
                                                                                 value={level.minPoints}
                                                                                 min={0}
                                                                                 onChange={(e) =>
@@ -858,6 +872,9 @@ export default memo(function CriterionCard({
                                                                             </div>
                                                                             <input
                                                                                 type="number"
+                                                                                aria-label={t(
+                                                                                    'rubricBuilder.label_max_pts'
+                                                                                )}
                                                                                 value={level.maxPoints}
                                                                                 min={0}
                                                                                 onChange={(e) =>
@@ -885,6 +902,9 @@ export default memo(function CriterionCard({
                                                                         }
                                                                         placeholder={t(
                                                                             'rubricBuilder.placeholder_level_description'
+                                                                        )}
+                                                                        aria-label={t(
+                                                                            'rubricBuilder.label_level_description'
                                                                         )}
                                                                         rows={3}
                                                                         style={{
@@ -1042,6 +1062,9 @@ export default memo(function CriterionCard({
                                                                                             }
                                                                                             placeholder={t(
                                                                                                 'rubricBuilder.placeholder_sub_item_label'
+                                                                                            )}
+                                                                                            aria-label={t(
+                                                                                                'rubricBuilder.label_sub_item'
                                                                                             )}
                                                                                             rows={2}
                                                                                             style={{

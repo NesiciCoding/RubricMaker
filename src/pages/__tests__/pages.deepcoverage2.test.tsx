@@ -584,8 +584,8 @@ describe('ExportPage deep coverage', () => {
 
     it('rubric select change updates selected rubric', () => {
         renderPage(<ExportPage />);
-        // 1 combobox = the Topbar's global class selector, present before any section is expanded.
-        expect(screen.queryAllByRole('combobox')).toHaveLength(1);
+        // No comboboxes before a section is expanded: Export doesn't show the topbar class selector (#661).
+        expect(screen.queryAllByRole('combobox')).toHaveLength(0);
         fireEvent.click(screen.getByText('exportPage.rubric_section_title'));
         const selects = screen.getAllByRole('combobox');
         if (selects.length > 0) {

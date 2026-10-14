@@ -35,11 +35,17 @@ services:
       timeout: 5s
       retries: 20
 
-  # ── Run migrations once the DB is healthy ────────────────────────────────────
+  # ── Run migrations once the DB, auth and storage are up ──────────────────────
   db_migrate:
     image: postgres:15-alpine
+    # The migrations need the auth and storage schemas that GoTrue and storage-api create on start
+    # (auth.jwt(), storage.buckets), so they run once both are up — not before.
     depends_on:
       db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      storage:
         condition: service_healthy
     volumes:
       - ./supabase/migrations:/migrations:ro
@@ -182,6 +188,10 @@ services:
       timeout: 5s
       retries: 6
     depends_on:
+      # auth/rest/storage are reachable only through this proxy, so nothing (sign-ups included) is
+      # served until every migration — the handle_new_user trigger among them — has been applied.
+      db_migrate:
+        condition: service_completed_successfully
       auth:
         condition: service_healthy
       rest:

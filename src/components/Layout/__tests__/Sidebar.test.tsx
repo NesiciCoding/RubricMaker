@@ -6,7 +6,7 @@ import type { AppSettings } from '../../../types';
 import type { StoreData } from '../../../store/storage';
 import Sidebar from '../Sidebar';
 
-let mockUserRole: string = 'user';
+let mockUserRole: string | undefined = 'user';
 let mockNotificationCount = 0;
 let mockModerationCount = 0;
 const mockSignOut = vi.fn();
@@ -133,6 +133,23 @@ describe('Sidebar', () => {
         mockUserRole = 'admin';
         renderSidebar();
         expect(screen.getByText('admin.title')).toBeInTheDocument();
+    });
+
+    it('shows admin link to the local owner when the role is unset, matching Settings (#641)', () => {
+        mockUserRole = undefined;
+        localStorage.setItem('rm_local_mode', 'true');
+        try {
+            renderSidebar();
+            expect(screen.getByText('admin.title')).toBeInTheDocument();
+        } finally {
+            localStorage.removeItem('rm_local_mode');
+        }
+    });
+
+    it('hides the admin link while a connected role is still unset (#641)', () => {
+        mockUserRole = undefined;
+        renderSidebar();
+        expect(screen.queryByText('admin.title')).not.toBeInTheDocument();
     });
 
     it('keeps a domain highlighted on a footer route with no matching domain', () => {

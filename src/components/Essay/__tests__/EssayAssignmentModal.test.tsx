@@ -1,7 +1,12 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import EssayAssignmentModal from '../EssayAssignmentModal';
+
+let mockDbConnected = false;
+vi.mock('../../../hooks/useDbStatus', () => ({
+    useDbStatus: () => ({ isConnected: mockDbConnected }),
+}));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -41,5 +46,54 @@ describe('EssayAssignmentModal prompt pre-fill', () => {
             />
         );
         expect(screen.getByLabelText(/prompt_label/)).toHaveValue('');
+    });
+});
+
+describe('EssayAssignmentModal word limits (#676)', () => {
+    it('disables assigning while the minimum exceeds the maximum', () => {
+        const onAssign = vi.fn();
+        render(
+            <EssayAssignmentModal
+                rubricId="rubric1"
+                rubricName="Writing Test"
+                studentId="student1"
+                studentName="Jane"
+                onClose={() => {}}
+                onOpenSlipSheet={() => {}}
+                onAssignToStudents={onAssign}
+                classStudents={[{ id: 'student1', name: 'Jane' }]}
+                initialValues={{ title: 'Essay', minWords: 500, maxWords: 100 }}
+            />
+        );
+        expect(screen.getByText('essays.error_min_exceeds_max')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'essays.assign_to_students' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /essay_assignment.copy_link/ })).toBeDisabled();
+        expect(screen.getByLabelText('essay_assignment.essay_link_label')).toHaveValue('');
+    });
+
+    it('saves the DB-mode assignment once invalid limits are corrected', async () => {
+        mockDbConnected = true;
+        try {
+            const onSaveAssignment = vi.fn().mockResolvedValue(undefined);
+            render(
+                <EssayAssignmentModal
+                    rubricId="rubric1"
+                    rubricName="Writing Test"
+                    studentId="student1"
+                    studentName="Jane"
+                    onClose={() => {}}
+                    onOpenSlipSheet={() => {}}
+                    onSaveAssignment={onSaveAssignment}
+                    classStudents={[{ id: 'student1', name: 'Jane' }]}
+                    initialValues={{ title: 'Essay', minWords: 500, maxWords: 100 }}
+                />
+            );
+            expect(onSaveAssignment).not.toHaveBeenCalled();
+            fireEvent.change(screen.getByLabelText(/min_words_label/), { target: { value: '50' } });
+            await waitFor(() => expect(onSaveAssignment).toHaveBeenCalledTimes(1));
+            expect(onSaveAssignment.mock.calls[0][0]).toMatchObject({ minWords: 50, maxWords: 100 });
+        } finally {
+            mockDbConnected = false;
+        }
     });
 });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     RadarChart,
     Radar,
@@ -34,13 +35,15 @@ export default function CriterionRadarChart({
     data,
     accentColor,
     selectedStudents,
-    classAverageLabel = 'Class Average',
+    classAverageLabel,
     height = 420,
 }: Props) {
+    const { t } = useTranslation();
+    const averageLabel = classAverageLabel ?? t('statistics.class_average_label');
     if (data.length < 3) {
         return (
             <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '40px 0' }}>
-                At least 3 criteria are needed to display the radar chart.
+                {t('statistics.radar_min_criteria')}
             </p>
         );
     }
@@ -66,13 +69,7 @@ export default function CriterionRadarChart({
                     }}
                     formatter={(value: unknown) => (value != null ? `${value}%` : '')}
                 />
-                <Radar
-                    name={classAverageLabel}
-                    dataKey="avg"
-                    stroke={accentColor}
-                    fill={accentColor}
-                    fillOpacity={0.25}
-                />
+                <Radar name={averageLabel} dataKey="avg" stroke={accentColor} fill={accentColor} fillOpacity={0.25} />
                 {hasStudents &&
                     selectedStudents!.map((s) => (
                         <Radar

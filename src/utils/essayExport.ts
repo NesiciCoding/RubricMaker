@@ -12,6 +12,7 @@ import {
     BorderStyle,
     AlignmentType,
     LineRuleType,
+    ExternalHyperlink,
     type ImageRun,
 } from 'docx';
 import { saveAs } from 'file-saver';
@@ -30,6 +31,7 @@ import type {
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
 import { printHtml, buildRubricHTML } from './pdfExport';
 import { createUniqueFilenames, sanitizeFilename } from './exportDataPrep';
+import { safeHref } from './safeUrl';
 
 type EssayLike = Pick<EssayAssignment, 'title'>;
 
@@ -44,8 +46,9 @@ export function escapeHtml(value: string): string {
 
 // ponytail: walks only the tags EssayEditor's TipTap config actually emits (p, h1-3, strong/em/u/s,
 // sup/sub, color/highlight/font/line-height spans, ul/ol/li incl. task lists, blockquote, hr, a, br,
-// table). Markdown has no native representation for paragraph text-align/line-height, so those two
-// degrade silently there (DOCX carries them); everything else round-trips in both formats.
+// table, and the `dir` attribute from TipTap's text direction). Markdown has no native representation
+// for paragraph text-align/line-height/direction, so those degrade silently there (DOCX carries them);
+// everything else round-trips in both formats.
 function parseEssayHtml(html: string): HTMLElement {
     const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
     return doc.body.firstElementChild as HTMLElement;
@@ -201,6 +204,7 @@ interface InlineStyle {
     font?: string;
     size?: number; // half-points
     hidden?: boolean;
+    rtl?: boolean;
     images?: DocxImageMap;
 }
 
@@ -233,11 +237,31 @@ function blockStyle(node: Element, parent?: Element, images?: DocxImageMap): Inl
     const fontSize =
         styleValue(node as HTMLElement, 'font-size') ?? (parent && styleValue(parent as HTMLElement, 'font-size'));
     const size = fontSize ? ptToHalfPoints(fontSize) : undefined;
-    if (size === 0) return { ...plainStyle(images), hidden: true };
-    return size ? { ...plainStyle(images), size } : plainStyle(images);
+    const base = isRtlBlock(node, parent) ? { ...plainStyle(images), rtl: true } : plainStyle(images);
+    if (size === 0) return { ...base, hidden: true };
+    return size ? { ...base, size } : base;
 }
 
-function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextRun | ImageRun)[] {
+const FIRST_STRONG_CHAR =
+    /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+const RTL_CHAR = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+
+/**
+ * TipTap writes the paragraph direction as `dir`, and `dir` is inherited, so a list item's paragraph takes the
+ * list's direction. `auto` follows the first strong character, as browsers do.
+ */
+function isRtlBlock(node: Element, parent?: Element): boolean {
+    const dir = (node.closest('[dir]') ?? parent?.closest('[dir]'))?.getAttribute('dir')?.toLowerCase();
+    const cssDirection = styleValue(node as HTMLElement, 'direction')?.toLowerCase();
+    if (dir === 'rtl' || cssDirection === 'rtl') return true;
+    if (dir !== 'auto') return false;
+    const first = FIRST_STRONG_CHAR.exec(node.textContent ?? '')?.[0];
+    return !!first && RTL_CHAR.test(first);
+}
+
+export type DocxInline = TextRun | ImageRun | ExternalHyperlink;
+
+function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): DocxInline[] {
     if (el.nodeType === Node.TEXT_NODE) {
         /* v8 ignore next -- a text node's value is always a string, so the ?? '' never fires */
         const text = el.textContent ?? '';
@@ -257,12 +281,20 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
                 size: style.size,
                 vanish: style.hidden || undefined,
                 shading: style.highlightFill ? { fill: style.highlightFill } : undefined,
+                rightToLeft: style.rtl || undefined,
             }),
         ];
     }
     const node = el as HTMLElement;
     const tag = node.tagName;
     if (tag === 'BR') return [new TextRun({ break: 1 })];
+    if (tag === 'A') {
+        const href = safeHref(node.getAttribute('href'));
+        const color = cssColorToHex(styleValue(node, 'color')) ?? style.color ?? '0563C1';
+        const linkStyle: InlineStyle = { ...style, underline: true, color };
+        const runs = Array.from(node.childNodes).flatMap((child) => inlineDocxRuns(child, href ? linkStyle : style));
+        return href && runs.length > 0 ? [new ExternalHyperlink({ link: href, children: runs })] : runs;
+    }
     if (tag === 'IMG') {
         const image = style.images?.get(node.getAttribute('src') ?? '');
         return image ? [image()] : [];
@@ -286,6 +318,7 @@ function inlineDocxRuns(el: ChildNode, style: InlineStyle = PLAIN_STYLE): (TextR
         font: fontFamily ? fontFamily.split(',')[0].replace(/['"]/g, '').trim() : style.font,
         size: parsedSize ? parsedSize : style.size,
         hidden: style.hidden || parsedSize === 0,
+        rtl: style.rtl,
         images: style.images,
     };
     return Array.from(node.childNodes).flatMap((child) => inlineDocxRuns(child, next));
@@ -352,6 +385,7 @@ function tableToDocx(node: Element, images?: DocxImageMap): Table {
                             children: [
                                 new Paragraph({
                                     spacing: blockSpacing(inner, innerParent),
+                                    bidirectional: isRtlBlock(inner, innerParent) || undefined,
                                     children: Array.from(cell.childNodes).flatMap((c) =>
                                         inlineDocxRuns(
                                             c,
@@ -377,8 +411,14 @@ function taskListToDocx(node: Element, images?: DocxImageMap): Paragraph[] {
         return new Paragraph({
             indent: { left: 360 },
             spacing: blockSpacing(content, content === li ? node : li),
+            bidirectional: liStyle.rtl || undefined,
             children: [
-                new TextRun({ text: checked ? '☑ ' : '☐ ', size: liStyle.size, vanish: liStyle.hidden || undefined }),
+                new TextRun({
+                    text: checked ? '☑ ' : '☐ ',
+                    size: liStyle.size,
+                    vanish: liStyle.hidden || undefined,
+                    rightToLeft: liStyle.rtl || undefined,
+                }),
                 ...Array.from(content.childNodes).flatMap((c) => inlineDocxRuns(c, liStyle)),
             ],
         });
@@ -390,7 +430,8 @@ export function htmlToDocxLead(
     html: string,
     images?: DocxImageMap
 ): {
-    leadRuns: (TextRun | ImageRun)[];
+    leadRuns: DocxInline[];
+    leadRtl?: boolean;
     leadSize?: number;
     leadSpacing?: ReturnType<typeof blockSpacing>;
     rest: (Paragraph | Table)[];
@@ -408,7 +449,7 @@ export function htmlToDocxLead(
         undefined,
         images
     );
-    return { leadRuns, leadSize: leadStyle.size, leadSpacing: blockSpacing(first), rest };
+    return { leadRuns, leadRtl: leadStyle.rtl, leadSize: leadStyle.size, leadSpacing: blockSpacing(first), rest };
 }
 
 /** Converts EssayEditor's TipTap HTML output to docx Paragraph/Table nodes. */
@@ -419,6 +460,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
         const tag = node.tagName;
         const alignment = blockAlignment(node);
         const spacing = blockSpacing(node);
+        const bidirectional = isRtlBlock(node) || undefined;
         if (tag === 'H1' || tag === 'H2' || tag === 'H3') {
             const heading =
                 tag === 'H1' ? HeadingLevel.HEADING_1 : tag === 'H2' ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3;
@@ -427,6 +469,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
                     heading,
                     alignment,
                     spacing,
+                    bidirectional,
                     children: Array.from(node.childNodes).flatMap((c) =>
                         inlineDocxRuns(c, blockStyle(node, undefined, images))
                     ),
@@ -437,6 +480,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
                 new Paragraph({
                     indent: { left: 360 },
                     spacing,
+                    bidirectional,
                     children: Array.from(node.childNodes).flatMap((c) =>
                         inlineDocxRuns(c, { ...blockStyle(node, undefined, images), italics: true })
                     ),
@@ -456,8 +500,14 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
                         new Paragraph({
                             indent: { left: 360 },
                             spacing: blockSpacing(inner, inner === li ? node : li),
+                            bidirectional: liStyle.rtl || undefined,
                             children: [
-                                new TextRun({ text: bullet, size: liStyle.size, vanish: liStyle.hidden || undefined }),
+                                new TextRun({
+                                    text: bullet,
+                                    size: liStyle.size,
+                                    vanish: liStyle.hidden || undefined,
+                                    rightToLeft: liStyle.rtl || undefined,
+                                }),
                                 ...Array.from(li.childNodes).flatMap((c) => inlineDocxRuns(c, liStyle)),
                             ],
                         })
@@ -478,6 +528,7 @@ export function htmlToDocxChildren(html: string, spacingAfter?: number, images?:
             children.push(
                 new Paragraph({
                     alignment,
+                    bidirectional,
                     spacing: spacingAfter === undefined ? spacing : { ...spacing, after: spacingAfter },
                     children: runs,
                 })

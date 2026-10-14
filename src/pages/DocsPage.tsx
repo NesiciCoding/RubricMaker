@@ -765,7 +765,7 @@ function RubricsTab() {
                 </InfoBox>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginTop: 12 }}>
                     {t('docs.rb_builder_undo_delete')} {t('docs.rb_builder_save_shortcut')}{' '}
-                    {t('docs.rb_builder_designer_columns')}
+                    {t('docs.rb_builder_designer_columns')} {t('docs.rb_builder_unsaved_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -979,6 +979,9 @@ function GradingTab() {
                         t('docs.gr_scoring_item_subitems'),
                         t('docs.gr_scoring_item_modifiers'),
                         t('docs.gr_scoring_item_nhi'),
+                        t('docs.gr_scoring_item_feedback_only'),
+                        t('docs.gr_scoring_item_anchor'),
+                        t('docs.gr_scoring_item_nothing_scored'),
                     ]}
                 />
 
@@ -993,7 +996,7 @@ function GradingTab() {
                     {t('docs.gr_keyboard_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
-                    {t('docs.gr_keyboard_body')}
+                    {t('docs.gr_keyboard_body')} {t('docs.gr_nav_scope_note')}
                 </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
@@ -1014,11 +1017,19 @@ function GradingTab() {
                     items={[
                         t('docs.gr_feedback_item_comment_bank'),
                         t('docs.gr_feedback_item_voice'),
+                        t('docs.gr_feedback_item_audio_record'),
                         t('docs.gr_feedback_item_audio_storage'),
                         t('docs.gr_feedback_item_notes'),
                         t('docs.gr_feedback_item_attachments'),
                     ]}
                 />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_rubric_version_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {t('docs.gr_rubric_version_body')}
+                </p>
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_scan_title')}
@@ -1595,7 +1606,6 @@ function EssaysTab() {
                         t('docs.es_creating_item_status'),
                         t('docs.es_creating_item_import'),
                         t('docs.es_creating_item_monitor'),
-                        t('docs.es_creating_item_save_config'),
                     ]}
                 />
 

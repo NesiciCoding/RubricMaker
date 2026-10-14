@@ -12,6 +12,7 @@ import { orderCorners, cropQuadrilateral, type Point } from '../../utils/documen
 import { preprocessScan } from '../../utils/preprocessScan';
 import { EXAM_PAGE_MM } from '../../utils/testExamContent';
 import { detectScannedAnswers, UnsupportedAnswerSheetError, type ScannedAnswer } from '../../utils/examScanAnswers';
+import { OcrUnavailableError } from '../../utils/ocrErrors';
 import { calcStudentTestRawPoints } from '../../utils/testCalc';
 import { nanoid } from '../../utils/nanoid';
 import type { RgbaImage, Student, StudentTest, Test, TestAnswer, TestQuestion } from '../../types';
@@ -153,9 +154,11 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                 setErrorMsg(
                     err instanceof UnsupportedAnswerSheetError
                         ? t('tests.scan.unsupported_sheet')
-                        : err instanceof Error
-                          ? err.message
-                          : String(err)
+                        : err instanceof OcrUnavailableError
+                          ? t('scan.error_engine_unavailable')
+                          : err instanceof Error
+                            ? err.message
+                            : String(err)
                 );
                 setPhase('error');
             }

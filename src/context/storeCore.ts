@@ -80,6 +80,7 @@ import {
     upsertRubricVersion,
 } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
+import { dedupeStudentRubrics } from '../utils/syncMerge';
 import { eraseStudentFromStore } from '../utils/eraseStudent';
 import { getDb, loadDb } from '../services/database/lazyDb';
 import type { DatabaseConfig, DbUser, SyncResult } from '../services/database';
@@ -99,7 +100,7 @@ export interface PlatformCtx extends StoreActionsCtx {
     t: (key: string, options?: Record<string, unknown>) => string;
     setLandingState: (s: 'checking' | 'show' | 'hide') => void;
     setShowMigrationPrompt: (b: boolean) => void;
-    applyHydrated: (merged: StoreData, seedDiffBaseline: boolean) => void;
+    applyHydrated: (merged: StoreData, seedDiffBaseline: boolean) => StoreData;
 }
 
 export type Action =
@@ -227,7 +228,11 @@ export function reducer(state: StoreData, action: Action): StoreData {
         case 'MERGE_CACHED_STUDENT_RUBRICS': {
             const known = new Set(state.studentRubrics.map((sr) => sr.id));
             const missing = action.payload.filter((sr) => !known.has(sr.id));
-            return missing.length === 0 ? state : { ...state, studentRubrics: [...state.studentRubrics, ...missing] };
+            if (missing.length === 0) return state;
+            return {
+                ...state,
+                studentRubrics: dedupeStudentRubrics([...state.studentRubrics, ...missing]).records,
+            };
         }
         case 'ADD_RUBRIC': {
             const next = [...state.rubrics, action.payload];
@@ -335,10 +340,13 @@ export function reducer(state: StoreData, action: Action): StoreData {
             // sharing groupId, scoped per criterion by RubricCriterion.collaborative (unset/true =
             // fan out, false = stays individually scored per student).
             if (payload.groupId) {
-                const rubric = state.rubrics.find((r) => r.id === payload.rubricId);
-                const collaborativeIds = new Set(
-                    (rubric?.criteria ?? []).filter((c) => c.collaborative !== false).map((c) => c.id)
-                );
+                // Fan-out follows the rubric version the grade is saved against, not the live one: a
+                // criterion's collaborative flag may have changed since this grade was taken.
+                const criteria =
+                    payload.rubricSnapshot?.criteria ??
+                    state.rubrics.find((r) => r.id === payload.rubricId)?.criteria ??
+                    [];
+                const collaborativeIds = new Set(criteria.filter((c) => c.collaborative !== false).map((c) => c.id));
                 next = next.map((sr) => {
                     if (sr.groupId !== payload.groupId || sr.id === payload.id) return sr;
                     const mergedEntries = payload.entries.map((entry) =>
@@ -352,6 +360,7 @@ export function reducer(state: StoreData, action: Action): StoreData {
                         globalModifier: payload.globalModifier,
                         overallComment: payload.overallComment,
                         rubricSnapshot: payload.rubricSnapshot,
+                        gradeScaleSnapshot: payload.gradeScaleSnapshot,
                         gradedAt: payload.gradedAt,
                         updatedAt: payload.updatedAt,
                     };

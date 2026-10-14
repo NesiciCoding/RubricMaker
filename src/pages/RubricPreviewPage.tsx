@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { decodeRubricShareCode } from '../utils/rubricImport';
+import { SharedPageInvalid, SharedPageShell, sharedCardStyle } from '../components/ui/SharedPageShell';
 
 export default function RubricPreviewPage() {
     const { code } = useParams<{ code: string }>();
+    const { t } = useTranslation();
 
     let rubric: ReturnType<typeof decodeRubricShareCode> | null;
     try {
@@ -12,27 +15,17 @@ export default function RubricPreviewPage() {
         rubric = null;
     }
 
+    useEffect(() => {
+        if (!rubric) return;
+        const previous = document.title;
+        document.title = rubric.name;
+        return () => {
+            document.title = previous;
+        };
+    }, [rubric?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
     if (!rubric) {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#f8fafc',
-                    padding: 24,
-                }}
-            >
-                <div style={{ maxWidth: 480, textAlign: 'center' }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-                    <h2 style={{ marginBottom: 8 }}>Invalid rubric link</h2>
-                    <p style={{ color: '#64748b' }}>
-                        This link is no longer valid. Please ask your teacher for a new link.
-                    </p>
-                </div>
-            </div>
-        );
+        return <SharedPageInvalid title={t('rubricPreview.invalid_title')} body={t('rubricPreview.invalid_body')} />;
     }
 
     const fmt = rubric.format as
@@ -51,153 +44,126 @@ export default function RubricPreviewPage() {
     const showPoints = fmt?.showPoints ?? false;
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '24px 16px', fontFamily }}>
-            <div style={{ maxWidth: 900, margin: '0 auto' }}>
-                {/* Header */}
+        <SharedPageShell fontFamily={fontFamily} maxWidth={900} footer={t('rubricPreview.footer')}>
+            <header style={{ ...sharedCardStyle, marginBottom: 20 }}>
                 <div
                     style={{
-                        background: '#fff',
-                        borderRadius: 12,
-                        padding: 24,
-                        marginBottom: 20,
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
+                        display: 'inline-block',
+                        background: `color-mix(in srgb, ${accentColor} 14%, var(--bg-card))`,
+                        border: `1px solid ${accentColor}`,
+                        color: 'var(--text)',
+                        borderRadius: 20,
+                        padding: '3px 12px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        marginBottom: 10,
                     }}
+                >
+                    {t('rubricPreview.badge')}
+                </div>
+                <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>{rubric.name}</h1>
+                {rubric.subject && <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>{rubric.subject}</div>}
+                {rubric.description && (
+                    <p style={{ margin: '10px 0 0', color: 'var(--text)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                        {rubric.description}
+                    </p>
+                )}
+            </header>
+
+            {rubric.criteria.map((criterion, ci) => (
+                <section
+                    key={criterion.id ?? ci}
+                    aria-labelledby={`preview-criterion-${ci}`}
+                    style={{ ...sharedCardStyle, padding: 0, marginBottom: 14, overflow: 'hidden' }}
                 >
                     <div
                         style={{
-                            display: 'inline-block',
-                            background: accentColor + '18',
-                            color: accentColor,
-                            borderRadius: 20,
-                            padding: '3px 12px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            marginBottom: 10,
+                            background: headerColor,
+                            color: headerTextColor,
+                            padding: '12px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
                         }}
                     >
-                        Assessment Rubric
-                    </div>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>{rubric.name}</h1>
-                    {rubric.subject && <div style={{ color: '#64748b', marginTop: 4 }}>{rubric.subject}</div>}
-                    {rubric.description && (
-                        <p style={{ margin: '10px 0 0', color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                            {rubric.description}
-                        </p>
-                    )}
-                </div>
-
-                {/* Criteria */}
-                {rubric.criteria.map((criterion, ci) => (
-                    <div
-                        key={criterion.id ?? ci}
-                        style={{
-                            background: '#fff',
-                            borderRadius: 12,
-                            marginBottom: 14,
-                            border: '1px solid #e2e8f0',
-                            boxShadow: '0 1px 3px rgba(0,0,0,.06)',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {/* Criterion header */}
-                        <div
-                            style={{
-                                background: headerColor,
-                                color: headerTextColor,
-                                padding: '12px 20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{criterion.title}</div>
-                                {criterion.description && (
-                                    <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: 2 }}>
-                                        {criterion.description}
-                                    </div>
-                                )}
-                            </div>
-                            {criterion.weight !== undefined && (
-                                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginLeft: 16, whiteSpace: 'nowrap' }}>
-                                    Weight: {criterion.weight}%
-                                </div>
+                        <div>
+                            <h2 id={`preview-criterion-${ci}`} style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>
+                                {criterion.title}
+                            </h2>
+                            {criterion.description && (
+                                <div style={{ fontSize: '0.85rem', marginTop: 2 }}>{criterion.description}</div>
                             )}
                         </div>
+                        {criterion.weight !== undefined && (
+                            <div style={{ fontSize: '0.85rem', marginInlineStart: 16, whiteSpace: 'nowrap' }}>
+                                {t('rubricPreview.weight', { weight: criterion.weight })}
+                            </div>
+                        )}
+                    </div>
 
-                        {/* Levels grid */}
-                        {/* Levels wrap onto extra rows on narrow screens instead of being clipped; the 1px
-                            gap over the tinted background draws the cell borders for any wrap. */}
-                        <div
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                                gap: 1,
-                                background: '#e2e8f0',
-                                borderTop: '1px solid #e2e8f0',
-                            }}
-                        >
-                            {(criterion.levels ?? []).map((level, li) => (
+                    {/* Levels wrap onto extra rows on narrow screens instead of being clipped; the 1px
+                        gap over the tinted background draws the cell borders for any wrap. */}
+                    <ul
+                        style={{
+                            listStyle: 'none',
+                            margin: 0,
+                            padding: 0,
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                            gap: 1,
+                            background: 'var(--border)',
+                            borderTop: '1px solid var(--border)',
+                        }}
+                    >
+                        {(criterion.levels ?? []).map((level, li) => (
+                            <li
+                                key={level.id ?? li}
+                                style={{
+                                    padding: '14px 16px',
+                                    background: 'var(--bg-card)',
+                                    minWidth: 0,
+                                }}
+                            >
                                 <div
-                                    key={level.id ?? li}
                                     style={{
-                                        padding: '14px 16px',
-                                        background: '#fff',
-                                        minWidth: 0,
+                                        fontWeight: 700,
+                                        fontSize: '0.9rem',
+                                        color: 'var(--text)',
+                                        marginBottom: 6,
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            fontWeight: 700,
-                                            fontSize: '0.88rem',
-                                            color: '#1e293b',
-                                            marginBottom: 6,
-                                        }}
-                                    >
-                                        {level.label}
-                                        {showPoints && (
-                                            <span
-                                                style={{
-                                                    fontWeight: 400,
-                                                    color: '#94a3b8',
-                                                    fontSize: '0.75rem',
-                                                    marginLeft: 6,
-                                                    display: 'inline-block',
-                                                    maxWidth: '100%',
-                                                    overflowWrap: 'anywhere',
-                                                }}
-                                            >
-                                                {level.minPoints === level.maxPoints
-                                                    ? `${level.maxPoints}pt`
-                                                    : `${level.minPoints}–${level.maxPoints}pt`}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {level.description && (
-                                        <div style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.5 }}>
-                                            {level.description}
-                                        </div>
+                                    {level.label}
+                                    {showPoints && (
+                                        <span
+                                            style={{
+                                                fontWeight: 400,
+                                                color: 'var(--text-muted)',
+                                                fontSize: '0.8rem',
+                                                marginInlineStart: 6,
+                                                display: 'inline-block',
+                                                maxWidth: '100%',
+                                                overflowWrap: 'anywhere',
+                                            }}
+                                        >
+                                            {level.minPoints === level.maxPoints
+                                                ? t('rubricPreview.points_single', { points: level.maxPoints })
+                                                : t('rubricPreview.points_range', {
+                                                      min: level.minPoints,
+                                                      max: level.maxPoints,
+                                                  })}
+                                        </span>
                                     )}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-
-                {/* Footer */}
-                <div
-                    style={{
-                        textAlign: 'center',
-                        color: '#94a3b8',
-                        fontSize: '0.75rem',
-                        marginTop: 24,
-                        paddingBottom: 24,
-                    }}
-                >
-                    Generated by RubricMaker · Review this rubric before submitting your work
-                </div>
-            </div>
-        </div>
+                                {level.description && (
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                                        {level.description}
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            ))}
+        </SharedPageShell>
     );
 }

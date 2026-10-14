@@ -14,13 +14,17 @@
 # Usage (run from the project root):
 #   ./scripts/delete-old-attachments.sh
 #
-# Schedule with crontab to run at 02:00 every night:
+# Schedule with crontab to run at 02:00 every night. The redirect means cron has no output to mail,
+# so alert on the exit status too — otherwise a failed cleanup only shows up in the log:
 #   0 2 * * *  cd /path/to/rubricmaker && ./scripts/delete-old-attachments.sh \
-#                >> /var/log/rubricmaker-cleanup.log 2>&1
+#                >> /var/log/rubricmaker-cleanup.log 2>&1 \
+#                || logger -t rubricmaker-cleanup 'attachment cleanup FAILED - see /var/log/rubricmaker-cleanup.log'
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/compose.sh
+source "$SCRIPT_DIR/lib/compose.sh"
 COMPOSE_FILE="${SCRIPT_DIR}/../docker-compose.yml"
 ENV_FILE="${SCRIPT_DIR}/../.env"
 
@@ -28,7 +32,8 @@ if [[ -f "$ENV_FILE" ]]; then
     set -a; source "$ENV_FILE"; set +a
 fi
 
-STORAGE_URL="${SITE_URL:-http://localhost:8000}"
+# The compose stack serves the API (and Storage) through the app on port 8080.
+STORAGE_URL="${SITE_URL:-http://localhost:8080}"
 SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:?SERVICE_ROLE_KEY is not set in .env}"
 
 NAME_RE='^[A-Za-z0-9_-]{1,64}$'
@@ -40,9 +45,14 @@ NO_FILE_SQL="storage_path IS NULL AND id ~ '${NAME_RE}'"
 
 log() { echo "[$(date -Iseconds)] $*"; }
 
+require_compose
 psql_exec() {
-    docker-compose -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
+    $COMPOSE -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
 }
+
+# Storage DELETEs that failed (wrong URL, auth, server error); the run exits non-zero if any did,
+# so cron surfaces a cleanup that silently purged nothing.
+FAILED=0
 
 BATCH_SIZE=100
 # Every prior-year scan becomes overdue on the same night, so batches repeat until the backlog is gone.
@@ -104,6 +114,7 @@ purge_batch() {
             deleted_ids+=("$id")
         else
             log "Warning: storage DELETE returned HTTP ${http_status} for path '${path}'"
+            FAILED=$((FAILED + 1))
         fi
     done <<< "$rows"
 
@@ -152,3 +163,8 @@ purge() {
 purge "attachment" get_overdue_attachments attachments attachments
 # Handwriting scans: one-academic-year cap (get_overdue_scans, migrations 074/082).
 purge "scan" get_overdue_scans scans scan_metadata
+
+if [[ $FAILED -gt 0 ]]; then
+    log "Error: ${FAILED} storage DELETE(s) failed (check SITE_URL=${STORAGE_URL} and SERVICE_ROLE_KEY); those rows were kept."
+    exit 1
+fi

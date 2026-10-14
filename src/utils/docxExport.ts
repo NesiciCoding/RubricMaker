@@ -45,6 +45,8 @@ import {
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
 
+const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+
 // Re-exported for existing call sites that import stripHtmlTags from here.
 export { stripHtmlTags } from './exportDataPrep';
 
@@ -164,14 +166,16 @@ export async function exportRubricToDocx(rubric: Rubric) {
                 width: { size: 25, type: WidthType.PERCENTAGE },
                 children: [
                     new Paragraph({
-                        children: [new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF' })],
+                        children: [new TextRun({ text: docLabel('criterion'), bold: true, color: 'FFFFFF' })],
                         alignment: AlignmentType.LEFT,
                     }),
                 ],
                 shading: { fill: fmt.headerColor.replace('#', '') },
             }),
             ...headerLevels.map((l) => {
-                const pointsStr = fmt.showPoints ? ` (${formatPointsRange(l.minPoints, l.maxPoints)} pts)` : '';
+                const pointsStr = fmt.showPoints
+                    ? ` (${docLabel('points', { points: formatPointsRange(l.minPoints, l.maxPoints) })})`
+                    : '';
                 return new TableCell({
                     width: { size: 75 / headerLevels.length, type: WidthType.PERCENTAGE },
                     children: [
@@ -211,7 +215,11 @@ export async function exportRubricToDocx(rubric: Rubric) {
                             ? [
                                   new Paragraph({
                                       children: [
-                                          new TextRun({ text: `Weight: ${c.weight}%`, size: 18, color: '666666' }),
+                                          new TextRun({
+                                              text: docLabel('weight', { weight: c.weight }),
+                                              size: 18,
+                                              color: '666666',
+                                          }),
                                       ],
                                       spacing: { before: 100 },
                                   }),
@@ -229,7 +237,11 @@ export async function exportRubricToDocx(rubric: Rubric) {
                             children: [
                                 new TextRun({ text: '[ ] ', size: 18, color: '666666' }),
                                 new TextRun({ text: si.label, size: 18, color: '666666' }),
-                                new TextRun({ text: ` (${si.minPoints ?? 0}-${max} pts)`, size: 16, color: '888888' }),
+                                new TextRun({
+                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
+                                    size: 16,
+                                    color: '888888',
+                                }),
                             ],
                             spacing: { before: 60 },
                         });
@@ -245,7 +257,9 @@ export async function exportRubricToDocx(rubric: Rubric) {
                                       new Paragraph({
                                           children: [
                                               new TextRun({
-                                                  text: `${formatPointsRange(l.minPoints, l.maxPoints)} pts`,
+                                                  text: docLabel('points', {
+                                                      points: formatPointsRange(l.minPoints, l.maxPoints),
+                                                  }),
                                                   bold: true,
                                               }),
                                           ],
@@ -337,12 +351,13 @@ export function buildRubricGridDocxChildren(
     );
 
     // Score summary line
+    const pointsText = docLabel('points', { points: `${summary.rawScore}/${summary.configuredMaxPoints}` });
     const gradeText =
         fmt.showCalculatedGrade === false
-            ? `${summary.rawScore}/${summary.configuredMaxPoints} pts`
+            ? pointsText
             : scale
-              ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`
-              : `${summary.modifiedPercentage.toFixed(1)}% · ${summary.rawScore}/${summary.configuredMaxPoints} pts`;
+              ? `${summary.letterGrade} · ${summary.modifiedPercentage.toFixed(1)}% · ${pointsText}`
+              : `${summary.modifiedPercentage.toFixed(1)}% · ${pointsText}`;
     children.push(
         new Paragraph({
             children: [new TextRun({ text: gradeText, bold: true, size: 24 })],
@@ -359,7 +374,7 @@ export function buildRubricGridDocxChildren(
               // Single-point 3-column header: Not Yet | Proficiency Standard | Exceeds
               new TableRow({
                   tableHeader: true,
-                  children: ['Not Yet', 'Proficiency Standard', 'Exceeds'].map(
+                  children: [docLabel('not_yet'), docLabel('proficiency_standard'), docLabel('exceeds')].map(
                       (label) =>
                           new TableCell({
                               children: [
@@ -381,7 +396,7 @@ export function buildRubricGridDocxChildren(
                   const profDesc = c.levels[0]?.description ?? c.description ?? '';
 
                   const notYetRuns: TextRun[] = [
-                      new TextRun({ text: outcome === 'not-yet' ? '✗ Not Yet' : '', bold: true }),
+                      new TextRun({ text: outcome === 'not-yet' ? `✗ ${docLabel('not_yet')}` : '', bold: true }),
                   ];
                   if (outcome === 'not-yet' && comment)
                       notYetRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
@@ -392,7 +407,7 @@ export function buildRubricGridDocxChildren(
                       centerRuns.push(new TextRun({ text: `\n${comment}`, break: 1, italics: true }));
 
                   const exceedsRuns: TextRun[] = [
-                      new TextRun({ text: outcome === 'exceeds' ? '▲ Exceeds' : '', bold: true }),
+                      new TextRun({ text: outcome === 'exceeds' ? `▲ ${docLabel('exceeds')}` : '', bold: true }),
                   ];
                   if (outcome === 'exceeds' && comment)
                       exceedsRuns.push(new TextRun({ text: `\n${comment}`, break: 1 }));
@@ -422,7 +437,7 @@ export function buildRubricGridDocxChildren(
               // Standard 3-column header: Criterion | Level / Outcome | Comment
               new TableRow({
                   tableHeader: true,
-                  children: ['Criterion', 'Level / Outcome', 'Comment'].map(
+                  children: [docLabel('criterion'), docLabel('level_outcome'), docLabel('comment')].map(
                       (label, ci) =>
                           new TableCell({
                               children: [
@@ -483,7 +498,7 @@ export function buildRubricGridDocxChildren(
         const overall = stripCommentHtml(sr.overallComment);
         children.push(
             new Paragraph({
-                children: [new TextRun({ text: 'Overall comment: ', bold: true }), new TextRun(overall)],
+                children: [new TextRun({ text: `${docLabel('overall_comment')} `, bold: true }), new TextRun(overall)],
                 spacing: { before: 200 },
             })
         );

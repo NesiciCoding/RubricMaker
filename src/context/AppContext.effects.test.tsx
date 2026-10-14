@@ -88,6 +88,8 @@ vi.mock('../store/storage', () => ({
     isMigrationSkippedForSession: vi.fn(() => false),
     loadStore: vi.fn(() => loadStoreValue.current ?? mockEmptyState()),
     loadPendingQueue: vi.fn(() => []),
+    unconfirmedWriteIds: vi.fn(() => new Set<string>()),
+    retargetPendingUpsertToDelete: vi.fn(),
     loadCachedStudentRubrics: vi.fn(async () => []),
     sanitizeClassYears: vi.fn((cls) => cls),
     clearLocalData: vi.fn(),
@@ -105,6 +107,7 @@ vi.mock('../store/storage', () => ({
     saveStudents: vi.fn(),
     saveClasses: vi.fn(),
     saveStudentRubrics: vi.fn(),
+    saveStudentRubricsCache: vi.fn(async () => {}),
     saveAttachments: vi.fn(),
     saveGradeScales: vi.fn(),
     saveSettings: vi.fn(),
@@ -848,6 +851,72 @@ describe('AppContext startup effects', () => {
             await Promise.all(lateHydrateHandlers.map((h) => h({ data: null, error: 'boom' })));
         });
         expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), 'warning');
+    });
+
+    it('folds a grade saved before the cloud grade arrived into it and deletes the duplicate (#799)', async () => {
+        const { storageSync } = (await import('../services/database')) as unknown as {
+            storageSync: { isConnected: Mock; pushOne: Mock; pushMany: Mock };
+        };
+        const grade = (id: string, updatedAt: string, levelId: string) => ({
+            id,
+            rubricId: 'r1',
+            studentId: 's1',
+            isPeerReview: false,
+            overallComment: '',
+            entries: [{ criterionId: 'c1', levelId, comment: '', checkedSubItems: [] }],
+            updatedAt,
+        });
+        const cloudGrade = grade('r1_s1_cloud', '2026-10-01T10:00:00Z', 'old-level');
+        const offlineGrade = grade('r1_s1_offline', '2026-10-02T10:00:00Z', 'new-level');
+        // The offline save is still queued, so the merge keeps it next to the cloud record.
+        vi.mocked(storage.loadPendingQueue).mockReturnValue([
+            { entity: 'studentRubric', action: 'upsert', payload: offlineGrade, entityId: offlineGrade.id },
+        ] as never);
+
+        vi.mocked(storage.loadStore).mockReturnValue({
+            ...mockEmptyState(),
+            studentRubrics: [offlineGrade],
+        } as unknown as StoreData);
+        let grades: Array<{ id: string; entries: Array<{ levelId: string }> }> = [];
+        function GradesProbe() {
+            grades = useStoreSelector((st) => st.studentRubrics) as never;
+            return null;
+        }
+        render(
+            <AppProvider>
+                <GradesProbe />
+            </AppProvider>
+        );
+        await act(async () => {});
+
+        vi.mocked(storageSync.isConnected).mockReturnValue(true);
+        const fresh = { ...mockEmptyState(), studentRubrics: [cloudGrade] };
+        await act(async () => {
+            await Promise.all(lateHydrateHandlers.map((h) => h({ data: fresh as unknown as StoreData })));
+        });
+
+        // State loaded from the queue + cloud would hold two live grades; only one remains, under the
+        // cloud id, carrying the newer offline edit.
+        await waitFor(() => expect(grades).toHaveLength(1));
+        expect(grades[0].id).toBe('r1_s1_cloud');
+        expect(grades[0].entries[0].levelId).toBe('new-level');
+        expect(storageSync.pushOne).toHaveBeenCalledWith('studentRubric', 'delete', null, 'r1_s1_offline');
+        expect(storageSync.pushOne).toHaveBeenCalledWith(
+            'studentRubric',
+            'upsert',
+            expect.objectContaining({ id: 'r1_s1_cloud' }),
+            'r1_s1_cloud'
+        );
+        // The cache writers must persist the reconciled snapshot: flushing the pre-dedupe value
+        // would reload both grades on the next offline boot.
+        expect(vi.mocked(storage.saveStudentRubricsCache)).toHaveBeenCalledWith([
+            expect.objectContaining({ id: 'r1_s1_cloud' }),
+        ]);
+        // The queued upsert that minted the duplicate is retargeted at the delete, so replaying the
+        // queue cannot put the folded row back.
+        expect(vi.mocked(storage.retargetPendingUpsertToDelete)).toHaveBeenCalledWith('studentRubric', 'r1_s1_offline');
+        vi.mocked(storage.loadPendingQueue).mockReturnValue([]);
+        vi.mocked(storage.loadStore).mockImplementation(() => loadStoreValue.current ?? mockEmptyState());
     });
 
     it('ignores reconnect events while disconnected', async () => {

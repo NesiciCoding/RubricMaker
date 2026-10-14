@@ -4,7 +4,8 @@
  * Exports a rubric to DOCX using a user-uploaded blank template.
  * Option A approach: extract column header labels + header colour from the
  * uploaded template, then build the output document with the existing `docx`
- * library, preserving those styling cues.
+ * library, preserving those styling cues. Only the blank rubric Word export uses
+ * it; graded per-student DOCX exports keep the built-in layout.
  */
 
 import {
@@ -21,11 +22,48 @@ import {
     ShadingType,
 } from 'docx';
 import { saveAs } from 'file-saver';
+import i18n from 'i18next';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
 import { orderedLevels } from './gradeCalc';
+import { contrastRatio } from './contrastCheck';
+
+const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
 // ─── Template parsing (mammoth extracts the HTML table header) ────────────────
+
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+export const DEFAULT_TEMPLATE_HEADER_COLOR = '#1e3a5f';
+
+const DARK_HEADER_TEXT = '1F2937';
+
+/** A template may shade its header row in any colour, so white labels would vanish on a light fill. */
+export function headerTextColor(fill: string): string {
+    return contrastRatio('#FFFFFF', fill) >= contrastRatio(DARK_HEADER_TEXT, fill) ? 'FFFFFF' : DARK_HEADER_TEXT;
+}
+
+/** docx only accepts a 6-digit hex fill; anything else (3-digit, `auto`, names) must never reach it. */
+export function toDocxFill(value: string | undefined): string | undefined {
+    const hex = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value?.trim() ?? '')?.[1];
+    if (!hex) return undefined;
+    return (hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex).toUpperCase();
+}
+
+/** Mammoth drops cell shading, so the header colour is read from the first table row's `w:shd` in the raw XML. */
+async function readHeaderFill(arrayBuffer: ArrayBuffer): Promise<string | undefined> {
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const xml = await zip.file('word/document.xml')?.async('text');
+    if (!xml) return undefined;
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length > 0) return undefined;
+    const firstRow = doc.getElementsByTagNameNS(W_NS, 'tbl')[0]?.getElementsByTagNameNS(W_NS, 'tr')[0];
+    for (const shd of Array.from(firstRow?.getElementsByTagNameNS(W_NS, 'shd') ?? [])) {
+        const fill = toDocxFill(shd.getAttributeNS(W_NS, 'fill') ?? undefined);
+        if (fill) return fill;
+    }
+    return undefined;
+}
 
 export async function parseTemplateHeaders(file: File): Promise<{
     levelHeaders: string[];
@@ -39,7 +77,7 @@ export async function parseTemplateHeaders(file: File): Promise<{
     const doc = parser.parseFromString(result.value, 'text/html');
 
     const table = doc.querySelector('table');
-    if (!table) return { levelHeaders: [], headerColor: '#1e3a5f' };
+    if (!table) return { levelHeaders: [], headerColor: DEFAULT_TEMPLATE_HEADER_COLOR };
 
     // First row = level headers; skip first cell (criterion column)
     const headerRow = table.querySelector('tr');
@@ -51,13 +89,8 @@ export async function parseTemplateHeaders(file: File): Promise<{
         .map((td) => td.textContent?.trim() ?? '')
         .filter(Boolean);
 
-    // Try to detect a background colour from inline style or class (basic extraction)
-    let headerColor = '#1e3a5f';
-    const style = (headerRow as HTMLElement)?.getAttribute('style') ?? '';
-    const match = style.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,6}|rgb\([^)]+\))/i);
-    if (match) headerColor = match[1];
-
-    return { levelHeaders, headerColor };
+    const fill = await readHeaderFill(arrayBuffer).catch(() => undefined);
+    return { levelHeaders, headerColor: fill ? `#${fill}` : DEFAULT_TEMPLATE_HEADER_COLOR };
 }
 
 // ─── Export ────────────────────────────────────────────────────────────────────
@@ -75,7 +108,9 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
         template.levelHeaders.length === rubricLevelLabels.length && template.levelHeaders.length > 0;
 
     const levelLabels = useTemplateHeaders ? template.levelHeaders : rubricLevelLabels;
-    const headerBg = (template.headerColor ?? fmt.headerColor).replace('#', '');
+    const headerBg =
+        toDocxFill(template.headerColor) ?? toDocxFill(fmt.headerColor) ?? toDocxFill(DEFAULT_TEMPLATE_HEADER_COLOR)!;
+    const headerText = headerTextColor(headerBg);
 
     // ── Header Row ──────────────────────────────────────────────────────────────
     const headerRow = new TableRow({
@@ -87,7 +122,12 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                 children: [
                     new Paragraph({
                         children: [
-                            new TextRun({ text: 'Criterion', bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                            new TextRun({
+                                text: docLabel('criterion'),
+                                bold: true,
+                                color: headerText,
+                                size: fmt.fontSize * 2,
+                            }),
                         ],
                     }),
                 ],
@@ -105,9 +145,15 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                         new Paragraph({
                             alignment: AlignmentType.CENTER,
                             children: [
-                                new TextRun({ text: label, bold: true, color: 'FFFFFF', size: fmt.fontSize * 2 }),
+                                new TextRun({ text: label, bold: true, color: headerText, size: fmt.fontSize * 2 }),
                                 ...(pointsStr
-                                    ? [new TextRun({ text: pointsStr, color: 'FFFFFF', size: (fmt.fontSize - 2) * 2 })]
+                                    ? [
+                                          new TextRun({
+                                              text: pointsStr,
+                                              color: headerText,
+                                              size: (fmt.fontSize - 2) * 2,
+                                          }),
+                                      ]
                                     : []),
                             ],
                         }),
@@ -148,7 +194,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                   new Paragraph({
                                       children: [
                                           new TextRun({
-                                              text: `Weight: ${c.weight}%`,
+                                              text: docLabel('weight', { weight: c.weight }),
                                               size: (fmt.fontSize - 2) * 2,
                                               color: '888888',
                                           }),
@@ -168,7 +214,7 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                 new TextRun({ text: '[ ] ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({
-                                    text: ` (${si.minPoints ?? 0}-${max} pts)`,
+                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
                                     size: (fmt.fontSize - 3) * 2,
                                     color: '888888',
                                 }),
@@ -190,7 +236,12 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                                           spacing: { before: 80 },
                                           children: [
                                               new TextRun({
-                                                  text: `${l.minPoints === l.maxPoints ? l.maxPoints : `${l.minPoints}–${l.maxPoints}`} pts`,
+                                                  text: docLabel('points', {
+                                                      points:
+                                                          l.minPoints === l.maxPoints
+                                                              ? l.maxPoints
+                                                              : `${l.minPoints}–${l.maxPoints}`,
+                                                  }),
                                                   bold: true,
                                                   size: (fmt.fontSize - 2) * 2,
                                               }),
@@ -251,7 +302,10 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                               new Paragraph({
                                   children: [
                                       new TextRun({
-                                          text: `Note: Template column count (${template.levelHeaders.length}) did not match rubric levels (${rubricLevelLabels.length}); rubric level labels were used instead.`,
+                                          text: docLabel('template_mismatch_note', {
+                                              templateCount: template.levelHeaders.length,
+                                              rubricCount: rubricLevelLabels.length,
+                                          }),
                                           color: '888888',
                                           italics: true,
                                           size: 18,

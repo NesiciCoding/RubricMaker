@@ -249,6 +249,33 @@ describe('GradeStudent', () => {
         expect(anchorBox.checked).toBe(true);
     });
 
+    it('collapses the footer options behind a toggle that reflects their state (#660)', () => {
+        renderPage();
+        const toggle = screen.getByRole('button', { name: 'gradeStudent.footer_options' });
+        const options = document.getElementById('grade-footer-options')!;
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        expect(toggle).toHaveAttribute('aria-controls', 'grade-footer-options');
+        expect(options).not.toHaveClass('open');
+        fireEvent.click(toggle);
+        expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        expect(options).toHaveClass('open');
+        expect(toggle).toHaveClass('btn-ghost');
+        fireEvent.click(screen.getByLabelText('gradeStudent.feedback_only_label'));
+        expect(toggle).toHaveClass('btn-secondary');
+    });
+
+    it('wraps the Save & Next first name in a truncating span titled with the full name (#660)', () => {
+        renderPage();
+        const name = document.querySelector('.grade-footer-actions .grade-footer-next-name')!;
+        expect(name).toHaveTextContent('Bob');
+        expect(name).toHaveAttribute('title', 'Bob');
+    });
+
+    it('counts graded criteria with a plural-aware key (#660)', () => {
+        renderPage();
+        expect(screen.getByText(/^gradeStudent\.criteria_graded:\{"graded":\d+,"count":\d+\}$/)).toBeInTheDocument();
+    });
+
     function tickFeedbackOnlyAndAnchor() {
         fireEvent.click(screen.getByLabelText('gradeStudent.feedback_only_label'));
         const anchorLabel = Array.from(document.querySelectorAll('label')).find((l) =>
