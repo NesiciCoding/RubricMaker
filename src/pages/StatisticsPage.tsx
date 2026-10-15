@@ -746,7 +746,10 @@ export default function StatisticsPage() {
 
                     {viewMode === 'rubric' ? (
                         <>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
+                            <div
+                                className="form-group"
+                                style={{ flex: '1 1 240px', minWidth: 200, maxWidth: 380, marginBottom: 0 }}
+                            >
                                 <label htmlFor="stats-rubric">{t('statistics.label_rubric')}</label>
                                 <select
                                     id="stats-rubric"
@@ -889,7 +892,10 @@ export default function StatisticsPage() {
                                     allLabel={t('statistics.all_classes')}
                                 />
                             </div>
-                            <div className="form-group" style={{ flex: 1, maxWidth: 320, marginBottom: 0 }}>
+                            <div
+                                className="form-group"
+                                style={{ flex: '1 1 240px', minWidth: 200, maxWidth: 380, marginBottom: 0 }}
+                            >
                                 <label htmlFor="stats-student">{t('statistics.label_student')}</label>
                                 <select
                                     id="stats-student"
@@ -901,6 +907,10 @@ export default function StatisticsPage() {
                                     </option>
                                     {students
                                         .filter((s) => studentViewClassId === 'all' || s.classId === studentViewClassId)
+                                        // Alphabetical, not store insertion order: a teacher looking for
+                                        // one name should not have to scan the roster's import order.
+                                        .slice()
+                                        .sort((a, b) => a.name.localeCompare(b.name))
                                         .map((s) => (
                                             <option key={s.id} value={s.id}>
                                                 {s.name}

@@ -2833,7 +2833,8 @@
         "rationale_developing": "Avg {{score}}% across {{count}} assessment(s), threshold {{threshold}}% — developing",
         "working_toward": "Working toward {{level}} — not achieved yet",
         "legend_developing": "Solid badges are achieved levels. A dashed badge means the student is still working toward that level (below the achievement threshold).",
-        "standard_no_score": "No score yet"
+        "standard_no_score": "No score yet",
+        "no_graded_work_yet": "No graded work yet — these tiles fill in once the student has graded rubrics."
     },
     "learningPath": {
         "page_title": "Learning Path",
@@ -2852,7 +2853,8 @@
         "flag_kind_criterion": "Criterion",
         "flag_kind_cefr_skill": "CEFR Skill",
         "flag_streak": "{{count}} consecutive low scores",
-        "flag_scores": "Scores: {{scores}}%"
+        "flag_scores": "Scores: {{scores}}%",
+        "recommendations_no_graded_work": "No graded work yet — recommendations appear once this student has a graded rubric."
     },
     "analysis": {
         "detection_disclaimer": "Vocabulary and grammar detection is rule- and NLP-based (no AI) and approximate. It may miss some structures, flag false matches, and does not catch misspelled words — always review the results before relying on them.",

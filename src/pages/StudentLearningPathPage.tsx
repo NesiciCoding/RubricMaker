@@ -228,7 +228,15 @@ export default function StudentLearningPathPage() {
                     {recommendations.length === 0 ? (
                         <div className="empty-state" style={{ padding: '32px 20px' }}>
                             <BookOpen size={28} style={{ opacity: 0.4 }} />
-                            <p>{t('learningPath.recommendations_empty')}</p>
+                            {/* An ungraded student has no class average to trail, so 'nothing to
+                                recommend yet' must not be phrased as 'not trailing'. */}
+                            <p>
+                                {t(
+                                    achievedRubricIds.size > 0
+                                        ? 'learningPath.recommendations_empty'
+                                        : 'learningPath.recommendations_no_graded_work'
+                                )}
+                            </p>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

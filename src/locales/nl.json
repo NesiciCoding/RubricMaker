@@ -2833,7 +2833,8 @@
         "rationale_developing": "Gem. {{score}}% over {{count}} beoordeling(en), drempel {{threshold}}% — in ontwikkeling",
         "working_toward": "Werkt toe naar {{level}} — nog niet behaald",
         "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel).",
-        "standard_no_score": "Nog geen score"
+        "standard_no_score": "Nog geen score",
+        "no_graded_work_yet": "Nog geen beoordeeld werk — deze tegels vullen zich zodra de leerling beoordeelde rubrics heeft."
     },
     "learningPath": {
         "page_title": "Leerpad",
@@ -2852,7 +2853,8 @@
         "flag_kind_criterion": "Criterium",
         "flag_kind_cefr_skill": "ERK-vaardigheid",
         "flag_streak": "{{count}} opeenvolgende lage scores",
-        "flag_scores": "Scores: {{scores}}%"
+        "flag_scores": "Scores: {{scores}}%",
+        "recommendations_no_graded_work": "Nog geen beoordeeld werk — aanbevelingen verschijnen zodra deze leerling een beoordeelde rubric heeft."
     },
     "analysis": {
         "detection_disclaimer": "Detectie van woordenschat en grammatica is gebaseerd op regels en NLP (geen AI) en bij benadering. Het kan structuren missen, onterecht matchen en controleert geen verkeerd gespelde woorden — controleer de resultaten altijd voordat je erop vertrouwt.",

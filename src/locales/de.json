@@ -2833,7 +2833,8 @@
         "rationale_developing": "Ø {{score}}% über {{count}} Bewertung(en), Schwelle {{threshold}}% — im Aufbau",
         "working_toward": "Arbeitet auf {{level}} hin — noch nicht erreicht",
         "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle).",
-        "standard_no_score": "Noch keine Punktzahl"
+        "standard_no_score": "Noch keine Punktzahl",
+        "no_graded_work_yet": "Noch keine benotete Arbeit — diese Kacheln füllen sich, sobald der Schüler benotete Raster hat."
     },
     "learningPath": {
         "page_title": "Lernpfad",
@@ -2852,7 +2853,8 @@
         "flag_kind_criterion": "Kriterium",
         "flag_kind_cefr_skill": "GER-Fähigkeit",
         "flag_streak": "{{count}} aufeinanderfolgende niedrige Bewertungen",
-        "flag_scores": "Bewertungen: {{scores}}%"
+        "flag_scores": "Bewertungen: {{scores}}%",
+        "recommendations_no_graded_work": "Noch keine benotete Arbeit — Empfehlungen erscheinen, sobald der Schüler ein benotetes Raster hat."
     },
     "analysis": {
         "detection_disclaimer": "Die Erkennung von Wortschatz und Grammatik basiert auf Regeln und NLP (keine KI) und ist näherungsweise. Sie kann Strukturen übersehen, falsche Treffer melden und prüft keine falsch geschriebenen Wörter — überprüfen Sie die Ergebnisse stets, bevor Sie sich darauf verlassen.",

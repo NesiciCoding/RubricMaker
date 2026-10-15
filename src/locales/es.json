@@ -2833,7 +2833,8 @@
         "rationale_developing": "Media {{score}}% en {{count}} evaluación(es), umbral {{threshold}}% — en desarrollo",
         "working_toward": "Trabajando hacia {{level}}: aún no alcanzado",
         "legend_developing": "Las insignias rellenas son niveles alcanzados. Una insignia discontinua significa que el alumno aún trabaja hacia ese nivel (por debajo del umbral de logro).",
-        "standard_no_score": "Aún sin puntuación"
+        "standard_no_score": "Aún sin puntuación",
+        "no_graded_work_yet": "Aún no hay trabajo calificado: estas tarjetas se rellenan cuando el estudiante tenga rúbricas calificadas."
     },
     "learningPath": {
         "page_title": "Ruta de aprendizaje",
@@ -2852,7 +2853,8 @@
         "flag_kind_criterion": "Criterio",
         "flag_kind_cefr_skill": "Competencia MCER",
         "flag_streak": "{{count}} puntuaciones bajas consecutivas",
-        "flag_scores": "Puntuaciones: {{scores}}%"
+        "flag_scores": "Puntuaciones: {{scores}}%",
+        "recommendations_no_graded_work": "Aún no hay trabajo calificado: las recomendaciones aparecen cuando el estudiante tenga una rúbrica calificada."
     },
     "analysis": {
         "detection_disclaimer": "La detección de vocabulario y gramática se basa en reglas y PLN (sin IA) y es aproximada. Puede pasar por alto estructuras, marcar coincidencias falsas y no detecta palabras mal escritas — revisa siempre los resultados antes de confiar en ellos.",

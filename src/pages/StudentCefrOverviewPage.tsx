@@ -122,6 +122,10 @@ export default function StudentCefrOverviewPage() {
         ]
     );
 
+    // No self-assessment descriptors at all means the confidence rate was never measurable;
+    // an empty sample must not be reported as '0% confident'.
+    const hasConfidenceData = (overview?.cells ?? []).some((c) => c.descriptors.length > 0);
+
     // Build CefrEntry[] for the radar (only cells with rubric data)
     const radarEntries = useMemo(
         () =>
@@ -263,12 +267,13 @@ export default function StudentCefrOverviewPage() {
                     </button>
                 </div>
 
-                {/* Summary stat cards */}
+                {/* Summary stat cards. With no graded work the tiles show an em dash instead of a
+                    literal 0 / 0%, which reads like a measured result for a student who has none. */}
                 {overview && (
                     <div className="grid-3" style={{ marginBottom: 24 }}>
                         <div className="card" style={{ borderTop: '3px solid var(--accent)' }}>
                             <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)' }}>
-                                {overview.skillsWithRubricData}
+                                {overview.skillsWithRubricData > 0 ? overview.skillsWithRubricData : '—'}
                             </div>
                             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
                                 {t('cefrOverview.stat_skills_assessed')}
@@ -285,7 +290,7 @@ export default function StudentCefrOverviewPage() {
                                     color: 'var(--green, #22c55e)',
                                 }}
                             >
-                                {Math.round(overview.overallConfidenceRate)}%
+                                {hasConfidenceData ? `${Math.round(overview.overallConfidenceRate)}%` : '—'}
                             </div>
                             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginTop: 4 }}>
                                 {t('cefrOverview.stat_confidence_rate')}
@@ -312,6 +317,11 @@ export default function StudentCefrOverviewPage() {
                             </div>
                         </div>
                     </div>
+                )}
+                {overview && overview.skillsWithRubricData === 0 && (
+                    <p className="text-muted text-sm" style={{ marginTop: -12, marginBottom: 24 }}>
+                        {t('cefrOverview.no_graded_work_yet')}
+                    </p>
                 )}
 
                 {/* Radar chart */}

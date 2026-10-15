@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -92,7 +92,13 @@ const richOverview = {
             confidentCount: 1,
             confidenceRate: 25,
             state: 'not-started',
-            descriptors: [],
+            // Self-assessment descriptors, so the confidence tile has a real sample to report.
+            descriptors: [
+                { descriptorId: 'd1', confidentInSelfAssess: true },
+                { descriptorId: 'd2', confidentInSelfAssess: false },
+                { descriptorId: 'd3', confidentInSelfAssess: false },
+                { descriptorId: 'd4', confidentInSelfAssess: false },
+            ],
         },
     ],
     cellMap: new Map(),
@@ -327,6 +333,16 @@ describe('StudentCefrOverviewPage coverage', () => {
             vi.advanceTimersByTime(2000);
         });
         expect(screen.getAllByText('cefrOverview.share_button').length).toBe(2);
+    });
+
+    it('shows em dashes and a no-graded-work note for a student with nothing graded', () => {
+        mockGetOverview.mockReturnValue(emptyOverview);
+        mockState.classes = [{ id: 'c1', name: 'Class A' }];
+        renderAt();
+        // '0 skills assessed' / '0% confident' read like measured results; ungraded work is not.
+        const tiles = document.querySelector('.grid-3') as HTMLElement;
+        expect(within(tiles).getAllByText('—')).toHaveLength(2);
+        expect(screen.getByText('cefrOverview.no_graded_work_yet')).toBeInTheDocument();
     });
 
     it('shows the empty grid when there is no CEFR data and hides radar/evidence/panels', () => {
