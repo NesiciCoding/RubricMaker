@@ -55,8 +55,10 @@ test.describe('Essay workflow — full lifecycle (offline)', () => {
 
         // EssayAssignmentModal opens — the footer's "Assign to students" is the
         // one that persists the fan-out (the builder's trigger is aria-hidden
-        // behind the Radix dialog, so target the dialog itself).
-        await expect(appPage.getByRole('dialog').getByText('Essay Assignment — Ada Essay')).toBeVisible({
+        // behind the Radix dialog, so target the dialog itself). Assigning the
+        // whole class names the class rather than whichever student is first in
+        // the roster (#697).
+        await expect(appPage.getByRole('dialog').getByText(/whole class \(2 students\)/i)).toBeVisible({
             timeout: 5_000,
         });
         await appPage
