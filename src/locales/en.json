@@ -2759,7 +2759,8 @@
         "launch_session": "Speaking Session",
         "new_session": "New Session",
         "choose_rubric": "Choose rubric",
-        "empty_state_no_sessions": "No speaking sessions yet. Click \"New Session\" above to start one."
+        "empty_state_no_sessions": "No speaking sessions yet. Click \"New Session\" above to start one.",
+        "mode_switch_needs_save": "Save this session before switching mode."
     },
     "recordings": {
         "panel_title": "Recordings",

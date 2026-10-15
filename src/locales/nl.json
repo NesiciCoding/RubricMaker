@@ -2759,7 +2759,8 @@
         "launch_session": "Spreeksessie",
         "new_session": "Nieuwe sessie",
         "choose_rubric": "Kies rubriek",
-        "empty_state_no_sessions": "Nog geen spreeksessies. Klik op \"Nieuwe sessie\" hierboven om te beginnen."
+        "empty_state_no_sessions": "Nog geen spreeksessies. Klik op \"Nieuwe sessie\" hierboven om te beginnen.",
+        "mode_switch_needs_save": "Sla deze sessie op voordat je van modus wisselt."
     },
     "recordings": {
         "panel_title": "Opnames",

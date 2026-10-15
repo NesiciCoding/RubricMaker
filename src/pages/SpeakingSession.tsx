@@ -18,6 +18,16 @@ import type {
     SpeakingSession as SpeakingSessionType,
 } from '../types';
 
+const DEFAULT_DURATION_MINUTES = 2;
+const MIN_DURATION_MINUTES = 1;
+const MAX_DURATION_MINUTES = 30;
+
+/** Minutes for the duration field, derived from a saved session so reopening one keeps its timing. */
+function durationMinutesFrom(seconds: number | undefined): number {
+    if (!seconds || seconds <= 0) return DEFAULT_DURATION_MINUTES;
+    return Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, Math.round(seconds / 60)));
+}
+
 const ERROR_TYPES: PronunciationErrorType[] = [
     'word_stress',
     'sentence_stress',
@@ -67,7 +77,11 @@ export default function SpeakingSession() {
     const existingSession = mode === 'practice' ? existingPracticeSession : existingAssessmentSession;
 
     // ── Timer state ─────────────────────────────────────────────────────────────
-    const [durationMinutes, setDurationMinutes] = useState(2);
+    // The field keeps the raw text so it can be cleared mid-retype; `durationMinutes` is the
+    // clamped value the timer actually uses (updated on every keystroke, re-synced on blur).
+    const initialDurationMinutes = durationMinutesFrom(existingSession?.durationSeconds);
+    const [durationInput, setDurationInput] = useState(String(initialDurationMinutes));
+    const [durationMinutes, setDurationMinutes] = useState(initialDurationMinutes);
     const [elapsed, setElapsed] = useState(existingSession?.elapsedSeconds ?? 0);
     const [timerRunning, setTimerRunning] = useState(false);
     const [timerLocked, setTimerLocked] = useState(!!existingSession);
@@ -152,11 +166,32 @@ export default function SpeakingSession() {
     const timerPct = Math.min(100, (elapsed / durationSeconds) * 100);
     const timeUp = elapsed >= durationSeconds;
 
+    // ── Duration input ──────────────────────────────────────────────────────────
+    function handleDurationChange(raw: string) {
+        setDurationInput(raw);
+        setElapsed(0);
+        setIsDirty(true);
+        const parsed = Number.parseInt(raw, 10);
+        // An empty or unparsable field mid-retype keeps the last committed duration instead of
+        // snapping to a value the teacher never typed.
+        if (Number.isFinite(parsed)) {
+            setDurationMinutes(Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, parsed)));
+        }
+    }
+
+    function handleDurationBlur() {
+        // Show the clamped value (e.g. 0 → 1, 99 → 30, empty → the last valid minutes).
+        setDurationInput(String(durationMinutes));
+    }
+
     // ── Mode switching ──────────────────────────────────────────────────────────
     function switchMode(next: 'practice' | 'assessment') {
         if (next === mode || isDirty) return;
         const target = next === 'practice' ? existingPracticeSession : existingAssessmentSession;
+        const targetMinutes = durationMinutesFrom(target?.durationSeconds);
         setMode(next);
+        setDurationInput(String(targetMinutes));
+        setDurationMinutes(targetMinutes);
         setElapsed(target?.elapsedSeconds ?? 0);
         setTimerLocked(!!target);
         setTimerRunning(false);
@@ -287,6 +322,11 @@ export default function SpeakingSession() {
                     <span className="text-muted text-xs">
                         {mode === 'practice' ? t('speaking.mode_practice_help') : t('speaking.mode_assessment_help')}
                     </span>
+                    {isDirty && (
+                        <span className="text-muted text-xs" role="status">
+                            {t('speaking.mode_switch_needs_save')}
+                        </span>
+                    )}
                 </div>
 
                 {/* ── Timer Panel ── */}
@@ -304,13 +344,11 @@ export default function SpeakingSession() {
                             <input
                                 id="sp-duration"
                                 type="number"
-                                min={1}
-                                max={30}
-                                value={durationMinutes}
-                                onChange={(e) => {
-                                    setDurationMinutes(Math.max(1, Number(e.target.value)));
-                                    setElapsed(0);
-                                }}
+                                min={MIN_DURATION_MINUTES}
+                                max={MAX_DURATION_MINUTES}
+                                value={durationInput}
+                                onChange={(e) => handleDurationChange(e.target.value)}
+                                onBlur={handleDurationBlur}
                                 disabled={timerRunning}
                                 style={{ maxWidth: 80 }}
                             />

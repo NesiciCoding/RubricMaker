@@ -2759,7 +2759,8 @@
         "launch_session": "Sprechsitzung",
         "new_session": "Neue Sitzung",
         "choose_rubric": "Rubrik wählen",
-        "empty_state_no_sessions": "Noch keine Sprechsitzungen. Klicken Sie oben auf \"Neue Sitzung\"."
+        "empty_state_no_sessions": "Noch keine Sprechsitzungen. Klicken Sie oben auf \"Neue Sitzung\".",
+        "mode_switch_needs_save": "Speichern Sie diese Sitzung, bevor Sie den Modus wechseln."
     },
     "recordings": {
         "panel_title": "Aufnahmen",

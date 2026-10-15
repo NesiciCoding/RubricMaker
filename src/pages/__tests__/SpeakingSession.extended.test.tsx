@@ -275,4 +275,71 @@ describe('SpeakingSession extended', () => {
         fireEvent.click(screen.getAllByText('speaking.save_session')[0]);
         expect(mockSaveSpeakingSession.mock.calls[0][0].recordings).toHaveLength(1);
     });
+
+    it('reopens a saved session with its own duration, not the 2-minute default', () => {
+        // A 5-minute session saved with 1 min elapsed must show 04:00 remaining, not 01:00.
+        const assessmentSession: SpeakingSessionType = {
+            id: 'as1',
+            rubricId: 'r1',
+            studentId: 's1',
+            durationSeconds: 300,
+            elapsedSeconds: 60,
+            pronunciationMarks: [],
+            entries: [],
+            overallComment: '',
+            gradedAt: '2024-01-02T00:00:00Z',
+        };
+        mockAppValue.speakingSessions = [assessmentSession];
+        renderAt();
+        expect(screen.getByText('04:00')).toBeInTheDocument();
+        expect(screen.getByText('speaking.elapsed_time:{"elapsed":60,"duration":300}')).toBeInTheDocument();
+    });
+
+    it('adopts the practice slot duration when switching modes', () => {
+        // The assessment slot is 2 min (default) while the practice slot was saved at 10 min.
+        mockAppValue.speakingSessions = [{ ...practiceSession, durationSeconds: 600, elapsedSeconds: 60 }];
+        renderAt();
+        expect(screen.getByLabelText('speaking.duration_minutes')).toHaveValue(2);
+        fireEvent.click(screen.getByText('speaking.mode_practice'));
+        expect(screen.getByText('09:00')).toBeInTheDocument();
+        // Back to assessment: the 2-minute default returns.
+        fireEvent.click(screen.getByText('speaking.mode_assessment'));
+        expect(screen.getByLabelText('speaking.duration_minutes')).toHaveValue(2);
+    });
+
+    it('lets the duration field be cleared and clamps out-of-range values', () => {
+        renderAt();
+        const input = screen.getByLabelText('speaking.duration_minutes') as HTMLInputElement;
+
+        fireEvent.change(input, { target: { value: '' } });
+        // Empty mid-retype: the timer keeps the last committed duration instead of collapsing.
+        expect(input.value).toBe('');
+        expect(screen.getByText('02:00')).toBeInTheDocument();
+
+        // Above the 30-minute max: the timer clamps, the field re-syncs on blur.
+        fireEvent.change(input, { target: { value: '99' } });
+        expect(screen.getByText('30:00')).toBeInTheDocument();
+        fireEvent.blur(input);
+        expect(input.value).toBe('30');
+
+        // Below the 1-minute min.
+        fireEvent.change(input, { target: { value: '0' } });
+        expect(screen.getByText('01:00')).toBeInTheDocument();
+        fireEvent.blur(input);
+        expect(input.value).toBe('1');
+    });
+
+    it('marks the session dirty on a duration change and explains the blocked mode switch', () => {
+        renderAt();
+        expect(screen.queryByText('speaking.mode_switch_needs_save')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('speaking.duration_minutes'), { target: { value: '5' } });
+        expect(screen.getByText('speaking.mode_practice').closest('button')).toBeDisabled();
+        expect(screen.getByText('speaking.mode_switch_needs_save')).toBeInTheDocument();
+
+        // Saving clears the dirty flag, so the toggle works and the hint disappears.
+        fireEvent.click(screen.getAllByText('speaking.save_session')[0]);
+        expect(screen.queryByText('speaking.mode_switch_needs_save')).not.toBeInTheDocument();
+        expect(screen.getByText('speaking.mode_practice').closest('button')).not.toBeDisabled();
+    });
 });
