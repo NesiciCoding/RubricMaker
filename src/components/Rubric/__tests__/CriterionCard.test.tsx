@@ -106,4 +106,32 @@ describe('CriterionCard', () => {
         expect(screen.getByDisplayValue('Alpha updated')).toBeInTheDocument();
         expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1);
     });
+
+    it('flags the weight field as ignored in total points mode (#681)', () => {
+        const renderCard = (scoringMode: 'weighted-percentage' | 'total-points' | 'single-point') =>
+            render(
+                <DragDropContext onDragEnd={noop}>
+                    <Droppable droppableId="criteria">
+                        {(provided) => (
+                            <div ref={provided.innerRef} {...provided.droppableProps}>
+                                <CriterionCard
+                                    {...cardProps(makeCriterion('c1', 'Alpha'), noop)}
+                                    scoringMode={scoringMode}
+                                />
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+            );
+
+        const { unmount } = renderCard('total-points');
+        expect(screen.getByLabelText('rubricBuilder.label_weight')).toHaveAttribute(
+            'title',
+            'rubricBuilder.weights_ignored_total_points'
+        );
+        unmount();
+
+        renderCard('weighted-percentage');
+        expect(screen.getByLabelText('rubricBuilder.label_weight')).not.toHaveAttribute('title');
+    });
 });

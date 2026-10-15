@@ -207,6 +207,11 @@ export default memo(function CriterionCard({
                                                 weight: Number(e.target.value),
                                             })
                                         }
+                                        title={
+                                            scoringMode === 'total-points'
+                                                ? t('rubricBuilder.weights_ignored_total_points')
+                                                : undefined
+                                        }
                                         style={{ width: 70 }}
                                     />
                                 </div>

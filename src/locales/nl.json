@@ -1665,6 +1665,7 @@
         "error_not_found": "Rubriek/Leerling niet gevonden.",
         "table_criterion": "Criterium",
         "table_points": "pt.",
+        "raw_points_unit": "ruwe ptn",
         "table_weight": "Gew%",
         "label_standard": "Leerdoel / Standaard",
         "label_override": "Overschrijft:",
@@ -1742,6 +1743,8 @@
         "nhi_banner": "Gemarkeerd als niet ingeleverd — dit werk telt niet mee in statistieken, het dashboard en het leerlingportaal. Een cijfer geven en opslaan haalt de markering weg.",
         "nhi_undo": "Niet ingeleverd ongedaan maken",
         "points_before_modifier": "Punten vóór de aanpassing",
+        "points_raw_hint": "Ruwe punten, vóór weging. Het percentage wordt per criterium gewogen en komt dus niet overeen met deze punten.",
+        "grade_pending_hint": "Beoordeel alle criteria om het eindcijfer te zien.",
         "criteria_graded_one": "{{graded}}/{{count}} criterium",
         "criteria_graded_other": "{{graded}}/{{count}} criteria",
         "footer_options": "Beoordelingsopties",
@@ -1892,6 +1895,7 @@
         "weight_total_label": "Totaal gewicht:",
         "weight_total_hint": "(moet 100% zijn)",
         "weight_total_warning": "Gewichten totaal {{total}}% (verwacht 100%). U kunt toch opslaan — het beoordelingssysteem normaliseert ze.",
+        "weights_ignored_total_points": "Totaal punten negeert deze gewichten: het cijfer is de ruwe score ÷ het ingestelde totaal. Kies Percentage met weging om ze te gebruiken.",
         "weight_distribute_evenly": "Gelijk verdelen",
         "cefr_skill_inherit": "— overnemen van rubriek —",
         "label_group_grading": "Groepsbeoordeling (deelt score bij groepsbeoordeling)",
@@ -2313,7 +2317,9 @@
         "performed_better": "{{name}} presteerde beter",
         "duplicate_records": "Deze leerling heeft {{count}} beoordelingen voor deze rubric.",
         "duplicate_records_keep": "Alleen deze bewaren",
-        "duplicate_records_keep_hint": "De andere beoordelingen gaan naar Beheer → Archief → Onlangs verwijderde cijfers, waar je ze kunt herstellen."
+        "duplicate_records_keep_hint": "De andere beoordelingen gaan naar Beheer → Archief → Onlangs verwijderde cijfers, waar je ze kunt herstellen.",
+        "per_student_limit_unlimited_one": "Geen limiet — {{count}} vergelijking",
+        "per_student_limit_unlimited_other": "Geen limiet — {{count}} vergelijkingen"
     },
     "studentPortal": {
         "not_found": "Leerling niet gevonden.",

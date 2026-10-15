@@ -2183,6 +2183,19 @@ describe('RubricBuilder', () => {
         expect(screen.getByText('90%')).toBeInTheDocument();
     });
 
+    it('says that total points ignores the weights the builder still lets you set (#681)', () => {
+        appOverrides = { rubrics: [{ ...mockRubric, scoringMode: 'total-points' }] };
+        renderEdit();
+        expect(screen.getByTestId('weights-ignored-hint')).toHaveTextContent(
+            'rubricBuilder.weights_ignored_total_points'
+        );
+    });
+
+    it('leaves the weight hint out of weighted-percentage mode, where weights count (#681)', () => {
+        renderEdit();
+        expect(screen.queryByTestId('weights-ignored-hint')).not.toBeInTheDocument();
+    });
+
     it('designer shows the max-points hint in total-points mode', () => {
         appOverrides = { rubrics: [{ ...mockRubric, scoringMode: 'total-points' }] };
         renderEdit();

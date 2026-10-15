@@ -582,6 +582,8 @@ describe('GradeStudent coverage', () => {
     it('falls back to the default grade scale when the rubric has none', () => {
         mockRubricsArr[0] = { ...mockRubric, gradeScaleId: undefined as unknown as string };
         renderPage();
+        // The letter is only shown once every criterion is scored (#681), so score the single one.
+        fireEvent.click(screen.getByText('Excellent'));
         expect(screen.getByText('A')).toBeInTheDocument();
         mockRubricsArr[0] = mockRubric;
     });
@@ -589,13 +591,17 @@ describe('GradeStudent coverage', () => {
     it('hides the grade scale chip when the scale id is none', () => {
         mockRubricsArr[0] = { ...mockRubric, gradeScaleId: 'none' };
         renderPage();
+        // Fully scored, so the missing chip can only come from the missing scale.
+        fireEvent.click(screen.getByText('Excellent'));
         expect(screen.queryByText('A')).not.toBeInTheDocument();
+        expect(document.querySelector('.grade-chip')).toBeNull();
         mockRubricsArr[0] = mockRubric;
     });
 
     it('falls back to the first grade scale when the scale id is unknown', () => {
         mockRubricsArr[0] = { ...mockRubric, gradeScaleId: 'missing-scale' };
         renderPage();
+        fireEvent.click(screen.getByText('Excellent'));
         expect(screen.getByText('A')).toBeInTheDocument();
         mockRubricsArr[0] = mockRubric;
     });

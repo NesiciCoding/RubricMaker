@@ -971,6 +971,13 @@ select.input-error {
     text-align: center;
 }
 
+/* Until every criterion is scored there is no letter grade yet, so the chip holds a dashed
+   placeholder instead of a colour-coded letter the teacher might read as final (#681). */
+.grade-chip-pending {
+    border: 2px dashed var(--border);
+    color: var(--text-dim);
+}
+
 /* ─── Grade footer ────────────────────────────────────────────────────────────
    In-flow flex item (not position: fixed) — .main-area is already exactly
    viewport-height with overflow:hidden and only .page-content scrolls inside

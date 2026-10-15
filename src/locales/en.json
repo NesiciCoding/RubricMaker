@@ -1665,6 +1665,7 @@
         "error_not_found": "Rubric/Student not found.",
         "table_criterion": "Criterion",
         "table_points": "pts",
+        "raw_points_unit": "raw pts",
         "table_weight": "Wt%",
         "label_standard": "Learning Goal / Standard",
         "label_override": "Override:",
@@ -1742,6 +1743,8 @@
         "nhi_banner": "Marked as not handed in — this work is left out of statistics, the dashboard and the student portal. Scoring and saving a grade clears the mark.",
         "nhi_undo": "Undo not handed in",
         "points_before_modifier": "Points before the modifier",
+        "points_raw_hint": "Raw marks, before weighting. The percentage is weighted by the criteria, so it does not match these points.",
+        "grade_pending_hint": "Grade every criterion to see the letter grade.",
         "criteria_graded_one": "{{graded}}/{{count}} criterion",
         "criteria_graded_other": "{{graded}}/{{count}} criteria",
         "footer_options": "Grade options",
@@ -1892,6 +1895,7 @@
         "weight_total_label": "Total weight:",
         "weight_total_hint": "(should be 100%)",
         "weight_total_warning": "Weights total {{total}}% (expected 100%). You can still save — the grade engine normalises them.",
+        "weights_ignored_total_points": "Total points ignores these weights: the grade is the raw score ÷ the configured total. Switch to Weighted percentage to use them.",
         "weight_distribute_evenly": "Distribute evenly",
         "cefr_skill_inherit": "— inherit from rubric —",
         "label_group_grading": "Group grading (shares score in group grading)",
@@ -2313,7 +2317,9 @@
         "performed_better": "{{name}} performed better",
         "duplicate_records": "This student has {{count}} grade records for this rubric.",
         "duplicate_records_keep": "Keep the one shown",
-        "duplicate_records_keep_hint": "The other records move to Admin → Archive → Recently deleted grades, where they can be restored."
+        "duplicate_records_keep_hint": "The other records move to Admin → Archive → Recently deleted grades, where they can be restored.",
+        "per_student_limit_unlimited_one": "No limit — {{count}} matchup",
+        "per_student_limit_unlimited_other": "No limit — {{count}} matchups"
     },
     "studentPortal": {
         "not_found": "Student not found.",
