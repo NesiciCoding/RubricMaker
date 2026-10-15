@@ -508,6 +508,8 @@ export default function QuestionEditor({
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {/* Drag handle */}
+                    {/* The handle carries the label as text rather than aria-label: outside a
+                        Droppable it has no role, and a name on a role-less div is invalid (#697). */}
                     <div
                         {...(dragHandleProps ?? {})}
                         style={{
@@ -517,9 +519,9 @@ export default function QuestionEditor({
                             alignItems: 'center',
                             padding: '2px 0',
                         }}
-                        aria-label={t('tests.drag_question')}
                     >
-                        <GripVertical size={16} />
+                        <GripVertical size={16} aria-hidden="true" />
+                        <span className="sr-only">{t('tests.drag_question')}</span>
                     </div>
                     <span className="badge badge-blue">{t('tests.question_number', { number: index + 1 })}</span>
                 </div>

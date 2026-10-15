@@ -207,7 +207,7 @@ describe('TestListPage', () => {
         );
         expect(screen.getByText('Vocabulary Quiz')).toBeInTheDocument();
         expect(screen.getByText(/tests.question_count/)).toBeInTheDocument();
-        expect(screen.getByText(/tests.total_points/)).toBeInTheDocument();
+        expect(screen.getByText(/tests.points_total/)).toBeInTheDocument();
     });
 
     it('duplicates a test with a new id and copy suffix', async () => {

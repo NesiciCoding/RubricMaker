@@ -110,6 +110,44 @@ beforeEach(() => {
 });
 
 describe('ExamScanCaptureModal', () => {
+    it('lists the roster alphabetically and marks who already has a result (#697)', () => {
+        const roster: Student[] = [
+            { id: 's3', name: 'Carol', classId: 'c1' },
+            { id: 's1', name: 'Alice', classId: 'c1' },
+            { id: 's2', name: 'Bob', classId: 'c1' },
+        ];
+        const bobResult: StudentTest = {
+            id: 'st2',
+            testId: 't1',
+            studentId: 's2',
+            answers: [],
+            status: 'submitted',
+            startedAt: '2026-01-01T00:00:00.000Z',
+        };
+        render(
+            <ExamScanCaptureModal
+                test={test}
+                students={roster}
+                studentTests={[bobResult]}
+                onSave={vi.fn()}
+                onClose={vi.fn()}
+            />
+        );
+
+        const select = screen.getByLabelText('tests.scan.pick_student_label');
+        expect(
+            within(select)
+                .getAllByRole('option')
+                .map((o) => o.textContent)
+        ).toEqual([
+            'tests.results.student_label',
+            'Alice',
+            // Bob's row already exists, and saving a scan replaces it.
+            'Bob — tests.scan.student_has_result',
+            'Carol',
+        ]);
+    });
+
     it('walks student pick → import → corners → review → save', async () => {
         const onSave = vi.fn();
         const onClose = vi.fn();

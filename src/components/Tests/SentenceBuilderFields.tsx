@@ -84,7 +84,12 @@ function TilePreview({ sentence }: { sentence: string }) {
             <p className="text-muted text-xs" style={{ margin: '0 0 4px' }}>
                 {t('tests.builder_tile_count', { count: words.length })}
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }} aria-label={t('tests.builder_tiles_label')}>
+            {/* role=group makes the label legal on a container and names the tile set (#697). */}
+            <div
+                role="group"
+                style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                aria-label={t('tests.builder_tiles_label')}
+            >
                 {[...words].sort().map((word, i) => (
                     <span key={`${word}-${i}`} className="te-chip te-chip-plain" style={{ paddingRight: 10 }}>
                         {word}

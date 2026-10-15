@@ -568,6 +568,7 @@ export default function EssayBuilderPage() {
                     rubricName={selectedRubric?.name ?? ''}
                     studentId={assignTargets[0].id}
                     studentName={assignTargets[0].name}
+                    assignmentScope={assignTargets.length > 1 ? 'class' : 'student'}
                     classStudents={assignTargets}
                     teacherKey={teacherKeyRef}
                     initialValues={buildPatch()}

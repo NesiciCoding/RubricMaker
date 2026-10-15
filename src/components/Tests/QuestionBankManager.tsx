@@ -496,7 +496,7 @@ export default function QuestionBankManager({ onSelect }: QuestionBankManagerPro
                                                     ? t('questionBank.section_bundle_meta', {
                                                           count: item.section.questions.length,
                                                       })
-                                                    : `${t(questionTypeLabelKey(item.question?.type ?? 'multiple-choice'))} · ${t('tests.total_points', { points: item.question?.points ?? 0 })}`}
+                                                    : `${t(questionTypeLabelKey(item.question?.type ?? 'multiple-choice'))} · ${t('tests.points_total', { count: item.question?.points ?? 0 })}`}
                                                 {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                             </div>
                                             <div style={{ fontSize: '0.95rem', marginTop: 4 }}>

@@ -127,8 +127,9 @@ export default function ExamBookletExportPanel({ test, students, fontFamily, sty
 
             {hasAttachment && (
                 <div className="form-group" style={{ marginBottom: 12 }}>
-                    <label>{t('tests.export.exam.attachment_mode_label')}</label>
+                    <label htmlFor="exam-booklet-attachment-mode">{t('tests.export.exam.attachment_mode_label')}</label>
                     <select
+                        id="exam-booklet-attachment-mode"
                         value={attachmentMode}
                         onChange={(e) => setAttachmentMode(e.target.value as 'inline' | 'separate')}
                     >

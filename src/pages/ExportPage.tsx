@@ -700,8 +700,9 @@ export default function ExportPage() {
                 >
                     <div data-tour="export-rubric" className="card" style={{ marginBottom: 20 }}>
                         <div className="form-group" style={{ marginBottom: 16 }}>
-                            <label>{t('exportPage.select_rubric')}</label>
+                            <label htmlFor="export-rubric-select">{t('exportPage.select_rubric')}</label>
                             <select
+                                id="export-rubric-select"
                                 value={selectedRubricId}
                                 onChange={(e) => {
                                     setSelectedRubricId(e.target.value);
@@ -753,6 +754,7 @@ export default function ExportPage() {
                             </div>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                 <select
+                                    aria-label={t('exportPage.word_template_label')}
                                     style={{ flex: 1, minWidth: 180, maxWidth: 340 }}
                                     value={activeTemplateId}
                                     onChange={(e) => updateSettings({ exportTemplateId: e.target.value || undefined })}
@@ -1008,10 +1010,14 @@ export default function ExportPage() {
                                                     paddingLeft: 12,
                                                 }}
                                             >
-                                                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                <label
+                                                    htmlFor="export-orientation-select"
+                                                    style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}
+                                                >
                                                     {t('rubricBuilder.format_orientation')}:
                                                 </label>
                                                 <select
+                                                    id="export-orientation-select"
                                                     /* v8 ignore next 1 */
                                                     value={orientation || rubric.format.orientation || 'portrait'}
                                                     onChange={(e) =>
@@ -1312,8 +1318,9 @@ export default function ExportPage() {
                         ) : (
                             <>
                                 <div className="form-group" style={{ marginBottom: 12 }}>
-                                    <label>{t('exportPage.select_test')}</label>
+                                    <label htmlFor="export-test-select">{t('exportPage.select_test')}</label>
                                     <select
+                                        id="export-test-select"
                                         value={selectedTest?.id ?? ''}
                                         onChange={(e) => setSelectedTestId(e.target.value)}
                                     >
@@ -1386,8 +1393,11 @@ export default function ExportPage() {
                         style={{ display: collapsedSections.has('essays') ? 'none' : undefined }}
                     >
                         <div className="form-group" style={{ marginBottom: 12 }}>
-                            <label>{t('exportPage.essays_select_assignment')}</label>
+                            <label htmlFor="export-essay-assignment-select">
+                                {t('exportPage.essays_select_assignment')}
+                            </label>
                             <select
+                                id="export-essay-assignment-select"
                                 value={essayTeacherKey}
                                 onChange={(e) => {
                                     setEssayTeacherKey(e.target.value);
@@ -1451,8 +1461,11 @@ export default function ExportPage() {
                                     }}
                                 >
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label style={{ fontSize: '0.8rem' }}>{t('exportPage.essays_format')}</label>
+                                        <label htmlFor="export-essay-format" style={{ fontSize: '0.8rem' }}>
+                                            {t('exportPage.essays_format')}
+                                        </label>
                                         <select
+                                            id="export-essay-format"
                                             value={essayFormat}
                                             onChange={(e) => {
                                                 const next = e.target.value as typeof essayFormat;
@@ -1466,10 +1479,11 @@ export default function ExportPage() {
                                         </select>
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label style={{ fontSize: '0.8rem' }}>
+                                        <label htmlFor="export-essay-batch-mode" style={{ fontSize: '0.8rem' }}>
                                             {t('exportPage.essays_batch_mode')}
                                         </label>
                                         <select
+                                            id="export-essay-batch-mode"
                                             value={essayBatchMode}
                                             onChange={(e) => setEssayBatchMode(e.target.value as typeof essayBatchMode)}
                                             disabled={includeRubricAnalysis && essayFormat !== 'markdown'}
@@ -1556,24 +1570,33 @@ export default function ExportPage() {
                                 />
                             </div>
                             <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
-                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_from')}</label>
+                                <label htmlFor="export-period-from" style={{ fontSize: '0.8rem' }}>
+                                    {t('exportPage.period_from')}
+                                </label>
                                 <input
+                                    id="export-period-from"
                                     type="date"
                                     value={reportDateFrom}
                                     onChange={(e) => setReportDateFrom(e.target.value)}
                                 />
                             </div>
                             <div className="form-group" style={{ flex: '1 1 130px', marginBottom: 0 }}>
-                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_to')}</label>
+                                <label htmlFor="export-period-to" style={{ fontSize: '0.8rem' }}>
+                                    {t('exportPage.period_to')}
+                                </label>
                                 <input
+                                    id="export-period-to"
                                     type="date"
                                     value={reportDateTo}
                                     onChange={(e) => setReportDateTo(e.target.value)}
                                 />
                             </div>
                             <div className="form-group" style={{ flex: '1 1 160px', marginBottom: 0 }}>
-                                <label style={{ fontSize: '0.8rem' }}>{t('exportPage.period_label_field')}</label>
+                                <label htmlFor="export-period-label" style={{ fontSize: '0.8rem' }}>
+                                    {t('exportPage.period_label_field')}
+                                </label>
                                 <input
+                                    id="export-period-label"
                                     type="text"
                                     value={reportPeriodLabel}
                                     onChange={(e) => setReportPeriodLabel(e.target.value)}

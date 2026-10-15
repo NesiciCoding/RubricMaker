@@ -185,8 +185,8 @@ describe('EssayBuilderPage', () => {
         renderWithRouter(<EssayBuilderPage />);
         fireEvent.click(screen.getByText('essays.assign_to_students'));
         fireEvent.click(screen.getByRole('button', { name: 'Class A' }));
-        // The assignment modal opens for the first un-assigned class student (Alice).
-        expect(screen.getByText('essay_assignment.modal_title:{"name":"Alice"}')).toBeInTheDocument();
+        // Assigning to the class says so, instead of naming whichever student is first (#697).
+        expect(screen.getByText('essay_assignment.modal_title_class:{"count":2}')).toBeInTheDocument();
     });
 
     it('blocks saving an empty title with an inline message (#676)', async () => {

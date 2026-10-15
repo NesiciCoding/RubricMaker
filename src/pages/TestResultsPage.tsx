@@ -29,6 +29,36 @@ import type { TestAnswer, TestQuestion, ProctorEventType, CommentBankItem, Rubri
 const isClozeType = (type: TestQuestion['type']) =>
     type === 'cloze' || type === 'cloze-dropdown' || type === 'cloze-bank';
 
+/**
+ * What the manual points field is about to save when the typed text does not say it.
+ *
+ * `handleSaveManualScore` clamps a typed mark to 0…max and turns anything unparseable into 0, which
+ * used to happen with no explanation (#697). Only the cases that would actually change the mark get a
+ * hint, so an untouched empty field stays quiet.
+ */
+function manualPointsHint(
+    question: TestQuestion,
+    typed: string,
+    savedPoints: number | undefined
+): { key: string; params: Record<string, number>; tone: 'muted' | 'warning' } | null {
+    const trimmed = typed.trim();
+    const saved = savedPoints ?? 0;
+    if (trimmed === '') {
+        // The field is a number input, so anything unparseable never reaches state as text — the only
+        // way to type "nothing" is to clear it, and that records a 0.
+        return saved !== 0 ? { key: 'tests.results.manual_points_empty_hint', params: {}, tone: 'muted' } : null;
+    }
+    const value = Number(trimmed);
+    if (!Number.isFinite(value)) return null;
+    const clamped = clamp(value, 0, question.points);
+    if (clamped === value) return null;
+    return {
+        key: 'tests.results.manual_points_clamped',
+        params: { max: question.points, saved: clamped },
+        tone: 'warning',
+    };
+}
+
 function isAutoScored(question: TestQuestion, answer: TestAnswer | undefined): boolean {
     if (!answer) return false;
     if (answer.pointsEarned !== undefined) return false;
@@ -822,7 +852,7 @@ export default function TestResultsPage() {
                                         <div className="text-muted text-xs">
                                             {t('tests.question_number', { number: index + 1 })} ·{' '}
                                             {t(questionTypeLabelKey(question.type))} ·{' '}
-                                            {t('tests.total_points', { points: question.points })}
+                                            {t('tests.points_total', { count: question.points })}
                                         </div>
                                         <div style={{ fontWeight: 600, marginTop: 4 }}>{promptPreview(question)}</div>
                                     </div>
@@ -882,26 +912,54 @@ export default function TestResultsPage() {
                                                 }
                                             />
                                         )}
-                                        {!rubric && (
-                                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                                <label htmlFor={`points-${question.id}`}>
-                                                    {t('tests.results.manual_points_label')}
-                                                </label>
-                                                <input
-                                                    id={`points-${question.id}`}
-                                                    type="number"
-                                                    min={0}
-                                                    max={question.points}
-                                                    value={draft.pointsEarned}
-                                                    onChange={(e) =>
-                                                        updateDraft(question.id, answer, {
-                                                            pointsEarned: e.target.value,
-                                                        })
-                                                    }
-                                                    style={{ width: 90 }}
-                                                />
-                                            </div>
-                                        )}
+                                        {!rubric &&
+                                            (() => {
+                                                const hint = manualPointsHint(
+                                                    question,
+                                                    draft.pointsEarned,
+                                                    answer?.pointsEarned
+                                                );
+                                                return (
+                                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                                        <label htmlFor={`points-${question.id}`}>
+                                                            {t('tests.results.manual_points_label')}
+                                                        </label>
+                                                        <input
+                                                            id={`points-${question.id}`}
+                                                            type="number"
+                                                            min={0}
+                                                            max={question.points}
+                                                            value={draft.pointsEarned}
+                                                            onChange={(e) =>
+                                                                updateDraft(question.id, answer, {
+                                                                    pointsEarned: e.target.value,
+                                                                })
+                                                            }
+                                                            aria-describedby={
+                                                                hint ? `points-hint-${question.id}` : undefined
+                                                            }
+                                                            style={{ width: 90 }}
+                                                        />
+                                                        {hint && (
+                                                            <div
+                                                                id={`points-hint-${question.id}`}
+                                                                role="status"
+                                                                className="text-xs"
+                                                                style={{
+                                                                    color:
+                                                                        hint.tone === 'warning'
+                                                                            ? 'var(--warning, #b45309)'
+                                                                            : 'var(--text-muted)',
+                                                                    marginTop: 4,
+                                                                    maxWidth: 220,
+                                                                }}
+                                                            >
+                                                                {t(hint.key, hint.params)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         <div className="form-group" style={{ marginBottom: 0, flex: '1 1 240px' }}>
                                             <label htmlFor={`feedback-${question.id}`}>
                                                 {t('tests.results.feedback_label')}

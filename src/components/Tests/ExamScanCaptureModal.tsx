@@ -52,7 +52,12 @@ function AnswerEditor({
 
     if (question.type === 'multiple-choice') {
         return (
-            <select className="input" value={response} onChange={(e) => onChange(e.target.value)}>
+            <select
+                className="input"
+                aria-label={t('tests.scan.answer_for_label', { prompt: question.prompt })}
+                value={response}
+                onChange={(e) => onChange(e.target.value)}
+            >
                 <option value="">{t('tests.scan.no_answer_option')}</option>
                 {(question.options ?? []).map((o) => (
                     <option key={o.id} value={o.id}>
@@ -65,7 +70,12 @@ function AnswerEditor({
 
     if (question.type === 'true-false') {
         return (
-            <select className="input" value={response} onChange={(e) => onChange(e.target.value)}>
+            <select
+                className="input"
+                aria-label={t('tests.scan.answer_for_label', { prompt: question.prompt })}
+                value={response}
+                onChange={(e) => onChange(e.target.value)}
+            >
                 <option value="">{t('tests.scan.no_answer_option')}</option>
                 <option value="true">{t('tests.true_false_true')}</option>
                 <option value="false">{t('tests.true_false_false')}</option>
@@ -130,6 +140,15 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
     const [errorMsg, setErrorMsg] = useState('');
 
     const questionsById = useMemo(() => new Map(test.questions.map((q) => [q.id, q])), [test.questions]);
+
+    // The picker used to be storage order with no hint of who was already scanned, so a teacher had
+    // to open every name to find out (#697). A scan overwrites the row, so say it up front.
+    const rosterOptions = useMemo(() => {
+        const withResult = new Set(studentTests.filter((st) => st.testId === test.id).map((st) => st.studentId));
+        return students
+            .map((s) => ({ ...s, hasResult: withResult.has(s.id) }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [students, studentTests, test.id]);
 
     const runDetection = useCallback(
         async (image: RgbaImage, cornerFractions: { fx: number; fy: number }[]) => {
@@ -288,7 +307,14 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                 maxWidth={760}
                 style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '18px 20px 14px',
+                    }}
+                >
                     <ScanLine size={20} style={{ color: 'var(--accent)' }} />
                     <h3 id="exam-scan-dialog-title" style={{ margin: 0, flex: 1 }}>
                         {t('tests.scan.title')}
@@ -298,7 +324,16 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                     </button>
                 </div>
 
-                <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div
+                    style={{
+                        overflowY: 'auto',
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 14,
+                        padding: '0 20px 20px',
+                    }}
+                >
                     {phase === 'setup' && (
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <label htmlFor="exam-scan-student">{t('tests.scan.pick_student_label')}</label>
@@ -309,9 +344,9 @@ export default function ExamScanCaptureModal({ test, students, studentTests, onS
                                 onChange={(e) => setStudentId(e.target.value)}
                             >
                                 <option value="">{t('tests.results.student_label')}</option>
-                                {students.map((s) => (
+                                {rosterOptions.map((s) => (
                                     <option key={s.id} value={s.id}>
-                                        {s.name}
+                                        {s.hasResult ? `${s.name} — ${t('tests.scan.student_has_result')}` : s.name}
                                     </option>
                                 ))}
                             </select>

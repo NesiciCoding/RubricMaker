@@ -49,6 +49,37 @@ describe('EssayAssignmentModal prompt pre-fill', () => {
     });
 });
 
+describe('EssayAssignmentModal header scope (#697)', () => {
+    const baseProps = {
+        rubricId: 'rubric1',
+        rubricName: 'Writing Test',
+        studentId: 'student1',
+        studentName: 'Jane',
+        onClose: () => {},
+        onOpenSlipSheet: () => {},
+    };
+
+    it('names the whole class when every student is being assigned', () => {
+        render(
+            <EssayAssignmentModal
+                {...baseProps}
+                assignmentScope="class"
+                classStudents={[
+                    { id: 'student1', name: 'Jane' },
+                    { id: 'student2', name: 'Ahmed' },
+                ]}
+            />
+        );
+        // Naming the first student in the class read as if only they were being assigned.
+        expect(screen.getByRole('heading', { name: 'essay_assignment.modal_title_class' })).toBeInTheDocument();
+    });
+
+    it('names the single student for a one-student assignment', () => {
+        render(<EssayAssignmentModal {...baseProps} classStudents={[{ id: 'student1', name: 'Jane' }]} />);
+        expect(screen.getByRole('heading', { name: 'essay_assignment.modal_title' })).toBeInTheDocument();
+    });
+});
+
 describe('EssayAssignmentModal word limits (#676)', () => {
     it('disables assigning while the minimum exceeds the maximum', () => {
         const onAssign = vi.fn();
