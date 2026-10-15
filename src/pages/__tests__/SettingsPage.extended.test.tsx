@@ -456,6 +456,55 @@ describe('SettingsPage extended', () => {
             expect(screen.queryByText('settings.label_min_pct')).not.toBeInTheDocument();
         });
 
+        it('shows range warnings for a malformed scale and hides them when collapsed', () => {
+            // 0–49 + 60–95 leaves 50–59 in a gap and never reaches 100%.
+            mockGradeScalesArr[0] = {
+                id: 'gs1',
+                name: 'Gappy',
+                type: 'custom',
+                ranges: [
+                    { min: 60, max: 95, label: 'D', color: '#eab308' },
+                    { min: 0, max: 49, label: 'F', color: '#ef4444' },
+                ],
+            } as GradeScale;
+            renderPage();
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+            expect(screen.getByText('settings.range_warning_gap')).toBeInTheDocument();
+            expect(screen.getByText('settings.range_warning_coverage')).toBeInTheDocument();
+            expect(screen.queryByText('settings.range_warning_overlap')).not.toBeInTheDocument();
+
+            fireEvent.click(findButtonByText('settings.action_collapse'));
+            expect(screen.queryByText('settings.range_warning_gap')).not.toBeInTheDocument();
+        });
+
+        it('keeps the warnings quiet for a well-formed scale and for a fresh placeholder row', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+            // 0–100 is complete.
+            expect(screen.queryByText('settings.range_warning_coverage')).not.toBeInTheDocument();
+
+            // A brand-new 0–0 row is a placeholder, so adding it raises nothing.
+            fireEvent.click(findButtonByText('settings.action_add_range'));
+            expect(screen.queryByText('settings.range_warning_coverage')).not.toBeInTheDocument();
+        });
+
+        it('clamps range percentages to 0–100', () => {
+            renderPage();
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+            const [minInput, maxInput] = within(screen.getByRole('table')).getAllByRole(
+                'spinbutton'
+            ) as HTMLInputElement[];
+
+            fireEvent.change(maxInput, { target: { value: '950' } });
+            expect((mockUpdateGradeScale.mock.calls[0][0] as GradeScale).ranges[0].max).toBe(100);
+
+            fireEvent.change(minInput, { target: { value: '-20' } });
+            expect((mockUpdateGradeScale.mock.calls[1][0] as GradeScale).ranges[0].min).toBe(0);
+        });
+
         it('deletes a non-default grade scale after confirmation', () => {
             mockGradeScalesArr.push({ id: 'gs2', name: 'Points', type: 'custom', ranges: [] });
             renderPage();

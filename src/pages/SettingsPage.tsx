@@ -52,6 +52,58 @@ import { VO_TRACK_LABELS } from '../data/voTracks';
 
 type Tab = 'general' | 'teaching' | 'administration';
 
+export type GradeRangeWarningKey =
+    | 'settings.range_warning_min_above_max'
+    | 'settings.range_warning_overlap'
+    | 'settings.range_warning_gap'
+    | 'settings.range_warning_coverage';
+
+/**
+ * Problems in one grade scale's ranges, as translation keys.
+ *
+ * Ranges are matched by percentage ('highest min wins', see gradeCalc), so an overlap or a gap
+ * quietly changes which label a score gets. Warn instead of rejecting the edit: the teacher is
+ * usually mid-way through retyping the table when a gap is temporarily present. Ranges that are
+ * still the untouched `add range` placeholder (0–0) are ignored so adding a row doesn't shout.
+ */
+/** Range-problem notes for one grade scale; renders nothing while the scale is well-formed. */
+function GradeRangeWarnings({ ranges }: { ranges: GradeRange[] }) {
+    const { t } = useTranslation();
+    const warnings = gradeRangeWarnings(ranges);
+    if (warnings.length === 0) return null;
+    return (
+        <div
+            role="status"
+            className="text-xs"
+            style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4, color: 'var(--yellow)' }}
+        >
+            {warnings.map((key) => (
+                <span key={key}>
+                    <AlertCircle size={12} aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 4 }} />
+                    {t(key)}
+                </span>
+            ))}
+        </div>
+    );
+}
+
+export function gradeRangeWarnings(ranges: GradeRange[]): GradeRangeWarningKey[] {
+    const filled = ranges.filter((r) => !(r.min === 0 && r.max === 0));
+    if (filled.length === 0) return [];
+    const sorted = [...filled].sort((a, b) => a.min - b.min);
+    const warnings: GradeRangeWarningKey[] = [];
+    if (sorted.some((r) => r.min > r.max)) warnings.push('settings.range_warning_min_above_max');
+    if (sorted.some((r, i) => i > 0 && r.min <= sorted[i - 1].max)) warnings.push('settings.range_warning_overlap');
+    if (sorted.some((r, i) => i > 0 && r.min > sorted[i - 1].max + 1)) warnings.push('settings.range_warning_gap');
+    // Scores are matched by 'highest min wins', so 0% falls through the whole scale when no range
+    // starts at 0, and a score near 100% is labelled by the top range even when that range ends
+    // short of 100. Both leave the ends of the scale mislabelled.
+    const lowestMin = Math.min(...filled.map((r) => r.min));
+    const highestMax = Math.max(...filled.map((r) => r.max));
+    if (lowestMin > 0 || highestMax < 100) warnings.push('settings.range_warning_coverage');
+    return warnings;
+}
+
 // ─── Role helpers ──────────────────────────────────────────────────────────────
 
 const ROLE_META: Record<
@@ -371,7 +423,18 @@ export default function SettingsPage() {
         const scale = gradeScales.find((g) => g.id === scaleId);
         /* v8 ignore next -- the editor only renders for scales present in gradeScales */
         if (!scale) return;
-        updateGradeScale({ ...scale, ranges: scale.ranges.map((r, i) => (i === idx ? { ...r, ...patch } : r)) });
+        updateGradeScale({
+            ...scale,
+            ranges: scale.ranges.map((r, i) => {
+                if (i !== idx) return r;
+                const next = { ...r, ...patch };
+                // Ranges are percentages: clamp the numeric bounds so a typo (e.g. 800) can't
+                // leave a scale that no score ever reaches.
+                next.min = Math.min(100, Math.max(0, Math.round(next.min)));
+                next.max = Math.min(100, Math.max(0, Math.round(next.max)));
+                return next;
+            }),
+        });
     }
 
     function addRange(scaleId: string) {
@@ -1259,7 +1322,12 @@ export default function SettingsPage() {
                                     }}
                                 >
                                     <div
-                                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 10,
+                                            padding: '12px 16px',
+                                        }}
                                     >
                                         <input
                                             type="text"
@@ -1447,7 +1515,8 @@ export default function SettingsPage() {
                                                 onClick={() => addRange(gs.id)}
                                             >
                                                 <Plus size={14} aria-hidden="true" /> {t('settings.action_add_range')}
-                                            </button>
+                                            </button>{' '}
+                                            <GradeRangeWarnings ranges={gs.ranges} />
                                         </div>
                                     )}
                                 </div>

@@ -521,7 +521,11 @@
         "role_current": "Current",
         "admin_pin_dialog_desc": "Enter the admin password to switch to the Administrator role.",
         "admin_pin_incorrect": "Incorrect password. Please try again.",
-        "grade_range_new": "New"
+        "grade_range_new": "New",
+        "range_warning_min_above_max": "A range ends below where it starts.",
+        "range_warning_overlap": "Ranges overlap — the higher one wins for the scores in both.",
+        "range_warning_gap": "There is a gap between ranges; scores in it fall back to the range below.",
+        "range_warning_coverage": "Ranges do not cover 0–100%."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -2000,7 +2004,9 @@
         "sort_newest": "Newest",
         "sort_most_used": "Most used",
         "usage_count_label": "Used {{count}}×",
-        "sidebar_all_comments": "All comments"
+        "sidebar_all_comments": "All comments",
+        "tag_group_cefr": "CEFR level",
+        "tag_group_other": "Tags"
     },
     "questionBank": {
         "title": "Question Bank",

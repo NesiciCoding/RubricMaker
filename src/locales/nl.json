@@ -521,7 +521,11 @@
         "role_current": "Huidig",
         "admin_pin_dialog_desc": "Voer het beheerderswachtwoord in om over te schakelen naar de rol Beheerder.",
         "admin_pin_incorrect": "Onjuist wachtwoord. Probeer het opnieuw.",
-        "grade_range_new": "Nieuw"
+        "grade_range_new": "Nieuw",
+        "range_warning_min_above_max": "Een bereik eindigt onder het beginpunt.",
+        "range_warning_overlap": "Bereiken overlappen — het hoogste bereik wint voor scores in beide.",
+        "range_warning_gap": "Er zit een gat tussen de bereiken; scores daarin vallen terug op het bereik eronder.",
+        "range_warning_coverage": "De bereiken dekken niet 0–100%."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -2000,7 +2004,9 @@
         "sort_newest": "Nieuwste",
         "sort_most_used": "Meest gebruikt",
         "usage_count_label": "{{count}}× gebruikt",
-        "sidebar_all_comments": "Alle opmerkingen"
+        "sidebar_all_comments": "Alle opmerkingen",
+        "tag_group_cefr": "CEFR-niveau",
+        "tag_group_other": "Labels"
     },
     "questionBank": {
         "title": "Vragenbank",

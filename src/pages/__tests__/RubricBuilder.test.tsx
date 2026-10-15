@@ -540,6 +540,56 @@ describe('RubricBuilder', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new-r', { replace: true });
     });
 
+    it('stays clean under StrictMode, where effects run twice on mount', () => {
+        // The dev double-invoke used to flip the mount-skip ref and mark a pristine form dirty,
+        // so leaving an untouched rubric raised the 'unsaved changes' dialog.
+        const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
+            initialEntries: ['/rubrics/r1'],
+        });
+        render(
+            <React.StrictMode>
+                <RouterProvider router={router} />
+            </React.StrictMode>
+        );
+        const event = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('tracks unsaved changes against a snapshot instead of the first render', () => {
+        renderEdit();
+        const promptOnLeave = () => {
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        // A freshly opened rubric is not dirty, so leaving must not prompt.
+        expect(promptOnLeave()).toBe(false);
+
+        fireEvent.change(screen.getByDisplayValue('Essay Rubric'), { target: { value: 'Renamed Rubric' } });
+        expect(promptOnLeave()).toBe(true);
+
+        // Typing the original value back restores the saved state — no phantom prompt.
+        fireEvent.change(screen.getByDisplayValue('Renamed Rubric'), { target: { value: 'Essay Rubric' } });
+        expect(promptOnLeave()).toBe(false);
+    });
+
+    it('stops prompting after saving the edits', () => {
+        renderEdit();
+        fireEvent.change(screen.getByDisplayValue('Essay Rubric'), { target: { value: 'Renamed Rubric' } });
+        fireEvent.click(screen.getByText('rubricBuilder.action_save'));
+
+        const event = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+        // The saved snapshot is refreshed, so re-typing the same value is not a change either.
+        fireEvent.change(screen.getByDisplayValue('Renamed Rubric'), { target: { value: 'Renamed Rubric!' } });
+        fireEvent.change(screen.getByDisplayValue('Renamed Rubric!'), { target: { value: 'Renamed Rubric' } });
+        const after = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(after);
+        expect(after.defaultPrevented).toBe(false);
+    });
+
     it('loads an existing rubric pre-filled and saves an update', () => {
         renderEdit();
         expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();
@@ -931,7 +981,7 @@ describe('RubricBuilder', () => {
         it('inserts a rubric-bank item', () => {
             const grid = renderDesigner();
             const before = grid.getAllByLabelText('rubricBuilder.action_delete_criterion').length;
-            const bankSelect = grid.getByDisplayValue('rubricBuilder.action_insert_from_bank');
+            const bankSelect = grid.getByLabelText('rubricBuilder.action_insert_from_bank');
             fireEvent.change(bankSelect, { target: { value: 'Grammar & Spelling' } });
             expect(grid.getAllByLabelText('rubricBuilder.action_delete_criterion').length).toBeGreaterThan(before);
         });
@@ -1236,7 +1286,7 @@ describe('RubricBuilder', () => {
         fireEvent.click(screen.getByText('rubricBuilder.action_smart_allocate'));
         fireEvent.click(screen.getByText('rubricBuilder.action_balance_weights'));
         const grid = within(document.querySelector('table.rubric-grid') as HTMLElement);
-        const bankSelect = grid.getByDisplayValue('rubricBuilder.action_insert_from_bank');
+        const bankSelect = grid.getByLabelText('rubricBuilder.action_insert_from_bank');
         fireEvent.change(bankSelect, { target: { value: 'Clarity of Expression' } });
         expect(grid.getAllByLabelText('rubricBuilder.action_delete_criterion').length).toBeGreaterThan(0);
         // Empty selection is a no-op guard.

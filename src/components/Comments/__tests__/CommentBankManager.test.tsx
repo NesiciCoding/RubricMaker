@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import CommentBankManager from '../CommentBankManager';
+import CommentBankManager, { humaniseTag } from '../CommentBankManager';
 import type { CommentBankItem } from '../../../types';
 
 const commentBank: CommentBankItem[] = [
@@ -91,6 +91,27 @@ describe('CommentBankManager fullPage sidebar', () => {
         );
     });
 
+    it('groups sidebar tags into CEFR levels and the rest', () => {
+        render(<CommentBankManager fullPage />);
+        const sidebar = within(screen.getByRole('complementary'));
+        const cefrHeading = sidebar.getByText('commentBank.tag_group_cefr');
+        const otherHeading = sidebar.getByText('commentBank.tag_group_other');
+        // B1 sits under the CEFR heading; EFL and Grammar under the general one.
+        expect(cefrHeading.compareDocumentPosition(sidebar.getByText('B1'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(otherHeading.compareDocumentPosition(sidebar.getByText('Grammar'))).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
+        expect(cefrHeading.compareDocumentPosition(otherHeading)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('labels the search box for screen readers', () => {
+        render(<CommentBankManager />);
+        const search = screen.getByLabelText('commentBank.search_placeholder');
+        fireEvent.change(search, { target: { value: 'Needs' } });
+        expect(screen.getByText('Needs more detail.')).toBeInTheDocument();
+        expect(screen.queryByText('Great use of vocabulary.')).not.toBeInTheDocument();
+    });
+
     it('"Most used" sort reorders cards by descending usageCount', () => {
         const { container } = render(<CommentBankManager fullPage />);
         // Newest-first (default): c2 (2026-01-02) was created after c1 (2026-01-01).
@@ -104,5 +125,20 @@ describe('CommentBankManager fullPage sidebar', () => {
         expect(container.textContent!.indexOf('Great use of vocabulary.')).toBeLessThan(
             container.textContent!.indexOf('Needs more detail.')
         );
+    });
+});
+
+describe('humaniseTag', () => {
+    it('turns separator-typed tags into readable labels', () => {
+        expect(humaniseTag('connected_speech')).toBe('Connected speech');
+        expect(humaniseTag('word-stress')).toBe('Word stress');
+    });
+
+    it('leaves separator-free tags exactly as the teacher typed them', () => {
+        expect(humaniseTag('B1')).toBe('B1');
+        expect(humaniseTag('EFL')).toBe('EFL');
+        expect(humaniseTag('Grammar')).toBe('Grammar');
+        // Casing is the teacher's choice for a plain word, too.
+        expect(humaniseTag('positive')).toBe('positive');
     });
 });

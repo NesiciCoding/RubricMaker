@@ -521,7 +521,11 @@
         "role_current": "Actuel",
         "admin_pin_dialog_desc": "Saisissez le mot de passe administrateur pour passer au rôle Administrateur.",
         "admin_pin_incorrect": "Mot de passe incorrect. Veuillez réessayer.",
-        "grade_range_new": "Nouveau"
+        "grade_range_new": "Nouveau",
+        "range_warning_min_above_max": "Une plage se termine avant son début.",
+        "range_warning_overlap": "Les plages se chevauchent — la plus élevée l’emporte pour les notes communes.",
+        "range_warning_gap": "Il y a un trou entre les plages ; les notes qui y tombent utilisent la plage inférieure.",
+        "range_warning_coverage": "Les plages ne couvrent pas 0–100 %."
     },
     "navigation": {
         "dashboard": "Tableau de bord",
@@ -2000,7 +2004,9 @@
         "sort_newest": "Plus récents",
         "sort_most_used": "Plus utilisés",
         "usage_count_label": "Utilisé {{count}}×",
-        "sidebar_all_comments": "Tous les commentaires"
+        "sidebar_all_comments": "Tous les commentaires",
+        "tag_group_cefr": "Niveau CECR",
+        "tag_group_other": "Étiquettes"
     },
     "questionBank": {
         "title": "Banque de questions",

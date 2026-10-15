@@ -234,15 +234,11 @@ function RubricBuilderEditor() {
     }, []);
 
     // ── Unsaved changes tracking ─────────────────────────────────────────────
-    const [isDirty, setIsDirty] = useState(false);
-    const mountedRef = useRef(false);
-    useEffect(() => {
-        if (!mountedRef.current) {
-            mountedRef.current = true;
-            return;
-        }
-        setIsDirty(true);
-    }, [
+    // Dirty is derived by comparing the current form values with the snapshot taken at mount
+    // (and refreshed on Save), rather than "any change after the first render". Comparing values
+    // keeps a pristine form clean even when React double-invokes effects in dev/StrictMode,
+    // where the old mount-skip ref raised a bogus 'unsaved changes' dialog.
+    const formSnapshot = JSON.stringify({
         name,
         subject,
         description,
@@ -254,7 +250,16 @@ function RubricBuilderEditor() {
         cefrTargetLevel,
         cefrSkill,
         cefrAchieveThreshold,
-    ]);
+    });
+    const savedSnapshotRef = useRef<string | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
+    useEffect(() => {
+        if (savedSnapshotRef.current === null) {
+            savedSnapshotRef.current = formSnapshot;
+            return;
+        }
+        setIsDirty(formSnapshot !== savedSnapshotRef.current);
+    }, [formSnapshot]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
@@ -446,12 +451,18 @@ function RubricBuilderEditor() {
             if (affectedCount > 0) {
                 setSyncDialogRubric(savedRubric);
             }
-            flushSync(() => setIsDirty(false));
+            flushSync(() => {
+                savedSnapshotRef.current = formSnapshot;
+                setIsDirty(false);
+            });
         } else {
             const newR = addRubric(rubricData);
             // Flush only after the create succeeds, and before navigate so
             // useBlocker doesn't see stale isDirty=true.
-            flushSync(() => setIsDirty(false));
+            flushSync(() => {
+                savedSnapshotRef.current = formSnapshot;
+                setIsDirty(false);
+            });
             navigate(`/rubrics/${newR.id}`, { replace: true });
         }
         setSaved(true);
@@ -3036,8 +3047,8 @@ function RubricWysiwygEditor({
                                 </button>
                                 <select
                                     className="btn btn-ghost btn-sm"
-                                    style={{ padding: '0 8px', maxWidth: 160 }}
                                     aria-label={t('rubricBuilder.action_insert_from_bank')}
+                                    style={{ padding: '0 8px', maxWidth: 160 }}
                                     defaultValue=""
                                     onChange={(e) => {
                                         if (!e.target.value) return;
