@@ -71,8 +71,11 @@ describe('localDayWindow in a non-UTC zone (#701)', () => {
         delete process.env.TZ;
     });
 
-    const window = localDayWindow('2026-01-05', '2026-01-05');
-    const inside = (iso: string) => {
+    // Built inside the tests rather than at collection time: the zone is only switched in
+    // beforeAll, so a module-level window would still be the runner's own zone (UTC on CI)
+    // while every assertion below describes Europe/Amsterdam.
+    const localWindow = () => localDayWindow('2026-01-05', '2026-01-05');
+    const inside = (window: { fromTs: number; toTs: number }, iso: string) => {
         const ts = new Date(iso).getTime();
         return ts >= window.fromTs && ts < window.toTs;
     };
@@ -83,13 +86,14 @@ describe('localDayWindow in a non-UTC zone (#701)', () => {
 
     it('covers the whole From day, including the hours before UTC midnight drifts in', () => {
         // 00:30 local on the From day: `new Date('2026-01-05')` (UTC midnight) used to exclude it.
-        expect(inside('2026-01-04T23:30:00Z')).toBe(true);
+        expect(inside(localWindow(), '2026-01-04T23:30:00Z')).toBe(true);
         expect(new Date('2026-01-04T23:30:00Z').getTime() < new Date('2026-01-05').getTime()).toBe(true);
     });
 
     it('covers the To day up to its final millisecond', () => {
-        expect(inside('2026-01-05T22:59:59.999Z')).toBe(true);
-        expect(inside('2026-01-05T23:00:00.000Z')).toBe(false);
+        const window = localWindow();
+        expect(inside(window, '2026-01-05T22:59:59.999Z')).toBe(true);
+        expect(inside(window, '2026-01-05T23:00:00.000Z')).toBe(false);
     });
 
     it('leaves missing or unparsable bounds open', () => {
