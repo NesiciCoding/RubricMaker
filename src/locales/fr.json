@@ -4157,7 +4157,8 @@
         "wordnet_remove": "Supprimer",
         "wordnet_get": "Télécharger…",
         "seed_deck_looking_up": "Recherche des mots… {{done}}/{{total}}",
-        "seed_deck_blank_hint": "Aucune définition trouvée pour {{count}} mot(s) — complétez-les sur la page du paquet."
+        "seed_deck_blank_hint": "Aucune définition trouvée pour {{count}} mot(s) — complétez-les sur la page du paquet.",
+        "csv_band_all_label": "Tous les niveaux"
     },
     "csv": {
         "summary_created": "créé(s)",
@@ -4319,7 +4320,6 @@
         "import_failed": "Impossible de lire ce fichier.",
         "import_xls_unsupported": "Les anciens fichiers .xls ne sont pas pris en charge — enregistrez le fichier au format .xlsx ou .csv et réessayez.",
         "import_more_rows": "…et {{count}} de plus",
-        "import_success": "{{count}} cartes importées",
         "assign_heading": "Attribuer aux élèves",
         "assign_class_label": "Classe",
         "assign_button": "Attribuer à la classe",
@@ -4360,7 +4360,9 @@
         "import_preview_one": "{{count}} carte trouvée",
         "import_preview_other": "{{count}} cartes trouvées",
         "import_confirm_one": "Ajouter {{count}} carte",
-        "import_confirm_other": "Ajouter {{count}} cartes"
+        "import_confirm_other": "Ajouter {{count}} cartes",
+        "import_success_one": "{{count}} carte importée",
+        "import_success_other": "{{count}} cartes importées"
     },
     "grammar": {
         "item_select_label": "Point de grammaire",

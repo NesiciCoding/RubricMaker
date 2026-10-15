@@ -61,13 +61,17 @@ describe('FlashcardStudySession coverage', () => {
         const onExit = vi.fn();
         render(<FlashcardStudySession deck={deck} initialStates={{}} onExit={onExit} />);
 
-        for (const rating of ['flashcards.rate_good', 'flashcards.rate_good']) {
+        // 'Again' re-queues c1 behind c2, so the session needs three ratings to drain. 'Easy'
+        // schedules 8 days out — past the requeue window — so those cards leave the queue.
+        fireEvent.click(screen.getByText('flashcards.show_answer'));
+        fireEvent.click(screen.getByText('flashcards.rate_again'));
+        for (const rating of ['flashcards.rate_easy', 'flashcards.rate_easy']) {
             fireEvent.click(screen.getByText('flashcards.show_answer'));
             fireEvent.click(screen.getByText(rating));
         }
 
         expect(screen.getByText('flashcards.session_done_title')).toBeInTheDocument();
-        expect(screen.getByText('flashcards.session_done_summary:{"count":2,"again":0}')).toBeInTheDocument();
+        expect(screen.getByText('flashcards.session_done_summary:{"count":3,"again":1}')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.close'));
         expect(onExit).toHaveBeenCalledTimes(1);
     });

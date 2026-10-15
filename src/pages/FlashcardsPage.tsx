@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,19 @@ export default function FlashcardsPage() {
     const { flashcardDecks, flashcardAssignments, addFlashcardDeck, deleteFlashcardDeck } = useFlashcards();
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
+
+    // 'New deck' has to persist a deck before navigating (the editor needs an id), so an
+    // untitled deck the teacher never added a card to would otherwise pile up in the list.
+    // Prune those once, when the list mounts.
+    const prunedUntitledDecks = useRef(false);
+    useEffect(() => {
+        if (prunedUntitledDecks.current) return;
+        prunedUntitledDecks.current = true;
+        flashcardDecks
+            .filter((d) => !d.ownerStudentId && d.cards.length === 0 && d.name === t('flashcards.untitled_deck'))
+            .forEach((d) => deleteFlashcardDeck(d.id));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function handleCreate() {
         const deck = addFlashcardDeck({ name: t('flashcards.untitled_deck'), cards: [] });

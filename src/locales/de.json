@@ -4157,7 +4157,8 @@
         "wordnet_remove": "Entfernen",
         "wordnet_get": "Herunterladen…",
         "seed_deck_looking_up": "Wörter werden nachgeschlagen… {{done}}/{{total}}",
-        "seed_deck_blank_hint": "Für {{count}} Wort/Wörter wurde keine Definition gefunden — ergänze sie auf der Stapelseite."
+        "seed_deck_blank_hint": "Für {{count}} Wort/Wörter wurde keine Definition gefunden — ergänze sie auf der Stapelseite.",
+        "csv_band_all_label": "Alle Niveaus"
     },
     "csv": {
         "summary_created": "erstellt",
@@ -4319,7 +4320,6 @@
         "import_failed": "Diese Datei konnte nicht gelesen werden.",
         "import_xls_unsupported": "Alte .xls-Dateien werden nicht unterstützt — speichere die Datei als .xlsx oder .csv und versuche es erneut.",
         "import_more_rows": "…und {{count}} weitere",
-        "import_success": "{{count}} Karten importiert",
         "assign_heading": "Schülern zuweisen",
         "assign_class_label": "Klasse",
         "assign_button": "Der Klasse zuweisen",
@@ -4360,7 +4360,9 @@
         "import_preview_one": "{{count}} Karte gefunden",
         "import_preview_other": "{{count}} Karten gefunden",
         "import_confirm_one": "{{count}} Karte hinzufügen",
-        "import_confirm_other": "{{count}} Karten hinzufügen"
+        "import_confirm_other": "{{count}} Karten hinzufügen",
+        "import_success_one": "{{count}} Karte importiert",
+        "import_success_other": "{{count}} Karten importiert"
     },
     "grammar": {
         "item_select_label": "Grammatikelement",

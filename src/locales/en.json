@@ -4157,7 +4157,8 @@
         "wordnet_remove": "Remove",
         "wordnet_get": "Download…",
         "seed_deck_looking_up": "Looking up words… {{done}}/{{total}}",
-        "seed_deck_blank_hint": "No definition found for {{count}} word(s) — fill them in on the deck page."
+        "seed_deck_blank_hint": "No definition found for {{count}} word(s) — fill them in on the deck page.",
+        "csv_band_all_label": "All levels"
     },
     "csv": {
         "summary_created": "created",
@@ -4319,7 +4320,6 @@
         "import_failed": "Could not read this file.",
         "import_xls_unsupported": "Legacy .xls files are not supported — save the file as .xlsx or .csv and try again.",
         "import_more_rows": "…and {{count}} more",
-        "import_success": "Imported {{count}} cards",
         "assign_heading": "Assign to students",
         "assign_class_label": "Class",
         "assign_button": "Assign to class",
@@ -4360,7 +4360,9 @@
         "import_preview_one": "Found {{count}} card",
         "import_preview_other": "Found {{count}} cards",
         "import_confirm_one": "Add {{count}} card",
-        "import_confirm_other": "Add {{count}} cards"
+        "import_confirm_other": "Add {{count}} cards",
+        "import_success_one": "Imported {{count}} card",
+        "import_success_other": "Imported {{count}} cards"
     },
     "grammar": {
         "item_select_label": "Grammar item",

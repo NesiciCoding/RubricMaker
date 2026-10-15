@@ -97,6 +97,7 @@ export default function VocabularyDashboardPage() {
             [t('vocabProfile.csv_column_source')]: t(`vocabProfile.csv_source_${r.source}`),
         }));
         const csv = Papa.unparse(csvRows, CSV_UNPARSE_OPTIONS);
+        // The filename keeps the slug; the UI and the seeded deck name use the label key.
         const suffix = band ?? t('vocabProfile.csv_band_all');
         const filename = `${t('vocabProfile.csv_filename')}_${suffix}.csv`;
         downloadCsv(csv, filename);
@@ -109,7 +110,7 @@ export default function VocabularyDashboardPage() {
             showToast(t('vocabProfile.seed_deck_empty'), 'info');
             return;
         }
-        const bandLabel = band ?? t('vocabProfile.csv_band_all');
+        const bandLabel = band ?? t('vocabProfile.csv_band_all_label');
         const deck = addFlashcardDeck({
             name: t('vocabProfile.seed_deck_name', { band: bandLabel }),
             deckKind: 'vocabulary',
@@ -182,7 +183,7 @@ export default function VocabularyDashboardPage() {
                                     value={exportBand}
                                     onChange={(e) => setExportBand(e.target.value as 'all' | CefrLevel)}
                                 >
-                                    <option value="all">{t('vocabProfile.csv_band_all')}</option>
+                                    <option value="all">{t('vocabProfile.csv_band_all_label')}</option>
                                     {CEFR_LEVELS.map((lvl) => (
                                         <option key={lvl} value={lvl}>
                                             {lvl}

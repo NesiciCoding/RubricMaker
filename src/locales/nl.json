@@ -4157,7 +4157,8 @@
         "wordnet_remove": "Verwijderen",
         "wordnet_get": "Downloaden…",
         "seed_deck_looking_up": "Woorden opzoeken… {{done}}/{{total}}",
-        "seed_deck_blank_hint": "Geen definitie gevonden voor {{count}} woord(en) — vul die aan op de setpagina."
+        "seed_deck_blank_hint": "Geen definitie gevonden voor {{count}} woord(en) — vul die aan op de setpagina.",
+        "csv_band_all_label": "Alle niveaus"
     },
     "csv": {
         "summary_created": "aangemaakt",
@@ -4319,7 +4320,6 @@
         "import_failed": "Dit bestand kon niet worden gelezen.",
         "import_xls_unsupported": "Oude .xls-bestanden worden niet ondersteund — sla het bestand op als .xlsx of .csv en probeer het opnieuw.",
         "import_more_rows": "…en nog {{count}}",
-        "import_success": "{{count}} kaarten geïmporteerd",
         "assign_heading": "Toewijzen aan leerlingen",
         "assign_class_label": "Klas",
         "assign_button": "Toewijzen aan klas",
@@ -4360,7 +4360,9 @@
         "import_preview_one": "{{count}} kaart gevonden",
         "import_preview_other": "{{count}} kaarten gevonden",
         "import_confirm_one": "{{count}} kaart toevoegen",
-        "import_confirm_other": "{{count}} kaarten toevoegen"
+        "import_confirm_other": "{{count}} kaarten toevoegen",
+        "import_success_one": "{{count}} kaart geïmporteerd",
+        "import_success_other": "{{count}} kaarten geïmporteerd"
     },
     "grammar": {
         "item_select_label": "Grammaticaonderdeel",

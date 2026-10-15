@@ -39,9 +39,41 @@ describe('parseCsvText', () => {
         expect(cards).toEqual([{ front: 'apple', back: 'appel' }]);
     });
 
+    it('skips a header row in another shipped UI language', () => {
+        const cards = parseCsvText('Woord,Vertaling\nappel,apple');
+        expect(cards).toEqual([{ front: 'appel', back: 'apple' }]);
+    });
+
+    it('skips a bilingual header row that names the two languages', () => {
+        const cards = parseCsvText('Nederlands,English\nappel,apple');
+        expect(cards).toEqual([{ front: 'appel', back: 'apple' }]);
+    });
+
+    it('keeps a language-name pair that is not the first row', () => {
+        // Only row 0 can be a header, so a card translating language names still imports.
+        const cards = parseCsvText('appel,apple\nFrans,French');
+        expect(cards).toEqual([
+            { front: 'appel', back: 'apple' },
+            { front: 'Frans', back: 'French' },
+        ]);
+    });
+
     it('skips rows missing a front or back', () => {
         const cards = parseCsvText('apple,appel\nlonely\n,orphan');
         expect(cards).toHaveLength(1);
+    });
+
+    it('drops rows that repeat an earlier row verbatim', () => {
+        const cards = parseCsvText('apple,appel\nhouse,huis\napple,appel');
+        expect(cards).toEqual([
+            { front: 'apple', back: 'appel' },
+            { front: 'house', back: 'huis' },
+        ]);
+    });
+
+    it('keeps two cards that share front/back but differ in another column', () => {
+        const cards = parseCsvText('apple,appel,I eat an apple\napple,appel,An apple a day');
+        expect(cards).toHaveLength(2);
     });
 
     it('parses optional phonetic and part-of-speech columns', () => {
