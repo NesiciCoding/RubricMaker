@@ -8,6 +8,7 @@ import {
     exportEssayDocx,
     exportEssaysBatch,
     exportEssayWithRubric,
+    exportEssaysWithRubricBatch,
 } from '../essayExport';
 import { Paragraph, Table } from 'docx';
 import type { EssayAssignment, EssaySubmission, Rubric, Student, StudentRubric, GradeScale } from '../../types';
@@ -15,6 +16,13 @@ import type { EssayAssignment, EssaySubmission, Rubric, Student, StudentRubric, 
 // docx marks XmlComponent.root as protected — read it structurally for assertions.
 function rootOf(node: unknown): unknown {
     return (node as unknown as { root?: unknown }).root;
+}
+
+/** Member names of a zip download, for the batch-export assertions. */
+async function zipMembers(blob: Blob): Promise<string[]> {
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(blob);
+    return Object.keys(zip.files);
 }
 
 const mockSaveAs = vi.hoisted(() => vi.fn());
@@ -304,11 +312,17 @@ describe('essayExport', () => {
             },
         ];
 
-        it('exports each essay separately for markdown', async () => {
+        it('bundles separate markdown essays into one zip (#701)', async () => {
             await exportEssaysBatch(entries, 'markdown', 'separate');
-            expect(mockSaveAs).toHaveBeenCalledTimes(2);
-            expect(mockSaveAs.mock.calls[0][1]).toBe('Alice_Smith_My_Essay.md');
-            expect(mockSaveAs.mock.calls[1][1]).toBe('Bob_Jones_Second.md');
+            expect(mockSaveAs).toHaveBeenCalledTimes(1);
+            const [blob, name] = mockSaveAs.mock.calls[0] as [Blob, string];
+            expect(name).toBe('essays.zip');
+            await expect(zipMembers(blob)).resolves.toEqual(['Alice_Smith_My_Essay.md', 'Bob_Jones_Second.md']);
+        });
+
+        it('names the zip when a caller passes one', async () => {
+            await exportEssaysBatch(entries, 'markdown', 'separate', undefined, 'My_Essay_essays.zip');
+            expect(mockSaveAs.mock.calls[0][1]).toBe('My_Essay_essays.zip');
         });
 
         it('exports each essay separately for pdf', async () => {
@@ -316,11 +330,12 @@ describe('essayExport', () => {
             expect(mockPrintHtml).toHaveBeenCalledTimes(2);
         });
 
-        it('exports each essay separately for docx', async () => {
+        it('bundles separate docx essays into one zip (#701)', async () => {
             await exportEssaysBatch(entries, 'docx', 'separate');
             expect(mockToBlob).toHaveBeenCalledTimes(2);
-            expect(mockSaveAs.mock.calls[0][1]).toBe('Alice_Smith_My_Essay.docx');
-            expect(mockSaveAs.mock.calls[1][1]).toBe('Bob_Jones_Second.docx');
+            expect(mockSaveAs).toHaveBeenCalledTimes(1);
+            const [blob] = mockSaveAs.mock.calls[0] as [Blob, string];
+            await expect(zipMembers(blob)).resolves.toEqual(['Alice_Smith_My_Essay.docx', 'Bob_Jones_Second.docx']);
         });
 
         it('combines markdown essays into a single file separated by rules', async () => {
@@ -493,6 +508,45 @@ describe('essayExport', () => {
             await exportEssayWithRubric(assignment, student, submission, studentRubric, rubric, scale, 'pdf');
             expect(mockPrintHtml).toHaveBeenCalledTimes(1);
             expect((mockPrintHtml.mock.calls[0] as unknown[])[0]).not.toContain('Grammar &amp; Vocabulary');
+        });
+    });
+
+    describe('exportEssaysWithRubricBatch (#701)', () => {
+        const second = {
+            assignment: { ...assignment, studentId: 's2', title: 'Second' },
+            student: { ...student, id: 's2', name: 'Bob Jones' },
+            submission: { ...submission, id: 'es2' },
+            studentRubric,
+            rubric,
+            scale,
+        };
+        const entries = [{ assignment, student, submission, studentRubric, rubric, scale }, second];
+
+        it('zips the docx exports instead of downloading one per essay', async () => {
+            await exportEssaysWithRubricBatch(entries, 'docx');
+            expect(mockToBlob).toHaveBeenCalledTimes(2);
+            expect(mockSaveAs).toHaveBeenCalledTimes(1);
+            const [blob, name] = mockSaveAs.mock.calls[0] as [Blob, string];
+            expect(name).toBe('essays_with_rubric.zip');
+            await expect(zipMembers(blob)).resolves.toEqual([
+                'Alice_Smith_My_Essay_with_rubric.docx',
+                'Bob_Jones_Second_with_rubric.docx',
+            ]);
+        });
+
+        it('prints the pdf batch as one job so there is a single dialog', async () => {
+            await exportEssaysWithRubricBatch(entries, 'pdf');
+            expect(mockPrintHtml).toHaveBeenCalledTimes(1);
+            const call = (mockPrintHtml.mock.calls[0] as unknown[]).slice() as [string, string, string | undefined];
+            expect(call[0]).toContain('<div class="rubric-html">grid</div>');
+            expect(call[2]).toBe(rubric.format.fontFamily);
+        });
+
+        it('does nothing at all for an empty selection', async () => {
+            await exportEssaysWithRubricBatch([], 'docx');
+            await exportEssaysWithRubricBatch([], 'pdf');
+            expect(mockSaveAs).not.toHaveBeenCalled();
+            expect(mockPrintHtml).not.toHaveBeenCalled();
         });
     });
 });

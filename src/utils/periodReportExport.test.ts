@@ -25,6 +25,13 @@ vi.mock('file-saver', () => ({ saveAs: vi.fn() }));
 
 import { saveAs } from 'file-saver';
 import { TextRun, ImageRun, Paragraph } from 'docx';
+
+/** Member names of a zip download, for the batch-export assertions. */
+async function zipMembers(blob: Blob): Promise<string[]> {
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(blob);
+    return Object.keys(zip.files);
+}
 import {
     exportPeriodReport,
     exportPeriodReportsBatch,
@@ -107,9 +114,17 @@ describe('periodReportExport', () => {
         expect(saveAs).toHaveBeenCalledOnce();
     });
 
-    it('exportPeriodReportsBatch calls saveAs once per input', async () => {
+    it('exportPeriodReportsBatch downloads one zip instead of one file per input (#701)', async () => {
         await exportPeriodReportsBatch([baseInput, baseInput]);
-        expect(saveAs).toHaveBeenCalledTimes(2);
+        expect(saveAs).toHaveBeenCalledOnce();
+        const [blob, name] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
+        expect(name).toBe('period_reports.zip');
+        await expect(zipMembers(blob)).resolves.toEqual(['Alice_period_report.docx', 'Alice_period_report_2.docx']);
+    });
+
+    it('accepts a zip name so a class export carries the class', async () => {
+        await exportPeriodReportsBatch([baseInput], undefined, 'Class_A_period_reports.zip');
+        expect(vi.mocked(saveAs).mock.calls[0][1]).toBe('Class_A_period_reports.zip');
     });
 
     it('gives students whose names reduce to the same file name distinct files (#692)', async () => {
@@ -117,10 +132,8 @@ describe('periodReportExport', () => {
             { ...baseInput, student: { ...baseInput.student, name: 'Li Wei' } },
             { ...baseInput, student: { ...baseInput.student, id: 's2', name: 'Li  Wei' } },
         ]);
-        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual([
-            'Li_Wei_period_report.docx',
-            'Li_Wei_period_report_2.docx',
-        ]);
+        const [blob] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
+        await expect(zipMembers(blob)).resolves.toEqual(['Li_Wei_period_report.docx', 'Li_Wei_period_report_2.docx']);
     });
 
     it('handles entries with no comments in the feedback section', async () => {
@@ -490,9 +503,12 @@ describe('exportReportCard', () => {
         expect(filename).toBe('Empty_Student_report_card.docx');
     });
 
-    it('exportReportCardsBatch calls saveAs once per student', async () => {
+    it('exportReportCardsBatch downloads one zip instead of one file per student (#701)', async () => {
         await exportReportCardsBatch([fullReportCard, emptyReportCard]);
-        expect(saveAs).toHaveBeenCalledTimes(2);
+        expect(saveAs).toHaveBeenCalledOnce();
+        const [blob, name] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
+        expect(name).toBe('report_cards.zip');
+        await expect(zipMembers(blob)).resolves.toHaveLength(2);
     });
 
     it('numbers report cards of students with the same name (#692)', async () => {
@@ -500,10 +516,8 @@ describe('exportReportCard', () => {
             { ...fullReportCard, studentName: 'محمد' },
             { ...emptyReportCard, studentName: 'محمد' },
         ]);
-        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual([
-            'محمد_report_card.docx',
-            'محمد_report_card_2.docx',
-        ]);
+        const [blob] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
+        await expect(zipMembers(blob)).resolves.toEqual(['محمد_report_card.docx', 'محمد_report_card_2.docx']);
     });
 
     it('renders a Feedback section from the rubrics section, matching period report behavior', async () => {

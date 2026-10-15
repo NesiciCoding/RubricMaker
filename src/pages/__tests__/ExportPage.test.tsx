@@ -162,9 +162,11 @@ vi.mock('../../utils/docxTemplateExport', () => ({
 
 const mockExportEssaysBatch = vi.fn().mockResolvedValue(undefined);
 const mockExportEssayWithRubric = vi.fn().mockResolvedValue(undefined);
+const mockExportEssaysWithRubricBatch = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../utils/essayExport', () => ({
     exportEssaysBatch: (...args: unknown[]) => mockExportEssaysBatch(...args),
     exportEssayWithRubric: (...args: unknown[]) => mockExportEssayWithRubric(...args),
+    exportEssaysWithRubricBatch: (...args: unknown[]) => mockExportEssaysWithRubricBatch(...args),
 }));
 
 const mockBuildIcs = vi.fn((..._args: unknown[]) => 'BEGIN:VCALENDAR');

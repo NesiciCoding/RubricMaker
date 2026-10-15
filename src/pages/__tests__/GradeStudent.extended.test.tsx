@@ -191,6 +191,13 @@ describe('GradeStudent extended', () => {
         );
     });
 
+    it('leaves the modifier type select its natural width so "Points offset" is not clipped (#701)', () => {
+        renderPage();
+        const select = screen.getByRole('combobox', { name: 'gradeStudent.label_modifier' });
+        expect(select.style.width).toBe('');
+        expect(select.style.flexShrink).toBe('0');
+    });
+
     it('rounds the modifier offset shown in the footer', () => {
         mockStudentRubricsArr = [
             {

@@ -789,8 +789,13 @@ export default function GradeStudent() {
     const handleExportPdf = async () => {
         /* v8 ignore next -- the not-found render above gates on sr/rubric/student */
         if (!sr || !rubric || !student) return;
-        await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
-        logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
+        try {
+            await exportSinglePdf(sr, rubric, student, scale, { orientation: rubric.format.orientation });
+            logAuditEvent('export', 'export_pdf', 'rubric', rubric.id);
+        } catch {
+            // No print dialog opened, so nothing was exported: say so instead of logging a saved file (#701).
+            showToast(t('toast.export_error'), 'error');
+        }
     };
 
     const fmt = rubric.format;
@@ -1084,6 +1089,8 @@ export default function GradeStudent() {
                         </HelpPopover>
                     </span>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1, minWidth: 280 }}>
+                        {/* No fixed width: a select sizes itself to its widest option, and the former
+                            110px clipped "Points offset" (and longer translations) mid-word. */}
                         <select
                             aria-label={t('gradeStudent.label_modifier')}
                             value={sr.globalModifier?.type ?? 'percentage'}
@@ -1103,7 +1110,7 @@ export default function GradeStudent() {
                                 );
                                 setIsDirty(true);
                             }}
-                            style={{ width: 110 }}
+                            style={{ flexShrink: 0, minWidth: 110 }}
                         >
                             <option value="percentage">{t('gradeStudent.offset_percentage')}</option>
                             <option value="points">{t('gradeStudent.offset_points')}</option>

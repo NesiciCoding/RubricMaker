@@ -1,28 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./rubric-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Rubric Maker — Create, fill, and export educational rubrics with ease" />
-    <title>Rubric Maker</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
-      />
-    </noscript>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="./rubric-icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Rubric Maker — Create, fill, and export educational rubrics with ease" />
+        <title>Rubric Maker</title>
+        <!-- Fonts are self-hosted (see scripts/vendor-fonts.mjs) so no page load or print frame ever
+         calls out to fonts.googleapis.com. -->
+        <link rel="preload" as="font" type="font/woff2" crossorigin href="./fonts/hanken-grotesk-400_700.woff2" />
+        <link rel="preload" as="font" type="font/woff2" crossorigin href="./fonts/bricolage-grotesque-500_700.woff2" />
+        <link rel="stylesheet" href="./fonts/fonts.css" />
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>

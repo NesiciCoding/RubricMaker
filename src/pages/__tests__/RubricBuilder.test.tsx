@@ -1021,8 +1021,8 @@ describe('RubricBuilder', () => {
         fireEvent.change(screen.getByDisplayValue('Sans Serif (Inter)'), {
             target: { value: "'Playfair Display', Georgia, serif" },
         });
-        expect(document.getElementById('rubric-export-gfont')).not.toBeNull();
-        // A second recognised font reuses the existing stylesheet link (matches option text).
+        // Every format font is self-hosted with the app, so switching one fetches nothing (#701).
+        expect(document.getElementById('rubric-export-gfont')).toBeNull();
         fireEvent.change(screen.getByDisplayValue('Playfair Display'), {
             target: { value: "'Oswald', Arial, sans-serif" },
         });

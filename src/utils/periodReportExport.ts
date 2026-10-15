@@ -26,7 +26,8 @@ import type {
 } from '../types';
 import { calcGradeSummary } from './gradeCalc';
 import { buildDocxStyles } from './docxExport';
-import { createUniqueFilenames, sanitizeFilename, stripCommentHtml } from './exportDataPrep';
+import { sanitizeFilename, stripCommentHtml } from './exportDataPrep';
+import { saveZippedFiles } from './zipExport';
 import type { LearningGoalAggregate } from './learningGoalsAggregator';
 
 const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
@@ -395,11 +396,10 @@ async function buildRubricGradeSections(summaries: RubricGradeSummary[]): Promis
     return blocks;
 }
 
-export async function exportPeriodReport(
+async function buildPeriodReportBlob(
     input: PeriodReportInput,
-    styleTemplate?: ExportTemplate,
-    claimFilename: (name: string) => string = (name) => name
-): Promise<void> {
+    styleTemplate?: ExportTemplate
+): Promise<{ name: string; blob: Blob }> {
     const { student, className, entries, periodLabel, goals } = input;
 
     const sections: ReportCardSection[] = [{ type: 'rubrics', entries }];
@@ -414,19 +414,27 @@ export async function exportPeriodReport(
     });
 
     const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
-    const blob = await Packer.toBlob(doc);
-    const safeName = sanitizeFilename(student.name);
-    saveAs(blob, claimFilename(`${safeName}_period_report.docx`));
+    return { name: `${sanitizeFilename(student.name)}_period_report.docx`, blob: await Packer.toBlob(doc) };
 }
 
+export async function exportPeriodReport(
+    input: PeriodReportInput,
+    styleTemplate?: ExportTemplate,
+    claimFilename: (name: string) => string = (name) => name
+): Promise<void> {
+    const { name, blob } = await buildPeriodReportBlob(input, styleTemplate);
+    saveAs(blob, claimFilename(name));
+}
+
+/** One zip instead of one download per student — see saveZippedFiles(). */
 export async function exportPeriodReportsBatch(
     inputs: PeriodReportInput[],
-    styleTemplate?: ExportTemplate
+    styleTemplate?: ExportTemplate,
+    zipName = 'period_reports.zip'
 ): Promise<void> {
-    const claimFilename = createUniqueFilenames();
-    for (const input of inputs) {
-        await exportPeriodReport(input, styleTemplate, claimFilename);
-    }
+    const files = [];
+    for (const input of inputs) files.push(await buildPeriodReportBlob(input, styleTemplate));
+    await saveZippedFiles(files, zipName);
 }
 
 // ─── Report cards ──────────────────────────────────────────────────────────────
@@ -682,24 +690,31 @@ async function buildReportCardSections(data: ReportCardData): Promise<(Paragraph
     return blocks;
 }
 
+async function buildReportCardBlob(
+    data: ReportCardData,
+    styleTemplate?: ExportTemplate
+): Promise<{ name: string; blob: Blob }> {
+    const blocks = await buildReportCardSections(data);
+    const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
+    return { name: `${sanitizeFilename(data.studentName)}_report_card.docx`, blob: await Packer.toBlob(doc) };
+}
+
 export async function exportReportCard(
     data: ReportCardData,
     styleTemplate?: ExportTemplate,
     claimFilename: (name: string) => string = (name) => name
 ): Promise<void> {
-    const blocks = await buildReportCardSections(data);
-    const doc = new Document({ styles: buildDocxStyles(undefined, styleTemplate), sections: [{ children: blocks }] });
-    const blob = await Packer.toBlob(doc);
-    const safeName = sanitizeFilename(data.studentName);
-    saveAs(blob, claimFilename(`${safeName}_report_card.docx`));
+    const { name, blob } = await buildReportCardBlob(data, styleTemplate);
+    saveAs(blob, claimFilename(name));
 }
 
+/** One zip instead of one download per student — see saveZippedFiles(). */
 export async function exportReportCardsBatch(
     dataList: ReportCardData[],
-    styleTemplate?: ExportTemplate
+    styleTemplate?: ExportTemplate,
+    zipName = 'report_cards.zip'
 ): Promise<void> {
-    const claimFilename = createUniqueFilenames();
-    for (const data of dataList) {
-        await exportReportCard(data, styleTemplate, claimFilename);
-    }
+    const files = [];
+    for (const data of dataList) files.push(await buildReportCardBlob(data, styleTemplate));
+    await saveZippedFiles(files, zipName);
 }

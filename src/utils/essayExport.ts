@@ -30,7 +30,8 @@ import type {
 } from '../types';
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
 import { printHtml, buildRubricHTML } from './pdfExport';
-import { createUniqueFilenames, sanitizeFilename } from './exportDataPrep';
+import { sanitizeFilename } from './exportDataPrep';
+import { saveZippedFiles } from './zipExport';
 import { safeHref } from './safeUrl';
 
 type EssayLike = Pick<EssayAssignment, 'title'>;
@@ -563,25 +564,19 @@ function essayHtmlHeader(assignment: EssayLike, student: Student, submission: Es
   </div>`;
 }
 
-export async function exportEssayMarkdown(
-    assignment: EssayLike,
-    student: Student,
-    submission: EssaySubmission,
-    claimFilename: (name: string) => string = (name) => name
-) {
+function buildEssayMarkdown(assignment: EssayLike, student: Student, submission: EssaySubmission) {
     const md = `# ${assignment.title}\n\n_${essayHeaderLine(assignment, student, submission)}_\n\n${htmlToMarkdown(submission.contentHtml)}\n`;
-    saveAs(
-        new Blob([md], { type: 'text/markdown' }),
-        claimFilename(`${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.md`)
-    );
+    return {
+        name: `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.md`,
+        blob: new Blob([md], { type: 'text/markdown' }),
+    };
 }
 
-export async function exportEssayDocx(
+async function buildEssayDocx(
     assignment: EssayLike,
     student: Student,
     submission: EssaySubmission,
-    styleTemplate?: ExportTemplate,
-    claimFilename: (name: string) => string = (name) => name
+    styleTemplate?: ExportTemplate
 ) {
     const doc = new Document({
         styles: buildDocxStyles(undefined, styleTemplate),
@@ -594,8 +589,31 @@ export async function exportEssayDocx(
             },
         ],
     });
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, claimFilename(`${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`));
+    return {
+        name: `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}.docx`,
+        blob: await Packer.toBlob(doc),
+    };
+}
+
+export async function exportEssayMarkdown(
+    assignment: EssayLike,
+    student: Student,
+    submission: EssaySubmission,
+    claimFilename: (name: string) => string = (name) => name
+) {
+    const { name, blob } = buildEssayMarkdown(assignment, student, submission);
+    saveAs(blob, claimFilename(name));
+}
+
+export async function exportEssayDocx(
+    assignment: EssayLike,
+    student: Student,
+    submission: EssaySubmission,
+    styleTemplate?: ExportTemplate,
+    claimFilename: (name: string) => string = (name) => name
+) {
+    const { name, blob } = await buildEssayDocx(assignment, student, submission, styleTemplate);
+    saveAs(blob, claimFilename(name));
 }
 
 export async function exportEssayPdf(
@@ -617,16 +635,28 @@ export async function exportEssaysBatch(
     entries: EssayBatchEntry[],
     format: 'markdown' | 'docx' | 'pdf',
     mode: 'separate' | 'combined',
-    styleTemplate?: ExportTemplate
+    styleTemplate?: ExportTemplate,
+    zipName = 'essays.zip'
 ) {
     if (mode === 'separate') {
-        const claimFilename = createUniqueFilenames();
-        for (const { assignment, student, submission } of entries) {
-            if (format === 'markdown') await exportEssayMarkdown(assignment, student, submission, claimFilename);
-            else if (format === 'docx')
-                await exportEssayDocx(assignment, student, submission, styleTemplate, claimFilename);
-            else await exportEssayPdf(assignment, student, submission, styleTemplate);
+        // "Separate" only means separate files, not separate downloads: N saveAs() calls make the
+        // browser prompt for (or block) everything after the first (#701). PDFs stay one dialog each —
+        // the point of that mode is a print job per essay.
+        if (format === 'pdf') {
+            for (const { assignment, student, submission } of entries) {
+                await exportEssayPdf(assignment, student, submission, styleTemplate);
+            }
+            return;
         }
+        const files = [];
+        for (const { assignment, student, submission } of entries) {
+            files.push(
+                format === 'markdown'
+                    ? buildEssayMarkdown(assignment, student, submission)
+                    : await buildEssayDocx(assignment, student, submission, styleTemplate)
+            );
+        }
+        await saveZippedFiles(files, zipName);
         return;
     }
 
@@ -703,6 +733,46 @@ function analysisHtml(analysis: DocumentAnalysisResult, vocabularyItems: Vocabul
     </div>`;
 }
 
+/** One student's essay, its graded rubric grid and (optionally) the grammar/vocabulary analysis. */
+export interface EssayWithRubricEntry {
+    assignment: EssayLike;
+    student: Student;
+    submission: EssaySubmission;
+    studentRubric: StudentRubric;
+    rubric: Rubric;
+    scale: GradeScale | null;
+    analysis?: DocumentAnalysisResult;
+}
+
+async function buildEssayWithRubricDocx(entry: EssayWithRubricEntry, styleTemplate?: ExportTemplate) {
+    const { assignment, student, submission, studentRubric, rubric, scale, analysis } = entry;
+    const vocabularyItems = rubric.vocabularyItems ?? [];
+    const children: (Paragraph | Table)[] = [
+        ...essayDocxHeader(assignment, student, submission),
+        ...htmlToDocxChildren(submission.contentHtml),
+        new Paragraph({ children: [new PageBreak()] }),
+        ...buildRubricGridDocxChildren(rubric, studentRubric, scale, student),
+        ...(analysis ? analysisDocxChildren(analysis, vocabularyItems) : []),
+    ];
+    const doc = new Document({
+        styles: buildDocxStyles(rubric.format.fontFamily, styleTemplate),
+        sections: [{ children }],
+    });
+    return {
+        name: `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}_with_rubric.docx`,
+        blob: await Packer.toBlob(doc),
+    };
+}
+
+function essayWithRubricHtml(entry: EssayWithRubricEntry): string {
+    const { assignment, student, submission, studentRubric, rubric, scale, analysis } = entry;
+    return (
+        essayHtmlHeader(assignment, student, submission) +
+        buildRubricHTML(studentRubric, rubric, student, scale) +
+        (analysis ? analysisHtml(analysis, rubric.vocabularyItems ?? []) : '')
+    );
+}
+
 /** Combined essay + graded rubric (+ optional grammar/vocabulary analysis) export. Markdown is intentionally not offered — a grade grid has no clean Markdown representation. */
 export async function exportEssayWithRubric(
     assignment: EssayLike,
@@ -715,28 +785,45 @@ export async function exportEssayWithRubric(
     analysis?: DocumentAnalysisResult,
     styleTemplate?: ExportTemplate
 ) {
-    const vocabularyItems = rubric.vocabularyItems ?? [];
+    const entry: EssayWithRubricEntry = {
+        assignment,
+        student,
+        submission,
+        studentRubric,
+        rubric,
+        scale,
+        analysis,
+    };
 
     if (format === 'docx') {
-        const children: (Paragraph | Table)[] = [
-            ...essayDocxHeader(assignment, student, submission),
-            ...htmlToDocxChildren(submission.contentHtml),
-            new Paragraph({ children: [new PageBreak()] }),
-            ...buildRubricGridDocxChildren(rubric, studentRubric, scale, student),
-            ...(analysis ? analysisDocxChildren(analysis, vocabularyItems) : []),
-        ];
-        const doc = new Document({
-            styles: buildDocxStyles(rubric.format.fontFamily, styleTemplate),
-            sections: [{ children }],
-        });
-        const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${sanitizeFilename(student.name)}_${sanitizeFilename(assignment.title)}_with_rubric.docx`);
+        const { name, blob } = await buildEssayWithRubricDocx(entry, styleTemplate);
+        saveAs(blob, name);
         return;
     }
 
-    const html =
-        essayHtmlHeader(assignment, student, submission) +
-        buildRubricHTML(studentRubric, rubric, student, scale) +
-        (analysis ? analysisHtml(analysis, vocabularyItems) : '');
-    await printHtml(html, 'portrait', rubric.format.fontFamily);
+    await printHtml(essayWithRubricHtml(entry), 'portrait', rubric.format.fontFamily);
+}
+
+/**
+ * Batch counterpart of exportEssayWithRubric: the DOCX files come back as one zip and the PDFs go out
+ * as a single print job, so a class export is one download or one dialog instead of one per student
+ * (#701). Every essay in a batch shares the first rubric's font family for the print job.
+ */
+export async function exportEssaysWithRubricBatch(
+    entries: EssayWithRubricEntry[],
+    format: 'docx' | 'pdf',
+    styleTemplate?: ExportTemplate,
+    zipName = 'essays_with_rubric.zip'
+) {
+    if (entries.length === 0) return;
+
+    if (format === 'docx') {
+        const files = [];
+        for (const entry of entries) files.push(await buildEssayWithRubricDocx(entry, styleTemplate));
+        await saveZippedFiles(files, zipName);
+        return;
+    }
+
+    const html = entries.map((entry) => essayWithRubricHtml(entry)).join('');
+    await printHtml(html, 'portrait', entries[0].rubric.format.fontFamily);
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { toLocalDatetimeInput, fromLocalDatetimeInput, formatShortDate } from './dateInput';
+import { toLocalDatetimeInput, fromLocalDatetimeInput, formatShortDate, localDayWindow } from './dateInput';
 
 describe('toLocalDatetimeInput', () => {
     it('returns a value matching the datetime-local shape', () => {
@@ -60,5 +60,47 @@ describe('fromLocalDatetimeInput in a non-UTC zone (#700)', () => {
     it('shows the slice-based value the old code used would have shifted the deadline', () => {
         const stored = '2026-10-11T20:27:33.645Z';
         expect(new Date(stored.slice(0, 16)).toISOString()).not.toBe(stored);
+    });
+});
+
+describe('localDayWindow in a non-UTC zone (#701)', () => {
+    beforeAll(() => {
+        process.env.TZ = 'Europe/Amsterdam';
+    });
+    afterAll(() => {
+        delete process.env.TZ;
+    });
+
+    const window = localDayWindow('2026-01-05', '2026-01-05');
+    const inside = (iso: string) => {
+        const ts = new Date(iso).getTime();
+        return ts >= window.fromTs && ts < window.toTs;
+    };
+
+    it('runs in a zone with an offset, so the regression is meaningful', () => {
+        expect(new Date('2026-01-05T00:30:00Z').getTimezoneOffset()).not.toBe(0);
+    });
+
+    it('covers the whole From day, including the hours before UTC midnight drifts in', () => {
+        // 00:30 local on the From day: `new Date('2026-01-05')` (UTC midnight) used to exclude it.
+        expect(inside('2026-01-04T23:30:00Z')).toBe(true);
+        expect(new Date('2026-01-04T23:30:00Z').getTime() < new Date('2026-01-05').getTime()).toBe(true);
+    });
+
+    it('covers the To day up to its final millisecond', () => {
+        expect(inside('2026-01-05T22:59:59.999Z')).toBe(true);
+        expect(inside('2026-01-05T23:00:00.000Z')).toBe(false);
+    });
+
+    it('leaves missing or unparsable bounds open', () => {
+        expect(localDayWindow('', '')).toEqual({ fromTs: 0, toTs: Infinity });
+        expect(localDayWindow('not-a-date', '')).toEqual({ fromTs: 0, toTs: Infinity });
+        expect(localDayWindow('', '2026-01-05').fromTs).toBe(0);
+    });
+
+    it('keeps a DST-shortened day whole', () => {
+        // 2026-03-29 is 23 hours long in Europe/Amsterdam (CET -> CEST at 02:00 local).
+        const { fromTs, toTs } = localDayWindow('2026-03-29', '2026-03-29');
+        expect((toTs - fromTs) / 3_600_000).toBe(23);
     });
 });

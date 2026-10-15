@@ -276,26 +276,8 @@ function RubricBuilderEditor() {
         };
     }, [showVersionHistory, id, fetchRubricVersions]);
 
-    useEffect(() => {
-        const EXPORT_GOOGLE_FONTS: Record<string, string> = {
-            'Playfair Display': 'Playfair+Display:wght@400;700',
-            Oswald: 'Oswald:wght@400;500;700',
-            'Bebas Neue': 'Bebas+Neue',
-            'Special Elite': 'Special+Elite',
-            'Courier Prime': 'Courier+Prime:wght@400;700',
-        };
-        const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => format.fontFamily.includes(name));
-        if (families.length === 0) return;
-        let link = document.getElementById('rubric-export-gfont') as HTMLLinkElement | null;
-        if (!link) {
-            link = document.createElement('link');
-            link.id = 'rubric-export-gfont';
-            link.rel = 'stylesheet';
-            document.head.appendChild(link);
-        }
-        const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
-        link.href = `https://fonts.googleapis.com/css2?${familyParams}&display=swap`;
-    }, [format.fontFamily]);
+    // The preview and print fonts come from the app's own stylesheet (public/fonts/fonts.css), so
+    // switching format.fontFamily needs nothing fetched here (#701).
 
     const getRubricData = useCallback(
         (): Rubric => ({

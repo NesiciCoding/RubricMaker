@@ -32,6 +32,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { getStudentGoalScores } from '../utils/learningGoalsAggregator';
 import { encodeFeedbackCode } from '../utils/shareCode';
 import { sanitizeFilename } from '../utils/exportDataPrep';
+import { localDayWindow } from '../utils/dateInput';
 import type { ReportCardConfig, Student, StudentRubric } from '../types';
 import {
     buildGradebookPresetCsv,
@@ -42,6 +43,11 @@ import {
 import ExamBookletExportPanel from '../components/Tests/ExamBookletExportPanel';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+
+/** `Class A_period_reports.zip` for a named class, otherwise undefined so the export module names the zip. */
+function classZipName(className: string | undefined, kind: string): string | undefined {
+    return className ? `${sanitizeFilename(className)}_${kind}.zip` : undefined;
+}
 
 export default function ExportPage() {
     const { t } = useTranslation();
@@ -250,7 +256,8 @@ export default function ExportPage() {
             let exportedCount = 0;
             const skippedNames: string[] = [];
             if (includeRubricAnalysis && (essayFormat === 'docx' || essayFormat === 'pdf')) {
-                const { exportEssayWithRubric } = await import('../utils/essayExport');
+                const { exportEssaysWithRubricBatch } = await import('../utils/essayExport');
+                const items: import('../utils/essayExport').EssayWithRubricEntry[] = [];
                 for (const { assignment, student, submission } of toExport) {
                     const sr = studentRubrics.find(
                         (s) => s.rubricId === assignment.rubricId && s.studentId === assignment.studentId
@@ -269,19 +276,25 @@ export default function ExportPage() {
                     const analysis = analysisResults.find(
                         (ar) => ar.studentId === student.id && ar.rubricId === essayRubric.id
                     );
-                    await exportEssayWithRubric(
+                    items.push({
                         assignment,
                         student,
                         submission,
-                        sr,
-                        essayRubric,
-                        essayScale,
-                        essayFormat,
+                        studentRubric: sr,
+                        rubric: essayRubric,
+                        scale: essayScale,
                         analysis,
-                        activeStyleTemplate
-                    );
-                    exportedCount += 1;
+                    });
                 }
+                // One zip / one print job for the whole selection: a download or dialog per student is
+                // what made the browser drop or prompt for every file after the first (#701).
+                await exportEssaysWithRubricBatch(
+                    items,
+                    essayFormat,
+                    activeStyleTemplate,
+                    toExport[0] ? `${sanitizeFilename(toExport[0].assignment.title)}_with_rubric.zip` : undefined
+                );
+                exportedCount = items.length;
                 if (skippedNames.length > 0) {
                     showToast(t('exportPage.essays_skipped_ungraded', { names: skippedNames.join(', ') }), 'error');
                 }
@@ -521,8 +534,8 @@ export default function ExportPage() {
     }
 
     function gatherPeriodEntries(studentId: string) {
-        const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
-        const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
+        // Both pickers are calendar days in the teacher's own zone; see localDayWindow().
+        const { fromTs, toTs } = localDayWindow(reportDateFrom, reportDateTo);
         const srs = studentRubrics.filter(
             (sr) =>
                 sr.studentId === studentId &&
@@ -530,7 +543,7 @@ export default function ExportPage() {
                 !sr.isPeerReview &&
                 !sr.notHandedIn &&
                 new Date(sr.gradedAt).getTime() >= fromTs &&
-                new Date(sr.gradedAt).getTime() <= toTs
+                new Date(sr.gradedAt).getTime() < toTs
         );
         const entries = srs
             .map((sr) => {
@@ -547,14 +560,13 @@ export default function ExportPage() {
     }
 
     function gatherPeriodTests(studentId: string) {
-        const fromTs = reportDateFrom ? new Date(reportDateFrom).getTime() : 0;
-        const toTs = reportDateTo ? new Date(reportDateTo + 'T23:59:59').getTime() : Infinity;
+        const { fromTs, toTs } = localDayWindow(reportDateFrom, reportDateTo);
         const periodStudentTests = studentTests.filter((st) => {
             if (st.studentId !== studentId || st.status !== 'graded') return false;
             const at = st.gradedAt ?? st.submittedAt;
             if (!at) return false;
             const ts = new Date(at).getTime();
-            return ts >= fromTs && ts <= toTs;
+            return ts >= fromTs && ts < toTs;
         });
         const testIds = new Set(periodStudentTests.map((st) => st.testId));
         const periodTests = tests.filter((test) => testIds.has(test.id));
@@ -582,7 +594,7 @@ export default function ExportPage() {
                 };
             });
 
-            await exportPeriodReportsBatch(inputs, activeStyleTemplate);
+            await exportPeriodReportsBatch(inputs, activeStyleTemplate, classZipName(cls?.name, 'period_reports'));
             logAuditEvent('export', 'export_period_report', 'class', reportClassId, { count: inputs.length });
             showToast(t('exportPage.period_report_success', { count: inputs.length }), 'success');
         } catch {
@@ -638,7 +650,8 @@ export default function ExportPage() {
             const classStudents = students.filter((s) => s.classId === reportClassId && reportStudentIds.has(s.id));
             const { exportReportCardsBatch } = await import('../utils/periodReportExport');
             const dataList = await Promise.all(classStudents.map((student) => buildReportCardDataForStudent(student)));
-            await exportReportCardsBatch(dataList, activeStyleTemplate);
+            const cls = classes.find((c) => c.id === reportClassId);
+            await exportReportCardsBatch(dataList, activeStyleTemplate, classZipName(cls?.name, 'report_cards'));
             logAuditEvent('export', 'export_report_card', 'class', reportClassId, { count: dataList.length });
             showToast(t('exportPage.report_card_success', { count: dataList.length }), 'success');
         } catch {
