@@ -1674,7 +1674,7 @@ describe('GradeStudent coverage', () => {
         mockSettingsObj.gradeNavigationScope = 'current-class';
         renderPage();
         openMenu();
-        fireEvent.click(screen.getByText('gradeStudent.nav_scope_current_class'));
+        fireEvent.click(screen.getByText('gradeStudent.nav_scope_switch_all'));
         expect(mockUpdateSettings).toHaveBeenCalledWith({ gradeNavigationScope: 'rubric-classes' });
     });
 

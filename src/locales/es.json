@@ -1693,8 +1693,6 @@
         "delete_grade_scope_student": "Eliminar solo la calificación de este estudiante",
         "delete_grade_scope_group": "Eliminar la calificación de todo el grupo ({{names}})",
         "not_handed_in_comment": "No entregado",
-        "nav_scope_current_class": "Clase actual",
-        "nav_scope_rubric_classes": "Todas las clases vinculadas",
         "all_students_graded": "Todos los estudiantes están calificados para esta rúbrica.",
         "modifier_reason_placeholder": "Motivo del modificador de calificación",
         "feedback_only_label": "Solo retroalimentación (ocultar calificación al estudiante)",
@@ -1761,7 +1759,9 @@
         "regrade_latest_done_cleared_one": "Ahora se califica con la última versión: {{count}} criterio necesita un nivel nuevo. Guarda para conservarla.",
         "regrade_latest_done_cleared_other": "Ahora se califica con la última versión: {{count}} criterios necesitan un nivel nuevo. Guarda para conservarla.",
         "regrade_latest_done_removed_one": "Ahora se califica con la última versión: se conserva el comentario de {{count}} criterio eliminado. Guarda para mantenerlo.",
-        "regrade_latest_done_removed_other": "Ahora se califica con la última versión: se conservan los comentarios de {{count}} criterios eliminados. Guarda para mantenerlos."
+        "regrade_latest_done_removed_other": "Ahora se califica con la última versión: se conservan los comentarios de {{count}} criterios eliminados. Guarda para mantenerlos.",
+        "nav_scope_switch_all": "Cambiar a todas las clases vinculadas",
+        "nav_scope_switch_current": "Cambiar solo a esta clase"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -2113,7 +2113,6 @@
         "title": "Estadísticas de revisión por pares — {{rubricName}}",
         "rubric_not_found": "Rúbrica no encontrada.",
         "empty_state": "Aún no se han enviado revisiones por pares para esta rúbrica.",
-        "total_comparisons": "{{count}} comparaciones con la referencia del profesor",
         "missing_baseline": "{{count}} entradas sin referencia del profesor",
         "filter_round": "Ronda",
         "all_rounds": "Todas las rondas",
@@ -2130,7 +2129,9 @@
         "anonymous_reviewer": "Revisor anónimo",
         "round_trend": "Tendencia por ronda",
         "total_reviews_one": "{{count}} revisión por pares",
-        "total_reviews_other": "{{count}} revisiones por pares"
+        "total_reviews_other": "{{count}} revisiones por pares",
+        "total_comparisons_one": "{{count}} comparación con la referencia del profesor",
+        "total_comparisons_other": "{{count}} comparaciones con la referencia del profesor"
     },
     "toast": {
         "export_error": "Error al exportar. Por favor, inténtalo de nuevo.",
@@ -2406,7 +2407,7 @@
     },
     "selfAssess": {
         "title": "Autoevaluación MCER",
-        "instruction": "Lee cada afirmación a continuación y marca las que sientes que dominas. Sé honesto — esto ayuda a tu profesor a entender cómo ves tu propio progreso.",
+        "instruction": "Lee cada afirmación y elige cómo de seguro te sientes: Todavía no, A veces, Generalmente o Seguro. Sé sincero: ayuda a tu profesor a entender cómo ves tu propio progreso.",
         "confident_count": "afirmaciones con confianza",
         "reflection_label": "Tu Reflexión",
         "reflection_help": "Opcional: escribe una breve nota sobre lo que te resulta fácil o difícil.",

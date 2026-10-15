@@ -144,6 +144,32 @@ describe('CriterionDetailPanel coverage', () => {
         expect(setSubItemScore).not.toHaveBeenCalled();
     });
 
+    it('accepts a typed override mark and clamps it to the criterion maximum', () => {
+        const levelA = makeLevel('lvA', 6, 10, 'Full command', []);
+        const criterion = makeCriterion('c1', [levelA]);
+        const updateEntry = vi.fn();
+        renderPanel(criterion, makeEntry({ levelId: 'lvA', selectedPoints: 8, overridePoints: 8 }), updateEntry);
+
+        const input = screen.getByRole('spinbutton', {
+            name: 'gradeStudent.override_label',
+        }) as HTMLInputElement;
+
+        // An exact mark in one go, instead of tapping a 0.5 stepper up to 100 times.
+        fireEvent.change(input, { target: { value: '9.5' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 9.5 });
+
+        fireEvent.change(input, { target: { value: '12' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 10 });
+
+        fireEvent.change(input, { target: { value: '-3' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 0 });
+
+        // Clearing the field is ignored, so it can be retyped without jumping to 0.
+        updateEntry.mockClear();
+        fireEvent.change(input, { target: { value: '' } });
+        expect(updateEntry).not.toHaveBeenCalled();
+    });
+
     it('renders sub-item chips alongside base points and toggles single chips', () => {
         const levelE = makeLevel('lvE', 6, 10, '', [bareSubItem, singleSubItem, rangeSubItem, legacySubItem]);
         const criterion = makeCriterion('c2', [levelE]);

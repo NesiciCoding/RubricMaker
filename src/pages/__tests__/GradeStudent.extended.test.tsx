@@ -233,7 +233,7 @@ describe('GradeStudent extended', () => {
     it('toggles the grade navigation scope from the actions menu', () => {
         renderPage();
         fireEvent.click(screen.getByLabelText('gradeStudent.more_actions'));
-        fireEvent.click(screen.getByText('gradeStudent.nav_scope_rubric_classes'));
+        fireEvent.click(screen.getByText('gradeStudent.nav_scope_switch_current'));
         expect(mockUpdateSettings).toHaveBeenCalledWith({ gradeNavigationScope: 'current-class' });
     });
 

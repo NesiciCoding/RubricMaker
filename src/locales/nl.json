@@ -1693,8 +1693,6 @@
         "delete_grade_scope_student": "Alleen het cijfer van deze leerling verwijderen",
         "delete_grade_scope_group": "Het cijfer van de hele groep verwijderen ({{names}})",
         "not_handed_in_comment": "Niet ingeleverd",
-        "nav_scope_current_class": "Huidige klas",
-        "nav_scope_rubric_classes": "Alle gekoppelde klassen",
         "all_students_graded": "Alle leerlingen zijn beoordeeld voor deze rubric.",
         "modifier_reason_placeholder": "Reden voor cijferaanpassing",
         "feedback_only_label": "Alleen feedback (verberg cijfer voor leerling)",
@@ -1761,7 +1759,9 @@
         "regrade_latest_done_cleared_one": "Je beoordeelt nu op de nieuwste versie — {{count}} criterium heeft een nieuw niveau nodig. Sla op om dit te bewaren.",
         "regrade_latest_done_cleared_other": "Je beoordeelt nu op de nieuwste versie — {{count}} criteria hebben een nieuw niveau nodig. Sla op om dit te bewaren.",
         "regrade_latest_done_removed_one": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderd criterium blijft bewaard. Sla op om dit te behouden.",
-        "regrade_latest_done_removed_other": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderde criteria blijft bewaard. Sla op om dit te behouden."
+        "regrade_latest_done_removed_other": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderde criteria blijft bewaard. Sla op om dit te behouden.",
+        "nav_scope_switch_all": "Naar alle gekoppelde klassen",
+        "nav_scope_switch_current": "Alleen naar deze klas"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -2113,7 +2113,6 @@
         "title": "Peerreview-analyse — {{rubricName}}",
         "rubric_not_found": "Rubriek niet gevonden.",
         "empty_state": "Er zijn nog geen peerreviews ingediend voor deze rubriek.",
-        "total_comparisons": "{{count}} vergelijkingen met docentbeoordeling",
         "missing_baseline": "{{count}} items zonder docentbeoordeling",
         "filter_round": "Ronde",
         "all_rounds": "Alle rondes",
@@ -2130,7 +2129,9 @@
         "anonymous_reviewer": "Anonieme beoordelaar",
         "round_trend": "Trend per ronde",
         "total_reviews_one": "{{count}} peerreview",
-        "total_reviews_other": "{{count}} peerreviews"
+        "total_reviews_other": "{{count}} peerreviews",
+        "total_comparisons_one": "{{count}} vergelijking met docentbeoordeling",
+        "total_comparisons_other": "{{count}} vergelijkingen met docentbeoordeling"
     },
     "toast": {
         "export_error": "Exporteren mislukt. Probeer het opnieuw.",
@@ -2406,7 +2407,7 @@
     },
     "selfAssess": {
         "title": "ERK Zelfbeoordeling",
-        "instruction": "Lees elke uitspraak hieronder en vink de uitspraken aan waar je je zeker bij voelt. Wees eerlijk — dit helpt je docent begrijpen hoe jij je eigen voortgang ziet.",
+        "instruction": "Lees elke uitspraak en kies hoe zeker je je voelt: Nog niet, Soms, Meestal of Zeker. Wees eerlijk — zo begrijpt je docent hoe jij je eigen voortgang ziet.",
         "confident_count": "uitspraken zeker",
         "reflection_label": "Jouw Reflectie",
         "reflection_help": "Optioneel: schrijf een korte notitie over wat je makkelijk of moeilijk vindt.",

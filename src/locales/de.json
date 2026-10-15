@@ -1693,8 +1693,6 @@
         "delete_grade_scope_student": "Nur die Note dieses Schülers entfernen",
         "delete_grade_scope_group": "Die Note der gesamten Gruppe entfernen ({{names}})",
         "not_handed_in_comment": "Nicht abgegeben",
-        "nav_scope_current_class": "Aktuelle Klasse",
-        "nav_scope_rubric_classes": "Alle verknüpften Klassen",
         "all_students_graded": "Alle Schüler sind für dieses Raster bewertet.",
         "modifier_reason_placeholder": "Grund für den Notenmodifikator",
         "feedback_only_label": "Nur Feedback (Note für Schüler ausblenden)",
@@ -1761,7 +1759,9 @@
         "regrade_latest_done_cleared_one": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterium braucht eine neue Stufe. Zum Behalten speichern.",
         "regrade_latest_done_cleared_other": "Jetzt wird mit der neuesten Fassung bewertet — {{count}} Kriterien brauchen eine neue Stufe. Zum Behalten speichern.",
         "regrade_latest_done_removed_one": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entferntem Kriterium bleibt erhalten. Zum Behalten speichern.",
-        "regrade_latest_done_removed_other": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entfernten Kriterien bleibt erhalten. Zum Behalten speichern."
+        "regrade_latest_done_removed_other": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entfernten Kriterien bleibt erhalten. Zum Behalten speichern.",
+        "nav_scope_switch_all": "Zu allen verknüpften Klassen wechseln",
+        "nav_scope_switch_current": "Nur zu dieser Klasse wechseln"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -2113,7 +2113,6 @@
         "title": "Peer-Review-Statistiken — {{rubricName}}",
         "rubric_not_found": "Rubrik nicht gefunden.",
         "empty_state": "Für diese Rubrik wurden noch keine Peer-Reviews eingereicht.",
-        "total_comparisons": "{{count}} Vergleiche mit der Lehrkraft-Bewertung",
         "missing_baseline": "{{count}} Einträge ohne Lehrkraft-Bewertung",
         "filter_round": "Runde",
         "all_rounds": "Alle Runden",
@@ -2130,7 +2129,9 @@
         "anonymous_reviewer": "Anonymer Bewerter",
         "round_trend": "Trend pro Runde",
         "total_reviews_one": "{{count}} Peer-Review",
-        "total_reviews_other": "{{count}} Peer-Reviews"
+        "total_reviews_other": "{{count}} Peer-Reviews",
+        "total_comparisons_one": "{{count}} Vergleich mit der Lehrkraft-Bewertung",
+        "total_comparisons_other": "{{count}} Vergleiche mit der Lehrkraft-Bewertung"
     },
     "toast": {
         "export_error": "Export fehlgeschlagen. Bitte versuchen Sie es erneut.",
@@ -2406,7 +2407,7 @@
     },
     "selfAssess": {
         "title": "GER-Selbstbewertung",
-        "instruction": "Lesen Sie jede Aussage und haken Sie diejenigen ab, bei denen Sie sich sicher fühlen. Seien Sie ehrlich — das hilft Ihrem Lehrer, Ihren Fortschritt besser zu verstehen.",
+        "instruction": "Lies jede Aussage und wähle, wie sicher du dich fühlst: Noch nicht, Manchmal, Meistens oder Sicher. Sei ehrlich — so versteht deine Lehrkraft, wie du deinen eigenen Fortschritt siehst.",
         "confident_count": "Aussagen sicher beherrscht",
         "reflection_label": "Ihre Reflexion",
         "reflection_help": "Optional: Schreiben Sie eine kurze Notiz darüber, was Sie leicht oder schwierig finden.",

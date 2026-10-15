@@ -290,6 +290,30 @@ export default function CriterionDetailPanel({
                     </label>
                     {entry.overridePoints !== undefined && (
                         <>
+                            {/* Typing the exact mark beats tapping a 0.5 stepper up to 100 times. */}
+                            <input
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                max={maxOverride}
+                                step={0.5}
+                                value={entry.overridePoints}
+                                aria-label={t('gradeStudent.override_label')}
+                                onChange={(e) => {
+                                    const typed = Number(e.target.value);
+                                    if (e.target.value.trim() === '' || Number.isNaN(typed)) return;
+                                    updateEntry({
+                                        overridePoints: Math.min(maxOverride, Math.max(0, typed)),
+                                    });
+                                }}
+                                style={{
+                                    width: 64,
+                                    padding: '2px 4px',
+                                    fontSize: '0.8rem',
+                                    textAlign: 'center',
+                                    accentColor: 'var(--yellow)',
+                                }}
+                            />
                             <TouchStepper
                                 value={entry.overridePoints}
                                 min={0}
