@@ -89,17 +89,30 @@ function GradeRangeWarnings({ ranges }: { ranges: GradeRange[] }) {
 
 export function gradeRangeWarnings(ranges: GradeRange[]): GradeRangeWarningKey[] {
     const filled = ranges.filter((r) => !(r.min === 0 && r.max === 0));
-    if (filled.length === 0) return [];
-    const sorted = [...filled].sort((a, b) => a.min - b.min);
+    // Untouched placeholder rows stay ignored — but only while a real range is still present. A
+    // scale whose *only* row is the 0–0 placeholder claims every score ('highest min wins'), so it
+    // has to be reported rather than falling through the empty case and warning about nothing.
+    const checked = filled.length > 0 ? filled : ranges;
+    if (checked.length === 0) return [];
+    const sorted = [...checked].sort((a, b) => a.min - b.min);
     const warnings: GradeRangeWarningKey[] = [];
     if (sorted.some((r) => r.min > r.max)) warnings.push('settings.range_warning_min_above_max');
     if (sorted.some((r, i) => i > 0 && r.min <= sorted[i - 1].max)) warnings.push('settings.range_warning_overlap');
-    if (sorted.some((r, i) => i > 0 && r.min > sorted[i - 1].max + 1)) warnings.push('settings.range_warning_gap');
+    // Walk the rows in floor order, remembering the highest ceiling seen so far: a row is only in a
+    // gap when nothing below it already reaches it. Comparing against the previous row alone would
+    // call 0–100, 20–30, 40–50 gapped, even though the 0–100 row covers 30–40.
+    let highestMax = -Infinity;
+    let hasGap = false;
+    sorted.forEach((r, i) => {
+        if (i > 0 && r.min > highestMax + 1) hasGap = true;
+        highestMax = Math.max(highestMax, r.max);
+    });
+    if (hasGap) warnings.push('settings.range_warning_gap');
     // Scores are matched by 'highest min wins', so 0% falls through the whole scale when no range
     // starts at 0, and a score near 100% is labelled by the top range even when that range ends
-    // short of 100. Both leave the ends of the scale mislabelled.
-    const lowestMin = Math.min(...filled.map((r) => r.min));
-    const highestMax = Math.max(...filled.map((r) => r.max));
+    // short of 100. Both leave the ends of the scale mislabelled. `highestMax` from the walk above
+    // is the ceiling of the whole scale.
+    const lowestMin = Math.min(...checked.map((r) => r.min));
     if (lowestMin > 0 || highestMax < 100) warnings.push('settings.range_warning_coverage');
     return warnings;
 }
@@ -428,10 +441,13 @@ export default function SettingsPage() {
             ranges: scale.ranges.map((r, i) => {
                 if (i !== idx) return r;
                 const next = { ...r, ...patch };
-                // Ranges are percentages: clamp the numeric bounds so a typo (e.g. 800) can't
-                // leave a scale that no score ever reaches.
-                next.min = Math.min(100, Math.max(0, Math.round(next.min)));
-                next.max = Math.min(100, Math.max(0, Math.round(next.max)));
+                // Ranges are percentages: clamp a bound the teacher just typed so a typo (e.g. 800)
+                // can't leave a scale that no score ever reaches. Only the bounds this edit actually
+                // carries are touched — an imported scale can hold a fractional bound, and renaming
+                // or recolouring a row must not quietly round 89.5 up to 90.
+                const clampPercent = (n: number) => Math.min(100, Math.max(0, Math.round(n)));
+                if (patch.min !== undefined) next.min = clampPercent(patch.min);
+                if (patch.max !== undefined) next.max = clampPercent(patch.max);
                 return next;
             }),
         });

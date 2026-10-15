@@ -98,11 +98,16 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
     const activeTags = useMemo(() => [...selectedTags].filter((tag) => tagCounts.has(tag)), [selectedTags, tagCounts]);
 
     const filteredItems = useMemo(() => {
+        const needle = searchTerm.toLowerCase();
         return combinedItems
             .filter((item) => {
+                // Match both the stored tag and the label the chip actually shows, so searching for
+                // the words on screen ('connected speech') finds a comment tagged the slug.
                 const matchesSearch =
-                    item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    item.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+                    item.text.toLowerCase().includes(needle) ||
+                    item.tags.some(
+                        (tag) => tag.toLowerCase().includes(needle) || humaniseTag(tag).toLowerCase().includes(needle)
+                    );
                 // Each selected tag narrows the list further (B1 + Grammar = B1 grammar comments).
                 const matchesTags = activeTags.every((tag) => item.tags.includes(tag));
                 return matchesSearch && matchesTags;

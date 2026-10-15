@@ -12,7 +12,12 @@ const commentBank: CommentBankItem[] = [
         createdAt: '2026-01-01T00:00:00.000Z',
         usageCount: 3,
     },
-    { id: 'c2', text: 'Needs more detail.', tags: ['Grammar'], createdAt: '2026-01-02T00:00:00.000Z' },
+    {
+        id: 'c2',
+        text: 'Needs more detail.',
+        tags: ['Grammar', 'connected_speech'],
+        createdAt: '2026-01-02T00:00:00.000Z',
+    },
 ];
 
 const makeAppContextMock = () => ({
@@ -108,6 +113,19 @@ describe('CommentBankManager fullPage sidebar', () => {
         render(<CommentBankManager />);
         const search = screen.getByLabelText('commentBank.search_placeholder');
         fireEvent.change(search, { target: { value: 'Needs' } });
+        expect(screen.getByText('Needs more detail.')).toBeInTheDocument();
+        expect(screen.queryByText('Great use of vocabulary.')).not.toBeInTheDocument();
+    });
+
+    it('matches the tag label shown on the chip, not only the stored slug', () => {
+        render(<CommentBankManager />);
+        // The card's chip reads "Connected speech" for the stored `connected_speech` tag, so
+        // searching for the words on screen has to find the comment that shows them.
+        const card = screen.getByText('Needs more detail.').closest('.card') as HTMLElement;
+        expect(within(card).getByText('Connected speech')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('commentBank.search_placeholder'), {
+            target: { value: 'Connected speech' },
+        });
         expect(screen.getByText('Needs more detail.')).toBeInTheDocument();
         expect(screen.queryByText('Great use of vocabulary.')).not.toBeInTheDocument();
     });

@@ -590,6 +590,25 @@ describe('RubricBuilder', () => {
         expect(after.defaultPrevented).toBe(false);
     });
 
+    it('ignores surrounding whitespace, which a save trims away', () => {
+        renderEdit();
+        const promptOnLeave = () => {
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        // The rubric is stored as "Essay Rubric", so padding the name is not a real edit.
+        const nameInput = screen.getByDisplayValue('Essay Rubric') as HTMLInputElement;
+        fireEvent.change(nameInput, { target: { value: ' Essay Rubric ' } });
+        expect(nameInput.value).toBe(' Essay Rubric ');
+        expect(promptOnLeave()).toBe(false);
+
+        // Saving writes the trimmed name and normalises the field to match it.
+        fireEvent.click(screen.getByText('rubricBuilder.action_save'));
+        expect(nameInput.value).toBe('Essay Rubric');
+        expect(promptOnLeave()).toBe(false);
+    });
+
     it('loads an existing rubric pre-filled and saves an update', () => {
         renderEdit();
         expect(screen.getByText('rubricBuilder.edit_rubric')).toBeInTheDocument();

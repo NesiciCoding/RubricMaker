@@ -490,6 +490,26 @@ describe('SettingsPage extended', () => {
             expect(screen.queryByText('settings.range_warning_coverage')).not.toBeInTheDocument();
         });
 
+        it('leaves an untouched bound alone when another field of the row is edited', () => {
+            // A scale imported with a fractional floor: renaming the row must not round 89.5 to 90.
+            mockGradeScalesArr[0] = {
+                id: 'gs1',
+                name: 'Half marks',
+                type: 'custom',
+                ranges: [{ min: 89.5, max: 100, label: 'A', color: '#22c55e' }],
+            } as GradeScale;
+            renderPage();
+            fireEvent.click(screen.getByText('settings.tab_teaching'));
+            fireEvent.click(findButtonByText('settings.action_edit'));
+
+            fireEvent.change(within(screen.getByRole('table')).getAllByRole('textbox')[0], {
+                target: { value: 'A*' },
+            });
+
+            const saved = mockUpdateGradeScale.mock.calls[0][0] as GradeScale;
+            expect(saved.ranges[0]).toMatchObject({ label: 'A*', min: 89.5, max: 100 });
+        });
+
         it('clamps range percentages to 0–100', () => {
             renderPage();
             fireEvent.click(screen.getByText('settings.tab_teaching'));

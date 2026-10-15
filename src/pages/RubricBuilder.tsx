@@ -239,7 +239,10 @@ function RubricBuilderEditor() {
     // keeps a pristine form clean even when React double-invokes effects in dev/StrictMode,
     // where the old mount-skip ref raised a bogus 'unsaved changes' dialog.
     const formSnapshot = JSON.stringify({
-        name,
+        // `handleSave` persists the trimmed name, so the baseline has to compare the trimmed value:
+        // saving " Essay " and then tidying the field to "Essay" is not an unsaved change, and
+        // neither is typing the trailing space in the first place.
+        name: name.trim(),
         subject,
         description,
         criteria,
@@ -441,6 +444,9 @@ function RubricBuilderEditor() {
             cefrSkill: cefrSkill || undefined,
             cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
         };
+        // The field can hold surrounding whitespace the save ignores, so show what actually got
+        // persisted. Comparing trimmed values above keeps that re-render from marking the form dirty.
+        setName(rubricData.name);
         if (existing) {
             const savedRubric = { ...existing, ...rubricData };
             updateRubric(savedRubric);

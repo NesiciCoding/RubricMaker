@@ -42,9 +42,22 @@ describe('gradeRangeWarnings', () => {
     it('ignores the untouched 0–0 placeholder row', () => {
         // A row that was just added (min and max still 0) is not yet a real range.
         expect(gradeRangeWarnings([range(0, 100, 'Pass'), range(0, 0, 'New')])).toEqual([]);
-        expect(gradeRangeWarnings([range(0, 0, 'New')])).toEqual([]);
         // A scale with no rows at all has nothing to report.
         expect(gradeRangeWarnings([])).toEqual([]);
+    });
+
+    it('reports a scale left with nothing but the placeholder row', () => {
+        // Deleting the real row while a 0–0 row is open leaves a scale whose only range matches any
+        // score, so it has to complain instead of falling through the placeholder filter in silence.
+        expect(gradeRangeWarnings([range(0, 0, 'New')])).toEqual(['settings.range_warning_coverage']);
+    });
+
+    it('does not report a gap that a broader range already covers', () => {
+        // 0–100 spans 30–40, so only the overlap is real. Comparing against the previous row alone
+        // would report a gap between 30 and 40 on the strength of the narrower rows.
+        expect(gradeRangeWarnings([range(0, 100, 'All'), range(20, 30, 'Low'), range(40, 50, 'Mid')])).toEqual([
+            'settings.range_warning_overlap',
+        ]);
     });
 
     it('collapses repeated overflow warnings into one entry', () => {
