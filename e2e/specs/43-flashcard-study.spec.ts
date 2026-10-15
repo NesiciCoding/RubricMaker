@@ -38,6 +38,12 @@ test.describe('Flashcard study session', () => {
         await expect(page.practiceModal().getByText('the cat')).toBeVisible();
 
         await page.rateCard('Good');
+        // A first 'Good' is the 10-minute learning step, which sits inside the session's requeue
+        // window — so the card comes back later in the session instead of ending it.
+        await expect(page.practiceModal().getByText('1 done · 1 left')).toBeVisible();
+        await page.revealCard();
+        // The second 'Good' graduates the card out of its learning steps, draining the queue.
+        await page.rateCard('Good');
         await expect(page.sessionDoneHeading()).toBeVisible({ timeout: 5_000 });
 
         // Practice explicitly does not save (see the "nothing is saved" hint in the modal).
@@ -62,7 +68,11 @@ test.describe('Flashcard study session', () => {
         await page.reveal();
         await expect(appPage.getByText('the house')).toBeVisible();
         await page.rate('Good');
-
+        // Same 10-minute learning step as the practice preview: the card returns once more …
+        await expect(appPage.getByText('1 done · 1 left')).toBeVisible();
+        await page.reveal();
+        await page.rate('Good');
+        // … and the second 'Good' graduates it days out, so the session drains for real.
         await expect(page.sessionDoneHeading()).toBeVisible({ timeout: 5_000 });
 
         const reviews = await readLocalStorage<FlashcardReview[]>(appPage, 'rm_flashcard_reviews');
@@ -72,8 +82,8 @@ test.describe('Flashcard study session', () => {
 
         await appPage.reload();
         await appPage.waitForSelector('.main-area', { timeout: 15_000 });
-        // The card was just reviewed as "Good" — FSRS schedules it days out, so the
-        // session should now report nothing due rather than showing the card again.
+        // The card graduated to its first review interval, so the session should now report
+        // nothing due rather than showing the card again.
         await expect(appPage.getByText('Nothing to review right now')).toBeVisible({ timeout: 10_000 });
     });
 });
