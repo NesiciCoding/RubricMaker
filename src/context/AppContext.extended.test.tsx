@@ -90,14 +90,6 @@ vi.mock('../services/msalConfig', () => ({
     loginRequest: {},
 }));
 
-vi.mock('../services/microsoftGraph', () => ({
-    graphService: {
-        getUserProfile: vi.fn(),
-        uploadFile: vi.fn(),
-        downloadFile: vi.fn(),
-    },
-}));
-
 const makeRubric = (): Omit<Rubric, 'id' | 'createdAt' | 'updatedAt'> => ({
     name: 'R1',
     subject: 'English',

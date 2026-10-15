@@ -168,11 +168,6 @@ function makeApp(overrides = {}) {
         deleteVocabularyItem: noop,
         saveAnalysisResult: noop,
         deleteAnalysisResult: noop,
-        loginMicrosoft: vi.fn(),
-        logoutMicrosoft: vi.fn(),
-        syncToOneDrive: vi.fn(),
-        restoreFromOneDrive: vi.fn(),
-        microsoftUser: null,
         ...overrides,
     };
 }

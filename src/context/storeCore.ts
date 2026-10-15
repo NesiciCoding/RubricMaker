@@ -1148,12 +1148,6 @@ export interface AppContextValue extends StoreData {
     signInWithMicrosoftPersonal: () => Promise<{ error?: string }>;
     signInWithAzureAD: () => Promise<{ error?: string }>;
     signOutFromDatabase: () => Promise<void>;
-    // Microsoft Sync
-    loginMicrosoft: () => Promise<void>;
-    logoutMicrosoft: () => Promise<void>;
-    syncToOneDrive: () => Promise<void>;
-    restoreFromOneDrive: () => Promise<void>;
-    microsoftUser: null;
     getCurrentDatabaseUserId: () => string | null;
 }
 

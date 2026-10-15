@@ -78,17 +78,9 @@ The application includes an optional integration with the [Common Standards Proj
 - **API key storage:** The key is stored in plain text in `localStorage` under `rm_settings`. Treat it like a password — do not share your browser profile or export file if you want to keep it confidential.
 - **If not used:** If no API key is entered, no network requests are made to this service.
 
-### 4.2 Microsoft / Azure MSAL (disabled)
+### 4.2 Microsoft OneDrive/SharePoint sync (removed)
 
-The codebase contains scaffolding for a OneDrive/SharePoint sync feature using the Microsoft Authentication Library (MSAL) and Microsoft Graph API. **This feature is entirely disabled in the current release.** The MSAL provider is not mounted, no Microsoft login flow is triggered, and no data is transmitted to Microsoft.
-
-If this feature is re-enabled in a future release, it would:
-
-- Trigger an OAuth login via Microsoft identity platform.
-- Store MSAL token cache (access tokens, refresh tokens, account info) in `localStorage`.
-- Sync rubric and grading data to the signed-in user's OneDrive.
-
-This document will be updated if and when that feature is activated.
+An earlier release contained disabled scaffolding for a OneDrive/SharePoint sync feature built on the Microsoft Authentication Library (MSAL) and the Microsoft Graph API. That scaffolding has been **removed from the codebase**: there is no MSAL provider, no Microsoft Graph client, and no OneDrive/SharePoint data flow. The application transmits no data to Microsoft.
 
 ### 4.3 Web Speech API (speaking assessments)
 
@@ -129,7 +121,7 @@ Data persists in `localStorage` indefinitely — there is no automatic expiry. T
 
 ### 5.7 Cross-border transfers (Articles 44–49)
 
-No personal data is transferred outside the operator's device by the application itself. The optional CSP API integration sends no personal data (see §4.1). If MSAL/OneDrive sync is enabled in a future release, the operator's Microsoft tenant region will determine where data is stored; review Microsoft's data residency documentation at that time.
+No personal data is transferred outside the operator's device by the application itself. The optional CSP API integration sends no personal data (see §4.1).
 
 ### 5.8 Privacy by design and default (Article 25)
 
@@ -171,7 +163,7 @@ The following practices are recommended for any institution that deploys RubricM
 
 7. **Limit access to the device.** Because the application has no login system, anyone with access to the browser can read all stored student data. Lock your device when unattended.
 
-8. **Review this document before enabling new features.** The Microsoft OneDrive integration, if activated, would constitute a new data flow and would require an updated privacy assessment.
+8. **Review this document before enabling new features.** Any new external integration (for example a cloud sync or a Microsoft 365 data flow) would constitute a new data flow and would require an updated privacy assessment.
 
 9. **Inform data subjects.** Depending on your jurisdiction and institutional policy, students (and/or their guardians) may need to be informed that their assessment data is stored locally on your device. Consult your institution's DPO.
 
@@ -184,7 +176,7 @@ The following practices are recommended for any institution that deploys RubricM
 This document reflects the privacy characteristics of RubricMaker as a client-side-only application. It must be reviewed and updated when:
 
 - Server-side features are introduced (e.g. cloud sync, multi-user backend).
-- The Microsoft OneDrive/SharePoint integration is activated.
+- A new Microsoft 365 or third-party sync integration is activated.
 - New external service integrations are added.
 - The application is deployed in a new jurisdiction with different regulatory requirements.
 

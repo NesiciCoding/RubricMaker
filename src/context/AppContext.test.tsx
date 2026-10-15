@@ -97,45 +97,6 @@ vi.mock('../services/database', () => ({
     },
 }));
 
-vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
-    graphService: {
-        getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
-        uploadFile: vi.fn().mockResolvedValue({}),
-        downloadFile: vi.fn().mockResolvedValue(
-            JSON.stringify({
-                rubrics: [],
-                students: [],
-                classes: [],
-                studentRubrics: [],
-                attachments: [],
-                gradeScales: [],
-                settings: {
-                    theme: 'light',
-                    language: 'en',
-                    accentColor: '#3b82f6',
-                    defaultFormat: {
-                        criterionColWidth: 200,
-                        levelColWidth: 160,
-                        fontSize: 14,
-                        headerColor: '#1e3a5f',
-                        headerTextColor: '#ffffff',
-                        accentColor: '#3b82f6',
-                        fontFamily: 'Inter',
-                        showWeights: true,
-                        showPoints: true,
-                        levelOrder: 'best-first',
-                    },
-                    defaultGradeScaleId: 'default-scale',
-                },
-                favoriteStandards: [],
-                commentBank: [],
-                exportTemplates: [],
-                peerReviews: [],
-            })
-        ),
-    },
-}));
-
 describe('AppContext', () => {
     beforeEach(() => {
         vi.clearAllMocks();

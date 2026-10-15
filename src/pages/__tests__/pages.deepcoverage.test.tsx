@@ -153,11 +153,6 @@ const mockUseApp = {
     deleteAnalysisResult: noop,
     saveUserTemplate: noop,
     deleteUserTemplate: noop,
-    loginMicrosoft: vi.fn(),
-    logoutMicrosoft: vi.fn(),
-    syncToOneDrive: vi.fn(),
-    restoreFromOneDrive: vi.fn(),
-    microsoftUser: null,
 };
 
 vi.mock('../../context/AppContext', () => ({
