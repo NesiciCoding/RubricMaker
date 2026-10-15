@@ -171,18 +171,42 @@ export default function SpeakingSession() {
         setDurationInput(raw);
         setElapsed(0);
         setIsDirty(true);
-        const parsed = Number.parseInt(raw, 10);
-        // An empty or unparsable field mid-retype keeps the last committed duration instead of
-        // snapping to a value the teacher never typed.
-        if (Number.isFinite(parsed)) {
-            setDurationMinutes(Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, parsed)));
-        }
+        // `Number`, not `parseInt`: a number input accepts exponent forms such as `1e2`, which
+        // parseInt truncates to 1 and would run the session at one minute instead of clamping to
+        // the 30-minute maximum. Whitespace, an empty field or a half-typed `1e` are all not a
+        // finite number, so they keep the last committed duration instead of snapping to a value
+        // the teacher never typed.
+        if (raw.trim() === '') return;
+        const parsed = Number(raw);
+        if (!Number.isFinite(parsed)) return;
+        setDurationMinutes(Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, Math.trunc(parsed))));
     }
 
     function handleDurationBlur() {
         // Show the clamped value (e.g. 0 → 1, 99 → 30, empty → the last valid minutes).
         setDurationInput(String(durationMinutes));
     }
+
+    // ── A saved session that arrives after mount ────────────────────────────────
+    // `loadStore()` boots the store synchronously from localStorage, but a Supabase hydrate that
+    // outlives its timeout is handed to `onLateHydrate` and merged in later — so a session saved on
+    // another device can reach `existingSession` on a subsequent render, long after this page
+    // mounted and seeded its state from `undefined`. Re-seed the timer from it then, exactly as if
+    // it had been there at mount. Never over work the teacher has already started: every edit sets
+    // `isDirty`, and starting the timer does not, so both are checked. The ref is claimed before the
+    // guard so a session that arrives mid-edit is never adopted later either.
+    const adoptedSessionIdRef = useRef(existingSession?.id);
+    useEffect(() => {
+        if (!existingSession || existingSession.id === adoptedSessionIdRef.current) return;
+        adoptedSessionIdRef.current = existingSession.id;
+        if (isDirty || timerRunning) return;
+        const nextMinutes = durationMinutesFrom(existingSession.durationSeconds);
+        setDurationInput(String(nextMinutes));
+        setDurationMinutes(nextMinutes);
+        setElapsed(existingSession.elapsedSeconds ?? 0);
+        // A saved session is locked on mount, and a late one has to behave the same way.
+        setTimerLocked(true);
+    }, [existingSession, isDirty, timerRunning]);
 
     // ── Mode switching ──────────────────────────────────────────────────────────
     function switchMode(next: 'practice' | 'assessment') {

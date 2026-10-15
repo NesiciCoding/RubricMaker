@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -168,6 +168,50 @@ function renderAt(rubricId = 'r1', studentId = 's1') {
         { initialEntries: [`/rubrics/${rubricId}/speaking/${studentId}`] }
     );
     return render(<RouterProvider router={router} />);
+}
+
+// `createMemoryRouter` caches the route element it is handed, and React bails out of re-rendering a
+// subtree whose element is identical to the previous render's — so a bare `rerender` of the same
+// router never re-runs the page. This harness makes the page a fresh element on every render, which
+// is what a store notification looks like to it, without remounting and losing its state.
+const lateHydration = { refresh: () => {} };
+
+function LateHydrationHarness() {
+    const [, setTick] = React.useState(0);
+    // Published from an effect rather than during render: mutating anything outside the component
+    // while rendering is what the react-hooks/immutability rule (and React itself) forbid.
+    React.useEffect(() => {
+        lateHydration.refresh = () => setTick((n) => n + 1);
+    }, []);
+    return <SpeakingSessionComp />;
+}
+
+function renderLateHydrationPage() {
+    const router = createMemoryRouter(
+        [{ path: '/rubrics/:rubricId/speaking/:studentId', element: <LateHydrationHarness /> }],
+        {
+            initialEntries: ['/rubrics/r1/speaking/s1'],
+        }
+    );
+    render(<RouterProvider router={router} />);
+}
+
+function refreshLateHydration() {
+    act(() => lateHydration.refresh());
+}
+
+function lateAssessmentSession(id: string): SpeakingSessionType {
+    return {
+        id,
+        rubricId: 'r1',
+        studentId: 's1',
+        durationSeconds: 600,
+        elapsedSeconds: 120,
+        pronunciationMarks: [],
+        entries: [],
+        overallComment: '',
+        gradedAt: '2024-01-02T00:00:00Z',
+    };
 }
 
 describe('SpeakingSession extended', () => {
@@ -341,5 +385,47 @@ describe('SpeakingSession extended', () => {
         fireEvent.click(screen.getAllByText('speaking.save_session')[0]);
         expect(screen.queryByText('speaking.mode_switch_needs_save')).not.toBeInTheDocument();
         expect(screen.getByText('speaking.mode_practice').closest('button')).not.toBeDisabled();
+    });
+
+    it('parses the whole duration value, so an exponent form clamps instead of truncating', () => {
+        renderAt();
+        const input = screen.getByLabelText('speaking.duration_minutes') as HTMLInputElement;
+
+        // A number input happily accepts `1e2`. parseInt would read it as 1 minute.
+        fireEvent.change(input, { target: { value: '1e2' } });
+        expect(screen.getByText('30:00')).toBeInTheDocument();
+        fireEvent.blur(input);
+        expect(input.value).toBe('30');
+
+        // A half-typed exponent is not a number yet, so the committed duration stands.
+        fireEvent.change(input, { target: { value: '2e' } });
+        expect(screen.getByText('30:00')).toBeInTheDocument();
+    });
+
+    it('adopts a saved session that hydrates after the page has mounted', () => {
+        renderLateHydrationPage();
+        // The store booted from localStorage with no session for this pair yet.
+        expect(screen.getByText('02:00')).toBeInTheDocument();
+        expect(screen.queryByText('speaking.session_locked')).not.toBeInTheDocument();
+
+        // onLateHydrate then merges the cloud snapshot in while this page is already open.
+        mockAppValue.speakingSessions = [lateAssessmentSession('late1')];
+        refreshLateHydration();
+
+        // 10 minutes saved, 2 elapsed — not the 2-minute default seeded at mount.
+        expect(screen.getByText('08:00')).toBeInTheDocument();
+        expect(screen.getByText('speaking.session_locked')).toBeInTheDocument();
+    });
+
+    it('does not let a late saved session overwrite a duration the teacher already edited', () => {
+        renderLateHydrationPage();
+        fireEvent.change(screen.getByLabelText('speaking.duration_minutes'), { target: { value: '5' } });
+
+        mockAppValue.speakingSessions = [lateAssessmentSession('late2')];
+        refreshLateHydration();
+
+        // The teacher's 5 minutes stand, and the field stays editable rather than locking up.
+        expect(screen.getByText('05:00')).toBeInTheDocument();
+        expect((screen.getByLabelText('speaking.duration_minutes') as HTMLInputElement).value).toBe('5');
     });
 });
