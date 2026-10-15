@@ -35,7 +35,7 @@ Never add another timestamp-prefixed migration: if `supabase migration new` or `
 
 All tables have RLS enabled. The pattern is:
 
-- Users can only access rows they own (matched by `auth.uid() = user_id`).
+- Users can only access rows they own. Most tables scope on `owner_id` (`auth.uid() = owner_id`); `student_rubrics` uses `grader_id` (`auth.uid() = grader_id`), and `profiles`/`class_members` key on `id`/`user_id`.
 - Public/shared data uses specific policies defined per table.
 - The `site_config` table has its own access rules (see `012_site_config.sql`): signed-in users read every key, logged-out visitors only `auth_providers` (`088_site_config_anon_providers.sql`) because other values can hold API keys. Provider configuration is documented in `docs/SELF_HOSTING_OPS.md` → Login providers.
 
@@ -86,7 +86,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 - `scans` — scanned handwriting images (Phase 33), private, 15 MB, images only; `074_scans_storage.sql`. Kept for one academic year — `get_overdue_scans()` (same migration) lists path-bearing scans older than a year, mirroring `get_overdue_attachments()`; `082_scans_sweep_guard.sql` skips rows whose `school_year` has no leading four-digit year so one bad value can't abort the query, and also returns text-only scans (NULL `storage_path`), whose row alone is deleted. Swept nightly by the same `delete-old-attachments` function / `scripts/delete-old-attachments.sh` as attachments
 - `backups` — nightly per-owner data dumps (JSON), `048_nightly_backup.sql`
 
-Access is controlled via storage policies that match `auth.uid()` to the uploader.
+Access is controlled by per-bucket storage policies, which do not all key on the uploader: `attachments` and `export-templates` match the first path folder to `auth.uid()`, while `essays` is keyed on the assignment id in the path (an `essay_assignments` row owned by `auth.uid()`). Check each bucket's migration for its exact rules.
 
 ## Edge functions
 
@@ -146,9 +146,9 @@ Current functions:
 | `test_assignments`          | Per-student test assignment records, mirrors `essay_assignments` so the student portal can list assigned tests                                                                                                                                                                                    |
 | `tests`                     | Test/quiz definitions (including cloze and hot-text questions)                                                                                                                                                                                                                                    |
 | `student_tests`             | Student test attempts and results                                                                                                                                                                                                                                                                 |
-| `site_config`               | Per-user app configuration                                                                                                                                                                                                                                                                        |
+| `site_config`               | Site-wide key/value config (public read, admin write)                                                                                                                                                                                                                                             |
 | `schools`                   | School/organisation records for multi-user deployments                                                                                                                                                                                                                                            |
-| `school_members`            | User–school role mappings (admin / user / student)                                                                                                                                                                                                                                                |
+| `school_members`            | Membership join table (`profiles` ↔ `schools`; no role column — roles live on `profiles.role`)                                                                                                                                                                                                    |
 | `client_logs`               | Client-side error/diagnostic logs                                                                                                                                                                                                                                                                 |
 | `audit_logs`                | Audit trail of sensitive actions                                                                                                                                                                                                                                                                  |
 | `grading_tasks`             | Async grading job records                                                                                                                                                                                                                                                                         |
