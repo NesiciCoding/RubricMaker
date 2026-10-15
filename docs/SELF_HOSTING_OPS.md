@@ -134,7 +134,7 @@ RubricMaker's `docker-compose.yml` pins image versions. To upgrade:
 
 ## Enabling pg_cron (Audit Log + Auto-Anonymization)
 
-Migration `037_audit_logs.sql` calls `CREATE EXTENSION IF NOT EXISTS pg_cron` and registers cleanup jobs. pg_cron requires two things on self-hosted deployments:
+Migration `038_audit_logs.sql` calls `CREATE EXTENSION IF NOT EXISTS pg_cron` and registers cleanup jobs. pg_cron requires two things on self-hosted deployments:
 
 1. **Add `pg_cron` to `shared_preload_libraries`** in `postgresql.conf`:
 
@@ -143,7 +143,7 @@ Migration `037_audit_logs.sql` calls `CREATE EXTENSION IF NOT EXISTS pg_cron` an
     cron.database_name = 'postgres'
     ```
 
-    With the Docker stack this is set via the `POSTGRES_EXTRA_FLAGS` or a mounted `postgresql.conf`.
+    This repo's `docker-compose.yml` does **not** set it: the `db` service only sets `POSTGRES_PASSWORD`, and there is no `POSTGRES_EXTRA_FLAGS` or `postgresql.conf` mount. It works because the bundled `public.ecr.aws/supabase/postgres` image ships `pg_cron` preloaded — confirm with `SHOW shared_preload_libraries;`. On a different Postgres image, add `shared_preload_libraries = 'pg_cron'` and `cron.database_name = 'postgres'` to a `postgresql.conf` and mount it into the container.
 
 2. **Grant usage** (handled automatically by the migration via the `postgres` superuser role):
 

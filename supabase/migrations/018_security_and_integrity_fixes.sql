@@ -1,5 +1,5 @@
 -- Migration 018: Security and data-integrity fixes
--- 1. CHECK (retention_years > 0) on schools
+-- 1. CHECK (retention_years BETWEEN 1 AND 20) on schools
 -- 2. UNIQUE(profile_id) on school_members (one school per user)
 -- 3. Public school-lookup RPC for onboarding join flow
 -- 4. REVOKE EXECUTE from PUBLIC on SECURITY DEFINER functions
@@ -92,5 +92,7 @@ BEGIN
 END;
 $$;
 
--- Re-apply the revoke after OR REPLACE (OR REPLACE resets grants to default).
+-- Revoke PUBLIC EXECUTE on the replaced SECURITY DEFINER function. CREATE OR REPLACE
+-- keeps an existing function's ACL, but 017 never revoked the default PUBLIC EXECUTE
+-- grant the function was created with, so revoke it explicitly here.
 REVOKE EXECUTE ON FUNCTION public.anonymize_overdue_students() FROM PUBLIC;
