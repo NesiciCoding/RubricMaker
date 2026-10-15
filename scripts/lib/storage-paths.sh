@@ -2,17 +2,21 @@
 # Helpers shared by export-cloud.sh and import-cloud.sh for copying Storage objects.
 
 # Percent-encodes an object name for a Storage API URL, keeping "/" as the path separator.
+#
+# The value is walked byte by byte (via od) rather than character by character: taking one
+# character at a time and formatting it as a byte breaks on multi-byte UTF-8 under the bash 3.2
+# that ships with macOS, which used to emit garbage such as "FC3FA9" instead of "%C3%A9" for "é".
 urlencode_path() {
-    local LC_ALL=C
-    local s="$1" out="" c i
-    for ((i = 0; i < ${#s}; i++)); do
-        c="${s:i:1}"
-        case "$c" in
-            [A-Za-z0-9._~/-]) out+="$c" ;;
-            *)
-                printf -v c '%%%02X' "'$c"
-                out+="${c: -3}"
+    local bytes out="" i byte
+    bytes=$(printf '%s' "$1" | LC_ALL=C od -An -tx1 -v | tr -d '[:space:]' | tr 'a-f' 'A-F')
+    for ((i = 0; i < ${#bytes}; i += 2)); do
+        byte="${bytes:i:2}"
+        case "$byte" in
+            2F) out+="/" ;;                                                          # path separator
+            2D|2E|5F|7E|3[0-9]|4[1-9A-F]|5[0-9A]|6[1-9A-F]|7[0-9A])
+                out+=$(LC_ALL=C printf "\\x$byte")                                    # unreserved
                 ;;
+            *) out+="%$byte" ;;
         esac
     done
     printf '%s' "$out"
