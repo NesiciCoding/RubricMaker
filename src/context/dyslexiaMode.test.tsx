@@ -77,14 +77,6 @@ vi.mock('../services/database', () => ({
     },
 }));
 
-vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
-    graphService: {
-        getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
-        uploadFile: vi.fn().mockResolvedValue({}),
-        downloadFile: vi.fn().mockResolvedValue(null),
-    },
-}));
-
 describe('Dyslexia-friendly reading mode', () => {
     beforeEach(() => {
         vi.clearAllMocks();

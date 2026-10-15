@@ -25,7 +25,6 @@ export type PlatformValue = Pick<
     | 'showLanding'
     | 'isCheckingSession'
     | 'showMigrationPrompt'
-    | 'microsoftUser'
     | 'enterLocalMode'
     | 'connectForOAuth'
     | 'dismissMigrationPrompt'
@@ -33,10 +32,6 @@ export type PlatformValue = Pick<
     | 'signInWithMicrosoftPersonal'
     | 'signInWithAzureAD'
     | 'signOutFromDatabase'
-    | 'loginMicrosoft'
-    | 'logoutMicrosoft'
-    | 'syncToOneDrive'
-    | 'restoreFromOneDrive'
     | 'getCurrentDatabaseUserId'
     | 'connectDatabase'
     | 'disconnectDatabase'
@@ -74,10 +69,6 @@ export type PlatformActions = Pick<
     | 'signInWithAzureAD'
     | 'signOutFromDatabase'
     | 'importBackup'
-    | 'loginMicrosoft'
-    | 'logoutMicrosoft'
-    | 'syncToOneDrive'
-    | 'restoreFromOneDrive'
     | 'fetchSchools'
     | 'createSchool'
     | 'joinSchool'
@@ -233,10 +224,6 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         }
         return ok;
     };
-    const loginMicrosoft = async () => {};
-    const logoutMicrosoft = async () => {};
-    const syncToOneDrive = async () => {};
-    const restoreFromOneDrive = async () => {};
     const fetchSchools = async () => (await loadDb()).storageSync.fetchSchools();
     const createSchool = async (name: string, retentionYears: number) =>
         (await loadDb()).storageSync.createSchool(name, retentionYears);
@@ -264,10 +251,6 @@ export function createPlatformActions(ctx: PlatformCtx): PlatformActions {
         signInWithAzureAD,
         signOutFromDatabase,
         importBackup,
-        loginMicrosoft,
-        logoutMicrosoft,
-        syncToOneDrive,
-        restoreFromOneDrive,
         fetchSchools,
         createSchool,
         joinSchool,
@@ -291,7 +274,6 @@ export function usePlatformValue(
             showLanding: landingState === 'show',
             isCheckingSession: landingState === 'checking',
             showMigrationPrompt,
-            microsoftUser: null,
             ...actions,
         }),
         [actions, dispatch, landingState, showMigrationPrompt]

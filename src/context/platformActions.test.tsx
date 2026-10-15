@@ -705,18 +705,11 @@ describe('platform actions', () => {
         warnSpy.mockRestore();
     });
 
-    it('OneDrive actions are no-ops and school methods delegate to the adapter', async () => {
+    it('school methods delegate to the adapter', async () => {
         const { result } = renderHook(() => usePlatform(), { wrapper });
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: Record<string, Mock> & { adapter: { getClient: Mock } };
         };
-
-        await act(async () => {
-            await result.current.loginMicrosoft();
-            await result.current.logoutMicrosoft();
-            await result.current.syncToOneDrive();
-            await result.current.restoreFromOneDrive();
-        });
 
         await act(async () => {
             await result.current.fetchSchools();

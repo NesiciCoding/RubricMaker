@@ -80,14 +80,6 @@ vi.mock('../services/database', () => ({
     },
 }));
 
-vi.mock('../services/microsoftGraph_deleted_placeholder', () => ({
-    graphService: {
-        getUserProfile: vi.fn().mockResolvedValue({ displayName: 'Test User' }),
-        uploadFile: vi.fn().mockResolvedValue({}),
-        downloadFile: vi.fn().mockResolvedValue(null),
-    },
-}));
-
 /** Mirrors SettingsPage's applyTheme(): a single updateSettings call that
  * spreads defaultFormat and overlays the bundle's font/header/accent. */
 function applyTheme(
