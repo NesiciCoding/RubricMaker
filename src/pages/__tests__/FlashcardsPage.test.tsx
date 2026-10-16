@@ -100,6 +100,23 @@ describe('FlashcardsPage', () => {
         await waitFor(() => expect(mockDeleteDeck).toHaveBeenCalledWith('untitled'));
     });
 
+    it('does not prune the untitled deck it just created (#693)', async () => {
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        let bump: () => void = () => {};
+        function Harness() {
+            const [, force] = React.useState(0);
+            bump = () => force((n) => n + 1);
+            return <FlashcardsPage />;
+        }
+        renderWithRouter(<Harness />);
+        fireEvent.click(screen.getAllByText('flashcards.new_deck')[0]);
+
+        // The list stays mounted until the navigation lands, so the new empty deck appears in it.
+        mockDecks = [{ id: 'deck-new', name: 'Untitled deck', cards: [], createdAt: '2024-02-05T00:00:00Z' }];
+        act(() => bump());
+        expect(mockDeleteDeck).not.toHaveBeenCalled();
+    });
+
     it('recognises an untitled deck created while another language was active (#693)', async () => {
         mockDecks = [{ id: 'fr', name: 'Paquet sans titre', cards: [], createdAt: '2024-02-04T00:00:00Z' }];
         const { default: FlashcardsPage } = await import('../FlashcardsPage');

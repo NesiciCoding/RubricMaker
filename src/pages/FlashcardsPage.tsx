@@ -24,16 +24,28 @@ export default function FlashcardsPage() {
     // asynchronous hydrate() resolves, so a mount-time prune would run against the empty list, latch
     // itself done and never see the hydrated decks (#693).
     const prunedUntitledDecks = useRef(false);
+    // Decks created from this page while it is mounted: 'New deck' leaves the list mounted until the
+    // navigation to the editor completes, so the brand-new empty deck is briefly in the list and must
+    // not be mistaken for an abandoned leftover. An abandoned deck is still cleaned up on the next
+    // visit, when it is no longer in this set.
+    const createdHere = useRef<Set<string>>(new Set());
     useEffect(() => {
         if (prunedUntitledDecks.current || flashcardDecks.length === 0) return;
         prunedUntitledDecks.current = true;
         flashcardDecks
-            .filter((d) => !d.ownerStudentId && d.cards.length === 0 && UNTITLED_DECK_NAMES.has(d.name))
+            .filter(
+                (d) =>
+                    !createdHere.current.has(d.id) &&
+                    !d.ownerStudentId &&
+                    d.cards.length === 0 &&
+                    UNTITLED_DECK_NAMES.has(d.name)
+            )
             .forEach((d) => deleteFlashcardDeck(d.id));
     }, [flashcardDecks, deleteFlashcardDeck]);
 
     function handleCreate() {
         const deck = addFlashcardDeck({ name: t('flashcards.untitled_deck'), cards: [] });
+        createdHere.current.add(deck.id);
         navigate(`/flashcards/${deck.id}`);
     }
 
