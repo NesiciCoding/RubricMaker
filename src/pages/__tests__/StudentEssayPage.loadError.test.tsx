@@ -103,6 +103,23 @@ describe('StudentEssayPage — assignment content fails to load (#708)', () => {
         expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
     });
 
+    it('shows the task skeleton while the assignment content is still loading', async () => {
+        let resolveContent!: (v: unknown) => void;
+        mockFetchContent.mockReturnValueOnce(
+            new Promise((resolve) => {
+                resolveContent = resolve;
+            })
+        );
+
+        renderPage();
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading'));
+        expect(screen.queryByTestId('essay-editor')).not.toBeInTheDocument();
+
+        resolveContent({ ok: true, data: content });
+        expect(await screen.findByTestId('essay-editor')).toBeInTheDocument();
+    });
+
     it('still shows the expired screen for an expired assignment', async () => {
         mockFetchContent.mockResolvedValueOnce({ ok: false, reason: 'expired' });
         renderPage();
