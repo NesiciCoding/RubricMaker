@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
+import { SkeletonRow } from '../components/ui/Skeleton';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useTranslation, Trans } from 'react-i18next';
 import type {
@@ -1974,7 +1975,11 @@ function RubricBuilderEditor() {
                         </div>
                         {/* Version list */}
                         {versionHistoryLoading ? (
-                            <p className="text-muted text-sm">{t('common.loading')}</p>
+                            <div role="status" aria-label={t('a11y.loading')}>
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <SkeletonRow key={i} />
+                                ))}
+                            </div>
                         ) : versionHistory.length === 0 ? (
                             <p className="text-muted text-sm">{t('rubricBuilder.no_versions_yet')}</p>
                         ) : (
