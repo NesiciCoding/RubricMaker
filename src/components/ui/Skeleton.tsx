@@ -65,19 +65,29 @@ export function ChartSkeleton({ height = '260px' }: { height?: string }) {
 // real page shell (topbar bar + .page-content) so there is no layout jump when
 // the chunk resolves.
 
-function PageShell({ children }: { children: React.ReactNode }) {
+// The status wrapper shared by every shape: one `role="status"` per skeleton so a
+// screen reader hears a single "Loading" announcement for the page, never one per block.
+function SkeletonFrame({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
     const { t } = useTranslation();
     return (
         <div
             role="status"
             aria-label={t('a11y.loading')}
-            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, ...style }}
         >
+            {children}
+        </div>
+    );
+}
+
+function PageShell({ children }: { children: React.ReactNode }) {
+    return (
+        <SkeletonFrame>
             <div className="topbar" aria-hidden="true">
                 <Skeleton width="180px" height="1rem" />
             </div>
             <div className="page-content">{children}</div>
-        </div>
+        </SkeletonFrame>
     );
 }
 
@@ -135,5 +145,194 @@ export function DashboardSkeleton() {
                 <ChartSkeleton />
             </div>
         </PageShell>
+    );
+}
+
+// Header row plus N rows — rubrics, students, tests, attachments, export.
+export function TablePageSkeleton({ rows = 8 }: { rows?: number }) {
+    return (
+        <PageShell>
+            <Skeleton width="30%" height="1.5rem" style={{ marginBottom: '20px' }} />
+            <div className="card">
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        paddingBottom: '0.75rem',
+                        borderBottom: '1px solid var(--border)',
+                    }}
+                    aria-hidden="true"
+                >
+                    <Skeleton height="0.75rem" width="24%" />
+                    <Skeleton height="0.75rem" width="18%" />
+                    <Skeleton height="0.75rem" width="34%" />
+                    <Skeleton height="0.75rem" width="14%" />
+                </div>
+                {Array.from({ length: rows }).map((_, i) => (
+                    <SkeletonRow key={i} />
+                ))}
+            </div>
+        </PageShell>
+    );
+}
+
+// auto-fill card grid — marketplace, flashcards, docs cards.
+export function CardGridSkeleton({ count = 6 }: { count?: number }) {
+    return (
+        <PageShell>
+            <Skeleton width="35%" height="1.5rem" style={{ marginBottom: '20px' }} />
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: '16px',
+                }}
+            >
+                {Array.from({ length: count }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                ))}
+            </div>
+        </PageShell>
+    );
+}
+
+// Tab strip plus a body — settings, docs, admin. Pass `children` for a body that
+// is not the default form/section blocks (e.g. docs uses a card grid).
+export function TabbedPageSkeleton({ children }: { children?: React.ReactNode }) {
+    return (
+        <PageShell>
+            <Skeleton width="28%" height="1.5rem" style={{ marginBottom: '20px' }} />
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }} aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} width="92px" height="2rem" />
+                ))}
+            </div>
+            {children ?? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
+            )}
+        </PageShell>
+    );
+}
+
+// Long-form text — privacy, docs content.
+export function DocumentSkeleton({ paragraphs = 6 }: { paragraphs?: number }) {
+    return (
+        <PageShell>
+            <Skeleton width="45%" height="1.75rem" style={{ marginBottom: '24px' }} />
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {Array.from({ length: paragraphs }).map((_, i) => (
+                    <SkeletonText key={i} lines={i % 2 === 0 ? 4 : 3} />
+                ))}
+            </div>
+        </PageShell>
+    );
+}
+
+// Criteria × levels grid plus a comment/score side panel — grade, peer-review,
+// self-assess, speaking, comparative grading.
+export function GradingSkeleton() {
+    return (
+        <PageShell>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <Skeleton width="2.5rem" height="2.5rem" borderRadius="50%" style={{ flexShrink: 0 }} />
+                <Skeleton width="220px" height="1.25rem" />
+            </div>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div
+                    className="card"
+                    style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+                >
+                    {Array.from({ length: 5 }).map((_, row) => (
+                        <div
+                            key={row}
+                            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}
+                            aria-hidden="true"
+                        >
+                            {Array.from({ length: 4 }).map((_, col) => (
+                                <Skeleton key={col} height={row === 0 ? '1rem' : '56px'} />
+                            ))}
+                        </div>
+                    ))}
+                </div>
+                <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
+            </div>
+        </PageShell>
+    );
+}
+
+// Student header, tab strip, section cards — the student portal (rendered outside
+// the app shell, so no topbar).
+export function PortalSkeleton() {
+    return (
+        <SkeletonFrame>
+            <div className="page-content">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <Skeleton width="2.75rem" height="2.75rem" borderRadius="50%" style={{ flexShrink: 0 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <Skeleton width="180px" height="1.25rem" />
+                        <Skeleton width="120px" height="0.875rem" />
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }} aria-hidden="true">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} width="84px" height="2rem" />
+                    ))}
+                </div>
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                        gap: '16px',
+                    }}
+                >
+                    <SkeletonCard />
+                    <SkeletonCard />
+                    <SkeletonCard />
+                </div>
+            </div>
+        </SkeletonFrame>
+    );
+}
+
+// Title, timer pill, question/editor blocks — the public /test and /essay pages.
+// Rendered outside AppProvider, with no sidebar or topbar shell.
+export function StudentTaskSkeleton() {
+    return (
+        <SkeletonFrame
+            style={{
+                flex: 'initial',
+                minHeight: '100vh',
+                background: 'var(--bg)',
+                padding: '24px 16px',
+                alignItems: 'center',
+            }}
+        >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '900px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                    <Skeleton width="240px" height="1.5rem" />
+                    <Skeleton width="96px" height="2rem" borderRadius="999px" />
+                </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <Skeleton width="55%" height="1rem" />
+                    <SkeletonText lines={2} />
+                </div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <Skeleton width="70%" height="0.95rem" />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }} aria-hidden="true">
+                            {Array.from({ length: 3 }).map((_, j) => (
+                                <Skeleton key={j} height="2.25rem" />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </SkeletonFrame>
     );
 }
