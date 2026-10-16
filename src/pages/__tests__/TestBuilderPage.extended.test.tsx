@@ -683,7 +683,11 @@ describe('TestBuilderPage extended', () => {
             },
         ];
         renderBuilder('/tests/t1');
-        expect(screen.getByText(/tests.questions_summary/)).toBeInTheDocument();
+        const summary = screen.getByText(/tests.questions_summary/);
+        expect(summary).toBeInTheDocument();
+        // The point half is pluralised through its own key, so a 0-point test reads "0 points"
+        // and a 1-point test reads "1 point" rather than a bare number (#697).
+        expect(summary.textContent).toContain('tests.points_total');
     });
 
     it('removing a referenced section cleans only its own routing edges', () => {

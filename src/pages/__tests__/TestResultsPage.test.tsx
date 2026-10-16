@@ -162,6 +162,29 @@ describe('TestResultsPage', () => {
         expect(saved.rawTotalPoints).toBe(9); // 4 (MC) + 5 (open)
     });
 
+    it('explains how an out-of-range manual score is saved (#697)', async () => {
+        const { default: TestResultsPage } = await import('../TestResultsPage');
+        render(
+            <MemoryRouter initialEntries={['/tests/t1/results/st1']}>
+                <Routes>
+                    <Route path="/tests/:testId/results/:studentTestId" element={<TestResultsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        const openPointsInput = screen.getAllByLabelText('tests.results.manual_points_label')[1] as HTMLInputElement;
+
+        // The open question is worth 6 points, so 99 is clamped on save — say so before saving.
+        fireEvent.change(openPointsInput, { target: { value: '99' } });
+        expect(screen.getByText(/^tests\.results\.manual_points_clamped:/)).toHaveTextContent('"saved":6');
+        // A negative mark clamps to 0 the same way.
+        fireEvent.change(openPointsInput, { target: { value: '-3' } });
+        expect(screen.getByText(/^tests\.results\.manual_points_clamped:/)).toHaveTextContent('"saved":0');
+        // A value already in range saves exactly what was typed, so it stays quiet.
+        fireEvent.change(openPointsInput, { target: { value: '4' } });
+        expect(screen.queryByText(/manual_points_clamped/)).not.toBeInTheDocument();
+    });
+
     it('shows a late-submission badge when submittedAt is after the test due date', async () => {
         mockUseApp.tests = [{ ...mockTest, dueDate: '2026-01-01T09:15:00.000Z' }];
         const { default: TestResultsPage } = await import('../TestResultsPage');

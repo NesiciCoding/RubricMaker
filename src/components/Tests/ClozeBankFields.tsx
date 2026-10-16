@@ -47,7 +47,12 @@ export default function ClozeBankFields({ question, update }: Props) {
                 <p className="text-muted text-xs" style={{ margin: '0 0 4px' }}>
                     {t('tests.bank_preview_label')}
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }} aria-label={t('tests.bank_preview_label')}>
+                {/* role=group makes the label legal on a container and names the tile set (#697). */}
+                <div
+                    role="group"
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
+                    aria-label={t('tests.bank_preview_label')}
+                >
                     {answers.filter(Boolean).map((text, i) => (
                         <span key={`a-${i}`} className="te-chip" style={{ paddingRight: 10 }}>
                             {text}

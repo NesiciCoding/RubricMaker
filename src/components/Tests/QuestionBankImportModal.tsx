@@ -129,7 +129,7 @@ export default function QuestionBankImportModal({ onImport, onClose }: Props) {
                                               const type = q.type ?? 'multiple-choice';
                                               const points = q.points ?? 0;
                                               /* v8 ignore stop */
-                                              return `${t(questionTypeLabelKey(type))} · ${t('tests.total_points', { points })}`;
+                                              return `${t(questionTypeLabelKey(type))} · ${t('tests.points_total', { count: points })}`;
                                           })()}
                                     {item.cefrLevel ? ` · ${item.cefrLevel}` : ''}
                                 </div>

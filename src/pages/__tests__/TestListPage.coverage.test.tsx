@@ -222,7 +222,7 @@ describe('TestListPage coverage', () => {
     it('falls back to zero for questions without points', () => {
         mockUseApp.tests = [{ ...testOne, questions: [{ id: 'q0', prompt: 'Q', type: 'open', points: 0 }] }];
         loadPage();
-        expect(screen.getByText('tests.total_points:{"points":0}')).toBeInTheDocument();
+        expect(screen.getByText('tests.points_total:{"count":0}')).toBeInTheDocument();
     });
 
     it('highlights the card border on mouse enter and restores it on leave', () => {

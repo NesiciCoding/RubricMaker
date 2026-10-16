@@ -1410,7 +1410,10 @@ export default function TestBuilderPage() {
                         <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
                             {t('tests.questions_title')}{' '}
                             <span className="text-muted text-sm">
-                                {t('tests.questions_summary', { count: questions.length, points: totalPoints })}
+                                {t('tests.questions_summary', {
+                                    count: questions.length,
+                                    points: t('tests.points_total', { count: totalPoints }),
+                                })}
                             </span>
                         </h3>
                         <div style={{ display: 'flex', gap: 8 }}>

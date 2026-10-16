@@ -599,7 +599,7 @@ export default function TestListPage() {
                                                                 })}
                                                             </span>
                                                             <span className="badge badge-purple">
-                                                                {t('tests.total_points', { points: totalPoints })}
+                                                                {t('tests.points_total', { count: totalPoints })}
                                                             </span>
                                                             {test.requireSEB && (
                                                                 <span className="badge badge-green">
