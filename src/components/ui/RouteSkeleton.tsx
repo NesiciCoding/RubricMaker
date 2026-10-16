@@ -10,6 +10,7 @@ import {
     DocumentSkeleton,
     GradingSkeleton,
     PortalSkeleton,
+    FlashcardCardSkeleton,
 } from './Skeleton';
 
 export type SkeletonShape = React.ComponentType;
@@ -52,6 +53,7 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
     [/^\/flashcards\/[^/]+/, BuilderPageSkeleton],
     [/^\/news-flashes/, ListPageSkeleton],
 
+    [/^\/portal\/[^/]+\/flashcards\//, FlashcardCardSkeleton],
     [/^\/portal\//, PortalSkeleton],
 
     [/^\/attachments/, TablePageSkeleton],

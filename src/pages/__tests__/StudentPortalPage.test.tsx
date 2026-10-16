@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, within, cleanup, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -357,6 +357,27 @@ describe('StudentPortalPage', () => {
         } finally {
             localStorage.removeItem('rm_local_mode');
         }
+    });
+
+    it('shows a section skeleton while messages load, then the empty state once they settle', async () => {
+        let resolveMessages!: (v: unknown) => void;
+        mockFetchMyMessages.mockReturnValueOnce(
+            new Promise((resolve) => {
+                resolveMessages = resolve;
+            })
+        );
+
+        renderAt('s1');
+        switchTab('feedback');
+
+        // Pending fetch → section skeleton, not the "no messages" empty state.
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        expect(screen.queryByText('studentPortal.no_messages_yet')).not.toBeInTheDocument();
+
+        await act(async () => {
+            resolveMessages([]);
+        });
+        expect(await screen.findByText('studentPortal.no_messages_yet')).toBeInTheDocument();
     });
 
     it('calls fetchMyEssayAssignments on mount', () => {
