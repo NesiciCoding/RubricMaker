@@ -1565,9 +1565,10 @@ describe('AppContext startup effects', () => {
         // Accent unset → the removeProperty branch runs.
         expect(root.style.getPropertyValue('--accent')).toBe('');
 
-        // Font set → --font applied and the Google Fonts link injected.
+        // Font set → --font applied. The faces themselves are self-hosted and linked from index.html,
+        // so no stylesheet is injected here (#701).
         expect(root.style.getPropertyValue('--font')).toContain('Inter');
-        expect(document.getElementById('app-gfont')).not.toBeNull();
+        expect(document.querySelector('link[id="app-gfont"]')).toBeNull();
 
         // RTL language → dir flipped.
         expect(root.dir).toBe('rtl');
@@ -1609,7 +1610,6 @@ describe('AppContext edge paths', () => {
         realtimeHandlers.length = 0;
         lateHydrateHandlers.length = 0;
         localStorage.clear();
-        document.getElementById('app-gfont')?.remove();
         const { storageSync } = (await import('../services/database')) as unknown as {
             storageSync: {
                 isConnected: Mock;
@@ -1642,29 +1642,9 @@ describe('AppContext edge paths', () => {
         vi.mocked(supabaseConfig.loadSupabaseConfig).mockReturnValue(null);
     });
 
-    it('reuses an existing Google Fonts link when one is already injected', () => {
-        document.getElementById('app-gfont')?.remove();
-        const existing = document.createElement('link');
-        existing.id = 'app-gfont';
-        document.head.appendChild(existing);
-        const withFont = {
-            ...mockEmptyState(),
-            settings: { ...mockEmptyState().settings, uiFontFamily: 'Nunito' },
-        } as unknown as StoreData;
-        try {
-            renderProvider(withFont);
-            const link = document.getElementById('app-gfont') as HTMLLinkElement | null;
-            expect(link).toBe(existing);
-            expect(link?.href).toContain('Nunito');
-        } finally {
-            existing.remove();
-        }
-    });
-
-    it('degrades gracefully when the stored font is not a bundled Google font', () => {
-        // A stale/corrupt stored value that isn't in the Google-font allow-list still
-        // applies the CSS variable, but skips the stylesheet injection.
-        document.getElementById('app-gfont')?.remove();
+    it('applies the stored font variable without fetching anything', () => {
+        // Any stored value (e.g. a stale "Comic Sans MS") just becomes --font: bundle membership no
+        // longer decides whether a stylesheet is fetched, because nothing is fetched (#701).
         const withUnknownFont = {
             ...mockEmptyState(),
             settings: {
@@ -1675,7 +1655,7 @@ describe('AppContext edge paths', () => {
         renderProvider(withUnknownFont);
         const root = document.documentElement;
         expect(root.style.getPropertyValue('--font')).toContain('Comic Sans MS');
-        expect(document.getElementById('app-gfont')).toBeNull();
+        expect(document.querySelector('link[id="app-gfont"]')).toBeNull();
     });
 
     it('stops the startup flow when unmounted before the db chunk resolves', async () => {

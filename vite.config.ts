@@ -74,6 +74,21 @@ export default defineConfig({
                             expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
                         },
                     },
+                    {
+                        // Self-hosted fonts (#701): already served from our own origin, cached on
+                        // first use so an offline session keeps the right face — and like the locale
+                        // chunks, kept out of the precache so a visitor who never opens an export
+                        // doesn't download every print font up front. StaleWhileRevalidate rather
+                        // than CacheFirst because fonts.css keeps a stable URL: a regenerated sheet
+                        // (new @font-face rules, changed unicode-range) must reach users on their next
+                        // load instead of waiting out the one-year cache entry.
+                        urlPattern: /\/fonts\/[^/]+\.(?:woff2|css)$/,
+                        handler: 'StaleWhileRevalidate',
+                        options: {
+                            cacheName: 'rm-fonts',
+                            expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                        },
+                    },
                 ],
             },
         }),

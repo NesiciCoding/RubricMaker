@@ -206,24 +206,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             document.documentElement.style.removeProperty('--font');
             return;
         }
-        const GOOGLE_FONTS: Record<string, string> = {
-            Inter: 'Inter:wght@300;400;500;600;700',
-            Nunito: 'Nunito:wght@400;500;600;700',
-            'Source Sans 3': 'Source+Sans+3:wght@400;500;600;700',
-            Lato: 'Lato:wght@400;700',
-            Roboto: 'Roboto:wght@400;500;700',
-        };
+        // Every family on offer is self-hosted and loaded with the app (public/fonts/fonts.css), so
+        // picking one only has to swap the CSS variable — no request to make (#701).
         document.documentElement.style.setProperty('--font', `'${fontKey}', system-ui, sans-serif`);
-        if (GOOGLE_FONTS[fontKey]) {
-            let link = document.getElementById('app-gfont') as HTMLLinkElement | null;
-            if (!link) {
-                link = document.createElement('link');
-                link.id = 'app-gfont';
-                link.rel = 'stylesheet';
-                document.head.appendChild(link);
-            }
-            link.href = `https://fonts.googleapis.com/css2?family=${GOOGLE_FONTS[fontKey]}&display=swap`;
-        }
     }, [state.settings.uiFontFamily]);
 
     useEffect(() => {

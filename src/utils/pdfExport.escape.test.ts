@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FORMAT } from '../types';
 import type { Rubric, Student, StudentRubric } from '../types';
-import { buildRubricHTML, printHtml, styleTemplateCss } from './pdfExport';
+import { buildRubricHTML, exportBatchPdf, printHtml, styleTemplateCss } from './pdfExport';
 
 const PAYLOAD = '<img src=x onerror="window.__pwned=1">';
 
@@ -48,6 +48,67 @@ describe('print export escaping', () => {
         const css = styleTemplateCss({ bodyFont: "x'}</style><img src=x onerror=1>", headingFont: 'Arial' });
         expect(css).not.toContain('<');
         expect(css).not.toContain('}</style');
+    });
+});
+
+describe('print exports only record a dialog that opened (#701)', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => {
+        vi.useRealTimers();
+        document.body.innerHTML = '';
+    });
+
+    /** Starts a batch print with a stubbed print(), so jsdom never touches a real dialog. */
+    function startBatchPrint() {
+        const { rubric, student, sr } = fixtures();
+        const promise = exportBatchPdf([{ sr, student }], rubric, null);
+        const win = document.querySelector('iframe')!.contentWindow! as Window;
+        win.print = vi.fn();
+        return { promise, win };
+    }
+
+    it('resolves once the browser has shown the print dialog', async () => {
+        const { promise, win } = startBatchPrint();
+        await vi.advanceTimersByTimeAsync(5_000);
+        win.dispatchEvent(new Event('afterprint'));
+        await expect(promise).resolves.toBeUndefined();
+    });
+
+    it('rejects instead of reporting an export when the browser never opened a dialog', async () => {
+        const { promise } = startBatchPrint();
+        // Assert before advancing: the rejection lands while the timers run, and an unobserved
+        // rejection would trip vitest's unhandled-error check.
+        const rejection = expect(promise).rejects.toThrow('print dialog did not open');
+        await vi.advanceTimersByTimeAsync(5_000 + 2 * 60_000 + 1_000);
+        await rejection;
+    });
+
+    it('takes a dialog the user may have cancelled at its word: opening it is all a browser reports', async () => {
+        const { promise, win } = startBatchPrint();
+        await vi.advanceTimersByTimeAsync(5_000);
+        win.dispatchEvent(new Event('beforeprint'));
+        await vi.advanceTimersByTimeAsync(2 * 60_000 + 1_000);
+        await expect(promise).resolves.toBeUndefined();
+    });
+});
+
+describe('emphasis in comments (#701)', () => {
+    function htmlForComment(comment: string) {
+        const { rubric, student, sr } = fixtures();
+        sr.entries[0].comment = comment;
+        return buildRubricHTML(sr, rubric, student, null);
+    }
+
+    it('leaves arithmetic asterisks alone', () => {
+        const html = htmlForComment('3 * 4 = 12, and 2*3 = 6');
+        expect(html).not.toContain('<em>');
+        expect(html).toContain('3 * 4 = 12');
+    });
+
+    it('still renders deliberate emphasis', () => {
+        expect(htmlForComment('a *great* start')).toContain('<em>great</em>');
+        expect(htmlForComment('(**bold** and *sharp*)')).toContain('<strong>bold</strong>');
+        expect(htmlForComment('(**bold** and *sharp*)')).toContain('<em>sharp</em>');
     });
 });
 

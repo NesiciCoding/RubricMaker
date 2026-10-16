@@ -21,10 +21,17 @@ import { plainQuestionPromptText } from './clozeParse';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
 
+/**
+ * Minimal emphasis parser for the free text that reaches a printout: `**bold**` and `*italic*`.
+ *
+ * Both markers have to hug their text and, for italics, start on a word boundary and end at one, so
+ * arithmetic in a comment (`3 * 4`, `2*3 = 6`) is left alone instead of turning into italics — the
+ * old `\*(.*?)\*` regex italicised everything between the first two asterisks on the line (#701).
+ */
 function parseMd(text: string) {
     if (!text) return text;
-    let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    let html = text.replace(/\*\*([^*\s](?:[^*]*[^*\s])?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/(^|[\s([{"'“‘—-])\*([^*\s](?:[^*]*[^*\s])?)\*(?=$|[\s)\]}"'”’.,;:!?—-])/g, '$1<em>$2</em>');
     html = html.replace(/\n/g, '<br/>');
     return html;
 }
@@ -247,26 +254,40 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
   </div>`;
 }
 
-/** Google Fonts CSS2 family params for decorative export fonts that need loading before print. */
-const EXPORT_GOOGLE_FONTS: Record<string, string> = {
-    'Playfair Display': 'Playfair+Display:wght@400;700',
-    Oswald: 'Oswald:wght@400;500;700',
-    'Bebas Neue': 'Bebas+Neue',
-    'Special Elite': 'Special+Elite',
-    'Courier Prime': 'Courier+Prime:wght@400;700',
-};
+/** The families scripts/vendor-fonts.mjs serves locally, i.e. what a print document cannot get from the app's stylesheet. */
+const VENDORED_FONTS = [
+    'Bricolage Grotesque',
+    'Hanken Grotesk',
+    'Inter',
+    'Nunito',
+    'Source Sans 3',
+    'Lato',
+    'Roboto',
+    'Playfair Display',
+    'Oswald',
+    'Bebas Neue',
+    'Special Elite',
+    'Courier Prime',
+];
 
-/** Accepts every font-family stack in play (base font plus a style template's body/heading overrides) so the returned link covers all of them at once. */
-export function googleFontsLinkFor(...fontFamilies: Array<string | undefined>): string {
+/** Font families named by the given stacks (base font plus a style template's body/heading overrides). */
+function fontFamilyTokens(...fontFamilies: Array<string | undefined>): string[] {
     const tokens = new Set<string>();
     for (const fontFamily of fontFamilies) {
         if (!fontFamily) continue;
         fontFamily.split(',').forEach((part) => tokens.add(part.trim().replace(/^['"]|['"]$/g, '')));
     }
-    const families = Object.keys(EXPORT_GOOGLE_FONTS).filter((name) => tokens.has(name));
-    if (families.length === 0) return '';
-    const familyParams = families.map((name) => `family=${EXPORT_GOOGLE_FONTS[name]}`).join('&');
-    return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${familyParams}&display=swap">`;
+    return [...tokens];
+}
+
+/**
+ * The print document is a separate document, so the vendored fonts have to be linked into it. Returns
+ * '' when every family in play is a system font (the common case), which spares the frame a request.
+ */
+export function fontStylesheetLinkFor(...fontFamilies: Array<string | undefined>): string {
+    const tokens = fontFamilyTokens(...fontFamilies);
+    if (!VENDORED_FONTS.some((name) => tokens.includes(name))) return '';
+    return `<link rel="stylesheet" href="${new URL('fonts/fonts.css', document.baseURI).href}">`;
 }
 
 /** Same body/heading override CSS `buildDocxStyles()` (docxExport.ts) applies to a DOCX document, translated to print CSS. */
@@ -319,8 +340,61 @@ export function withoutBrowserPrintChrome(
 
 /** Upper bound on how long a print job may keep its iframe alive when the browser never reports `afterprint`. */
 const PRINT_SAFETY_TIMEOUT_MS = 5 * 60_000;
+/** How long to wait for the print document's fonts, so a font that never arrives can't hold the dialog. */
+const PRINT_FONT_TIMEOUT_MS = 3_000;
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Waits for the print document's own stylesheets to finish loading, so the faces they declare are registered. */
+function whenStylesheetsReady(doc: Document): Promise<void> {
+    const pending = [...doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].filter((link) => !link.sheet);
+    return Promise.all(
+        pending.map(
+            (link) =>
+                new Promise<void>((resolve) => {
+                    link.addEventListener('load', () => resolve(), { once: true });
+                    link.addEventListener('error', () => resolve(), { once: true });
+                })
+        )
+    ).then(() => undefined);
+}
+
+/**
+ * Waits until the print document can render in the fonts it asked for.
+ *
+ * A flat delay either printed in a fallback face when the font was slow or wasted half a second when it
+ * wasn't. `document.fonts.load()` is the real signal that the faces are available — it is what the print
+ * dialog's snapshot needs — but a font that never arrives must not hold the dialog, hence the cap. `doc.fonts`
+ * is missing in older browsers (and in jsdom), where the caller's flat delay is kept instead.
+ */
+function waitForPrintFonts(doc: Document, families: string[], fallbackMs: number): Promise<void> {
+    if (!doc.fonts) return sleep(fallbackMs);
+    return Promise.race([
+        whenStylesheetsReady(doc)
+            .then(() => Promise.all(families.map((family) => doc.fonts.load(`16px "${family}"`))))
+            .then(() => doc.fonts.ready)
+            .then(() => undefined),
+        sleep(PRINT_FONT_TIMEOUT_MS),
+    ]);
+}
+
 /** How long a caller that waits for the print dialog waits for `afterprint` before moving on, so a browser that advertises but never fires it can't stall a multi-document export for the full cleanup window. */
 const PRINT_DIALOG_WAIT_TIMEOUT_MS = 2 * 60_000;
+
+/**
+ * What the browser could tell us about a print job.
+ *
+ * Every browser fires the dialog lifecycle events for a cancelled print exactly as it does for a
+ * completed one, and none exposes a cancel event, so this is deliberately "was the print dialog
+ * shown", never "did a document come out". `dialogDetectable` is false in browsers that don't report
+ * the lifecycle at all, where the caller has to take the print on trust.
+ */
+export interface PrintOutcome {
+    dialogOpened: boolean;
+    dialogDetectable: boolean;
+}
 
 export function printHtml(
     html: string,
@@ -328,8 +402,8 @@ export function printHtml(
     fontFamily?: string,
     styleTemplate?: DocxStyleTemplateOverrides,
     options: { hideBrowserChrome?: boolean; waitForPrintDialog?: boolean; fontSize?: number; lineSpacing?: number } = {}
-) {
-    return new Promise<void>((resolve) => {
+): Promise<PrintOutcome> {
+    return new Promise<PrintOutcome>((resolve) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
         iframe.style.right = '0';
@@ -341,7 +415,11 @@ export function printHtml(
 
         const doc = iframe.contentWindow?.document;
         if (doc) {
-            const fontLink = googleFontsLinkFor(fontFamily, styleTemplate?.bodyFont, styleTemplate?.headingFont);
+            const printFontFamilies = fontFamilyTokens(fontFamily, styleTemplate?.bodyFont, styleTemplate?.headingFont);
+            const fontLink = fontStylesheetLinkFor(...printFontFamilies);
+            // The vendored faces are only requested when the document uses them, and the browser needs
+            // them in place before it snapshots the page for the dialog.
+            const linkedFamilies = fontLink ? printFontFamilies.filter((name) => VENDORED_FONTS.includes(name)) : [];
             doc.open();
             doc.write(`
                 <!DOCTYPE html>
@@ -361,43 +439,72 @@ export function printHtml(
             `);
             doc.close();
 
-            setTimeout(
-                () => {
-                    const win = iframe.contentWindow;
-                    let cleaned = false;
-                    // Removing the frame right after print() drops the job in browsers where print() doesn't
-                    // block until the dialog closes, so it stays until the browser reports afterprint.
-                    const cleanup = () => {
-                        if (cleaned) return;
-                        cleaned = true;
-                        clearTimeout(safety);
-                        iframe.remove();
-                    };
-                    const safety = setTimeout(() => {
+            void waitForPrintFonts(doc, linkedFamilies, fontLink ? 800 : 500).then(() => {
+                const win = iframe.contentWindow;
+                let cleaned = false;
+                /* v8 ignore next -- a window without print-dialog events cannot report them */
+                const dialogDetectable = !!win && 'onafterprint' in win;
+                let dialogOpened = false;
+                // Removing the frame right after print() drops the job in browsers where print() doesn't
+                // block until the dialog closes, so it stays until the browser reports afterprint.
+                const cleanup = () => {
+                    if (cleaned) return;
+                    cleaned = true;
+                    clearTimeout(safety);
+                    iframe.remove();
+                };
+                // Resolving and removing the frame are separate: dropping the frame right after print()
+                // cancels the job in browsers where print() doesn't block.
+                const finish = () => resolve({ dialogOpened, dialogDetectable });
+                const safety = setTimeout(() => {
+                    cleanup();
+                    finish();
+                }, PRINT_SAFETY_TIMEOUT_MS);
+                win?.addEventListener(
+                    'beforeprint',
+                    () => {
+                        dialogOpened = true;
+                    },
+                    { once: true }
+                );
+                win?.addEventListener(
+                    'afterprint',
+                    () => {
+                        dialogOpened = true;
                         cleanup();
-                        resolve();
-                    }, PRINT_SAFETY_TIMEOUT_MS);
-                    win?.addEventListener(
-                        'afterprint',
-                        () => {
-                            cleanup();
-                            resolve();
-                        },
-                        { once: true }
-                    );
-                    win?.focus();
-                    win?.print();
-                    // Only callers that print several documents in a row wait for the dialog to close (so the
-                    // next one doesn't open over it); everyone else resolves promptly as before.
-                    const waitsForDialog = options.waitForPrintDialog && !!win && 'onafterprint' in win;
-                    setTimeout(resolve, waitsForDialog ? PRINT_DIALOG_WAIT_TIMEOUT_MS : 100);
-                },
-                fontLink ? 800 : 500
-            );
+                        finish();
+                    },
+                    { once: true }
+                );
+                win?.focus();
+                win?.print();
+                // Only callers that print several documents in a row wait for the dialog to close (so the
+                // next one doesn't open over it); everyone else resolves promptly as before.
+                const waitsForDialog = options.waitForPrintDialog && dialogDetectable;
+                setTimeout(finish, waitsForDialog ? PRINT_DIALOG_WAIT_TIMEOUT_MS : 100);
+            });
         } else {
-            resolve();
+            resolve({ dialogOpened: false, dialogDetectable: false });
         }
     });
+}
+
+/**
+ * printHtml for exports whose callers record or announce a finished file: waits for the print dialog
+ * to close, and throws when the browser was able to report the dialog but never showed one — a blocked
+ * print preview used to be logged (and toasted) as a successful export (#701). A cancelled dialog is
+ * still indistinguishable from a printed one, so callers must not read this as proof of paper.
+ */
+export async function printForExport(
+    html: string,
+    orientation: 'portrait' | 'landscape' | undefined,
+    fontFamily: string | undefined,
+    styleTemplate?: DocxStyleTemplateOverrides
+): Promise<void> {
+    const outcome = await printHtml(html, orientation, fontFamily, styleTemplate, { waitForPrintDialog: true });
+    if (outcome.dialogDetectable && !outcome.dialogOpened) {
+        throw new Error('print dialog did not open');
+    }
 }
 
 export async function exportSinglePdf(
@@ -408,7 +515,7 @@ export async function exportSinglePdf(
     options: { orientation?: 'portrait' | 'landscape'; styleTemplate?: DocxStyleTemplateOverrides } = {}
 ): Promise<void> {
     const htmlStr = buildRubricHTML(sr, rubric, student, scale);
-    await printHtml(
+    await printForExport(
         htmlStr,
         options.orientation || rubric.format.orientation || 'portrait',
         rubric.format.fontFamily,
@@ -431,7 +538,7 @@ export async function exportBatchPdf(
         // page only when needed so each student always starts on the front of a sheet.
         return buildRubricHTML(sr, rubric, student, scale, options.padForDoubleSided === true && index > 0);
     });
-    await printHtml(
+    await printForExport(
         htmlParts.join(''),
         options.orientation || rubric.format.orientation || 'portrait',
         rubric.format.fontFamily,
@@ -441,7 +548,7 @@ export async function exportBatchPdf(
 
 export async function exportRubricGridPdf(rubric: Rubric, styleTemplate?: DocxStyleTemplateOverrides): Promise<void> {
     const htmlStr = buildEmptyRubricHTML(rubric);
-    await printHtml(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
+    await printForExport(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
 }
 
 /** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */

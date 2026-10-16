@@ -62,6 +62,7 @@ The following data is **never collected, stored, or transmitted** by this applic
 - User session identifiers or tracking cookies
 - IP addresses or geolocation
 - Device fingerprints
+- Font CDN requests: every web font is self-hosted from this application's own origin (see `public/fonts/` and `scripts/vendor-fonts.mjs`), so loading a page — or printing from one — never contacts a font CDN. There is no request to fonts.googleapis.com or fonts.gstatic.com.
 - Any data sent to servers controlled by the application author or maintainer
 
 ---

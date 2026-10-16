@@ -6,6 +6,13 @@ import { saveAs } from 'file-saver';
 import { exportEssaysBatch } from './essayExport';
 import type { EssaySubmission, Student } from '../types';
 
+/** Member names of a zip download, for the batch-export assertions. */
+async function zipMembers(blob: Blob): Promise<string[]> {
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(blob);
+    return Object.keys(zip.files);
+}
+
 const submission = {
     id: 'sub',
     teacherKey: 'tk',
@@ -31,7 +38,10 @@ describe('exportEssaysBatch separate files (#692)', () => {
             'markdown',
             'separate'
         );
-        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual([
+        // Still separate files, but one download: the members live inside the zip (#701).
+        expect(vi.mocked(saveAs).mock.calls.map(([, name]) => name)).toEqual(['essays.zip']);
+        const [blob] = vi.mocked(saveAs).mock.calls[0] as [Blob, string];
+        await expect(zipMembers(blob)).resolves.toEqual([
             'Zoë_Müller_Mijn_opstel.md',
             '王小明_Mijn_opstel.md',
             '王小明_Mijn_opstel_2.md',

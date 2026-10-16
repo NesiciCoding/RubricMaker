@@ -1,65 +1,68 @@
-import { describe, it, expect } from 'vitest';
-import { googleFontsLinkFor, styleTemplateCss } from './pdfExport';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { fontStylesheetLinkFor, printHtml, styleTemplateCss } from './pdfExport';
 
-describe('googleFontsLinkFor', () => {
+/** Where the vendored stylesheet link points for the document under test. */
+const FONTS_HREF = new URL('fonts/fonts.css', document.baseURI).href;
+
+describe('fontStylesheetLinkFor', () => {
     it('returns empty string when fontFamily is undefined', () => {
-        expect(googleFontsLinkFor(undefined)).toBe('');
+        expect(fontStylesheetLinkFor(undefined)).toBe('');
     });
 
     it('returns empty string when fontFamily is empty', () => {
-        expect(googleFontsLinkFor('')).toBe('');
+        expect(fontStylesheetLinkFor('')).toBe('');
     });
 
-    it('returns empty string for standard system fonts (Inter)', () => {
-        expect(googleFontsLinkFor('Inter, system-ui, sans-serif')).toBe('');
+    it('returns empty string for system-only stacks', () => {
+        expect(fontStylesheetLinkFor('Georgia, serif')).toBe('');
+        expect(fontStylesheetLinkFor('"Courier New", Courier, monospace')).toBe('');
+        expect(fontStylesheetLinkFor('system-ui, sans-serif')).toBe('');
     });
 
-    it('returns empty string for standard fonts (Georgia)', () => {
-        expect(googleFontsLinkFor('Georgia, serif')).toBe('');
+    it('links the self-hosted stylesheet for a decorative export font (#701)', () => {
+        const link = fontStylesheetLinkFor("'Playfair Display', Georgia, serif");
+        expect(link).toBe(`<link rel="stylesheet" href="${FONTS_HREF}">`);
+        expect(link).not.toContain('googleapis');
     });
 
-    it('returns empty string for standard fonts (Courier New)', () => {
-        expect(googleFontsLinkFor('"Courier New", Courier, monospace')).toBe('');
-    });
-
-    it('returns a Google Fonts link tag for Playfair Display', () => {
-        const link = googleFontsLinkFor("'Playfair Display', Georgia, serif");
-        expect(link).toContain('<link rel="stylesheet"');
-        expect(link).toContain('https://fonts.googleapis.com/css2?');
-        expect(link).toContain('family=Playfair+Display:wght@400;700');
-        expect(link).toContain('display=swap');
-    });
-
-    it('returns a Google Fonts link tag for Oswald', () => {
-        const link = googleFontsLinkFor('Oswald, sans-serif');
-        expect(link).toContain('family=Oswald:wght@400;500;700');
-    });
-
-    it('returns a Google Fonts link tag for Bebas Neue', () => {
-        const link = googleFontsLinkFor('Bebas Neue, cursive');
-        expect(link).toContain('family=Bebas+Neue');
-    });
-
-    it('returns a Google Fonts link tag for Special Elite', () => {
-        const link = googleFontsLinkFor('Special Elite, monospace');
-        expect(link).toContain('family=Special+Elite');
-    });
-
-    it('returns a Google Fonts link tag for Courier Prime', () => {
-        const link = googleFontsLinkFor('Courier Prime, monospace');
-        expect(link).toContain('family=Courier+Prime:wght@400;700');
+    it('links it for the UI font options too, which are vendored alongside the export fonts', () => {
+        expect(fontStylesheetLinkFor('Inter, system-ui, sans-serif')).toContain('fonts/fonts.css');
+        expect(fontStylesheetLinkFor('Nunito, sans-serif')).toContain('fonts/fonts.css');
     });
 
     it('picks up a decorative font passed only via a style-template override argument', () => {
-        const link = googleFontsLinkFor('Inter, sans-serif', undefined, 'Oswald, sans-serif');
-        expect(link).toContain('family=Oswald:wght@400;500;700');
-        expect(link).not.toContain('Inter');
+        expect(fontStylesheetLinkFor('Georgia, serif', undefined, 'Oswald, sans-serif')).toContain('fonts/fonts.css');
+        expect(fontStylesheetLinkFor('Georgia, serif', 'Oswald, sans-serif')).toContain('fonts/fonts.css');
     });
 
-    it('dedupes and combines families across multiple arguments', () => {
-        const link = googleFontsLinkFor('Playfair Display, serif', 'Oswald, sans-serif');
-        expect(link).toContain('family=Playfair+Display:wght@400;700');
-        expect(link).toContain('family=Oswald:wght@400;500;700');
+    it('resolves against the app base, so a print frame on a nested route still finds it', () => {
+        const link = fontStylesheetLinkFor('Lato');
+        expect(link).toContain(`href="${document.baseURI}`);
+    });
+});
+
+describe('printHtml font wiring', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => {
+        vi.useRealTimers();
+        document.body.innerHTML = '';
+    });
+
+    const headOfPrintFrame = () => document.querySelector('iframe')!.contentDocument!.head;
+
+    it('links the vendored stylesheet into the print document', async () => {
+        const promise = printHtml('<p>x</p>', 'portrait', "'Playfair Display', Georgia, serif");
+        const link = headOfPrintFrame().querySelector('link[rel="stylesheet"]');
+        expect(link?.getAttribute('href')).toBe(FONTS_HREF);
+        await vi.advanceTimersByTimeAsync(1_000);
+        await promise;
+    });
+
+    it('adds no stylesheet request when the print only uses system fonts', async () => {
+        const promise = printHtml('<p>x</p>', 'portrait', 'Georgia, serif');
+        expect(headOfPrintFrame().querySelector('link[rel="stylesheet"]')).toBeNull();
+        await vi.advanceTimersByTimeAsync(1_000);
+        await promise;
     });
 });
 

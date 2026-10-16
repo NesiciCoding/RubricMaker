@@ -271,9 +271,11 @@ vi.mock('../../utils/docxTemplateExport', () => ({
 
 const mockExportEssaysBatch = vi.fn().mockResolvedValue(undefined);
 const mockExportEssayWithRubric = vi.fn().mockResolvedValue(undefined);
+const mockExportEssaysWithRubricBatch = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../utils/essayExport', () => ({
     exportEssaysBatch: (...args: unknown[]) => mockExportEssaysBatch(...args),
     exportEssayWithRubric: (...args: unknown[]) => mockExportEssayWithRubric(...args),
+    exportEssaysWithRubricBatch: (...args: unknown[]) => mockExportEssaysWithRubricBatch(...args),
 }));
 
 const mockBuildIcs = vi.fn((..._args: unknown[]) => 'BEGIN:VCALENDAR');
@@ -545,7 +547,11 @@ describe('ExportPage coverage', () => {
         await act(async () => {
             fireEvent.click(screen.getByText('exportPage.essays_export_button'));
         });
-        expect(mockExportEssayWithRubric).toHaveBeenCalledTimes(1);
+        // One batch call for the graded essay, which becomes a single zip download (#701).
+        expect(mockExportEssaysWithRubricBatch).toHaveBeenCalledTimes(1);
+        const [items, format] = mockExportEssaysWithRubricBatch.mock.calls[0] as [unknown[], string];
+        expect(items).toHaveLength(1);
+        expect(format).toBe('docx');
         expect(mockShowToast).toHaveBeenCalledWith(
             expect.stringContaining('exportPage.essays_skipped_ungraded'),
             'error'
@@ -1069,7 +1075,8 @@ describe('ExportPage coverage', () => {
             fireEvent.click(screen.getByText('exportPage.essays_export_button'));
         });
         // all three have rubric records → nothing skipped, and none/zzz hit the scale fallbacks
-        expect(mockExportEssayWithRubric).toHaveBeenCalledTimes(3);
+        expect(mockExportEssaysWithRubricBatch).toHaveBeenCalledTimes(1);
+        expect((mockExportEssaysWithRubricBatch.mock.calls[0] as [unknown[]])[0]).toHaveLength(3);
         expect(mockShowToast).not.toHaveBeenCalledWith(
             expect.stringContaining('exportPage.essays_skipped_ungraded'),
             'error'

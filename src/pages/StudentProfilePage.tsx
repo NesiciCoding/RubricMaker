@@ -27,6 +27,7 @@ import Avatar from '../components/ui/Avatar';
 import DropdownMenu from '../components/ui/DropdownMenu';
 import { formatShortDate } from '../utils/dateInput';
 import { useStoreSelector } from '../context/useStore';
+import { useToast } from '../hooks/useToast';
 import { calcGradeSummary, type GradeSummary } from '../utils/gradeCalc';
 import { exportSinglePdf } from '../utils/pdfExport';
 import { logAuditEvent } from '../services/database/AuditLogger';
@@ -95,6 +96,7 @@ export default function StudentProfilePage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'portfolio'>('overview');
     const [tourRun, setTourRun] = useState(false);
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
     const profileTourSteps = useMemo(() => getStudentProfileTourSteps(t), [t]);
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
 
@@ -346,6 +348,9 @@ export default function StudentProfilePage() {
                 orientation: h.rubric.format?.orientation || 'portrait',
             });
             logAuditEvent('export', 'export_pdf', 'rubric', h.rubric.id);
+        } catch {
+            // No print dialog opened, so nothing was exported: say so instead of logging a saved file (#701).
+            showToast(t('toast.export_error'), 'error');
         } finally {
             setExportingId(null);
         }
