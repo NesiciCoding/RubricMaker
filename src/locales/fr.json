@@ -4217,6 +4217,10 @@
         "err_parse": "Échec de l'analyse du CSV : {{message}}",
         "active_class_default": "Classe active (par défaut)"
     },
+    "boot": {
+        "checking_session": "Vérification de votre session…",
+        "loading_data": "Chargement de vos grilles et de vos classes…"
+    },
     "a11y": {
         "skip_to_content": "Aller au contenu principal",
         "open_nav": "Ouvrir le menu de navigation",

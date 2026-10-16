@@ -4217,6 +4217,10 @@
         "err_parse": "Kan CSV niet verwerken: {{message}}",
         "active_class_default": "Actieve klas (standaard)"
     },
+    "boot": {
+        "checking_session": "Je sessie wordt gecontroleerd…",
+        "loading_data": "Je rubrics en klassen worden geladen…"
+    },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen",
         "open_nav": "Navigatiemenu openen",

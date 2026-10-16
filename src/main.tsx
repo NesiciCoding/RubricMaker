@@ -10,6 +10,7 @@ import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/log
 import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
 import { HydrationProgress } from './components/ui/HydrationProgress';
+import { BootShellSkeleton } from './components/ui/AppShellSkeleton';
 
 setupPwaUpdatePrompt();
 
@@ -177,7 +178,7 @@ const router = createHashRouter([
 function renderApp() {
     root.render(
         <React.StrictMode>
-            <Suspense fallback={null}>
+            <Suspense fallback={<BootShellSkeleton />}>
                 <RouterProvider router={router} />
             </Suspense>
             <UpdateAvailableToast />

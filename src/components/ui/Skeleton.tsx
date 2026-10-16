@@ -336,3 +336,25 @@ export function StudentTaskSkeleton() {
         </SkeletonFrame>
     );
 }
+
+// Static sidebar frame for the boot skeleton — a logo bar plus nav-item bars, sized to
+// the real sidebar so nothing shifts when the app shell mounts. Decorative (aria-hidden).
+export function SidebarSkeleton() {
+    return (
+        <aside
+            className="sidebar"
+            aria-hidden="true"
+            style={{ flexDirection: 'column', flexShrink: 0, padding: '12px' }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 4px 18px' }}>
+                <Skeleton width="32px" height="32px" borderRadius="8px" />
+                <Skeleton width="110px" height="1rem" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} height="2.25rem" />
+                ))}
+            </div>
+        </aside>
+    );
+}
