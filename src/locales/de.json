@@ -1659,6 +1659,7 @@
         "error_not_found": "Rubrik/Schüler nicht gefunden.",
         "table_criterion": "Kriterium",
         "table_points": "Pkt.",
+        "raw_points_unit": "Roh-Pkt.",
         "table_weight": "Gew.",
         "label_standard": "Lernziel / Standard",
         "label_override": "Überschreiben:",
@@ -1734,6 +1735,8 @@
         "nhi_banner": "Als nicht abgegeben markiert — diese Arbeit zählt nicht in Statistiken, Dashboard und Schülerportal. Bewerten und Speichern hebt die Markierung auf.",
         "nhi_undo": "„Nicht abgegeben“ rückgängig machen",
         "points_before_modifier": "Punkte vor der Anpassung",
+        "points_raw_hint": "Rohpunkte vor der Gewichtung. Der Prozentsatz wird nach Kriterien gewichtet und stimmt deshalb nicht mit diesen Punkten überein.",
+        "grade_pending_hint": "Bewerte alle Kriterien, um die Note zu sehen.",
         "criteria_graded_one": "{{graded}}/{{count}} Kriterium",
         "criteria_graded_other": "{{graded}}/{{count}} Kriterien",
         "footer_options": "Bewertungsoptionen",
@@ -1886,6 +1889,7 @@
         "weight_total_label": "Gesamtgewicht:",
         "weight_total_hint": "(sollte 100% sein)",
         "weight_total_warning": "Gewichte ergeben {{total}}% (erwartet 100%). Sie können trotzdem speichern — das Bewertungssystem normalisiert sie.",
+        "weights_ignored_total_points": "Gesamtpunkte ignoriert diese Gewichtungen: Die Note ist der Rohwert ÷ die festgelegte Gesamtpunktzahl. Wechsle zu Gewichtete Prozente, um sie zu nutzen.",
         "weight_distribute_evenly": "Gleichmäßig verteilen",
         "cefr_skill_inherit": "— von Rubrik übernehmen —",
         "label_group_grading": "Gruppenbewertung (teilt Punktzahl bei Gruppenbewertung)",
@@ -2309,7 +2313,9 @@
         "performed_better": "{{name}} hat besser abgeschnitten",
         "duplicate_records": "Für diese Person gibt es {{count}} Bewertungen zu diesem Raster.",
         "duplicate_records_keep": "Nur diese behalten",
-        "duplicate_records_keep_hint": "Die anderen Bewertungen werden nach Admin → Archiv → Kürzlich gelöschte Noten verschoben und können dort wiederhergestellt werden."
+        "duplicate_records_keep_hint": "Die anderen Bewertungen werden nach Admin → Archiv → Kürzlich gelöschte Noten verschoben und können dort wiederhergestellt werden.",
+        "per_student_limit_unlimited_one": "Kein Limit — {{count}} Vergleich",
+        "per_student_limit_unlimited_other": "Kein Limit — {{count}} Vergleiche"
     },
     "studentPortal": {
         "not_found": "Schüler nicht gefunden.",

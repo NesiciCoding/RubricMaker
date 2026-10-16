@@ -745,6 +745,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     style={{ width: 48, fontSize: '0.8rem', textAlign: 'center', padding: '2px 4px' }}
                                     title={t('comparativeGrading.per_student_limit_hint')}
                                 />
+                                {matchupLimit === 0 && (
+                                    <span className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
+                                        {t('comparativeGrading.per_student_limit_unlimited', { count: sessionMax })}
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -959,6 +964,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             alignItems: 'flex-start',
+                                            flexWrap: 'wrap',
                                             gap: 12,
                                             marginBottom: commentOpen ? 0 : 0,
                                             marginTop: 16,
@@ -967,7 +973,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         {/* Student A score */}
                                         <div
                                             style={{
-                                                flex: 1,
+                                                // Wide enough for the level names: two flexible panels
+                                                // plus the 140px comparison buttons used to leave the
+                                                // "Select level…" dropdown showing "Sele".
+                                                flex: '1 1 180px',
+                                                minWidth: 160,
                                                 padding: 10,
                                                 background: 'var(--bg-body)',
                                                 borderRadius: 8,
@@ -1247,7 +1257,11 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         {/* Student B score */}
                                         <div
                                             style={{
-                                                flex: 1,
+                                                // Wide enough for the level names: two flexible panels
+                                                // plus the 140px comparison buttons used to leave the
+                                                // "Select level…" dropdown showing "Sele".
+                                                flex: '1 1 180px',
+                                                minWidth: 160,
                                                 padding: 10,
                                                 background: 'var(--bg-body)',
                                                 borderRadius: 8,

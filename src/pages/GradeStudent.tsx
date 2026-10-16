@@ -314,6 +314,13 @@ export default function GradeStudent() {
         return calcGradeSummary(sr, rubric.criteria, scale, rubric);
     }, [sr, rubric, scale]);
 
+    // A letter is only shown once every criterion is scored: a half-graded record used to show a
+    // red "F" straight away, which reads as a final mark rather than work in progress (#681).
+    const gradingComplete = !!summary && summary.totalCriteria > 0 && summary.gradedCount === summary.totalCriteria;
+    // Weighted-percentage and single-point scoring put the points and the percentage on different
+    // scales, so the footer calls the tally raw there instead of implying they reconcile (#681).
+    const pointsAreWeighted = rubric?.scoringMode !== 'total-points';
+
     // Criteria with a low-score streak for this student — drives the comment-bank
     // "Suggested" group so it only appears when there's an actual signal, not on every save.
     const interventionFlags = useMemo(() => {
@@ -2432,18 +2439,27 @@ export default function GradeStudent() {
                     aria-label={t('gradeStudent.aria_grade_summary')}
                 >
                     <div className="grade-footer-summary">
-                        {scale && (
-                            <span
-                                className="grade-chip"
-                                style={{
-                                    background: `${summary.gradeColor}22`,
-                                    border: `2px solid ${summary.gradeColor}`,
-                                    color: summary.gradeColor,
-                                }}
-                            >
-                                {summary.letterGrade}
-                            </span>
-                        )}
+                        {scale &&
+                            (gradingComplete ? (
+                                <span
+                                    className="grade-chip"
+                                    style={{
+                                        background: `${summary.gradeColor}22`,
+                                        border: `2px solid ${summary.gradeColor}`,
+                                        color: summary.gradeColor,
+                                    }}
+                                >
+                                    {summary.letterGrade}
+                                </span>
+                            ) : (
+                                <span
+                                    className="grade-chip grade-chip-pending"
+                                    title={t('gradeStudent.grade_pending_hint')}
+                                    aria-label={t('gradeStudent.grade_pending_hint')}
+                                >
+                                    —
+                                </span>
+                            ))}
                         {scale && (
                             <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>
                                 {summary.modifiedPercentage.toFixed(1)}%
@@ -2458,7 +2474,13 @@ export default function GradeStudent() {
                                 </span>
                             )}
                             {formatPoints(summary.modifiedPoints)} / {formatPoints(summary.configuredMaxPoints)}{' '}
-                            {t('gradeStudent.table_points')}
+                            {pointsAreWeighted ? (
+                                <span title={t('gradeStudent.points_raw_hint')}>
+                                    {t('gradeStudent.raw_points_unit')}
+                                </span>
+                            ) : (
+                                t('gradeStudent.table_points')
+                            )}
                         </span>
                         <span className="text-muted text-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             {t('gradeStudent.criteria_graded', {

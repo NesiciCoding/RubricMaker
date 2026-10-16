@@ -30,6 +30,7 @@ import {
     RotateCcw,
     GitCompare,
     Printer,
+    Info,
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -1340,6 +1341,29 @@ function RubricBuilderEditor() {
                                     </div>
                                 );
                             })()}
+
+                        {/* Total points scores the raw marks against the configured maximum and ignores
+                            the per-criterion weights, so say so where the weights are edited (#681). */}
+                        {scoringMode === 'total-points' && criteria.length > 0 && (
+                            <div
+                                className="text-xs text-muted"
+                                data-testid="weights-ignored-hint"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    padding: '6px 12px',
+                                    borderRadius: 8,
+                                    background: 'var(--bg-elevated)',
+                                    border: '1px dashed var(--border)',
+                                    marginTop: 16,
+                                    marginBottom: 4,
+                                }}
+                            >
+                                <Info size={14} aria-hidden="true" />
+                                {t('rubricBuilder.weights_ignored_total_points')}
+                            </div>
+                        )}
 
                         {/* Criteria */}
                         <div
@@ -3029,6 +3053,11 @@ function RubricWysiwygEditor({
                                         value={c.weight}
                                         onChange={(e) => updateCriterion(c.id, { weight: Number(e.target.value) })}
                                         aria-label={t('rubricBuilder.label_weight')}
+                                        title={
+                                            scoringMode === 'total-points'
+                                                ? t('rubricBuilder.weights_ignored_total_points')
+                                                : undefined
+                                        }
                                         style={{ ...inputStyle, width: 44, textAlign: 'center' }}
                                         className="hover-border"
                                     />

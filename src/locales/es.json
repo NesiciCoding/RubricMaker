@@ -1659,6 +1659,7 @@
         "error_not_found": "Rúbrica/Estudiante no encontrado.",
         "table_criterion": "Criterio",
         "table_points": "pts",
+        "raw_points_unit": "pts brutos",
         "table_weight": "Peso%",
         "label_standard": "Objetivo de Aprendizaje / Estándar",
         "label_override": "Anular:",
@@ -1734,6 +1735,8 @@
         "nhi_banner": "Marcado como no entregado: este trabajo no cuenta en las estadísticas, el panel ni el portal del alumno. Calificar y guardar quita la marca.",
         "nhi_undo": "Deshacer «no entregado»",
         "points_before_modifier": "Puntos antes del modificador",
+        "points_raw_hint": "Puntos brutos, antes de ponderar. El porcentaje se pondera por criterio, así que no coincide con estos puntos.",
+        "grade_pending_hint": "Califica todos los criterios para ver la calificación.",
         "criteria_graded_one": "{{graded}}/{{count}} criterio",
         "criteria_graded_other": "{{graded}}/{{count}} criterios",
         "footer_options": "Opciones de calificación",
@@ -1886,6 +1889,7 @@
         "weight_total_label": "Peso total:",
         "weight_total_hint": "(debe ser 100%)",
         "weight_total_warning": "Los pesos totalizan {{total}}% (esperado 100%). Puede guardar igualmente — el motor de calificación los normaliza.",
+        "weights_ignored_total_points": "El modo Total de puntos ignora estos pesos: la nota es la puntuación bruta ÷ el total configurado. Cambia a Porcentaje ponderado para usarlos.",
         "weight_distribute_evenly": "Distribuir uniformemente",
         "cefr_skill_inherit": "— heredar de la rúbrica —",
         "label_group_grading": "Calificación grupal (comparte puntuación en calificación grupal)",
@@ -2309,7 +2313,9 @@
         "performed_better": "{{name}} tuvo mejor desempeño",
         "duplicate_records": "Este alumno tiene {{count}} calificaciones para esta rúbrica.",
         "duplicate_records_keep": "Conservar la mostrada",
-        "duplicate_records_keep_hint": "Las demás calificaciones pasan a Admin → Archivo → Calificaciones eliminadas recientemente, donde se pueden restaurar."
+        "duplicate_records_keep_hint": "Las demás calificaciones pasan a Admin → Archivo → Calificaciones eliminadas recientemente, donde se pueden restaurar.",
+        "per_student_limit_unlimited_one": "Sin límite — {{count}} comparación",
+        "per_student_limit_unlimited_other": "Sin límite — {{count}} comparaciones"
     },
     "studentPortal": {
         "not_found": "Estudiante no encontrado.",

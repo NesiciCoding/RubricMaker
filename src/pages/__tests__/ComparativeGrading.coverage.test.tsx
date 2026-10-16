@@ -451,6 +451,17 @@ describe('ComparativeGrading coverage', () => {
         fireEvent.change(input, { target: { value: '0' } });
     });
 
+    it('says how many matchups an unlimited per-student limit actually means (#681)', () => {
+        renderAt('/grade-comparative/c1/r1');
+        // The field is an empty box with an "∞" placeholder; the hint beside it names the real
+        // number — three students in the class can only ever produce three pairings.
+        expect(screen.getByText('comparativeGrading.per_student_limit_unlimited:{"count":3}')).toBeInTheDocument();
+
+        const input = screen.getByTitle('comparativeGrading.per_student_limit_hint');
+        fireEvent.change(input, { target: { value: '2' } });
+        expect(screen.queryByText(/per_student_limit_unlimited/)).not.toBeInTheDocument();
+    });
+
     it('persists the matchup limit to the rubric on blur, but only when it actually changed', () => {
         renderAt('/grade-comparative/c1/r1');
         const input = screen.getByTitle('comparativeGrading.per_student_limit_hint');

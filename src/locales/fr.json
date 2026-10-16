@@ -1659,6 +1659,7 @@
         "error_not_found": "Rubrique/Élève introuvable.",
         "table_criterion": "Critère",
         "table_points": "pts",
+        "raw_points_unit": "pts bruts",
         "table_weight": "Pond.",
         "label_standard": "Objectif d'apprentissage / Standard",
         "label_override": "Remplacement :",
@@ -1734,6 +1735,8 @@
         "nhi_banner": "Marqué comme non rendu — ce travail est exclu des statistiques, du tableau de bord et du portail élève. Noter et enregistrer retire cette marque.",
         "nhi_undo": "Annuler « non rendu »",
         "points_before_modifier": "Points avant le modificateur",
+        "points_raw_hint": "Points bruts, avant pondération. Le pourcentage est pondéré par critère et ne correspond donc pas à ces points.",
+        "grade_pending_hint": "Évaluez tous les critères pour voir la note.",
         "criteria_graded_one": "{{graded}}/{{count}} critère",
         "criteria_graded_other": "{{graded}}/{{count}} critères",
         "footer_options": "Options de notation",
@@ -1886,6 +1889,7 @@
         "weight_total_label": "Poids total :",
         "weight_total_hint": "(doit être 100%)",
         "weight_total_warning": "Le poids total est de {{total}}% (attendu 100%). Vous pouvez quand même enregistrer — le moteur de notation normalise les valeurs.",
+        "weights_ignored_total_points": "Le mode Total des points ignore ces pondérations : la note est le score brut ÷ le total configuré. Passez à Pourcentage pondéré pour les utiliser.",
         "weight_distribute_evenly": "Distribuer uniformément",
         "cefr_skill_inherit": "— hériter de la rubrique —",
         "label_group_grading": "Notation de groupe (partage la note en notation de groupe)",
@@ -2309,7 +2313,9 @@
         "performed_better": "{{name}} a mieux performé",
         "duplicate_records": "Cet élève a {{count}} évaluations pour cette grille.",
         "duplicate_records_keep": "Garder celle affichée",
-        "duplicate_records_keep_hint": "Les autres évaluations sont déplacées dans Admin → Archiver → Notes récemment supprimées, où elles peuvent être restaurées."
+        "duplicate_records_keep_hint": "Les autres évaluations sont déplacées dans Admin → Archiver → Notes récemment supprimées, où elles peuvent être restaurées.",
+        "per_student_limit_unlimited_one": "Sans limite — {{count}} comparaison",
+        "per_student_limit_unlimited_other": "Sans limite — {{count}} comparaisons"
     },
     "studentPortal": {
         "not_found": "Élève introuvable.",

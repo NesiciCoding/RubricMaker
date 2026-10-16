@@ -204,6 +204,83 @@ describe('GradeStudent extended', () => {
         expect(screen.getByTitle('gradeStudent.points_before_modifier')).toHaveTextContent('(80.7 + 0.1)');
     });
 
+    it('holds the letter grade back until the scoring has started (#681)', () => {
+        renderPage();
+        // A grade that has not been started used to show a red "F" straight away, which reads as
+        // a final mark rather than work in progress.
+        expect(document.querySelector('.grade-chip-pending')).toHaveTextContent('—');
+
+        fireEvent.click(screen.getAllByText('Excellent')[0]);
+
+        expect(document.querySelector('.grade-chip-pending')).toBeNull();
+        expect(document.querySelector('.grade-chip')).toHaveTextContent('A');
+    });
+
+    it('holds the letter grade back while a rubric is only partly scored (#681)', () => {
+        const original = mockRubricsArr[0];
+        mockRubricsArr[0] = {
+            ...mockRubric,
+            criteria: [
+                mockRubric.criteria[0],
+                {
+                    ...mockRubric.criteria[0],
+                    id: 'c2',
+                    title: 'Criterion 2',
+                    // Distinct level ids, so nothing can carry the first criterion's level over.
+                    levels: [
+                        { id: 'l9', label: 'Excellent', minPoints: 90, maxPoints: 100, description: '', subItems: [] },
+                        { id: 'l10', label: 'Good', minPoints: 70, maxPoints: 89, description: '', subItems: [] },
+                    ],
+                },
+            ],
+        };
+        try {
+            mockStudentRubricsArr = [
+                {
+                    ...existingSR,
+                    entries: [
+                        { criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] },
+                        { criterionId: 'c2', levelId: null, comment: '', checkedSubItems: [] },
+                    ],
+                },
+            ] as never[];
+            mockAppValue.studentRubrics = mockStudentRubricsArr;
+            renderPage();
+            expect(document.querySelector('.grade-chip-pending')).toHaveTextContent('—');
+            // 1 of 2 criteria scored — the count still tells the teacher where they are.
+            expect(screen.getByText(/^gradeStudent\.criteria_graded:/)).toHaveTextContent('"graded":1,"count":2');
+        } finally {
+            mockRubricsArr[0] = original;
+        }
+    });
+
+    it('labels the footer tally as raw points when the percentage is weighted (#681)', () => {
+        mockStudentRubricsArr = [
+            { ...existingSR, entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }] },
+        ] as never[];
+        mockAppValue.studentRubrics = mockStudentRubricsArr;
+        renderPage();
+        expect(screen.getByTitle('gradeStudent.points_raw_hint')).toHaveTextContent('gradeStudent.raw_points_unit');
+    });
+
+    it('keeps the plain points label in total points mode, where the tally does reconcile (#681)', () => {
+        const original = mockRubricsArr[0];
+        mockRubricsArr[0] = { ...mockRubric, scoringMode: 'total-points' };
+        try {
+            mockStudentRubricsArr = [
+                { ...existingSR, entries: [{ criterionId: 'c1', levelId: 'l1', comment: '', checkedSubItems: [] }] },
+            ] as never[];
+            mockAppValue.studentRubrics = mockStudentRubricsArr;
+            renderPage();
+            expect(screen.queryByTitle('gradeStudent.points_raw_hint')).not.toBeInTheDocument();
+            const footer = document.querySelector('.grade-footer-summary')!;
+            expect(footer.textContent).toContain('gradeStudent.table_points');
+            expect(footer.textContent).not.toContain('gradeStudent.raw_points_unit');
+        } finally {
+            mockRubricsArr[0] = original;
+        }
+    });
+
     it('saves and advances with Ctrl+Enter', () => {
         renderPage();
         fireEvent.click(screen.getAllByText('Excellent')[0]);
