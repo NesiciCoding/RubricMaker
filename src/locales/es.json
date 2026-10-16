@@ -4217,6 +4217,10 @@
         "err_parse": "No se pudo analizar el CSV: {{message}}",
         "active_class_default": "Clase activa (predeterminada)"
     },
+    "boot": {
+        "checking_session": "Comprobando tu sesión…",
+        "loading_data": "Cargando tus rúbricas y clases…"
+    },
     "a11y": {
         "skip_to_content": "Saltar al contenido principal",
         "open_nav": "Abrir el menú de navegación",

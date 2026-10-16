@@ -7,13 +7,15 @@ import { getTutorialSteps, withMobileDrawer } from './data/TutorialSteps';
 import { isMobileViewport } from './hooks/usePageTour';
 import { TourProvider } from './context/TourContext';
 import { useTranslation } from 'react-i18next';
-import { Loader, GraduationCap } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import MigrationPrompt from './components/auth/MigrationPrompt';
 import { OwnPortalGuard } from './components/auth/OwnPortalGuard';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import NotFoundPage from './pages/NotFoundPage';
 import RouteSkeleton from './components/ui/RouteSkeleton';
+import { AppShellSkeleton } from './components/ui/AppShellSkeleton';
+import { TabbedPageSkeleton } from './components/ui/Skeleton';
 import { PageViewLogger } from './components/ui/PageViewLogger';
 import { isLocalMode } from './store/storage';
 import { canOpenAdmin, resolveUserRole } from './utils/userRole';
@@ -89,7 +91,7 @@ export default function App() {
     const { students } = useStudents();
 
     const { settings, updateSettings } = useSettings();
-    const { showLanding, isCheckingSession, signOutFromDatabase } = usePlatform();
+    const { showLanding, isCheckingSession, bootPhase, signOutFromDatabase } = usePlatform();
 
     const { t } = useTranslation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -100,9 +102,7 @@ export default function App() {
 
     if (isCheckingSession) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-                <Loader className="spin" size={28} style={{ color: '#94a3b8' }} />
-            </div>
+            <AppShellSkeleton statusText={t(bootPhase === 'hydrate' ? 'boot.loading_data' : 'boot.checking_session')} />
         );
     }
 
@@ -110,7 +110,7 @@ export default function App() {
 
     if (settings.needsOnboarding) {
         return (
-            <Suspense fallback={<RouteSkeleton />}>
+            <Suspense fallback={<TabbedPageSkeleton />}>
                 <OnboardingPage />
             </Suspense>
         );

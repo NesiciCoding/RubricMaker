@@ -1,6 +1,6 @@
 // Generated from src/context/AppContext.tsx by the domain-split refactor.
 import React, { createContext, useMemo, ReactNode } from 'react';
-import { Action, AppContextValue, PlatformCtx, flushToLocalStorage, useContextOrThrow } from '../storeCore';
+import { Action, AppContextValue, BootPhase, PlatformCtx, flushToLocalStorage, useContextOrThrow } from '../storeCore';
 import type { UserRole } from '../../types';
 import {
     clearLocalData,
@@ -24,6 +24,7 @@ export type PlatformValue = Pick<
     | 'dispatch'
     | 'showLanding'
     | 'isCheckingSession'
+    | 'bootPhase'
     | 'showMigrationPrompt'
     | 'enterLocalMode'
     | 'connectForOAuth'
@@ -266,6 +267,7 @@ export function usePlatformValue(
     actions: PlatformActions,
     dispatch: React.Dispatch<Action>,
     landingState: 'checking' | 'show' | 'hide',
+    bootPhase: BootPhase,
     showMigrationPrompt: boolean
 ): PlatformValue {
     return useMemo(
@@ -273,26 +275,29 @@ export function usePlatformValue(
             dispatch,
             showLanding: landingState === 'show',
             isCheckingSession: landingState === 'checking',
+            bootPhase,
             showMigrationPrompt,
             ...actions,
         }),
-        [actions, dispatch, landingState, showMigrationPrompt]
+        [actions, dispatch, landingState, bootPhase, showMigrationPrompt]
     );
 }
 
 export function PlatformProvider({
     ctx,
     landingState,
+    bootPhase,
     showMigrationPrompt,
     children,
 }: {
     ctx: PlatformCtx;
     landingState: 'checking' | 'show' | 'hide';
+    bootPhase: BootPhase;
     showMigrationPrompt: boolean;
     children: ReactNode;
 }) {
     const actions = useMemo(() => createPlatformActions(ctx), [ctx]);
-    const value = usePlatformValue(actions, ctx.dispatch, landingState, showMigrationPrompt);
+    const value = usePlatformValue(actions, ctx.dispatch, landingState, bootPhase, showMigrationPrompt);
     return <PlatformContext.Provider value={value}>{children}</PlatformContext.Provider>;
 }
 
