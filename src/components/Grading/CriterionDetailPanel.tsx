@@ -52,10 +52,16 @@ export default function CriterionDetailPanel({
 }: Props) {
     const { t } = useTranslation();
     const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
+    // Raw text of the override field while it is being edited, so a half-typed entry like "9." is not
+    // rewritten by the controlled rerender before the next keystroke lands.
+    const [overrideDraft, setOverrideDraft] = useState<string | null>(null);
 
     const selectedLevel = entry.levelId ? levels.find((l) => l.id === entry.levelId) : undefined;
     const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
     const maxOverride = criterionMaxPoints(criterion);
+    // A zero maximum means "uncapped" for total-points rubrics (calcEntryPoints reads it the same way),
+    // so only clamp when the criterion actually declares a maximum.
+    const clampOverride = (value: number) => Math.max(0, maxOverride > 0 ? Math.min(maxOverride, value) : value);
     const showBasePoints =
         !!selectedLevel && (selectedLevel.minPoints !== selectedLevel.maxPoints || selectedLevel.subItems.length === 0);
 
@@ -277,13 +283,14 @@ export default function CriterionDetailPanel({
                         <input
                             type="checkbox"
                             checked={entry.overridePoints !== undefined}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                                setOverrideDraft(null);
                                 updateEntry({
                                     overridePoints: e.target.checked
-                                        ? Math.min(maxOverride, entry.selectedPoints ?? selectedLevel?.minPoints ?? 0)
+                                        ? clampOverride(entry.selectedPoints ?? selectedLevel?.minPoints ?? 0)
                                         : undefined,
-                                })
-                            }
+                                });
+                            }}
                             style={{ accentColor: 'var(--yellow)' }}
                         />
                         {t('gradeStudent.override_label')}
@@ -295,17 +302,19 @@ export default function CriterionDetailPanel({
                                 type="number"
                                 inputMode="decimal"
                                 min={0}
-                                max={maxOverride}
+                                max={maxOverride > 0 ? maxOverride : undefined}
                                 step={0.5}
-                                value={entry.overridePoints}
+                                value={overrideDraft ?? String(entry.overridePoints)}
                                 aria-label={t('gradeStudent.override_label')}
                                 onChange={(e) => {
-                                    const typed = Number(e.target.value);
-                                    if (e.target.value.trim() === '' || Number.isNaN(typed)) return;
-                                    updateEntry({
-                                        overridePoints: Math.min(maxOverride, Math.max(0, typed)),
-                                    });
+                                    const raw = e.target.value;
+                                    setOverrideDraft(raw);
+                                    if (raw.trim() === '') return;
+                                    const typed = Number(raw);
+                                    if (Number.isNaN(typed)) return;
+                                    updateEntry({ overridePoints: clampOverride(typed) });
                                 }}
+                                onBlur={() => setOverrideDraft(null)}
                                 style={{
                                     width: 64,
                                     padding: '2px 4px',
@@ -323,10 +332,12 @@ export default function CriterionDetailPanel({
                                 label={t('gradeStudent.override_label')}
                                 onChange={(v) => updateEntry({ overridePoints: v })}
                             />
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                / {maxOverride}
-                                {t('gradeStudent.table_points')}
-                            </span>
+                            {maxOverride > 0 && (
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                    / {maxOverride}
+                                    {t('gradeStudent.table_points')}
+                                </span>
+                            )}
                         </>
                     )}
                 </div>
