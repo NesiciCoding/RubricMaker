@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { decodeEssaySubmission } from '../../utils/shareCode';
 import Modal from '../ui/Modal';
+import { InlineSkeleton } from '../ui/Skeleton';
 import type { Attachment } from '../../types';
 import { useDbStatus } from '../../hooks/useDbStatus';
 
@@ -369,9 +370,7 @@ export default function EssayImportModal({
                         )}
 
                         {loadingDb ? (
-                            <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '16px 0' }}>
-                                Loading…
-                            </p>
+                            <InlineSkeleton rows={3} />
                         ) : submissions.length === 0 ? (
                             <div
                                 style={{
