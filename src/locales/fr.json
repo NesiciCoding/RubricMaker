@@ -2834,7 +2834,8 @@
         "working_toward": "Vise {{level}} — pas encore atteint",
         "legend_developing": "Les badges pleins sont des niveaux atteints. Un badge en pointillés signifie que l'élève vise encore ce niveau (sous le seuil de réussite).",
         "standard_no_score": "Pas encore de score",
-        "no_graded_work_yet": "Pas encore de travail noté — ces tuiles se remplissent dès que l'élève a des grilles notées."
+        "no_graded_work_yet": "Pas encore de travail noté — ces tuiles se remplissent dès que l'élève a des grilles notées.",
+        "no_cefr_data_yet": "Pas encore de niveaux CECRL — il y a du travail noté, mais rien n’est associé à un niveau CECRL."
     },
     "learningPath": {
         "page_title": "Parcours d'apprentissage",

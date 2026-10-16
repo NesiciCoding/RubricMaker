@@ -2834,7 +2834,8 @@
         "working_toward": "Arbeitet auf {{level}} hin — noch nicht erreicht",
         "legend_developing": "Volle Abzeichen sind erreichte Niveaus. Ein gestricheltes Abzeichen bedeutet, dass die Person noch auf dieses Niveau hinarbeitet (unter der Erreichungsschwelle).",
         "standard_no_score": "Noch keine Punktzahl",
-        "no_graded_work_yet": "Noch keine benotete Arbeit — diese Kacheln füllen sich, sobald der Schüler benotete Raster hat."
+        "no_graded_work_yet": "Noch keine benotete Arbeit — diese Kacheln füllen sich, sobald der Schüler benotete Raster hat.",
+        "no_cefr_data_yet": "Noch keine CEFR-Niveaus — es gibt benotete Arbeit, aber keine davon ist einem CEFR-Niveau zugeordnet."
     },
     "learningPath": {
         "page_title": "Lernpfad",

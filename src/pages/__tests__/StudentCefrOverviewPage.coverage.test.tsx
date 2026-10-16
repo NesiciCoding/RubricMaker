@@ -345,6 +345,14 @@ describe('StudentCefrOverviewPage coverage', () => {
         expect(screen.getByText('cefrOverview.no_graded_work_yet')).toBeInTheDocument();
     });
 
+    it('shows the CEFR-specific note when the student has graded work that maps to no CEFR cell', () => {
+        mockGetOverview.mockReturnValue({ ...emptyOverview, gradedRubricCount: 2 });
+        mockState.classes = [{ id: 'c1', name: 'Class A' }];
+        renderAt();
+        expect(screen.getByText('cefrOverview.no_cefr_data_yet')).toBeInTheDocument();
+        expect(screen.queryByText('cefrOverview.no_graded_work_yet')).not.toBeInTheDocument();
+    });
+
     it('shows the empty grid when there is no CEFR data and hides radar/evidence/panels', () => {
         mockGetOverview.mockReturnValue(emptyOverview);
         mockState.classes = [{ id: 'c1', name: 'Class A' }]; // no voTrack → no target badge

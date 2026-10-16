@@ -2834,7 +2834,8 @@
         "working_toward": "Werkt toe naar {{level}} — nog niet behaald",
         "legend_developing": "Volle labels zijn behaalde niveaus. Een gestippeld label betekent dat de leerling nog toewerkt naar dat niveau (onder de behaaldrempel).",
         "standard_no_score": "Nog geen score",
-        "no_graded_work_yet": "Nog geen beoordeeld werk — deze tegels vullen zich zodra de leerling beoordeelde rubrics heeft."
+        "no_graded_work_yet": "Nog geen beoordeeld werk — deze tegels vullen zich zodra de leerling beoordeelde rubrics heeft.",
+        "no_cefr_data_yet": "Nog geen CEFR-niveaus — er is beoordeeld werk, maar geen daarvan is aan een CEFR-niveau gekoppeld."
     },
     "learningPath": {
         "page_title": "Leerpad",

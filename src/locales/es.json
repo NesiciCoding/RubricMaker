@@ -2834,7 +2834,8 @@
         "working_toward": "Trabajando hacia {{level}}: aún no alcanzado",
         "legend_developing": "Las insignias rellenas son niveles alcanzados. Una insignia discontinua significa que el alumno aún trabaja hacia ese nivel (por debajo del umbral de logro).",
         "standard_no_score": "Aún sin puntuación",
-        "no_graded_work_yet": "Aún no hay trabajo calificado: estas tarjetas se rellenan cuando el estudiante tenga rúbricas calificadas."
+        "no_graded_work_yet": "Aún no hay trabajo calificado: estas tarjetas se rellenan cuando el estudiante tenga rúbricas calificadas.",
+        "no_cefr_data_yet": "Aún no hay niveles MCER: hay trabajo calificado, pero nada está asociado a un nivel MCER."
     },
     "learningPath": {
         "page_title": "Ruta de aprendizaje",

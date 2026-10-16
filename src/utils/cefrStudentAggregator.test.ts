@@ -379,6 +379,25 @@ describe('getCefrStudentOverview', () => {
         expect(result.cellMap.size).toBe(0);
     });
 
+    it('reports graded work that maps to no CEFR cell through gradedRubricCount', () => {
+        // A graded rubric whose criteria carry no CEFR tag: the empty state must not tell the student
+        // they have no graded work when they plainly do.
+        const rubric = makeRubric({
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Untagged',
+                    description: '',
+                    weight: 100,
+                    levels: [{ id: 'l1', label: 'L1', minPoints: 0, maxPoints: 100, description: '', subItems: [] }],
+                },
+            ],
+        });
+        const result = getCefrStudentOverview('s1', [makeSr()], [rubric], []);
+        expect(result.skillsWithRubricData).toBe(0);
+        expect(result.gradedRubricCount).toBe(1);
+    });
+
     it('aggregates standards via overridePoints across multiple linked standards', () => {
         const std1: import('../types').LinkedStandard = {
             guid: 'std1',

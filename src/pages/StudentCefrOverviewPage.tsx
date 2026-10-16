@@ -320,7 +320,9 @@ export default function StudentCefrOverviewPage() {
                 )}
                 {overview && overview.skillsWithRubricData === 0 && (
                     <p className="text-muted text-sm" style={{ marginTop: -12, marginBottom: 24 }}>
-                        {t('cefrOverview.no_graded_work_yet')}
+                        {overview.gradedRubricCount > 0
+                            ? t('cefrOverview.no_cefr_data_yet')
+                            : t('cefrOverview.no_graded_work_yet')}
                     </p>
                 )}
 
