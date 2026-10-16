@@ -14,6 +14,8 @@ import {
     GradingSkeleton,
     PortalSkeleton,
     FlashcardCardSkeleton,
+    MonitorGridSkeleton,
+    TestResultsSkeleton,
 } from '../Skeleton';
 
 function renderAt(path: string) {
@@ -51,13 +53,13 @@ describe('getRouteSkeleton', () => {
         ['/tests', TablePageSkeleton],
         ['/tests/new', BuilderPageSkeleton],
         ['/tests/t1', BuilderPageSkeleton],
-        ['/tests/t1/results/st1', DashboardSkeleton],
-        ['/tests/t1/monitor', DashboardSkeleton],
+        ['/tests/t1/results/st1', TestResultsSkeleton],
+        ['/tests/t1/monitor', MonitorGridSkeleton],
 
         ['/essays', ListPageSkeleton],
         ['/essays/new', BuilderPageSkeleton],
         ['/essays/key1', BuilderPageSkeleton],
-        ['/essays/a1/monitor', DashboardSkeleton],
+        ['/essays/a1/monitor', MonitorGridSkeleton],
 
         ['/flashcards', ListPageSkeleton],
         ['/flashcards/d1', BuilderPageSkeleton],

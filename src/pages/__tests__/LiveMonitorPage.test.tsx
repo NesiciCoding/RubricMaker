@@ -307,10 +307,33 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('tests.monitor.no_students')).toBeInTheDocument();
         });
 
-        it('shows the no-students state when no one is assigned', () => {
+        it('shows the no-students state when no one is assigned', async () => {
             mockUseApp = { ...mockUseApp, studentTests: [] };
             renderPage(['/tests/test-1/monitor']);
-            expect(screen.getByText('tests.monitor.no_students')).toBeInTheDocument();
+            // The empty state only renders once the teacher-key lookup has settled — see the
+            // keys-pending skeleton test below.
+            expect(await screen.findByText('tests.monitor.no_students')).toBeInTheDocument();
+        });
+
+        it('shows skeleton tiles instead of the empty state while teacher keys resolve', () => {
+            mockUseApp = {
+                ...mockUseApp,
+                studentTests: [],
+                // Never settles: an in-progress student has no persisted row yet, so the
+                // grid must not claim "no students" before the keys land.
+                fetchTestAssignmentTeacherKeys: vi.fn(() => new Promise(() => {})),
+            };
+            const { container } = renderPage(['/tests/test-1/monitor']);
+            expect(screen.getByLabelText('a11y.loading')).toBeInTheDocument();
+            expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+            expect(screen.queryByText('tests.monitor.no_students')).not.toBeInTheDocument();
+        });
+
+        it('drops the skeleton once teacher keys resolve to an empty set', async () => {
+            mockUseApp = { ...mockUseApp, studentTests: [] };
+            renderPage(['/tests/test-1/monitor']);
+            expect(await screen.findByText('tests.monitor.no_students')).toBeInTheDocument();
+            expect(screen.queryByLabelText('a11y.loading')).not.toBeInTheDocument();
         });
 
         it('ignores teacher keys that resolve after unmount', async () => {
@@ -557,15 +580,17 @@ describe('LiveMonitorPage', () => {
             mockSupabaseConfig = { supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon-key' };
         });
 
-        it('shows the loading state while the assignment resolves', async () => {
+        it('shows a monitor skeleton while the assignment resolves', async () => {
             let resolve: (v: unknown) => void = () => {};
             mockUseApp = {
                 ...mockUseApp,
                 fetchEssayAssignmentByKey: vi.fn(() => new Promise((r) => (resolve = r))),
             };
-            renderPage(['/essays/assn-1/monitor']);
-            expect(screen.getByText('tests.monitor.loading')).toBeInTheDocument();
+            const { container } = renderPage(['/essays/assn-1/monitor']);
+            expect(screen.getByLabelText('a11y.loading')).toBeInTheDocument();
+            expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
             await act(async () => resolve({ rubricId: 'r1', studentId: 'student-1', title: 'My Essay' }));
+            expect(screen.queryByLabelText('a11y.loading')).not.toBeInTheDocument();
             expect(screen.getByText('tests.monitor.title_essay: My Essay')).toBeInTheDocument();
         });
 

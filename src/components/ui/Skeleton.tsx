@@ -409,6 +409,92 @@ export function InlineSkeleton({ rows = 3 }: { rows?: number }) {
     );
 }
 
+// Live monitor: a presence/summary strip above an auto-fill grid of student tiles —
+// the /tests/:id/monitor and /essays/:id/monitor route fallback, and the in-page
+// assignment/teacher-key loading state (no app-shell topbar there, the real one shows).
+function MonitorGridSkeletonBody() {
+    return (
+        <>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }} aria-hidden="true">
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} width="104px" height="2rem" borderRadius="999px" />
+                ))}
+            </div>
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '12px',
+                }}
+            >
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Skeleton width="40%" height="1rem" />
+                            <Skeleton width="72px" height="1.25rem" borderRadius="999px" />
+                        </div>
+                        <Skeleton width="80%" height="0.75rem" />
+                        <Skeleton height="2rem" />
+                    </div>
+                ))}
+            </div>
+        </>
+    );
+}
+
+export function MonitorGridSkeleton() {
+    return (
+        <PageShell>
+            <Skeleton width="30%" height="1.5rem" style={{ marginBottom: '20px' }} />
+            <MonitorGridSkeletonBody />
+        </PageShell>
+    );
+}
+
+// In-page variant of the monitor skeleton: same shapes inside its own status region,
+// so an already-mounted monitor (title in the topbar) can read as loading without the
+// app-shell frame and without flashing a premature empty state.
+export function InlineMonitorSkeleton() {
+    return (
+        <SkeletonFrame>
+            <MonitorGridSkeletonBody />
+        </SkeletonFrame>
+    );
+}
+
+// Test results: header card (title, student line, stat row) plus one card per question —
+// the /tests/:testId/results/:studentTestId route fallback.
+export function TestResultsSkeleton({ questions = 5 }: { questions?: number }) {
+    return (
+        <PageShell>
+            <div
+                className="card"
+                style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}
+            >
+                <Skeleton width="40%" height="1.5rem" />
+                <Skeleton width="30%" height="0.875rem" />
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }} aria-hidden="true">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <Skeleton width="72px" height="0.75rem" />
+                            <Skeleton width="96px" height="1.5rem" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {Array.from({ length: questions }).map((_, i) => (
+                    <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <Skeleton width="15%" height="0.75rem" />
+                        <Skeleton width="65%" height="1rem" />
+                        <SkeletonText lines={2} />
+                    </div>
+                ))}
+            </div>
+        </PageShell>
+    );
+}
+
 // Flashcard study card (progress bar, large card, rating-button row) — the
 // /portal/:id/flashcards/:deckId loading state and route fallback.
 // `fullPage` is for the route fallback, where the skeleton *is* the page and has to fill the

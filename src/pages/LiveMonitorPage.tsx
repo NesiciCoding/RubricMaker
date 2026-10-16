@@ -7,6 +7,7 @@ import { Eye, EyeOff, AlertTriangle, Database, Send, SlidersHorizontal } from 'l
 import { useTranslation } from 'react-i18next';
 import Topbar from '../components/Layout/Topbar';
 import HelpPopover from '../components/ui/HelpPopover';
+import { InlineMonitorSkeleton } from '../components/ui/Skeleton';
 import { useAssessment, useEssays, useStudents, useClasses } from '../context/AppContext';
 import { useToast } from '../hooks/useToast';
 import { useDbStatus } from '../hooks/useDbStatus';
@@ -89,6 +90,10 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     } | null>(null);
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
+    // Starts true for a test monitor: the teacher-key lookup is what reveals in-progress
+    // students (they have no `student_tests` row until hand-in), so until it settles the
+    // grid shows skeleton tiles rather than a premature "no students" empty state.
+    const [testTeacherKeysLoading, setTestTeacherKeysLoading] = useState(kind === 'test');
 
     const { fetchEssayAssignmentByKey, fetchEssaySubmissions } = useEssays();
 
@@ -154,19 +159,26 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // ── Test teacherKey lookup (Realtime channel name = the per-student teacherKey,
     // not a testId/studentId guess — see assignmentKeyFor below) ─────────────────
     useEffect(() => {
-        if (kind !== 'test' || !test || !hasDb) return;
+        if (kind !== 'test' || !test || !hasDb) {
+            setTestTeacherKeysLoading(false);
+            return;
+        }
         let cancelled = false;
         // Reset before fetching: this effect re-fires when `test.id` changes (the route
         // doesn't remount LiveMonitorPage between two tests' monitor pages), and without
         // this a student who overlaps between the two tests would transiently render
         // keyed to the PREVIOUS test's teacherKey/channel until the new fetch resolves.
         setTestTeacherKeys({});
+        setTestTeacherKeysLoading(true);
         fetchTestAssignmentTeacherKeys(test.id)
             .then((keys) => {
                 if (!cancelled) setTestTeacherKeys(keys);
             })
             .catch(() => {
                 if (!cancelled) setTestTeacherKeys({});
+            })
+            .finally(() => {
+                if (!cancelled) setTestTeacherKeysLoading(false);
             });
         return () => {
             cancelled = true;
@@ -521,7 +533,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
             <>
                 <Topbar title={t('tests.monitor.title')} />
                 <div className="page-content fade-in">
-                    <p className="text-muted">{t('tests.monitor.loading')}</p>
+                    <InlineMonitorSkeleton />
                 </div>
             </>
         );
@@ -598,7 +610,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     />
                 )}
 
-                {sortedRows.length === 0 ? (
+                {kind === 'test' && testTeacherKeysLoading && sortedRows.length === 0 ? (
+                    // Teacher keys still resolving: in-progress students have no persisted
+                    // row yet, so hold the skeleton instead of asserting "no students".
+                    <InlineMonitorSkeleton />
+                ) : sortedRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>
                 ) : (
                     <>
