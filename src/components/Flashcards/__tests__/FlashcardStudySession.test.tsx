@@ -51,7 +51,24 @@ describe('FlashcardStudySession', () => {
         fireEvent.click(screen.getByText('flashcards.show_answer'));
         // A rating button (Good) is now shown; click it to complete one review.
         fireEvent.click(screen.getByText('flashcards.rate_good'));
-        // One of two cards reviewed → 50%.
-        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50');
+        // 'Good' on a new card is scheduled exactly the 10-minute learning step, which sits
+        // inside the session's requeue window, so the card comes back later in the session:
+        // 1 review landed, 2 cards still queued → 33%.
+        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
+    });
+
+    it('re-queues a card rated Good (the 10-minute step) but drops one rated Easy (8 days)', () => {
+        const first = render(<FlashcardStudySession deck={deck} initialStates={{}} />);
+        fireEvent.click(screen.getByText('flashcards.show_answer'));
+        fireEvent.click(screen.getByText('flashcards.rate_good'));
+        // The Good card is re-queued behind the untouched second card.
+        expect(screen.getByText('flashcards.study_progress_count:{"done":1,"remaining":2}')).toBeInTheDocument();
+        first.unmount();
+
+        render(<FlashcardStudySession deck={deck} initialStates={{}} />);
+        fireEvent.click(screen.getByText('flashcards.show_answer'));
+        fireEvent.click(screen.getByText('flashcards.rate_easy'));
+        // Easy pushes the card out to the 8-day step — past the window, so it leaves.
+        expect(screen.getByText('flashcards.study_progress_count:{"done":1,"remaining":1}')).toBeInTheDocument();
     });
 });

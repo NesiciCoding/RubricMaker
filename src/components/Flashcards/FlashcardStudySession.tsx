@@ -57,7 +57,10 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
         setReviewedIds((prev) => (prev.has(card.id) ? prev : new Set(prev).add(card.id)));
         if (rating === 1) setAgainCount((n) => n + 1);
 
-        const dueAgainSoon = new Date(nextState.due).getTime() - now.getTime() < REQUEUE_WINDOW_MS;
+        // `<=`, not `<`: a first 'Good' on a new card is scheduled exactly REQUEUE_WINDOW_MS
+        // out (the 10-minute learning step), and a strict comparison dropped it from the
+        // session instead of showing it again but one second later.
+        const dueAgainSoon = new Date(nextState.due).getTime() - now.getTime() <= REQUEUE_WINDOW_MS;
         setQueue((q) => (dueAgainSoon ? [...q.slice(1), card] : q.slice(1)));
         setRevealed(false);
     }

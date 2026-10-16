@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import Topbar from '../components/Layout/Topbar';
 import { useFlashcards } from '../context/AppContext';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import { UNTITLED_DECK_NAMES } from '../utils/flashcardDecks';
 
 export default function FlashcardsPage() {
     const { t, i18n } = useTranslation();
@@ -17,8 +18,34 @@ export default function FlashcardsPage() {
 
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
+    // 'New deck' has to persist a deck before navigating (the editor needs an id), so an
+    // untitled deck the teacher never added a card to would otherwise pile up in the list.
+    // Prune those once there is a deck list to judge: the provider mounts route children before its
+    // asynchronous hydrate() resolves, so a mount-time prune would run against the empty list, latch
+    // itself done and never see the hydrated decks (#693).
+    const prunedUntitledDecks = useRef(false);
+    // Decks created from this page while it is mounted: 'New deck' leaves the list mounted until the
+    // navigation to the editor completes, so the brand-new empty deck is briefly in the list and must
+    // not be mistaken for an abandoned leftover. An abandoned deck is still cleaned up on the next
+    // visit, when it is no longer in this set.
+    const createdHere = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        if (prunedUntitledDecks.current || flashcardDecks.length === 0) return;
+        prunedUntitledDecks.current = true;
+        flashcardDecks
+            .filter(
+                (d) =>
+                    !createdHere.current.has(d.id) &&
+                    !d.ownerStudentId &&
+                    d.cards.length === 0 &&
+                    UNTITLED_DECK_NAMES.has(d.name)
+            )
+            .forEach((d) => deleteFlashcardDeck(d.id));
+    }, [flashcardDecks, deleteFlashcardDeck]);
+
     function handleCreate() {
         const deck = addFlashcardDeck({ name: t('flashcards.untitled_deck'), cards: [] });
+        createdHere.current.add(deck.id);
         navigate(`/flashcards/${deck.id}`);
     }
 

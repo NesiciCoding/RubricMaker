@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import type { FlashcardAssignment, FlashcardDeck } from '../../types';
@@ -81,6 +81,62 @@ describe('FlashcardsPage', () => {
         fireEvent.click(screen.getAllByText('flashcards.new_deck')[0]);
         expect(mockAddDeck).toHaveBeenCalledWith({ name: 'flashcards.untitled_deck', cards: [] });
         expect(mockNavigate).toHaveBeenCalledWith('/flashcards/deck-new');
+    });
+
+    it('prunes an empty untitled deck once the hydrated decks arrive (#693)', async () => {
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        let bump: () => void = () => {};
+        function Harness() {
+            const [, force] = React.useState(0);
+            bump = () => force((n) => n + 1);
+            return <FlashcardsPage />;
+        }
+        renderWithRouter(<Harness />);
+        // Mounted empty, the way it is before storageSync.hydrate() resolves: nothing to prune yet.
+        expect(mockDeleteDeck).not.toHaveBeenCalled();
+
+        mockDecks = [{ id: 'untitled', name: 'Untitled deck', cards: [], createdAt: '2024-02-03T00:00:00Z' }, deckA];
+        act(() => bump());
+        await waitFor(() => expect(mockDeleteDeck).toHaveBeenCalledWith('untitled'));
+    });
+
+    it('does not prune the untitled deck it just created (#693)', async () => {
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        let bump: () => void = () => {};
+        function Harness() {
+            const [, force] = React.useState(0);
+            bump = () => force((n) => n + 1);
+            return <FlashcardsPage />;
+        }
+        renderWithRouter(<Harness />);
+        fireEvent.click(screen.getAllByText('flashcards.new_deck')[0]);
+
+        // The list stays mounted until the navigation lands, so the new empty deck appears in it.
+        mockDecks = [{ id: 'deck-new', name: 'Untitled deck', cards: [], createdAt: '2024-02-05T00:00:00Z' }];
+        act(() => bump());
+        expect(mockDeleteDeck).not.toHaveBeenCalled();
+    });
+
+    it('recognises an untitled deck created while another language was active (#693)', async () => {
+        mockDecks = [{ id: 'fr', name: 'Paquet sans titre', cards: [], createdAt: '2024-02-04T00:00:00Z' }];
+        const { default: FlashcardsPage } = await import('../FlashcardsPage');
+        renderWithRouter(<FlashcardsPage />);
+        await waitFor(() => expect(mockDeleteDeck).toHaveBeenCalledWith('fr'));
+    });
+
+    it('keeps UNTITLED_DECK_NAMES in step with every shipped locale', async () => {
+        const { UNTITLED_DECK_NAMES } = await import('../../utils/flashcardDecks');
+        const [en, nl, fr, de, es] = await Promise.all([
+            import('../../locales/en.json'),
+            import('../../locales/nl.json'),
+            import('../../locales/fr.json'),
+            import('../../locales/de.json'),
+            import('../../locales/es.json'),
+        ]);
+        const label = (m: { default: { flashcards: { untitled_deck: string } } }) => m.default.flashcards.untitled_deck;
+        for (const shipped of [en, nl, fr, de, es].map(label)) {
+            expect(UNTITLED_DECK_NAMES.has(shipped)).toBe(true);
+        }
     });
 
     it('lists decks with card counts and navigates to edit', async () => {

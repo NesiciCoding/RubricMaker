@@ -25,20 +25,43 @@ function toText(cell: Cellish): string {
     return String(cell).trim();
 }
 
-const HEADER_FRONT = /^(front|term|word|question|phrase)$/i;
-const HEADER_BACK = /^(back|definition|translation|answer|meaning)$/i;
+// Column-header words. The English set covers most exports; the localised set covers the
+// app's other UI languages (NL/FR/DE/ES) so a "Woord,Vertaling" header is skipped too. French
+// exports also label the sides "Recto,Verso" (the card-side terms fr.json uses).
+const HEADER_FRONT =
+    /^(front|term|word|question|phrase|voorkant|woord|begrip|vraag|terme|mot|question|phrase|vorderseite|wort|begriff|frage|frente|palabra|término|pregunta|recto)$/i;
+const HEADER_BACK =
+    /^(back|definition|translation|answer|meaning|achterkant|vertaling|definitie|betekenis|antwoord|arrière|traduction|définition|réponse|sens|rückseite|übersetzung|bedeutung|antwort|reverso|traducción|definición|respuesta|significado|verso)$/i;
+
+// A bilingual deck often labels its columns with language names ("Nederlands,English").
+// That only counts as a header when BOTH cells are language names, so a genuine first card
+// such as ("Frans", "French") survives a single-cell match.
+const LANGUAGE_NAME =
+    /^(english|engels|anglais|englisch|inglés|dutch|nederlands|néerlandais|niederländisch|neerlandés|french|frans|français|französisch|francés|german|duits|allemand|deutsch|alemán|spanish|spaans|espagnol|spanisch|español|italian|italiaans|italien|italienisch|italiano|portuguese|portugees|portugais|portugiesisch|portugués)$/i;
+
+function isHeaderRow(front: string, back: string): boolean {
+    return (
+        HEADER_FRONT.test(front) || HEADER_BACK.test(back) || (LANGUAGE_NAME.test(front) && LANGUAGE_NAME.test(back))
+    );
+}
 
 export function cardsFromRows(rows: Cellish[][]): ParsedFlashcard[] {
     const cards: ParsedFlashcard[] = [];
+    const seen = new Set<string>();
     rows.forEach((row, i) => {
         const front = toText(row[0]);
         const back = toText(row[1]);
         if (!front || !back) return;
-        if (i === 0 && (HEADER_FRONT.test(front) || HEADER_BACK.test(back))) return;
+        if (i === 0 && isHeaderRow(front, back)) return;
         const example = toText(row[2]);
         // Optional trailing columns (back-compat: absent in 2/3-column files).
         const phonetic = toText(row[3]);
         const partOfSpeech = toText(row[4]);
+        // Skip rows that repeat an earlier one verbatim, so a file listing the same card
+        // twice does not import it twice.
+        const rowKey = [front, back, example, phonetic, partOfSpeech].join('\u0000');
+        if (seen.has(rowKey)) return;
+        seen.add(rowKey);
         cards.push({
             front,
             back,

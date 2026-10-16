@@ -4146,7 +4146,8 @@
         "wordnet_remove": "Quitar",
         "wordnet_get": "Descargar…",
         "seed_deck_looking_up": "Buscando palabras… {{done}}/{{total}}",
-        "seed_deck_blank_hint": "No se encontró definición para {{count}} palabra(s): complétalas en la página del mazo."
+        "seed_deck_blank_hint": "No se encontró definición para {{count}} palabra(s): complétalas en la página del mazo.",
+        "csv_band_all_label": "Todos los niveles"
     },
     "csv": {
         "summary_created": "creado(s)",
@@ -4308,7 +4309,6 @@
         "import_failed": "No se pudo leer este archivo.",
         "import_xls_unsupported": "Los archivos .xls antiguos no son compatibles — guarda el archivo como .xlsx o .csv e inténtalo de nuevo.",
         "import_more_rows": "…y {{count}} más",
-        "import_success": "Se importaron {{count}} tarjetas",
         "assign_heading": "Asignar a alumnos",
         "assign_class_label": "Clase",
         "assign_button": "Asignar a la clase",
@@ -4349,7 +4349,9 @@
         "import_preview_one": "Se encontró {{count}} tarjeta",
         "import_preview_other": "Se encontraron {{count}} tarjetas",
         "import_confirm_one": "Añadir {{count}} tarjeta",
-        "import_confirm_other": "Añadir {{count}} tarjetas"
+        "import_confirm_other": "Añadir {{count}} tarjetas",
+        "import_success_one": "Se importó {{count}} tarjeta",
+        "import_success_other": "Se importaron {{count}} tarjetas"
     },
     "grammar": {
         "item_select_label": "Elemento gramatical",
