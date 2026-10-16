@@ -216,9 +216,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             <Icon size={16} aria-hidden="true" />
             {label}
             {!!badge && (
+                // flexShrink 0 keeps the count from being squeezed out of view at the panel edge.
                 <span
                     className="badge badge-orange"
-                    style={{ marginLeft: 'auto', fontSize: '0.7rem' }}
+                    style={{ marginLeft: 'auto', fontSize: '0.7rem', flexShrink: 0 }}
                     aria-label={t(badgeLabelKey ?? 'sidebar.moderation_pending_badge', { count: badge })}
                 >
                     {badge}

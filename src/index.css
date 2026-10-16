@@ -437,7 +437,13 @@ h3 {
 .topbar-title {
     font-weight: 600;
     font-size: 1rem;
-    flex: 1;
+    /* Keep a long page title on one line: it used to wrap to three lines when the action
+       strip was busy (e.g. 'Students & Classes' at 1280px). The actions scroll instead. */
+    flex: 0 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .topbar-actions {

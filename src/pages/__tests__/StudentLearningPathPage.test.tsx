@@ -79,7 +79,8 @@ describe('StudentLearningPathPage', () => {
         renderWithRouter(<StudentLearningPathPage />);
         expect(screen.getByText('Alice')).toBeInTheDocument();
         expect(screen.getAllByText('Class A').length).toBeGreaterThan(0);
-        expect(screen.getByText('learningPath.recommendations_empty')).toBeInTheDocument();
+        // No graded work at all: the copy must not claim the student is merely not trailing.
+        expect(screen.getByText('learningPath.recommendations_no_graded_work')).toBeInTheDocument();
         expect(screen.getByText('learningPath.interventions_empty')).toBeInTheDocument();
     });
 });

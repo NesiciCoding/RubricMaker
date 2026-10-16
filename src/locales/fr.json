@@ -2829,7 +2829,9 @@
         "rationale_developing": "Moy. {{score}}% sur {{count}} évaluation(s), seuil {{threshold}}% — en développement",
         "working_toward": "Vise {{level}} — pas encore atteint",
         "legend_developing": "Les badges pleins sont des niveaux atteints. Un badge en pointillés signifie que l'élève vise encore ce niveau (sous le seuil de réussite).",
-        "standard_no_score": "Pas encore de score"
+        "standard_no_score": "Pas encore de score",
+        "no_graded_work_yet": "Pas encore de travail noté — ces tuiles se remplissent dès que l'élève a des grilles notées.",
+        "no_cefr_data_yet": "Pas encore de niveaux CECRL — il y a du travail noté, mais rien n’est associé à un niveau CECRL."
     },
     "learningPath": {
         "page_title": "Parcours d'apprentissage",
@@ -2848,7 +2850,8 @@
         "flag_kind_criterion": "Critère",
         "flag_kind_cefr_skill": "Compétence CECR",
         "flag_streak": "{{count}} scores faibles consécutifs",
-        "flag_scores": "Scores : {{scores}}%"
+        "flag_scores": "Scores : {{scores}}%",
+        "recommendations_no_graded_work": "Pas encore de travail noté — les recommandations apparaissent dès que l'élève a une grille notée."
     },
     "analysis": {
         "detection_disclaimer": "La détection du vocabulaire et de la grammaire repose sur des règles et le TAL (sans IA) et reste approximative. Elle peut manquer certaines structures, signaler de fausses correspondances et ne détecte pas les fautes d'orthographe — vérifiez toujours les résultats avant de vous y fier.",

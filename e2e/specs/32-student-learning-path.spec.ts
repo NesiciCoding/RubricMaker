@@ -15,7 +15,9 @@ test.describe('Student learning path', () => {
         await page.goto(student.id);
 
         await expect(appPage.getByText('SLP Student')).toBeVisible();
-        await expect(appPage.getByText(/no recommendations/i)).toBeVisible();
+        // With no graded work there is no class average to trail, so the empty state says so
+        // rather than reading as "nothing to recommend" for a student who was never assessed (#689).
+        await expect(appPage.getByText(/no graded work yet/i)).toBeVisible();
         await expect(appPage.getByText(/no intervention/i)).toBeVisible();
     });
 

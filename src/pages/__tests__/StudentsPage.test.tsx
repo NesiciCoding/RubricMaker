@@ -139,6 +139,7 @@ vi.mock('../../utils/cefrStudentAggregator', () => ({
                 cellMap: new Map(),
                 standardSets: [],
                 skillsWithRubricData: 0,
+                gradedRubricCount: 0,
                 overallConfidenceRate: 0,
                 standardsCovered: 0,
                 practiceCefrProgress: [],

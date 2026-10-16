@@ -246,6 +246,12 @@ export interface CefrStudentOverview {
     cellMap: Map<string, CefrCellData>;
     standardSets: StandardSetGroup[];
     skillsWithRubricData: number;
+    /**
+     * Graded rubric records for this student, whether or not their criteria carry a CEFR tag. A student
+     * can have graded work that maps to no CEFR cell at all, so this is the only safe "has graded work"
+     * signal for empty-state copy.
+     */
+    gradedRubricCount: number;
     overallConfidenceRate: number;
     standardsCovered: number;
     /** Present only when schoolYear was supplied to getCefrStudentOverview. */
@@ -788,6 +794,7 @@ export function getCefrStudentOverview(
         cellMap,
         standardSets,
         skillsWithRubricData,
+        gradedRubricCount: graded.length,
         overallConfidenceRate,
         practiceCefrProgress,
         standardsCovered,
