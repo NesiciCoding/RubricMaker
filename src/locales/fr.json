@@ -2754,7 +2754,8 @@
         "launch_session": "Session orale",
         "new_session": "Nouvelle session",
         "choose_rubric": "Choisir une rubrique",
-        "empty_state_no_sessions": "Aucune session orale. Cliquez sur \"Nouvelle session\" pour commencer."
+        "empty_state_no_sessions": "Aucune session orale. Cliquez sur \"Nouvelle session\" pour commencer.",
+        "mode_switch_needs_save": "Enregistrez cette session avant de changer de mode."
     },
     "recordings": {
         "panel_title": "Enregistrements",
