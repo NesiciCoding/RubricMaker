@@ -511,7 +511,11 @@
         "role_current": "Aktuell",
         "admin_pin_dialog_desc": "Geben Sie das Administratorpasswort ein, um zur Rolle Administrator zu wechseln.",
         "admin_pin_incorrect": "Falsches Passwort. Bitte versuchen Sie es erneut.",
-        "grade_range_new": "Neu"
+        "grade_range_new": "Neu",
+        "range_warning_min_above_max": "Ein Bereich endet unterhalb seines Startpunkts.",
+        "range_warning_overlap": "Bereiche überschneiden sich — der höhere gewinnt für Punkte in beiden.",
+        "range_warning_gap": "Zwischen den Bereichen besteht eine Lücke; Punkte darin fallen auf den niedrigeren Bereich.",
+        "range_warning_coverage": "Die Bereiche decken 0–100 % nicht ab."
     },
     "navigation": {
         "dashboard": "Dashboard",
@@ -1990,7 +1994,9 @@
         "sort_newest": "Neueste",
         "sort_most_used": "Am häufigsten verwendet",
         "usage_count_label": "{{count}}× verwendet",
-        "sidebar_all_comments": "Alle Kommentare"
+        "sidebar_all_comments": "Alle Kommentare",
+        "tag_group_cefr": "CEFR-Niveau",
+        "tag_group_other": "Schlagwörter"
     },
     "questionBank": {
         "title": "Fragenbank",

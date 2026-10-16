@@ -19,6 +19,19 @@ interface CommentBankManagerProps {
 
 type SortMode = 'newest' | 'mostUsed';
 
+/**
+ * Tag chips are typed by hand, so they arrive in whatever shape the teacher used. Show the
+ * readable form ('connected_speech' → 'Connected speech') without touching the stored value,
+ * and leave already-formatted tags such as 'EFL' or 'B1' alone.
+ */
+export function humaniseTag(tag: string): string {
+    const spaced = tag.replace(/[_-]+/g, ' ').trim();
+    // Tags without a separator are left byte-identical: 'EFL', 'B1' and 'positive' were typed
+    // that way on purpose, so only slug-shaped tags get tidied up.
+    if (spaced === tag) return tag;
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 export default function CommentBankManager({ onSelect, suggestedTags, fullPage }: CommentBankManagerProps) {
     const { t } = useTranslation();
     const { commentBank, addCommentBankItem, updateCommentBankItem, deleteCommentBankItem, restoreCommentBankItem } =
@@ -71,6 +84,11 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         return counts;
     }, [combinedItems]);
 
+    // The sidebar splits authored tags into the CEFR levels (shown in level order) and everything
+    // else (alphabetical), so a long tag list reads as two scannable groups instead of one blob.
+    const cefrTags = useMemo<string[]>(() => CEFR_LEVELS.filter((level) => allTags.includes(level)), [allTags]);
+    const otherTags = useMemo(() => allTags.filter((tag) => !cefrTags.includes(tag)), [allTags, cefrTags]);
+
     function cefrTagOf(item: CommentBankItem): CefrLevel | undefined {
         return item.tags.find((tag): tag is CefrLevel => (CEFR_LEVELS as readonly string[]).includes(tag));
     }
@@ -80,11 +98,16 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
     const activeTags = useMemo(() => [...selectedTags].filter((tag) => tagCounts.has(tag)), [selectedTags, tagCounts]);
 
     const filteredItems = useMemo(() => {
+        const needle = searchTerm.toLowerCase();
         return combinedItems
             .filter((item) => {
+                // Match both the stored tag and the label the chip actually shows, so searching for
+                // the words on screen ('connected speech') finds a comment tagged the slug.
                 const matchesSearch =
-                    item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    item.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+                    item.text.toLowerCase().includes(needle) ||
+                    item.tags.some(
+                        (tag) => tag.toLowerCase().includes(needle) || humaniseTag(tag).toLowerCase().includes(needle)
+                    );
                 // Each selected tag narrows the list further (B1 + Grammar = B1 grammar comments).
                 const matchesTags = activeTags.every((tag) => item.tags.includes(tag));
                 return matchesSearch && matchesTags;
@@ -166,12 +189,26 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                    gap: 4,
                     marginBottom: 6,
                 }}
             >
-                <div style={{ fontSize: '0.95rem', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{item.text}</div>
+                {/* minWidth 0 lets a long comment wrap instead of pushing the action icons out of view. */}
+                <div
+                    style={{
+                        fontSize: '0.95rem',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                        minWidth: 0,
+                        overflowWrap: 'anywhere',
+                        flex: '1 1 160px',
+                    }}
+                >
+                    {item.text}
+                </div>
                 {!onSelect && item.isOwn && (
-                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
                         <button
                             type="button"
                             className="btn btn-ghost btn-icon btn-xs"
@@ -254,7 +291,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 color: 'var(--text-dim)',
                             }}
                         >
-                            {tag}
+                            {humaniseTag(tag)}
                         </span>
                     ))}
                 </div>
@@ -272,15 +309,27 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
     };
 
     const searchAndNewRow = (
-        <div style={{ display: 'flex', gap: 8 }}>
-            <div className="input-group" style={{ flex: 1 }}>
-                <Search size={16} style={{ color: 'var(--text-dim)' }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px' }}>
+                <Search
+                    size={15}
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        left: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: 'var(--text-dim)',
+                    }}
+                />
                 <input
                     type="text"
+                    aria-label={t('commentBank.search_placeholder')}
                     placeholder={t('commentBank.search_placeholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ border: 'none', background: 'transparent', width: '100%' }}
+                    className="input"
+                    style={{ paddingLeft: 36, width: '100%' }}
                 />
             </div>
             <button
@@ -361,6 +410,37 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
         </div>
     );
 
+    const renderTagRow = (tag: string) => (
+        <button
+            key={tag}
+            type="button"
+            className="btn btn-ghost btn-sm"
+            style={{
+                justifyContent: 'space-between',
+                fontWeight: selectedTags.has(tag) ? 700 : 400,
+                color: selectedTags.has(tag) ? 'var(--accent)' : undefined,
+            }}
+            onClick={() => toggleTagFilter(tag)}
+            aria-pressed={selectedTags.has(tag)}
+        >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                <Tag size={12} style={{ flexShrink: 0 }} />
+                <span
+                    style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {humaniseTag(tag)}
+                </span>
+            </span>
+            <span className="text-xs text-muted" aria-hidden="true">
+                {tagCounts.get(tag)}
+            </span>
+        </button>
+    );
+
     const itemList = (
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
             {activeTags.length > 1 && (
@@ -396,8 +476,9 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
             // without a bounded height here, this row just grows and .page-content scrolls the
             // whole thing, including the sidebar, instead of the sidebar and item list each
             // scrolling independently within the available space.
-            <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
+            <div className="comment-bank-layout" style={{ display: 'flex', height: '100%', minHeight: 0 }}>
                 <aside
+                    className="comment-bank-sidebar"
                     style={{
                         width: 220,
                         flexShrink: 0,
@@ -424,36 +505,14 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                             {combinedItems.length}
                         </span>
                     </button>
-                    {allTags.map((tag) => (
-                        <button
-                            key={tag}
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{
-                                justifyContent: 'space-between',
-                                fontWeight: selectedTags.has(tag) ? 700 : 400,
-                                color: selectedTags.has(tag) ? 'var(--accent)' : undefined,
-                            }}
-                            onClick={() => toggleTagFilter(tag)}
-                            aria-pressed={selectedTags.has(tag)}
-                        >
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
-                                <Tag size={12} style={{ flexShrink: 0 }} />
-                                <span
-                                    style={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {tag}
-                                </span>
-                            </span>
-                            <span className="text-xs text-muted" aria-hidden="true">
-                                {tagCounts.get(tag)}
-                            </span>
-                        </button>
-                    ))}
+                    {cefrTags.length > 0 && (
+                        <div className="text-muted text-xs tag-group-heading">{t('commentBank.tag_group_cefr')}</div>
+                    )}
+                    {cefrTags.map(renderTagRow)}
+                    {otherTags.length > 0 && (
+                        <div className="text-muted text-xs tag-group-heading">{t('commentBank.tag_group_other')}</div>
+                    )}
+                    {otherTags.map(renderTagRow)}
                 </aside>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
                     <div
@@ -500,7 +559,7 @@ export default function CommentBankManager({ onSelect, suggestedTags, fullPage }
                                 aria-pressed={selectedTags.has(tag)}
                                 style={{ borderRadius: 12, fontSize: '0.75rem', padding: '2px 8px' }}
                             >
-                                {tag}
+                                {humaniseTag(tag)}
                             </button>
                         ))}
                     </div>

@@ -1584,6 +1584,30 @@ select.input-error {
     display: none;
 }
 
+/* ─── Comment bank: tag group headings ───────────────────────────────────────── */
+.tag-group-heading {
+    font-weight: 600;
+    text-transform: uppercase;
+    margin: 4px 0;
+}
+
+/* ─── Comment bank reflow (tag sidebar moves above the list on phones) ───────── */
+@media (max-width: 768px) {
+    .comment-bank-layout {
+        flex-direction: column;
+    }
+
+    .comment-bank-sidebar {
+        width: 100% !important;
+        max-height: 28vh;
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+}
+
 /* ─── Comparative grading reflow (stack to single column on phones) ──────────── */
 @media (max-width: 768px) {
     .comparative-grid {

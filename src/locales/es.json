@@ -511,7 +511,11 @@
         "role_current": "Actual",
         "admin_pin_dialog_desc": "Introduzca la contraseña de administrador para cambiar al rol de Administrador.",
         "admin_pin_incorrect": "Contraseña incorrecta. Inténtelo de nuevo.",
-        "grade_range_new": "Nuevo"
+        "grade_range_new": "Nuevo",
+        "range_warning_min_above_max": "Un rango termina por debajo de su inicio.",
+        "range_warning_overlap": "Los rangos se solapan: gana el más alto para las notas en ambos.",
+        "range_warning_gap": "Hay un hueco entre rangos; las notas ahí usan el rango inferior.",
+        "range_warning_coverage": "Los rangos no cubren 0–100 %."
     },
     "navigation": {
         "dashboard": "Panel",
@@ -1990,7 +1994,9 @@
         "sort_newest": "Más recientes",
         "sort_most_used": "Más usados",
         "usage_count_label": "Usado {{count}}×",
-        "sidebar_all_comments": "Todos los comentarios"
+        "sidebar_all_comments": "Todos los comentarios",
+        "tag_group_cefr": "Nivel MCER",
+        "tag_group_other": "Etiquetas"
     },
     "questionBank": {
         "title": "Banco de preguntas",
