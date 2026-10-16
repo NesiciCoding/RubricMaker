@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor, act, within, cleanup } from '@testing-libra
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { encodeEssaySubmission } from '../../utils/shareCode';
+import { fromLocalDatetimeInput, toLocalDatetimeInput } from '../../utils/dateInput';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, EssayAssignment, EssaySubmission, Rubric, Student } from '../../types';
 
@@ -148,7 +149,10 @@ describe('EssayBuilderPage coverage', () => {
         expect(screen.getByDisplayValue('100')).toBeInTheDocument();
         expect(screen.getByDisplayValue('500')).toBeInTheDocument();
         expect(screen.getByDisplayValue('45')).toBeInTheDocument();
-        expect(screen.getByDisplayValue('2024-12-31T12:00')).toBeInTheDocument();
+        // The stored UTC instant is shown as local wall-clock time, so the expected string
+        // depends on the machine's zone — derive it with the same helper the page uses.
+        const displayedDeadline = toLocalDatetimeInput(mockAssignment.expiresAt!);
+        expect(screen.getByDisplayValue(displayedDeadline)).toBeInTheDocument();
         expect(screen.getByLabelText('essay_assignment.require_seb_label')).toBeChecked();
         expect(screen.getByLabelText('essay_assignment.lock_after_submit_label')).not.toBeChecked();
 
@@ -157,7 +161,7 @@ describe('EssayBuilderPage coverage', () => {
         fireEvent.change(screen.getByDisplayValue('100'), { target: { value: '150' } });
         fireEvent.change(screen.getByDisplayValue('500'), { target: { value: '600' } });
         fireEvent.change(screen.getByDisplayValue('45'), { target: { value: '30' } });
-        fireEvent.change(screen.getByDisplayValue('2024-12-31T12:00'), { target: { value: '2025-01-15T09:30' } });
+        fireEvent.change(screen.getByDisplayValue(displayedDeadline), { target: { value: '2025-01-15T09:30' } });
         fireEvent.click(screen.getByLabelText('essay_assignment.require_seb_label'));
         fireEvent.click(screen.getByLabelText('essay_assignment.lock_after_submit_label'));
         fireEvent.change(screen.getByLabelText('essays.rubric_connector_label'), { target: { value: '' } });
@@ -173,7 +177,7 @@ describe('EssayBuilderPage coverage', () => {
                 timeLimitMinutes: 30,
                 requireSEB: false,
                 readOnlyAfterSubmit: true,
-                expiresAt: expect.stringContaining('2025-01-15'),
+                expiresAt: fromLocalDatetimeInput('2025-01-15T09:30', mockAssignment.expiresAt),
                 rubricId: '',
             })
         );
