@@ -836,10 +836,12 @@ export default function GradeStudent() {
         {
             key: 'nav-scope',
             icon: <Users size={15} />,
+            // The label names what clicking does; the checkmark shows which scope is live now.
             label:
                 navScope === 'current-class'
-                    ? t('gradeStudent.nav_scope_current_class')
-                    : t('gradeStudent.nav_scope_rubric_classes'),
+                    ? t('gradeStudent.nav_scope_switch_all')
+                    : t('gradeStudent.nav_scope_switch_current'),
+            active: navScope === 'rubric-classes',
             onClick: () =>
                 updateSettings({
                     gradeNavigationScope: navScope === 'current-class' ? 'rubric-classes' : 'current-class',

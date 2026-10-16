@@ -144,6 +144,32 @@ describe('CriterionDetailPanel coverage', () => {
         expect(setSubItemScore).not.toHaveBeenCalled();
     });
 
+    it('accepts a typed override mark and clamps it to the criterion maximum', () => {
+        const levelA = makeLevel('lvA', 6, 10, 'Full command', []);
+        const criterion = makeCriterion('c1', [levelA]);
+        const updateEntry = vi.fn();
+        renderPanel(criterion, makeEntry({ levelId: 'lvA', selectedPoints: 8, overridePoints: 8 }), updateEntry);
+
+        const input = screen.getByRole('spinbutton', {
+            name: 'gradeStudent.override_label',
+        }) as HTMLInputElement;
+
+        // An exact mark in one go, instead of tapping a 0.5 stepper up to 100 times.
+        fireEvent.change(input, { target: { value: '9.5' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 9.5 });
+
+        fireEvent.change(input, { target: { value: '12' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 10 });
+
+        fireEvent.change(input, { target: { value: '-3' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 0 });
+
+        // Clearing the field is ignored, so it can be retyped without jumping to 0.
+        updateEntry.mockClear();
+        fireEvent.change(input, { target: { value: '' } });
+        expect(updateEntry).not.toHaveBeenCalled();
+    });
+
     it('renders sub-item chips alongside base points and toggles single chips', () => {
         const levelE = makeLevel('lvE', 6, 10, '', [bareSubItem, singleSubItem, rangeSubItem, legacySubItem]);
         const criterion = makeCriterion('c2', [levelE]);
@@ -246,5 +272,42 @@ describe('CriterionDetailPanel coverage', () => {
         // Override section renders once overridePoints is set.
         rerender(makeEntry({ overridePoints: 2 }));
         expect(screen.getAllByText((_, el) => (el?.textContent ?? '').includes('/ 10')).length).toBeGreaterThan(0);
+    });
+
+    it('treats a criterion with no declared maximum as uncapped for a typed override', () => {
+        const levelA = makeLevel('lvA', 0, 0, 'Uncapped', []);
+        const criterion = makeCriterion('c9', [levelA]);
+        const updateEntry = vi.fn();
+        renderPanel(criterion, makeEntry({ levelId: 'lvA', overridePoints: 0 }), updateEntry);
+
+        const input = screen.getByRole('spinbutton', {
+            name: 'gradeStudent.override_label',
+        }) as HTMLInputElement;
+        expect(input).not.toHaveAttribute('max');
+
+        // 7 must survive: a zero maximum is uncapped, not a clamp to zero.
+        fireEvent.change(input, { target: { value: '7' } });
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 7 });
+    });
+
+    it('keeps the typed text while editing and re-normalises the clamped mark on blur', () => {
+        const levelA = makeLevel('lvA', 6, 10, 'Full command', []);
+        const criterion = makeCriterion('c10', [levelA]);
+        const updateEntry = vi.fn();
+        const { rerender } = renderPanel(criterion, makeEntry({ levelId: 'lvA', overridePoints: 8 }), updateEntry);
+
+        const input = screen.getByRole('spinbutton', {
+            name: 'gradeStudent.override_label',
+        }) as HTMLInputElement;
+
+        // The clamped 10 is committed, but the field still shows what was typed so editing continues.
+        fireEvent.change(input, { target: { value: '12' } });
+        expect(input.value).toBe('12');
+        expect(updateEntry).toHaveBeenCalledWith({ overridePoints: 10 });
+
+        // Once the parent echoes the clamped mark and editing ends, the field shows the saved value.
+        rerender(makeEntry({ levelId: 'lvA', overridePoints: 10 }));
+        fireEvent.blur(input);
+        expect(input.value).toBe('10');
     });
 });

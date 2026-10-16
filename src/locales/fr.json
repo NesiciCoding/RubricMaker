@@ -1687,8 +1687,6 @@
         "delete_grade_scope_student": "Supprimer seulement la note de cet élève",
         "delete_grade_scope_group": "Supprimer la note de tout le groupe ({{names}})",
         "not_handed_in_comment": "Non rendu",
-        "nav_scope_current_class": "Classe actuelle",
-        "nav_scope_rubric_classes": "Toutes les classes liées",
         "all_students_graded": "Tous les élèves sont notés pour cette grille.",
         "modifier_reason_placeholder": "Raison du modificateur de note",
         "feedback_only_label": "Retour uniquement (masquer la note à l'élève)",
@@ -1755,7 +1753,9 @@
         "regrade_latest_done_cleared_one": "Notation sur la dernière version — {{count}} critère doit recevoir un nouveau niveau. Enregistrez pour la conserver.",
         "regrade_latest_done_cleared_other": "Notation sur la dernière version — {{count}} critères doivent recevoir un nouveau niveau. Enregistrez pour la conserver.",
         "regrade_latest_done_removed_one": "Notation sur la dernière version — le commentaire de {{count}} critère supprimé est conservé. Enregistrez pour le garder.",
-        "regrade_latest_done_removed_other": "Notation sur la dernière version — les commentaires de {{count}} critères supprimés sont conservés. Enregistrez pour les garder."
+        "regrade_latest_done_removed_other": "Notation sur la dernière version — les commentaires de {{count}} critères supprimés sont conservés. Enregistrez pour les garder.",
+        "nav_scope_switch_all": "Passer à toutes les classes liées",
+        "nav_scope_switch_current": "Passer à cette classe uniquement"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -2109,7 +2109,6 @@
         "title": "Analyse des évaluations par les pairs — {{rubricName}}",
         "rubric_not_found": "Grille introuvable.",
         "empty_state": "Aucune évaluation par les pairs n'a encore été soumise pour cette grille.",
-        "total_comparisons": "{{count}} comparaisons avec la référence de l'enseignant",
         "missing_baseline": "{{count}} entrées sans référence de l'enseignant",
         "filter_round": "Tour",
         "all_rounds": "Tous les tours",
@@ -2126,7 +2125,9 @@
         "anonymous_reviewer": "Évaluateur anonyme",
         "round_trend": "Tendance par tour",
         "total_reviews_one": "{{count}} évaluation par les pairs",
-        "total_reviews_other": "{{count}} évaluations par les pairs"
+        "total_reviews_other": "{{count}} évaluations par les pairs",
+        "total_comparisons_one": "{{count}} comparaison avec la référence de l'enseignant",
+        "total_comparisons_other": "{{count}} comparaisons avec la référence de l'enseignant"
     },
     "toast": {
         "export_error": "Export échoué. Veuillez réessayer.",
@@ -2401,7 +2402,7 @@
     },
     "selfAssess": {
         "title": "Auto-évaluation CECR",
-        "instruction": "Lisez chaque énoncé et cochez ceux dont vous vous sentez capable. Soyez honnête — cela aide votre enseignant à comprendre votre progression.",
+        "instruction": "Lis chaque énoncé et indique ton niveau de confiance : Pas encore, Parfois, Généralement ou Confiant. Sois honnête — cela aide ton enseignant à comprendre comment tu perçois tes progrès.",
         "confident_count": "énoncés maîtrisés",
         "reflection_label": "Votre réflexion",
         "reflection_help": "Optionnel : rédigez une courte note sur ce que vous trouvez facile ou difficile.",
