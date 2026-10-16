@@ -4217,6 +4217,10 @@
         "err_parse": "CSV konnte nicht verarbeitet werden: {{message}}",
         "active_class_default": "Aktive Klasse (Standard)"
     },
+    "boot": {
+        "checking_session": "Sitzung wird überprüft…",
+        "loading_data": "Deine Raster und Klassen werden geladen…"
+    },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen",
         "open_nav": "Navigationsmenü öffnen",

@@ -11,6 +11,7 @@ import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
 import { StudentTaskSkeleton } from './components/ui/Skeleton';
 import { HydrationProgress } from './components/ui/HydrationProgress';
+import { BootShellSkeleton } from './components/ui/AppShellSkeleton';
 
 setupPwaUpdatePrompt();
 
@@ -182,7 +183,7 @@ const router = createHashRouter([
 function renderApp() {
     root.render(
         <React.StrictMode>
-            <Suspense fallback={null}>
+            <Suspense fallback={<BootShellSkeleton />}>
                 <RouterProvider router={router} />
             </Suspense>
             <UpdateAvailableToast />
