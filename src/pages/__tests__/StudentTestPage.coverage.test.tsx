@@ -833,6 +833,26 @@ describe('StudentTestPage — generator-engine (DB mode)', () => {
         expect(answers).toEqual([{ questionId: 'gq1', response: 'gb' }]);
     });
 
+    it('shows the task skeleton while the assignment content is still being fetched', async () => {
+        mockEnsureSession.mockResolvedValue({ ok: true });
+        let resolveContent!: (v: unknown) => void;
+        mockFetchAssignmentContent.mockReturnValueOnce(
+            new Promise((resolve) => {
+                resolveContent = resolve;
+            })
+        );
+
+        renderDbPage(makeTest({ questions: [mc('q1', 'What is 2 + 2?')] }));
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading'));
+        expect(document.querySelector('.lucide-loader-circle')).toBeNull();
+
+        await act(async () => {
+            resolveContent({ ok: true, data: dbContent(makeTest({ questions: [mc('q1', 'What is 2 + 2?')] })) });
+        });
+        await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
+    });
+
     it('shows the generator error guard when the first question cannot be loaded', async () => {
         mockEnsureSession.mockResolvedValue({ ok: true });
         mockFetchAssignmentContent.mockResolvedValue({ ok: true, data: dbContent(generatorTest()) });
@@ -855,8 +875,8 @@ describe('StudentTestPage — generator-engine (DB mode)', () => {
         renderDbPage(generatorTest());
         await waitFor(() => expect(screen.getByText('Sample Test')).toBeInTheDocument());
 
-        // Content loaded; the generator effect is awaiting its question → spinner.
-        await waitFor(() => expect(document.querySelector('.lucide-loader-circle')).not.toBeNull());
+        // Content loaded; the generator effect is awaiting its question → task skeleton.
+        await waitFor(() => expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading'));
 
         await act(async () => {
             resolveFirst({
