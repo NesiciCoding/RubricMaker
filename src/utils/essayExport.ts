@@ -29,7 +29,7 @@ import type {
     ExportTemplate,
 } from '../types';
 import { buildDocxStyles, buildRubricGridDocxChildren } from './docxExport';
-import { printHtml, buildRubricHTML } from './pdfExport';
+import { printForExport, buildRubricHTML } from './pdfExport';
 import { sanitizeFilename } from './exportDataPrep';
 import { saveZippedFiles } from './zipExport';
 import { safeHref } from './safeUrl';
@@ -622,7 +622,7 @@ export async function exportEssayPdf(
     submission: EssaySubmission,
     styleTemplate?: ExportTemplate
 ) {
-    await printHtml(essayHtmlHeader(assignment, student, submission), 'portrait', undefined, styleTemplate);
+    await printForExport(essayHtmlHeader(assignment, student, submission), 'portrait', undefined, styleTemplate);
 }
 
 interface EssayBatchEntry {
@@ -686,7 +686,7 @@ export async function exportEssaysBatch(
     const html = entries
         .map(({ assignment, student, submission }) => essayHtmlHeader(assignment, student, submission))
         .join('');
-    await printHtml(html, 'portrait', undefined, styleTemplate);
+    await printForExport(html, 'portrait', undefined, styleTemplate);
 }
 
 function analysisDocxChildren(analysis: DocumentAnalysisResult, vocabularyItems: VocabularyItem[]): Paragraph[] {
@@ -801,7 +801,7 @@ export async function exportEssayWithRubric(
         return;
     }
 
-    await printHtml(essayWithRubricHtml(entry), 'portrait', rubric.format.fontFamily);
+    await printForExport(essayWithRubricHtml(entry), 'portrait', rubric.format.fontFamily, styleTemplate);
 }
 
 /**
@@ -825,5 +825,5 @@ export async function exportEssaysWithRubricBatch(
     }
 
     const html = entries.map((entry) => essayWithRubricHtml(entry)).join('');
-    await printHtml(html, 'portrait', entries[0].rubric.format.fontFamily);
+    await printForExport(html, 'portrait', entries[0].rubric.format.fontFamily, styleTemplate);
 }

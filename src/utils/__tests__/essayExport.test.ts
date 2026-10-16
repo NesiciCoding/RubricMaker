@@ -45,7 +45,10 @@ vi.mock('docx', async (importOriginal) => {
 });
 
 vi.mock('../pdfExport', () => ({
+    // Export paths call printForExport (it wraps printHtml and rejects when a detectable dialog never
+    // opened); aliasing both to the same mock keeps the print assertions below meaningful.
     printHtml: mockPrintHtml,
+    printForExport: mockPrintHtml,
     buildRubricHTML: mockBuildRubricHTML,
 }));
 
@@ -540,6 +543,18 @@ describe('essayExport', () => {
             const call = (mockPrintHtml.mock.calls[0] as unknown[]).slice() as [string, string, string | undefined];
             expect(call[0]).toContain('<div class="rubric-html">grid</div>');
             expect(call[2]).toBe(rubric.format.fontFamily);
+        });
+
+        it('applies the active style template to the batch pdf print job (#701)', async () => {
+            const template = { bodyFont: 'Inter' } as unknown as Parameters<typeof exportEssaysWithRubricBatch>[2];
+            await exportEssaysWithRubricBatch(entries, 'pdf', template);
+            expect(mockPrintHtml).toHaveBeenCalledTimes(1);
+            expect((mockPrintHtml.mock.calls[0] as unknown[])[3]).toBe(template);
+        });
+
+        it('rejects instead of reporting a finished export when the print dialog never opens (#701)', async () => {
+            mockPrintHtml.mockRejectedValueOnce(new Error('print dialog did not open'));
+            await expect(exportEssaysWithRubricBatch(entries, 'pdf')).rejects.toThrow('print dialog did not open');
         });
 
         it('does nothing at all for an empty selection', async () => {

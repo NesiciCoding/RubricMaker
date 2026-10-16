@@ -495,7 +495,7 @@ export function printHtml(
  * print preview used to be logged (and toasted) as a successful export (#701). A cancelled dialog is
  * still indistinguishable from a printed one, so callers must not read this as proof of paper.
  */
-async function printForExport(
+export async function printForExport(
     html: string,
     orientation: 'portrait' | 'landscape' | undefined,
     fontFamily: string | undefined,

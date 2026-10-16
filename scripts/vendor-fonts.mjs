@@ -55,8 +55,36 @@ const slug = (name) =>
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-/** `400` -> `400`, variable range `400 700` -> `400_700`. */
-const weightSlug = (weight) => weight.trim().replace(/\s+/g, '_');
+/**
+ * `400` -> `400`, variable range `400 700` -> `400_700`. Everything but letters, digits and `_` is
+ * dropped, so an unexpected `font-weight` in a fetched stylesheet can never steer the output filename
+ * (`..`, `/` and `.` are all stripped before the name is used).
+ */
+const weightSlug = (weight) =>
+    weight
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^A-Za-z0-9_]/g, '');
+
+/** The vendoring target is Google Fonts itself: fonts.gstatic.com serves the files the CSS points at. */
+const ALLOWED_FONT_HOSTS = new Set(['fonts.gstatic.com']);
+
+const isAllowedFontUrl = (value) => {
+    try {
+        return ALLOWED_FONT_HOSTS.has(new URL(value).host);
+    } catch {
+        return false;
+    }
+};
+
+/** Resolve a generated filename inside OUT_DIR, refusing anything that would escape it. */
+const fontFile = (name) => {
+    const target = path.resolve(OUT_DIR, name);
+    if (path.dirname(target) !== path.resolve(OUT_DIR)) {
+        throw new Error(`Refusing to write outside ${OUT_DIR}: ${name}`);
+    }
+    return target;
+};
 
 async function fetchCss(query) {
     const url = `https://fonts.googleapis.com/css2?family=${query}&display=swap`;
@@ -80,7 +108,15 @@ function latinFaces(css) {
             url: /url\((https:[^)]+\.woff2)\)/.exec(body)?.[1],
             unicodeRange: /unicode-range:\s*([^;]+);/.exec(body)?.[1].trim(),
         }))
-        .filter((face) => face.style === 'normal' && face.weight && face.url && face.unicodeRange);
+        .filter(
+            (face) =>
+                face.style === 'normal' &&
+                face.weight &&
+                face.url &&
+                face.unicodeRange &&
+                // The stylesheet is fetched over the network, so only follow the host we vendor from.
+                isAllowedFontUrl(face.url)
+        );
 }
 
 async function main() {
@@ -112,7 +148,9 @@ async function main() {
             if (!file) {
                 file = `${slug(family)}-${weightSlug(weight)}.woff2`;
                 const data = await fetchBinary(url);
-                await writeFile(path.join(OUT_DIR, file), data);
+                // Vendoring is the point of this script: the bytes belong in public/fonts, the source
+                // host is checked in latinFaces() and the filename is confined to OUT_DIR by fontFile().
+                await writeFile(fontFile(file), data);
                 downloaded.set(url, file);
                 bytes += data.byteLength;
                 console.log(`${file.padEnd(38)} ${(data.byteLength / 1024).toFixed(1)} KB`);
