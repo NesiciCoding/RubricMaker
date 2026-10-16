@@ -358,3 +358,33 @@ export function SidebarSkeleton() {
         </aside>
     );
 }
+
+// Rubric grid for the public share pages (/feedback, /preview) — rendered outside the app
+// shell, so a centered document column instead of the sidebar layout.
+export function RubricGridSkeleton() {
+    return (
+        <SkeletonFrame style={{ flex: 'initial', minHeight: '100vh', background: 'var(--bg)', padding: '24px 16px' }}>
+            <div
+                style={{
+                    width: '100%',
+                    maxWidth: '900px',
+                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                }}
+            >
+                <Skeleton width="45%" height="1.75rem" />
+                <Skeleton width="65%" height="1rem" />
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <Skeleton width="40%" height="1rem" />
+                            <SkeletonText lines={2} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </SkeletonFrame>
+    );
+}
