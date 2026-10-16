@@ -64,6 +64,7 @@ import { searchPortal } from '../utils/portalSearch';
 import { liveStudentRubrics } from '../utils/liveStudentRubrics';
 import PortalSearchBar from '../components/Students/PortalSearchBar';
 import NewsFlashTimeline from '../components/Students/NewsFlashTimeline';
+import { InlineSkeleton, ChartSkeleton } from '../components/ui/Skeleton';
 import StudentDecksSection from '../components/Students/StudentDecksSection';
 import { PortalCriterionFeedback } from '../components/Students/PortalCriterionFeedback';
 import { nanoid } from '../utils/nanoid';
@@ -239,14 +240,23 @@ export default function StudentPortalPage() {
     const [messageRows, setMessageRows] = useState<Message[]>([]);
     const [flashcardRows, setFlashcardRows] = useState<FlashcardAssignment[]>([]);
     const [newsFlashRows, setNewsFlashRows] = useState<NewsFlash[]>([]);
+    // Per-section settle flags: a section shows rows skeletons until its fetch resolves, so an
+    // empty state can't flash before the data has had a chance to arrive.
+    const [essayLoading, setEssayLoading] = useState(true);
+    const [testLoading, setTestLoading] = useState(true);
+    const [messageLoading, setMessageLoading] = useState(true);
+    const [flashcardLoading, setFlashcardLoading] = useState(true);
+    const [newsFlashLoading, setNewsFlashLoading] = useState(true);
 
     useEffect(() => {
         fetchMyEssayAssignments()
             .then(setEssayRows)
-            .catch((err: unknown) => setEssayLoadError(err instanceof Error ? err.message : 'Failed to load essays'));
+            .catch((err: unknown) => setEssayLoadError(err instanceof Error ? err.message : 'Failed to load essays'))
+            .finally(() => setEssayLoading(false));
         fetchMyTestAssignments()
             .then(setTestRows)
-            .catch((err: unknown) => setTestLoadError(err instanceof Error ? err.message : 'Failed to load tests'));
+            .catch((err: unknown) => setTestLoadError(err instanceof Error ? err.message : 'Failed to load tests'))
+            .finally(() => setTestLoading(false));
         fetchMyMessages()
             .then((rows) => {
                 setMessageRows(rows);
@@ -255,17 +265,20 @@ export default function StudentPortalPage() {
             })
             .catch(() => {
                 /* messaging requires a live Supabase session; silently unavailable otherwise */
-            });
+            })
+            .finally(() => setMessageLoading(false));
         fetchMyFlashcardAssignments()
             .then(setFlashcardRows)
             .catch(() => {
                 /* local mode: app state (below) already has the assignments */
-            });
+            })
+            .finally(() => setFlashcardLoading(false));
         fetchMyNewsFlashes()
             .then(setNewsFlashRows)
             .catch(() => {
                 /* local mode: app state (below) already has the flashes */
-            });
+            })
+            .finally(() => setNewsFlashLoading(false));
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const tourKey = `rm_portal_tour_seen_${studentId}`;
@@ -586,6 +599,7 @@ export default function StudentPortalPage() {
         .sort(byDueDateAsc);
     const completedWork = allWork.filter(isDone);
     const hasWork = allWork.length > 0;
+    const workLoading = essayLoading || testLoading;
     const hasRadar = combinedRadarData.length >= 3 || rubricRadarOptions.length > 0;
 
     const hasLearningPath =
@@ -908,7 +922,7 @@ export default function StudentPortalPage() {
                 {/* Grade history chart */}
                 {scoredHistory.length > 1 && isTab('progress') && (
                     <Section id="portal-section-grades" title={t('studentPortal.grade_history')}>
-                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                        <Suspense fallback={<ChartSkeleton height="200px" />}>
                             <PortalGradeHistoryChart history={scoredHistory} />
                         </Suspense>
                     </Section>
@@ -917,7 +931,7 @@ export default function StudentPortalPage() {
                 {/* CEFR progress */}
                 {cefrProgress.length > 0 && isTab('progress') && (
                     <Section id="portal-section-cefr" title={t('studentPortal.cefr_progress')}>
-                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                        <Suspense fallback={<ChartSkeleton height="200px" />}>
                             <CefrProgressChart entries={cefrProgress} />
                         </Suspense>
                     </Section>
@@ -941,96 +955,106 @@ export default function StudentPortalPage() {
                         {t('studentPortal.work_load_error')}
                     </div>
                 )}
-                {hasWork && isTab('assignments') && (
+                {(hasWork || workLoading) && isTab('assignments') && (
                     <Section id="portal-section-work" title={t('studentPortal.my_work')}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                            {overdueWork.length > 0 && (
-                                <WorkGroup
-                                    title={t('studentPortal.work_overdue')}
-                                    entries={overdueWork}
-                                    buildEssayUrl={buildEssayUrl}
-                                    onOpenTest={handleOpenTest}
-                                    openingTestKey={openingTestKey}
-                                    testOpenErrorKey={testOpenErrorKey}
-                                    t={t}
-                                />
-                            )}
-                            {plannedWork.length > 0 && (
-                                <WorkGroup
-                                    title={t('studentPortal.work_planned')}
-                                    entries={plannedWork}
-                                    buildEssayUrl={buildEssayUrl}
-                                    onOpenTest={handleOpenTest}
-                                    openingTestKey={openingTestKey}
-                                    testOpenErrorKey={testOpenErrorKey}
-                                    t={t}
-                                />
-                            )}
-                            {completedWork.length > 0 && (
-                                <WorkGroup
-                                    title={t('studentPortal.work_completed')}
-                                    entries={completedWork}
-                                    buildEssayUrl={buildEssayUrl}
-                                    onOpenTest={handleOpenTest}
-                                    openingTestKey={openingTestKey}
-                                    testOpenErrorKey={testOpenErrorKey}
-                                    t={t}
-                                />
-                            )}
-                        </div>
+                        {workLoading && !hasWork ? (
+                            <InlineSkeleton rows={3} />
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                                {overdueWork.length > 0 && (
+                                    <WorkGroup
+                                        title={t('studentPortal.work_overdue')}
+                                        entries={overdueWork}
+                                        buildEssayUrl={buildEssayUrl}
+                                        onOpenTest={handleOpenTest}
+                                        openingTestKey={openingTestKey}
+                                        testOpenErrorKey={testOpenErrorKey}
+                                        t={t}
+                                    />
+                                )}
+                                {plannedWork.length > 0 && (
+                                    <WorkGroup
+                                        title={t('studentPortal.work_planned')}
+                                        entries={plannedWork}
+                                        buildEssayUrl={buildEssayUrl}
+                                        onOpenTest={handleOpenTest}
+                                        openingTestKey={openingTestKey}
+                                        testOpenErrorKey={testOpenErrorKey}
+                                        t={t}
+                                    />
+                                )}
+                                {completedWork.length > 0 && (
+                                    <WorkGroup
+                                        title={t('studentPortal.work_completed')}
+                                        entries={completedWork}
+                                        buildEssayUrl={buildEssayUrl}
+                                        onOpenTest={handleOpenTest}
+                                        openingTestKey={openingTestKey}
+                                        testOpenErrorKey={testOpenErrorKey}
+                                        t={t}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </Section>
                 )}
 
-                {myFlashcards.length > 0 && isTab('assignments') && (
+                {(myFlashcards.length > 0 || flashcardLoading) && isTab('assignments') && (
                     <Section id="portal-section-flashcards" title={t('studentPortal.flashcards_section_title')}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {myFlashcards.map((a) => {
-                                const deck = flashcardDecks.find((d) => d.id === a.deckId);
-                                const review =
-                                    flashcardReviews.find((r) => r.id === `${a.deckId}:${student.id}`) ?? null;
-                                const insights = deck ? computeDeckInsights(deck, review) : null;
-                                return (
-                                    <div
-                                        key={a.deckId}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            gap: 12,
-                                            flexWrap: 'wrap',
-                                            border: '1px solid var(--border)',
-                                            borderRadius: 10,
-                                            padding: '10px 14px',
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <Layers size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                                            <div>
-                                                <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
-                                                    {a.deckName}
-                                                </div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                    {t('flashcards.card_count', {
-                                                        count: deck?.cards.length ?? a.cardCount,
-                                                    })}
-                                                    {insights && insights.dueCount > 0 && (
-                                                        <span style={{ color: 'var(--red)', marginLeft: 8 }}>
-                                                            {t('flashcards.due_count', { count: insights.dueCount })}
-                                                        </span>
-                                                    )}
+                        {flashcardLoading && myFlashcards.length === 0 ? (
+                            <InlineSkeleton rows={3} />
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {myFlashcards.map((a) => {
+                                    const deck = flashcardDecks.find((d) => d.id === a.deckId);
+                                    const review =
+                                        flashcardReviews.find((r) => r.id === `${a.deckId}:${student.id}`) ?? null;
+                                    const insights = deck ? computeDeckInsights(deck, review) : null;
+                                    return (
+                                        <div
+                                            key={a.deckId}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: 12,
+                                                flexWrap: 'wrap',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 10,
+                                                padding: '10px 14px',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <Layers size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                                <div>
+                                                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                                        {a.deckName}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                        {t('flashcards.card_count', {
+                                                            count: deck?.cards.length ?? a.cardCount,
+                                                        })}
+                                                        {insights && insights.dueCount > 0 && (
+                                                            <span style={{ color: 'var(--red)', marginLeft: 8 }}>
+                                                                {t('flashcards.due_count', {
+                                                                    count: insights.dueCount,
+                                                                })}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <Link
+                                                to={`/portal/${student.id}/flashcards/${a.deckId}`}
+                                                className="btn btn-primary btn-sm"
+                                            >
+                                                {t('flashcards.study_button')}
+                                            </Link>
                                         </div>
-                                        <Link
-                                            to={`/portal/${student.id}/flashcards/${a.deckId}`}
-                                            className="btn btn-primary btn-sm"
-                                        >
-                                            {t('flashcards.study_button')}
-                                        </Link>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </Section>
                 )}
 
@@ -1040,7 +1064,7 @@ export default function StudentPortalPage() {
                     </div>
                 )}
 
-                {myNewsFlashes.length > 0 && isTab('home') && (
+                {(myNewsFlashes.length > 0 || newsFlashLoading) && isTab('home') && (
                     <Section
                         id="portal-section-news-flashes"
                         title={
@@ -1049,42 +1073,50 @@ export default function StudentPortalPage() {
                                 : t('newsFlashes.section_title')
                         }
                     >
-                        <NewsFlashTimeline
-                            studentId={student.id}
-                            flashes={myNewsFlashes}
-                            readFlashIds={readNewsFlashIds}
-                            onOpen={handleOpenNewsFlash}
-                            onScrollToSection={goToSection}
-                        />
+                        {newsFlashLoading && myNewsFlashes.length === 0 ? (
+                            <InlineSkeleton rows={2} />
+                        ) : (
+                            <NewsFlashTimeline
+                                studentId={student.id}
+                                flashes={myNewsFlashes}
+                                readFlashIds={readNewsFlashIds}
+                                onOpen={handleOpenNewsFlash}
+                                onScrollToSection={goToSection}
+                            />
+                        )}
                     </Section>
                 )}
 
                 {isTab('feedback') && (
                     <Section id="portal-section-messages" title={t('studentPortal.messages_section_title')}>
-                        <PortalMessages
-                            studentId={student.id}
-                            threads={myThreads}
-                            contextOptions={messageContextOptions}
-                            onSend={(contextType, contextId, contextLabel, body) => {
-                                const message: Message = {
-                                    id: nanoid(),
-                                    studentId: student.id,
-                                    contextType,
-                                    contextId,
-                                    contextLabel,
-                                    sender: 'student',
-                                    body,
-                                    createdAt: new Date().toISOString(),
-                                    readByTeacher: false,
-                                    readByStudent: true,
-                                };
-                                setMessageRows((prev) => [...prev, message]);
-                                sendMessageAsStudent(message).catch(() => {
-                                    /* messaging requires a live Supabase session; silently unavailable otherwise */
-                                });
-                            }}
-                            t={t}
-                        />
+                        {messageLoading ? (
+                            <InlineSkeleton rows={3} />
+                        ) : (
+                            <PortalMessages
+                                studentId={student.id}
+                                threads={myThreads}
+                                contextOptions={messageContextOptions}
+                                onSend={(contextType, contextId, contextLabel, body) => {
+                                    const message: Message = {
+                                        id: nanoid(),
+                                        studentId: student.id,
+                                        contextType,
+                                        contextId,
+                                        contextLabel,
+                                        sender: 'student',
+                                        body,
+                                        createdAt: new Date().toISOString(),
+                                        readByTeacher: false,
+                                        readByStudent: true,
+                                    };
+                                    setMessageRows((prev) => [...prev, message]);
+                                    sendMessageAsStudent(message).catch(() => {
+                                        /* messaging requires a live Supabase session; silently unavailable otherwise */
+                                    });
+                                }}
+                                t={t}
+                            />
+                        )}
                     </Section>
                 )}
 
@@ -1109,7 +1141,7 @@ export default function StudentPortalPage() {
                                 </select>
                             </div>
                         )}
-                        <Suspense fallback={<div style={{ height: 340 }} />}>
+                        <Suspense fallback={<ChartSkeleton height="340px" />}>
                             <CriterionRadarChart
                                 data={selectedRadarData}
                                 accentColor="var(--accent)"

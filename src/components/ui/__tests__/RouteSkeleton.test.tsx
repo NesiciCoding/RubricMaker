@@ -13,6 +13,7 @@ import {
     DocumentSkeleton,
     GradingSkeleton,
     PortalSkeleton,
+    FlashcardCardSkeleton,
 } from '../Skeleton';
 
 function renderAt(path: string) {
@@ -63,7 +64,7 @@ describe('getRouteSkeleton', () => {
         ['/news-flashes', ListPageSkeleton],
 
         ['/portal/s1', PortalSkeleton],
-        ['/portal/s1/flashcards/d1', PortalSkeleton],
+        ['/portal/s1/flashcards/d1', FlashcardCardSkeleton],
 
         ['/attachments', TablePageSkeleton],
         ['/export', TablePageSkeleton],

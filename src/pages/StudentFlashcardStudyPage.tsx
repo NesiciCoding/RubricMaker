@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFlashcards, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
@@ -9,6 +9,7 @@ import FlashcardInsightsPanel from '../components/Flashcards/FlashcardInsightsPa
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { computeDeckInsights } from '../utils/flashcardInsights';
+import { FlashcardCardSkeleton } from '../components/ui/Skeleton';
 import type { FlashcardCardState, FlashcardDeck, FlashcardReview } from '../types';
 
 export default function StudentFlashcardStudyPage() {
@@ -157,9 +158,7 @@ export default function StudentFlashcardStudyPage() {
                     </div>
                 )}
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: 48 }}>
-                        <Loader2 size={24} className="spin" style={{ color: 'var(--text-muted)' }} />
-                    </div>
+                    <FlashcardCardSkeleton />
                 ) : !deck ? (
                     <div className="empty-state">
                         <h2>{t('flashcards.deck_not_found')}</h2>

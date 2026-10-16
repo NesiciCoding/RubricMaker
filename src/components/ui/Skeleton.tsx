@@ -388,3 +388,55 @@ export function RubricGridSkeleton() {
         </SkeletonFrame>
     );
 }
+
+// In-page section skeleton: N rows inside the site card, wrapped in a single status
+// region so an async section reads as loading before its empty state can show.
+export function InlineSkeleton({ rows = 3 }: { rows?: number }) {
+    const { t } = useTranslation();
+    return (
+        <div className="card" role="status" aria-label={t('a11y.loading')} aria-busy="true">
+            {Array.from({ length: rows }).map((_, i) => (
+                <SkeletonRow key={i} />
+            ))}
+        </div>
+    );
+}
+
+// Flashcard study card (progress bar, large card, rating-button row) — the
+// /portal/:id/flashcards/:deckId loading state and route fallback.
+export function FlashcardCardSkeleton() {
+    return (
+        <SkeletonFrame style={{ flex: 'initial', minHeight: '100vh', background: 'var(--bg)', padding: '24px 16px' }}>
+            <div
+                style={{
+                    width: '100%',
+                    maxWidth: '640px',
+                    margin: '0 auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                }}
+            >
+                <Skeleton width="40%" height="0.9rem" />
+                <div
+                    className="card"
+                    style={{
+                        minHeight: '280px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Skeleton width="60%" height="1.25rem" />
+                    <SkeletonText lines={2} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }} aria-hidden="true">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} height="2.5rem" style={{ flex: 1 }} />
+                    ))}
+                </div>
+            </div>
+        </SkeletonFrame>
+    );
+}
