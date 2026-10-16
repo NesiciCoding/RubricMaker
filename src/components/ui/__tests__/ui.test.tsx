@@ -7,7 +7,22 @@ import HelpPopover from '../HelpPopover';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { EmptyState } from '../EmptyState';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { Skeleton, SkeletonText, SkeletonCard, SkeletonRow } from '../Skeleton';
+import {
+    Skeleton,
+    SkeletonText,
+    SkeletonCard,
+    SkeletonRow,
+    ListPageSkeleton,
+    BuilderPageSkeleton,
+    DashboardSkeleton,
+    TablePageSkeleton,
+    CardGridSkeleton,
+    TabbedPageSkeleton,
+    DocumentSkeleton,
+    GradingSkeleton,
+    PortalSkeleton,
+    StudentTaskSkeleton,
+} from '../Skeleton';
 import i18nInstance from 'i18next';
 import enLocale from '../../../locales/en.json';
 
@@ -335,6 +350,37 @@ describe('SkeletonRow', () => {
     it('renders multiple skeleton elements', () => {
         const { container } = render(<SkeletonRow />);
         expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(1);
+    });
+});
+
+describe('page-shaped skeletons', () => {
+    const shapes: Array<[string, React.ComponentType]> = [
+        ['ListPageSkeleton', ListPageSkeleton],
+        ['BuilderPageSkeleton', BuilderPageSkeleton],
+        ['DashboardSkeleton', DashboardSkeleton],
+        ['TablePageSkeleton', TablePageSkeleton],
+        ['CardGridSkeleton', CardGridSkeleton],
+        ['TabbedPageSkeleton', TabbedPageSkeleton],
+        ['DocumentSkeleton', DocumentSkeleton],
+        ['GradingSkeleton', GradingSkeleton],
+        ['PortalSkeleton', PortalSkeleton],
+        ['StudentTaskSkeleton', StudentTaskSkeleton],
+    ];
+
+    it.each(shapes)('%s is a single status region of aria-hidden blocks', (_name, Shape) => {
+        const { container } = render(<Shape />);
+        expect(screen.getAllByRole('status')).toHaveLength(1);
+        expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        expect(container.querySelectorAll('.skeleton:not([aria-hidden="true"])')).toHaveLength(0);
+    });
+
+    it('TabbedPageSkeleton renders a custom body when given children', () => {
+        const { container } = render(
+            <TabbedPageSkeleton>
+                <span data-testid="body" />
+            </TabbedPageSkeleton>
+        );
+        expect(container.querySelector('[data-testid="body"]')).toBeTruthy();
     });
 });
 
