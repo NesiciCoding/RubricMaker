@@ -26,11 +26,12 @@ function toText(cell: Cellish): string {
 }
 
 // Column-header words. The English set covers most exports; the localised set covers the
-// app's other UI languages (NL/FR/DE/ES) so a "Woord,Vertaling" header is skipped too.
+// app's other UI languages (NL/FR/DE/ES) so a "Woord,Vertaling" header is skipped too. French
+// exports also label the sides "Recto,Verso" (the card-side terms fr.json uses).
 const HEADER_FRONT =
-    /^(front|term|word|question|phrase|voorkant|woord|begrip|vraag|terme|mot|question|phrase|vorderseite|wort|begriff|frage|frente|palabra|término|pregunta)$/i;
+    /^(front|term|word|question|phrase|voorkant|woord|begrip|vraag|terme|mot|question|phrase|vorderseite|wort|begriff|frage|frente|palabra|término|pregunta|recto)$/i;
 const HEADER_BACK =
-    /^(back|definition|translation|answer|meaning|achterkant|vertaling|definitie|betekenis|antwoord|arrière|traduction|définition|réponse|sens|rückseite|übersetzung|bedeutung|antwort|reverso|traducción|definición|respuesta|significado)$/i;
+    /^(back|definition|translation|answer|meaning|achterkant|vertaling|definitie|betekenis|antwoord|arrière|traduction|définition|réponse|sens|rückseite|übersetzung|bedeutung|antwort|reverso|traducción|definición|respuesta|significado|verso)$/i;
 
 // A bilingual deck often labels its columns with language names ("Nederlands,English").
 // That only counts as a header when BOTH cells are language names, so a genuine first card

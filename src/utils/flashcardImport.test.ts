@@ -44,6 +44,11 @@ describe('parseCsvText', () => {
         expect(cards).toEqual([{ front: 'appel', back: 'apple' }]);
     });
 
+    it('skips the French Recto,Verso header row', () => {
+        const cards = parseCsvText('Recto,Verso\napple,appel');
+        expect(cards).toEqual([{ front: 'apple', back: 'appel' }]);
+    });
+
     it('skips a bilingual header row that names the two languages', () => {
         const cards = parseCsvText('Nederlands,English\nappel,apple');
         expect(cards).toEqual([{ front: 'appel', back: 'apple' }]);
