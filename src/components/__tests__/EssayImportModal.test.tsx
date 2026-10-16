@@ -255,7 +255,7 @@ describe('EssayImportModal', () => {
                     })
             );
             render(<EssayImportModal {...dbProps({ onFetchSubmissions })} />);
-            expect(screen.getByText('Loading…')).toBeInTheDocument();
+            expect(screen.getByRole('status')).toBeInTheDocument();
             resolveFetch([dbSubmission]);
             expect(await screen.findByText('alice@school.com')).toBeInTheDocument();
         });
