@@ -2117,6 +2117,7 @@ export default function GradeStudent() {
                     criteria={rubric.criteria}
                     studentAttachments={studentAttachments}
                     existingResult={existingAnalysisResult}
+                    grammarEnglishVariant={settings.grammarEnglishVariant}
                     onClose={() => setShowAnalysisPanel(false)}
                     onSaveResult={saveAnalysisResult}
                     onAddToCommentBank={(phrase) => addCommentBankItem(phrase, ['vocabulary'])}

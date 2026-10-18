@@ -38,7 +38,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { isLocalMode } from '../store/storage';
 import { useDbStatus } from '../hooks/useDbStatus';
-import type { GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
+import type { AppSettings, GradeScale, GradeRange, UserRole, StandardMasteryTarget } from '../types';
 import { resolveUserRole } from '../utils/userRole';
 import { exportFullBackup } from '../store/storage';
 import { hasFloorRange } from '../utils/gradeCalc';
@@ -985,6 +985,27 @@ export default function SettingsPage() {
                                             </option>
                                         ))}
                                     </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="setting-grammar-variant">
+                                        {t('settings.grammar_variant_label')}
+                                    </label>
+                                    <select
+                                        id="setting-grammar-variant"
+                                        value={settings.grammarEnglishVariant ?? 'en-US'}
+                                        onChange={(e) =>
+                                            updateSettings({
+                                                grammarEnglishVariant: e.target
+                                                    .value as AppSettings['grammarEnglishVariant'],
+                                            })
+                                        }
+                                    >
+                                        <option value="en-US">{t('settings.grammar_variant_us')}</option>
+                                        <option value="en-GB">{t('settings.grammar_variant_gb')}</option>
+                                    </select>
+                                    <div className="text-muted text-xs" style={{ marginTop: 4 }}>
+                                        {t('settings.grammar_variant_help')}
+                                    </div>
                                 </div>
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                     <label
