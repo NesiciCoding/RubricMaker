@@ -92,6 +92,30 @@ If uploads fail (wrong `SITE_URL`, storage not running), fix the cause and run `
 
 ---
 
+## Production health check
+
+`scripts/audit-live-stack.sh` is a read-only check for a host running HestiaCP and the official
+Supabase Docker stack. It covers exposed ports, Studio/MCP reachability, upstream example secrets
+and demo keys, response headers, SSH settings, memory limits and OOM protection, disk, Postgres
+settings, tables without RLS, failed `pg_cron`/`pg_net` runs, scheduled backups, and drift between
+the repository and the deployed migrations and edge functions. Each line is PASS, WARN, FAIL or
+INFO, with the issue that tracks the fix. It changes nothing (only `SELECT`/`SHOW` queries and
+GET/HEAD requests) and never prints secret values.
+
+```bash
+git clone --depth 1 https://github.com/NesiciCoding/RubricMaker /tmp/rm
+sudo bash /tmp/rm/scripts/audit-live-stack.sh \
+    --app-url https://your-app-domain --api-url https://your-supabase-domain \
+    --repo-dir /tmp/rm | tee audit-$(date +%F).txt
+```
+
+The stack directory is detected from the `supabase-db` container; pass `--supabase-dir` if it is
+not. The exit status is 1 while anything FAILs, so it also works as a post-change check. Port
+exposure is checked from the server itself: confirm it from outside with the `nmap` command the
+script prints.
+
+---
+
 ## Upgrade Path
 
 RubricMaker's `docker-compose.yml` pins image versions. To upgrade:
