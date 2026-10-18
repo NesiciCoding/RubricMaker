@@ -2321,7 +2321,17 @@
         "per_student_limit_unlimited_one": "Kein Limit — {{count}} Vergleich",
         "per_student_limit_unlimited_other": "Kein Limit — {{count}} Vergleiche"
     },
+    "tour": {
+        "back": "Zurück",
+        "close": "Schließen",
+        "last": "Fertig",
+        "next": "Weiter",
+        "next_with_progress": "Weiter ({current} von {total})",
+        "open": "Tour-Schritt öffnen",
+        "skip": "Tour überspringen"
+    },
     "studentPortal": {
+        "language_label": "Sprache der Oberfläche",
         "not_found": "Schüler nicht gefunden.",
         "no_linked_account": "Kein Schülerkonto mit dieser E-Mail verknüpft.",
         "no_linked_account_detail": "Bitten Sie Ihren Lehrer, Ihre E-Mail-Adresse zu Ihrem Schülerprofil hinzuzufügen, damit Sie sich hier anmelden können.",
@@ -3766,6 +3776,8 @@
         "gr_portal_progress_body": "Ein Radardiagramm der eigenen Punktzahlen des Schülers pro Kriterium, entweder kombiniert über alle bewerteten Rubrics (Kriterien mit demselben Namen werden gemittelt) oder gefiltert auf eine einzelne Rubric — sichtbar, sobald mindestens 3 verschiedene bewertete Kriterien vorliegen.",
         "gr_portal_messages_title": "Nachrichten",
         "gr_portal_messages_body": "Ein Schüler kann eine Frage zu einer bestimmten Rubrik-Bewertung, einem Test oder einem Aufsatz stellen — oder eine allgemeine Frage ohne Bezug zu einem davon — direkt aus seinem Portal, und die Antwort der Lehrkraft beim nächsten Besuch sehen.",
+        "gr_portal_language_title": "Sprache",
+        "gr_portal_language_body": "Schüler wählen die Sprache der Oberfläche (Englisch, Niederländisch, Französisch, Deutsch oder Spanisch) im Sprachmenü oben im Portal. Bis dahin folgt das Portal der Sprache des Browsers. Die Wahl wird auf diesem Gerät gespeichert, und das Sprachattribut der Seite folgt ihr, damit Screenreader das Portal mit der richtigen Stimme vorlesen.",
         "ce_overview_title": "GER-Übersicht",
         "ce_overview_intro": "Das GER-Modul (Gemeinsamer Europäischer Referenzrahmen) verfolgt Sprachkompetenz in Lesen, Schreiben, Sprechen und Hören — abgestimmt auf niederländische VO-Zielniveaus (VMBO-BB bis VWO).",
         "ce_overview_item_whole_class": "Klassenweite Übersicht (/cefr-overview) — Heatmap aller Schüler über GER-Niveaus pro Fertigkeit.",

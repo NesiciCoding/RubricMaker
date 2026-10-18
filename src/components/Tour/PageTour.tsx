@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Joyride, STATUS } from 'react-joyride';
-import type { EventData, Step } from 'react-joyride';
+import type { EventData, Locale, Step } from 'react-joyride';
 import { usePageTour } from '../../hooks/usePageTour';
 import { usePageTourRegistry } from '../../context/TourContext';
 
@@ -33,8 +34,22 @@ export default function PageTour({
     onStartRequest,
     autoPlacement = true,
 }: PageTourProps) {
+    const { t } = useTranslation();
     const available = usePageTour(steps, run, autoPlacement);
     const { registerPageTour } = usePageTourRegistry();
+    // Joyride fills {current} and {total} itself; i18next leaves single braces alone.
+    const locale = useMemo<Locale>(
+        () => ({
+            back: t('tour.back'),
+            close: t('tour.close'),
+            last: t('tour.last'),
+            next: t('tour.next'),
+            nextWithProgress: t('tour.next_with_progress'),
+            open: t('tour.open'),
+            skip: t('tour.skip'),
+        }),
+        [t]
+    );
 
     const startRef = useRef(onStartRequest);
 
@@ -63,6 +78,7 @@ export default function PageTour({
             continuous
             onEvent={handleEvent}
             options={TOUR_OPTIONS}
+            locale={locale}
             styles={{ tooltipContainer: { textAlign: 'left' } }}
         />
     );

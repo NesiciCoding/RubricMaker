@@ -158,10 +158,13 @@ describe('SettingsPage extended', () => {
         expect(screen.getAllByText('settings.role_admin_label').length).toBeGreaterThan(0);
     });
 
-    it('switches i18n language to the stored setting on mount', () => {
+    // #615: AppContext applies the language on every route, so the page only records the choice.
+    it('records a language pick as a choice instead of switching i18n itself', () => {
         mockSettings.language = 'nl';
         renderPage();
-        expect(mockChangeLanguage).toHaveBeenCalledWith('nl');
+        expect(mockChangeLanguage).not.toHaveBeenCalled();
+        fireEvent.change(document.getElementById('setting-language')!, { target: { value: 'fr' } });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ language: 'fr', languageChosen: true });
     });
 
     describe('switching to the Student role (#623)', () => {

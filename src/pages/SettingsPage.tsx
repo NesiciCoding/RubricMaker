@@ -30,6 +30,7 @@ import CommentBankModal from '../components/Comments/CommentBankModal';
 import TemplateUploadModal from '../components/Rubric/TemplateUploadModal';
 import StandardMasteryTargetModal from '../components/Standards/StandardMasteryTargetModal';
 import Modal from '../components/ui/Modal';
+import LanguageSelect from '../components/ui/LanguageSelect';
 import Topbar from '../components/Layout/Topbar';
 import { usePlatform } from '../context/AppContext';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
@@ -151,7 +152,7 @@ const ROLE_META: Record<
  * @returns The settings page UI as a JSX element
  */
 export default function SettingsPage() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const tour = usePageTourState('settings');
     const navigate = useNavigate();
     const {
@@ -241,12 +242,6 @@ export default function SettingsPage() {
     const [editingMasteryTarget, setEditingMasteryTarget] = useState<StandardMasteryTarget | 'new' | null>(null);
     const [accentInput, setAccentInput] = useState(settings.accentColor || '#37b49c');
     const [accentError, setAccentError] = useState(false);
-
-    useEffect(() => {
-        if (settings.language && i18n.language !== settings.language) {
-            i18n.changeLanguage(settings.language);
-        }
-    }, [settings.language, i18n]);
 
     // ─── Role switch helpers ─────────────────────────────────────────────────────
 
@@ -848,17 +843,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="form-group">
                                 <label htmlFor="setting-language">{t('settings.language_selection')}</label>
-                                <select
-                                    id="setting-language"
-                                    value={settings.language}
-                                    onChange={(e) => updateSettings({ language: e.target.value })}
-                                >
-                                    <option value="en">{t('settings.language_en')}</option>
-                                    <option value="nl">{t('settings.language_nl')}</option>
-                                    <option value="fr">{t('settings.language_fr')}</option>
-                                    <option value="de">{t('settings.language_de')}</option>
-                                    <option value="es">{t('settings.language_es')}</option>
-                                </select>
+                                <LanguageSelect id="setting-language" />
                             </div>
                             <p className="text-muted text-sm" style={{ marginTop: 12 }}>
                                 {t('settings.language_help')}

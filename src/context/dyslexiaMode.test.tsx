@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useSettings } from './AppContext';
 import * as storage from '../store/storage';
+import i18n, { i18nReady } from '../i18n';
 
 vi.mock('../store/storage', () => ({
     loadCachedStudentRubrics: vi.fn(async () => []),
@@ -127,5 +128,38 @@ describe('Dyslexia-friendly reading mode', () => {
             result.current.updateSettings({ language: 'en' });
         });
         expect(document.documentElement.dir).toBe('ltr');
+    });
+});
+
+// #615: the language used to be applied only while the Settings page was open, so students (who have
+// no Settings page) always got the browser's language, and opening Settings forced the default 'en'.
+describe('Interface language', () => {
+    const wrapper = ({ children }: { children: ReactNode }) => <AppProvider>{children}</AppProvider>;
+
+    beforeEach(async () => {
+        await i18nReady;
+        await i18n.changeLanguage('nl');
+    });
+
+    it('keeps the browser language while settings only hold the default English', () => {
+        renderHook(() => useSettings(), { wrapper });
+        expect(i18n.language).toBe('nl');
+        expect(document.documentElement.lang).toBe('nl');
+    });
+
+    it('applies a chosen language on every route, and follows a later change', async () => {
+        const { result } = renderHook(() => useSettings(), { wrapper });
+
+        await act(async () => {
+            result.current.updateSettings({ language: 'fr', languageChosen: true });
+        });
+        expect(i18n.language).toBe('fr');
+        expect(document.documentElement.lang).toBe('fr');
+
+        await act(async () => {
+            result.current.updateSettings({ language: 'en', languageChosen: true });
+        });
+        expect(i18n.language).toBe('en');
+        expect(document.documentElement.lang).toBe('en');
     });
 });

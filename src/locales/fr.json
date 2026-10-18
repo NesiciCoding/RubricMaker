@@ -2321,7 +2321,17 @@
         "per_student_limit_unlimited_one": "Sans limite — {{count}} comparaison",
         "per_student_limit_unlimited_other": "Sans limite — {{count}} comparaisons"
     },
+    "tour": {
+        "back": "Retour",
+        "close": "Fermer",
+        "last": "Terminer",
+        "next": "Suivant",
+        "next_with_progress": "Suivant ({current} sur {total})",
+        "open": "Ouvrir l'étape de la visite",
+        "skip": "Passer la visite"
+    },
     "studentPortal": {
+        "language_label": "Langue de l'interface",
         "not_found": "Élève introuvable.",
         "no_linked_account": "Aucun compte élève lié à cet e-mail.",
         "no_linked_account_detail": "Demandez à votre enseignant d'ajouter votre adresse e-mail à votre profil élève pour vous connecter ici.",
@@ -3766,6 +3776,8 @@
         "gr_portal_progress_body": "Un graphique radar des propres scores de l'élève par critère, combiné sur tous les référentiels évalués (les critères de même nom sont moyennés) ou filtré sur un seul référentiel — affiché dès qu'au moins 3 critères distincts ont été évalués.",
         "gr_portal_messages_title": "Messages",
         "gr_portal_messages_body": "Un élève peut poser une question sur une note de rubrique, un test ou un essai précis — ou une question générale non liée à l'un d'eux — directement depuis son portail, et voir la réponse de l'enseignant lors de sa prochaine visite.",
+        "gr_portal_language_title": "Langue",
+        "gr_portal_language_body": "Les élèves choisissent la langue de l'interface (anglais, néerlandais, français, allemand ou espagnol) dans le menu des langues en haut du portail. Tant qu'ils ne l'ont pas fait, le portail suit la langue du navigateur. Le choix est mémorisé sur cet appareil, et l'attribut de langue de la page suit, pour que les lecteurs d'écran lisent le portail avec la bonne voix.",
         "ce_overview_title": "Vue d'ensemble CECRL",
         "ce_overview_intro": "Le module CECRL (Cadre européen commun de référence pour les langues) suit la compétence linguistique en Lecture, Écriture, Expression orale et Compréhension orale — aligné sur les objectifs néerlandais VO (de VMBO-BB à VWO).",
         "ce_overview_item_whole_class": "Vue d'ensemble de la classe (/cefr-overview) — carte de chaleur de tous les élèves selon les niveaux CECRL par compétence.",

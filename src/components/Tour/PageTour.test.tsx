@@ -2,14 +2,25 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import type { EventData, Step } from 'react-joyride';
 import PageTour from './PageTour';
+import i18n, { i18nReady } from '../../i18n';
 import { TourProvider, usePageTourRegistry } from '../../context/TourContext';
 
 const joyride = vi.hoisted(() => ({
-    props: null as null | { steps: Step[]; run: boolean; onEvent: (d: EventData) => void },
+    props: null as null | {
+        steps: Step[];
+        run: boolean;
+        onEvent: (d: EventData) => void;
+        locale?: Record<string, unknown>;
+    },
 }));
 
 vi.mock('react-joyride', () => ({
-    Joyride: (props: { steps: Step[]; run: boolean; onEvent: (d: EventData) => void }) => {
+    Joyride: (props: {
+        steps: Step[];
+        run: boolean;
+        onEvent: (d: EventData) => void;
+        locale?: Record<string, unknown>;
+    }) => {
         joyride.props = props;
         return <div data-testid="joyride" data-run={String(props.run)} data-steps={props.steps.length} />;
     },
@@ -98,5 +109,21 @@ describe('PageTour', () => {
             </TourProvider>
         );
         expect(screen.getByTestId('joyride')).toHaveAttribute('data-run', 'false');
+    });
+
+    // #615: Joyride's buttons were always English ('Last', 'Next (1 of 5)').
+    it('labels the tour buttons in the interface language', async () => {
+        await i18nReady;
+        await i18n.changeLanguage('en');
+        render(<PageTour steps={steps} run onFinish={() => {}} />);
+        expect(joyride.props!.locale).toEqual({
+            back: 'Back',
+            close: 'Close',
+            last: 'Done',
+            next: 'Next',
+            nextWithProgress: 'Next ({current} of {total})',
+            open: 'Open the tour step',
+            skip: 'Skip tour',
+        });
     });
 });

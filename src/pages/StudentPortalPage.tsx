@@ -27,6 +27,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
+import LanguageSelect from '../components/ui/LanguageSelect';
 import PageTour from '../components/Tour/PageTour';
 import { STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -38,7 +39,6 @@ const CefrProgressChart = lazy(() => import('../components/Statistics/CefrProgre
 const CriterionRadarChart = lazy(() => import('../components/Statistics/CriterionRadarChart'));
 const PortalGradeHistoryChart = lazy(() => import('../components/Statistics/PortalGradeHistoryChart'));
 import type { CriterionRadarDataPoint } from '../components/Statistics/CriterionRadarChart';
-import { CEFR_SKILL_LABELS } from '../data/cefrDescriptors';
 import { getGrammarItemById } from '../data/grammarStandards';
 import { getCefrStudentOverview, aggregateCefrProgress } from '../utils/cefrStudentAggregator';
 import { formatShortDate } from '../utils/dateInput';
@@ -202,6 +202,7 @@ export default function StudentPortalPage() {
     } = useStoreActions();
 
     const { t, i18n } = useTranslation();
+    // Grammar items only carry Dutch and English labels (labelNl / labelEn); other languages show English.
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);
     const [portalQuery, setPortalQuery] = useState('');
@@ -593,9 +594,7 @@ export default function StudentPortalPage() {
 
     function learningPathFlagLabel(flag: InterventionFlag): string {
         if (flag.kind === 'cefrSkill') {
-            const skillLabel = CEFR_SKILL_LABELS[flag.targetId as keyof typeof CEFR_SKILL_LABELS]?.[lang];
-            /* v8 ignore next -- targetId is always a CefrSkill, which CEFR_SKILL_LABELS covers fully */
-            return skillLabel ?? flag.targetId;
+            return t(`cefr.skills.${flag.targetId}`, { defaultValue: flag.targetId });
         }
         for (const rubric of rubrics) {
             const criterion = rubric.criteria.find((c) => c.id === flag.targetId);
@@ -770,6 +769,11 @@ export default function StudentPortalPage() {
                         >
                             {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                         </button>
+                        <LanguageSelect
+                            ariaLabel={t('studentPortal.language_label')}
+                            className="input"
+                            style={{ width: 'auto', padding: '4px 8px', fontSize: '0.85rem' }}
+                        />
                         {settings.userRole === 'student' && isLocalMode() && (
                             // The local-mode role switch must be reversible from the portal too (#623).
                             <button
@@ -1230,8 +1234,7 @@ export default function StudentPortalPage() {
                         {learningPathRecommendations.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
                                 {learningPathRecommendations.map((rec) => {
-                                    /* v8 ignore next -- rec.skill is always a CefrSkill, which CEFR_SKILL_LABELS covers fully */
-                                    const skillLabel = CEFR_SKILL_LABELS[rec.skill]?.[lang] ?? rec.skill;
+                                    const skillLabel = t(`cefr.skills.${rec.skill}`, { defaultValue: rec.skill });
                                     return (
                                         <div
                                             key={`${rec.skill}__${rec.level}`}

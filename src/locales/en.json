@@ -2321,7 +2321,17 @@
         "per_student_limit_unlimited_one": "No limit — {{count}} matchup",
         "per_student_limit_unlimited_other": "No limit — {{count}} matchups"
     },
+    "tour": {
+        "back": "Back",
+        "close": "Close",
+        "last": "Done",
+        "next": "Next",
+        "next_with_progress": "Next ({current} of {total})",
+        "open": "Open the tour step",
+        "skip": "Skip tour"
+    },
     "studentPortal": {
+        "language_label": "Interface language",
         "not_found": "Student not found.",
         "no_linked_account": "No student account linked to this email.",
         "no_linked_account_detail": "Ask your teacher to add your email address to your student profile so you can log in here.",
@@ -3764,6 +3774,8 @@
         "gr_portal_progress_body": "A radar chart of the student's own per-criterion scores, either combined across every rubric they've been graded on (criteria with the same name are averaged together) or filtered to a single rubric — shown once they have at least 3 distinct graded criteria.",
         "gr_portal_messages_title": "Messages",
         "gr_portal_messages_body": "A student can ask a question about a specific rubric grade, test, or essay — or a general question not tied to any of them — right from their portal, and see the teacher's reply on their next visit.",
+        "gr_portal_language_title": "Language",
+        "gr_portal_language_body": "Students can pick the interface language (English, Dutch, French, German or Spanish) from the language menu in the portal header. Until they do, the portal follows the browser's language. The choice is remembered on that device, and the page's language attribute follows it, so screen readers read the portal in the right voice.",
         "ce_overview_title": "CEFR Overview",
         "ce_overview_intro": "The CEFR (Common European Framework of Reference) module tracks language proficiency across Reading, Writing, Speaking, and Listening — aligned to Dutch VO targets (VMBO-BB through VWO).",
         "ce_overview_item_whole_class": "Whole-class overview (/cefr-overview) — heatmap of all students across CEFR levels per skill.",

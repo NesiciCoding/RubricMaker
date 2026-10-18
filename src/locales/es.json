@@ -2321,7 +2321,17 @@
         "per_student_limit_unlimited_one": "Sin límite — {{count}} comparación",
         "per_student_limit_unlimited_other": "Sin límite — {{count}} comparaciones"
     },
+    "tour": {
+        "back": "Atrás",
+        "close": "Cerrar",
+        "last": "Terminar",
+        "next": "Siguiente",
+        "next_with_progress": "Siguiente ({current} de {total})",
+        "open": "Abrir el paso del recorrido",
+        "skip": "Omitir recorrido"
+    },
     "studentPortal": {
+        "language_label": "Idioma de la interfaz",
         "not_found": "Estudiante no encontrado.",
         "no_linked_account": "No hay ninguna cuenta de estudiante vinculada a este correo electrónico.",
         "no_linked_account_detail": "Pide a tu profesor que añada tu dirección de correo electrónico a tu perfil de estudiante para que puedas iniciar sesión aquí.",
@@ -3766,6 +3776,8 @@
         "gr_portal_progress_body": "Un gráfico de radar con las propias puntuaciones del estudiante por criterio, combinado en todas las rúbricas calificadas (los criterios con el mismo nombre se promedian) o filtrado a una sola rúbrica — se muestra en cuanto haya al menos 3 criterios calificados distintos.",
         "gr_portal_messages_title": "Mensajes",
         "gr_portal_messages_body": "Un estudiante puede hacer una pregunta sobre una calificación de rúbrica, prueba o ensayo específico — o una pregunta general no vinculada a ninguno de ellos — directamente desde su portal, y ver la respuesta del profesor en su próxima visita.",
+        "gr_portal_language_title": "Idioma",
+        "gr_portal_language_body": "Los estudiantes eligen el idioma de la interfaz (inglés, neerlandés, francés, alemán o español) en el menú de idiomas de la cabecera del portal. Mientras no lo hagan, el portal sigue el idioma del navegador. La elección se recuerda en ese dispositivo, y el atributo de idioma de la página la sigue, para que los lectores de pantalla lean el portal con la voz correcta.",
         "ce_overview_title": "Resumen del MCER",
         "ce_overview_intro": "El módulo MCER (Marco Común Europeo de Referencia) sigue la competencia lingüística en Lectura, Escritura, Expresión oral y Comprensión oral — alineado con los objetivos neerlandeses VO (de VMBO-BB a VWO).",
         "ce_overview_item_whole_class": "Resumen de toda la clase (/cefr-overview) — mapa de calor de todos los alumnos según los niveles MCER por destreza.",
