@@ -449,6 +449,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
                             setLandingState('show');
                             return;
                         }
+                        // Configure done: the remaining wait is the data pull, so the boot
+                        // shell must stop saying "Checking your session…".
+                        setBootPhase('hydrate');
                         storageSync.setToastFn(showToast);
                         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
