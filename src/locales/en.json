@@ -2619,6 +2619,7 @@
         "comment_author_you": "You",
         "comment_author_teacher": "Teacher",
         "comments_empty": "No comments yet. Select text in the document above to add one.",
+        "preview_unavailable": "Preview unavailable.",
         "loading_preview": "Loading preview…",
         "size_limit_hint": "up to {{limit}} per file",
         "too_large": "\"{{name}}\" was not added: it is larger than the {{limit}} limit.",

@@ -2619,6 +2619,7 @@
         "comment_author_you": "Du",
         "comment_author_teacher": "Lehrkraft",
         "comments_empty": "Noch keine Kommentare. Wähle Text im Dokument oben aus, um einen hinzuzufügen.",
+        "preview_unavailable": "Vorschau nicht verfügbar.",
         "loading_preview": "Vorschau wird geladen…",
         "size_limit_hint": "bis zu {{limit}} pro Datei",
         "too_large": "„{{name}}“ wurde nicht hinzugefügt: Die Datei ist größer als das Limit von {{limit}}.",

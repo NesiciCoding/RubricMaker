@@ -28,8 +28,10 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
     // Images decode from their base64 payload; hold a media box until the browser has it,
     // otherwise the viewer collapses and then shoves the layout down.
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
     useEffect(() => {
         setImageLoaded(false);
+        setImageError(false);
     }, [attachment.dataUrl]);
 
     const isImage = attachment.mimeType.startsWith('image/');
@@ -152,18 +154,28 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
 
             {isImage && attachment.dataUrl && (
                 <div style={{ width: '100%', marginTop: 8 }}>
-                    {!imageLoaded && <MediaBoxSkeleton aspectRatio="4 / 3" label={t('attachments.loading_preview')} />}
-                    <img
-                        src={attachment.dataUrl}
-                        onLoad={() => setImageLoaded(true)}
-                        style={{
-                            display: imageLoaded ? 'block' : 'none',
-                            width: '100%',
-                            borderRadius: 4,
-                            border: '1px solid var(--border)',
-                        }}
-                        alt={attachment.name}
-                    />
+                    {!imageLoaded && !imageError && (
+                        <MediaBoxSkeleton aspectRatio="4 / 3" label={t('attachments.loading_preview')} />
+                    )}
+                    {!imageError && (
+                        <img
+                            src={attachment.dataUrl}
+                            onLoad={() => setImageLoaded(true)}
+                            onError={() => setImageError(true)}
+                            style={{
+                                display: imageLoaded && !imageError ? 'block' : 'none',
+                                width: '100%',
+                                borderRadius: 4,
+                                border: '1px solid var(--border)',
+                            }}
+                            alt={attachment.name}
+                        />
+                    )}
+                    {imageError && (
+                        <p style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            {t('attachments.preview_unavailable')}
+                        </p>
+                    )}
                 </div>
             )}
 

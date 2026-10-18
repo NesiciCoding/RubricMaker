@@ -2619,6 +2619,7 @@
         "comment_author_you": "Tú",
         "comment_author_teacher": "Profesor",
         "comments_empty": "Aún no hay comentarios. Selecciona texto en el documento de arriba para añadir uno.",
+        "preview_unavailable": "Vista previa no disponible.",
         "loading_preview": "Cargando vista previa…",
         "size_limit_hint": "hasta {{limit}} por archivo",
         "too_large": "«{{name}}» no se añadió: supera el límite de {{limit}}.",

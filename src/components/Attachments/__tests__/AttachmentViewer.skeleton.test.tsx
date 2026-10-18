@@ -47,6 +47,17 @@ describe('AttachmentViewer loading placeholders', () => {
         expect(screen.queryByRole('status')).toBeNull();
     });
 
+    it('shows a preview-unavailable message when the image fails to decode', () => {
+        render(<AttachmentViewer attachment={imageAttachment} />);
+        const img = screen.getByAltText('scan.png');
+        expect(screen.getByRole('status', { name: 'attachments.loading_preview' })).toBeInTheDocument();
+
+        fireEvent.error(img);
+        expect(screen.getByText('attachments.preview_unavailable')).toBeInTheDocument();
+        expect(screen.queryByRole('status', { name: 'attachments.loading_preview' })).toBeNull();
+        expect(screen.queryByAltText('scan.png')).toBeNull();
+    });
+
     it('shows a page-shaped placeholder while the docx converts', () => {
         render(<AttachmentViewer attachment={docxAttachment} />);
         const status = screen.getByRole('status', { name: 'attachments.loading_preview' });

@@ -2619,6 +2619,7 @@
         "comment_author_you": "Jij",
         "comment_author_teacher": "Docent",
         "comments_empty": "Nog geen opmerkingen. Selecteer tekst in het document hierboven om er een toe te voegen.",
+        "preview_unavailable": "Voorbeeld niet beschikbaar.",
         "loading_preview": "Voorbeeld laden…",
         "size_limit_hint": "tot {{limit}} per bestand",
         "too_large": "\"{{name}}\" is niet toegevoegd: het is groter dan de limiet van {{limit}}.",
