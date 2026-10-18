@@ -294,22 +294,30 @@ export function TablePageSkeleton({ rows = 8 }: { rows?: number }) {
     );
 }
 
+// Grid-only body, so a page shell that already exists (docs' tab strip) can reuse it.
+function CardGridBody({ count = 6 }: { count?: number }) {
+    return (
+        <div
+            aria-hidden="true"
+            style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '16px',
+            }}
+        >
+            {Array.from({ length: count }).map((_, i) => (
+                <SkeletonCard key={i} />
+            ))}
+        </div>
+    );
+}
+
 // auto-fill card grid — marketplace, flashcards, docs cards.
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
     return (
         <PageShell>
             <Skeleton width="35%" height="1.5rem" style={{ marginBottom: '20px' }} />
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                    gap: '16px',
-                }}
-            >
-                {Array.from({ length: count }).map((_, i) => (
-                    <SkeletonCard key={i} />
-                ))}
-            </div>
+            <CardGridBody count={count} />
         </PageShell>
     );
 }
@@ -332,6 +340,32 @@ export function TabbedPageSkeleton({ children }: { children?: React.ReactNode })
                 </div>
             )}
         </PageShell>
+    );
+}
+
+// Docs: the tab strip over a grid of guide cards (the page's own layout), not the
+// default form/section body.
+export function DocsPageSkeleton() {
+    return (
+        <TabbedPageSkeleton>
+            <CardGridBody />
+        </TabbedPageSkeleton>
+    );
+}
+
+// Settings: tab strip over labelled fields, one card per settings section.
+export function SettingsPageSkeleton() {
+    return (
+        <TabbedPageSkeleton>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <Skeleton width="22%" height="0.75rem" />
+                        <Skeleton height="2.5rem" borderRadius="var(--radius)" />
+                    </div>
+                ))}
+            </div>
+        </TabbedPageSkeleton>
     );
 }
 

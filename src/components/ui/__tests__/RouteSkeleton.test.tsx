@@ -17,6 +17,8 @@ import {
     MonitorGridSkeleton,
     TestResultsSkeleton,
     ProfilePageSkeleton,
+    DocsPageSkeleton,
+    SettingsPageSkeleton,
 } from '../Skeleton';
 
 function renderAt(path: string) {
@@ -81,9 +83,9 @@ describe('getRouteSkeleton', () => {
 
         ['/marketplace', CardGridSkeleton],
 
-        ['/settings', TabbedPageSkeleton],
+        ['/settings', SettingsPageSkeleton],
         ['/admin', TabbedPageSkeleton],
-        ['/docs', TabbedPageSkeleton],
+        ['/docs', DocsPageSkeleton],
         ['/privacy', DocumentSkeleton],
     ];
 

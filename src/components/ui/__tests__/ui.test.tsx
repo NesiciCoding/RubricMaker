@@ -25,6 +25,9 @@ import {
     ProfilePageSkeleton,
     TableSkeleton,
     InlineSkeleton,
+    MediaBoxSkeleton,
+    DocsPageSkeleton,
+    SettingsPageSkeleton,
 } from '../Skeleton';
 import i18nInstance from 'i18next';
 import enLocale from '../../../locales/en.json';
@@ -369,6 +372,8 @@ describe('page-shaped skeletons', () => {
         ['PortalSkeleton', PortalSkeleton],
         ['StudentTaskSkeleton', StudentTaskSkeleton],
         ['ProfilePageSkeleton', ProfilePageSkeleton],
+        ['DocsPageSkeleton', DocsPageSkeleton],
+        ['SettingsPageSkeleton', SettingsPageSkeleton],
     ];
 
     it.each(shapes)('%s is a single status region of aria-hidden blocks', (_name, Shape) => {
@@ -376,6 +381,25 @@ describe('page-shaped skeletons', () => {
         expect(screen.getAllByRole('status')).toHaveLength(1);
         expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
         expect(container.querySelectorAll('.skeleton:not([aria-hidden="true"])')).toHaveLength(0);
+    });
+
+    it('MediaBoxSkeleton keeps a labelled box at the requested ratio or height', () => {
+        const { unmount } = render(<MediaBoxSkeleton aspectRatio="16 / 9" />);
+        const status = screen.getByRole('status');
+        expect(status.style.aspectRatio).toBe('16 / 9');
+        expect(status.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        unmount();
+        render(<MediaBoxSkeleton height="3.5rem" label="Loading media" />);
+        const bar = screen.getByRole('status');
+        expect(bar.style.height).toBe('3.5rem');
+        expect(bar).toHaveAttribute('aria-label', 'Loading media');
+    });
+
+    it('DocsPageSkeleton reuses the tab strip with a card-grid body', () => {
+        const { container } = render(<DocsPageSkeleton />);
+        expect(screen.getAllByRole('status')).toHaveLength(1);
+        // tab strip (5 pills) + the grid's cards
+        expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(10);
     });
 
     it('TableSkeleton is one labelled status region of decorative rows', () => {

@@ -14,6 +14,8 @@ import {
     MonitorGridSkeleton,
     TestResultsSkeleton,
     ProfilePageSkeleton,
+    DocsPageSkeleton,
+    SettingsPageSkeleton,
 } from './Skeleton';
 
 export type SkeletonShape = React.ComponentType;
@@ -71,9 +73,9 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
 
     [/^\/marketplace/, CardGridSkeleton],
 
-    [/^\/settings/, TabbedPageSkeleton],
+    [/^\/settings/, SettingsPageSkeleton],
     [/^\/admin/, TabbedPageSkeleton],
-    [/^\/docs/, TabbedPageSkeleton],
+    [/^\/docs/, DocsPageSkeleton],
     [/^\/privacy/, DocumentSkeleton],
 ];
 
