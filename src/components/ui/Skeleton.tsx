@@ -192,6 +192,43 @@ export function ProfilePageSkeleton() {
     );
 }
 
+// In-place table placeholder for a tab that is already mounted: a header strip plus N
+// rows, with column widths that mirror the real table so nothing reflows on arrival.
+// `label` carries the tab's own loading string as the status name.
+export function TableSkeleton({
+    rows = 5,
+    columnWidths = ['45%', '30%', '18%'],
+    label,
+}: {
+    rows?: number;
+    columnWidths?: string[];
+    label?: string;
+}) {
+    const { t } = useTranslation();
+    const rowStyle: React.CSSProperties = {
+        display: 'flex',
+        gap: '12px',
+        padding: '10px 12px',
+        borderBottom: '1px solid var(--border)',
+    };
+    return (
+        <div role="status" aria-label={label ?? t('a11y.loading')} aria-busy="true" style={{ overflowX: 'auto' }}>
+            <div style={{ ...rowStyle, padding: '8px 12px' }} aria-hidden="true">
+                {columnWidths.map((width, i) => (
+                    <Skeleton key={i} width={width} height="0.75rem" />
+                ))}
+            </div>
+            {Array.from({ length: rows }).map((_, r) => (
+                <div key={r} style={rowStyle} aria-hidden="true">
+                    {columnWidths.map((width, i) => (
+                        <Skeleton key={i} width={width} height="0.875rem" />
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // Header row plus N rows — rubrics, students, tests, attachments, export.
 export function TablePageSkeleton({ rows = 8 }: { rows?: number }) {
     return (
@@ -435,10 +472,12 @@ export function RubricGridSkeleton() {
 
 // In-page section skeleton: N rows inside the site card, wrapped in a single status
 // region so an async section reads as loading before its empty state can show.
-export function InlineSkeleton({ rows = 3 }: { rows?: number }) {
+// `label` lets a mounted tab keep its own loading string ("Loading members…") as
+// the status name instead of the generic one.
+export function InlineSkeleton({ rows = 3, label }: { rows?: number; label?: string }) {
     const { t } = useTranslation();
     return (
-        <div className="card" role="status" aria-label={t('a11y.loading')} aria-busy="true">
+        <div className="card" role="status" aria-label={label ?? t('a11y.loading')} aria-busy="true">
             {Array.from({ length: rows }).map((_, i) => (
                 <SkeletonRow key={i} />
             ))}

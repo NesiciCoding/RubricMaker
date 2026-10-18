@@ -23,6 +23,8 @@ import {
     PortalSkeleton,
     StudentTaskSkeleton,
     ProfilePageSkeleton,
+    TableSkeleton,
+    InlineSkeleton,
 } from '../Skeleton';
 import i18nInstance from 'i18next';
 import enLocale from '../../../locales/en.json';
@@ -374,6 +376,22 @@ describe('page-shaped skeletons', () => {
         expect(screen.getAllByRole('status')).toHaveLength(1);
         expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
         expect(container.querySelectorAll('.skeleton:not([aria-hidden="true"])')).toHaveLength(0);
+    });
+
+    it('TableSkeleton is one labelled status region of decorative rows', () => {
+        const { container } = render(<TableSkeleton rows={4} label="Loading users…" />);
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading users…');
+        // header strip + one row per requested row
+        expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(4 * 3);
+        expect(container.querySelectorAll('.skeleton:not([aria-hidden="true"])')).toHaveLength(0);
+    });
+
+    it('InlineSkeleton falls back to the generic label and honours a custom one', () => {
+        const { unmount } = render(<InlineSkeleton rows={2} />);
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading');
+        unmount();
+        render(<InlineSkeleton rows={2} label="Loading members…" />);
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading members…');
     });
 
     it('TabbedPageSkeleton renders a custom body when given children', () => {
