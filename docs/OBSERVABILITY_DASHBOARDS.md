@@ -180,6 +180,7 @@ when they run in another Compose project.
 | Fullest disk (% used)               | The highest used share across real filesystems. Attachments, speaking recordings (up to 50 MB each), backups and Loki/Prometheus data all grow on the same disk as Postgres. |
 | Days until the fullest disk is full | Free space divided by the growth of the last 6 hours: "the disk is 92% full and will stop Postgres in two days" in one number.                                               |
 | Memory used / CPU used / Load       | Headline host pressure. Load per core above 1 means work is queuing.                                                                                                         |
+| CPU steal                           | CPU time the hypervisor gave to other VMs. On a VPS with shared vCores, sustained steal means busy neighbours, not an overloaded server.                                     |
 | Disk used / free by mountpoint      | Per-filesystem trend, to see which one is filling.                                                                                                                           |
 | CPU by mode, Memory, Network        | Host time series.                                                                                                                                                            |
 | CPU / Memory by container           | Which container is using the host: Postgres, the app, Loki, Grafana…                                                                                                         |
@@ -241,6 +242,7 @@ under **Alerting → Alert rules**).
 | Disk full within 2 days               | At the growth rate of the last 6 hours, a disk is full within 2 days     | warning  |
 | Monitoring target down                | Alloy cannot scrape a target (Loki, Grafana, Prometheus, exporters)      | warning  |
 | Host metrics stopped arriving         | No host metrics for 10 minutes (Alloy or Prometheus is down)             | critical |
+| CPU steal high                        | Over 10% of CPU time is stolen by the hypervisor for 15 minutes          | warning  |
 | Postgres unreachable                  | postgres-exporter cannot connect (only once `SUPABASE_DB_HOST` is set)   | critical |
 | Postgres connections nearly exhausted | Over 80% of `max_connections` in use for 5 minutes                       | warning  |
 | Scheduled database job failed         | A `pg_cron` run failed in the last 24 hours                              | warning  |
@@ -310,6 +312,13 @@ push monitor) with its expected schedule, and a missed ping alerts you:
 Function secrets are set with `supabase secrets set NAME=value` (Cloud), or in
 the official self-hosted stack's functions environment. A failed ping never
 fails the job itself.
+
+On the official self-hosted stack, edge functions are not deployed from this
+repository automatically: the three functions only ping once their updated
+`index.ts` **and** `supabase/functions/_shared/heartbeat.ts` are copied into
+that stack's `volumes/functions/` (keeping the `_shared/` folder next to the
+function folders). Until then, set up the heartbeat checks for the scripts
+only, or a missing ping will alert from day one.
 
 ### Off-box uptime checks
 

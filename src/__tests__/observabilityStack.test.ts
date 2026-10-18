@@ -98,6 +98,7 @@ describe('alerting (#869)', () => {
             'rm-disk-full-soon',
             'rm-target-down',
             'rm-metrics-missing',
+            'rm-cpu-steal',
             'rm-postgres-down',
             'rm-postgres-connections',
             'rm-pg-cron-failed',

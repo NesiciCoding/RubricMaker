@@ -203,6 +203,54 @@ groups:
             type: lt
             params:
             - 1
+  - uid: rm-cpu-steal
+    title: CPU steal high
+    condition: C
+    for: 15m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: The hypervisor withheld {{ humanize $values.B.Value }}% of CPU time for 15 minutes
+      description: Other VMs on the same physical host are using the shared vCores, so the app is slow without this server being overloaded. Compare with "CPU used" and "Load per core"; if it persists, raise it with the hosting provider or move to dedicated cores.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: 100 * avg(rate(node_cpu_seconds_total{job="node",mode="steal"}[5m]))
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 10
 - orgId: 1
   name: Postgres
   folder: RubricMaker alerts
