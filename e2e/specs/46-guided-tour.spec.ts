@@ -40,7 +40,8 @@ test.describe('Guided tours', () => {
         for (let i = 0; i < 6; i++) {
             const label = (await tooltip.textContent()) ?? '';
             await tooltip.click();
-            if (/last/i.test(label)) break;
+            // en.json tour.last
+            if (/done/i.test(label)) break;
             await page.waitForTimeout(isMobile ? 500 : 200);
         }
 
