@@ -270,8 +270,10 @@ describe('backup scripts', () => {
         expect(job).toMatch(/set -euo pipefail/);
     });
 
-    it('keep the off-site credentials file out of git', () => {
-        expect(read('.gitignore').split('\n')).toContain('.env.backup');
+    it('keep the off-site and observability credentials files out of git', () => {
+        const ignored = read('.gitignore').split('\n');
+        expect(ignored).toContain('.env.backup');
+        expect(ignored).toContain('.env.observability');
         expect(read('.env.backup.example')).toContain('BACKUP_ENCRYPTION_PASSPHRASE=\n');
     });
 });
