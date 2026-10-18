@@ -11,6 +11,7 @@ import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { InlineSkeleton } from '../components/ui/Skeleton';
 import {
     buildReconciledEntries,
     DEFAULT_MODERATION_THRESHOLD_PERCENT,
@@ -55,14 +56,32 @@ export default function ModerationQueuePage() {
     const dbStatus = useDbStatus();
     const [threshold, setThreshold] = useState(DEFAULT_MODERATION_THRESHOLD_PERCENT);
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
+    // The queue's reviewer filter is built from the school roster, so until it settles every
+    // second marker would render as a raw user id — hold a row skeleton instead.
+    const [colleaguesLoading, setColleaguesLoading] = useState(false);
     const [reconcileTargetId, setReconcileTargetId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!dbStatus.isConnected || !settings.schoolId) {
             setColleagues([]);
+            setColleaguesLoading(false);
             return;
         }
-        fetchSchoolMembers(settings.schoolId).then(setColleagues);
+        let cancelled = false;
+        setColleaguesLoading(true);
+        fetchSchoolMembers(settings.schoolId)
+            .then((members) => {
+                if (!cancelled) setColleagues(members);
+            })
+            .catch(() => {
+                if (!cancelled) setColleagues([]);
+            })
+            .finally(() => {
+                if (!cancelled) setColleaguesLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [dbStatus.isConnected, settings.schoolId, fetchSchoolMembers]);
 
     function resolveReviewerName(reviewerId: string) {
@@ -185,7 +204,9 @@ export default function ModerationQueuePage() {
                     />
                 </div>
 
-                {queue.length === 0 ? (
+                {colleaguesLoading ? (
+                    <InlineSkeleton rows={4} />
+                ) : queue.length === 0 ? (
                     <div className="empty-state">
                         <UserCheck size={40} />
                         <h3>{t('coGrading.moderation_empty')}</h3>

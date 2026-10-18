@@ -22,6 +22,7 @@ import {
     GradingSkeleton,
     PortalSkeleton,
     StudentTaskSkeleton,
+    ProfilePageSkeleton,
 } from '../Skeleton';
 import i18nInstance from 'i18next';
 import enLocale from '../../../locales/en.json';
@@ -365,6 +366,7 @@ describe('page-shaped skeletons', () => {
         ['GradingSkeleton', GradingSkeleton],
         ['PortalSkeleton', PortalSkeleton],
         ['StudentTaskSkeleton', StudentTaskSkeleton],
+        ['ProfilePageSkeleton', ProfilePageSkeleton],
     ];
 
     it.each(shapes)('%s is a single status region of aria-hidden blocks', (_name, Shape) => {

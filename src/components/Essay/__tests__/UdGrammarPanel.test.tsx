@@ -10,9 +10,13 @@ vi.mock('react-i18next', () => ({
 const empty = { constructionCount: 0, distinct: 0, constructions: [] };
 
 describe('UdGrammarPanel', () => {
-    it('shows a loading note', () => {
-        render(<UdGrammarPanel state={{ status: 'loading' }} />);
-        expect(screen.getByText('grammarProfile.loading')).toBeInTheDocument();
+    it('shows a band-bar skeleton inside a status region while analysing', () => {
+        const { container } = render(<UdGrammarPanel state={{ status: 'loading' }} />);
+        const status = screen.getByRole('status');
+        expect(status).toHaveAttribute('aria-label', 'a11y.loading');
+        // Band-shaped placeholder, not a one-line note: several skeleton blocks, all decorative.
+        expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(3);
+        expect(container.querySelector('.skeleton:not([aria-hidden="true"])')).toBeNull();
     });
 
     it('renders nothing when the model is unavailable', () => {

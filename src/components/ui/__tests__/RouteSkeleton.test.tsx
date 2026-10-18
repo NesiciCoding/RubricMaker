@@ -16,6 +16,7 @@ import {
     FlashcardCardSkeleton,
     MonitorGridSkeleton,
     TestResultsSkeleton,
+    ProfilePageSkeleton,
 } from '../Skeleton';
 
 function renderAt(path: string) {
@@ -44,8 +45,8 @@ describe('getRouteSkeleton', () => {
         ['/peer-analytics/r1', DashboardSkeleton],
 
         ['/students', TablePageSkeleton],
-        ['/students/s1', DashboardSkeleton],
-        ['/students/s1/cefr-overview', DashboardSkeleton],
+        ['/students/s1', ProfilePageSkeleton],
+        ['/students/s1/cefr-overview', ProfilePageSkeleton],
         ['/students/s1/learning-path', ListPageSkeleton],
         ['/cefr-overview', DashboardSkeleton],
         ['/vocabulary', DashboardSkeleton],

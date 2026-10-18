@@ -155,6 +155,43 @@ export function DashboardSkeleton() {
     );
 }
 
+// Student profile: avatar header, tab strip, stat cards, then the chart stack —
+// /students/:id and /students/:id/cefr-overview.
+export function ProfilePageSkeleton() {
+    return (
+        <PageShell>
+            <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <Skeleton width="72px" height="72px" borderRadius="50%" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <Skeleton width="30%" height="1.5rem" />
+                    <Skeleton width="45%" height="0.875rem" />
+                </div>
+            </div>
+            <div aria-hidden="true" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} width={i === 0 ? '96px' : '84px'} height="2.25rem" borderRadius="999px" />
+                ))}
+            </div>
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: '16px',
+                    marginBottom: '20px',
+                }}
+            >
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <ChartSkeleton />
+                <ChartSkeleton height="200px" />
+            </div>
+        </PageShell>
+    );
+}
+
 // Header row plus N rows — rubrics, students, tests, attachments, export.
 export function TablePageSkeleton({ rows = 8 }: { rows?: number }) {
     return (

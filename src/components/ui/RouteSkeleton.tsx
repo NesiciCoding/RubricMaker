@@ -13,6 +13,7 @@ import {
     FlashcardCardSkeleton,
     MonitorGridSkeleton,
     TestResultsSkeleton,
+    ProfilePageSkeleton,
 } from './Skeleton';
 
 export type SkeletonShape = React.ComponentType;
@@ -35,7 +36,7 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
 
     [/^\/students$/, TablePageSkeleton],
     [/^\/students\/[^/]+\/learning-path/, ListPageSkeleton],
-    [/^\/students\/[^/]+/, DashboardSkeleton],
+    [/^\/students\/[^/]+/, ProfilePageSkeleton],
 
     [/^\/cefr-overview/, DashboardSkeleton],
     [/^\/vocabulary/, DashboardSkeleton],

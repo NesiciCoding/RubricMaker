@@ -447,7 +447,15 @@ vi.mock('../../services/database/AuditLogger', () => ({
 }));
 vi.mock('../../components/Statistics/LearningGoalChart', () => ({ default: () => null }));
 vi.mock('../../components/Statistics/CefrProgressChart', () => ({ default: () => null }));
-vi.mock('../../components/Statistics/ProfileTimelineChart', () => ({ default: () => null }));
+// The timeline chart suspends while `mockTimelinePending.value` is set, so a test can hold
+// the lazy chunk open and assert the Suspense fallback (ChartSkeleton) explicitly.
+const mockTimelinePending = vi.hoisted(() => ({ value: false }));
+vi.mock('../../components/Statistics/ProfileTimelineChart', () => ({
+    default: () => {
+        if (mockTimelinePending.value) throw new Promise(() => {});
+        return null;
+    },
+}));
 vi.mock('../../components/Recordings/RecordingPlayer', () => ({ default: () => null }));
 
 const i18nLang = vi.hoisted(() => ({ value: 'en' }));
@@ -478,6 +486,7 @@ function findButtonByText(text: string): HTMLElement {
 describe('StudentProfilePage extended coverage', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
+        mockTimelinePending.value = false;
         i18nLang.value = 'en';
         Object.defineProperty(navigator, 'clipboard', {
             value: { writeText: mockClipboardWrite },
@@ -498,6 +507,15 @@ describe('StudentProfilePage extended coverage', () => {
         expect(screen.getByText('cefr.student_progress_title')).toBeInTheDocument();
         expect(screen.getAllByText('cefr.achieved').length).toBeGreaterThan(0);
         expect(screen.getByText('cefr.developing')).toBeInTheDocument();
+    });
+
+    it('holds a chart skeleton, not a blank gap, while the timeline chunk loads', () => {
+        mockTimelinePending.value = true;
+        renderAt('s1');
+        const timelineCard = screen.getByText('studentProfile.timeline_title').closest('.card') as HTMLElement;
+        expect(timelineCard.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        // The whole card is announced once, not per skeleton block.
+        expect(timelineCard.querySelector('[role="status"]')).toBeNull();
     });
 
     it('renders the placement estimate card and the navigation buttons', () => {

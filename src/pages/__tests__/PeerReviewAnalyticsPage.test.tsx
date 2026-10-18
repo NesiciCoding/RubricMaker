@@ -158,7 +158,7 @@ describe('PeerReviewAnalyticsPage', () => {
         expect(screen.getByText('peerAnalytics.rubric_not_found')).toBeInTheDocument();
     });
 
-    it('renders reviewer table and heatmap when peer reviews exist', () => {
+    it('renders reviewer table and heatmap when peer reviews exist', async () => {
         mockUseApp = {
             ...baseApp,
             rubrics: [mockRubric],
@@ -169,10 +169,12 @@ describe('PeerReviewAnalyticsPage', () => {
 
         renderPage();
 
-        // Reviewer name resolved via gradedBy
+        // The heatmap is deferred one frame, so the chart placeholder paints first — no blank gap.
+        expect(document.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        // Reviewer name resolved via gradedBy (the table is not deferred)
         expect(screen.getByText('Bob')).toBeInTheDocument();
-        // Heatmap renders the criteria headers
-        expect(screen.getByText('Structure')).toBeInTheDocument();
+        // Heatmap renders the criteria headers once the frame lands
+        expect(await screen.findByText('Structure')).toBeInTheDocument();
         expect(screen.getByText('Grammar')).toBeInTheDocument();
     });
 

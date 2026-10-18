@@ -108,8 +108,9 @@ vi.mock('../../context/useStore', () => ({
     useStoreActions: () => makeAppContextMock(),
 }));
 
+const mockDbStatus = vi.hoisted(() => ({ isConnected: false }));
 vi.mock('../../hooks/useDbStatus', () => ({
-    useDbStatus: () => ({ isConnected: false }),
+    useDbStatus: () => mockDbStatus,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -122,6 +123,9 @@ vi.mock('react-i18next', () => ({
 describe('ModerationQueuePage', () => {
     beforeEach(() => {
         appOverrides = {};
+        mockDbStatus.isConnected = false;
+        mockFetchSchoolMembers.mockReset();
+        mockFetchSchoolMembers.mockResolvedValue([]);
         mockSaveStudentRubric.mockClear();
         mockSavePeerReview.mockClear();
     });
@@ -136,6 +140,25 @@ describe('ModerationQueuePage', () => {
         const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
         renderWithRouter(<ModerationQueuePage />);
         expect(screen.getByText('coGrading.moderation_empty')).toBeInTheDocument();
+    });
+
+    it('holds a row skeleton while the school roster that names reviewers loads', async () => {
+        mockDbStatus.isConnected = true;
+        appOverrides = { settings: { ...mockSettings, schoolId: 'school-1' } };
+        let resolveMembers: (members: unknown[]) => void = () => {};
+        mockFetchSchoolMembers.mockReturnValue(
+            new Promise((res) => {
+                resolveMembers = res;
+            })
+        );
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        // Second markers would render as raw ids until the roster lands, so no queue yet.
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading');
+        expect(screen.queryByText('coGrading.moderation_empty')).not.toBeInTheDocument();
+        resolveMembers([]);
+        expect(await screen.findByText('Alice')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).toBeNull();
     });
 
     it('lists a queue item needing moderation and resolves via keep-baseline', async () => {
