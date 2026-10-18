@@ -27,10 +27,11 @@ So production is most likely **HestiaCP (frontend) + the official Supabase Docke
 (backend) + this repo's observability compose**, all on the one VPS. The official stack is
 not in this repository.
 
-**Settle it first:** `docker ps --format '{{.Names}}\t{{.Image}}'` on the VPS. If you see
-`supabase-db`, `supabase-kong` or `supabase-envoy`, `supabase-edge-functions` or
-`supabase-pooler`, it is the official stack. That changes the verdict on several items
-below, starting with backups.
+**Confirmed by the operator (2026-10-18):** production is HestiaCP plus the official
+Supabase Docker stack.
+
+**Tracking:** the findings below are filed as #929–#937 and indexed on #882. #871 and #873
+are closed; #870, #875 and #886 are re-scoped; #404 is raised to high and #889 deferred.
 
 ---
 
