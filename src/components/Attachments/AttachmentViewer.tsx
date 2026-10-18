@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
-import { Download, FileText, ImageIcon, Loader } from 'lucide-react';
+import { Download, FileText, ImageIcon } from 'lucide-react';
 import { Attachment } from '../../types';
 import { convertDocxToHtml } from '../../utils/textExtraction';
 import EssayEditor from '../Editor/EssayEditor';
 import CommentableDocumentView from '../Editor/CommentableDocumentView';
+import { MediaBoxSkeleton } from '../ui/Skeleton';
 
 interface Props {
     attachment: Attachment;
@@ -24,6 +25,12 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
     const [docxHtmlFailed, setDocxHtmlFailed] = useState(false);
     const [viewMode, setViewMode] = useState<'formatted' | 'original'>('formatted');
     const originalRendered = useRef(false);
+    // Images decode from their base64 payload; hold a media box until the browser has it,
+    // otherwise the viewer collapses and then shoves the layout down.
+    const [imageLoaded, setImageLoaded] = useState(false);
+    useEffect(() => {
+        setImageLoaded(false);
+    }, [attachment.dataUrl]);
 
     const isImage = attachment.mimeType.startsWith('image/');
     const isPdf = attachment.mimeType === 'application/pdf';
@@ -145,9 +152,16 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
 
             {isImage && attachment.dataUrl && (
                 <div style={{ width: '100%', marginTop: 8 }}>
+                    {!imageLoaded && <MediaBoxSkeleton aspectRatio="4 / 3" label={t('attachments.loading_preview')} />}
                     <img
                         src={attachment.dataUrl}
-                        style={{ width: '100%', borderRadius: 4, border: '1px solid var(--border)' }}
+                        onLoad={() => setImageLoaded(true)}
+                        style={{
+                            display: imageLoaded ? 'block' : 'none',
+                            width: '100%',
+                            borderRadius: 4,
+                            border: '1px solid var(--border)',
+                        }}
                         alt={attachment.name}
                     />
                 </div>
@@ -206,10 +220,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                                     />
                                 )
                             ) : (
-                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
-                                    <div>{t('attachments.loading_preview')}</div>
-                                </div>
+                                <MediaBoxSkeleton aspectRatio="8.5 / 11" label={t('attachments.loading_preview')} />
                             )}
                         </div>
                     )}
@@ -225,10 +236,7 @@ export default function AttachmentViewer({ attachment, commentable = false }: Pr
                             }}
                         >
                             {loading && (
-                                <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
-                                    <Loader size={20} className="spin" style={{ marginBottom: 8 }} />
-                                    <div>{t('attachments.loading_preview')}</div>
-                                </div>
+                                <MediaBoxSkeleton aspectRatio="8.5 / 11" label={t('attachments.loading_preview')} />
                             )}
                             {error && (
                                 <div style={{ padding: 20, textAlign: 'center', color: 'var(--red)' }}>{error}</div>

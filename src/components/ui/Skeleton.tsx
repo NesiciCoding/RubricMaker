@@ -52,6 +52,43 @@ export function SkeletonRow() {
     );
 }
 
+// Media box: holds the footprint of an image, video, audio bar or document page while
+// its bytes load (IndexedDB blobs, base64 attachments, converter output). Pass
+// `aspectRatio` for pictures/pages, or `height` for a fixed-height strip such as an
+// audio player.
+export function MediaBoxSkeleton({
+    aspectRatio,
+    height = '4rem',
+    label,
+}: {
+    aspectRatio?: string;
+    height?: string;
+    label?: string;
+}) {
+    const { t } = useTranslation();
+    return (
+        <div
+            role="status"
+            aria-label={label ?? t('a11y.loading')}
+            aria-busy="true"
+            style={{
+                width: '100%',
+                height: aspectRatio ? undefined : height,
+                aspectRatio,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+            }}
+        >
+            <Skeleton width="35%" height="1.5rem" />
+        </div>
+    );
+}
+
 // `height` sizes the whole placeholder, not just the plot area: card padding, the title and
 // the gap would otherwise push a fixed-height fallback (the portal's 200px/340px chart slots)
 // past the height it is reserving, shifting the page when the real chart lands.

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBlob } from '../../services/mediaStore';
+import { MediaBoxSkeleton } from '../ui/Skeleton';
 import type { SessionRecording } from '../../types';
 
 interface Props {
@@ -42,11 +43,24 @@ export default function RecordingPlayer({ recording, cloudUrl }: Props) {
     const src = loadedRecordingId === recording.id ? (objectUrl ?? undefined) : notFound ? cloudUrl : undefined;
 
     if (!src) {
-        return notFound ? (
-            <p className="text-xs text-muted" style={{ margin: 0 }}>
-                {t('recordings.unavailable')}
-            </p>
-        ) : null;
+        if (notFound) {
+            return (
+                <p className="text-xs text-muted" style={{ margin: 0 }}>
+                    {t('recordings.unavailable')}
+                </p>
+            );
+        }
+        // The blob is still coming out of IndexedDB: keep the player's footprint instead
+        // of returning null (which made the whole row jump when the audio appeared).
+        return recording.mediaType === 'video' ? (
+            <div style={{ width: '100%', maxWidth: 360 }}>
+                <MediaBoxSkeleton aspectRatio="16 / 9" label={t('a11y.loading')} />
+            </div>
+        ) : (
+            <div style={{ width: '100%', maxWidth: 360 }}>
+                <MediaBoxSkeleton height="3.5rem" label={t('a11y.loading')} />
+            </div>
+        );
     }
 
     return recording.mediaType === 'video' ? (

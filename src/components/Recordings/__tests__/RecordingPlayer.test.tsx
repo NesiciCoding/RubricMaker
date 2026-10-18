@@ -68,6 +68,23 @@ describe('RecordingPlayer', () => {
         await waitFor(() => expect(container.querySelector('video')).toBeTruthy());
     });
 
+    it('holds a media-box skeleton while the blob is still loading', async () => {
+        let resolveBlob!: (value: unknown) => void;
+        mockGetBlob.mockImplementation(
+            () =>
+                new Promise((r) => {
+                    resolveBlob = r;
+                })
+        );
+        render(<RecordingPlayer recording={videoRecording} />);
+        const status = screen.getByRole('status');
+        expect(status.getAttribute('aria-label')).toBe('a11y.loading');
+        expect(status.style.aspectRatio).toBe('16 / 9');
+        resolveBlob(null);
+        await waitFor(() => expect(screen.getByText('recordings.unavailable')).toBeInTheDocument());
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
     it('falls back to cloudUrl when the local blob is missing', async () => {
         mockGetBlob.mockResolvedValue(null);
         const { container } = render(
