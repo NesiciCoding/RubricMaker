@@ -58,7 +58,9 @@ export default function ModerationQueuePage() {
     const [colleagues, setColleagues] = useState<DbUser[]>([]);
     // The queue's reviewer filter is built from the school roster, so until it settles every
     // second marker would render as a raw user id — hold a row skeleton instead.
-    const [colleaguesLoading, setColleaguesLoading] = useState(false);
+    // Seeded from the effect's own condition: setting the flag inside the effect would only
+    // happen after the first commit, leaving one frame of raw ids or a flash of the empty state.
+    const [colleaguesLoading, setColleaguesLoading] = useState(() => dbStatus.isConnected && !!settings.schoolId);
     const [reconcileTargetId, setReconcileTargetId] = useState<string | null>(null);
 
     useEffect(() => {
