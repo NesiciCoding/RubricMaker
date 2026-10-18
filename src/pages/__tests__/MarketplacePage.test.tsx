@@ -255,9 +255,15 @@ describe('MarketplacePage', () => {
         expect(status.querySelectorAll('.skeleton').length).toBeGreaterThan(8);
         expect(screen.queryByText('marketplace.loading')).toBeNull();
         // Same auto-fill grid as the real cards, so nothing shifts when they arrive.
-        expect((status as HTMLElement).style.gridTemplateColumns).toBe('repeat(auto-fill, minmax(320px, 1fr))');
+        expect((status as HTMLElement).style.gridTemplateColumns).toBe(
+            'repeat(auto-fill, minmax(min(100%, 320px), 1fr))'
+        );
         // Controls are visible but inert until listings arrive.
         expect(screen.getByText('marketplace.filter_kind_all').closest('button')).toBeDisabled();
+        // The subject selector stays mounted during the first load, even with no options yet.
+        expect(
+            screen.getByText('marketplace.filter_subject_label').closest('.form-group')?.querySelector('select')
+        ).toBeDisabled();
         expect(
             screen.getByText('marketplace.sort_label').closest('.form-group')?.querySelector('select')
         ).toBeDisabled();

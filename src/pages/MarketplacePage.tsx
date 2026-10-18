@@ -26,7 +26,7 @@ const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test
 // One template for the skeleton and the real cards, so nothing reflows on arrival.
 const LISTING_GRID: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
     gap: 16,
 };
 
@@ -360,13 +360,13 @@ export default function MarketplacePage() {
                             ))}
                         </div>
                         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-                            {subjectOptions.length > 0 && (
+                            {(loading || subjectOptions.length > 0) && (
                                 <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
                                     <label>{t('marketplace.filter_subject_label')}</label>
                                     <select
                                         value={subjectFilter}
                                         onChange={(e) => setSubjectFilter(e.target.value)}
-                                        disabled={loading}
+                                        disabled={loading || subjectOptions.length === 0}
                                     >
                                         <option value="all">{t('marketplace.filter_subject_all')}</option>
                                         {subjectOptions.map((s) => (
