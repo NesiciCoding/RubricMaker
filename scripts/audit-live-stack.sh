@@ -87,12 +87,13 @@ DB_OK=0
 DB_USER="supabase_admin"
 
 # psql inside the db container over loopback TCP, which the Supabase image trusts (see #926).
-# A password, when needed, travels through the environment, never on the command line (ps).
+# A password, when needed, travels through the environment, never on the command line (ps). -w
+# makes psql fail instead of waiting on a password prompt that 2>/dev/null would hide.
 psql_q() {
     local envargs=(-e PGHOST=127.0.0.1)
     [[ -n "${PGPASSWORD_ENV:-}" ]] && envargs+=(-e PGPASSWORD)
-    PGPASSWORD="${PGPASSWORD_ENV:-}" docker exec -i "${envargs[@]}" "$DB_CONTAINER" \
-        psql -U "$DB_USER" -d postgres -XAtq -v ON_ERROR_STOP=1 -F '|' -c "$1" 2>/dev/null
+    PGPASSWORD="${PGPASSWORD_ENV:-}" timeout 30 docker exec "${envargs[@]}" "$DB_CONTAINER" \
+        psql -w -U "$DB_USER" -d postgres -XAtq -v ON_ERROR_STOP=1 -F '|' -c "$1" 2>/dev/null
 }
 
 printf '%sRubricMaker live-stack audit — %s on %s%s\n' "$C_B" "$(date -Is)" "$(hostname)" "$C_OFF"
@@ -190,21 +191,24 @@ if [[ $DOCKER_OK -eq 1 ]]; then
     if [[ -n "$public_maps" ]]; then
         while IFS=$'\t' read -r name port; do
             fail "$name publishes port $port on all interfaces (Docker bypasses the host firewall)" \
-                "Bind it to 127.0.0.1 in docker-compose.override.yml, e.g. \"127.0.0.1:8000:8000\"."
+                "Publish it as \"127.0.0.1:$port:$port\" in docker-compose.override.yml (ports: !override)"
         done <<<"$public_maps"
     else
         pass "No container publishes a port on a public interface"
     fi
 fi
 if have ss; then
+    # One line per port and process; loopback, link-local, Docker bridges and docker-proxy (reported
+    # above) are left out.
     listeners="$(ss -tlnpH 2>/dev/null | awk '{print $4"\t"$6}' |
-        grep -vE '^(127\.|\[::1\]|::1)' | grep -vE ':(22|80|443)\b' | sort -u)"
+        grep -vE '^(127\.|\[::1\]|::1|\[fe80|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v docker-proxy |
+        sed -E 's/^.*:([0-9]+)\t.*\("([^"]+)".*/\1\t\2/' | grep -vE '^(22|80|443)\b' | sort -u -n)"
     if [[ -n "$listeners" ]]; then
-        info "Other host ports listening on public addresses (the host firewall must block these):"
-        while IFS=$'\t' read -r addr proc; do
-            printf '       %s %s\n' "$addr" "$(grep -o '"[^"]*"' <<<"$proc" | head -n1)"
-        done <<<"$listeners"
-        grep -qE ':8083\b' <<<"$listeners" && warn "HestiaCP panel (8083) listens publicly" "Restrict it to your IP in Hestia → Server → Firewall."
+        info "Other ports listening on public addresses (the host firewall must block any you don't serve):"
+        awk -F'\t' '{printf "       %s (%s)\n", $1, $2}' <<<"$listeners"
+        grep -qE '^8083\b' <<<"$listeners" && warn "HestiaCP panel (8083) listens publicly" "Restrict it to your IP in Hestia → Server → Firewall, or reach it over an SSH tunnel."
+        grep -qE '^21\b' <<<"$listeners" && warn "FTP (21, plain text) listens publicly" "systemctl disable --now vsftpd if nobody uses FTP accounts"
+        grep -qE '^53\b' <<<"$listeners" && info "DNS (53) listens publicly: from outside, 'dig @<vps-ip> example.com' must answer REFUSED (no open resolver)"
     fi
 fi
 if [[ -n "$API_URL" ]] && have curl; then
@@ -358,8 +362,9 @@ if [[ $DOCKER_OK -eq 1 ]] && docker inspect "$DB_CONTAINER" >/dev/null 2>&1; the
         DB_OK=1
     elif [[ -n "$ENV_FILE" ]]; then
         PGPASSWORD_ENV="$(env_value "$ENV_FILE" POSTGRES_PASSWORD || true)"
-        DB_USER="postgres"
-        psql_q 'SELECT 1' >/dev/null && DB_OK=1
+        for DB_USER in supabase_admin postgres; do
+            psql_q 'SELECT 1' >/dev/null && { DB_OK=1; break; }
+        done
     fi
 fi
 if [[ $DB_OK -eq 0 ]]; then

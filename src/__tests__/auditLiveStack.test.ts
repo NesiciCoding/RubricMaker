@@ -63,6 +63,8 @@ function setup() {
     esac ;;
   stats) printf '1.2GiB / 11.7GiB\\tsupabase-db\\n' ;;
   exec)
+    echo "$*" >> "${join(work, 'exec.log')}"
+    [[ -n "\${REQUIRE_PW:-}" && -z "\${PGPASSWORD:-}" ]] && exit 2
     sql="\${@: -1}"
     case "$sql" in
       'SELECT 1') echo 1 ;;
@@ -87,11 +89,17 @@ esac`
     return stack;
 }
 
-function run() {
+function run(extraEnv: Record<string, string> = {}) {
     const stack = setup();
+    rmSync(join(work, 'exec.log'), { force: true });
     return spawnSync('bash', [script, '--supabase-dir', stack], {
         encoding: 'utf8',
-        env: { ...process.env, PATH: `${join(work, 'bin')}:${process.env.PATH}`, AUDIT_CPU_SAMPLE_SECONDS: '0' },
+        env: {
+            ...process.env,
+            PATH: `${join(work, 'bin')}:${process.env.PATH}`,
+            AUDIT_CPU_SAMPLE_SECONDS: '0',
+            ...extraEnv,
+        },
         timeout: 60_000,
     });
 }
@@ -136,8 +144,36 @@ describe('scripts/audit-live-stack.sh', () => {
         expect(queries.length).toBeGreaterThan(10);
         for (const q of queries) expect(q).toMatch(/^(SELECT|SHOW)\b/);
 
-        const dockerCalls = [...body.matchAll(/\bdocker\s+([a-z]+)/g)].map((m) => m[1]);
+        // Advice printed to the operator ("systemctl disable --now vsftpd") is text, not a command run.
+        const code = body.replace(/"(?:[^"\\\n]|\\.)*"/g, (m) => (m.includes('$(') ? m : '""'));
+        const dockerCalls = [...code.matchAll(/\bdocker\s+([a-z]+)/g)].map((m) => m[1]);
         for (const sub of dockerCalls) expect(['info', 'inspect', 'ps', 'stats', 'exec', 'group']).toContain(sub);
-        expect(body).not.toMatch(/systemctl\s+(stop|start|restart|disable|enable|mask)\b/);
+        expect(code).not.toMatch(/systemctl\s+(stop|start|restart|disable|enable|mask)\b/);
+    });
+});
+
+describe('scripts/audit-live-stack.sh when Postgres needs a password', () => {
+    // The supabase_admin login over loopback asked for a password on a real stack; psql's hidden
+    // prompt then hung the run. It must fail fast and retry with POSTGRES_PASSWORD from .env.
+    const result = run({ REQUIRE_PW: '1' });
+    const execLog = readFileSync(join(work, 'exec.log'), 'utf8');
+
+    it('finishes and runs the database checks with the password', () => {
+        expect(result.error).toBeUndefined();
+        expect(result.stdout).toMatch(/\[PASS\] shared_buffers is 2048 MB/);
+        expect(result.stdout).not.toMatch(/Could not query Postgres/);
+    });
+
+    it('never lets psql prompt or read stdin', () => {
+        const calls = execLog.trim().split('\n');
+        expect(calls.length).toBeGreaterThan(5);
+        for (const call of calls) {
+            expect(call).toMatch(/\bpsql -w\b/);
+            expect(call).not.toMatch(/(^|\s)-i(\s|$)/);
+        }
+    });
+
+    it('passes the password through the environment, not the command line', () => {
+        expect(execLog).not.toContain(POSTGRES_PASSWORD);
     });
 });
