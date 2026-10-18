@@ -6,7 +6,7 @@
     },
     "supabase": {
       "type": "http",
-      "url": "http://supabase.rubricmaker.nl/mcp"
+      "url": "https://supabase.rubricmaker.nl/mcp"
     }
   }
 }
