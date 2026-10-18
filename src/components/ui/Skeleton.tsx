@@ -52,11 +52,18 @@ export function SkeletonRow() {
     );
 }
 
+// `height` sizes the whole placeholder, not just the plot area: card padding, the title and
+// the gap would otherwise push a fixed-height fallback (the portal's 200px/340px chart slots)
+// past the height it is reserving, shifting the page when the real chart lands.
 export function ChartSkeleton({ height = '260px' }: { height?: string }) {
     return (
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} aria-hidden="true">
-            <Skeleton width="40%" height="1rem" />
-            <Skeleton height={height} />
+        <div
+            className="card"
+            style={{ height, display: 'flex', flexDirection: 'column', gap: '0.75rem', overflow: 'hidden' }}
+            aria-hidden="true"
+        >
+            <Skeleton width="40%" height="1rem" style={{ flexShrink: 0 }} />
+            <Skeleton height="100%" style={{ flex: 1, minHeight: 0 }} />
         </div>
     );
 }
@@ -404,9 +411,17 @@ export function InlineSkeleton({ rows = 3 }: { rows?: number }) {
 
 // Flashcard study card (progress bar, large card, rating-button row) — the
 // /portal/:id/flashcards/:deckId loading state and route fallback.
-export function FlashcardCardSkeleton() {
+// `fullPage` is for the route fallback, where the skeleton *is* the page and has to fill the
+// viewport. The study page renders it below its own header, where a 100vh minimum would only
+// add a scrollbar for the length of the deck fetch, so it asks for the content-height variant.
+export function FlashcardCardSkeleton({ fullPage = true }: { fullPage?: boolean } = {}) {
     return (
-        <SkeletonFrame style={{ flex: 'initial', minHeight: '100vh', background: 'var(--bg)', padding: '24px 16px' }}>
+        <SkeletonFrame
+            style={{
+                flex: 'initial',
+                ...(fullPage ? { minHeight: '100vh', background: 'var(--bg)', padding: '24px 16px' } : {}),
+            }}
+        >
             <div
                 style={{
                     width: '100%',

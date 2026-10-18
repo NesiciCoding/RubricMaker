@@ -957,7 +957,7 @@ export default function StudentPortalPage() {
                 )}
                 {(hasWork || workLoading) && isTab('assignments') && (
                     <Section id="portal-section-work" title={t('studentPortal.my_work')}>
-                        {workLoading && !hasWork ? (
+                        {workLoading ? (
                             <InlineSkeleton rows={3} />
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

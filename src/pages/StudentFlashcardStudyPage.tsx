@@ -158,7 +158,7 @@ export default function StudentFlashcardStudyPage() {
                     </div>
                 )}
                 {loading ? (
-                    <FlashcardCardSkeleton />
+                    <FlashcardCardSkeleton fullPage={false} />
                 ) : !deck ? (
                     <div className="empty-state">
                         <h2>{t('flashcards.deck_not_found')}</h2>
