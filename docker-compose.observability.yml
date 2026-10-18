@@ -70,6 +70,7 @@ services:
     environment:
       # Names this server in host and container metrics (and in alert notifications).
       OBSERVABILITY_HOST_NAME: "${OBSERVABILITY_HOST_NAME:-rubricmaker}"
+      SUPABASE_DB_HOST: "${SUPABASE_DB_HOST:-}"
     depends_on: [loki, prometheus]
 
   # Metrics store. Alloy pushes host, container, Postgres and stack metrics here (remote write).
@@ -109,6 +110,7 @@ services:
       - ./docker/observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
       - ./docker/observability/grafana-dashboards-provider.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
       - ./docker/observability/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - ./docker/observability/alerting:/etc/grafana/provisioning/alerting:ro
     environment:
       # No default — fails fast if GRAFANA_ADMIN_PASSWORD is unset so the
       # stack can never come up with a well-known admin password.
@@ -118,6 +120,15 @@ services:
       # only what the pinned image ships (it includes the Loki, Prometheus and Postgres datasources),
       # so the stack is reproducible and starts the same on a firewalled server.
       GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      # Alerting (alerting/*.yml). Grafana will not start with an empty address, hence the
+      # undeliverable placeholder; set ALERT_EMAIL and the SMTP settings to receive alerts.
+      ALERT_EMAIL: "${ALERT_EMAIL:-alerts@rubricmaker.invalid}"
+      GF_SMTP_ENABLED: "${ALERT_SMTP_ENABLED:-false}"
+      GF_SMTP_HOST: "${ALERT_SMTP_HOST:-}"
+      GF_SMTP_USER: "${ALERT_SMTP_USER:-}"
+      GF_SMTP_PASSWORD: "${ALERT_SMTP_PASSWORD:-}"
+      GF_SMTP_FROM_ADDRESS: "${ALERT_SMTP_FROM:-grafana@localhost}"
+      GF_SMTP_FROM_NAME: "RubricMaker monitoring (${OBSERVABILITY_HOST_NAME:-rubricmaker})"
       # Set when Grafana sits behind a reverse-proxy subdomain, so links,
       # redirects and auth cookies use the right external URL.
       GF_SERVER_DOMAIN: "${GRAFANA_DOMAIN:-localhost}"

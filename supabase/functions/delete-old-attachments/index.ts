@@ -7,6 +7,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { isMetadataOnlyRow, isPurgeableRow, type PurgeRow } from '../_shared/attachmentPurgeGuard.ts';
+import { pingHeartbeat } from '../_shared/heartbeat.ts';
 import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const BATCH_SIZE = 100;
@@ -83,6 +84,7 @@ serve(async (req) => {
     const attachments = await purge(admin, TARGETS.attachments);
     const scans = await purge(admin, TARGETS.scans);
     const failed = [attachments.error, scans.error].filter(Boolean);
+    if (failed.length === 0) await pingHeartbeat(Deno.env.get('CLEANUP_HEARTBEAT_URL'));
 
     return new Response(
         JSON.stringify({

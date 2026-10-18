@@ -1,0 +1,18 @@
+# Where alerts go. Grafana sends email through the SMTP settings in docker-compose.observability.yml
+# (ALERT_SMTP_*). ALERT_EMAIL defaults to an undeliverable placeholder because Grafana refuses to
+# start with an empty address; alerts still show under Alerting → Alert rules until it is set.
+#
+# For a chat channel (Microsoft Teams, Slack, Discord, Telegram…), add a second receiver to this
+# contact point — see docs/OBSERVABILITY_DASHBOARDS.md → Alerting.
+
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: rubricmaker-oncall
+    receivers:
+      - uid: rubricmaker-oncall-email
+        type: email
+        settings:
+          addresses: "${ALERT_EMAIL}"
+          singleEmail: true

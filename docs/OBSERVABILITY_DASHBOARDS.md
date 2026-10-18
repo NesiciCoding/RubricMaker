@@ -228,5 +228,104 @@ and the app.
 
 ---
 
+## Alerting
+
+Dashboards only help when someone is looking. Grafana evaluates the rules in
+`docker/observability/alerting/alert-rules.yml` every minute and sends firing
+alerts to the `rubricmaker-oncall` contact point (folder **RubricMaker alerts**
+under **Alerting → Alert rules**).
+
+| Rule                                  | Fires when                                                               | Severity |
+| ------------------------------------- | ------------------------------------------------------------------------ | -------- |
+| Disk almost full                      | A disk is over 90% full for 10 minutes                                   | critical |
+| Disk full within 2 days               | At the growth rate of the last 6 hours, a disk is full within 2 days     | warning  |
+| Monitoring target down                | Alloy cannot scrape a target (Loki, Grafana, Prometheus, exporters)      | warning  |
+| Host metrics stopped arriving         | No host metrics for 10 minutes (Alloy or Prometheus is down)             | critical |
+| Postgres unreachable                  | postgres-exporter cannot connect (only once `SUPABASE_DB_HOST` is set)   | critical |
+| Postgres connections nearly exhausted | Over 80% of `max_connections` in use for 5 minutes                       | warning  |
+| Scheduled database job failed         | A `pg_cron` run failed in the last 24 hours                              | warning  |
+| Scheduled HTTP call failed            | A `pg_net` call made by a scheduled job (e.g. the teacher digest) failed | warning  |
+| Burst of HTTP 5xx errors              | More than 25 server errors in the web server logs within 5 minutes       | warning  |
+
+The thresholds are plain numbers in the rule queries; edit the file and
+restart Grafana to tune them.
+
+### Receiving alerts
+
+Set these in `.env.observability`, then `up -d` again:
+
+- `ALERT_EMAIL` — who gets the alerts (comma-separate several addresses).
+- `ALERT_SMTP_ENABLED=true` with `ALERT_SMTP_HOST` (`host:port`),
+  `ALERT_SMTP_USER`, `ALERT_SMTP_PASSWORD` and `ALERT_SMTP_FROM`. The same
+  provider as the app's login emails works.
+
+Until then alerts still appear in Grafana but go nowhere. `ALERT_EMAIL`
+defaults to an undeliverable `alerts@rubricmaker.invalid` placeholder, because
+Grafana will not start with an empty address. Check delivery with **Alerting
+→ Contact points → rubricmaker-oncall → Test**.
+
+For a chat channel, add a second receiver to
+`docker/observability/alerting/contact-points.yml`, for example Microsoft
+Teams (a Workflows webhook URL), Slack, Discord or Telegram:
+
+```yaml
+- uid: rubricmaker-oncall-teams
+  type: teams # or slack / discord (settings: url), telegram (settings: bottoken, chatid)
+  settings:
+      url: '${ALERT_TEAMS_WEBHOOK_URL}'
+```
+
+and pass `ALERT_TEAMS_WEBHOOK_URL` to the `grafana` service in
+`docker-compose.observability.yml`. Leave it out entirely when unused: like
+the email address, an empty URL stops Grafana from starting.
+
+### Database job alerts
+
+The two scheduled-job rules call `monitoring.failed_jobs()` (migration
+`091_monitoring_job_failures.sql`) through the `client_logs` datasource. A
+plain query would not work: pg_cron's row-level security shows a role only
+its own jobs, and the jobs belong to the migrator. The function returns two
+counts and nothing else, lives in a schema the REST API does not expose, and
+may only be called by members of `pg_monitor`, so the role in
+`SUPABASE_DB_USER` needs `IN ROLE pg_monitor` (see `.env.observability.example`).
+Without it the rules stay normal.
+
+### Heartbeats for scheduled jobs
+
+The rules above live on the same server they watch, and a job that never
+runs produces no error to alert on. Each scheduled job therefore pings a
+dead-man's-switch URL after every **clean** run; create one check per job in
+an external service (Healthchecks.io, Better Stack, a self-hosted Uptime Kuma
+push monitor) with its expected schedule, and a missed ping alerts you:
+
+| Job                                             | Where to set the URL                           |
+| ----------------------------------------------- | ---------------------------------------------- |
+| `scripts/scheduled-backup.sh` (off-site backup) | `BACKUP_HEARTBEAT_URL` in `.env.backup`        |
+| `scripts/restore-drill.sh` (monthly)            | `RESTORE_DRILL_HEARTBEAT_URL` in `.env.backup` |
+| `scripts/delete-old-attachments.sh`             | `CLEANUP_HEARTBEAT_URL` in `.env`              |
+| `nightly-backup` edge function                  | `NIGHTLY_BACKUP_HEARTBEAT_URL` function secret |
+| `delete-old-attachments` edge function          | `CLEANUP_HEARTBEAT_URL` function secret        |
+| `scheduled-digest` edge function                | `DIGEST_HEARTBEAT_URL` function secret         |
+
+Function secrets are set with `supabase secrets set NAME=value` (Cloud), or in
+the official self-hosted stack's functions environment. A failed ping never
+fails the job itself.
+
+### Off-box uptime checks
+
+Grafana runs on the server it monitors, so if that server goes down, so do the
+alerts. Add an external uptime monitor (UptimeRobot, Better Stack or
+Healthchecks.io all have free tiers) that probes from outside your network:
+
+- `https://<your site>/` — the app itself.
+- `https://<your site>/auth/v1/health` — Supabase Auth behind the same proxy
+  (returns JSON when the backend is up).
+
+Point it at the same email or chat channel. Once real schools depend on the
+service, the same providers can publish a simple public status page from these
+checks.
+
+---
+
 See [Observability on a HestiaCP subdomain](OBSERVABILITY_HESTIACP.md) for
 deploying this stack behind HTTPS.

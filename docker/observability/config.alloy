@@ -118,7 +118,8 @@ prometheus.scrape "exporters" {
 		discovery.relabel.host.output,
 		discovery.relabel.containers.output,
 		// Postgres: the postgres-exporter service (pg_up is 0 until SUPABASE_DB_* points at a database).
-		[{__address__ = "postgres-exporter:9187", job = "postgres"}],
+		// db_host is empty, and so dropped, while unset; the "Postgres unreachable" alert keys on it.
+		[{__address__ = "postgres-exporter:9187", job = "postgres", db_host = sys.env("SUPABASE_DB_HOST")}],
 		// The stack itself, so a silent Loki, Alloy or Prometheus shows up as a dead target.
 		[{__address__ = "loki:3100", job = "loki"}],
 		[{__address__ = "localhost:12345", job = "alloy"}],
