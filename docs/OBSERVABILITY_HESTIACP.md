@@ -305,6 +305,13 @@ stopped. Container logs now carry `job="docker"`, which the **Web & Container
 Logs** dashboard always queried but Promtail never set, so container lines
 appear there from now on.
 
+The same upgrade adds metrics: Alloy now also collects host and per-container
+metrics into a new `prometheus` service, and a `postgres-exporter` service
+reads the database through the `SUPABASE_DB_*` settings. Two new dashboards,
+**Host & Containers** and **Postgres**, show them; see
+[OBSERVABILITY_DASHBOARDS.md](OBSERVABILITY_DASHBOARDS.md) for sizing and
+retention (`PROMETHEUS_RETENTION_TIME` / `PROMETHEUS_RETENTION_SIZE`).
+
 **Tearing down after a stress-test window** (drops Grafana dashboards/users
 and Loki's stored logs — back up first if needed):
 

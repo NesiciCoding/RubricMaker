@@ -1,8 +1,8 @@
 # Grafana Dashboards
 
 The standalone observability stack (`docker-compose.observability.yml`)
-auto-provisions four dashboards into a **RubricMaker** folder in Grafana, on
-top of the Loki and Postgres datasources described in
+auto-provisions six dashboards into a **RubricMaker** folder in Grafana, on
+top of the Loki, Prometheus and Postgres datasources described in
 `README.md` → "Observability". This page explains what each panel shows and
 how to extend them.
 
@@ -114,8 +114,9 @@ the UI, so they survive a `docker compose down -v`.
   the dashboard's time range and zoom level (see existing panels for
   examples).
 - **New panels against Loki**: reference datasource `{"type": "loki", "uid": "loki"}`;
-  for `client_logs` use `{"type": "postgres", "uid": "client_logs_postgres"}`.
-  Both UIDs are fixed in `docker/observability/grafana-datasources.yml` so
+  for metrics use `{"type": "prometheus", "uid": "prometheus"}`; for
+  `client_logs` use `{"type": "postgres", "uid": "client_logs_postgres"}`.
+  All three UIDs are fixed in `docker/observability/grafana-datasources.yml` so
   dashboard JSON can reference them directly.
 
 ---
@@ -164,6 +165,66 @@ excluded rather than erroring.
 | Web vitals summary                           | Per-metric sample count, mean, p75, and max. Note `cls` is a unitless score, not ms.          |
 | Sessions by role                             | Sessions and event volume per `role`.                                                         |
 | Recent pageviews                             | Raw pageview rows for debugging a specific session.                                           |
+
+---
+
+## 5. Host & Containers
+
+**Source:** Prometheus. Alloy's built-in node_exporter reads the host's
+`/proc`, `/sys` and filesystems (mounted read-only), and its built-in cAdvisor
+reads every Docker container on the host — including the app and Postgres
+when they run in another Compose project.
+
+| Panel                               | What it shows                                                                                                                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fullest disk (% used)               | The highest used share across real filesystems. Attachments, speaking recordings (up to 50 MB each), backups and Loki/Prometheus data all grow on the same disk as Postgres. |
+| Days until the fullest disk is full | Free space divided by the growth of the last 6 hours: "the disk is 92% full and will stop Postgres in two days" in one number.                                               |
+| Memory used / CPU used / Load       | Headline host pressure. Load per core above 1 means work is queuing.                                                                                                         |
+| Disk used / free by mountpoint      | Per-filesystem trend, to see which one is filling.                                                                                                                           |
+| CPU by mode, Memory, Network        | Host time series.                                                                                                                                                            |
+| CPU / Memory by container           | Which container is using the host: Postgres, the app, Loki, Grafana…                                                                                                         |
+| Scrape targets (1 = up)             | Every target Alloy collects. A `0` means that part of the stack stopped reporting.                                                                                           |
+
+## 6. Postgres
+
+**Source:** Prometheus, from `postgres-exporter`, which connects with the same
+`SUPABASE_DB_*` settings as the `client_logs` datasource (see
+`.env.observability.example`). Until those are set, **Postgres reachable**
+shows DOWN and the other panels stay empty.
+
+| Panel                     | What it shows                                                                                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Connections used          | Open connections as a share of `max_connections` (100 on the bundled image). New logins fail at 100%; see SELF_HOSTING_OPS.md → Resource Sizing for the ~15 users note. |
+| Cache hit ratio           | Share of reads served from memory. Persistently below ~95% on a busy database means RAM or `shared_buffers` is too small.                                               |
+| Database size             | Size of the `postgres` database.                                                                                                                                        |
+| Longest open transaction  | A transaction open for minutes holds locks and blocks vacuum.                                                                                                           |
+| Connections by state      | `active`, `idle`, `idle in transaction`… against `max_connections`.                                                                                                     |
+| Transactions per second   | Commits and rollbacks.                                                                                                                                                  |
+| Locks by mode / Deadlocks | Lock contention; any deadlock is worth a look in the Postgres logs.                                                                                                     |
+
+## Metrics retention and sizing
+
+Prometheus keeps metrics for `PROMETHEUS_RETENTION_TIME` (default `30d`) or
+until they reach `PROMETHEUS_RETENTION_SIZE` (default `2GB`), whichever comes
+first. The stack collects about 9,000 series at a 30-second interval, roughly
+40 MB a day, so the 30 days fit comfortably inside the size cap.
+
+Measured on a test host with the stack idle (memory as reported by
+`docker stats`):
+
+| Service           | Memory   |
+| ----------------- | -------- |
+| Alloy             | ~130 MiB |
+| Grafana           | ~220 MiB |
+| Loki              | ~65 MiB  |
+| Prometheus        | ~55 MiB  |
+| postgres-exporter | ~8 MiB   |
+
+`docker stats` shows Alloy at ~400 MiB because it also counts ~185 MiB of
+file-backed pages (mostly Alloy's own large executable), which the kernel
+drops and re-reads under memory pressure. Its own memory (`RssAnon`) is the
+~130 MiB above. In total the stack needs roughly 0.5 GiB next to Postgres
+and the app.
 
 ---
 

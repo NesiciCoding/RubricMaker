@@ -1,0 +1,8 @@
+# Prometheus — stores the stack's metrics. It scrapes nothing itself: Alloy collects host,
+# container, Postgres and stack metrics and pushes them here over remote write (see
+# config.alloy), so every scrape target is defined in one place. Retention is set by the
+# PROMETHEUS_RETENTION_TIME / PROMETHEUS_RETENTION_SIZE flags in docker-compose.observability.yml.
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s

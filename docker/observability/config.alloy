@@ -10,7 +10,7 @@
 // ── 1. Web server log files ──────────────────────────────────────────────────────────────────
 local.file_match "webserver" {
 	path_targets = [{
-		__path__         = "/var/host-logs/**/*{access,error}*.log*",
+		__path__ = "/var/host-logs/**/*{access,error}*.log*",
 		// Rotated, compressed logs would be shipped as binary noise.
 		__path_exclude__ = "/var/host-logs/**/*.gz",
 		job              = "webserver",
@@ -65,5 +65,72 @@ loki.source.docker "rubricmaker" {
 loki.write "default" {
 	endpoint {
 		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
+
+// ── 3. Metrics (pushed to Prometheus) ─────────────────────────────────────────────────────────
+// Host: node_exporter, built in. The host's /proc, /sys and / are mounted read-only under /host.
+prometheus.exporter.unix "host" {
+	procfs_path = "/host/proc"
+	sysfs_path  = "/host/sys"
+	rootfs_path = "/host/root"
+}
+
+// Containers: cAdvisor, built in. Docker containers only; every container on the host, not just
+// this stack, because Postgres and the app usually run in another compose project.
+prometheus.exporter.cadvisor "containers" {
+	docker_host      = "unix:///var/run/docker.sock"
+	docker_only      = true
+	storage_duration = "2m"
+}
+
+discovery.relabel "host" {
+	targets = prometheus.exporter.unix.host.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "node"
+	}
+
+	// The exporter would label series with Alloy's random container id.
+	rule {
+		target_label = "instance"
+		replacement  = sys.env("OBSERVABILITY_HOST_NAME")
+	}
+}
+
+discovery.relabel "containers" {
+	targets = prometheus.exporter.cadvisor.containers.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "cadvisor"
+	}
+
+	rule {
+		target_label = "instance"
+		replacement  = sys.env("OBSERVABILITY_HOST_NAME")
+	}
+}
+
+prometheus.scrape "exporters" {
+	targets = array.concat(
+		discovery.relabel.host.output,
+		discovery.relabel.containers.output,
+		// Postgres: the postgres-exporter service (pg_up is 0 until SUPABASE_DB_* points at a database).
+		[{__address__ = "postgres-exporter:9187", job = "postgres"}],
+		// The stack itself, so a silent Loki, Alloy or Prometheus shows up as a dead target.
+		[{__address__ = "loki:3100", job = "loki"}],
+		[{__address__ = "localhost:12345", job = "alloy"}],
+		[{__address__ = "prometheus:9090", job = "prometheus"}],
+		[{__address__ = "grafana:3000", job = "grafana"}],
+	)
+	scrape_interval = "30s"
+	forward_to      = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+	endpoint {
+		url = "http://prometheus:9090/api/v1/write"
 	}
 }

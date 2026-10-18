@@ -1,5 +1,5 @@
 # Provisions Grafana datasources on startup.
-# - Loki is always available (part of this stack).
+# - Loki and Prometheus are always available (part of this stack).
 # - The Postgres datasource is always provisioned so `client_logs` (app-level
 #   events from Part 1) can be queried directly — it points at SUPABASE_DB_HOST
 #   (with SUPABASE_DB_NAME/USER/PASSWORD/SSLMODE) and works for a self-hosted
@@ -15,6 +15,14 @@ datasources:
     access: proxy
     url: http://loki:3100
     isDefault: true
+
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      timeInterval: 30s
 
   - name: Supabase Postgres (client_logs)
     type: postgres
