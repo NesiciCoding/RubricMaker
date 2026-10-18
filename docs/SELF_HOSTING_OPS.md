@@ -314,7 +314,7 @@ Docker daemon logs are rotated via `/etc/docker/daemon.json`:
 
 Roles live in `public.profiles.role` (`admin`, `teacher`, `student`). Inside the app, role changes are guarded by the `protect_role_changes()` trigger: only an admin can change another user's role, and the last admin cannot be demoted (Admin → Users and Onboarding both refuse it). Since migration `083_role_repair_last_admin.sql`, the same trigger lets an **operator** change any role: a direct database connection (Supabase Studio SQL editor, `psql`) or a request made with the service-role key.
 
-To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: `docker compose exec db psql -U supabase_admin -d postgres`):
+To restore an admin, run this in the SQL editor or with `psql` (Docker Compose: `docker compose exec -e PGHOST=127.0.0.1 db psql -U supabase_admin -d postgres`):
 
 ```sql
 -- Find the account

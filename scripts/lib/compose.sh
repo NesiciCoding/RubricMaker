@@ -17,9 +17,11 @@ require_compose() {
 
 # How ops scripts run pg_dump/psql in the `db` service. The image's pg_hba.conf only lets
 # supabase_admin in over the local socket with a password, but trusts loopback TCP inside the
-# container, so connect through 127.0.0.1 instead of the socket.
+# container, so connect through 127.0.0.1 instead of the socket. Use as
+# `$COMPOSE "${DB_EXEC_ARGS[@]}" psql …`, or db_exec_default for a DB_EXEC string.
+DB_EXEC_ARGS=(exec -T -e PGHOST=127.0.0.1 db)
 db_exec_default() {
-    printf '%s exec -T -e PGHOST=127.0.0.1 db' "$COMPOSE"
+    printf '%s %s' "$COMPOSE" "${DB_EXEC_ARGS[*]}"
 }
 
 # Compose resolves its project directory from COMPOSE_FILE when one is given, otherwise from the

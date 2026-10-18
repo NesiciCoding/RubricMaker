@@ -47,7 +47,7 @@ log() { echo "[$(date -Iseconds)] $*"; }
 
 require_compose
 psql_exec() {
-    $COMPOSE -f "$COMPOSE_FILE" exec -T db psql -U supabase_admin -d postgres "$@"
+    $COMPOSE -f "$COMPOSE_FILE" "${DB_EXEC_ARGS[@]}" psql -U supabase_admin -d postgres "$@"
 }
 
 # Storage DELETEs that failed (wrong URL, auth, server error); the run exits non-zero if any did,
@@ -68,11 +68,12 @@ purge_batch() {
     BATCH_DELETED=0
     BATCH_FULL=0
 
-    # Fetch overdue rows (id | storage_path | owner) from the DB helper function.
+    # Fetch overdue rows (id | storage_path | owner) from the DB helper function. A failure here
+    # aborts the run, so psql's error is left visible: it is all the log has to say why.
     local rows no_file_rows
     rows=$(psql_exec -At -F'|' \
-        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
-    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT ${BATCH_SIZE};" 2>/dev/null)
+        -c "SELECT id, storage_path, owner_id FROM public.${fn}(100000) WHERE ${VALID_SQL} LIMIT ${BATCH_SIZE};")
+    no_file_rows=$(psql_exec -At -c "SELECT id FROM public.${fn}(100000) WHERE ${NO_FILE_SQL} LIMIT ${BATCH_SIZE};")
 
     if [[ $(printf '%s' "$rows" | grep -c . || true) -ge $BATCH_SIZE \
         || $(printf '%s' "$no_file_rows" | grep -c . || true) -ge $BATCH_SIZE ]]; then

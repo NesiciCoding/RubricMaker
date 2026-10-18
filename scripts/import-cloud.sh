@@ -82,7 +82,7 @@ if [[ -n "$LOAD_FILES" ]]; then
 fi
 
 psql_db() {
-  $COMPOSE exec -T db psql -X -v ON_ERROR_STOP=1 -U supabase_admin postgres "$@"
+  $COMPOSE "${DB_EXEC_ARGS[@]}" psql -X -v ON_ERROR_STOP=1 -U supabase_admin postgres "$@"
 }
 
 # Matches only the Supabase pooler directives and the injected SET line —
@@ -102,7 +102,7 @@ if [[ -n "$LOAD_ROWS" ]]; then
     echo "▶  Skipping auth import (--skip-auth)"
   else
     echo "▶  Importing auth users..."
-    grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | $COMPOSE exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
+    grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/auth-data.sql" | $COMPOSE "${DB_EXEC_ARGS[@]}" psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
     echo "   ✓ Auth users imported"
   fi
 
@@ -110,7 +110,7 @@ if [[ -n "$LOAD_ROWS" ]]; then
   {
     printf '%s\n' 'DELETE FROM public.site_config;'
     grep -Ev "$FILTER_REGEX" "$EXPORT_DIR/public-data.sql"
-  } | $COMPOSE exec -T db psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
+  } | $COMPOSE "${DB_EXEC_ARGS[@]}" psql -1 -v ON_ERROR_STOP=1 -U supabase_admin postgres
   echo "   ✓ Application data imported"
 fi
 
