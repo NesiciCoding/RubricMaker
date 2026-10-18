@@ -397,17 +397,30 @@ export function GradingSkeleton() {
                     className="card"
                     style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}
                 >
-                    {Array.from({ length: 5 }).map((_, row) => (
+                    {/* The real grid is a table in a horizontally scrolling wrapper, so the cells
+                        keep their size on narrow screens and scroll sideways rather than being
+                        crushed into unreadable slivers. */}
+                    <div style={{ overflowX: 'auto' }}>
                         <div
-                            key={row}
-                            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}
+                            style={{ minWidth: '480px', display: 'flex', flexDirection: 'column', gap: '8px' }}
                             aria-hidden="true"
                         >
-                            {Array.from({ length: 4 }).map((_, col) => (
-                                <Skeleton key={col} height={row === 0 ? '1rem' : '56px'} />
+                            {Array.from({ length: 5 }).map((_, row) => (
+                                <div
+                                    key={row}
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1.6fr repeat(3, 1fr)',
+                                        gap: '8px',
+                                    }}
+                                >
+                                    {Array.from({ length: 4 }).map((_, col) => (
+                                        <Skeleton key={col} height={row === 0 ? '1rem' : '56px'} />
+                                    ))}
+                                </div>
                             ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
                 <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
                     <SkeletonCard />
