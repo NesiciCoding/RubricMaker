@@ -9,6 +9,7 @@ import { i18nReady } from './i18n';
 import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/logging/clientLogger';
 import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
+import { StudentTaskSkeleton } from './components/ui/Skeleton';
 import { HydrationProgress } from './components/ui/HydrationProgress';
 
 setupPwaUpdatePrompt();
@@ -150,7 +151,9 @@ const router = createHashRouter([
         path: '/essay/:code',
         element: (
             <ToastProvider>
-                <StudentEssayPage />
+                <Suspense fallback={<StudentTaskSkeleton />}>
+                    <StudentEssayPage />
+                </Suspense>
             </ToastProvider>
         ),
     },
@@ -158,7 +161,9 @@ const router = createHashRouter([
         path: '/test/:code',
         element: (
             <ToastProvider>
-                <StudentTestPage />
+                <Suspense fallback={<StudentTaskSkeleton />}>
+                    <StudentTestPage />
+                </Suspense>
             </ToastProvider>
         ),
     },
