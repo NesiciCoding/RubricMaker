@@ -1,0 +1,69 @@
+// Grafana Alloy — ships logs to Loki from two sources (replaces Promtail, EOL 2026-03-02):
+//   1. webserver — Apache/Nginx access + error logs from any deployment style (traditional
+//                  HestiaCP/Virtualmin, or files mounted from the combined stack). The glob is
+//                  rooted at /var/host-logs, which is mounted from RUBRICMAKER_LOG_DIR.
+//   2. docker    — container stdout/stderr of the combined docker-compose stack, filtered to the
+//                  `rubricmaker` compose project. Harmless if no matching containers exist here.
+// Read positions live in Alloy's storage path (the alloy-data volume), so a restart resumes where
+// it stopped instead of re-sending every file.
+
+// ── 1. Web server log files ──────────────────────────────────────────────────────────────────
+local.file_match "webserver" {
+	path_targets = [{
+		__path__         = "/var/host-logs/**/*{access,error}*.log*",
+		// Rotated, compressed logs would be shipped as binary noise.
+		__path_exclude__ = "/var/host-logs/**/*.gz",
+		job              = "webserver",
+	}]
+}
+
+loki.source.file "webserver" {
+	targets    = local.file_match.webserver.targets
+	forward_to = [loki.write.default.receiver]
+}
+
+// ── 2. Combined docker-compose stack containers (optional) ───────────────────────────────────
+discovery.docker "rubricmaker" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+
+	filter {
+		name   = "label"
+		values = ["com.docker.compose.project=rubricmaker"]
+	}
+}
+
+discovery.relabel "docker" {
+	targets = []
+
+	// The dashboards select container logs with {job="docker"}; Promtail never set it.
+	rule {
+		target_label = "job"
+		replacement  = "docker"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/?(.*)"
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "service"
+	}
+}
+
+loki.source.docker "rubricmaker" {
+	host             = "unix:///var/run/docker.sock"
+	targets          = discovery.docker.rubricmaker.targets
+	relabel_rules    = discovery.relabel.docker.rules
+	refresh_interval = "15s"
+	forward_to       = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

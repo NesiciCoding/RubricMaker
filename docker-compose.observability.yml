@@ -1,4 +1,4 @@
-# RubricMaker — standalone observability stack (Loki + Promtail + Grafana)
+# RubricMaker — standalone observability stack (Loki + Alloy + Grafana)
 #
 # Runs independently of how RubricMaker itself is deployed — the combined
 # docker-compose.yml stack, or a traditional Apache/Nginx + HestiaCP/Virtualmin
@@ -18,18 +18,21 @@ name: rubricmaker-observability
 
 services:
   loki:
-    image: grafana/loki:2.9.8
+    image: grafana/loki:3.7.8
     restart: unless-stopped
     volumes:
       - ./docker/observability/loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yaml
 
-  promtail:
-    image: grafana/promtail:2.9.8
+  # Grafana Alloy replaced Promtail, which reached end-of-life on 2026-03-02.
+  alloy:
+    image: grafana/alloy:v1.20.1
     restart: unless-stopped
     volumes:
-      - ./docker/observability/promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./docker/observability/config.alloy:/etc/alloy/config.alloy:ro
+      # Read positions, so a restart resumes instead of re-sending every log file.
+      - alloy-data:/var/lib/alloy/data
       # Host log directory for traditional Apache/Nginx + HestiaCP/Virtualmin
       # deployments (set RUBRICMAKER_LOG_DIR to the panel's log path).
       - ${RUBRICMAKER_LOG_DIR:-/var/log}:/var/host-logs:ro
@@ -45,11 +48,15 @@ services:
       # runs on this host — harmless if these paths don't exist.
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: -config.file=/etc/promtail/config.yml
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
     depends_on: [loki]
 
   grafana:
-    image: grafana/grafana:11.1.0
+    image: grafana/grafana:13.2.3
     restart: unless-stopped
     ports:
       # Bound to localhost only — put a reverse proxy (with HTTPS) in front
@@ -65,6 +72,10 @@ services:
       # stack can never come up with a well-known admin password.
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env.observability}"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Grafana 12+ downloads and auto-updates extra plugins from grafana.com on every start. Run
+      # only what the pinned image ships (it includes the Loki, Prometheus and Postgres datasources),
+      # so the stack is reproducible and starts the same on a firewalled server.
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
       # Set when Grafana sits behind a reverse-proxy subdomain, so links,
       # redirects and auth cookies use the right external URL.
       GF_SERVER_DOMAIN: "${GRAFANA_DOMAIN:-localhost}"
@@ -85,6 +96,7 @@ services:
 
 volumes:
   loki-data:    # persists log chunks across restarts
+  alloy-data:   # persists Alloy's read positions (and its write-ahead log)
   grafana-data: # persists Grafana dashboards/users
 
 # ── Optional: self-hosted db on the same host ────────────────────────────────

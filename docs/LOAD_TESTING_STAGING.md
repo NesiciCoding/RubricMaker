@@ -32,11 +32,11 @@ exist on:
 
 So pick your `TARGET` to match the VM:
 
-| VM runs…                              | Edge functions? | Use `TARGET=` | Tiers exercised |
-| ------------------------------------- | --------------- | ------------- | --------------- |
-| This repo's `docker-compose.yml`      | No              | `rest`        | PostgREST + Postgres + auth (seeding) |
-| Official self-hosted Supabase stack   | Yes             | `both` (default) | Edge functions + PostgREST + Postgres + auth |
-| Supabase Cloud                        | Yes             | `both`        | (that's Phase-2 hosted, not a VM) |
+| VM runs…                            | Edge functions? | Use `TARGET=`    | Tiers exercised                              |
+| ----------------------------------- | --------------- | ---------------- | -------------------------------------------- |
+| This repo's `docker-compose.yml`    | No              | `rest`           | PostgREST + Postgres + auth (seeding)        |
+| Official self-hosted Supabase stack | Yes             | `both` (default) | Edge functions + PostgREST + Postgres + auth |
+| Supabase Cloud                      | Yes             | `both`           | (that's Phase-2 hosted, not a VM)            |
 
 If you want the fullest capacity picture (including the edge functions students
 hit when opening a test), mirror the **official self-hosted stack** on the VM and
@@ -117,9 +117,9 @@ VUS=200 npm run loadtest:stress
 Watch **both sides** during a run:
 
 - **k6's live output** — RPS, p95, error rate. Rising `dropped_iterations` or
-  connection errors *before* server latency climbs means your *generator* is
+  connection errors _before_ server latency climbs means your _generator_ is
   saturated, not the VM — move k6 to a bigger box.
-- **the VM's own metrics** — `htop` on the VM, or the bundled Loki/Promtail/Grafana
+- **the VM's own metrics** — `htop` on the VM, or the bundled Loki/Alloy/Grafana
   stack ([`docker-compose.observability.yml`](../docker-compose.observability.yml),
   see [`docs/OBSERVABILITY_DASHBOARDS.md`](OBSERVABILITY_DASHBOARDS.md)). CPU
   pinned at 100%, Postgres hitting its connection limit, or swap usage is what

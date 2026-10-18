@@ -12,18 +12,18 @@ how to extend them.
 
 **Source:** Loki (always provisioned — works in every deployment).
 
-| Panel | Query | What it tells you |
-|---|---|---|
-| Error log rate | `sum(rate({job=~"webserver\|docker"} \|~ "(?i)error" [5m]))` | Lines/sec containing "error" across web server and container logs, last 5 minutes. |
-| HTTP 5xx rate | `sum(rate({job="webserver"} \|~ " 5[0-9][0-9] " [5m]))` | Server-error response rate from access logs. Spikes here usually mean a backend or proxy problem, not a client bug. |
-| Log volume by source | `sum by (job) (rate({job=~"webserver\|docker"}[1m]))` | Relative traffic between `webserver` (Apache/Nginx access+error logs) and `docker` (combined-stack container stdout/stderr). Useful for spotting a job that's gone silent. |
-| Total log lines (1h) | `sum(count_over_time({job=~"webserver\|docker"}[1h]))` | Overall log throughput — a sudden drop to zero usually means Promtail lost its source, not that errors stopped. |
-| Warning rate | `sum(rate({job=~"webserver\|docker"} \|~ "(?i)warn" [5m]))` | Same idea as the error rate panel, one severity down. |
-| Recent errors & warnings | `{job=~"webserver\|docker"} \|~ "(?i)(error\|warn\|exception\|traceback)"` | Raw log lines — click through from a spike in the panels above to read what actually happened. |
+| Panel                    | Query                                                                      | What it tells you                                                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Error log rate           | `sum(rate({job=~"webserver\|docker"} \|~ "(?i)error" [5m]))`               | Lines/sec containing "error" across web server and container logs, last 5 minutes.                                                                                         |
+| HTTP 5xx rate            | `sum(rate({job="webserver"} \|~ " 5[0-9][0-9] " [5m]))`                    | Server-error response rate from access logs. Spikes here usually mean a backend or proxy problem, not a client bug.                                                        |
+| Log volume by source     | `sum by (job) (rate({job=~"webserver\|docker"}[1m]))`                      | Relative traffic between `webserver` (Apache/Nginx access+error logs) and `docker` (combined-stack container stdout/stderr). Useful for spotting a job that's gone silent. |
+| Total log lines (1h)     | `sum(count_over_time({job=~"webserver\|docker"}[1h]))`                     | Overall log throughput — a sudden drop to zero usually means Alloy lost its source, not that errors stopped.                                                               |
+| Warning rate             | `sum(rate({job=~"webserver\|docker"} \|~ "(?i)warn" [5m]))`                | Same idea as the error rate panel, one severity down.                                                                                                                      |
+| Recent errors & warnings | `{job=~"webserver\|docker"} \|~ "(?i)(error\|warn\|exception\|traceback)"` | Raw log lines — click through from a spike in the panels above to read what actually happened.                                                                             |
 
 If `RUBRICMAKER_LOG_DIR` doesn't point at any `*access*.log` / `*error*.log`
 files (see `.env.observability.example`), the `webserver` job has nothing to
-scrape and these panels stay empty — that's a Promtail config issue, not a
+scrape and these panels stay empty — that's an Alloy config issue, not a
 Grafana one. Use **Explore** with the Loki datasource to confirm log lines
 are arriving before debugging the dashboard.
 
@@ -43,18 +43,18 @@ fails, so these panels cannot query `client_logs` — expected for deployments
 that don't use the stress-test logging feature. The Loki dashboards on this
 stack are unaffected.
 
-| Panel | What it shows |
-|---|---|
-| Active sessions | Distinct `session_id` values seen in the selected time range — roughly "how many browser tabs were active". |
-| Actions logged | Count of `category = 'action'` rows — every dispatched `AppContext` action (see `summarizeAction` in `src/context/AppContext.tsx`). |
-| Sync errors | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. This should stay at 0; the panel turns red at 1 or more. |
-| JS errors | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). This should stay at 0; the panel turns red at 1 or more. |
-| Essay submissions | Count of `name = 'essay_submitted'` from `StudentEssayPage`. |
-| Essay submit errors | Count of `name = 'essay_submit_error'`. Compare against essay submissions to gauge the failure rate. |
-| Events per minute by category | Time series of `action` / `sync` / `error` / `lifecycle` event volume — shows overall usage shape during a pilot window (e.g. a class period). |
-| Sync push latency (avg ms) | Average `meta->>'ms'` for `pushOne:<entity>:<action>` sync events (`StorageSync.ts`) — rising latency over a session can indicate Supabase-side slowdowns under load. |
-| Top action types | The most frequent action names in the selected range — what teachers/students are actually doing during the pilot. |
-| Recent warnings & errors | Raw rows for `level IN ('warn', 'error')`, including the `meta` JSON (error messages, entity ids, durations) for debugging a specific failure. |
+| Panel                         | What it shows                                                                                                                                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Active sessions               | Distinct `session_id` values seen in the selected time range — roughly "how many browser tabs were active".                                                                                              |
+| Actions logged                | Count of `category = 'action'` rows — every dispatched `AppContext` action (see `summarizeAction` in `src/context/AppContext.tsx`).                                                                      |
+| Sync errors                   | Count of `category = 'sync' AND level = 'error'` — failed pushes/hydration to Supabase. This should stay at 0; the panel turns red at 1 or more.                                                         |
+| JS errors                     | Count of `category = 'error'` — unhandled rejections (`src/main.tsx`) and React error boundary catches (`src/components/ui/ErrorBoundary.tsx`). This should stay at 0; the panel turns red at 1 or more. |
+| Essay submissions             | Count of `name = 'essay_submitted'` from `StudentEssayPage`.                                                                                                                                             |
+| Essay submit errors           | Count of `name = 'essay_submit_error'`. Compare against essay submissions to gauge the failure rate.                                                                                                     |
+| Events per minute by category | Time series of `action` / `sync` / `error` / `lifecycle` event volume — shows overall usage shape during a pilot window (e.g. a class period).                                                           |
+| Sync push latency (avg ms)    | Average `meta->>'ms'` for `pushOne:<entity>:<action>` sync events (`StorageSync.ts`) — rising latency over a session can indicate Supabase-side slowdowns under load.                                    |
+| Top action types              | The most frequent action names in the selected range — what teachers/students are actually doing during the pilot.                                                                                       |
+| Recent warnings & errors      | Raw rows for `level IN ('warn', 'error')`, including the `meta` JSON (error messages, entity ids, durations) for debugging a specific failure.                                                           |
 
 Since migration `072_client_logs_observability.sql`, every row also carries a
 `path` column (the hash-router route the event happened on), and two new
@@ -85,6 +85,7 @@ domain tables.
 ### Reading `meta`
 
 `meta` is a JSON column with different shapes per event:
+
 - `sync` events: `{ "id": "...", "ms": 123 }` (success) or `{ "id": "...", "error": "..." }` (failure).
 - `error` events: `{ "message": "..." }` or similar — never includes essay/comment/grade text.
 - `essay_submitted` / `essay_submit_error`: `{ "teacherKey": "...", "wordCount": N }`.
@@ -127,15 +128,15 @@ this dashboard reads the domain tables directly, so it works for any
 deployment with a reachable database (including existing/legacy data),
 regardless of `VITE_STRESS_TEST_LOGGING`.
 
-| Panel | What it shows |
-|---|---|
-| Stat rows (18 panels) | Total row counts per domain: teachers, schools, classes, students, rubrics, grades, tests, test attempts, essay assignments/submissions, flashcard decks/reviews, marketplace listings, messages, question-bank items, peer reviews, grading tasks — plus distinct active teachers in the time range. |
-| Daily activity — content created | Rubrics created, grades recorded (`gradedAt`/`updatedAt`), essay submissions, and test attempts per day — the shape of teacher/student work over time. |
-| Signups & marketplace per day | New `profiles` and published marketplace listings per day. |
-| Entity counts by domain | One table ranking every domain by row count, so a silent table (e.g. a broken sync path that stopped writing) is visible at a glance. |
-| Students & grades per school | Multi-tenant breakdown — students and grades attributable to each school. |
-| Most active teachers (grades) | Teachers ranked by grades recorded, with last-graded timestamp. |
-| Latest activity per domain | Most recent write per domain — spot a domain whose last activity is stale. |
+| Panel                            | What it shows                                                                                                                                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stat rows (18 panels)            | Total row counts per domain: teachers, schools, classes, students, rubrics, grades, tests, test attempts, essay assignments/submissions, flashcard decks/reviews, marketplace listings, messages, question-bank items, peer reviews, grading tasks — plus distinct active teachers in the time range. |
+| Daily activity — content created | Rubrics created, grades recorded (`gradedAt`/`updatedAt`), essay submissions, and test attempts per day — the shape of teacher/student work over time.                                                                                                                                                |
+| Signups & marketplace per day    | New `profiles` and published marketplace listings per day.                                                                                                                                                                                                                                            |
+| Entity counts by domain          | One table ranking every domain by row count, so a silent table (e.g. a broken sync path that stopped writing) is visible at a glance.                                                                                                                                                                 |
+| Students & grades per school     | Multi-tenant breakdown — students and grades attributable to each school.                                                                                                                                                                                                                             |
+| Most active teachers (grades)    | Teachers ranked by grades recorded, with last-graded timestamp.                                                                                                                                                                                                                                       |
+| Latest activity per domain       | Most recent write per domain — spot a domain whose last activity is stale.                                                                                                                                                                                                                            |
 
 Many of the jsonb-document tables (`student_rubrics`, `tests`,
 `student_tests`, `flashcard_*`) have no real `created_at` column, so these
@@ -153,16 +154,16 @@ excluded rather than erroring.
 `VITE_STRESS_TEST_LOGGING=true` **and** migration
 `072_client_logs_observability.sql`.
 
-| Panel | What it shows |
-|---|---|
-| Pageviews / Active sessions / Distinct pages | Usage volume in the selected range, from `category = 'pageview'`. |
-| Avg page load / p75 LCP / p75 FID | Headline performance numbers from `meta->>'value'` of `page_load` / `lcp` / `fid`. |
-| Pageviews per minute by page | Time series of traffic per route — which screens get used when. |
-| Web vitals (p75, ms) | LCP / FCP / FID / page-load 75th percentile over time — watch for regressions after a deploy. |
-| Slowest pages (avg page load) | Routes ranked by average `page_load` — the pages worth optimizing first. |
-| Web vitals summary | Per-metric sample count, mean, p75, and max. Note `cls` is a unitless score, not ms. |
-| Sessions by role | Sessions and event volume per `role`. |
-| Recent pageviews | Raw pageview rows for debugging a specific session. |
+| Panel                                        | What it shows                                                                                 |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Pageviews / Active sessions / Distinct pages | Usage volume in the selected range, from `category = 'pageview'`.                             |
+| Avg page load / p75 LCP / p75 FID            | Headline performance numbers from `meta->>'value'` of `page_load` / `lcp` / `fid`.            |
+| Pageviews per minute by page                 | Time series of traffic per route — which screens get used when.                               |
+| Web vitals (p75, ms)                         | LCP / FCP / FID / page-load 75th percentile over time — watch for regressions after a deploy. |
+| Slowest pages (avg page load)                | Routes ranked by average `page_load` — the pages worth optimizing first.                      |
+| Web vitals summary                           | Per-metric sample count, mean, p75, and max. Note `cls` is a unitless score, not ms.          |
+| Sessions by role                             | Sessions and event volume per `role`.                                                         |
+| Recent pageviews                             | Raw pageview rows for debugging a specific session.                                           |
 
 ---
 
