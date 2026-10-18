@@ -934,7 +934,10 @@ function DatabaseTab() {
                                                         {t('settings.sharing_current')}
                                                     </div>
                                                     {loadingRubricShares ? (
-                                                        <InlineSkeleton rows={2} />
+                                                        <InlineSkeleton
+                                                            rows={2}
+                                                            label={t('settings.sharing_loading_shares')}
+                                                        />
                                                     ) : rubricShares.length === 0 ? (
                                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                             {t('settings.sharing_no_shares')}
@@ -1120,7 +1123,10 @@ function DatabaseTab() {
                                                         {t('settings.sharing_class_members')}
                                                     </div>
                                                     {loadingClassMembers ? (
-                                                        <InlineSkeleton rows={2} />
+                                                        <InlineSkeleton
+                                                            rows={2}
+                                                            label={t('settings.sharing_loading_members')}
+                                                        />
                                                     ) : classMembers.length === 0 ? (
                                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                             {t('settings.sharing_no_members')}
@@ -1726,7 +1732,11 @@ function AuditTab() {
             </div>
 
             {loading ? (
-                <TableSkeleton rows={8} columnWidths={['14%', '12%', '28%', '18%', '16%', '12%']} />
+                <TableSkeleton
+                    rows={8}
+                    columnWidths={['14%', '12%', '28%', '18%', '16%', '12%']}
+                    label={t('admin.audit_loading')}
+                />
             ) : rows.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('admin.audit_empty')}</p>
             ) : (
