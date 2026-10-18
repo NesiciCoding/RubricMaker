@@ -150,7 +150,7 @@ describe('SettingsPage', () => {
         renderPage();
         const langSelect = screen.getByLabelText('settings.language_selection');
         fireEvent.change(langSelect, { target: { value: 'nl' } });
-        expect(mockUpdateSettings).toHaveBeenCalledWith({ language: 'nl' });
+        expect(mockUpdateSettings).toHaveBeenCalledWith({ language: 'nl', languageChosen: true });
     });
 
     it('switches to the Teaching tab and adds a grade scale', () => {
