@@ -54,7 +54,7 @@ Uploads go through [rclone](https://rclone.org) (run from the pinned `rclone/rcl
 
 #### Set up
 
-1. Create a bucket at a provider other than the one hosting the server. Cloudflare R2 (no egress fees), Backblaze B2 and Wasabi all work, and an EU region keeps the data in the EU. Create an API key scoped to that bucket only.
+1. Create a bucket at a provider other than the one hosting the server. EU providers keep student data in the EU: Hetzner Object Storage, Scaleway, OVHcloud and IONOS all work (endpoints in `.env.backup.example`). So do Cloudflare R2 (no egress fees), Backblaze B2 and Wasabi; pick an EU region there. Create an API key scoped to that bucket only.
 2. `cp .env.backup.example .env.backup && chmod 600 .env.backup` and fill it in. Generate the passphrase with `openssl rand -base64 32`.
 3. **Store a copy of `BACKUP_ENCRYPTION_PASSPHRASE` away from the server** (the school's password manager, or a sealed envelope with the head of IT). Without it, no off-site backup can be decrypted, and if the server is lost, so is `.env.backup`. Keep the bucket credentials with it, or know how to issue new ones.
 4. Run `./scripts/scheduled-backup.sh` once by hand, then `./scripts/offsite-backup.sh list` to see the backup in the bucket.
@@ -96,7 +96,7 @@ Re-measure the RTO when the data grows: the restore time scales with the databas
 Someone with root on the server can read `.env.backup`. With a key that may delete objects, they can also wipe the off-site copies. To make the copies survive that:
 
 - Use an API key **without delete permission**, set `OFFSITE_KEEP=0` (the scripts then never delete), and expire old copies with the bucket's lifecycle rules instead (e.g. delete after 30 days).
-- Additionally, enable object versioning or object lock (B2 and Wasabi support object lock; R2 supports bucket locks) so even an overwrite keeps the previous version for the retention period.
+- Additionally, enable object versioning or object lock (the four EU providers above, B2 and Wasabi support object lock; R2 supports bucket locks) so even an overwrite keeps the previous version for the retention period.
 
 ### Volume snapshot (faster, filesystem-level)
 
