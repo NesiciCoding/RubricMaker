@@ -83,7 +83,11 @@ esac`
   *http_code*) echo 401 ;;
 esac`
     );
-    for (const name of ['openssl', 'sshd', 'apt-get', 'systemctl', 'journalctl', 'dmesg', 'crontab', 'ss']) {
+    stub(
+        'crontab',
+        '[[ "$1" == -l ]] && echo \'15 05 * * * sudo /usr/local/hestia/bin/v-backup-users > /dev/null 2>&1\''
+    );
+    for (const name of ['openssl', 'sshd', 'apt-get', 'systemctl', 'journalctl', 'dmesg', 'ss']) {
         stub(name, 'exit 0');
     }
     return stack;
@@ -123,6 +127,7 @@ describe('scripts/audit-live-stack.sh', () => {
         expect(out).toMatch(/\[PASS\] supabase-db has oom_score_adj -800/);
         expect(out).toMatch(/\[PASS\] shared_buffers is 2048 MB/);
         expect(out).toMatch(/\[PASS\] Connections: 12 of 100/);
+        expect(out).toMatch(/\[FAIL\] Only HestiaCP's v-backup-users is scheduled/);
     });
 
     it('exits non-zero when something fails', () => {

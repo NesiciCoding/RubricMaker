@@ -414,8 +414,13 @@ fi
 section "Backups (#931)"
 cron_hits="$( (crontab -l 2>/dev/null; cat /etc/crontab /etc/cron.d/* /var/spool/cron/crontabs/* 2>/dev/null) |
     grep -vE '^\s*#' | grep -oE '[^ ]*(backup|pg_dump|rclone|restic|borg)[^ ]*' | sort -u | tr '\n' ' ')"
-if [[ -n "$cron_hits" ]]; then
-    info "Scheduled backup commands found: $cron_hits"
+# HestiaCP's own nightly backup covers its users' web, mail and panel databases, not Docker volumes.
+db_backup_hits="$(tr ' ' '\n' <<<"$cron_hits" | grep -v 'v-backup-users' | grep . | tr '\n' ' ')"
+if [[ -n "$db_backup_hits" ]]; then
+    info "Scheduled backup commands found: $db_backup_hits"
+elif [[ -n "$cron_hits" ]]; then
+    fail "Only HestiaCP's v-backup-users is scheduled: it does not include the Supabase database or uploads" \
+        "It backs up HestiaCP users (web, mail, panel databases) to the same disk. #931 adds a pg_dump + uploads backup with an off-site copy."
 else
     fail "No scheduled pg_dump/rclone/restic/borg backup on this host" \
         "The nightly-backup edge function's JSON snapshots hold no files and live on the same disk. #931 makes scripts/scheduled-backup.sh work on this stack."
