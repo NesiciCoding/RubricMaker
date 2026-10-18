@@ -450,7 +450,7 @@ else
             psql_q "SELECT version || coalesce('_' || name, '') FROM supabase_migrations.schema_migrations" 2>/dev/null
         } | sed 's/\.sql$//' | sort -u)"
         if [[ -z "$applied" ]]; then
-            warn "No migration bookkeeping table found (public._migrations or supabase_migrations.schema_migrations): can't tell which migrations production has" "#935"
+            warn "No migration bookkeeping table found (public._migrations or supabase_migrations.schema_migrations): can't tell which migrations production has" "python3 scripts/stack-drift.py check, then baseline"
         else
             missing=()
             for f in "$REPO_DIR"/supabase/migrations/*.sql; do
@@ -458,7 +458,7 @@ else
                 grep -qxF "$stem" <<<"$applied" || missing+=("$stem")
             done
             if [[ ${#missing[@]} -gt 0 ]]; then
-                warn "${#missing[@]} repository migrations are not recorded as applied: ${missing[*]:0:10}${missing[10]:+ …}" "#935 (if they were applied by hand without bookkeeping, record them)"
+                warn "${#missing[@]} repository migrations are not recorded as applied: ${missing[*]:0:10}${missing[10]:+ …}" "python3 scripts/stack-drift.py check shows which are really missing; apply runs them"
             else
                 pass "Every repository migration is recorded as applied"
             fi
@@ -476,7 +476,7 @@ else
             fi
         done
         if [[ ${#drift[@]} -gt 0 ]]; then
-            warn "Edge functions differ from the repository: ${drift[*]}" "Copy supabase/functions/<name> into $funcs (or automate it, #935)"
+            warn "Edge functions differ from the repository: ${drift[*]}" "bash scripts/deploy-edge-functions.sh (checks migrations first, backs up, restarts, probes)"
         else
             pass "Deployed edge functions match the repository"
         fi
