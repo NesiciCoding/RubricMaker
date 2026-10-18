@@ -90,16 +90,23 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     } | null>(null);
     const [essayAssignmentLoading, setEssayAssignmentLoading] = useState(kind === 'essay');
     const [testTeacherKeys, setTestTeacherKeys] = useState<Record<string, string>>({});
-    // Starts true for a test monitor: the teacher-key lookup is what reveals in-progress
-    // students (they have no `student_tests` row until hand-in), so until it settles the
-    // grid shows skeleton tiles rather than a premature "no students" empty state.
-    const [testTeacherKeysLoading, setTestTeacherKeysLoading] = useState(kind === 'test');
+    // Which test.id the teacher-key lookup has finished for. The lookup is what reveals
+    // in-progress students (they have no `student_tests` row until hand-in), so until it
+    // settles the grid must show skeleton tiles rather than a premature "no students" empty
+    // state. Recording the resolved id — instead of flipping a boolean in the effect — is
+    // what makes the pending state apply on the very first frame after switching from one
+    // test's monitor to another's, where the page is not remounted.
+    const [testTeacherKeysSettledFor, setTestTeacherKeysSettledFor] = useState<string | null>(null);
 
     const { fetchEssayAssignmentByKey, fetchEssaySubmissions } = useEssays();
 
     const hasDb = dbStatus.isConnected && !!config?.supabaseUrl && !!config?.supabaseAnonKey;
 
     const test = kind === 'test' ? tests.find((tst) => tst.id === params.testId) : undefined;
+
+    // Derived during render so it is already true for a test whose lookup has not started.
+    const testTeacherKeysLoading =
+        kind === 'test' && test !== undefined && hasDb && testTeacherKeysSettledFor !== test.id;
 
     // ── Essay assignment lookup (teacher-owned row, by teacherKey) ───────────────
     useEffect(() => {
@@ -159,18 +166,15 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
     // ── Test teacherKey lookup (Realtime channel name = the per-student teacherKey,
     // not a testId/studentId guess — see assignmentKeyFor below) ─────────────────
     useEffect(() => {
-        if (kind !== 'test' || !test || !hasDb) {
-            setTestTeacherKeysLoading(false);
-            return;
-        }
+        if (kind !== 'test' || !test || !hasDb) return;
         let cancelled = false;
+        const testId = test.id;
         // Reset before fetching: this effect re-fires when `test.id` changes (the route
         // doesn't remount LiveMonitorPage between two tests' monitor pages), and without
         // this a student who overlaps between the two tests would transiently render
         // keyed to the PREVIOUS test's teacherKey/channel until the new fetch resolves.
         setTestTeacherKeys({});
-        setTestTeacherKeysLoading(true);
-        fetchTestAssignmentTeacherKeys(test.id)
+        fetchTestAssignmentTeacherKeys(testId)
             .then((keys) => {
                 if (!cancelled) setTestTeacherKeys(keys);
             })
@@ -178,7 +182,7 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                 if (!cancelled) setTestTeacherKeys({});
             })
             .finally(() => {
-                if (!cancelled) setTestTeacherKeysLoading(false);
+                if (!cancelled) setTestTeacherKeysSettledFor(testId);
             });
         return () => {
             cancelled = true;
@@ -610,9 +614,11 @@ export default function LiveMonitorPage({ kind }: LiveMonitorPageProps) {
                     />
                 )}
 
-                {kind === 'test' && testTeacherKeysLoading && sortedRows.length === 0 ? (
+                {kind === 'test' && testTeacherKeysLoading ? (
                     // Teacher keys still resolving: in-progress students have no persisted
-                    // row yet, so hold the skeleton instead of asserting "no students".
+                    // row yet, so hold the skeleton instead of asserting "no students" — and
+                    // instead of rendering the persisted rows on their own, which would show
+                    // an incomplete roster until the in-progress students arrive.
                     <InlineMonitorSkeleton />
                 ) : sortedRows.length === 0 ? (
                     <p className="text-muted">{t('tests.monitor.no_students')}</p>

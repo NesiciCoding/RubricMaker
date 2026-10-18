@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
 import type { Student, Test } from '../../types';
 import LiveMonitorPage from '../LiveMonitorPage';
@@ -107,6 +107,11 @@ function renderPage(initialEntries: string[]) {
     );
 }
 
+/** Flush the teacher-key lookup so the grid drops its loading skeleton and renders the roster. */
+async function settleTeacherKeys() {
+    await act(async () => {});
+}
+
 describe('LiveMonitorPage', () => {
     beforeEach(() => {
         mockHasDb = false;
@@ -177,8 +182,9 @@ describe('LiveMonitorPage', () => {
             });
         });
 
-        it('toggles hide-names so the student row shows an anonymised label', () => {
+        it('toggles hide-names so the student row shows an anonymised label', async () => {
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
 
             expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
 
@@ -192,7 +198,7 @@ describe('LiveMonitorPage', () => {
             expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
         });
 
-        it('reflects presence based on heartbeat age using fake timers', () => {
+        it('reflects presence based on heartbeat age using fake timers', async () => {
             vi.useFakeTimers();
 
             mockUseApp = {
@@ -214,6 +220,7 @@ describe('LiveMonitorPage', () => {
             vi.setSystemTime(fixedNow);
 
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
 
             expect(screen.getByText('tests.monitor.presence.active')).toBeInTheDocument();
 
@@ -228,7 +235,7 @@ describe('LiveMonitorPage', () => {
             vi.useRealTimers();
         });
 
-        it('flags a submission made after the due date as late', () => {
+        it('flags a submission made after the due date as late', async () => {
             mockUseApp = {
                 ...mockUseApp,
                 tests: [{ ...mockTest, dueDate: '2026-06-01T00:00:00.000Z' }],
@@ -247,11 +254,12 @@ describe('LiveMonitorPage', () => {
             };
 
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
 
             expect(screen.getByTitle('tests.monitor.status.late')).toBeInTheDocument();
         });
 
-        it('does not flag an on-time submission as late', () => {
+        it('does not flag an on-time submission as late', async () => {
             mockUseApp = {
                 ...mockUseApp,
                 tests: [{ ...mockTest, dueDate: '2026-06-01T00:00:00.000Z' }],
@@ -270,6 +278,7 @@ describe('LiveMonitorPage', () => {
             };
 
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
 
             expect(screen.queryByTitle('tests.monitor.status.late')).not.toBeInTheDocument();
             expect(screen.getByTitle('tests.monitor.status.submitted')).toBeInTheDocument();
@@ -329,6 +338,49 @@ describe('LiveMonitorPage', () => {
             expect(screen.queryByText('tests.monitor.no_students')).not.toBeInTheDocument();
         });
 
+        it('holds the skeleton while teacher keys resolve even with a persisted row on screen', () => {
+            mockUseApp = {
+                ...mockUseApp,
+                // student-1 already has a persisted row; student-2 is known only through the
+                // teacher-key lookup, so rendering now would show a roster about to grow.
+                students: [mockStudent, { id: 'student-2', name: 'Bob', classId: 'class-1' }],
+                fetchTestAssignmentTeacherKeys: vi.fn(() => new Promise(() => {})),
+            };
+            renderPage(['/tests/test-1/monitor']);
+            expect(screen.getByLabelText('a11y.loading')).toBeInTheDocument();
+            expect(screen.queryAllByText('Alice')).toHaveLength(0);
+            expect(screen.queryByText('tests.monitor.no_students')).not.toBeInTheDocument();
+        });
+
+        it('holds the skeleton on the first frame after switching to another test', async () => {
+            // test-1's lookup resolves, test-2's never does: switching tests must fall back to
+            // the skeleton rather than keep rendering test-1's settled roster. The route does
+            // not remount the page, so the pending state has to come from the test id.
+            mockUseApp = {
+                ...mockUseApp,
+                tests: [mockTest, { ...mockTest, id: 'test-2', name: 'Second Quiz' }],
+                fetchTestAssignmentTeacherKeys: vi
+                    .fn()
+                    .mockResolvedValueOnce({ 'student-1': 'tk-1' })
+                    .mockReturnValueOnce(new Promise(() => {})),
+            };
+            const router = createMemoryRouter(
+                [{ path: '/tests/:testId/monitor', element: <LiveMonitorPage kind="test" /> }],
+                { initialEntries: ['/tests/test-1/monitor'] }
+            );
+            render(<RouterProvider router={router} />);
+            await settleTeacherKeys();
+            expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
+
+            await act(async () => {
+                await router.navigate('/tests/test-2/monitor');
+            });
+
+            expect(screen.getByLabelText('a11y.loading')).toBeInTheDocument();
+            expect(screen.queryAllByText('Alice')).toHaveLength(0);
+            expect(screen.queryByText('tests.monitor.no_students')).not.toBeInTheDocument();
+        });
+
         it('drops the skeleton once teacher keys resolve to an empty set', async () => {
             mockUseApp = { ...mockUseApp, studentTests: [] };
             renderPage(['/tests/test-1/monitor']);
@@ -360,9 +412,10 @@ describe('LiveMonitorPage', () => {
             expect(mockClient.channel).toHaveBeenCalledWith('monitor:test:no-teacher-key:student-1');
         });
 
-        it('renders proctoring flags from live broadcast events', () => {
+        it('renders proctoring flags from live broadcast events', async () => {
             vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             const ch = channels[0];
             act(() => {
                 ch.handlers.event({ payload: { type: 'tab_switch', at: '2026-01-01T00:00:01Z' } });
@@ -380,9 +433,10 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('tests.monitor.flags.seb')).toBeInTheDocument();
         });
 
-        it('renders the non-charging battery flag variant', () => {
+        it('renders the non-charging battery flag variant', async () => {
             vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             const ch = channels[0];
             act(() => {
                 ch.handlers.event({ payload: { type: 'battery', at: '2026-01-01T00:00:05Z', value: '40' } });
@@ -391,9 +445,10 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('tests.monitor.flags.battery')).toBeInTheDocument();
         });
 
-        it('warns in red once tab switches reach the threshold', () => {
+        it('warns in red once tab switches reach the threshold', async () => {
             vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             const ch = channels[0];
             act(() => {
                 ch.handlers.event({ payload: { type: 'tab_switch', at: '2026-01-01T00:00:01Z' } });
@@ -404,7 +459,7 @@ describe('LiveMonitorPage', () => {
             expect(screen.getByText('tests.monitor.flags.tabSwitch (3)')).toBeInTheDocument();
         });
 
-        it('merges live snapshot answers with persisted answers', () => {
+        it('merges live snapshot answers with persisted answers', async () => {
             mockUseApp = {
                 ...mockUseApp,
                 tests: [
@@ -451,6 +506,7 @@ describe('LiveMonitorPage', () => {
             };
             vi.useFakeTimers();
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             const ch = channels[0];
             act(() => {
                 ch.handlers.snapshot({ payload: { answers: { q1: 'b' } } });
@@ -461,8 +517,9 @@ describe('LiveMonitorPage', () => {
             expect(screen.getAllByTitle('tests.monitor.grid.state.incorrect')).toHaveLength(1);
         });
 
-        it('sends a nudge over the student channel', () => {
+        it('sends a nudge over the student channel', async () => {
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             fireEvent.click(screen.getByTitle('tests.monitor.nudge_button'));
             expect(mockSend).toHaveBeenCalledWith({
                 type: 'broadcast',
@@ -477,6 +534,7 @@ describe('LiveMonitorPage', () => {
                 tests: [{ ...mockTest, placementEngine: 'generator' }],
             };
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             fireEvent.click(screen.getByTitle('tests.monitor.nudge_up_button'));
             await act(async () => {});
             expect(mockSetPlacementOverride).toHaveBeenCalledWith('no-teacher-key:student-1', 'up');
@@ -491,13 +549,14 @@ describe('LiveMonitorPage', () => {
                 setPlacementOverride: vi.fn().mockRejectedValue(new Error('boom')),
             };
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             fireEvent.click(screen.getByTitle('tests.monitor.nudge_down_button'));
             await act(async () => {});
             expect(mockShowToast).toHaveBeenCalledWith('tests.monitor.nudge_override_error', 'error');
             spy.mockRestore();
         });
 
-        it('sorts rows by name, progress and ungraded status', () => {
+        it('sorts rows by name, progress and ungraded status', async () => {
             const alice = { id: 's-a', name: 'Alice', classId: 'class-1' };
             const bob = { id: 's-b', name: 'Bob', classId: 'class-1' };
             const carol = { id: 's-c', name: 'Carol', classId: 'class-1' };
@@ -553,6 +612,7 @@ describe('LiveMonitorPage', () => {
                 ],
             };
             renderPage(['/tests/test-1/monitor']);
+            await settleTeacherKeys();
             const nameOrder = () =>
                 screen
                     .getAllByText(/^(Alice|Bob|Carol|Dana)$/)
