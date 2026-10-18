@@ -1,0 +1,202 @@
+[
+  {
+    "name": "landing",
+    "info": {
+      "h1": [
+        "Better assessment, for everyone"
+      ],
+      "skipLinks": 0,
+      "docTitle": "Rubric Maker",
+      "lang": "en"
+    },
+    "firstTab": {
+      "tag": "button",
+      "name": "Continue without account",
+      "outline": "solid 2px",
+      "hasFocusStyle": true,
+      "inDialog": false
+    },
+    "axe": []
+  },
+  {
+    "name": "skip-link-and-tab-walk",
+    "firstTab": {
+      "tag": "a",
+      "name": "Skip to main content",
+      "outline": "solid 2px",
+      "hasFocusStyle": true,
+      "inDialog": false
+    },
+    "afterSkip": {
+      "active": "BODY",
+      "hash": "#main-content",
+      "mainText": "Page not found1404 — Page not foundThe page you're looking for doesn't exist or ",
+      "mainH1": [
+        "404 — Page not found"
+      ],
+      "mainTabIndex": null
+    },
+    "stops": [
+      "button: Search (Ctrl/Cmd+K)",
+      "button: Notifications (1 overdue)",
+      "button: Toggle theme",
+      "a: Go to Dashboard",
+      "BODY",
+      "a: Skip to main content",
+      "a: Overview",
+      "a: Assessments",
+      "a: Students",
+      "a: Insights",
+      "a: Library",
+      "a: Dashboard",
+      "a: Settings",
+      "a: Docs",
+      "a: Admin Dashboard",
+      "a: Privacy & AVG",
+      "button: Search (Ctrl/Cmd+K)",
+      "button: Notifications (1 overdue)",
+      "button: Toggle theme",
+      "a: Go to Dashboard",
+      "BODY",
+      "a: Skip to main content",
+      "a: Overview",
+      "a: Assessments"
+    ],
+    "stopsWithoutVisibleFocus": []
+  },
+  {
+    "name": "add-student-dialog",
+    "info": {
+      "ariaModal": "true",
+      "labelText": "Add Student",
+      "backgroundInert": false,
+      "autoFocus": "student-name"
+    },
+    "tabStopsOutsideDialog": 9,
+    "focusTrail": [
+      "input:",
+      "input:",
+      "button:Cancel",
+      "BODY: [OUTSIDE]",
+      "a:Skip to main content [OUTSIDE]",
+      "a:Overview [OUTSIDE]",
+      "a:Assessments [OUTSIDE]",
+      "a:Students [OUTSIDE]",
+      "a:Insights [OUTSIDE]",
+      "a:Library [OUTSIDE]",
+      "a:Students [OUTSIDE]",
+      "a:CEFR Overview [OUTSIDE]"
+    ],
+    "openAfterEscape": true,
+    "focusAfterClose": {
+      "tag": "BODY"
+    },
+    "axe": [
+      {
+        "id": "color-contrast",
+        "nodes": 11
+      },
+      {
+        "id": "target-size",
+        "nodes": 2
+      }
+    ]
+  },
+  {
+    "name": "confirm-dialog",
+    "before": {
+      "ariaModal": null,
+      "title": "Delete Rubric",
+      "describedBy": "confirm-dialog-message",
+      "firstFocus": "Delete"
+    },
+    "closedOnEscape": true,
+    "focusAfterClose": {
+      "tag": "BODY"
+    }
+  },
+  {
+    "name": "toast",
+    "toast": {
+      "text": "ℹDeleted “Argumentative Essay B1”.Undo×",
+      "ariaLive": null
+    }
+  },
+  {
+    "name": "settings-tabs",
+    "tabs": [
+      {
+        "name": "General",
+        "selected": "true",
+        "tabindex": null,
+        "controls": null
+      },
+      {
+        "name": "Teaching",
+        "selected": "false",
+        "tabindex": null,
+        "controls": null
+      },
+      {
+        "name": "Administration",
+        "selected": "false",
+        "tabindex": null,
+        "controls": null
+      }
+    ],
+    "tabpanels": 0,
+    "afterArrowRight": {
+      "focused": "General",
+      "selected": [
+        "true",
+        "false",
+        "false"
+      ]
+    }
+  },
+  {
+    "name": "mobile-drawer",
+    "drawer": {
+      "open": true,
+      "role": null,
+      "ariaModal": null,
+      "focusInside": false,
+      "focus": "BUTTON:Open navigation menu",
+      "backgroundInert": false
+    },
+    "stillOpenAfterEscape": true,
+    "axe": [
+      {
+        "id": "color-contrast",
+        "nodes": 8
+      }
+    ]
+  },
+  {
+    "name": "language-nl",
+    "htmlLang": "en",
+    "heading": "Rol & toegang"
+  },
+  {
+    "name": "language-fr",
+    "htmlLang": "en",
+    "heading": "Rôle et accès"
+  },
+  {
+    "name": "route-change",
+    "hash": "#/students",
+    "title": "Rubric Maker",
+    "focus": "Students",
+    "statusAnnouncement": "Rubric Maker",
+    "h1": 0,
+    "headings": [
+      "H3:Class 4A — 4 students"
+    ]
+  },
+  {
+    "name": "reduced-motion",
+    "prefersReduce": true,
+    "modalAnimation": "none 0s",
+    "overlayAnimation": "modal-overlay-in 0.16s"
+  }
+]

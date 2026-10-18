@@ -1,0 +1,4883 @@
+{
+  "reflow320": [
+    {
+      "route": "/",
+      "label": "Dashboard",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics",
+      "label": "Rubric list",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/new",
+      "label": "Rubric builder (new)",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1",
+      "label": "Rubric builder (edit)",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
+      "label": "Grading",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/peer-review/student-a11y-1",
+      "label": "Peer review",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/peer-analytics/rubric-a11y-1",
+      "label": "Peer analytics",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/self-assess/student-a11y-1",
+      "label": "Self assessment",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/speaking/rubric2-a11y-1/student-a11y-1",
+      "label": "Speaking session",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/grade-comparative/class-a11y-1/rubric-a11y-1",
+      "label": "Comparative grading",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students",
+      "label": "Students",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students/student-a11y-1",
+      "label": "Student profile",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students/student-a11y-1/cefr-overview",
+      "label": "Student CEFR overview",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students/student-a11y-1/learning-path",
+      "label": "Student learning path",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "main",
+          "cls": "main-area",
+          "text": "Learning PathTour this page Back to Prof",
+          "scrollH": 808,
+          "clientH": 800
+        }
+      ]
+    },
+    {
+      "route": "/cefr-overview",
+      "label": "CEFR overview",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/vocabulary",
+      "label": "Vocabulary dashboard",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests",
+      "label": "Test list",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests/new",
+      "label": "Test builder (new)",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests/test-a11y-1",
+      "label": "Test builder (edit)",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/essays",
+      "label": "Essay list",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/essays/new",
+      "label": "Essay builder (new)",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/flashcards",
+      "label": "Flashcards",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/flashcards/deck-a11y-1",
+      "label": "Flashcard deck",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/news-flashes",
+      "label": "News flashes",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/portal/student-a11y-1",
+      "label": "Student portal",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "main",
+          "cls": "main-area",
+          "text": "Previewing as student — this is what the",
+          "scrollH": 866,
+          "clientH": 800
+        }
+      ]
+    },
+    {
+      "route": "/portal/student-a11y-1/flashcards/deck-a11y-1",
+      "label": "Student flashcard study",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/attachments",
+      "label": "Attachments",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/export",
+      "label": "Export",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/statistics",
+      "label": "Statistics",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/activity-dashboard",
+      "label": "Activity dashboard",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "label",
+          "cls": "sr-only",
+          "text": "Standards Coverage",
+          "scrollH": 19,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/moderation",
+      "label": "Moderation queue",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/notifications",
+      "label": "Notifications",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "main",
+          "cls": "main-area",
+          "text": "NotificationsTour this page1AllOverdue g",
+          "scrollH": 808,
+          "clientH": 800
+        }
+      ]
+    },
+    {
+      "route": "/messages",
+      "label": "Messages",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/comments",
+      "label": "Comment bank",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/question-bank",
+      "label": "Question bank",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/marketplace",
+      "label": "Marketplace",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/settings",
+      "label": "Settings",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/admin",
+      "label": "Admin",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "main",
+          "cls": "main-area",
+          "text": "Admin DashboardTour this page1UsersSchoo",
+          "scrollH": 808,
+          "clientH": 800
+        }
+      ]
+    },
+    {
+      "route": "/docs",
+      "label": "Docs",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/privacy",
+      "label": "Privacy",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/this-route-does-not-exist",
+      "label": "Not found",
+      "viewport": 320,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "nav",
+          "cls": "nav-rail",
+          "text": "OverviewAssessmentsStudentsInsightsLibra",
+          "left": -236,
+          "right": -160
+        },
+        {
+          "tag": "div",
+          "cls": "nav-rail-logo",
+          "text": "",
+          "left": -216,
+          "right": -180
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -207,
+          "right": -189
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -191
+        },
+        {
+          "tag": "a",
+          "cls": "nav-rail-item active",
+          "text": "Overview",
+          "left": -230,
+          "right": -166
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -208,
+          "right": -188
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -206,
+          "right": -200
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        },
+        {
+          "tag": "rect",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": -197,
+          "right": -191
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    }
+  ],
+  "textZoom200": [
+    {
+      "route": "/",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm",
+          "text": "New Rubric",
+          "left": 1195,
+          "right": 1372
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-secondary btn-sm",
+          "text": "Export Summaries",
+          "left": 1167,
+          "right": 1425
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm",
+          "text": "Add Student",
+          "left": 1433,
+          "right": 1621
+        },
+        {
+          "tag": "svg",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": 1445,
+          "right": 1460
+        },
+        {
+          "tag": "path",
+          "cls": "[object SVGAnimatedString]",
+          "text": "",
+          "left": 1448,
+          "right": 1457
+        },
+        {
+          "tag": "table",
+          "cls": "data-table",
+          "text": "Name ↑EmailGradesCEFR · WritingTrendLast",
+          "left": 289,
+          "right": 1495
+        },
+        {
+          "tag": "thead",
+          "cls": "",
+          "text": "Name ↑EmailGradesCEFR · WritingTrendLast",
+          "left": 289,
+          "right": 1495
+        },
+        {
+          "tag": "tr",
+          "cls": "",
+          "text": "Name ↑EmailGradesCEFR · WritingTrendLast",
+          "left": 289,
+          "right": 1495
+        },
+        {
+          "tag": "th",
+          "cls": "",
+          "text": "Overall",
+          "left": 1210,
+          "right": 1348
+        },
+        {
+          "tag": "th",
+          "cls": "",
+          "text": "Actions",
+          "left": 1348,
+          "right": 1495
+        },
+        {
+          "tag": "tbody",
+          "cls": "",
+          "text": "AAlice Jansenalice@example.com1 rubricB1",
+          "left": 289,
+          "right": 1495
+        },
+        {
+          "tag": "tr",
+          "cls": "",
+          "text": "AAlice Jansenalice@example.com1 rubricB1",
+          "left": 289,
+          "right": 1495
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/statistics",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        },
+        {
+          "tag": "button",
+          "cls": "",
+          "text": "Class 4A",
+          "left": 1216,
+          "right": 1350
+        },
+        {
+          "tag": "span",
+          "cls": "",
+          "text": "Class 4A",
+          "left": 1229,
+          "right": 1337
+        },
+        {
+          "tag": "button",
+          "cls": "",
+          "text": "Class 4B",
+          "left": 1358,
+          "right": 1490
+        },
+        {
+          "tag": "span",
+          "cls": "",
+          "text": "Class 4B",
+          "left": 1371,
+          "right": 1477
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/settings",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests/test-a11y-1",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "ParagraphHeading 1Heading 2Heading 3",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Inter (default)ArialGeorgiaTimes New Rom",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Size8910111214161820242832364872",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Line height1.01.151.251.51.752.02.53.0",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "ParagraphHeading 1Heading 2Heading 3",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Inter (default)ArialGeorgiaTimes New Rom",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Size8910111214161820242832364872",
+          "scrollH": 39,
+          "clientH": 26
+        },
+        {
+          "tag": "select",
+          "cls": "",
+          "text": "Line height1.01.151.251.51.752.02.53.0",
+          "scrollH": 39,
+          "clientH": 26
+        }
+      ]
+    },
+    {
+      "route": "/docs",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9828
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    }
+  ],
+  "textSpacing": [
+    {
+      "route": "/",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/rubrics/rubric-a11y-1/grade/student-a11y-1",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/students",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn-primary btn-sm",
+          "text": "Add Student",
+          "left": 1160,
+          "right": 1290
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/statistics",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/settings",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/tests/test-a11y-1",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        },
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Drag to reorder",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    },
+    {
+      "route": "/docs",
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "horizontalOverflow": false,
+      "wide": [
+        {
+          "tag": "a",
+          "cls": "skip-nav",
+          "text": "Skip to main content",
+          "left": -9999,
+          "right": -9785
+        }
+      ],
+      "clipped": [
+        {
+          "tag": "span",
+          "cls": "sr-only",
+          "text": "Rubric Maker",
+          "scrollH": 23,
+          "clientH": 1
+        }
+      ]
+    }
+  ]
+}

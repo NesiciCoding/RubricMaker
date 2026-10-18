@@ -415,6 +415,55 @@ jobs:
           path: playwright-results/
           retention-days: 14
 
+  # Accessibility gate: axe-core across every route in light and dark mode.
+  # Runs in the same Playwright container as the e2e shards, so the browsers and
+  # their OS deps are already installed (no apt-get — see the e2e job comment).
+  # Fails on serious/critical violations that are not recorded in
+  # e2e/a11y-baseline.json, so new regressions block the pipeline while the
+  # documented debt from docs/a11y/REPORT.md is paid down. `A11Y_STRICT=1`
+  # ignores the baseline and requires zero violations (the end state).
+  e2e-a11y:
+    name: E2E — Accessibility (axe)
+    needs: playwright-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.playwright-version.outputs.version }}-noble
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run accessibility gate
+        run: npm run e2e:a11y
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-a11y
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-results-a11y
+          path: playwright-results/
+          retention-days: 14
+
   bundle:
     name: Bundle Analysis
     runs-on: ubuntu-latest
@@ -458,8 +507,8 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
     permissions:
       contents: read
       pages: write
@@ -526,8 +575,8 @@ jobs:
   deploy-hestiacp:
     name: Deploy to HestiaCP VPS
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -610,8 +659,8 @@ jobs:
   deploy-vps:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, bundle]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs.bundle.result == 'success' }}
+    needs: [ci, e2e, e2e-merge-reports, e2e-supabase, e2e-a11y, bundle]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' && needs.e2e.result == 'success' && needs['e2e-merge-reports'].result == 'success' && needs['e2e-supabase'].result == 'success' && needs['e2e-a11y'].result == 'success' && needs.bundle.result == 'success' }}
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

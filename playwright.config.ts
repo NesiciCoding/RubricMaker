@@ -50,6 +50,7 @@ export default defineConfig({
                 '**/48-profile-grade-policies.spec.ts',
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
+                '**/51-a11y.spec.ts',
                 ...quarantinePatterns,
             ],
         },
@@ -74,6 +75,7 @@ export default defineConfig({
                 '**/48-profile-grade-policies.spec.ts',
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
+                '**/51-a11y.spec.ts',
                 ...quarantinePatterns,
             ],
         },
@@ -98,8 +100,19 @@ export default defineConfig({
                 '**/48-profile-grade-policies.spec.ts',
                 '**/49-retention-anonymization.spec.ts',
                 '**/50-owner-data-backup.spec.ts',
+                '**/51-a11y.spec.ts',
                 ...quarantinePatterns,
             ],
+        },
+        // Accessibility gate — every route in light and dark mode, axe-core
+        // serious/critical only. Uses the baseline in e2e/a11y-baseline.json so
+        // the gate blocks regressions without re-failing on known debt.
+        // Run with: npm run e2e:a11y
+        {
+            name: 'a11y',
+            use: { ...devices['Desktop Chrome'], reducedMotion: 'reduce' },
+            testMatch: ['**/51-a11y.spec.ts'],
+            testIgnore: [...quarantinePatterns],
         },
         // Speaking session recording — needs a fake camera/mic so MediaRecorder
         // has a stream to capture instead of hanging on a permission prompt.
