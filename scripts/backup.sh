@@ -21,13 +21,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/compose.sh
 source "$SCRIPT_DIR/lib/compose.sh"
+# shellcheck source=lib/offsite.sh
+source "$SCRIPT_DIR/lib/offsite.sh"
 
 BACKUP_ROOT="${1:-./backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUT="$BACKUP_ROOT/$TIMESTAMP"
 if [[ -z "${DB_EXEC:-}" ]]; then
     require_compose
-    DB_EXEC="$COMPOSE exec -T db"
+    DB_EXEC="$(db_exec_default)"
 fi
 
 # Refuse to archive a volume that does not exist: `docker run -v` would create an empty one with
@@ -68,7 +70,11 @@ docker run --rm \
     > "$OUT/storage.tar.gz"
 echo "   ✓ storage.tar.gz ($(du -sh "$OUT/storage.tar.gz" | cut -f1))"
 
+# restore.sh and offsite-backup.sh refuse a backup whose files no longer match these.
+write_checksums "$OUT"
+
 echo ""
 echo "✓ Backup complete → $OUT"
 echo ""
 echo "To restore:  ./scripts/restore.sh $OUT"
+echo "Off-site:    ./scripts/offsite-backup.sh push $OUT"

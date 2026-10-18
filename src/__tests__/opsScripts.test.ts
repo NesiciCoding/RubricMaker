@@ -9,7 +9,15 @@ const libDir = resolve(root, 'scripts', 'lib');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 
 const compose = read('docker-compose.yml');
-const scripts = ['backup.sh', 'restore.sh', 'delete-old-attachments.sh', 'import-cloud.sh'].map((name) => ({
+const scripts = [
+    'backup.sh',
+    'restore.sh',
+    'delete-old-attachments.sh',
+    'import-cloud.sh',
+    'offsite-backup.sh',
+    'scheduled-backup.sh',
+    'restore-drill.sh',
+].map((name) => ({
     name,
     body: read(`scripts/${name}`),
 }));
