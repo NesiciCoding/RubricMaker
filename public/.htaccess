@@ -32,7 +32,7 @@
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
     # Permissions policy — disable APIs the app doesn't use
-    Header always set Permissions-Policy "geolocation=(), camera=(), payment=()"
+    Header always set Permissions-Policy "geolocation=(), camera=(self), microphone=(self), payment=()"
 </IfModule>
 
 # ─── Caching ──────────────────────────────────────────────────────────────────
