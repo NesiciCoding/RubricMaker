@@ -245,14 +245,25 @@ describe('MarketplacePage', () => {
         cleanupSettings();
     });
 
-    it('shows the loading text while listings load', async () => {
+    it('shows a listing-card skeleton, with disabled filters, while listings load', async () => {
         let resolveList: (v: MarketplaceListing[]) => void = () => {};
         mockListListings.mockImplementation(
             () => new Promise<MarketplaceListing[]>((resolve) => (resolveList = resolve))
         );
         await renderConnected();
-        expect(screen.getByText('marketplace.loading')).toBeInTheDocument();
+        const status = screen.getByRole('status', { name: 'marketplace.loading' });
+        expect(status.querySelectorAll('.skeleton').length).toBeGreaterThan(8);
+        expect(screen.queryByText('marketplace.loading')).toBeNull();
+        // Same auto-fill grid as the real cards, so nothing shifts when they arrive.
+        expect((status as HTMLElement).style.gridTemplateColumns).toBe('repeat(auto-fill, minmax(320px, 1fr))');
+        // Controls are visible but inert until listings arrive.
+        expect(screen.getByText('marketplace.filter_kind_all').closest('button')).toBeDisabled();
+        expect(
+            screen.getByText('marketplace.sort_label').closest('.form-group')?.querySelector('select')
+        ).toBeDisabled();
         await act(async () => resolveList([]));
+        expect(screen.getByText('marketplace.empty_state')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).toBeNull();
         cleanupSettings();
     });
 
