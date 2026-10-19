@@ -77,6 +77,32 @@ describe('AdminPage SchoolsTab feedback (#634, #630)', () => {
         await waitFor(() => expect(showToast).toHaveBeenCalledWith('admin.retention_save_failed', 'error'));
     });
 
+    it('shows skeleton rows for the school list and the expanded member list', async () => {
+        let resolveSchools: (value: School[]) => void = () => {};
+        platform.fetchSchools.mockReturnValueOnce(
+            new Promise((res) => {
+                resolveSchools = res;
+            })
+        );
+        const { SchoolsTab } = await import('../AdminPage');
+        render(<SchoolsTab />);
+        const schoolsStatus = screen.getByRole('status', { name: 'admin.schools_loading' });
+        expect(schoolsStatus.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        resolveSchools([school]);
+        await screen.findByText('Alpha School');
+
+        let resolveMembers: (value: (DbUser & { joinedAt: string })[]) => void = () => {};
+        platform.fetchSchoolMembers.mockReturnValueOnce(
+            new Promise((res) => {
+                resolveMembers = res;
+            })
+        );
+        fireEvent.click(screen.getByLabelText('admin.btn_expand_members'));
+        expect(await screen.findByRole('status', { name: 'admin.members_loading' })).toBeInTheDocument();
+        resolveMembers([member]);
+        expect(await screen.findByText('admin.btn_remove_member')).toBeInTheDocument();
+    });
+
     it('confirms before removing a member and reports the result', async () => {
         await renderSchools();
         fireEvent.click(screen.getByLabelText('admin.btn_expand_members'));

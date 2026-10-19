@@ -414,8 +414,10 @@
         "sharing_btn_share": "Teilen",
         "sharing_btn_remove": "Entfernen",
         "sharing_current": "Geteilt mit",
+        "sharing_loading_shares": "Freigaben werden geladen…",
         "sharing_no_shares": "Noch nicht geteilt.",
         "sharing_class_members": "Klassenmitglieder",
+        "sharing_loading_members": "Mitglieder werden geladen…",
         "sharing_no_members": "Noch keine Mitglieder hinzugefügt.",
         "sharing_success": "Erfolgreich geteilt.",
         "sharing_failed": "Teilen fehlgeschlagen: {{error}}",
@@ -2617,6 +2619,7 @@
         "comment_author_you": "Du",
         "comment_author_teacher": "Lehrkraft",
         "comments_empty": "Noch keine Kommentare. Wähle Text im Dokument oben aus, um einen hinzuzufügen.",
+        "preview_unavailable": "Vorschau nicht verfügbar.",
         "loading_preview": "Vorschau wird geladen…",
         "size_limit_hint": "bis zu {{limit}} pro Datei",
         "too_large": "„{{name}}“ wurde nicht hinzugefügt: Die Datei ist größer als das Limit von {{limit}}.",
@@ -3093,6 +3096,7 @@
         "deleted_grades_col_rubric": "Rubrik",
         "col_class": "Klasse",
         "btn_restore": "Wiederherstellen",
+        "audit_loading": "Auditprotokoll wird geladen…",
         "audit_empty": "Noch keine Audit-Ereignisse aufgezeichnet.",
         "audit_col_time": "Zeitpunkt",
         "audit_col_category": "Kategorie",
@@ -4216,6 +4220,10 @@
         "skip_reason_duplicate": "gleicher Name, gleiche E-Mail und Klasse wie Zeile {{row}}",
         "err_parse": "CSV konnte nicht verarbeitet werden: {{message}}",
         "active_class_default": "Aktive Klasse (Standard)"
+    },
+    "boot": {
+        "checking_session": "Sitzung wird überprüft…",
+        "loading_data": "Deine Raster und Klassen werden geladen…"
     },
     "a11y": {
         "skip_to_content": "Zum Hauptinhalt springen",

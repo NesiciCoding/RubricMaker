@@ -698,6 +698,22 @@ describe('RubricBuilder', () => {
         expect(await screen.findByText('rubricBuilder.no_versions_yet')).toBeInTheDocument();
     });
 
+    it('shows a row skeleton while the version history loads', async () => {
+        let resolveVersions!: (v: typeof mockVersions) => void;
+        mockFetchRubricVersions.mockReturnValueOnce(
+            new Promise<typeof mockVersions>((resolve) => {
+                resolveVersions = resolve;
+            })
+        );
+        renderEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.version_history'));
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        await act(async () => {
+            resolveVersions([]);
+        });
+        expect(await screen.findByText('rubricBuilder.no_versions_yet')).toBeInTheDocument();
+    });
+
     it('expands and collapses vocabulary section', () => {
         renderNew();
         fireEvent.click(screen.getByText('Vocabulary & Grammar List'));

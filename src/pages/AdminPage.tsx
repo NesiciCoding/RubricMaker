@@ -50,6 +50,7 @@ import { auditActorLabel, formatAuditDetails } from '../utils/auditFormat';
 import LoginButtons from '../components/auth/LoginButtons';
 import { useConfirm } from '../hooks/useConfirm';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { InlineSkeleton, TableSkeleton } from '../components/ui/Skeleton';
 import type { DbUser } from '../services/database/types';
 import type { School as SchoolType, RubricShare, ClassMember, AuditCategory, AuditRow } from '../types';
 
@@ -126,7 +127,7 @@ export function UsersTab() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('admin.users_offline_body')}</p>
             </div>
         );
-    if (loading) return <p style={{ color: 'var(--text-muted)' }}>{t('admin.users_loading')}</p>;
+    if (loading) return <TableSkeleton rows={6} label={t('admin.users_loading')} />;
     if (users.length === 0) return <p style={{ color: 'var(--text-muted)' }}>{t('admin.users_empty')}</p>;
 
     return (
@@ -365,7 +366,7 @@ export function SchoolsTab() {
                 </button>
             </div>
 
-            {loading && <p style={{ color: 'var(--text-muted)' }}>{t('admin.schools_loading')}</p>}
+            {loading && <InlineSkeleton rows={3} label={t('admin.schools_loading')} />}
             {!loading && schools.length === 0 && (
                 <p style={{ color: 'var(--text-muted)' }}>{t('admin.schools_empty')}</p>
             )}
@@ -432,11 +433,7 @@ export function SchoolsTab() {
                             >
                                 {t('admin.members_title', { school: s.name })}
                             </p>
-                            {!members[s.id] && (
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    {t('admin.members_loading')}
-                                </p>
-                            )}
+                            {!members[s.id] && <InlineSkeleton rows={3} label={t('admin.members_loading')} />}
                             {members[s.id]?.length === 0 && (
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                     {t('admin.members_empty')}
@@ -937,9 +934,10 @@ function DatabaseTab() {
                                                         {t('settings.sharing_current')}
                                                     </div>
                                                     {loadingRubricShares ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                            …
-                                                        </p>
+                                                        <InlineSkeleton
+                                                            rows={2}
+                                                            label={t('settings.sharing_loading_shares')}
+                                                        />
                                                     ) : rubricShares.length === 0 ? (
                                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                             {t('settings.sharing_no_shares')}
@@ -1125,9 +1123,10 @@ function DatabaseTab() {
                                                         {t('settings.sharing_class_members')}
                                                     </div>
                                                     {loadingClassMembers ? (
-                                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                            …
-                                                        </p>
+                                                        <InlineSkeleton
+                                                            rows={2}
+                                                            label={t('settings.sharing_loading_members')}
+                                                        />
                                                     ) : classMembers.length === 0 ? (
                                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                             {t('settings.sharing_no_members')}
@@ -1733,7 +1732,11 @@ function AuditTab() {
             </div>
 
             {loading ? (
-                <Loader size={20} className="spin" />
+                <TableSkeleton
+                    rows={8}
+                    columnWidths={['14%', '12%', '28%', '18%', '16%', '12%']}
+                    label={t('admin.audit_loading')}
+                />
             ) : rows.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('admin.audit_empty')}</p>
             ) : (

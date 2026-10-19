@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Store, ThumbsUp, Copy, Upload, Check } from 'lucide-react';
 import Topbar from '../components/Layout/Topbar';
 import CefrBadge from '../components/CEFR/CefrBadge';
+import { Skeleton, SkeletonText } from '../components/ui/Skeleton';
 import { useStoreActions, useStoreSelector } from '../context/useStore';
 import { useDbStatus } from '../hooks/useDbStatus';
 import { storageSync } from '../services/database';
@@ -21,6 +22,39 @@ import type {
 } from '../types';
 
 const KIND_TABS: Array<MarketplaceListingKind | 'all'> = ['all', 'rubric', 'test', 'deck', 'questionBankItem'];
+
+// One template for the skeleton and the real cards, so nothing reflows on arrival.
+const LISTING_GRID: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
+    gap: 16,
+};
+
+// Listing-shaped placeholders (kind chip, title, subject, two description lines,
+// upvote/clone footer) in the same grid the real cards use.
+function ListingGridSkeleton({ label, count = 8 }: { label: string; count?: number }) {
+    return (
+        <div role="status" aria-label={label} aria-busy="true" style={LISTING_GRID}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div
+                    key={i}
+                    className="card"
+                    aria-hidden="true"
+                    style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                >
+                    <Skeleton width="72px" height="1.25rem" borderRadius="999px" />
+                    <Skeleton width="70%" height="1.25rem" />
+                    <Skeleton width="40%" height="0.75rem" />
+                    <SkeletonText lines={2} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
+                        <Skeleton width="88px" height="1.75rem" borderRadius="999px" />
+                        <Skeleton width="104px" height="1.75rem" borderRadius="999px" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 /** QuestionBankItem has no `.name` field, unlike the other three publishable entity kinds. */
 function publishOptionLabel(
@@ -309,13 +343,8 @@ export default function MarketplacePage() {
                     </div>
                 )}
 
-                {loading ? (
-                    <p className="text-muted text-xs">{t('marketplace.loading')}</p>
-                ) : listings.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: 32 }}>
-                        <p style={{ color: 'var(--text-muted)' }}>{t('marketplace.empty_state')}</p>
-                    </div>
-                ) : (
+                {/* Controls stay mounted (disabled) while listings load, so the page keeps its shape. */}
+                {(loading || listings.length > 0) && (
                     <>
                         <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
                             {KIND_TABS.map((kind) => (
@@ -324,16 +353,21 @@ export default function MarketplacePage() {
                                     type="button"
                                     className={`btn btn-sm ${kindFilter === kind ? 'btn-primary' : 'btn-secondary'}`}
                                     onClick={() => setKindFilter(kind)}
+                                    disabled={loading}
                                 >
                                     {t(kind === 'all' ? 'marketplace.filter_kind_all' : `marketplace.kind_${kind}s`)}
                                 </button>
                             ))}
                         </div>
                         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-                            {subjectOptions.length > 0 && (
+                            {(loading || subjectOptions.length > 0) && (
                                 <div className="form-group" style={{ marginBottom: 0, maxWidth: 180 }}>
                                     <label>{t('marketplace.filter_subject_label')}</label>
-                                    <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
+                                    <select
+                                        value={subjectFilter}
+                                        onChange={(e) => setSubjectFilter(e.target.value)}
+                                        disabled={loading || subjectOptions.length === 0}
+                                    >
                                         <option value="all">{t('marketplace.filter_subject_all')}</option>
                                         {subjectOptions.map((s) => (
                                             <option key={s} value={s}>
@@ -348,100 +382,104 @@ export default function MarketplacePage() {
                                 <select
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value as 'newest' | 'upvotes')}
+                                    disabled={loading}
                                 >
                                     <option value="newest">{t('marketplace.sort_newest')}</option>
                                     <option value="upvotes">{t('marketplace.sort_upvotes')}</option>
                                 </select>
                             </div>
                         </div>
-                        <div
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                                gap: 16,
-                            }}
-                        >
-                            {visibleListings.map((listing) => (
-                                <div key={listing.id} className="card">
-                                    <div style={{ marginBottom: 8 }}>
-                                        <span className="badge badge-blue" style={{ marginBottom: 4 }}>
-                                            {t(`marketplace.kind_${listing.kind}`)}
-                                        </span>
-                                        <h3>{listing.name}</h3>
-                                        {listing.subject && (
-                                            <div className="text-muted text-xs" style={{ marginTop: 2 }}>
-                                                {listing.subject}
-                                            </div>
-                                        )}
-                                        {listing.cefrLevels && listing.cefrLevels.length > 0 && (
-                                            <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                                                {listing.cefrLevels.map((level) => (
-                                                    <CefrBadge key={level} level={level} size="sm" />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    {listing.description && (
-                                        <p
-                                            style={{
-                                                fontSize: '0.85rem',
-                                                color: 'var(--text-muted)',
-                                                marginBottom: 8,
-                                            }}
-                                        >
-                                            {listing.description}
-                                        </p>
+                    </>
+                )}
+
+                {loading ? (
+                    <ListingGridSkeleton label={t('marketplace.loading')} />
+                ) : listings.length === 0 ? (
+                    <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+                        <p style={{ color: 'var(--text-muted)' }}>{t('marketplace.empty_state')}</p>
+                    </div>
+                ) : (
+                    <div style={LISTING_GRID}>
+                        {visibleListings.map((listing) => (
+                            <div key={listing.id} className="card">
+                                <div style={{ marginBottom: 8 }}>
+                                    <span className="badge badge-blue" style={{ marginBottom: 4 }}>
+                                        {t(`marketplace.kind_${listing.kind}`)}
+                                    </span>
+                                    <h3>{listing.name}</h3>
+                                    {listing.subject && (
+                                        <div className="text-muted text-xs" style={{ marginTop: 2 }}>
+                                            {listing.subject}
+                                        </div>
                                     )}
-                                    {listing.attribution && (
-                                        <p
-                                            style={{
-                                                fontSize: '0.75rem',
-                                                color: 'var(--text-muted)',
-                                                fontStyle: 'italic',
-                                                marginBottom: 12,
-                                            }}
-                                        >
-                                            {listing.attribution}
-                                        </p>
+                                    {listing.cefrLevels && listing.cefrLevels.length > 0 && (
+                                        <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                                            {listing.cefrLevels.map((level) => (
+                                                <CefrBadge key={level} level={level} size="sm" />
+                                            ))}
+                                        </div>
                                     )}
-                                    <div
+                                </div>
+                                {listing.description && (
+                                    <p
                                         style={{
-                                            display: 'flex',
-                                            gap: 8,
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-muted)',
+                                            marginBottom: 8,
                                         }}
                                     >
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            style={{
-                                                color: myUpvotes.has(listing.id) ? 'var(--accent)' : undefined,
-                                            }}
-                                            onClick={() => handleToggleUpvote(listing.id)}
-                                            title={t('marketplace.upvote_title')}
-                                        >
-                                            <ThumbsUp size={14} /> {listing.upvoteCount}
-                                        </button>
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => handleClone(listing.id)}
-                                            title={t('marketplace.clone_title')}
-                                        >
-                                            {clonedId === listing.id ? (
-                                                <>
-                                                    <Check size={14} /> {t('marketplace.clone_done')}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Copy size={14} /> {t('marketplace.clone_button')}
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
+                                        {listing.description}
+                                    </p>
+                                )}
+                                {listing.attribution && (
+                                    <p
+                                        style={{
+                                            fontSize: '0.75rem',
+                                            color: 'var(--text-muted)',
+                                            fontStyle: 'italic',
+                                            marginBottom: 12,
+                                        }}
+                                    >
+                                        {listing.attribution}
+                                    </p>
+                                )}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        gap: 8,
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                    }}
+                                >
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        style={{
+                                            color: myUpvotes.has(listing.id) ? 'var(--accent)' : undefined,
+                                        }}
+                                        onClick={() => handleToggleUpvote(listing.id)}
+                                        title={t('marketplace.upvote_title')}
+                                    >
+                                        <ThumbsUp size={14} /> {listing.upvoteCount}
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => handleClone(listing.id)}
+                                        title={t('marketplace.clone_title')}
+                                    >
+                                        {clonedId === listing.id ? (
+                                            <>
+                                                <Check size={14} /> {t('marketplace.clone_done')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy size={14} /> {t('marketplace.clone_button')}
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    </>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
         </>

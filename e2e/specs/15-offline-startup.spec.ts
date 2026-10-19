@@ -9,9 +9,23 @@
  * Run with: npm run db:start && npm run e2e:supabase
  */
 import { test, expect, SUPABASE_URL } from '../fixtures/supabase.fixture';
+import type { Page } from '@playwright/test';
 import { buildRubric } from '../fixtures/data.factory';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve once the boot shell has handed over to the real app shell.
+ *
+ * Both boot skeletons (AppShellSkeleton in App.tsx, BootShellSkeleton in main.tsx) render
+ * `.main-area` themselves, so waiting on that selector alone now resolves while the app is
+ * still checking the session — which is exactly what the timing assertions below measure.
+ * `data-boot-shell` marks those placeholders, so their absence is what "the app is up" means.
+ */
+async function waitForAppReady(page: Page) {
+    await page.waitForSelector('[data-boot-shell]', { state: 'detached', timeout: 20_000 });
+    await page.waitForSelector('.main-area', { timeout: 15_000 });
+}
 
 /** Push a rubric into the page's localStorage without replacing existing entries. */
 async function addRubricToCache(page: import('@playwright/test').Page, rubric: ReturnType<typeof buildRubric>) {
@@ -43,7 +57,7 @@ test.describe('startup — offline with Supabase configured', () => {
 
         const t0 = Date.now();
         await page.reload();
-        await page.waitForSelector('.main-area', { timeout: 12_000 });
+        await waitForAppReady(page);
         const elapsed = Date.now() - t0;
 
         // Should open well under the 8 s hydration timeout (no network wait at all).
@@ -79,7 +93,10 @@ test.describe('startup — Supabase hydration timeout', () => {
 
         const t0 = Date.now();
         await page.reload();
-        await page.waitForSelector('.main-area', { timeout: 15_000 });
+        // The boot shell is what the user looks at for the whole 8 s wait — assert it really
+        // is on screen, so this cannot pass by timing a shell that never rendered.
+        await page.waitForSelector('[data-boot-shell]', { timeout: 5_000 });
+        await waitForAppReady(page);
         const elapsed = Date.now() - t0;
 
         // Lower bound: must have waited for the 8 s hydration timeout.
@@ -109,7 +126,7 @@ test.describe('startup — online with Supabase configured (regression)', () => 
     test('loads from Supabase when online, no offline toast', async ({ supabasePage: page }) => {
         // A clean reload with network available — verifies the happy path still works.
         await page.reload();
-        await page.waitForSelector('.main-area', { timeout: 15_000 });
+        await waitForAppReady(page);
         // Wait for hydration to settle so a late-appearing toast cannot slip past
         // the negative assertion below.
         await page.waitForLoadState('networkidle', { timeout: 15_000 });

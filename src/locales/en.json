@@ -417,8 +417,10 @@
         "sharing_btn_share": "Share",
         "sharing_btn_remove": "Remove",
         "sharing_current": "Shared with",
+        "sharing_loading_shares": "Loading shares…",
         "sharing_no_shares": "Not shared with anyone yet.",
         "sharing_class_members": "Class members",
+        "sharing_loading_members": "Loading members…",
         "sharing_no_members": "No members added yet.",
         "sharing_success": "Shared successfully.",
         "sharing_failed": "Share failed: {{error}}",
@@ -2617,6 +2619,7 @@
         "comment_author_you": "You",
         "comment_author_teacher": "Teacher",
         "comments_empty": "No comments yet. Select text in the document above to add one.",
+        "preview_unavailable": "Preview unavailable.",
         "loading_preview": "Loading preview…",
         "size_limit_hint": "up to {{limit}} per file",
         "too_large": "\"{{name}}\" was not added: it is larger than the {{limit}} limit.",
@@ -3011,6 +3014,7 @@
         "deleted_grades_col_rubric": "Rubric",
         "col_class": "Class",
         "btn_restore": "Restore",
+        "audit_loading": "Loading audit log…",
         "audit_empty": "No audit events recorded yet.",
         "audit_col_time": "Time",
         "audit_col_category": "Category",
@@ -4216,6 +4220,10 @@
         "skip_reason_duplicate": "same name, email and class as row {{row}}",
         "err_parse": "Failed to parse CSV: {{message}}",
         "active_class_default": "Active Class (Default)"
+    },
+    "boot": {
+        "checking_session": "Checking your session…",
+        "loading_data": "Loading your rubrics and classes…"
     },
     "a11y": {
         "skip_to_content": "Skip to main content",

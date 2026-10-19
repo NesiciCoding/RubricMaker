@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAssessment, useAuthoring, useGrading, useStudents } from '../context/AppContext';
 import Topbar from '../components/Layout/Topbar';
 import CriterionHeatmap from '../components/Statistics/CriterionHeatmap';
+import { ChartSkeleton } from '../components/ui/Skeleton';
 import { aggregatePeerReviews } from '../utils/peerReviewAggregator';
 
 export default function PeerReviewAnalyticsPage() {
@@ -22,6 +23,16 @@ export default function PeerReviewAnalyticsPage() {
     const { peerReviews } = useAssessment();
 
     const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
+
+    // The heatmap and trend chart render synchronously from a full aggregation pass;
+    // defer one frame so the header and round controls paint first and switching
+    // rounds never blocks on Recharts (same pattern as StatisticsPage).
+    const [chartsReady, setChartsReady] = useState(false);
+    useEffect(() => {
+        setChartsReady(false);
+        const id = requestAnimationFrame(() => setChartsReady(true));
+        return () => cancelAnimationFrame(id);
+    }, [selectedRound]);
 
     const rubric = rubrics.find((r) => r.id === rubricId);
 
@@ -170,12 +181,22 @@ export default function PeerReviewAnalyticsPage() {
                 )}
 
                 {/* Criterion feedback heatmap */}
-                <div data-tour="pa-heatmap" className="card" style={{ marginBottom: 24 }}>
-                    <h3 style={{ marginBottom: 16 }}>{t('peerAnalytics.feedback_heatmap')}</h3>
-                    <p className="text-muted text-xs" style={{ marginBottom: 12 }}>
-                        {t('peerAnalytics.feedback_heatmap_hint')}
-                    </p>
-                    <CriterionHeatmap students={heatmapStudents} criteria={heatmapCriteria} scores={heatmapScores} />
+                <div data-tour="pa-heatmap" style={{ marginBottom: 24 }}>
+                    {chartsReady ? (
+                        <div className="card">
+                            <h3 style={{ marginBottom: 16 }}>{t('peerAnalytics.feedback_heatmap')}</h3>
+                            <p className="text-muted text-xs" style={{ marginBottom: 12 }}>
+                                {t('peerAnalytics.feedback_heatmap_hint')}
+                            </p>
+                            <CriterionHeatmap
+                                students={heatmapStudents}
+                                criteria={heatmapCriteria}
+                                scores={heatmapScores}
+                            />
+                        </div>
+                    ) : (
+                        <ChartSkeleton height="240px" />
+                    )}
                 </div>
 
                 {/* Reviewer table */}
@@ -221,7 +242,8 @@ export default function PeerReviewAnalyticsPage() {
                 </div>
 
                 {/* Round-over-round trend */}
-                {trendData.length > 1 && (
+                {!chartsReady && trendData.length > 1 && <ChartSkeleton height="260px" />}
+                {chartsReady && trendData.length > 1 && (
                     <div className="card">
                         <h3 style={{ marginBottom: 16 }}>{t('peerAnalytics.round_trend')}</h3>
                         <ResponsiveContainer width="100%" height={260}>

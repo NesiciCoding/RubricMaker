@@ -13,6 +13,12 @@ import {
     DocumentSkeleton,
     GradingSkeleton,
     PortalSkeleton,
+    FlashcardCardSkeleton,
+    MonitorGridSkeleton,
+    TestResultsSkeleton,
+    ProfilePageSkeleton,
+    DocsPageSkeleton,
+    SettingsPageSkeleton,
 } from '../Skeleton';
 
 function renderAt(path: string) {
@@ -41,8 +47,8 @@ describe('getRouteSkeleton', () => {
         ['/peer-analytics/r1', DashboardSkeleton],
 
         ['/students', TablePageSkeleton],
-        ['/students/s1', DashboardSkeleton],
-        ['/students/s1/cefr-overview', DashboardSkeleton],
+        ['/students/s1', ProfilePageSkeleton],
+        ['/students/s1/cefr-overview', ProfilePageSkeleton],
         ['/students/s1/learning-path', ListPageSkeleton],
         ['/cefr-overview', DashboardSkeleton],
         ['/vocabulary', DashboardSkeleton],
@@ -50,20 +56,20 @@ describe('getRouteSkeleton', () => {
         ['/tests', TablePageSkeleton],
         ['/tests/new', BuilderPageSkeleton],
         ['/tests/t1', BuilderPageSkeleton],
-        ['/tests/t1/results/st1', DashboardSkeleton],
-        ['/tests/t1/monitor', DashboardSkeleton],
+        ['/tests/t1/results/st1', TestResultsSkeleton],
+        ['/tests/t1/monitor', MonitorGridSkeleton],
 
         ['/essays', ListPageSkeleton],
         ['/essays/new', BuilderPageSkeleton],
         ['/essays/key1', BuilderPageSkeleton],
-        ['/essays/a1/monitor', DashboardSkeleton],
+        ['/essays/a1/monitor', MonitorGridSkeleton],
 
         ['/flashcards', ListPageSkeleton],
         ['/flashcards/d1', BuilderPageSkeleton],
         ['/news-flashes', ListPageSkeleton],
 
         ['/portal/s1', PortalSkeleton],
-        ['/portal/s1/flashcards/d1', PortalSkeleton],
+        ['/portal/s1/flashcards/d1', FlashcardCardSkeleton],
 
         ['/attachments', TablePageSkeleton],
         ['/export', TablePageSkeleton],
@@ -77,9 +83,9 @@ describe('getRouteSkeleton', () => {
 
         ['/marketplace', CardGridSkeleton],
 
-        ['/settings', TabbedPageSkeleton],
+        ['/settings', SettingsPageSkeleton],
         ['/admin', TabbedPageSkeleton],
-        ['/docs', TabbedPageSkeleton],
+        ['/docs', DocsPageSkeleton],
         ['/privacy', DocumentSkeleton],
     ];
 

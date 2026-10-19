@@ -15,6 +15,7 @@ import {
     isOffline,
     loggingReducer,
     StoreData,
+    BootPhase,
 } from './storeCore';
 import { createSelectorStore, StoreActionsProvider, StoreProvider } from './useStore';
 
@@ -163,6 +164,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // 'checking' while we detect session; 'show' = show landing; 'hide' = in app
     const [landingState, setLandingState] = useState<'checking' | 'show' | 'hide'>('checking');
+    // Names the step that is running while the boot skeleton is on screen ('session' → 'hydrate').
+    const [bootPhase, setBootPhase] = useState<BootPhase>('session');
     // Ref so the OTP handler ([] deps effect) can read current state without
     // re-subscribing on every landingState change.
     const landingStateRef = useRef<'checking' | 'show' | 'hide'>('checking');
@@ -253,6 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 async function configureAndEnter(cfg: DatabaseConfig) {
                     if (sessionHandled) return;
                     sessionHandled = true;
+                    setBootPhase('hydrate');
                     saveSupabaseConfig(cfg);
                     const ok = await storageSync.configure(cfg);
                     if (!ok) {
@@ -438,12 +442,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     const config = loadSupabaseConfig();
                     if (!config) return;
                     setLandingState('checking');
+                    setBootPhase('session');
                     try {
                         const ok = await storageSync.configure(config);
                         if (!ok) {
                             setLandingState('show');
                             return;
                         }
+                        // Configure done: the remaining wait is the data pull, so the boot
+                        // shell must stop saying "Checking your session…".
+                        setBootPhase('hydrate');
                         storageSync.setToastFn(showToast);
                         const { data: fresh, error: hydrateError } = await storageSync.hydrate();
                         if (hydrateError) showToast(t('toast.sync_load_failed'), 'warning');
@@ -560,10 +568,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             showToast,
             t,
             setLandingState,
+            setBootPhase,
             setShowMigrationPrompt,
             applyHydrated,
         }),
-        [dispatch, showToast, t, setLandingState, setShowMigrationPrompt, applyHydrated]
+        [dispatch, showToast, t, setLandingState, setBootPhase, setShowMigrationPrompt, applyHydrated]
     );
 
     return (
@@ -578,6 +587,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                                         <PlatformProvider
                                             ctx={platformCtx}
                                             landingState={landingState}
+                                            bootPhase={bootPhase}
                                             showMigrationPrompt={showMigrationPrompt}
                                         >
                                             {children}

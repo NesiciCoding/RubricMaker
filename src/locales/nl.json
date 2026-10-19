@@ -417,8 +417,10 @@
         "sharing_btn_share": "Delen",
         "sharing_btn_remove": "Verwijderen",
         "sharing_current": "Gedeeld met",
+        "sharing_loading_shares": "Gedeelde items laden…",
         "sharing_no_shares": "Nog niet gedeeld met anderen.",
         "sharing_class_members": "Klasleden",
+        "sharing_loading_members": "Leden laden…",
         "sharing_no_members": "Nog geen leden toegevoegd.",
         "sharing_success": "Succesvol gedeeld.",
         "sharing_failed": "Delen mislukt: {{error}}",
@@ -2617,6 +2619,7 @@
         "comment_author_you": "Jij",
         "comment_author_teacher": "Docent",
         "comments_empty": "Nog geen opmerkingen. Selecteer tekst in het document hierboven om er een toe te voegen.",
+        "preview_unavailable": "Voorbeeld niet beschikbaar.",
         "loading_preview": "Voorbeeld laden…",
         "size_limit_hint": "tot {{limit}} per bestand",
         "too_large": "\"{{name}}\" is niet toegevoegd: het is groter dan de limiet van {{limit}}.",
@@ -3011,6 +3014,7 @@
         "deleted_grades_col_rubric": "Rubriek",
         "col_class": "Klas",
         "btn_restore": "Herstellen",
+        "audit_loading": "Auditlogboek laden…",
         "audit_empty": "Nog geen auditgebeurtenissen geregistreerd.",
         "audit_col_time": "Tijdstip",
         "audit_col_category": "Categorie",
@@ -4216,6 +4220,10 @@
         "skip_reason_duplicate": "zelfde naam, e-mail en klas als rij {{row}}",
         "err_parse": "Kan CSV niet verwerken: {{message}}",
         "active_class_default": "Actieve klas (standaard)"
+    },
+    "boot": {
+        "checking_session": "Je sessie wordt gecontroleerd…",
+        "loading_data": "Je rubrics en klassen worden geladen…"
     },
     "a11y": {
         "skip_to_content": "Naar hoofdinhoud springen",

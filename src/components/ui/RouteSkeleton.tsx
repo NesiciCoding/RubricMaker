@@ -10,6 +10,12 @@ import {
     DocumentSkeleton,
     GradingSkeleton,
     PortalSkeleton,
+    FlashcardCardSkeleton,
+    MonitorGridSkeleton,
+    TestResultsSkeleton,
+    ProfilePageSkeleton,
+    DocsPageSkeleton,
+    SettingsPageSkeleton,
 } from './Skeleton';
 
 export type SkeletonShape = React.ComponentType;
@@ -32,26 +38,27 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
 
     [/^\/students$/, TablePageSkeleton],
     [/^\/students\/[^/]+\/learning-path/, ListPageSkeleton],
-    [/^\/students\/[^/]+/, DashboardSkeleton],
+    [/^\/students\/[^/]+/, ProfilePageSkeleton],
 
     [/^\/cefr-overview/, DashboardSkeleton],
     [/^\/vocabulary/, DashboardSkeleton],
 
     [/^\/tests$/, TablePageSkeleton],
     [/^\/tests\/new$/, BuilderPageSkeleton],
-    [/^\/tests\/[^/]+\/results\//, DashboardSkeleton],
-    [/^\/tests\/[^/]+\/monitor/, DashboardSkeleton],
+    [/^\/tests\/[^/]+\/results\//, TestResultsSkeleton],
+    [/^\/tests\/[^/]+\/monitor/, MonitorGridSkeleton],
     [/^\/tests\/[^/]+/, BuilderPageSkeleton],
 
     [/^\/essays$/, ListPageSkeleton],
     [/^\/essays\/new$/, BuilderPageSkeleton],
-    [/^\/essays\/[^/]+\/monitor/, DashboardSkeleton],
+    [/^\/essays\/[^/]+\/monitor/, MonitorGridSkeleton],
     [/^\/essays\/[^/]+/, BuilderPageSkeleton],
 
     [/^\/flashcards$/, ListPageSkeleton],
     [/^\/flashcards\/[^/]+/, BuilderPageSkeleton],
     [/^\/news-flashes/, ListPageSkeleton],
 
+    [/^\/portal\/[^/]+\/flashcards\//, FlashcardCardSkeleton],
     [/^\/portal\//, PortalSkeleton],
 
     [/^\/attachments/, TablePageSkeleton],
@@ -66,9 +73,9 @@ export const ROUTE_SKELETON_RULES: ReadonlyArray<readonly [RegExp, SkeletonShape
 
     [/^\/marketplace/, CardGridSkeleton],
 
-    [/^\/settings/, TabbedPageSkeleton],
+    [/^\/settings/, SettingsPageSkeleton],
     [/^\/admin/, TabbedPageSkeleton],
-    [/^\/docs/, TabbedPageSkeleton],
+    [/^\/docs/, DocsPageSkeleton],
     [/^\/privacy/, DocumentSkeleton],
 ];
 
