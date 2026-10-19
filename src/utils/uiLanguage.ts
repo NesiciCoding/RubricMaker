@@ -7,9 +7,13 @@ function isUiLanguage(code: string): code is UiLanguage {
     return (UI_LANGUAGES as readonly string[]).includes(code);
 }
 
+export function baseLanguage(tag: string | undefined): string {
+    return (tag ?? '').split('-')[0].toLowerCase();
+}
+
 /** The interface language a BCP 47 tag ends up showing: its base code when the app ships it, else English (i18n's fallback). */
 export function displayedUiLanguage(tag: string | undefined): UiLanguage {
-    const base = (tag ?? '').split('-')[0].toLowerCase();
+    const base = baseLanguage(tag);
     return isUiLanguage(base) ? base : 'en';
 }
 

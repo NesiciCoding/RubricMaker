@@ -162,4 +162,22 @@ describe('Interface language', () => {
         expect(i18n.language).toBe('en');
         expect(document.documentElement.lang).toBe('en');
     });
+
+    it('replaces an unshipped browser language with a chosen English, so dates and numbers follow it', async () => {
+        await i18n.changeLanguage('pt-BR');
+        const { result } = renderHook(() => useSettings(), { wrapper });
+        await act(async () => {
+            result.current.updateSettings({ language: 'en', languageChosen: true });
+        });
+        expect(i18n.language).toBe('en');
+    });
+
+    it('keeps a regional variant of the chosen language', async () => {
+        await i18n.changeLanguage('nl-BE');
+        const { result } = renderHook(() => useSettings(), { wrapper });
+        await act(async () => {
+            result.current.updateSettings({ language: 'nl', languageChosen: true });
+        });
+        expect(i18n.language).toBe('nl-BE');
+    });
 });

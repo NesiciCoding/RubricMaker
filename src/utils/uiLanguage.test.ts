@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { chosenUiLanguage, displayedUiLanguage } from './uiLanguage';
+import { baseLanguage, chosenUiLanguage, displayedUiLanguage } from './uiLanguage';
+
+describe('baseLanguage', () => {
+    it('lower-cases the primary subtag', () => {
+        expect(baseLanguage('pt-BR')).toBe('pt');
+        expect(baseLanguage('NL')).toBe('nl');
+        expect(baseLanguage(undefined)).toBe('');
+    });
+});
 
 describe('displayedUiLanguage', () => {
     it('reduces a tag to a language the app ships', () => {
