@@ -309,7 +309,7 @@ class Db:
             self.user = user
             if self.password and self._ok():
                 return
-        raise SystemExit(f"error: cannot query Postgres in {DB_CONTAINER} (tried supabase_admin and postgres)")
+        raise RuntimeError(f"cannot query Postgres in {DB_CONTAINER} (tried supabase_admin and postgres)")
 
     def _cmd(self, interactive: bool) -> list[str]:
         cmd = ["docker", "exec"] + (["-i"] if interactive else []) + ["-e", "PGHOST=127.0.0.1"]
@@ -658,6 +658,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except RuntimeError as e:
+    except (RuntimeError, subprocess.TimeoutExpired) as e:
         print(f"error: {e}", file=sys.stderr)
         sys.exit(2)

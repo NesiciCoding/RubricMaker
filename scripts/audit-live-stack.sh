@@ -471,7 +471,7 @@ else
             fn="$(basename "$d")"
             if [[ ! -d "$funcs/$fn" ]]; then
                 drift+=("$fn (missing)")
-            elif ! diff -rq "$d" "$funcs/$fn" >/dev/null 2>&1; then
+            elif ! diff -rq --exclude='*.test.ts' --exclude='__tests__' "$d" "$funcs/$fn" >/dev/null 2>&1; then
                 drift+=("$fn (differs)")
             fi
         done

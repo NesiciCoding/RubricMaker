@@ -78,7 +78,16 @@ function stack(name: string) {
     return dir;
 }
 
-function stubs(binDir: string, opts: { migrationsTable?: boolean; failProbe?: string; driftExit?: number } = {}) {
+function stubs(
+    binDir: string,
+    opts: {
+        migrationsTable?: boolean;
+        failProbe?: string;
+        failCode?: number;
+        driftExit?: number;
+        dbDown?: boolean;
+    } = {}
+) {
     rmSync(binDir, { recursive: true, force: true });
     mkdirSync(binDir, { recursive: true });
     const log = join(binDir, 'calls.log');
@@ -96,6 +105,7 @@ case "$1" in
   restart) echo "$2" ;;
   exec)
     if [[ "$*" == *" -f -"* ]]; then cat >> "${join(binDir, 'scripts.sql')}"; exit 0; fi
+    ${opts.dbDown ? 'echo "psql: connection refused" >&2; exit 2' : ''}
     sql="\${@: -1}"
     case "$sql" in
       'SELECT 1') echo 1 ;;
@@ -113,7 +123,7 @@ esac`,
         join(binDir, 'curl'),
         `#!/bin/bash
 echo "curl $*" >> "${log}"
-case "$*" in *${opts.failProbe ?? '__none__'}*) echo 503 ;; *) echo 204 ;; esac`,
+case "$*" in *${opts.failProbe ?? '__none__'}*) echo ${opts.failCode ?? 503} ;; *) echo 204 ;; esac`,
         0o755
     );
     if (opts.driftExit !== undefined) {
@@ -262,6 +272,32 @@ describe('scripts/deploy-edge-functions.sh', () => {
         expect(r.status).toBe(2);
         expect(r.stdout).toMatch(/✗ beta: HTTP 503/);
         expect(r.stderr).toMatch(/To restore the previous functions:[\s\S]*functions\.bak-/);
+    });
+
+    it('treats HTTP 500 from the router as a boot failure', () => {
+        const dir = stack('deploy-500');
+        const bin = join(work, 'bin-deploy-500');
+        stubs(bin, { failProbe: '/functions/v1/alpha', failCode: 500 });
+        const r = run('bash', [deploy, '--supabase-dir', dir, '--repo-dir', repo, '--yes', '--force'], bin);
+        expect(r.status).toBe(2);
+        expect(r.stdout).toMatch(/✗ alpha: HTTP 500/);
+    });
+
+    it('reports a failed migration check, not pending migrations, when the database is unreachable', () => {
+        const dir = stack('deploy-nodb');
+        const bin = join(work, 'bin-deploy-nodb');
+        stubs(bin, { dbDown: true });
+        const check = run(
+            'python3',
+            [drift, 'check', '--only', 'migrations', '--supabase-dir', dir, '--repo-dir', repo],
+            bin
+        );
+        expect(check.status).toBe(2);
+        expect(check.stderr).toMatch(/error: cannot query Postgres/);
+        const r = run('bash', [deploy, '--supabase-dir', dir, '--repo-dir', repo, '--yes'], bin);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toMatch(/the migration check failed/);
+        expect(r.stdout).not.toMatch(/Refusing: the database is missing migrations/);
     });
 
     it('refuses while migrations are pending, without touching anything', () => {

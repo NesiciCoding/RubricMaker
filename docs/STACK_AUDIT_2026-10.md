@@ -61,14 +61,14 @@ but stating it keeps the two consistent. Add a test that scans `deploy/`, `docke
   `${POOLER_PROXY_PORT_TRANSACTION}:6543`, and the API gateway on `8000`, on **all
   interfaces**. Docker writes its own iptables rules ahead of HestiaCP's firewall, so a
   port blocked in the panel can still be reachable.
-- `.mcp.json` points at `http://supabase.rubricmaker.nl/mcp` over **plain HTTP**. The
-  Studio MCP endpoint can run SQL against the whole database, and Studio's basic-auth
-  credentials cross the network in clear text on that URL.
+- `.mcp.json` pointed at `http://supabase.rubricmaker.nl/mcp` over **plain HTTP** (now
+  `https://`, fixed with this audit). The Studio MCP endpoint can run SQL against the whole
+  database, and Studio's basic-auth credentials crossed the network in clear text on that URL.
 
 **Fix:** bind `5432`, `6543` and `8000` to `127.0.0.1` in the stack's
 `docker-compose.override.yml` (nginx already fronts the API). Reach Studio and `/mcp` only
-over an SSH tunnel or WireGuard/Tailscale, never through the public vhost. Change
-`.mcp.json` to `https://` or to a tunnel address. Verify from **outside** the VPS:
+over an SSH tunnel or WireGuard/Tailscale, never through the public vhost, and point
+`.mcp.json` at the tunnel address once it exists. Verify from **outside** the VPS:
 `nmap -Pn -p 5432,6543,8000,8443,3000 <vps-ip>` should show every port closed or filtered.
 
 ### 1.3 The CI deploy logs in as root (#404 — raise to high)

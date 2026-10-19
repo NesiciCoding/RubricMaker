@@ -12,8 +12,8 @@
 #   4. Replaces every function directory the repository has (and _shared). Directories that only
 #      exist on the server (the stack's own `main` router, for instance) are left alone.
 #   5. Restarts the edge-runtime container, then sends an OPTIONS request with the anon key to each
-#      function through the gateway on 127.0.0.1:8000. A 502/503 or no answer means the worker did
-#      not boot; the script then prints the command that restores the backup.
+#      function through the gateway on 127.0.0.1:8000. A 500/502/503 or no answer means the worker
+#      did not boot; the script then prints the command that restores the backup.
 #
 # Exit status: 0 deployed (or nothing to do), 1 refused or cancelled, 2 failed.
 
@@ -131,7 +131,8 @@ for fn in "${functions[@]}"; do
     code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X OPTIONS \
         -H "Authorization: Bearer $anon" -H "apikey: $anon" "$GATEWAY_URL/functions/v1/$fn" || true)"
     case "$code" in
-        000 | 502 | 503) failed+=("$fn"); echo "  ✗ $fn: HTTP $code (worker did not boot)" ;;
+        # The stack's main router answers 500 when it cannot create the function's worker.
+        000 | 500 | 502 | 503) failed+=("$fn"); echo "  ✗ $fn: HTTP $code (worker did not boot)" ;;
         *) echo "  ✓ $fn: HTTP $code" ;;
     esac
 done
