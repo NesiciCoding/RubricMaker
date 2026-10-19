@@ -109,6 +109,27 @@ describe('alerting (#869)', () => {
         }
     });
 
+    it('counts 5xx by the status field, not by a response size that happens to start with 5', () => {
+        const patterns = [
+            /count_over_time\(\{job="webserver"\} \|~ `([^`]+)`/.exec(rules)?.[1],
+            /rate\(\{job=\\"webserver\\"\} \|~ `([^`]+)`/.exec(
+                read('docker/observability/dashboards/web-logs.json')
+            )?.[1],
+        ];
+        const lines: [string, boolean][] = [
+            ['1.2.3.4 - - [x] "GET /api HTTP/1.1" 502 157 "-" "curl/8"', true],
+            ['1.2.3.4 - - [x] GET /api HTTP/1.1 "503" 190 "-" "Mozilla" "-"', true],
+            ['1.2.3.4 - - [x] "GET /api HTTP/1.1" 200 512 "-" "Mozilla/5.0"', false],
+            ['1.2.3.4 - - [x] GET /api HTTP/1.1 "200" 530 "-" "Mozilla" "-"', false],
+            ['[Mon Oct 19] [proxy:error] [pid 512 ] AH00957: connect failed', false],
+        ];
+        for (const pattern of patterns) {
+            expect(pattern).toBeDefined();
+            const re = new RegExp(pattern!.replaceAll('\\"', '"'));
+            for (const [line, is5xx] of lines) expect(re.test(line), line).toBe(is5xx);
+        }
+    });
+
     it('only alerts on an unreachable Postgres when one is configured', () => {
         expect(rules).toContain('pg_up{db_host!=""}');
         expect(alloy).toContain('db_host = sys.env("SUPABASE_DB_HOST")');
