@@ -244,6 +244,56 @@ describe('restore drill', () => {
     });
 });
 
+describe('scheduled-backup.sh', () => {
+    // backup.sh needs the Docker stack, so the job runs from a copy of scripts/ whose backup.sh
+    // stub copies a ready-made backup into place under the name in NEW_BACKUP.
+    function runJob(newBackup: string) {
+        const scripts = join(dir, 'scripts');
+        mkdirSync(join(scripts, 'lib'), { recursive: true });
+        for (const f of ['scheduled-backup.sh', 'offsite-backup.sh', 'lib/compose.sh', 'lib/offsite.sh']) {
+            writeFileSync(join(scripts, f), read(`scripts/${f}`), { mode: 0o755 });
+        }
+        writeFileSync(join(scripts, 'backup.sh'), '#!/bin/bash\ncp -R "$BACKUP_TEMPLATE" "$1/$NEW_BACKUP"\n', {
+            mode: 0o755,
+        });
+        return spawnSync('bash', [join(scripts, 'scheduled-backup.sh'), join(dir, 'backups')], {
+            cwd: dir,
+            encoding: 'utf8',
+            env: {
+                ...process.env,
+                BACKUP_ENV_FILE: envFile,
+                OFFSITE_RCLONE: join(dir, 'rclone'),
+                REMOTE_ROOT: remoteRoot,
+                STUB_LOG: log,
+                BACKUP_TEMPLATE: makeBackup(join(dir, 'template'), 'backup'),
+                NEW_BACKUP: newBackup,
+            },
+        });
+    }
+
+    it('keeps the LOCAL_KEEP newest local backups, counting the one it just made', () => {
+        writeEnv({ LOCAL_KEEP: '2' });
+        const local = join(dir, 'backups');
+        makeBackup(local, '20261019_031500');
+        makeBackup(local, '20261020_031500');
+        const out = runJob('20261021_031500');
+        expect(out.status, out.stderr).toBe(0);
+        expect(readdirSync(local).sort()).toEqual(['20261020_031500', '20261021_031500']);
+    });
+
+    it('ships and keeps the backup it just made, even when an older one is named later', () => {
+        writeEnv({ LOCAL_KEEP: '1' });
+        const local = join(dir, 'backups');
+        makeBackup(local, '20260101_000000');
+        // Left behind by a clock that ran ahead: sorts after anything made today.
+        makeBackup(local, '20990101_000000');
+        const out = runJob('20261021_031500');
+        expect(out.status, out.stderr).toBe(0);
+        expect(readdirSync(remoteRoot)).toEqual(['20261021_031500']);
+        expect(readdirSync(local)).toEqual(['20261021_031500']);
+    });
+});
+
 describe('backup scripts', () => {
     it('reach Postgres over loopback TCP, which the image trusts, not the password-protected socket', () => {
         expect(read('scripts/lib/compose.sh')).toContain('exec -T -e PGHOST=127.0.0.1 db');

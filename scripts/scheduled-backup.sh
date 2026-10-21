@@ -51,14 +51,16 @@ done
 
 "$SCRIPT_DIR/offsite-backup.sh" push "$BACKUP_ROOT/$latest"
 
-local_names=()
+# The new backup is always kept, for the same reason: by name it may not be the newest.
+other_names=()
 for dir in "$BACKUP_ROOT"/*/; do
     name="$(basename "$dir")"
-    is_backup_name "$name" && local_names+=("$name")
+    [[ "$name" != "$latest" ]] && is_backup_name "$name" && other_names+=("$name")
 done
-count=${#local_names[@]}
-if ((count > LOCAL_KEEP)); then
-    for old in "${local_names[@]:0:count-LOCAL_KEEP}"; do
+count=${#other_names[@]}
+keep_others=$((LOCAL_KEEP - 1))
+if ((count > keep_others)); then
+    for old in "${other_names[@]:0:count-keep_others}"; do
         rm -rf -- "${BACKUP_ROOT:?}/$old"
         echo "   ✓ removed local backup $old (kept the newest $LOCAL_KEEP)"
     done
