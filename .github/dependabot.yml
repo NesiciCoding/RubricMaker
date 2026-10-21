@@ -55,3 +55,8 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
+    groups:
+      # init/analyze must move together — mismatched versions fail the Analyze job
+      codeql-action:
+        patterns:
+          - "github/codeql-action/*"
