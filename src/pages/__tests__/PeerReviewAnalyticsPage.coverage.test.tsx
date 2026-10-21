@@ -117,7 +117,7 @@ beforeEach(async () => {
 });
 
 describe('PeerReviewAnalyticsPage coverage', () => {
-    it('renders the full analytics with round filter, reviewer rows, and trend', () => {
+    it('renders the full analytics with round filter, reviewer rows, and trend', async () => {
         renderPage();
         expect(screen.getByText('peerAnalytics.title: Essay Rubric')).toBeInTheDocument();
         // missing baseline badge
@@ -133,8 +133,10 @@ describe('PeerReviewAnalyticsPage coverage', () => {
         expect(screen.getByText('peerReview.round_n 1')).toBeInTheDocument();
         expect(screen.getByText('peerReview.round_n 2')).toBeInTheDocument();
         expect(screen.getByText('peerReview.round_n 3')).toBeInTheDocument();
+        // Charts are deferred one frame; the trend placeholder precedes the real card.
+        expect(document.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
         // two rounds → trend chart renders
-        expect(screen.getByText('peerAnalytics.round_trend')).toBeInTheDocument();
+        expect(await screen.findByText('peerAnalytics.round_trend')).toBeInTheDocument();
     });
 
     it('filters by round via the selector buttons', () => {

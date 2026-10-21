@@ -25,6 +25,7 @@ import { getStudentProfileTourSteps } from '../data/TutorialSteps';
 import Topbar from '../components/Layout/Topbar';
 import Avatar from '../components/ui/Avatar';
 import DropdownMenu from '../components/ui/DropdownMenu';
+import { ChartSkeleton } from '../components/ui/Skeleton';
 import { formatShortDate } from '../utils/dateInput';
 import { useStoreSelector } from '../context/useStore';
 import { useToast } from '../hooks/useToast';
@@ -800,14 +801,14 @@ export default function StudentProfilePage() {
                                     <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <TrendingUp size={18} /> {t('studentProfile.timeline_title')}
                                     </h3>
-                                    <Suspense fallback={<div style={{ height: 260 }} />}>
+                                    <Suspense fallback={<ChartSkeleton height="260px" />}>
                                         <ProfileTimelineChart history={history} />
                                     </Suspense>
                                 </div>
                             )}
 
                             {goals.length > 0 && (
-                                <Suspense fallback={<div style={{ height: 200 }} />}>
+                                <Suspense fallback={<ChartSkeleton height="200px" />}>
                                     <LearningGoalChart goals={goals} />
                                 </Suspense>
                             )}
@@ -831,7 +832,7 @@ export default function StudentProfilePage() {
                                     </h3>
 
                                     {cefrProgress.length >= 3 && (
-                                        <Suspense fallback={<div style={{ height: 200 }} />}>
+                                        <Suspense fallback={<ChartSkeleton height="200px" />}>
                                             <CefrProgressChart entries={cefrProgress} />
                                         </Suspense>
                                     )}

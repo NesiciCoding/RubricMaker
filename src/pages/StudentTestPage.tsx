@@ -28,6 +28,7 @@ import LimitedAudio, { OptionAudioButton } from '../components/Tests/LimitedAudi
 import { htmlToPlainText } from '../hooks/useTTS';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import { useLiveSessionTelemetry } from '../hooks/useLiveSessionTelemetry';
+import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { seededShuffle } from '../utils/seededShuffle';
 import { KEY_WORD_DEFAULT_LIMIT, answerWordCount } from '../../supabase/functions/_shared/testScoring';
 import { isStagedTest, entrySectionId, sectionQuestions, resolveNextSection } from '../utils/placementRouting';
@@ -739,11 +740,7 @@ export default function StudentTestPage() {
 
     // ── Guard: loading ────────────────────────────────────────────────────────
     if (loading) {
-        return (
-            <CenteredMessage>
-                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
-            </CenteredMessage>
-        );
+        return <StudentTaskSkeleton />;
     }
 
     // ── Guard: load error / no content ───────────────────────────────────────
@@ -784,11 +781,7 @@ export default function StudentTestPage() {
         );
     }
     if (isGenerator && generatorLoading && !generatorResult) {
-        return (
-            <CenteredMessage>
-                <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent)' }} />
-            </CenteredMessage>
-        );
+        return <StudentTaskSkeleton />;
     }
 
     const generatorQuestion =

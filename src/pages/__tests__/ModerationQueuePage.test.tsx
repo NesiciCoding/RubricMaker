@@ -1,4 +1,6 @@
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router-dom';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
@@ -108,8 +110,9 @@ vi.mock('../../context/useStore', () => ({
     useStoreActions: () => makeAppContextMock(),
 }));
 
+const mockDbStatus = vi.hoisted(() => ({ isConnected: false }));
 vi.mock('../../hooks/useDbStatus', () => ({
-    useDbStatus: () => ({ isConnected: false }),
+    useDbStatus: () => mockDbStatus,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -122,6 +125,9 @@ vi.mock('react-i18next', () => ({
 describe('ModerationQueuePage', () => {
     beforeEach(() => {
         appOverrides = {};
+        mockDbStatus.isConnected = false;
+        mockFetchSchoolMembers.mockReset();
+        mockFetchSchoolMembers.mockResolvedValue([]);
         mockSaveStudentRubric.mockClear();
         mockSavePeerReview.mockClear();
     });
@@ -131,11 +137,62 @@ describe('ModerationQueuePage', () => {
         fireEvent.click(within(dialog).getByText(buttonText));
     }
 
+    it('does not hold a roster skeleton when the page cannot have a school roster', async () => {
+        mockDbStatus.isConnected = false;
+        appOverrides = { settings: { ...mockSettings, schoolId: 'school-1' } };
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        const html = renderToStaticMarkup(
+            <MemoryRouter initialEntries={['/moderation']}>
+                <ModerationQueuePage />
+            </MemoryRouter>
+        );
+        expect(html).not.toContain('aria-label="a11y.loading"');
+        // With no roster to wait for, the queue renders straight away — reviewers fall back to
+        // their raw ids rather than blocking behind a skeleton that would never resolve.
+        expect(html).toContain('coGrading.second_marker_label');
+        expect(html).toContain('colleague-1');
+    });
+
     it('shows the empty state when no second-marker entries are outstanding', async () => {
         appOverrides = { peerReviews: [] };
         const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
         renderWithRouter(<ModerationQueuePage />);
         expect(screen.getByText('coGrading.moderation_empty')).toBeInTheDocument();
+    });
+
+    it('holds a row skeleton while the school roster that names reviewers loads', async () => {
+        mockDbStatus.isConnected = true;
+        appOverrides = { settings: { ...mockSettings, schoolId: 'school-1' } };
+        let resolveMembers: (members: unknown[]) => void = () => {};
+        mockFetchSchoolMembers.mockReturnValue(
+            new Promise((res) => {
+                resolveMembers = res;
+            })
+        );
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        renderWithRouter(<ModerationQueuePage />);
+        // Second markers would render as raw ids until the roster lands, so no queue yet.
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'a11y.loading');
+        expect(screen.queryByText('coGrading.moderation_empty')).not.toBeInTheDocument();
+        resolveMembers([]);
+        expect(await screen.findByText('Alice')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('is already in the roster-loading state on the very first render, before any effect runs', async () => {
+        mockDbStatus.isConnected = true;
+        appOverrides = { settings: { ...mockSettings, schoolId: 'school-1' } };
+        const { default: ModerationQueuePage } = await import('../ModerationQueuePage');
+        // Static server rendering runs the component but never its effects, so this is the
+        // first paint. A flag seeded to false would show the queue (or the empty state) here.
+        const html = renderToStaticMarkup(
+            <MemoryRouter initialEntries={['/moderation']}>
+                <ModerationQueuePage />
+            </MemoryRouter>
+        );
+        expect(html).toContain('aria-label="a11y.loading"');
+        expect(html).not.toContain('coGrading.moderation_empty');
+        expect(mockFetchSchoolMembers).not.toHaveBeenCalled();
     });
 
     it('lists a queue item needing moderation and resolves via keep-baseline', async () => {

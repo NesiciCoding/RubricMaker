@@ -95,10 +95,14 @@ export interface StoreActionsCtx {
     dispatch: React.Dispatch<Action>;
 }
 
+/** Which step of the startup sequence is running while the session check is in progress. */
+export type BootPhase = 'session' | 'hydrate';
+
 export interface PlatformCtx extends StoreActionsCtx {
     showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
     t: (key: string, options?: Record<string, unknown>) => string;
     setLandingState: (s: 'checking' | 'show' | 'hide') => void;
+    setBootPhase: (phase: BootPhase) => void;
     setShowMigrationPrompt: (b: boolean) => void;
     applyHydrated: (merged: StoreData, seedDiffBaseline: boolean) => StoreData;
 }
@@ -1140,6 +1144,7 @@ export interface AppContextValue extends StoreData {
     // Landing / auth flow
     showLanding: boolean;
     isCheckingSession: boolean;
+    bootPhase: BootPhase;
     showMigrationPrompt: boolean;
     enterLocalMode: () => void;
     connectForOAuth: (config: DatabaseConfig) => Promise<boolean>;

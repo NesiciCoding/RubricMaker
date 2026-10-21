@@ -46,6 +46,23 @@ describe('AdminPage UsersTab role changes (#629)', () => {
         vi.clearAllMocks();
     });
 
+    it('shows a table skeleton named after the users loading string until the list arrives', async () => {
+        let resolveUsers: (value: DbUser[]) => void = () => {};
+        fetchAllUsers.mockReturnValueOnce(
+            new Promise((res) => {
+                resolveUsers = res;
+            })
+        );
+        const { UsersTab } = await import('../AdminPage');
+        render(<UsersTab />);
+        const status = screen.getByRole('status', { name: 'admin.users_loading' });
+        expect(status.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+        expect(screen.queryByText('admin.users_loading')).toBeNull();
+        resolveUsers(users);
+        expect(await screen.findByText('teach@school.nl')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
     it('asks for confirmation and does nothing when cancelled', async () => {
         const select = await renderUsersTab();
         fireEvent.change(select, { target: { value: 'admin' } });

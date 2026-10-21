@@ -116,13 +116,14 @@ describe('StudentFlashcardStudyPage coverage', () => {
         );
         mocks.fetchMyFlashcardReview.mockResolvedValueOnce(null);
         renderPage();
-        // loading spinner while the remote fetch is pending
-        expect(document.querySelector('.spin')).not.toBeNull();
+        // card-shaped skeleton while the remote fetch is pending (no lone spinner)
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        expect(document.querySelector('.spin')).toBeNull();
         expect(mocks.fetchAssignedFlashcardDeck).toHaveBeenCalledWith('d1');
         expect(mocks.fetchMyFlashcardReview).toHaveBeenCalledWith('d1', 's1');
         await act(async () => resolveDeck(deck));
         expect(await screen.findByText('Animals')).toBeInTheDocument();
-        expect(document.querySelector('.spin')).toBeNull();
+        expect(document.querySelector('.skeleton')).toBeNull();
     });
 
     it('shows the not-found state without a local deck', async () => {

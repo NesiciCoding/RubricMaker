@@ -10,6 +10,8 @@ import { logEvent, logMetric, STRESS_TEST_LOGGING_ENABLED } from './services/log
 import { setupPwaUpdatePrompt } from './pwa';
 import { UpdateAvailableToast } from './components/ui/UpdateAvailableToast';
 import { HydrationProgress } from './components/ui/HydrationProgress';
+import { BootShellSkeleton } from './components/ui/AppShellSkeleton';
+import { StudentTaskSkeleton, RubricGridSkeleton } from './components/ui/Skeleton';
 
 setupPwaUpdatePrompt();
 
@@ -140,9 +142,25 @@ function isStudentRoute() {
     return STUDENT_ROUTES.some((r) => hash.startsWith(r));
 }
 
+// Each public route carries its own Suspense fallback so a shared link shows a task-shaped
+// skeleton instead of the app-shell blank frame while its chunk downloads.
 const router = createHashRouter([
-    { path: '/feedback/:code', element: <StudentFeedbackPage /> },
-    { path: '/preview/:code', element: <RubricPreviewPage /> },
+    {
+        path: '/feedback/:code',
+        element: (
+            <Suspense fallback={<RubricGridSkeleton />}>
+                <StudentFeedbackPage />
+            </Suspense>
+        ),
+    },
+    {
+        path: '/preview/:code',
+        element: (
+            <Suspense fallback={<RubricGridSkeleton />}>
+                <RubricPreviewPage />
+            </Suspense>
+        ),
+    },
     // Student pages need toasts (e.g. the live-monitor nudge check-in banner), so
     // wrap them in ToastProvider like the main app route — without it, the
     // ToastContext default makes showToast a silent no-op.
@@ -150,7 +168,9 @@ const router = createHashRouter([
         path: '/essay/:code',
         element: (
             <ToastProvider>
-                <StudentEssayPage />
+                <Suspense fallback={<StudentTaskSkeleton />}>
+                    <StudentEssayPage />
+                </Suspense>
             </ToastProvider>
         ),
     },
@@ -158,7 +178,9 @@ const router = createHashRouter([
         path: '/test/:code',
         element: (
             <ToastProvider>
-                <StudentTestPage />
+                <Suspense fallback={<StudentTaskSkeleton />}>
+                    <StudentTestPage />
+                </Suspense>
             </ToastProvider>
         ),
     },
@@ -177,7 +199,7 @@ const router = createHashRouter([
 function renderApp() {
     root.render(
         <React.StrictMode>
-            <Suspense fallback={null}>
+            <Suspense fallback={<BootShellSkeleton />}>
                 <RouterProvider router={router} />
             </Suspense>
             <UpdateAvailableToast />

@@ -33,6 +33,7 @@ import { isAllowedSupabaseUrl } from '../services/database/trustedSupabaseUrl';
 import { initClientLogger, logEvent } from '../services/logging/clientLogger';
 import { isAlreadySubmitted } from '../utils/testSubmitOutbox';
 import { useDeadlineCountdown } from '../hooks/useDeadlineCountdown';
+import { StudentTaskSkeleton } from '../components/ui/Skeleton';
 import { completeTimedAttempt, loadTimedAttemptReceipt } from '../store/storage';
 
 const DRAFT_KEY_PREFIX = 'rm_essay_draft_';
@@ -93,19 +94,7 @@ function EmailGate({ adapter, onAuthenticated }: EmailGateProps) {
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (sessionChecking) {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'var(--bg)',
-                }}
-            >
-                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
-            </div>
-        );
+        return <StudentTaskSkeleton />;
     }
 
     const handleStart = async () => {
@@ -661,19 +650,7 @@ export default function StudentEssayPage() {
 
     // ── Guard: waiting for assignment content from edge function ─────────────
     if (hasDb && studentUserId && !contentReady) {
-        return (
-            <div
-                style={{
-                    minHeight: '100vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'var(--bg)',
-                }}
-            >
-                <Loader2 size={28} style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }} />
-            </div>
-        );
+        return <StudentTaskSkeleton />;
     }
 
     const wordCount = countWords(html);

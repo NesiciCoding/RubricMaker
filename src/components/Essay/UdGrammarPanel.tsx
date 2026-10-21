@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { UdGrammarState } from '../../hooks/useUdGrammarProfile';
+import { Skeleton } from '../ui/Skeleton';
 import { CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import type { CefrLevel } from '../../types';
 
@@ -10,9 +11,25 @@ export default function UdGrammarPanel({ state }: { state: UdGrammarState }) {
 
     if (state.status === 'unavailable') return null;
     if (state.status === 'loading') {
+        // Band-shaped placeholder: one header line then a labelled bar per CEFR band, so the
+        // panel keeps its height instead of collapsing to a one-line note while analysing.
         return (
-            <div className="card" style={{ padding: 14, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {t('grammarProfile.loading')}
+            <div
+                className="card"
+                role="status"
+                aria-label={t('a11y.loading')}
+                style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+                <div aria-hidden="true" style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                    <Skeleton width="35%" height="0.9rem" />
+                    <Skeleton width="30%" height="0.8rem" />
+                </div>
+                {['80%', '62%', '45%'].map((width, i) => (
+                    <div key={i} aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <Skeleton width="14%" height="0.7rem" />
+                        <Skeleton width={width} height="1.4rem" borderRadius="999px" />
+                    </div>
+                ))}
             </div>
         );
     }
