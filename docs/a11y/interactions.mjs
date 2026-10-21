@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildSeed, routes, AXE_TAGS } from './fixtures.mjs';
+import { buildSeed, AXE_TAGS } from './fixtures.mjs';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));

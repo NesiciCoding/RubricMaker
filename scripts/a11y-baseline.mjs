@@ -29,7 +29,16 @@ if (parts.length === 0) {
     process.exit(1);
 }
 
-const previous = existsSync(BASELINE_PATH) ? JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) : { entries: [] };
+function readBaseline() {
+    try {
+        return JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
+    } catch (err) {
+        if (err.code === 'ENOENT') return { entries: [] };
+        throw err;
+    }
+}
+
+const previous = readBaseline();
 const merged = new Map(previous.entries.map((entry) => [`${entry.theme}\u0000${entry.route}`, entry]));
 
 for (const part of parts) {

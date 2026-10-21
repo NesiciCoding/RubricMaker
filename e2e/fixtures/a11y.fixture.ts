@@ -13,7 +13,6 @@
  * Regenerate the baseline with `A11Y_UPDATE_BASELINE=1 npm run e2e:a11y`
  * followed by `npm run e2e:a11y:baseline`.
  */
-import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -381,6 +380,15 @@ export type A11yScan = {
 
 export const BASELINE_PATH = path.resolve('e2e/a11y-baseline.json');
 
+/** Short, non-cryptographic hash for filename uniqueness — not a security boundary. */
+function shortHash(input: string): string {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+        hash = (hash * 31 + input.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
 export function loadBaseline(): A11yBaseline {
     return JSON.parse(readFileSync(BASELINE_PATH, 'utf8')) as A11yBaseline;
 }
@@ -390,7 +398,7 @@ export function writeBaselinePart(scan: A11yScan): void {
     const dir = path.resolve('test-results/a11y-baseline');
     mkdirSync(dir, { recursive: true });
     const slug = scan.route.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'root';
-    const hash = createHash('sha1').update(`${scan.theme}:${scan.route}`).digest('hex').slice(0, 8);
+    const hash = shortHash(`${scan.theme}:${scan.route}`);
     const file = path.join(dir, `${scan.theme}-${slug}-${hash}.json`);
     const entry: A11yBaselineEntry = {
         route: scan.route,

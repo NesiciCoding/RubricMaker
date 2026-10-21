@@ -596,7 +596,9 @@ export default function QuestionEditor({
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-                <label htmlFor={`question-prompt-${question.id}`}>{t('tests.question_prompt_label')}</label>
+                <label id={`question-prompt-label-${question.id}`} htmlFor={`question-prompt-${question.id}`}>
+                    {t('tests.question_prompt_label')}
+                </label>
                 {isClozeLike ? (
                     <>
                         {question.type === 'cloze' && (
@@ -683,6 +685,7 @@ export default function QuestionEditor({
                         minHeight={80}
                         allowPageMode={false}
                         allowImageEmbedding
+                        ariaLabelledBy={`question-prompt-label-${question.id}`}
                     />
                 )}
             </div>
