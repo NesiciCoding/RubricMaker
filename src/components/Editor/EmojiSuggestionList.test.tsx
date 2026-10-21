@@ -42,7 +42,7 @@ describe('EmojiSuggestionList', () => {
 
         // ArrowDown moves the selection from 0 to 1
         await expect(keyDown(ref, 'ArrowDown')).resolves.toBe(true);
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expect(screen.getByTitle(':heart:').style.background).toBe('var(--accent-soft)');
 
         // Enter confirms the selected (second) item
         await expect(keyDown(ref, 'Enter')).resolves.toBe(true);
@@ -56,11 +56,11 @@ describe('EmojiSuggestionList', () => {
 
         // ArrowUp from index 0 wraps to the last item
         await expect(keyDown(ref, 'ArrowUp')).resolves.toBe(true);
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expect(screen.getByTitle(':heart:').style.background).toBe('var(--accent-soft)');
 
         // ArrowDown from the last item wraps back to 0
         await expect(keyDown(ref, 'ArrowDown')).resolves.toBe(true);
-        expect(screen.getByTitle(':smile:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expect(screen.getByTitle(':smile:').style.background).toBe('var(--accent-soft)');
     });
 
     it('resets the selection to the first item when the item list changes', async () => {
@@ -68,7 +68,7 @@ describe('EmojiSuggestionList', () => {
         const ref = createRef<EmojiSuggestionListRef>();
         const { rerender } = render(<EmojiSuggestionList ref={ref} items={items} command={command} />);
         await keyDown(ref, 'ArrowDown');
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expect(screen.getByTitle(':heart:').style.background).toBe('var(--accent-soft)');
 
         rerender(
             <EmojiSuggestionList
@@ -81,7 +81,7 @@ describe('EmojiSuggestionList', () => {
                 command={command}
             />
         );
-        expect(screen.getByTitle(':smile:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expect(screen.getByTitle(':smile:').style.background).toBe('var(--accent-soft)');
     });
 
     it('renders nothing and ignores keys when there are no items', async () => {
