@@ -247,6 +247,25 @@
         "unknown_error": "Erreur inconnue",
         "done": "Terminé"
     },
+    "auth": {
+        "sign_in_with_google": "Se connecter avec Google",
+        "sign_in_with_microsoft": "Se connecter avec Microsoft",
+        "school_work_hint": "(école / travail)",
+        "sign_in_with_email": "Se connecter par e-mail",
+        "email_placeholder": "votre@email.com",
+        "enter_email_address": "Saisissez votre adresse e-mail.",
+        "send_login_code": "Envoyer le code de connexion",
+        "sending": "Envoi…",
+        "check_email_for_code": "Consultez {{email}} pour un code à 8 chiffres.",
+        "enter_otp_code": "Saisissez le code à 8 chiffres.",
+        "verify_code": "Vérifier le code",
+        "verifying": "Vérification…",
+        "student_login_password": "Connexion élève (mot de passe)",
+        "enter_email_and_password": "Saisissez votre e-mail et votre mot de passe.",
+        "sign_in": "Se connecter",
+        "signing_in": "Connexion…",
+        "signed_in_loading": "Connecté — chargement de vos données…"
+    },
     "slip_sheet": {
         "class_slips_one": "Fiches de classe — {{count}} élève",
         "class_slips_other": "Fiches de classe — {{count}} élèves",

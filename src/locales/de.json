@@ -247,6 +247,25 @@
         "unknown_error": "Unbekannter Fehler",
         "done": "Fertig"
     },
+    "auth": {
+        "sign_in_with_google": "Mit Google anmelden",
+        "sign_in_with_microsoft": "Mit Microsoft anmelden",
+        "school_work_hint": "(Schule / Arbeit)",
+        "sign_in_with_email": "Mit E-Mail anmelden",
+        "email_placeholder": "deine@email.com",
+        "enter_email_address": "Gib deine E-Mail-Adresse ein.",
+        "send_login_code": "Anmeldecode senden",
+        "sending": "Wird gesendet…",
+        "check_email_for_code": "Sieh in {{email}} nach einem 8-stelligen Code.",
+        "enter_otp_code": "Gib den 8-stelligen Code ein.",
+        "verify_code": "Code bestätigen",
+        "verifying": "Wird bestätigt…",
+        "student_login_password": "Schüler-Login (Passwort)",
+        "enter_email_and_password": "Gib deine E-Mail-Adresse und dein Passwort ein.",
+        "sign_in": "Anmelden",
+        "signing_in": "Anmeldung läuft…",
+        "signed_in_loading": "Angemeldet — deine Daten werden geladen…"
+    },
     "slip_sheet": {
         "class_slips_one": "Klassenzettel — {{count}} Schüler",
         "class_slips_other": "Klassenzettel — {{count}} Schüler",

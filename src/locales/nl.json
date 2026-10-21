@@ -247,6 +247,25 @@
         "unknown_error": "Onbekende fout",
         "done": "Klaar"
     },
+    "auth": {
+        "sign_in_with_google": "Inloggen met Google",
+        "sign_in_with_microsoft": "Inloggen met Microsoft",
+        "school_work_hint": "(school / werk)",
+        "sign_in_with_email": "Inloggen met e-mail",
+        "email_placeholder": "jouw@email.com",
+        "enter_email_address": "Vul je e-mailadres in.",
+        "send_login_code": "Inlogcode versturen",
+        "sending": "Versturen…",
+        "check_email_for_code": "Controleer {{email}} voor een 8-cijferige code.",
+        "enter_otp_code": "Vul de 8-cijferige code in.",
+        "verify_code": "Code verifiëren",
+        "verifying": "Verifiëren…",
+        "student_login_password": "Leerling-login (wachtwoord)",
+        "enter_email_and_password": "Vul je e-mailadres en wachtwoord in.",
+        "sign_in": "Inloggen",
+        "signing_in": "Bezig met inloggen…",
+        "signed_in_loading": "Ingelogd — je gegevens worden geladen…"
+    },
     "slip_sheet": {
         "class_slips_one": "Klasstroken — {{count}} leerling",
         "class_slips_other": "Klasstroken — {{count}} leerlingen",

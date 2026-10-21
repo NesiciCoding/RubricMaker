@@ -247,6 +247,25 @@
         "unknown_error": "Unknown error",
         "done": "Done"
     },
+    "auth": {
+        "sign_in_with_google": "Sign in with Google",
+        "sign_in_with_microsoft": "Sign in with Microsoft",
+        "school_work_hint": "(school / work)",
+        "sign_in_with_email": "Sign in with email",
+        "email_placeholder": "your@email.com",
+        "enter_email_address": "Enter your email address.",
+        "send_login_code": "Send login code",
+        "sending": "Sending…",
+        "check_email_for_code": "Check {{email}} for an 8-digit code.",
+        "enter_otp_code": "Enter the 8-digit code.",
+        "verify_code": "Verify code",
+        "verifying": "Verifying…",
+        "student_login_password": "Student login (password)",
+        "enter_email_and_password": "Enter your email and password.",
+        "sign_in": "Sign in",
+        "signing_in": "Signing in…",
+        "signed_in_loading": "Signed in — loading your data…"
+    },
     "slip_sheet": {
         "class_slips_one": "Class slips — {{count}} student",
         "class_slips_other": "Class slips — {{count}} students",
