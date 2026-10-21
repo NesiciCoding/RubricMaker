@@ -22,7 +22,7 @@ the gated deploys (see `ci.yml` and CLAUDE.md → CI/CD).
 | Allow force pushes / Allow deletions                             | ❌ (defaults)  | No history rewriting on `main`                        |
 
 Do **not** enable "Require deployments to succeed before merging": the deploy
-jobs (`Deploy to GitHub Pages`, `Deploy to HestiaCP VPS`, `Deploy to VPS`) are
+jobs (`Deploy to GitHub Pages`, `Deploy to HestiaCP VPS`) are
 push-only — on pull requests they are skipped, and requiring them adds no merge
 signal. GitHub treats a skipped required check as success, so it wouldn't block
 merges — it would only add confusion.
@@ -57,7 +57,7 @@ to `main` (skipped on PRs), so they never gate a merge.
 
 ## 2. Production environment: required reviewers
 
-The `deploy-hestiacp` and `deploy-vps` jobs (in `ci.yml`) run in the
+The `deploy-hestiacp` job (in `ci.yml`) runs in the
 `production` environment; the standalone `deploy-*.yml` workflows use it too.
 
 **Where:** repository **Settings → Environments → production**.

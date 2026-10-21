@@ -1,8 +1,7 @@
 # Manual deploy to the Virtualmin VPS.
 #
-# Automatic deploys on push to main now run inside ci.yml (the `deploy-vps`
-# job), which only fires after every CI + e2e job passes and only when the push
-# touched app files. Use this workflow_dispatch to deploy without waiting on CI.
+# Manual only: ci.yml has no automatic deploy to this host (production runs on
+# HestiaCP, see deploy-hestiacp.yml).
 name: Deploy to VPS
 
 on:
