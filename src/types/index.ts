@@ -894,6 +894,8 @@ export interface AppSettings {
      * scoreToMasteryColor falls back to pctToColor's continuous red→yellow→green interpolation.
      */
     masteryColorBands?: GradeRange[];
+    /** Spelling variant LanguageTool checks English documents against (default 'en-US'). */
+    grammarEnglishVariant?: 'en-GB' | 'en-US';
 }
 
 export type UiFontFamily = 'Inter' | 'Nunito' | 'Source Sans 3' | 'Lato' | 'Roboto';

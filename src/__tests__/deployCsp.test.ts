@@ -27,3 +27,20 @@ describe('deployment CSP headers', () => {
         expect(bare).toHaveLength(0);
     });
 });
+
+// The camera scan (useCameraCapture) and voice recording (useMediaRecorder) call getUserMedia on
+// our own origin; `camera=()` or `microphone=()` would block them in production only (#929).
+const policyFiles = [...files, 'deploy/.htaccess', 'public/.htaccess'];
+
+describe('deployment Permissions-Policy headers', () => {
+    it.each(policyFiles)('%s allows camera and microphone for the app itself', (file) => {
+        const text = readFileSync(resolve(root, file), 'utf8');
+        const headers = [...text.matchAll(/^\s*(?:add_header|Header always set)\s+Permissions-Policy\s+"([^"\n]*)"/gm)];
+        expect(headers.length).toBeGreaterThan(0);
+        for (const [, value] of headers) {
+            expect(value).toContain('camera=(self)');
+            expect(value).toContain('microphone=(self)');
+        }
+        expect(text).not.toMatch(/camera=\(\)|microphone=\(\)/);
+    });
+});

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import DocumentAnalysisPanel from '../DocumentAnalysisPanel';
 import type {
@@ -424,6 +424,32 @@ describe('DocumentAnalysisPanel coverage', () => {
         fireEvent.click(screen.getByRole('button', { name: /Extract & Analyse/ }));
         expect(await screen.findByText('An unexpected error occurred.')).toBeInTheDocument();
         r4.unmount();
+    });
+
+    it('checks grammar in the detected language, using the teacher’s English variant for English', async () => {
+        setDefaultMocks();
+        const english =
+            'I think that the trip was great and the teachers were kind to us. It is a shame that it rained.';
+        const dutch =
+            'Ik vind dat de reis heel leuk was en de leraren waren ook aardig. Het is jammer dat het niet zonnig was.';
+
+        const r1 = renderPanel({ grammarEnglishVariant: 'en-GB' });
+        fireEvent.click(screen.getByTitle(/Paste a transcript instead/));
+        fireEvent.change(screen.getByPlaceholderText(/Paste the student's transcript here/), {
+            target: { value: english },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Extract & Analyse/ }));
+        await waitFor(() => expect(mocks.checkGrammar).toHaveBeenCalledWith(english, 'en-GB'));
+        r1.unmount();
+
+        mocks.checkGrammar.mockClear();
+        renderPanel({ grammarEnglishVariant: 'en-GB' });
+        fireEvent.click(screen.getByTitle(/Paste a transcript instead/));
+        fireEvent.change(screen.getByPlaceholderText(/Paste the student's transcript here/), {
+            target: { value: dutch },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Extract & Analyse/ }));
+        await waitFor(() => expect(mocks.checkGrammar).toHaveBeenCalledWith(dutch, 'nl'));
     });
 
     it('warns for audio/video attachments and when the rubric has no vocabulary items', () => {

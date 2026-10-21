@@ -231,7 +231,7 @@ describe('DocumentAnalysisPanel', () => {
 
         expect(mockExtractText).toHaveBeenCalledWith(mockAttachment, expect.any(Function));
         expect(mockAnalyseVocabulary).toHaveBeenCalledWith('sample text', baseProps.vocabularyItems);
-        expect(mockCheckGrammar).toHaveBeenCalledWith('sample text');
+        expect(mockCheckGrammar).toHaveBeenCalledWith('sample text', 'en-US');
         expect(baseProps.onSaveResult).toHaveBeenCalledWith(
             expect.objectContaining({
                 studentId: 's1',

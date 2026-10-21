@@ -1,5 +1,6 @@
 import type { CefrGrammarHit, CefrGrammarProfile, CefrLevel, GrammarError } from '../types';
 import nlp from 'compromise';
+import { GRAMMAR_LANGUAGES, type GrammarLanguage } from './grammarLanguage';
 
 /** compromise's own .d.ts doesn't propagate the sentence view type through .forEach() — only type what we actually use. */
 interface SentenceView {
@@ -326,20 +327,23 @@ export function detectGrammar(text: string, shorthands: string[]): Record<string
 /**
  * Checks the given text for grammatical issues, preferring LanguageTool and falling back to a local compromise-based detector.
  *
- * @param language - BCP 47 language tag to request from LanguageTool (default: 'en-US')
+ * @param language - LanguageTool language code (default: 'en-US'); anything outside GRAMMAR_LANGUAGES falls back to 'en-US'
  * @returns An object with `errors` (detected grammar issues), `source` (which detector produced the results: `'languagetool'` or `'compromise'`), and `textWasTruncated` (`true` if the submitted text was truncated to meet the service byte limit)
  */
 export async function checkGrammar(
     text: string,
-    language = 'en-US'
+    language: string = 'en-US'
 ): Promise<{ errors: GrammarError[]; source: 'languagetool' | 'compromise'; textWasTruncated: boolean }> {
+    const requested = (GRAMMAR_LANGUAGES as readonly string[]).includes(language)
+        ? (language as GrammarLanguage)
+        : 'en-US';
     const encoder = new TextEncoder();
     const originalBytes = encoder.encode(text).length;
     const sample = truncateToBytes(text, LT_MAX_BYTES);
     const textWasTruncated = encoder.encode(sample).length < originalBytes;
 
     try {
-        const errors = await checkWithLanguageTool(sample, language);
+        const errors = await checkWithLanguageTool(sample, requested);
         return { errors, source: 'languagetool', textWasTruncated };
     } catch {
         const errors = await checkWithCompromise(sample);

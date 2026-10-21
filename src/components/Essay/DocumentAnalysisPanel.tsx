@@ -26,6 +26,7 @@ import { extractText, UnsupportedFormatError } from '../../utils/textExtraction'
 import { OcrUnavailableError } from '../../utils/ocrErrors';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
 import { checkGrammar, profileGrammar, LT_ATTRIBUTION_URL } from '../../utils/grammarChecker';
+import { resolveGrammarLanguage, type GrammarEnglishVariant } from '../../utils/grammarLanguage';
 import { profileText, buildPersistedVocabProfile, estimateLevelFromCounts } from '../../utils/cefrVocabularyProfiler';
 import { computeTargetVerdict } from '../../utils/textLevelVerdict';
 import { evaluateGrammar, buildGrammarComment } from '../../utils/grammarQualification';
@@ -52,6 +53,7 @@ interface Props {
     onApplyToEntry: (criterionId: string, subItemId: string) => void;
     onAddToCommentBank?: (phrase: string) => void;
     onApplyComment?: (criterionId: string, html: string) => void;
+    grammarEnglishVariant?: GrammarEnglishVariant;
 }
 
 type Phase = 'select' | 'analysing' | 'done' | 'error';
@@ -95,6 +97,7 @@ export default function DocumentAnalysisPanel({
     onApplyToEntry,
     onAddToCommentBank,
     onApplyComment,
+    grammarEnglishVariant,
 }: Props) {
     const { t, i18n } = useTranslation();
     const lang = i18n?.language?.startsWith('nl') ? 'nl' : 'en';
@@ -176,7 +179,11 @@ export default function DocumentAnalysisPanel({
             const detectedItems = analyseVocabulary(text, vocabularyItems);
 
             handleProgress(75, 'Checking grammar…');
-            const { errors: grammarErrors, source: grammarCheckerUsed, textWasTruncated } = await checkGrammar(text);
+            const {
+                errors: grammarErrors,
+                source: grammarCheckerUsed,
+                textWasTruncated,
+            } = await checkGrammar(text, resolveGrammarLanguage(text, grammarEnglishVariant));
 
             handleProgress(95, 'Saving…');
             const vocabProfile = buildPersistedVocabProfile(text);
@@ -221,6 +228,7 @@ export default function DocumentAnalysisPanel({
         rubricId,
         handleProgress,
         onSaveResult,
+        grammarEnglishVariant,
         t,
     ]);
 
