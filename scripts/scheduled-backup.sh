@@ -27,15 +27,27 @@ require_offsite_config
 LOCAL_KEEP="${LOCAL_KEEP:-7}"
 [[ "$LOCAL_KEEP" =~ ^[1-9][0-9]*$ ]] || { echo "Error: LOCAL_KEEP must be a whole number of at least 1." >&2; exit 1; }
 
+before_names=()
+for dir in "$BACKUP_ROOT"/*/; do
+    name="$(basename "$dir")"
+    is_backup_name "$name" && before_names+=("$name")
+done
+
 echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) scheduled backup ==="
 "$SCRIPT_DIR/backup.sh" "$BACKUP_ROOT"
 
+# Diff against the pre-run listing rather than taking the last glob match — a
+# pre-existing directory named later than "now" would otherwise outrank the
+# backup this run just created.
 latest=""
 for dir in "$BACKUP_ROOT"/*/; do
     name="$(basename "$dir")"
-    is_backup_name "$name" && latest="$name"
+    is_backup_name "$name" || continue
+    if ! printf '%s\n' "${before_names[@]:-}" | grep -qxF "$name"; then
+        latest="$name"
+    fi
 done
-[[ -n "$latest" ]] || { echo "Error: backup.sh reported success but no backup directory was found in $BACKUP_ROOT." >&2; exit 1; }
+[[ -n "$latest" ]] || { echo "Error: backup.sh reported success but no new backup directory was found in $BACKUP_ROOT." >&2; exit 1; }
 
 "$SCRIPT_DIR/offsite-backup.sh" push "$BACKUP_ROOT/$latest"
 
