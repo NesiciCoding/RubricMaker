@@ -22,7 +22,7 @@ the gated deploys (see `ci.yml` and CLAUDE.md → CI/CD).
 | Allow force pushes / Allow deletions                             | ❌ (defaults)  | No history rewriting on `main`                        |
 
 Do **not** enable "Require deployments to succeed before merging": the deploy
-jobs (`Deploy to GitHub Pages`, `Deploy to HestiaCP VPS`, `Deploy to VPS`) are
+jobs (`Deploy to GitHub Pages`, `Deploy to HestiaCP VPS`) are
 push-only — on pull requests they are skipped, and requiring them adds no merge
 signal. GitHub treats a skipped required check as success, so it wouldn't block
 merges — it would only add confusion.
@@ -57,7 +57,7 @@ to `main` (skipped on PRs), so they never gate a merge.
 
 ## 2. Production environment: required reviewers
 
-The `deploy-hestiacp` and `deploy-vps` jobs (in `ci.yml`) run in the
+The `deploy-hestiacp` job (in `ci.yml`) runs in the
 `production` environment; the standalone `deploy-*.yml` workflows use it too.
 
 **Where:** repository **Settings → Environments → production**.
@@ -70,8 +70,8 @@ The `deploy-hestiacp` and `deploy-vps` jobs (in `ci.yml`) run in the
   for `main`. This blocks accidental manual deploys of feature branches.
 - **Deployment timeout** — leave the default (30 min) or lower it; deploys are
   quick rsyncs.
-- **Environment secrets** — `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`,
-  `VPS_DOMAIN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+- **Environment secrets** — `VPS_HOST`, `VPS_SSH_KEY`, `VPS_DOMAIN`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
   `SUPABASE_PUBLIC_URL` (HestiaCP only) live here and are only injected into
   jobs that use this environment.
 
@@ -85,8 +85,8 @@ The `deploy-hestiacp` and `deploy-vps` jobs (in `ci.yml`) run in the
 - The `github-pages` environment used by `deploy-pages` is managed by GitHub
   itself and has no review gate — Pages deploys fire automatically once CI
   passes (as `deploy-pages` is push-only inside `ci.yml`).
-- Manual deploys (`workflow_dispatch` on `deploy.yml` / `deploy-hestiacp.yml` /
-  `deploy-vps.yml`) are also subject to the environment's required reviewers —
+- Manual deploys (`workflow_dispatch` on `deploy.yml` / `deploy-hestiacp.yml`)
+  are also subject to the environment's required reviewers —
   approval is required even though the run was started by hand.
 
 ## 3. Merge queue for `main`
