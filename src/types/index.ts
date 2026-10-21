@@ -820,6 +820,8 @@ export interface AppSettings {
     defaultGradeScaleId: string;
     theme: 'light' | 'dark';
     language: string;
+    /** Set when the user picked `language` themselves; until then the interface follows the browser. */
+    languageChosen?: boolean;
     accentColor: string;
     defaultFormat: RubricFormat;
     activeClassId?: string;

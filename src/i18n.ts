@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { displayedUiLanguage } from './utils/uiLanguage';
 
 i18n.use(LanguageDetector)
     .use(initReactI18next)
@@ -26,7 +27,7 @@ export const i18nReady = import('./locales/en.json').then(({ default: en }) => {
 // Non-English locale files are ~200KB of JSON each — loading all 5 upfront meant every
 // visitor downloaded ~1MB of translations regardless of language. 'en' stays bundled as
 // the always-available fallback; the rest load on demand, keyed off whatever language
-// LanguageDetector picks or the user later switches to via Settings' i18n.changeLanguage().
+// LanguageDetector picks or the user later chooses (applied app-wide by AppContext).
 const lazyLocales: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
     nl: () => import('./locales/nl.json'),
     fr: () => import('./locales/fr.json'),
@@ -53,5 +54,13 @@ function loadLocale(lng: string) {
 
 if (i18n.language) loadLocale(i18n.language);
 i18n.on('languageChanged', loadLocale);
+
+// index.html ships lang="en"; screen readers pick their voice from it, so it must follow the
+// language actually on screen (#615).
+function setDocumentLanguage(lng: string | undefined) {
+    document.documentElement.lang = displayedUiLanguage(lng);
+}
+setDocumentLanguage(i18n.language);
+i18n.on('languageChanged', setDocumentLanguage);
 
 export default i18n;

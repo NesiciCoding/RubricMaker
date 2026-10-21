@@ -995,8 +995,8 @@ describe('StudentPortalPage extended coverage', () => {
         renderAt('s1');
         switchTab('progress');
         await screen.findAllByText('studentPortal.learning_path_section_title');
-        // cefrSkill flag label resolves via CEFR_SKILL_LABELS.
-        expect(screen.getByText('Reading')).toBeInTheDocument();
+        // cefrSkill flag label resolves via the cefr.skills locale keys.
+        expect(screen.getByText(/^cefr\.skills\.reading/)).toBeInTheDocument();
         // Ghost criterion falls back to the raw targetId.
         expect(screen.getAllByText('ghost-c').length).toBeGreaterThan(0);
         // Grammar recommendation resolves the item label via getGrammarItemById.
@@ -1012,7 +1012,7 @@ describe('StudentPortalPage extended coverage', () => {
         renderAt('s1');
         switchTab('progress');
         await screen.findAllByText('studentPortal.learning_path_section_title');
-        expect(screen.getAllByText('Reading').length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/^cefr\.skills\.reading/).length).toBeGreaterThan(0);
         expect(screen.getByText(/learningPath.gap_summary/)).toBeInTheDocument();
     });
 

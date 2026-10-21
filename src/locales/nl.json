@@ -2327,7 +2327,17 @@
         "per_student_limit_unlimited_one": "Geen limiet — {{count}} vergelijking",
         "per_student_limit_unlimited_other": "Geen limiet — {{count}} vergelijkingen"
     },
+    "tour": {
+        "back": "Terug",
+        "close": "Sluiten",
+        "last": "Klaar",
+        "next": "Volgende",
+        "next_with_progress": "Volgende ({current} van {total})",
+        "open": "Rondleidingsstap openen",
+        "skip": "Rondleiding overslaan"
+    },
     "studentPortal": {
+        "language_label": "Taal van de interface",
         "not_found": "Leerling niet gevonden.",
         "no_linked_account": "Er is geen leerlingaccount gekoppeld aan dit e-mailadres.",
         "no_linked_account_detail": "Vraag je docent om je e-mailadres toe te voegen aan je leerlingprofiel zodat je hier kunt inloggen.",
@@ -3774,6 +3784,8 @@
         "gr_portal_progress_body": "Een radargrafiek van de eigen scores per criterium van de leerling, gecombineerd over alle beoordeelde rubrics (criteria met dezelfde naam worden gemiddeld) of gefilterd op één rubric — zichtbaar zodra er minstens 3 verschillende beoordeelde criteria zijn.",
         "gr_portal_messages_title": "Berichten",
         "gr_portal_messages_body": "Een leerling kan een vraag stellen over een specifiek rubriekcijfer, toets of essay — of een algemene vraag die nergens aan gekoppeld is — direct vanuit het portaal, en ziet het antwoord van de docent bij het volgende bezoek.",
+        "gr_portal_language_title": "Taal",
+        "gr_portal_language_body": "Leerlingen kiezen de taal van de interface (Engels, Nederlands, Frans, Duits of Spaans) in het taalmenu bovenaan het portaal. Zolang ze dat niet doen, volgt het portaal de taal van de browser. De keuze wordt op dat apparaat onthouden, en het taalattribuut van de pagina volgt mee, zodat schermlezers het portaal met de juiste stem voorlezen.",
         "ce_overview_title": "ERK-overzicht",
         "ce_overview_intro": "De ERK-module (Europees Referentiekader) volgt taalvaardigheid op het gebied van Lezen, Schrijven, Spreken en Luisteren — afgestemd op Nederlandse VO-doelen (VMBO-BB tot en met VWO).",
         "ce_overview_item_whole_class": "Klasbreed overzicht (/cefr-overview) — heatmap van alle leerlingen over ERK-niveaus per vaardigheid.",

@@ -47,6 +47,7 @@ import { dedupeStudentRubrics, mergeStoreData } from '../utils/syncMerge';
 import { diffCollection } from '../utils/syncDiff';
 import { buildAccentScale, ACCENT_SCALE_STEPS } from '../utils/accentScale';
 import { isRtlLanguage } from '../utils/rtlLanguages';
+import { baseLanguage, chosenUiLanguage } from '../utils/uiLanguage';
 import { initClientLogger, setLoggerContext, STRESS_TEST_LOGGING_ENABLED } from '../services/logging/clientLogger';
 import { initAuditLogger, clearAuditLogger } from '../services/database/AuditLogger';
 import type { DatabaseConfig } from '../services/database';
@@ -140,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
     }, []);
     const { showToast } = useToast();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     // storage.ts swallows quota errors internally (saveStudentRubrics retries
     // once without audio first) so a reducer case never throws mid-update; this
@@ -216,7 +217,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         document.documentElement.dir = isRtlLanguage(state.settings.language) ? 'rtl' : 'ltr';
-    }, [state.settings.language]);
+        // Applied here rather than on the Settings page, so it holds on every route, including the
+        // student portal, which has no Settings page (#615).
+        const chosen = chosenUiLanguage({
+            language: state.settings.language,
+            languageChosen: state.settings.languageChosen,
+        });
+        // Compared by base code: a chosen 'nl' keeps an nl-BE browser's regional formats, but a chosen 'en'
+        // must replace an unshipped pt-BR, which would otherwise keep formatting dates and numbers.
+        if (chosen && baseLanguage(i18n.language) !== chosen) void i18n.changeLanguage(chosen);
+    }, [state.settings.language, state.settings.languageChosen, i18n]);
 
     useEffect(() => {
         const root = document.documentElement;
