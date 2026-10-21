@@ -15,6 +15,15 @@ require_compose() {
     fi
 }
 
+# How ops scripts run pg_dump/psql in the `db` service. The image's pg_hba.conf only lets
+# supabase_admin in over the local socket with a password, but trusts loopback TCP inside the
+# container, so connect through 127.0.0.1 instead of the socket. Use as
+# `$COMPOSE "${DB_EXEC_ARGS[@]}" psql …`, or db_exec_default for a DB_EXEC string.
+DB_EXEC_ARGS=(exec -T -e PGHOST=127.0.0.1 db)
+db_exec_default() {
+    printf '%s %s' "$COMPOSE" "${DB_EXEC_ARGS[*]}"
+}
+
 # Compose resolves its project directory from COMPOSE_FILE when one is given, otherwise from the
 # directory the compose file is found in; compose.sh lives in scripts/lib/, so this repo is the
 # fallback. The project's .env is read from there.
@@ -68,6 +77,15 @@ compose_project_from_file() {
     printf '%s' "$value"
 }
 
+resolve_compose_project() {
+    local project
+    project=$(compose_project_from_flags || true)
+    if [[ -z "$project" ]]; then project="${COMPOSE_PROJECT_NAME:-}"; fi
+    if [[ -z "$project" ]]; then project=$(compose_project_from_env_file || true); fi
+    if [[ -z "$project" ]]; then project=$(compose_project_from_file || true); fi
+    printf '%s' "${project:-rubricmaker}"
+}
+
 # docker-compose.yml pins `name: rubricmaker`, so the volume is rubricmaker_storage-data unless the
 # project name says otherwise. STORAGE_VOLUME overrides the result outright.
 resolve_storage_volume() {
@@ -75,12 +93,7 @@ resolve_storage_volume() {
         printf '%s' "$STORAGE_VOLUME"
         return 0
     fi
-    local project
-    project=$(compose_project_from_flags || true)
-    if [[ -z "$project" ]]; then project="${COMPOSE_PROJECT_NAME:-}"; fi
-    if [[ -z "$project" ]]; then project=$(compose_project_from_env_file || true); fi
-    if [[ -z "$project" ]]; then project=$(compose_project_from_file || true); fi
-    printf '%s' "${project:-rubricmaker}_storage-data"
+    printf '%s_storage-data' "$(resolve_compose_project)"
 }
 
 STORAGE_VOLUME="$(resolve_storage_volume)"

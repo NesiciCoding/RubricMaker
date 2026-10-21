@@ -1,9 +1,10 @@
 #!/bin/bash
 # RubricMaker — restore a backup created by backup.sh
 #
-# Usage:  ./scripts/restore.sh backups/20260515_120000
+# Usage:  ./scripts/restore.sh [--yes] backups/20260515_120000
 #
-# ⚠  This OVERWRITES all current data.
+# ⚠  This OVERWRITES all current data. --yes skips the confirmation prompt (restore-drill.sh uses it
+# against its scratch stack).
 #
 # The target stack must already be migrated (`docker compose up -d` runs db_migrate) to at least
 # the migrations the backup was taken at; the restore refuses otherwise. The database part runs in
@@ -19,15 +20,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/compose.sh
 source "$SCRIPT_DIR/lib/compose.sh"
+# shellcheck source=lib/offsite.sh
+source "$SCRIPT_DIR/lib/offsite.sh"
 
+ASSUME_YES=0
+if [[ "${1:-}" == "--yes" ]]; then
+    ASSUME_YES=1
+    shift
+fi
 BACKUP_DIR="${1:-}"
 if [[ -z "${DB_EXEC:-}" ]]; then
     require_compose
-    DB_EXEC="$COMPOSE exec -T db"
+    DB_EXEC="$(db_exec_default)"
 fi
 
 if [ -z "$BACKUP_DIR" ]; then
-    echo "Usage: $0 <backup-dir>"
+    echo "Usage: $0 [--yes] <backup-dir>"
     echo "Example: $0 backups/20260515_120000"
     exit 1
 fi
@@ -51,6 +59,13 @@ if [ ! -f "$BACKUP_DIR/storage.tar.gz" ]; then
     exit 1
 fi
 
+# Backups from before checksums were added have no SHA256SUMS; anything newer must match it.
+if [ -f "$BACKUP_DIR/SHA256SUMS" ]; then
+    verify_checksums "$BACKUP_DIR" || { echo "Nothing was changed."; exit 1; }
+else
+    echo "Warning: $BACKUP_DIR has no SHA256SUMS (made before checksums were added); its files cannot be verified."
+fi
+
 psql_db() {
     $DB_EXEC psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 "$@"
 }
@@ -67,7 +82,11 @@ fi
 
 echo "RubricMaker restore from: $BACKUP_DIR"
 echo ""
-read -rp "This will overwrite all current data. Continue? [y/N] " confirm || confirm=""
+if [ "$ASSUME_YES" -eq 1 ]; then
+    confirm=y
+else
+    read -rp "This will overwrite all current data. Continue? [y/N] " confirm || confirm=""
+fi
 [[ "$confirm" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 0; }
 echo ""
 

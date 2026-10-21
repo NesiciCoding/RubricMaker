@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -9,7 +9,15 @@ const libDir = resolve(root, 'scripts', 'lib');
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8');
 
 const compose = read('docker-compose.yml');
-const scripts = ['backup.sh', 'restore.sh', 'delete-old-attachments.sh', 'import-cloud.sh'].map((name) => ({
+const scripts = [
+    'backup.sh',
+    'restore.sh',
+    'delete-old-attachments.sh',
+    'import-cloud.sh',
+    'offsite-backup.sh',
+    'scheduled-backup.sh',
+    'restore-drill.sh',
+].map((name) => ({
     name,
     body: read(`scripts/${name}`),
 }));
@@ -141,6 +149,54 @@ describe('ops scripts', () => {
         expect(staged).toBeGreaterThan(-1);
         expect(staged).toBeLessThan(body.indexOf('--single-transaction'));
         expect(body).not.toContain('rm -rf /data/* &&');
+    });
+
+    // #926: the image only accepts supabase_admin on the local socket with a password, so every
+    // `exec … db psql` without PGHOST=127.0.0.1 failed with "fe_sendauth: no password supplied".
+    it('reach Postgres over loopback TCP, never the password-protected socket', () => {
+        const shellScripts = readdirSync(resolve(root, 'scripts'))
+            .filter((name) => name.endsWith('.sh'))
+            .map((name) => `scripts/${name}`);
+        const files = [
+            ...shellScripts,
+            'README.md',
+            'docs/SELF_HOSTING_OPS.md',
+            'docker/db/roles.sql',
+            '.env.docker.example',
+        ];
+        for (const file of files) {
+            for (const line of read(file).split('\n')) {
+                if (/\bexec\b[^|]*\bdb (psql|pg_dump)\b/.test(line)) {
+                    expect(line, file).toContain('PGHOST=127.0.0.1');
+                }
+            }
+        }
+        expect(read('scripts/lib/compose.sh')).toContain('DB_EXEC_ARGS=(exec -T -e PGHOST=127.0.0.1 db)');
+        expect(read('scripts/delete-old-attachments.sh')).toContain('"${DB_EXEC_ARGS[@]}" psql');
+        expect(read('scripts/import-cloud.sh').match(/"\$\{DB_EXEC_ARGS\[@\]\}" psql/g)).toHaveLength(3);
+    });
+
+    it('fail the attachment cleanup with the database error in the log, not silently', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'rm-cleanup-'));
+        const bin = join(dir, 'bin');
+        mkdirSync(bin);
+        // A docker whose `compose version` works but whose database refuses every connection.
+        writeFileSync(
+            join(bin, 'docker'),
+            '#!/bin/bash\n[[ "$*" == *exec* ]] && { echo "psql: error: connection refused by stub" >&2; exit 2; }\nexit 0\n',
+            { mode: 0o755 }
+        );
+        try {
+            const out = spawnSync('bash', [resolve(root, 'scripts', 'delete-old-attachments.sh')], {
+                cwd: dir,
+                encoding: 'utf8',
+                env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, SERVICE_ROLE_KEY: 'stub-key' },
+            });
+            expect(out.status).not.toBe(0);
+            expect(out.stderr).toContain('connection refused by stub');
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 });
 

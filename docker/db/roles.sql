@@ -8,7 +8,7 @@
 -- volume is first initialised.
 --
 -- To repair an existing database, or after changing POSTGRES_PASSWORD in .env:
---   docker compose exec db psql -U supabase_admin -d postgres -f /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
+--   docker compose exec -e PGHOST=127.0.0.1 db psql -U supabase_admin -d postgres -f /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
 --   docker compose up -d --force-recreate
 \set ON_ERROR_STOP on
 \set pgpass `echo "$POSTGRES_PASSWORD"`
