@@ -70,8 +70,8 @@ The `deploy-hestiacp` job (in `ci.yml`) runs in the
   for `main`. This blocks accidental manual deploys of feature branches.
 - **Deployment timeout** — leave the default (30 min) or lower it; deploys are
   quick rsyncs.
-- **Environment secrets** — `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`,
-  `VPS_DOMAIN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+- **Environment secrets** — `VPS_HOST`, `VPS_SSH_KEY`, `VPS_DOMAIN`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
   `SUPABASE_PUBLIC_URL` (HestiaCP only) live here and are only injected into
   jobs that use this environment.
 
@@ -85,8 +85,8 @@ The `deploy-hestiacp` job (in `ci.yml`) runs in the
 - The `github-pages` environment used by `deploy-pages` is managed by GitHub
   itself and has no review gate — Pages deploys fire automatically once CI
   passes (as `deploy-pages` is push-only inside `ci.yml`).
-- Manual deploys (`workflow_dispatch` on `deploy.yml` / `deploy-hestiacp.yml` /
-  `deploy-vps.yml`) are also subject to the environment's required reviewers —
+- Manual deploys (`workflow_dispatch` on `deploy.yml` / `deploy-hestiacp.yml`)
+  are also subject to the environment's required reviewers —
   approval is required even though the run was started by hand.
 
 ## 3. Merge queue for `main`

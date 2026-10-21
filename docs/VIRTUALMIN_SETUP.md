@@ -304,7 +304,7 @@ Open `https://rubricmaker.example.com` in a browser. You should see the RubricMa
 
 ## 9. Automated CI/CD with GitHub Actions
 
-The workflow at `.github/workflows/deploy-vps.yml` builds the app and rsyncs to the VPS on every push to `main`.
+The repository no longer ships a Virtualmin workflow. To add one, copy `.github/workflows/deploy-hestiacp.yml` to `.github/workflows/deploy-virtualmin.yml` and change both rsync steps to the Virtualmin layout: `remote_path: /home/${{ secrets.VPS_USER }}/public_html/` (and `…/public_html/.htaccess`), `remote_user: ${{ secrets.VPS_USER }}`, and drop the `--chown=…` switch.
 
 ### 9.1 Create a dedicated deploy SSH key
 
@@ -341,7 +341,7 @@ VITE_SUPABASE_ANON_KEY = eyJ...                     (optional)
 
 ### 9.3 Trigger a deployment
 
-Push any commit to `main`, or go to **Actions → Deploy to VPS → Run workflow**.
+Go to **Actions → (your workflow) → Run workflow**. Copied from `deploy-hestiacp.yml`, it runs on demand only; add a `push` trigger if you want it to deploy on every push to `main`.
 
 The workflow:
 
@@ -487,12 +487,12 @@ Vite hashes asset filenames by default (e.g. `index-abc123.js`), so browsers fet
 
 ## File Reference
 
-| File                               | Purpose                                                       |
-| ---------------------------------- | ------------------------------------------------------------- |
-| `deploy.sh`                        | Local build + rsync deploy script                             |
-| `deploy/.htaccess`                 | Apache SPA config, security headers, caching                  |
-| `deploy/apache-virtualmin.conf`    | Apache `<Directory>` block (vhost alternative to `.htaccess`) |
-| `deploy/nginx-virtualmin.conf`     | Nginx server block for Virtualmin Nginx stacks                |
-| `.github/workflows/deploy-vps.yml` | GitHub Actions CI/CD pipeline                                 |
-| `.env.example`                     | Template for local environment variables                      |
-| `supabase/migrations/`             | Database schema SQL files                                     |
+| File                                    | Purpose                                                       |
+| --------------------------------------- | ------------------------------------------------------------- |
+| `deploy.sh`                             | Local build + rsync deploy script                             |
+| `deploy/.htaccess`                      | Apache SPA config, security headers, caching                  |
+| `deploy/apache-virtualmin.conf`         | Apache `<Directory>` block (vhost alternative to `.htaccess`) |
+| `deploy/nginx-virtualmin.conf`          | Nginx server block for Virtualmin Nginx stacks                |
+| `.github/workflows/deploy-hestiacp.yml` | GitHub Actions deploy to adapt (§9)                           |
+| `.env.example`                          | Template for local environment variables                      |
+| `supabase/migrations/`                  | Database schema SQL files                                     |

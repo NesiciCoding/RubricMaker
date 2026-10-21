@@ -333,7 +333,7 @@ Open `https://rubricmaker.example.com` in a browser. You should see the RubricMa
 
 ## 9. Automated CI/CD with GitHub Actions
 
-The workflow at `.github/workflows/deploy-vps.yml` was created for Virtualmin. For HestiaCP, create a new workflow file `.github/workflows/deploy-hestiacp.yml`:
+The repository's HestiaCP workflow is `.github/workflows/deploy-hestiacp.yml`. A minimal version looks like this:
 
 ```yaml
 name: Deploy to HestiaCP VPS
