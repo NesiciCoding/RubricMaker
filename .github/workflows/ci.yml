@@ -630,7 +630,7 @@ jobs:
 
       - name: Deploy via rsync
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
+        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
         with:
           # --chown forces the web-domain user on the receiving side: rsync -a would
           # otherwise preserve the runner's uid/gid 1001 (→ `hestiamail` on the box),
@@ -647,7 +647,7 @@ jobs:
 
       - name: Upload .htaccess
         if: steps.changes.outputs.changed == 'true'
-        uses: burnett01/rsync-deployments@155b6d6c1219ab2224c20c58d423a3f1b850395f # v9.0.1
+        uses: burnett01/rsync-deployments@2cbb5ed94b73d111d07a40b071b1c7d3c0272435 # v9.0.2
         with:
           switches: -avz --chown=rubricmaker:rubricmaker
           path: deploy/.htaccess
