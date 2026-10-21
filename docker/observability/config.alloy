@@ -1,0 +1,137 @@
+// Grafana Alloy — ships logs to Loki from two sources (replaces Promtail, EOL 2026-03-02):
+//   1. webserver — Apache/Nginx access + error logs from any deployment style (traditional
+//                  HestiaCP/Virtualmin, or files mounted from the combined stack). The glob is
+//                  rooted at /var/host-logs, which is mounted from RUBRICMAKER_LOG_DIR.
+//   2. docker    — container stdout/stderr of the combined docker-compose stack, filtered to the
+//                  `rubricmaker` compose project. Harmless if no matching containers exist here.
+// Read positions live in Alloy's storage path (the alloy-data volume), so a restart resumes where
+// it stopped instead of re-sending every file.
+
+// ── 1. Web server log files ──────────────────────────────────────────────────────────────────
+local.file_match "webserver" {
+	path_targets = [{
+		__path__ = "/var/host-logs/**/*{access,error}*.log*",
+		// Rotated, compressed logs would be shipped as binary noise.
+		__path_exclude__ = "/var/host-logs/**/*.gz",
+		job              = "webserver",
+	}]
+}
+
+loki.source.file "webserver" {
+	targets    = local.file_match.webserver.targets
+	forward_to = [loki.write.default.receiver]
+}
+
+// ── 2. Combined docker-compose stack containers (optional) ───────────────────────────────────
+discovery.docker "rubricmaker" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+
+	filter {
+		name   = "label"
+		values = ["com.docker.compose.project=rubricmaker"]
+	}
+}
+
+discovery.relabel "docker" {
+	targets = []
+
+	// The dashboards select container logs with {job="docker"}; Promtail never set it.
+	rule {
+		target_label = "job"
+		replacement  = "docker"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/?(.*)"
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "service"
+	}
+}
+
+loki.source.docker "rubricmaker" {
+	host             = "unix:///var/run/docker.sock"
+	targets          = discovery.docker.rubricmaker.targets
+	relabel_rules    = discovery.relabel.docker.rules
+	refresh_interval = "15s"
+	forward_to       = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
+
+// ── 3. Metrics (pushed to Prometheus) ─────────────────────────────────────────────────────────
+// Host: node_exporter, built in. The host's /proc, /sys and / are mounted read-only under /host.
+prometheus.exporter.unix "host" {
+	procfs_path = "/host/proc"
+	sysfs_path  = "/host/sys"
+	rootfs_path = "/host/root"
+}
+
+// Containers: cAdvisor, built in. Docker containers only; every container on the host, not just
+// this stack, because Postgres and the app usually run in another compose project.
+prometheus.exporter.cadvisor "containers" {
+	docker_host      = "unix:///var/run/docker.sock"
+	docker_only      = true
+	storage_duration = "2m"
+}
+
+discovery.relabel "host" {
+	targets = prometheus.exporter.unix.host.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "node"
+	}
+
+	// The exporter would label series with Alloy's random container id.
+	rule {
+		target_label = "instance"
+		replacement  = sys.env("OBSERVABILITY_HOST_NAME")
+	}
+}
+
+discovery.relabel "containers" {
+	targets = prometheus.exporter.cadvisor.containers.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "cadvisor"
+	}
+
+	rule {
+		target_label = "instance"
+		replacement  = sys.env("OBSERVABILITY_HOST_NAME")
+	}
+}
+
+prometheus.scrape "exporters" {
+	targets = array.concat(
+		discovery.relabel.host.output,
+		discovery.relabel.containers.output,
+		// Postgres: the postgres-exporter service (pg_up is 0 until SUPABASE_DB_* points at a database).
+		// db_host is empty, and so dropped, while unset; the "Postgres unreachable" alert keys on it.
+		[{__address__ = "postgres-exporter:9187", job = "postgres", db_host = sys.env("SUPABASE_DB_HOST")}],
+		// The stack itself, so a silent Loki, Alloy or Prometheus shows up as a dead target.
+		[{__address__ = "loki:3100", job = "loki"}],
+		[{__address__ = "localhost:12345", job = "alloy"}],
+		[{__address__ = "prometheus:9090", job = "prometheus"}],
+		[{__address__ = "grafana:3000", job = "grafana"}],
+	)
+	scrape_interval = "30s"
+	forward_to      = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+	endpoint {
+		url = "http://prometheus:9090/api/v1/write"
+	}
+}

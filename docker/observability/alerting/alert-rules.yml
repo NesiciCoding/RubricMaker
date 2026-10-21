@@ -1,0 +1,505 @@
+# Grafana-managed alert rules, provisioned on startup and routed to the rubricmaker-oncall contact
+# point (contact-points.yml). Thresholds are deliberately plain numbers in the queries: edit this
+# file to tune them. Rules that read Postgres (job=postgres, pg_cron, pg_net) stay quiet until the
+# SUPABASE_DB_* settings point at a database whose role is in pg_monitor (migration 091). Docs: docs/OBSERVABILITY_DASHBOARDS.md → Alerting.
+
+apiVersion: 1
+groups:
+- orgId: 1
+  name: Host
+  folder: RubricMaker alerts
+  interval: 1m
+  rules:
+  - uid: rm-disk-almost-full
+    title: Disk almost full
+    condition: C
+    for: 10m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+    annotations:
+      summary: Disk {{ $labels.device }} is {{ humanize $values.B.Value }}% full
+      description: Postgres stops accepting writes when its disk is full. Free space (old backups, Loki/Prometheus retention, attachments) or grow the disk. See the Host & Containers dashboard.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: max by (device) (100 * (1 - node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"} / node_filesystem_size_bytes{job="node",fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}))
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 90
+  - uid: rm-disk-full-soon
+    title: Disk full within 2 days
+    condition: C
+    for: 1h
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: Disk {{ $labels.device }} fills up in {{ humanize $values.B.Value }} days at the current rate
+      description: Based on the growth of the last 6 hours. Find what is writing (Memory/Disk panels, per-container usage) before the disk-full alert fires.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: min by (device) (node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"} / clamp_min(-deriv(node_filesystem_avail_bytes{job="node",fstype!~"tmpfs|overlay|squashfs|nsfs|ramfs"}[6h]),
+          1e-9)) / 86400
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 2
+  - uid: rm-target-down
+    title: Monitoring target down
+    condition: C
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ $labels.job }} has stopped reporting metrics'
+      description: Alloy cannot scrape this target. For job=postgres this is the exporter itself, not the database (see 'Postgres unreachable').
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: min by (job) (up)
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+  - uid: rm-metrics-missing
+    title: Host metrics stopped arriving
+    condition: C
+    for: 10m
+    noDataState: Alerting
+    execErrState: Alerting
+    labels:
+      severity: critical
+    annotations:
+      summary: No host metrics for 10 minutes
+      description: Alloy or Prometheus is down, so the other metric alerts cannot fire. Check `docker compose -f docker-compose.observability.yml ps`.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: count(up{job="node"})
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+  - uid: rm-cpu-steal
+    title: CPU steal high
+    condition: C
+    for: 15m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: The hypervisor withheld {{ humanize $values.B.Value }}% of CPU time for 15 minutes
+      description: Other VMs on the same physical host are using the shared vCores, so the app is slow without this server being overloaded. Compare with "CPU used" and "Load per core"; if it persists, raise it with the hosting provider or move to dedicated cores.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: 100 * avg(rate(node_cpu_seconds_total{job="node",mode="steal"}[5m]))
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 10
+- orgId: 1
+  name: Postgres
+  folder: RubricMaker alerts
+  interval: 1m
+  rules:
+  - uid: rm-postgres-down
+    title: Postgres unreachable
+    condition: C
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: critical
+    annotations:
+      summary: postgres-exporter cannot connect to {{ $labels.db_host }}
+      description: The database is down, refusing connections, or the SUPABASE_DB_* credentials changed.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: min by (db_host) (pg_up{db_host!=""})
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: lt
+            params:
+            - 1
+  - uid: rm-postgres-connections
+    title: Postgres connections nearly exhausted
+    condition: C
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }}% of max_connections in use'
+      description: New logins fail at 100%. See docs/SELF_HOSTING_OPS.md → Resource Sizing (connection pooling above ~15 concurrent users).
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        refId: A
+        expr: 100 * sum(pg_stat_activity_count) / max(pg_settings_max_connections)
+        instant: true
+        range: false
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 80
+  - uid: rm-pg-cron-failed
+    title: Scheduled database job failed
+    condition: C
+    for: 0s
+    noDataState: OK
+    execErrState: OK
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }} pg_cron run(s) failed in the last 24 hours'
+      description: 'Inspect as an admin: SELECT jobid, command, return_message, start_time FROM cron.job_run_details WHERE status = ''failed'' ORDER BY start_time DESC; (counted by monitoring.failed_jobs(),
+        migration 091).'
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: client_logs_postgres
+      model:
+        refId: A
+        rawSql: SELECT failed_cron_runs FROM monitoring.failed_jobs()
+        rawQuery: true
+        editorMode: code
+        format: table
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0
+  - uid: rm-pg-net-failed
+    title: Scheduled HTTP call failed
+    condition: C
+    for: 0s
+    noDataState: OK
+    execErrState: OK
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }} pg_net call(s) from a scheduled job failed in the last day'
+      description: pg_cron reports these jobs as succeeded even when the edge function they call fails (e.g. the teacher digest). Check net._http_response for the status and error.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 86400
+        to: 0
+      datasourceUid: client_logs_postgres
+      model:
+        refId: A
+        rawSql: SELECT failed_http_calls FROM monitoring.failed_jobs()
+        rawQuery: true
+        editorMode: code
+        format: table
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 0
+- orgId: 1
+  name: Web
+  folder: RubricMaker alerts
+  interval: 1m
+  rules:
+  - uid: rm-http-5xx-burst
+    title: Burst of HTTP 5xx errors
+    condition: C
+    for: 5m
+    noDataState: OK
+    execErrState: Error
+    labels:
+      severity: warning
+    annotations:
+      summary: '{{ humanize $values.B.Value }} server errors in the last 5 minutes'
+      description: Open the Web & Container Logs dashboard → Recent errors & warnings.
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: loki
+      model:
+        refId: A
+        expr: sum(count_over_time({job="webserver"} |~ `HTTP/[0-9.]+" 5[0-9][0-9] |HTTP/[0-9.]+ "5[0-9][0-9]"` [5m]))
+        queryType: instant
+    - refId: B
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: B
+        type: reduce
+        expression: A
+        reducer: last
+        settings:
+          mode: dropNN
+    - refId: C
+      datasourceUid: __expr__
+      relativeTimeRange:
+        from: 0
+        to: 0
+      model:
+        refId: C
+        type: threshold
+        expression: B
+        conditions:
+        - evaluator:
+            type: gt
+            params:
+            - 25

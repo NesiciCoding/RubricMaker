@@ -1,0 +1,12 @@
+# Every alert goes to rubricmaker-oncall, one notification per alert, repeated every 4 hours while
+# it keeps firing.
+
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: rubricmaker-oncall
+    group_by: [grafana_folder, alertname]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h

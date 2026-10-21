@@ -72,6 +72,10 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 
 - `client_logs` (035, 072) holds the stress-test diagnostics the client writes when built with `VITE_STRESS_TEST_LOGGING=true`. `089_client_logs_bounds.sql` adds a `NOT VALID` size check (`client_logs_bounded`, byte limits 4x the character limits `boundLogRow` in `src/services/logging/clientLogger.ts` clamps to — keep the two in step) and the nightly `client-logs-cleanup` pg_cron job that deletes rows older than 30 days.
 
+## Monitoring
+
+- `monitoring.failed_jobs(since interval default '1 day')` (091) returns two counts — failed `pg_cron` runs and failed `pg_net` calls — for the Grafana alerts in `docker/observability/alerting/`. It is `SECURITY DEFINER` because pg_cron's RLS hides the migrator's jobs from any other role, so it returns counts only (never job commands or response bodies), sits in the `monitoring` schema that PostgREST does not expose, and is executable only by `pg_monitor` members.
+
 ## Retention job
 
 - `anonymize_overdue_students()` runs nightly at 02:00 via pg_cron (scheduled in 038, rewritten in 078). It anonymizes students whose latest `student_rubrics.gradedAt` (any grader) is older than their teacher's school `retention_years`; a teacher's school comes from `profiles.school_id` or `school_members`. Students with a grade whose `gradedAt` cannot be parsed are skipped rather than anonymized. Each run writes one `audit_logs` row (`action = 'retention_anonymize'`, with `anonymized`/`failed`/`skipped_unreadable_date` counts). `e2e/specs/49-retention-anonymization.spec.ts` and `src/__tests__/retentionAnonymization.test.ts` guard it — keep them passing when touching `students`/`student_rubrics` columns.

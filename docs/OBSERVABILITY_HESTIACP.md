@@ -1,6 +1,6 @@
 # RubricMaker — Observability Stack on a HestiaCP Subdomain
 
-This guide deploys the standalone Loki + Promtail + Grafana stack
+This guide deploys the standalone Loki + Alloy + Grafana stack
 (`docker-compose.observability.yml`) on a HestiaCP-managed server, exposed at
 a dedicated subdomain — e.g. `observability.rubricmaker.example.com` — with
 HTTPS via HestiaCP's Let's Encrypt integration.
@@ -32,9 +32,9 @@ If RubricMaker isn't deployed on this server yet, see
   both require root).
 - A DNS **A record** for the subdomain pointing at the VPS IP, e.g.:
 
-  ```
-  observability.rubricmaker.example.com.  IN  A  YOUR_VPS_IP
-  ```
+    ```
+    observability.rubricmaker.example.com.  IN  A  YOUR_VPS_IP
+    ```
 
 This stack does **not** use ports 80/443 directly — Grafana is bound to
 `127.0.0.1:3001` and reached through HestiaCP's existing Nginx, which already
@@ -105,8 +105,8 @@ GRAFANA_ADMIN_PASSWORD=<choose a strong password>
 # Virtualmin equivalent). This is a Docker bind-mount source, so it must be a
 # real, literal directory — no shell globs (Docker won't expand a `*` in a
 # host path; it just creates an empty dir with that literal name and mounts
-# that). Point at the parent `web` dir; Promtail's own `**` glob in
-# promtail-config.yml recurses into each domain's log/ folder from there.
+# that). Point at the parent `web` dir; the `**` glob in config.alloy
+# recurses into each domain's log/ folder from there.
 RUBRICMAKER_LOG_DIR=/home/rubricmaker/web
 
 # Set in step 7, once the subdomain is live.
@@ -117,10 +117,10 @@ GRAFANA_ROOT_URL=https://observability.rubricmaker.example.com/
 # panel's real webserver log dir — check with
 # `ls -la /home/rubricmaker/web/<any-domain>/logs/`. Mount that real target
 # dir too (same absolute path) so the symlinks resolve inside the container.
-# This doesn't cause duplicate log ingestion: Promtail's only webserver scrape
-# path is RUBRICMAKER_LOG_DIR (`/var/host-logs/**` in promtail-config.yml) —
+# This doesn't cause duplicate log ingestion: Alloy's only webserver scrape
+# path is RUBRICMAKER_LOG_DIR (`/var/host-logs/**` in config.alloy) —
 # this second mount isn't separately scraped, it just makes the symlink
-# targets resolvable when Promtail follows them.
+# targets resolvable when Alloy follows them.
 # Apache (most HestiaCP installs):
 RUBRICMAKER_WEBSERVER_LOG_DIR=/var/log/apache2/domains
 # Nginx-only HestiaCP installs would instead use /var/log/nginx/domains.
@@ -134,7 +134,7 @@ RUBRICMAKER_WEBSERVER_LOG_DIR=/var/log/apache2/domains
 ```
 
 > **`RUBRICMAKER_LOG_DIR=/home/rubricmaker/web` vs `/var/log`:**
-> HestiaCP writes per-domain logs to `/home/<user>/web/<domain>/logs/` *and*
+> HestiaCP writes per-domain logs to `/home/<user>/web/<domain>/logs/` _and_
 > aggregates them under `/var/log/$WEB_SYSTEM/domains/`. Either parent path
 > works as `RUBRICMAKER_LOG_DIR`, but the per-domain `logs/` entries are
 > typically symlinks pointing at the latter — see `RUBRICMAKER_WEBSERVER_LOG_DIR`
@@ -174,11 +174,11 @@ template**.
 
 1. Copy the default proxy template pair to new names:
 
-   ```bash
-   cd /usr/local/hestia/data/templates/web/nginx
-   sudo cp default.tpl  rmaker_proxy.tpl
-   sudo cp default.stpl rmaker_proxy.stpl
-   ```
+    ```bash
+    cd /usr/local/hestia/data/templates/web/nginx
+    sudo cp default.tpl  rmaker_proxy.tpl
+    sudo cp default.stpl rmaker_proxy.stpl
+    ```
 
 2. In **both** new files, find the `location /` block (it proxies to the
    Apache backend, typically `proxy_pass http://%backend_lsnr%;` or similar —
@@ -186,40 +186,40 @@ template**.
    `proxy_pass` target with Grafana's local port. Also add the headers
    Grafana needs for its live-dashboard websocket connections:
 
-   ```nginx
-   location / {
-       proxy_pass http://127.0.0.1:3001;
-       proxy_set_header Host              $host;
-       proxy_set_header X-Real-IP         $remote_addr;
-       proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-       proxy_set_header X-Forwarded-Proto $scheme;
-       proxy_http_version 1.1;
-       proxy_set_header Upgrade    $http_upgrade;
-       proxy_set_header Connection "upgrade";
-   }
-   ```
+    ```nginx
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    ```
 
-   Leave any `location ~ /\.well-known/acme-challenge/` block (or equivalent
-   static-file handling for ACME validation) untouched — that's what lets
-   certificate renewals keep working after this template is applied.
+    Leave any `location ~ /\.well-known/acme-challenge/` block (or equivalent
+    static-file handling for ACME validation) untouched — that's what lets
+    certificate renewals keep working after this template is applied.
 
 3. Apply the new template to the subdomain and rebuild:
 
-   ```bash
-   sudo /usr/local/hestia/bin/v-change-web-domain-proxy-tpl \
-        rubricmaker observability.rubricmaker.example.com rmaker_proxy
+    ```bash
+    sudo /usr/local/hestia/bin/v-change-web-domain-proxy-tpl \
+         rubricmaker observability.rubricmaker.example.com rmaker_proxy
 
-   sudo /usr/local/hestia/bin/v-rebuild-web-domains rubricmaker
-   ```
+    sudo /usr/local/hestia/bin/v-rebuild-web-domains rubricmaker
+    ```
 
-   (`v-change-web-domain-proxy-tpl` only swaps the Nginx proxy config — the
-   Apache backend and SSL certificate for this domain are untouched.)
+    (`v-change-web-domain-proxy-tpl` only swaps the Nginx proxy config — the
+    Apache backend and SSL certificate for this domain are untouched.)
 
 4. Reload Nginx if the rebuild didn't already:
 
-   ```bash
-   sudo systemctl reload nginx
-   ```
+    ```bash
+    sudo systemctl reload nginx
+    ```
 
 `https://observability.rubricmaker.example.com/` now serves Grafana's login
 page over HTTPS.
@@ -246,7 +246,7 @@ docker compose -f docker-compose.observability.yml --env-file .env.observability
 ```
 
 (`up -d` re-creates only the `grafana` container since its config changed —
-Loki and Promtail are unaffected.)
+Loki and Alloy are unaffected.)
 
 ---
 
@@ -278,8 +278,39 @@ docker compose -f docker-compose.observability.yml --env-file .env.observability
 
 ```bash
 docker compose -f docker-compose.observability.yml logs -f grafana
-docker compose -f docker-compose.observability.yml logs -f promtail
+docker compose -f docker-compose.observability.yml logs -f alloy
 ```
+
+**Upgrading from the Promtail stack (Loki 2.9 / Grafana 11):** Promtail reached
+end-of-life on 2026-03-02 and was replaced by Grafana Alloy, with Loki and
+Grafana upgraded at the same time. Logs and dashboards are kept: the
+`loki-data` volume already uses the TSDB store with schema v13, which Loki 3
+reads as is, and Grafana migrates its `grafana-data` volume on first start.
+
+```bash
+cd ~/observability
+# Back up the volumes first (names are <project>_loki-data and <project>_grafana-data).
+docker run --rm -v rubricmaker-observability_loki-data:/v:ro -v "$PWD":/out alpine tar czf /out/loki-data.tgz -C /v .
+docker run --rm -v rubricmaker-observability_grafana-data:/v:ro -v "$PWD":/out alpine tar czf /out/grafana-data.tgz -C /v .
+git pull   # or copy the new docker-compose.observability.yml and docker/observability/
+docker compose -f docker-compose.observability.yml --env-file .env.observability up -d --remove-orphans
+```
+
+`--remove-orphans` removes the old `promtail` container. On its first start
+Alloy reads the log files from the beginning (Promtail kept its positions
+inside its container, so they cannot be carried over), which ingests up to a
+week of already-shipped lines a second time. That is a one-off: Alloy stores
+its positions in the `alloy-data` volume, so later restarts resume where they
+stopped. Container logs now carry `job="docker"`, which the **Web & Container
+Logs** dashboard always queried but Promtail never set, so container lines
+appear there from now on.
+
+The same upgrade adds metrics: Alloy now also collects host and per-container
+metrics into a new `prometheus` service, and a `postgres-exporter` service
+reads the database through the `SUPABASE_DB_*` settings. Two new dashboards,
+**Host & Containers** and **Postgres**, show them; see
+[OBSERVABILITY_DASHBOARDS.md](OBSERVABILITY_DASHBOARDS.md) for sizing and
+retention (`PROMETHEUS_RETENTION_TIME` / `PROMETHEUS_RETENTION_SIZE`).
 
 **Tearing down after a stress-test window** (drops Grafana dashboards/users
 and Loki's stored logs — back up first if needed):
@@ -296,7 +327,7 @@ subdomain).
 
 **SSL renewal** — handled automatically by HestiaCP, same as any other domain
 (HESTIACP_SETUP.md §11). The custom proxy template doesn't change how
-certificates are issued or renewed, only how *application* traffic is routed.
+certificates are issued or renewed, only how _application_ traffic is routed.
 
 **502 Bad Gateway:**
 

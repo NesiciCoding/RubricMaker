@@ -211,7 +211,7 @@ VITE_SUPABASE_URL=       # optional — Supabase project URL
 VITE_SUPABASE_ANON_KEY=  # optional — public anon key
 ```
 
-When both are unset, all sync is disabled and the app runs fully offline. `.env.docker.example`, `.env.observability.example`, and `.env.production.example` are for the Docker/self-hosted deployment stack (Caddy, backups, Loki/Promtail/Grafana), not the frontend build — see `docs/` and the README's Deployment section rather than this file for those.
+When both are unset, all sync is disabled and the app runs fully offline. `.env.docker.example`, `.env.observability.example`, and `.env.production.example` are for the Docker/self-hosted deployment stack (Caddy, backups, Loki/Alloy/Grafana), not the frontend build — see `docs/` and the README's Deployment section rather than this file for those.
 
 ## Deployment
 

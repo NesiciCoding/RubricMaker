@@ -169,3 +169,9 @@ if [[ $FAILED -gt 0 ]]; then
     log "Error: ${FAILED} storage DELETE(s) failed (check SITE_URL=${STORAGE_URL} and SERVICE_ROLE_KEY); those rows were kept."
     exit 1
 fi
+
+# Dead-man's-switch: pinged only after a clean run, so a monitor on CLEANUP_HEARTBEAT_URL (set in
+# .env) alerts when the nightly cleanup stops succeeding. A failed ping does not fail the run.
+if [[ -n "${CLEANUP_HEARTBEAT_URL:-}" ]]; then
+    curl -fsS -m 10 --retry 3 -o /dev/null "$CLEANUP_HEARTBEAT_URL" || log "Warning: heartbeat ping failed."
+fi

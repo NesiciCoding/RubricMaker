@@ -10,6 +10,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { pingHeartbeat } from '../_shared/heartbeat.ts';
 import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const PAGE_SIZE = 1000;
@@ -76,6 +77,7 @@ serve(async (req) => {
         }
     }
 
+    if (errors.length === 0) await pingHeartbeat(Deno.env.get('DIGEST_HEARTBEAT_URL'));
     return new Response(JSON.stringify({ sent, skipped, errors }), { status: 200 });
 });
 

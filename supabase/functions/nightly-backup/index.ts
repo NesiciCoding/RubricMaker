@@ -8,6 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { pingHeartbeat } from '../_shared/heartbeat.ts';
 import { secretsMatch } from '../_shared/secureCompare.ts';
 
 const KEEP_COUNT = 7;
@@ -60,6 +61,7 @@ serve(async (req) => {
         }
     }
 
+    if (errors.length === 0) await pingHeartbeat(Deno.env.get('NIGHTLY_BACKUP_HEARTBEAT_URL'));
     return new Response(JSON.stringify({ backedUp, errors }), { status: 200 });
 });
 
