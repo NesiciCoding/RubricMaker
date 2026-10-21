@@ -143,13 +143,26 @@ describe('Playwright project wiring', () => {
         expect(doubleRuns).toEqual([]);
     });
 
+    it('runs the a11y gate exactly once, in its own project', () => {
+        const a11ySpec = rel('51-a11y.spec.ts');
+        const a11y = projects.find((p) => p.name === 'a11y');
+        expect(a11y, 'expected an a11y project').toBeDefined();
+        expect(a11y!.testMatch).toEqual(['**/51-a11y.spec.ts']);
+
+        // The gate scans every route in A11Y_ROUTES in two themes; running it
+        // in every browser project would triple CI time for the same failures.
+        const runners = projects.filter((p) => includesSpec(p, a11ySpec)).map((p) => p.name);
+        expect(runners).toEqual(['a11y']);
+    });
+
     it('npm scripts only reference existing projects', () => {
         const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
         const names = projects.map((p) => p.name);
-        for (const scriptName of ['e2e:chromium', 'e2e:supabase']) {
+        for (const scriptName of ['e2e:chromium', 'e2e:supabase', 'e2e:a11y']) {
             const cmd: string = pkg.scripts?.[scriptName];
             expect(cmd, `missing npm script ${scriptName}`).toBeDefined();
-            const referenced = [...cmd.matchAll(/--project=([a-z-]+)/g)].map((m) => m[1]);
+            // Project names may contain digits (e.g. `a11y`).
+            const referenced = [...cmd.matchAll(/--project=([a-z0-9-]+)/g)].map((m) => m[1]);
             for (const name of referenced) {
                 expect(names, `${scriptName} references unknown project "${name}"`).toContain(name);
             }
