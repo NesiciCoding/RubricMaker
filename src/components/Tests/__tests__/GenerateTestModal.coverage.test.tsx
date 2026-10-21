@@ -94,9 +94,7 @@ describe('GenerateTestModal coverage', () => {
         fireEvent.change(screen.getByLabelText('questionBank.cefr_level_label'), {
             target: { value: 'B1' },
         });
-        fireEvent.change(screen.getByLabelText('generateTest.criterion_tag_label'), {
-            target: { value: 'VOCABULARY' }, // case-insensitive tag match
-        });
+        fireEvent.click(screen.getByRole('button', { name: 'vocabulary' }));
         fireEvent.change(screen.getByLabelText('tests.mode_label'), { target: { value: 'practice' } });
 
         fireEvent.click(screen.getByRole('button', { name: 'generateTest.generate_button' }));
@@ -122,11 +120,13 @@ describe('GenerateTestModal coverage', () => {
         expect(s.generated.questions).toHaveLength(2);
     });
 
-    it('filters out the whole pool when no item matches the tag', () => {
+    it('filters out the whole pool when no item matches the selected tag', () => {
         setup();
-        fireEvent.change(screen.getByLabelText('generateTest.criterion_tag_label'), {
-            target: { value: 'zebra' },
+        // b2 is the only A2 item and it's tagged 'reading', not 'vocabulary' — the combination matches nothing.
+        fireEvent.change(screen.getByLabelText('questionBank.cefr_level_label'), {
+            target: { value: 'A2' },
         });
+        fireEvent.click(screen.getByRole('button', { name: 'vocabulary' }));
         fireEvent.click(screen.getByRole('button', { name: 'generateTest.generate_button' }));
         const s = state();
         expect(s.generated.questions).toHaveLength(0);
