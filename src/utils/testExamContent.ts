@@ -401,6 +401,35 @@ export function fiducialMarkers(): FiducialMarker[] {
     ];
 }
 
+/** Physical size/inset of the per-page QR scan marker on an answer sheet (see scanMarkerHtml in testExamExportHtml.ts) — named here, rather than left as local literals, so scanMarkerMarginsMm() below can't drift out of sync with what's actually drawn. */
+export const SCAN_QR_SIZE_MM = 18;
+export const SCAN_QR_INSET_MM = 6;
+
+/** Gap (mm) kept between a scan marker's printed edge and the start of real page content. */
+const SCAN_MARKER_SAFETY_PAD_MM = 2;
+
+/**
+ * Top/bottom page margin (mm) that answer sheets need when `scanMarkers` is on, so the fiducials
+ * and the per-page QR code (both drawn inside the page's repeating header/footer band, see
+ * withoutBrowserPrintChrome in pdfExport.ts) sit entirely within that band instead of bleeding into
+ * the real content below/above it. The default PRINT_MARGIN_MM (10mm) is too small for either: the
+ * fiducials' own inset+size is 14mm, and the QR's is 24mm — both larger than a 10mm margin.
+ */
+export function scanMarkerMarginsMm(): { top: number; bottom: number } {
+    const markers = fiducialMarkers();
+    const topExtent = Math.max(
+        ...markers.filter((m) => m.corner === 'top-left' || m.corner === 'top-right').map((m) => m.y + m.size)
+    );
+    const bottomFiducialExtent = Math.max(
+        ...markers.filter((m) => m.corner === 'bottom-left').map((m) => EXAM_PAGE_MM.height - m.y)
+    );
+    const bottomQrExtent = SCAN_QR_INSET_MM + SCAN_QR_SIZE_MM;
+    return {
+        top: Math.ceil(topExtent) + SCAN_MARKER_SAFETY_PAD_MM,
+        bottom: Math.ceil(Math.max(bottomFiducialExtent, bottomQrExtent)) + SCAN_MARKER_SAFETY_PAD_MM,
+    };
+}
+
 export interface AnswerBlockGeometry {
     questionId: string;
     number: number;
