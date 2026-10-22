@@ -333,6 +333,7 @@ describe('StudentTestPage — safe media helpers', () => {
             )
         );
         expect(screen.getByText('Shared passage').closest('[lang]')?.getAttribute('lang')).toBe('en');
+        for (const title of screen.getAllByText('Reading')) expect(title.getAttribute('lang')).toBe('en');
         expect(screen.getByText('About the passage').closest('[lang]')?.getAttribute('lang')).toBe('en');
         expect(screen.getByText('OK').closest('[lang]')?.getAttribute('lang')).toBe('en');
         expect(screen.getByText(/^tests\.taking\.question_label/).closest('[lang]')).toBe(document.documentElement);

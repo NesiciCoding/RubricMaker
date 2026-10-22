@@ -1078,7 +1078,16 @@ export default function StudentTestPage() {
                                                         number: index + 1,
                                                     })}
                                                 </div>
-                                                <div style={{ fontWeight: 600, marginTop: 2 }}>
+                                                <div
+                                                    lang={
+                                                        q.type === 'cloze' ||
+                                                        q.type === 'cloze-dropdown' ||
+                                                        q.type === 'cloze-bank'
+                                                            ? undefined
+                                                            : contentLang
+                                                    }
+                                                    style={{ fontWeight: 600, marginTop: 2 }}
+                                                >
                                                     {q.type === 'cloze' ||
                                                     q.type === 'cloze-dropdown' ||
                                                     q.type === 'cloze-bank'
@@ -1087,6 +1096,7 @@ export default function StudentTestPage() {
                                                 </div>
                                                 {q.explanation && (
                                                     <p
+                                                        lang={contentLang}
                                                         className="text-muted text-sm"
                                                         style={{
                                                             marginTop: 8,
@@ -1113,6 +1123,7 @@ export default function StudentTestPage() {
                                                                 {t('tests.taking.transcript_title')}
                                                             </summary>
                                                             <p
+                                                                lang={contentLang}
                                                                 className="text-muted text-sm"
                                                                 style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}
                                                             >
@@ -1348,6 +1359,7 @@ export default function StudentTestPage() {
                         flagged={flagged}
                         seenIndices={seenIndices}
                         onJump={setCurrentIndex}
+                        contentLang={contentLang}
                     />
                 )}
             </div>
@@ -1365,6 +1377,7 @@ interface TimelineProps {
     flagged: Set<string>;
     seenIndices: Set<number>;
     onJump: (index: number) => void;
+    contentLang: string;
 }
 
 function LegendSwatch({ label, style }: { label: string; style: React.CSSProperties }) {
@@ -1376,7 +1389,16 @@ function LegendSwatch({ label, style }: { label: string; style: React.CSSPropert
     );
 }
 
-function QuestionTimeline({ questions, currentIndex, answers, sections, flagged, seenIndices, onJump }: TimelineProps) {
+function QuestionTimeline({
+    questions,
+    currentIndex,
+    answers,
+    sections,
+    flagged,
+    seenIndices,
+    onJump,
+    contentLang,
+}: TimelineProps) {
     const { t } = useTranslation();
 
     // Group consecutive questions with same sectionId
@@ -1439,6 +1461,7 @@ function QuestionTimeline({ questions, currentIndex, answers, sections, flagged,
                 >
                     {group.sectionTitle && (
                         <span
+                            lang={contentLang}
                             style={{
                                 fontSize: '0.7rem',
                                 fontWeight: 600,
