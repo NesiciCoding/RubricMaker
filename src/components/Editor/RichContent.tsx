@@ -5,14 +5,16 @@ import { TIPTAP_CONTENT_STYLES } from './tiptapContentStyles';
 interface Props {
     html: string;
     className?: string;
+    lang?: string;
 }
 
 /** Read-only render of TipTap-authored HTML (question prompts, section passages). */
-export default memo(function RichContent({ html, className }: Props) {
+export default memo(function RichContent({ html, className, lang }: Props) {
     return (
         <>
             <div
                 className={className ? `essay-editor-content ${className}` : 'essay-editor-content'}
+                lang={lang}
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
             />
             {/* ponytail: re-emits identical <style> per instance rather than a single global

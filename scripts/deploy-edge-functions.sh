@@ -107,7 +107,9 @@ restore_hint() {
 # ── 4. Copy ──────────────────────────────────────────────────────────────────────────────────────
 for fn in "${changed[@]}"; do
     if command -v rsync >/dev/null 2>&1; then
-        rsync -a --delete --exclude='*.test.ts' --exclude='__tests__' "$SRC/$fn/" "$DST/$fn/" || { restore_hint; die "copying $fn failed"; }
+        # --checksum: rsync's default size+mtime check skips an edit that keeps the file size when the
+        # timestamps match (e.g. both written in the same second), leaving the old function deployed.
+        rsync -a --checksum --delete --exclude='*.test.ts' --exclude='__tests__' "$SRC/$fn/" "$DST/$fn/" || { restore_hint; die "copying $fn failed"; }
     else
         rm -rf -- "${DST:?}/$fn" && cp -a "$SRC/$fn" "$DST/$fn" &&
             find "$DST/$fn" \( -name '*.test.ts' -o -name '__tests__' \) -prune -exec rm -rf {} + ||
