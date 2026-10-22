@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Clock } from 'lucide-react';
 import { useDeadlineCountdown } from '../../hooks/useDeadlineCountdown';
 
@@ -8,6 +10,9 @@ function formatTime(seconds: number): string {
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
 }
+
+const FIVE_MINUTES = 5 * 60;
+const ONE_MINUTE = 60;
 
 interface CountdownTimerProps {
     /** null → no countdown is active and nothing renders. */
@@ -34,6 +39,7 @@ export default function CountdownTimer({
     onTimeUp,
     timeUpLabel,
 }: CountdownTimerProps) {
+    const { t } = useTranslation();
     const secondsLeft = useDeadlineCountdown({
         durationMinutes,
         storageKey,
@@ -42,23 +48,71 @@ export default function CountdownTimer({
         onTimeUp,
     });
 
+    // Tracks which thresholds have already been announced for the current deadline, so a
+    // screen reader hears each one once rather than on every tick once it's crossed.
+    const announcedRef = useRef<Set<number>>(new Set());
+    // The previous tick's value, so a threshold only announces when actually crossed — a test
+    // that starts with under 5 minutes left must never claim "5 minutes remaining".
+    const prevSecondsRef = useRef<number | null>(null);
+    const [announcement, setAnnouncement] = useState('');
+
+    useEffect(() => {
+        announcedRef.current = new Set();
+        prevSecondsRef.current = null;
+        setAnnouncement('');
+    }, [resetSignal, storageKey]);
+
+    useEffect(() => {
+        if (secondsLeft === null) return;
+        const prev = prevSecondsRef.current;
+        if (
+            prev !== null &&
+            prev > FIVE_MINUTES &&
+            secondsLeft <= FIVE_MINUTES &&
+            !announcedRef.current.has(FIVE_MINUTES)
+        ) {
+            announcedRef.current.add(FIVE_MINUTES);
+            setAnnouncement(t('tests.taking.time_remaining_5min'));
+        }
+        if (prev !== null && prev > ONE_MINUTE && secondsLeft <= ONE_MINUTE && !announcedRef.current.has(ONE_MINUTE)) {
+            announcedRef.current.add(ONE_MINUTE);
+            setAnnouncement(t('tests.taking.time_remaining_1min'));
+        }
+        if (secondsLeft <= 0 && !announcedRef.current.has(0)) {
+            announcedRef.current.add(0);
+            // Reuse the caller's own time-up copy rather than a separate message, since
+            // `onTimeUp` is optional and `submitted` may still be false at this exact tick —
+            // this announcement must not claim a submission that hasn't been confirmed yet.
+            setAnnouncement(timeUpLabel);
+        }
+        prevSecondsRef.current = secondsLeft;
+    }, [secondsLeft, t, timeUpLabel]);
+
     if (secondsLeft === null) return null;
 
     const timedOut = secondsLeft <= 0;
     return (
-        <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                fontVariantNumeric: 'tabular-nums',
-                color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
-            }}
-        >
-            <Clock size={17} />
-            {timedOut ? timeUpLabel : formatTime(secondsLeft)}
-        </div>
+        <>
+            <div
+                role="timer"
+                aria-live="off"
+                aria-label={t('tests.taking.time_remaining_label')}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontWeight: 700,
+                    fontSize: '1.05rem',
+                    fontVariantNumeric: 'tabular-nums',
+                    color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
+                }}
+            >
+                <Clock size={17} aria-hidden="true" />
+                {timedOut ? timeUpLabel : formatTime(secondsLeft)}
+            </div>
+            <div role="status" aria-live="polite" className="sr-only">
+                {announcement}
+            </div>
+        </>
     );
 }

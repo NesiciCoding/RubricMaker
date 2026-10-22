@@ -91,6 +91,7 @@ const mockAppValue = {
     updateRubric: mockUpdateRubric,
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
+    userTemplates: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -195,11 +196,12 @@ describe('RubricList coverage', () => {
         RubricListComp = mod.default;
     });
 
-    it('creates a rubric from the empty-state button', () => {
+    it('creates a rubric from the empty-state button via the chooser', () => {
         const orig = mockAppValue.rubrics;
         (mockAppValue as Record<string, unknown>).rubrics = [];
         renderPage();
         fireEvent.click(screen.getByText('rubricList.create_rubric'));
+        fireEvent.click(screen.getByText('rubricList.chooser_blank_title'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new');
         (mockAppValue as Record<string, unknown>).rubrics = orig;
     });

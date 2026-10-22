@@ -69,6 +69,7 @@ const mockUseApp = {
     students: [mockStudent],
     classes: [mockClass],
     gradeScales: [mockGradeScale],
+    questionBank: [],
     studentRubrics: [],
     studentTests: [],
     settings: mockSettings,

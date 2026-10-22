@@ -71,7 +71,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
 
     async function handleSendOtp() {
         if (!email.trim()) {
-            setError('Enter your email address.');
+            setError(t('auth.enter_email_address'));
             return;
         }
         if (!supabaseReady) {
@@ -94,7 +94,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
 
     async function handleVerifyOtp() {
         if (otp.trim().length < 8) {
-            setError('Enter the 8-digit code.');
+            setError(t('auth.enter_otp_code'));
             return;
         }
         setError('');
@@ -116,7 +116,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
 
     async function handleStudentPasswordLogin() {
         if (!studentEmail.trim() || !studentPassword) {
-            setError('Enter your email and password.');
+            setError(t('auth.enter_email_and_password'));
             return;
         }
         if (!supabaseReady) {
@@ -158,7 +158,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
     if (done) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#16a34a', fontWeight: 600 }}>
-                <Check size={18} /> Signed in — loading your data…
+                <Check size={18} /> {t('auth.signed_in_loading')}
             </div>
         );
     }
@@ -179,7 +179,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     ) : (
                         <GoogleIcon />
                     )}
-                    Sign in with Google
+                    {t('auth.sign_in_with_google')}
                 </button>
             )}
 
@@ -197,7 +197,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     ) : (
                         <MicrosoftIcon />
                     )}
-                    Sign in with Microsoft
+                    {t('auth.sign_in_with_microsoft')}
                 </button>
             )}
 
@@ -216,8 +216,10 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                         <MicrosoftIcon />
                     )}
                     <span>
-                        Sign in with Microsoft{' '}
-                        <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#2563eb' }}>(school / work)</span>
+                        {t('auth.sign_in_with_microsoft')}{' '}
+                        <span style={{ fontSize: '0.78rem', fontWeight: 400, color: '#2563eb' }}>
+                            {t('auth.school_work_hint')}
+                        </span>
                     </span>
                 </button>
             )}
@@ -237,7 +239,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     onClick={() => setEmailOpen((o) => !o)}
                 >
                     <Mail size={16} />
-                    Sign in with email
+                    {t('auth.sign_in_with_email')}
                     {emailOpen ? (
                         <ChevronUp size={14} style={{ marginLeft: 'auto' }} />
                     ) : (
@@ -258,7 +260,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                                     setError('');
                                 }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
-                                placeholder="your@email.com"
+                                placeholder={t('auth.email_placeholder')}
                                 style={{
                                     padding: '9px 12px',
                                     borderRadius: 7,
@@ -274,17 +276,18 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                             >
                                 {busy === 'otp-send' ? (
                                     <>
-                                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Sending…
+                                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                                        {t('auth.sending')}
                                     </>
                                 ) : (
-                                    'Send login code'
+                                    t('auth.send_login_code')
                                 )}
                             </button>
                         </>
                     ) : (
                         <>
                             <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
-                                Check <strong>{email}</strong> for an 8-digit code.
+                                {t('auth.check_email_for_code', { email })}
                             </p>
                             <input
                                 type="text"
@@ -315,7 +318,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                                         setOtp('');
                                     }}
                                 >
-                                    Back
+                                    {t('common.back')}
                                 </button>
                                 <button
                                     className="btn btn-primary btn-sm"
@@ -325,10 +328,10 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                                     {busy === 'otp-verify' ? (
                                         <>
                                             <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />{' '}
-                                            Verifying…
+                                            {t('auth.verifying')}
                                         </>
                                     ) : (
-                                        'Verify code'
+                                        t('auth.verify_code')
                                     )}
                                 </button>
                             </div>
@@ -353,7 +356,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                 onClick={() => setStudentLoginOpen((o) => !o)}
             >
                 <KeyRound size={16} />
-                Student login (password)
+                {t('auth.student_login_password')}
                 {studentLoginOpen ? (
                     <ChevronUp size={14} style={{ marginLeft: 'auto' }} />
                 ) : (
@@ -370,7 +373,7 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                             setStudentEmail(e.target.value);
                             setError('');
                         }}
-                        placeholder="your@email.com"
+                        placeholder={t('auth.email_placeholder')}
                         style={{
                             padding: '9px 12px',
                             borderRadius: 7,
@@ -401,10 +404,11 @@ export default function LoginButtons({ onEmailSuccess, supabaseReady, onNeedConf
                     >
                         {busy === 'student-password' ? (
                             <>
-                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Signing in…
+                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />{' '}
+                                {t('auth.signing_in')}
                             </>
                         ) : (
-                            'Sign in'
+                            t('auth.sign_in')
                         )}
                     </button>
                 </div>

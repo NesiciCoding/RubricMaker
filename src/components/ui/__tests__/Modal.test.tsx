@@ -25,7 +25,7 @@ describe('Modal', () => {
         expect(content.style.maxWidth).toBe('420px');
     });
 
-    it('calls onClose when the escape key is pressed', () => {
+    it('calls onClose exactly once when the escape key is pressed', () => {
         const onClose = vi.fn();
         render(
             <Modal titleId="m-title" onClose={onClose}>
@@ -33,7 +33,7 @@ describe('Modal', () => {
             </Modal>
         );
         fireEvent.keyDown(document.body, { key: 'Escape' });
-        expect(onClose).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it('returns focus to the element that opened it once it closes', async () => {

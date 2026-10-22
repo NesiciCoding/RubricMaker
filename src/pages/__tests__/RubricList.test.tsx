@@ -56,6 +56,7 @@ const mockAppValue = {
     updateRubric: mockUpdateRubric,
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
+    userTemplates: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -188,10 +189,13 @@ describe('RubricList', () => {
         expect(screen.getByText('rubricList.no_rubrics')).toBeInTheDocument();
     });
 
-    it('navigates to create a new rubric', () => {
+    it('navigates to create a new rubric via the chooser', () => {
         renderPage();
         fireEvent.click(screen.getByText('rubricList.new_rubric'));
+        expect(screen.getByText('rubricList.chooser_title')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('rubricList.chooser_blank_title'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new');
+        expect(screen.queryByText('rubricList.chooser_title')).not.toBeInTheDocument();
     });
 
     it('navigates to edit a rubric via the edit button', () => {

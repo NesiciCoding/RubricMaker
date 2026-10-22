@@ -9,7 +9,8 @@ vi.mock('../../../services/database/lazyDb', () => ({ loadDb: mockLoadDb }));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key: string) => key,
+        t: (key: string, opts?: Record<string, unknown>) =>
+            opts && typeof opts === 'object' ? `${key}:${JSON.stringify(opts)}` : key,
         i18n: { language: 'en' },
     }),
 }));
@@ -48,16 +49,16 @@ describe('LoginButtons coverage', () => {
     it('shows the module-load error when OAuth throws', async () => {
         mockLoadDb.mockRejectedValue(new Error('module failed'));
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /sign in with google/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_google' }));
         expect(await screen.findByText('toast.sign_in_module_load_failed')).toBeInTheDocument();
     });
 
     it('shows the module-load error when sending the OTP throws', async () => {
         mockLoadDb.mockRejectedValue(new Error('module failed'));
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /sign in with email/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'a@b.com' } });
-        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_email' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 'a@b.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.send_login_code' }));
         expect(await screen.findByText('toast.sign_in_module_load_failed')).toBeInTheDocument();
     });
 
@@ -65,13 +66,13 @@ describe('LoginButtons coverage', () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /sign in with email/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 'a@b.com' } });
-        fireEvent.click(screen.getByRole('button', { name: /send login code/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in_with_email' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 'a@b.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.send_login_code' }));
         await waitFor(() => expect(storageSync.adapter.signInWithEmail).toHaveBeenCalled());
         fireEvent.change(screen.getByPlaceholderText('12345678'), { target: { value: '12345678' } });
         mockLoadDb.mockRejectedValue(new Error('module failed'));
-        fireEvent.click(screen.getByRole('button', { name: /verify code/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.verify_code' }));
         expect(await screen.findByText('toast.sign_in_module_load_failed')).toBeInTheDocument();
     });
 
@@ -79,13 +80,13 @@ describe('LoginButtons coverage', () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
         const passwordInput = screen.getByPlaceholderText('common.password');
-        const emailInput = screen.getByPlaceholderText(/your@email/i);
+        const emailInput = screen.getByPlaceholderText('auth.email_placeholder');
 
         // Empty email AND empty password → both validation branches.
         fireEvent.keyDown(passwordInput, { key: 'Enter' });
-        expect(screen.getByText('Enter your email and password.')).toBeInTheDocument();
+        expect(screen.getByText('auth.enter_email_and_password')).toBeInTheDocument();
 
         // Non-Enter key does not trigger login.
         fireEvent.keyDown(passwordInput, { key: 'Tab' });
@@ -94,17 +95,17 @@ describe('LoginButtons coverage', () => {
         // Email filled, password still empty → right operand of the validation.
         fireEvent.change(emailInput, { target: { value: 'student@school.com' } });
         fireEvent.keyDown(passwordInput, { key: 'Enter' });
-        expect(screen.getByText('Enter your email and password.')).toBeInTheDocument();
+        expect(screen.getByText('auth.enter_email_and_password')).toBeInTheDocument();
         expect(storageSync.adapter.signInWithPassword).not.toHaveBeenCalled();
     });
 
     it('routes to config when student login is attempted while supabase is not ready', async () => {
         const onNeedConfig = vi.fn();
         render(<LoginButtons supabaseReady={false} onNeedConfig={onNeedConfig} />);
-        fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
         expect(onNeedConfig).toHaveBeenCalled();
     });
 
@@ -114,10 +115,10 @@ describe('LoginButtons coverage', () => {
         });
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'wrong' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
         expect(await screen.findByText('Bad password')).toBeInTheDocument();
         expect(storageSync.adapter.signInWithPassword).toHaveBeenCalledWith('s@school.com', 'wrong');
     });
@@ -127,21 +128,21 @@ describe('LoginButtons coverage', () => {
         mockLoadDb.mockResolvedValue({ storageSync });
         const onEmailSuccess = vi.fn();
         render(<LoginButtons supabaseReady onEmailSuccess={onEmailSuccess} />);
-        fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
         fireEvent.keyDown(screen.getByPlaceholderText('common.password'), { key: 'Enter' });
         await waitFor(() => expect(onEmailSuccess).toHaveBeenCalled());
-        expect(screen.getByText(/Signed in/)).toBeInTheDocument();
+        expect(screen.getByText('auth.signed_in_loading')).toBeInTheDocument();
     });
 
     it('shows the module-load error when the student password login throws', async () => {
         mockLoadDb.mockRejectedValue(new Error('module failed'));
         render(<LoginButtons supabaseReady />);
-        fireEvent.click(screen.getByRole('button', { name: /student login \(password\)/i }));
-        fireEvent.change(screen.getByPlaceholderText(/your@email/i), { target: { value: 's@school.com' } });
+        fireEvent.click(screen.getByRole('button', { name: 'auth.student_login_password' }));
+        fireEvent.change(screen.getByPlaceholderText('auth.email_placeholder'), { target: { value: 's@school.com' } });
         fireEvent.change(screen.getByPlaceholderText('common.password'), { target: { value: 'secret' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+        fireEvent.click(screen.getByRole('button', { name: 'auth.sign_in' }));
         expect(await screen.findByText('toast.sign_in_module_load_failed')).toBeInTheDocument();
     });
 
@@ -149,10 +150,10 @@ describe('LoginButtons coverage', () => {
         const storageSync = makeStorageSync();
         mockLoadDb.mockResolvedValue({ storageSync });
         render(<LoginButtons supabaseReady />);
-        const toggle = screen.getByRole('button', { name: /student login \(password\)/i });
+        const toggle = screen.getByRole('button', { name: 'auth.student_login_password' });
         fireEvent.click(toggle);
         expect(screen.getByPlaceholderText('common.password')).toBeInTheDocument();
         fireEvent.click(toggle);
-        expect(screen.queryByPlaceholderText('Password')).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText('common.password')).not.toBeInTheDocument();
     });
 });

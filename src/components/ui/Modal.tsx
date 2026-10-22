@@ -51,8 +51,6 @@ export default function Modal({ titleId, onClose, children, maxWidth = 640, styl
                     className={`modal${growFrom ? ' modal-grow' : ''}${className ? ` ${className}` : ''}`}
                     aria-labelledby={titleId}
                     style={{ maxWidth, ...style }}
-                    onInteractOutside={onClose}
-                    onEscapeKeyDown={onClose}
                     onCloseAutoFocus={(event) => {
                         event.preventDefault();
                         if (returnFocusTo?.isConnected) returnFocusTo.focus();
