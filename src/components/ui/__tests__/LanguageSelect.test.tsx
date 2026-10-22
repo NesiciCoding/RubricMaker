@@ -21,9 +21,14 @@ describe('LanguageSelect', () => {
         await i18n.changeLanguage('de-DE');
     });
 
-    it('shows the language on screen while none was chosen, not the stored default', () => {
+    it('selects Automatic while none was chosen, not the stored default', () => {
         render(<LanguageSelect ariaLabel="Interface language" />);
-        expect(screen.getByRole('combobox', { name: 'Interface language' })).toHaveValue('de');
+        expect(screen.getByRole('combobox', { name: 'Interface language' })).toHaveValue('auto');
+    });
+
+    it('names what Automatic currently resolves to', () => {
+        render(<LanguageSelect ariaLabel="Interface language" />);
+        expect(screen.getByRole('option', { name: 'Automatic (Deutsch)' })).toBeInTheDocument();
     });
 
     it('shows the chosen language', () => {
@@ -38,14 +43,30 @@ describe('LanguageSelect', () => {
         expect(settingsState.updateSettings).toHaveBeenCalledWith({ language: 'nl', languageChosen: true });
     });
 
-    it('offers every interface language by its own name', () => {
+    it('offers every interface language by its own name, Automatic first', () => {
         render(<LanguageSelect ariaLabel="Interface language" />);
         expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+            'Automatic (Deutsch)',
             'English',
             'Nederlands',
             'Français',
             'Deutsch',
             'Español',
         ]);
+    });
+
+    it('resets to Automatic, clears the cached detector choice, and re-detects the browser language', async () => {
+        settingsState.settings = { language: 'es', languageChosen: true };
+        localStorage.setItem('i18nextLng', 'es');
+        render(<LanguageSelect ariaLabel="Interface language" />);
+
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'auto' } });
+
+        expect(settingsState.updateSettings).toHaveBeenCalledWith({ languageChosen: false });
+        // Re-detecting with the stale 'es' cache cleared falls through to jsdom's default
+        // navigator.language ('en-US'), which the detector then re-caches — proving it re-read
+        // the browser rather than the stale choice.
+        expect(localStorage.getItem('i18nextLng')).toBe('en-US');
+        await vi.waitFor(() => expect(i18n.language).toBe('en-US'));
     });
 });
