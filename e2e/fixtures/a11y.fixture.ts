@@ -413,6 +413,17 @@ export function writeBaselinePart(scan: A11yScan): void {
 /** Seed localStorage before the app boots so the route renders with this theme and data. */
 export async function seedApp(page: Page, theme: A11yTheme): Promise<void> {
     const seed = buildA11ySeed(theme);
+    // Comparative grading picks its matchup with Math.random. Which students land in it changes what
+    // axe sees (an ungraded student's red "0 pts" fails contrast, a graded one's score passes), so a
+    // random pick made the gate's node counts differ between runs. A fixed sequence keeps every scan
+    // identical.
+    await page.addInitScript(() => {
+        let state = 0x2f6b1d;
+        Math.random = () => {
+            state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+            return state / 2 ** 32;
+        };
+    });
     await page.addInitScript((data: Record<string, unknown>) => {
         for (const [key, value] of Object.entries(data)) {
             if (value !== undefined) localStorage.setItem(key, JSON.stringify(value));

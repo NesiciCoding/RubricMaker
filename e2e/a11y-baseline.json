@@ -416,7 +416,7 @@
       "violations": [
         {
           "rule": "color-contrast",
-          "nodes": 2
+          "nodes": 3
         },
         {
           "rule": "label",
