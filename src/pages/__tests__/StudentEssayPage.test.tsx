@@ -10,7 +10,8 @@ import type { EssayAssignment } from '../../types';
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string) => key,
-        i18n: { language: 'en', changeLanguage: vi.fn() },
+        // A non-English interface, so tests can tell essay content language from it.
+        i18n: { language: 'nl', changeLanguage: vi.fn() },
     }),
     Trans: ({ i18nKey }: { i18nKey: string }) => React.createElement('span', null, i18nKey),
     initReactI18next: { type: '3rdParty', init: vi.fn() },
@@ -21,17 +22,21 @@ vi.mock('../../components/Editor/EssayEditor', () => ({
     default: ({
         content,
         onChange,
+        lang,
     }: {
         content: string;
         onChange: (html: string) => void;
         editable?: boolean;
         placeholder?: string;
-    }) => <textarea data-testid="essay-editor" value={content} onChange={(e) => onChange(e.target.value)} />,
+        lang?: string;
+    }) => (
+        <textarea data-testid="essay-editor" lang={lang} value={content} onChange={(e) => onChange(e.target.value)} />
+    ),
 }));
 
 // Stub TTS controls added in the main-branch merge
 vi.mock('../../components/Essay/EssayTTSControls', () => ({
-    default: () => null,
+    default: ({ lang }: { lang: string }) => <div data-testid="essay-tts" data-lang={lang} />,
 }));
 
 // Capture what gets encoded so we can assert on wordLimitStatus without DB calls
@@ -97,6 +102,13 @@ describe('StudentEssayPage — submit button state', () => {
         vi.clearAllMocks();
         sessionStorage.clear();
         localStorage.clear();
+    });
+
+    it('treats the prompt, the essay and its read-aloud as English whatever the interface language is', () => {
+        renderPage(makeAssignment({ prompt: 'Describe your town.' }));
+        expect(screen.getByText('Describe your town.').getAttribute('lang')).toBe('en');
+        expect(screen.getByTestId('essay-editor').getAttribute('lang')).toBe('en');
+        expect(screen.getByTestId('essay-tts').getAttribute('data-lang')).toBe('en');
     });
 
     it('shows submit button and is enabled when no word limits are configured', () => {

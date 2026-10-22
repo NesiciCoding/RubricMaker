@@ -78,6 +78,8 @@ interface EssayEditorProps {
     allowPageMode?: boolean;
     /** id of an external <label> describing this editor, forwarded to the content-editable region for screen readers. */
     ariaLabelledBy?: string;
+    /** Language of the text written in the editor, for spellcheck and screen readers; defaults to the page language. */
+    lang?: string;
     /** Additional TipTap extensions appended to the shared set (e.g. comment decorations). */
     extraExtensions?: AnyExtension[];
     /** Fired with the underlying TipTap editor instance once created (and with null on unmount) —
@@ -150,6 +152,7 @@ export default function EssayEditor({
     minHeight = 420,
     allowPageMode = true,
     ariaLabelledBy,
+    lang,
     extraExtensions,
     onEditorReady,
     showDragHandle = false,
@@ -179,6 +182,7 @@ export default function EssayEditor({
             attributes: {
                 class: 'essay-editor-content',
                 ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+                ...(lang ? { lang } : {}),
             },
         },
     });
