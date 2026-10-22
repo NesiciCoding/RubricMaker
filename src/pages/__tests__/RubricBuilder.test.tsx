@@ -1403,7 +1403,9 @@ describe('RubricBuilder', () => {
         expect(await screen.findByText('rubricBuilder.confirm_restore')).toBeInTheDocument();
         fireEvent.click(screen.getByText('common.cancel'));
         expect(mockRestoreRubricVersion).not.toHaveBeenCalled();
-        expect(screen.getByText('rubricBuilder.version_history')).toBeInTheDocument();
+        // The version-history panel's own heading, not just its (always-present) toggle button —
+        // cancelling the nested restore confirmation must not also dismiss the panel underneath it.
+        expect(screen.getByRole('heading', { name: 'rubricBuilder.version_history' })).toBeInTheDocument();
     });
 
     // ── Sync dialog counts peer reviews ──────────────────────────────────────────
