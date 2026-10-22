@@ -328,13 +328,23 @@ function sanitizePrintHtml(html: string): string {
  * padding) — used for per-sheet scan markers, which a `position: fixed` element could not do since
  * that would repeat one sheet's marker across every student's pages. `breakAfter` starts the next
  * table on a fresh page.
+ *
+ * `headerHeightMm`/`footerHeightMm` default to PRINT_MARGIN_MM but can be widened — e.g. for scan
+ * markers, whose fiducials/QR are drawn inside this same header band but are physically larger than
+ * the default margin (see scanMarkerMarginsMm() in testExamContent.ts) and would otherwise bleed
+ * past it into the real content below/above.
  */
 export function withoutBrowserPrintChrome(
     html: string,
-    { headerExtra = '', breakAfter = false }: { headerExtra?: string; breakAfter?: boolean } = {}
+    {
+        headerExtra = '',
+        breakAfter = false,
+        headerHeightMm = PRINT_MARGIN_MM,
+        footerHeightMm = PRINT_MARGIN_MM,
+    }: { headerExtra?: string; breakAfter?: boolean; headerHeightMm?: number; footerHeightMm?: number } = {}
 ): string {
-    const top = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0;position:relative">${headerExtra}</td></tr>`;
-    const bottom = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0"></td></tr>`;
+    const top = `<tr><td style="height:${headerHeightMm}mm;padding:0;position:relative">${headerExtra}</td></tr>`;
+    const bottom = `<tr><td style="height:${footerHeightMm}mm;padding:0"></td></tr>`;
     return `<style>.print-page:last-child{page-break-after:auto !important}</style><table style="width:100%;border-collapse:collapse${breakAfter ? ';page-break-after:always' : ''}"><thead>${top}</thead><tbody><tr><td style="padding:0">${html}</td></tr></tbody><tfoot>${bottom}</tfoot></table>`;
 }
 
