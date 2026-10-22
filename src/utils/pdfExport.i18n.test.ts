@@ -89,4 +89,29 @@ describe('buildRubricHTML labels (#960)', () => {
         expect(html).toContain('Not yet graded');
         expect(html).not.toContain('N/A');
     });
+
+    it('localizes the point-modifier unit instead of a hardcoded "pts" (CodeRabbit #969)', async () => {
+        if (!i18n.hasResourceBundle('nl', 'translation')) {
+            i18n.addResourceBundle('nl', 'translation', nlResources);
+        }
+        await i18n.changeLanguage('nl');
+        const { rubric, student, sr } = fixtures();
+        const html = buildRubricHTML(sr, rubric, student, null);
+
+        expect(html).toContain('+1 ptn');
+        expect(html).not.toContain('pts');
+    });
+
+    it('keeps "%" literal for a percentage modifier rather than routing it through exportDoc.points', async () => {
+        await i18n.changeLanguage('en');
+        const { rubric, student, sr } = fixtures();
+        const html = buildRubricHTML(
+            { ...sr, globalModifier: { type: 'percentage', value: 5, reason: 'bonus' } },
+            rubric,
+            student,
+            null
+        );
+
+        expect(html).toContain('+5%');
+    });
 });

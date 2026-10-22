@@ -185,6 +185,12 @@ export function buildRubricHTML(
     const summary = calcGradeSummary(sr, rubric.criteria, scale);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
+    const modifierSign = sr.globalModifier && sr.globalModifier.value > 0 ? '+' : '';
+    const modifierValueLabel = sr.globalModifier
+        ? sr.globalModifier.type === 'percentage'
+            ? `${modifierSign}${sr.globalModifier.value}%`
+            : docLabel('points', { points: `${modifierSign}${sr.globalModifier.value}` })
+        : '';
 
     return `
   <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
@@ -212,7 +218,7 @@ export function buildRubricHTML(
           <div style="font-size:12px;color:#6b7280">${docLabel('points', { points: `${summary.rawScore}/${summary.maxRawScore}` })}</div>
           ${
               sr.globalModifier && sr.globalModifier.value !== 0
-                  ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">${docLabel('modifier', { value: `${sr.globalModifier.value > 0 ? '+' : ''}${sr.globalModifier.value}${sr.globalModifier.type === 'percentage' ? '%' : 'pts'}` })}
+                  ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">${docLabel('modifier', { value: modifierValueLabel })}
                ${sr.globalModifier.reason ? `(${escapeHtml(sr.globalModifier.reason)})` : ''}</div>`
                   : ''
           }

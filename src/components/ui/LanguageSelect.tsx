@@ -2,11 +2,9 @@ import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettings } from '../../context/AppContext';
 import { UI_LANGUAGES, chosenUiLanguage, displayedUiLanguage } from '../../utils/uiLanguage';
+import { resetLanguageDetectorCache } from '../../utils/languageDetectorCache';
 
 const AUTO_VALUE = 'auto';
-// The default lookupLocalStorage key i18next-browser-languagedetector caches a resolved language
-// under — must be cleared before re-detecting, or detect() just reads the stale cached choice back.
-const LANGUAGE_DETECTOR_CACHE_KEY = 'i18nextLng';
 
 interface LanguageSelectProps {
     id?: string;
@@ -25,11 +23,7 @@ export default function LanguageSelect({ id, ariaLabel, className, style }: Lang
 
     function handleChange(next: string) {
         if (next === AUTO_VALUE) {
-            try {
-                localStorage.removeItem(LANGUAGE_DETECTOR_CACHE_KEY);
-            } catch {
-                // Private-mode/blocked storage — detect() still runs, just without a cache to clear.
-            }
+            resetLanguageDetectorCache();
             updateSettings({ languageChosen: false });
             void i18n.changeLanguage();
             return;
