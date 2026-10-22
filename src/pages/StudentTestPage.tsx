@@ -199,6 +199,9 @@ export default function StudentTestPage() {
     );
     const contentReady = resolvedContent !== undefined;
     const test = resolvedContent?.test ?? null;
+    // Test content keeps its own language (English unless set) rather than inheriting <html lang> from the
+    // interface, so a student who picked Dutch doesn't get English passages read by a Dutch screen-reader voice.
+    const contentLang = test?.contentLanguage ?? 'en';
     // Read-aloud is always on in practice mode (today's behaviour); in graded modes
     // (assessment/placement) it's gated on the student's accommodation setting (roadmap
     // Phase 44, §6.2) so it doesn't quietly help everyone on a test that's meant to measure
@@ -1131,6 +1134,7 @@ export default function StudentTestPage() {
                             {/* Section label */}
                             {currentSection && (
                                 <div
+                                    lang={contentLang}
                                     style={{
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
@@ -1158,12 +1162,9 @@ export default function StudentTestPage() {
                                     }}
                                 >
                                     {readAloudAllowed && (
-                                        <PassageReadAloud
-                                            contentHtml={currentSection.content}
-                                            lang={test?.contentLanguage ?? 'en'}
-                                        />
+                                        <PassageReadAloud contentHtml={currentSection.content} lang={contentLang} />
                                     )}
-                                    <RichContent html={currentSection.content} />
+                                    <RichContent html={currentSection.content} lang={contentLang} />
                                 </div>
                             )}
                             {(sectionAudioSrc || sectionStimulus?.spokenText) && currentSection && (
@@ -1174,7 +1175,7 @@ export default function StudentTestPage() {
                                         maxPlays={sectionStimulus?.maxPlays}
                                         plays={audioPlays[`section:${currentSection.id}`] ?? 0}
                                         onPlay={(count) => handleAudioPlay(`section:${currentSection.id}`, count)}
-                                        lang={test?.contentLanguage ?? 'en'}
+                                        lang={contentLang}
                                         label={t('tests.taking.section_audio_alt')}
                                     />
                                 </div>
@@ -1192,7 +1193,7 @@ export default function StudentTestPage() {
                                     onRecordingChange={setIsRecordingAudio}
                                     hideTotal={isStaircase || isGenerator}
                                     readAloudAllowed={readAloudAllowed}
-                                    lang={test?.contentLanguage ?? 'en'}
+                                    lang={contentLang}
                                     audioPlays={audioPlays[`question:${question.id}`] ?? 0}
                                     onAudioPlay={(count) => handleAudioPlay(`question:${question.id}`, count)}
                                 />
@@ -1608,7 +1609,7 @@ function QuestionCard({
                 {isCloze ? (
                     <p style={{ margin: 0 }}>{t(clozeInstructionKey(question.type))}</p>
                 ) : (
-                    <RichContent html={question.prompt} className="rm-question-prompt" />
+                    <RichContent html={question.prompt} className="rm-question-prompt" lang={lang ?? 'en'} />
                 )}
                 {(question.type === 'true-false' ||
                     question.type === 'multiple-response' ||
@@ -1695,6 +1696,7 @@ function QuestionCard({
                     </button>
                     {hintVisible && (
                         <div
+                            lang={lang ?? 'en'}
                             style={{
                                 marginTop: 8,
                                 padding: '10px 14px',
@@ -1745,7 +1747,9 @@ function QuestionCard({
                                     style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
                                 />
                             )}
-                            <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                            <span lang={lang ?? 'en'} style={{ color: 'var(--text)' }}>
+                                {opt.text}
+                            </span>
                             <OptionAudioButton
                                 src={safeAudioSrc(opt.audioUrl)}
                                 spokenText={opt.spokenText}
@@ -1795,7 +1799,9 @@ function QuestionCard({
                                         style={{ maxWidth: 80, maxHeight: 60, borderRadius: 4, objectFit: 'contain' }}
                                     />
                                 )}
-                                <span style={{ color: 'var(--text)' }}>{opt.text}</span>
+                                <span lang={lang ?? 'en'} style={{ color: 'var(--text)' }}>
+                                    {opt.text}
+                                </span>
                                 <OptionAudioButton
                                     src={safeAudioSrc(opt.audioUrl)}
                                     spokenText={opt.spokenText}
