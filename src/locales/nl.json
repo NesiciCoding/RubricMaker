@@ -4794,6 +4794,14 @@
         "sample": "Steekproef",
         "no_grades": "Geen beoordeelde rubrics in deze periode.",
         "learning_goals": "Leerdoelen",
-        "no_goals": "Geen leerdoelen gevolgd."
+        "no_goals": "Geen leerdoelen gevolgd.",
+        "student": "Leerling:",
+        "graded": "Beoordeeld: {{date}}",
+        "not_graded": "Nog niet beoordeeld",
+        "modifier": "Aanpassing: {{value}}",
+        "generated_by": "Gegenereerd door Rubric Maker · {{date}}",
+        "peer_review": "Peerreview",
+        "areas_for_growth": "Aandachtspunten",
+        "exceeds_standard": "Overtreft de norm"
     }
 }

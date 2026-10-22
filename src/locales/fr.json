@@ -4794,6 +4794,14 @@
         "sample": "Échantillon",
         "no_grades": "Aucune grille notée pendant cette période.",
         "learning_goals": "Objectifs d'apprentissage",
-        "no_goals": "Aucun objectif d'apprentissage suivi."
+        "no_goals": "Aucun objectif d'apprentissage suivi.",
+        "student": "Élève :",
+        "graded": "Noté le : {{date}}",
+        "not_graded": "Pas encore noté",
+        "modifier": "Modificateur : {{value}}",
+        "generated_by": "Généré par Rubric Maker · {{date}}",
+        "peer_review": "Évaluation par les pairs",
+        "areas_for_growth": "Axes d'amélioration",
+        "exceeds_standard": "Dépasse la norme"
     }
 }

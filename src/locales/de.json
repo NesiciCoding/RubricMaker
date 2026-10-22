@@ -4794,6 +4794,14 @@
         "sample": "Stichprobe",
         "no_grades": "Keine bewerteten Raster in diesem Zeitraum.",
         "learning_goals": "Lernziele",
-        "no_goals": "Keine Lernziele erfasst."
+        "no_goals": "Keine Lernziele erfasst.",
+        "student": "Schüler:in:",
+        "graded": "Bewertet: {{date}}",
+        "not_graded": "Noch nicht bewertet",
+        "modifier": "Modifikator: {{value}}",
+        "generated_by": "Erstellt mit Rubric Maker · {{date}}",
+        "peer_review": "Peer-Review",
+        "areas_for_growth": "Entwicklungsbereiche",
+        "exceeds_standard": "Übertrifft den Standard"
     }
 }

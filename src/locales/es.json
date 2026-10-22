@@ -4794,6 +4794,14 @@
         "sample": "Muestra",
         "no_grades": "No hay rúbricas calificadas en este periodo.",
         "learning_goals": "Objetivos de aprendizaje",
-        "no_goals": "No se siguen objetivos de aprendizaje."
+        "no_goals": "No se siguen objetivos de aprendizaje.",
+        "student": "Alumno/a:",
+        "graded": "Calificado: {{date}}",
+        "not_graded": "Aún sin calificar",
+        "modifier": "Modificador: {{value}}",
+        "generated_by": "Generado por Rubric Maker · {{date}}",
+        "peer_review": "Revisión por pares",
+        "areas_for_growth": "Áreas de mejora",
+        "exceeds_standard": "Supera el estándar"
     }
 }
