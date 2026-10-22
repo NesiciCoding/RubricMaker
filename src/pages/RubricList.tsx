@@ -41,6 +41,7 @@ import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } fr
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
+import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
@@ -64,7 +65,7 @@ export default function RubricList() {
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
     const { peerReviews } = useAssessment();
 
-    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric } = useAuthoring();
+    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric, userTemplates } = useAuthoring();
     const { settings } = useSettings();
 
     const [search, setSearch] = useState('');
@@ -73,6 +74,7 @@ export default function RubricList() {
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [showImport, setShowImport] = useState(false);
+    const [showNewChooser, setShowNewChooser] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [showCodeImport, setShowCodeImport] = useState(false);
     const [pastedCode, setPastedCode] = useState('');
@@ -391,7 +393,7 @@ export default function RubricList() {
                         <button
                             data-tour="rl-new"
                             className="btn btn-primary btn-sm"
-                            onClick={() => navigate('/rubrics/new')}
+                            onClick={() => setShowNewChooser(true)}
                         >
                             <Plus size={15} /> {t('rubricList.new_rubric')}
                         </button>
@@ -457,7 +459,7 @@ export default function RubricList() {
                         <BookOpen size={40} />
                         <h3>{t('rubricList.no_rubrics')}</h3>
                         <p className="text-muted text-sm">{t('rubricList.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/rubrics/new')}>
+                        <button className="btn btn-primary" onClick={() => setShowNewChooser(true)}>
                             <Plus size={16} /> {t('rubricList.create_rubric')}
                         </button>
                     </div>
@@ -1082,6 +1084,25 @@ export default function RubricList() {
                 )}
 
                 <ConfirmDialog {...confirmDialogProps} />
+
+                {showNewChooser && (
+                    <NewRubricChooserModal
+                        userTemplates={userTemplates}
+                        onClose={() => setShowNewChooser(false)}
+                        onBlank={() => {
+                            setShowNewChooser(false);
+                            navigate('/rubrics/new');
+                        }}
+                        onImport={() => {
+                            setShowNewChooser(false);
+                            setShowImport(true);
+                        }}
+                        onPickTemplate={(template) => {
+                            setShowNewChooser(false);
+                            navigate('/rubrics/new', { state: { template } });
+                        }}
+                    />
+                )}
 
                 {showImport && <ImportRubricModal onClose={() => setShowImport(false)} onImport={handleImport} />}
 

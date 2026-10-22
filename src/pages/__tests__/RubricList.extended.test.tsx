@@ -78,6 +78,7 @@ const mockAppValue = {
     updateRubric: mockUpdateRubric,
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
+    userTemplates: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
