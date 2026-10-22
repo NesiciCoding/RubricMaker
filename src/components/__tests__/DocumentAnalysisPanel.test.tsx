@@ -177,14 +177,11 @@ describe('DocumentAnalysisPanel', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('calls onClose when clicking the overlay but not when clicking inside the modal', () => {
+    it('calls onClose on Escape (delegated to the shared Modal primitive)', () => {
         const onClose = vi.fn();
-        const { container } = render(<DocumentAnalysisPanel {...baseProps} onClose={onClose} />);
-        const overlay = container.querySelector('.modal-overlay') as HTMLElement;
-        const modal = container.querySelector('.modal') as HTMLElement;
-        fireEvent.click(modal);
-        expect(onClose).not.toHaveBeenCalled();
-        fireEvent.click(overlay);
+        render(<DocumentAnalysisPanel {...baseProps} onClose={onClose} />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 

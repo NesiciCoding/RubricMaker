@@ -22,6 +22,7 @@ import type {
     DetectedItem,
     RubricCriterion,
 } from '../../types';
+import Modal from '../ui/Modal';
 import { extractText, UnsupportedFormatError } from '../../utils/textExtraction';
 import { OcrUnavailableError } from '../../utils/ocrErrors';
 import { analyseVocabulary } from '../../utils/vocabularyAnalyser';
@@ -259,666 +260,643 @@ export default function DocumentAnalysisPanel({
     const totalCount = result?.detectedItems.length ?? 0;
 
     return (
-        <div
-            className="modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="analysis-dialog-title"
-            onClick={onClose}
+        <Modal
+            titleId="analysis-dialog-title"
+            onClose={onClose}
+            maxWidth={720}
+            style={{ width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
         >
-            <div
-                className="modal"
-                style={{ maxWidth: 720, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                    <ScanSearch size={20} style={{ color: 'var(--accent)' }} />
-                    <div style={{ flex: 1 }}>
-                        <h3 id="analysis-dialog-title" style={{ margin: 0 }}>
-                            {t('analysis.title', 'Document Analysis')}
-                        </h3>
-                        <p className="text-xs text-muted" style={{ margin: 0 }}>
-                            {rubricName}
-                        </p>
-                    </div>
-                    <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={onClose}
-                        aria-label={t('common.close', 'Close')}
-                    >
-                        <X size={18} />
-                    </button>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <ScanSearch size={20} style={{ color: 'var(--accent)' }} />
+                <div style={{ flex: 1 }}>
+                    <h3 id="analysis-dialog-title" style={{ margin: 0 }}>
+                        {t('analysis.title', 'Document Analysis')}
+                    </h3>
+                    <p className="text-xs text-muted" style={{ margin: 0 }}>
+                        {rubricName}
+                    </p>
+                </div>
+                <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label={t('common.close', 'Close')}>
+                    <X size={18} />
+                </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div
+                    className="card"
+                    style={{
+                        padding: '10px 14px',
+                        display: 'flex',
+                        gap: 8,
+                        alignItems: 'flex-start',
+                        borderLeft: '3px solid var(--accent)',
+                    }}
+                >
+                    <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                    <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.6 }}>
+                        {t('analysis.detection_disclaimer')}
+                    </p>
                 </div>
 
-                <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div
-                        className="card"
-                        style={{
-                            padding: '10px 14px',
-                            display: 'flex',
-                            gap: 8,
-                            alignItems: 'flex-start',
-                            borderLeft: '3px solid var(--accent)',
-                        }}
-                    >
-                        <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
-                        <p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.6 }}>
-                            {t('analysis.detection_disclaimer')}
-                        </p>
-                    </div>
-
-                    {/* Attachment / transcript selector */}
-                    {phase !== 'analysing' && (
-                        <div className="card" style={{ padding: 14 }}>
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
-                                <label style={{ fontWeight: 600, fontSize: '0.9rem', flex: 1 }}>
-                                    {t('analysis.source_label', 'Source document')}
-                                </label>
-                                <button
-                                    className={`btn btn-sm ${useTranscriptMode ? 'btn-secondary' : 'btn-ghost'}`}
-                                    onClick={() => setUseTranscriptMode((t) => !t)}
-                                    title={t('analysis.paste_transcript', 'Paste a transcript instead')}
-                                >
-                                    <ClipboardPaste size={14} />
-                                    {t('analysis.paste_transcript_short', 'Paste transcript')}
-                                </button>
-                            </div>
-
-                            {useTranscriptMode ? (
-                                <textarea
-                                    className="input"
-                                    style={{ width: '100%', minHeight: 120, resize: 'vertical', fontFamily: 'inherit' }}
-                                    placeholder={t(
-                                        'analysis.transcript_placeholder',
-                                        "Paste the student's transcript here… (useful for audio/video recordings)"
-                                    )}
-                                    value={transcript}
-                                    onChange={(e) => setTranscript(e.target.value)}
-                                />
-                            ) : (
-                                <>
-                                    <select
-                                        className="input"
-                                        value={selectedAttachmentId}
-                                        onChange={(e) => setSelectedAttachmentId(e.target.value)}
-                                    >
-                                        {studentAttachments.length === 0 && (
-                                            <option value="">
-                                                {t('analysis.no_attachments', 'No attachments for this student')}
-                                            </option>
-                                        )}
-                                        {studentAttachments.map((a) => (
-                                            <option key={a.id} value={a.id}>
-                                                {a.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {isAudioVideo && (
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                gap: 8,
-                                                alignItems: 'flex-start',
-                                                marginTop: 10,
-                                                padding: '10px 12px',
-                                                background: 'var(--bg)',
-                                                borderRadius: 8,
-                                                border: '1px solid var(--border)',
-                                            }}
-                                        >
-                                            <AlertTriangle
-                                                size={15}
-                                                style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 1 }}
-                                            />
-                                            <p className="text-xs text-muted" style={{ margin: 0 }}>
-                                                {t(
-                                                    'analysis.audio_video_note',
-                                                    'Audio and video files cannot be automatically transcribed (no server-side processing). Use "Paste transcript" to analyse the spoken content.'
-                                                )}
-                                            </p>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {vocabularyItems.length === 0 && (
-                                <div
-                                    style={{
-                                        marginTop: 10,
-                                        padding: '8px 12px',
-                                        background: 'var(--bg)',
-                                        borderRadius: 8,
-                                        border: '1px solid var(--border)',
-                                    }}
-                                >
-                                    <p className="text-xs text-muted" style={{ margin: 0 }}>
-                                        {t(
-                                            'analysis.no_vocab_items',
-                                            'This rubric has no vocabulary items yet. Add them in the Rubric Builder → Vocabulary section.'
-                                        )}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Privacy notice + Analyse button */}
-                    {phase === 'select' || phase === 'error' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div
-                                style={{
-                                    padding: '10px 14px',
-                                    background: 'var(--bg-elevated)',
-                                    borderRadius: 8,
-                                    border: '1px solid var(--border)',
-                                    fontSize: '0.8rem',
-                                    color: 'var(--text-muted)',
-                                    lineHeight: 1.5,
-                                }}
-                            >
-                                <strong style={{ color: 'var(--text)' }}>
-                                    {t('analysis.privacy_heading', 'Privacy notice')}
-                                </strong>{' '}
-                                {t('analysis.privacy_body', 'Grammar checking is powered by')}{' '}
-                                <a
-                                    href={LT_ATTRIBUTION_URL}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: 'var(--accent)' }}
-                                >
-                                    LanguageTool
-                                </a>
-                                .{' '}
-                                {t(
-                                    'analysis.privacy_detail',
-                                    "The extracted text of this document will be sent to LanguageTool's servers (api.languagetool.org) for grammar analysis. Do not use this feature if the document contains sensitive personal data."
-                                )}{' '}
-                                <a
-                                    href="https://languagetool.org/legal/privacy"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ color: 'var(--accent)' }}
-                                >
-                                    {t('analysis.privacy_policy_link', 'LanguageTool Privacy Policy')}
-                                </a>
-                                .
-                            </div>
+                {/* Attachment / transcript selector */}
+                {phase !== 'analysing' && (
+                    <div className="card" style={{ padding: 14 }}>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center' }}>
+                            <label style={{ fontWeight: 600, fontSize: '0.9rem', flex: 1 }}>
+                                {t('analysis.source_label', 'Source document')}
+                            </label>
                             <button
-                                className="btn btn-primary"
-                                onClick={handleAnalyse}
-                                disabled={
-                                    (!useTranscriptMode && (!selectedAttachment || isAudioVideo)) ||
-                                    (useTranscriptMode && !transcript.trim())
-                                }
+                                className={`btn btn-sm ${useTranscriptMode ? 'btn-secondary' : 'btn-ghost'}`}
+                                onClick={() => setUseTranscriptMode((t) => !t)}
+                                title={t('analysis.paste_transcript', 'Paste a transcript instead')}
                             >
-                                <ScanSearch size={16} />
-                                {phase === 'error'
-                                    ? t('analysis.retry', 'Retry Analysis')
-                                    : t('analysis.run', 'Extract & Analyse')}
+                                <ClipboardPaste size={14} />
+                                {t('analysis.paste_transcript_short', 'Paste transcript')}
                             </button>
                         </div>
-                    ) : null}
 
-                    {/* Error */}
-                    {phase === 'error' && (
-                        <div
-                            style={{
-                                padding: '12px 16px',
-                                background: 'rgba(239,68,68,0.08)',
-                                borderRadius: 8,
-                                border: '1px solid rgba(239,68,68,0.3)',
-                            }}
-                        >
-                            <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
-                        </div>
-                    )}
-
-                    {/* Progress */}
-                    {phase === 'analysing' && (
-                        <>
-                            <div className="card" style={{ padding: 16, textAlign: 'center' }}>
-                                <p style={{ marginBottom: 12, fontWeight: 600 }} aria-live="polite" aria-atomic="true">
-                                    {progressStatus || t('analysis.analysing', 'Analysing…')}
-                                </p>
-                                <div
-                                    role="progressbar"
-                                    aria-valuenow={progress}
-                                    aria-valuemin={0}
-                                    aria-valuemax={100}
-                                    aria-label={t('analysis.analysing', 'Analysing…')}
-                                    style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}
+                        {useTranscriptMode ? (
+                            <textarea
+                                className="input"
+                                style={{ width: '100%', minHeight: 120, resize: 'vertical', fontFamily: 'inherit' }}
+                                placeholder={t(
+                                    'analysis.transcript_placeholder',
+                                    "Paste the student's transcript here… (useful for audio/video recordings)"
+                                )}
+                                value={transcript}
+                                onChange={(e) => setTranscript(e.target.value)}
+                            />
+                        ) : (
+                            <>
+                                <select
+                                    className="input"
+                                    value={selectedAttachmentId}
+                                    onChange={(e) => setSelectedAttachmentId(e.target.value)}
                                 >
+                                    {studentAttachments.length === 0 && (
+                                        <option value="">
+                                            {t('analysis.no_attachments', 'No attachments for this student')}
+                                        </option>
+                                    )}
+                                    {studentAttachments.map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {isAudioVideo && (
                                     <div
                                         style={{
-                                            height: '100%',
-                                            width: `${progress}%`,
-                                            background: 'var(--accent)',
-                                            borderRadius: 4,
-                                            transition: 'width 0.3s',
+                                            display: 'flex',
+                                            gap: 8,
+                                            alignItems: 'flex-start',
+                                            marginTop: 10,
+                                            padding: '10px 12px',
+                                            background: 'var(--bg)',
+                                            borderRadius: 8,
+                                            border: '1px solid var(--border)',
                                         }}
-                                    />
-                                </div>
-                                <p className="text-xs text-muted" style={{ marginTop: 8 }} aria-hidden="true">
-                                    {progress}%
-                                </p>
-                            </div>
-                            {/* Skeleton of the results layout that will replace this once analysis completes */}
-                            <div aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                <Skeleton height="3rem" />
-                                <Skeleton width="60%" height="0.9rem" />
-                                <SkeletonCard />
-                                <SkeletonCard />
-                            </div>
-                        </>
-                    )}
+                                    >
+                                        <AlertTriangle
+                                            size={15}
+                                            style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 1 }}
+                                        />
+                                        <p className="text-xs text-muted" style={{ margin: 0 }}>
+                                            {t(
+                                                'analysis.audio_video_note',
+                                                'Audio and video files cannot be automatically transcribed (no server-side processing). Use "Paste transcript" to analyse the spoken content.'
+                                            )}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        )}
 
-                    {/* Results */}
-                    {phase === 'done' && result && (
-                        <>
-                            {/* Summary bar */}
+                        {vocabularyItems.length === 0 && (
                             <div
                                 style={{
-                                    display: 'flex',
-                                    gap: 12,
-                                    alignItems: 'center',
-                                    padding: '10px 14px',
-                                    background: 'var(--bg-elevated)',
+                                    marginTop: 10,
+                                    padding: '8px 12px',
+                                    background: 'var(--bg)',
                                     borderRadius: 8,
                                     border: '1px solid var(--border)',
                                 }}
                             >
-                                <div>
-                                    <span
-                                        style={{
-                                            fontWeight: 700,
-                                            fontSize: '1.1rem',
-                                            color: foundCount > 0 ? 'var(--accent)' : 'var(--text-muted)',
-                                        }}
-                                    >
-                                        {foundCount}
-                                    </span>
-                                    <span className="text-muted text-xs">
-                                        {' '}
-                                        / {totalCount} {t('analysis.items_found', 'items found')}
-                                    </span>
-                                </div>
-                                <div className="text-xs text-muted" style={{ marginLeft: 4 }}>
-                                    {result.grammarErrors.length} {t('analysis.grammar_issues', 'grammar issues')}
-                                    {' · '}
-                                    {result.grammarCheckerUsed === 'languagetool' ? (
-                                        <a
-                                            href={LT_ATTRIBUTION_URL}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ color: 'var(--accent)' }}
-                                        >
-                                            LanguageTool
-                                        </a>
-                                    ) : (
-                                        <span>compromise.js</span>
+                                <p className="text-xs text-muted" style={{ margin: 0 }}>
+                                    {t(
+                                        'analysis.no_vocab_items',
+                                        'This rubric has no vocabulary items yet. Add them in the Rubric Builder → Vocabulary section.'
                                     )}
-                                    {result.grammarTextTruncated && (
-                                        <span
-                                            title={t(
-                                                'analysis.truncated_title',
-                                                'Document exceeded 20 KB — only the first 20 KB was checked for grammar'
-                                            )}
-                                            style={{ marginLeft: 6, color: '#f59e0b', cursor: 'help' }}
-                                        >
-                                            ⚠ {t('analysis.truncated_short', 'partial')}
-                                        </span>
-                                    )}
-                                </div>
-                                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                                    {foundCount > 0 && (
-                                        <button className="btn btn-secondary btn-sm" onClick={applyAll}>
-                                            <Check size={14} />
-                                            {t('analysis.apply_all', 'Apply all found')}
-                                        </button>
-                                    )}
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => {
-                                            setPhase('select');
-                                            setResult(null);
-                                        }}
-                                    >
-                                        {t('analysis.re_analyse', 'Re-analyse')}
-                                    </button>
-                                </div>
+                                </p>
                             </div>
+                        )}
+                    </div>
+                )}
 
-                            {/* Vocabulary results */}
+                {/* Privacy notice + Analyse button */}
+                {phase === 'select' || phase === 'error' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div
+                            style={{
+                                padding: '10px 14px',
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 8,
+                                border: '1px solid var(--border)',
+                                fontSize: '0.8rem',
+                                color: 'var(--text-muted)',
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            <strong style={{ color: 'var(--text)' }}>
+                                {t('analysis.privacy_heading', 'Privacy notice')}
+                            </strong>{' '}
+                            {t('analysis.privacy_body', 'Grammar checking is powered by')}{' '}
+                            <a
+                                href={LT_ATTRIBUTION_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                LanguageTool
+                            </a>
+                            .{' '}
+                            {t(
+                                'analysis.privacy_detail',
+                                "The extracted text of this document will be sent to LanguageTool's servers (api.languagetool.org) for grammar analysis. Do not use this feature if the document contains sensitive personal data."
+                            )}{' '}
+                            <a
+                                href="https://languagetool.org/legal/privacy"
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ color: 'var(--accent)' }}
+                            >
+                                {t('analysis.privacy_policy_link', 'LanguageTool Privacy Policy')}
+                            </a>
+                            .
+                        </div>
+                        <button
+                            className="btn btn-primary"
+                            onClick={handleAnalyse}
+                            disabled={
+                                (!useTranscriptMode && (!selectedAttachment || isAudioVideo)) ||
+                                (useTranscriptMode && !transcript.trim())
+                            }
+                        >
+                            <ScanSearch size={16} />
+                            {phase === 'error'
+                                ? t('analysis.retry', 'Retry Analysis')
+                                : t('analysis.run', 'Extract & Analyse')}
+                        </button>
+                    </div>
+                ) : null}
+
+                {/* Error */}
+                {phase === 'error' && (
+                    <div
+                        style={{
+                            padding: '12px 16px',
+                            background: 'rgba(239,68,68,0.08)',
+                            borderRadius: 8,
+                            border: '1px solid rgba(239,68,68,0.3)',
+                        }}
+                    >
+                        <p style={{ margin: 0, color: 'var(--red)', fontSize: '0.9rem' }}>{errorMsg}</p>
+                    </div>
+                )}
+
+                {/* Progress */}
+                {phase === 'analysing' && (
+                    <>
+                        <div className="card" style={{ padding: 16, textAlign: 'center' }}>
+                            <p style={{ marginBottom: 12, fontWeight: 600 }} aria-live="polite" aria-atomic="true">
+                                {progressStatus || t('analysis.analysing', 'Analysing…')}
+                            </p>
+                            <div
+                                role="progressbar"
+                                aria-valuenow={progress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-label={t('analysis.analysing', 'Analysing…')}
+                                style={{ height: 8, background: 'var(--bg)', borderRadius: 4, overflow: 'hidden' }}
+                            >
+                                <div
+                                    style={{
+                                        height: '100%',
+                                        width: `${progress}%`,
+                                        background: 'var(--accent)',
+                                        borderRadius: 4,
+                                        transition: 'width 0.3s',
+                                    }}
+                                />
+                            </div>
+                            <p className="text-xs text-muted" style={{ marginTop: 8 }} aria-hidden="true">
+                                {progress}%
+                            </p>
+                        </div>
+                        {/* Skeleton of the results layout that will replace this once analysis completes */}
+                        <div aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <Skeleton height="3rem" />
+                            <Skeleton width="60%" height="0.9rem" />
+                            <SkeletonCard />
+                            <SkeletonCard />
+                        </div>
+                    </>
+                )}
+
+                {/* Results */}
+                {phase === 'done' && result && (
+                    <>
+                        {/* Summary bar */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                gap: 12,
+                                alignItems: 'center',
+                                padding: '10px 14px',
+                                background: 'var(--bg-elevated)',
+                                borderRadius: 8,
+                                border: '1px solid var(--border)',
+                            }}
+                        >
                             <div>
-                                <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
-                                    {t('analysis.vocabulary_results', 'Vocabulary & Grammar Detection')}
-                                </h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {result.detectedItems.map((detected) => {
-                                        const vocabItem = vocabularyItems.find(
-                                            (v) => v.id === detected.vocabularyItemId
-                                        );
-                                        if (!vocabItem) return null;
-                                        const linkedCriterion = vocabItem.linkedCriterionId
-                                            ? criteria.find((c) => c.id === vocabItem.linkedCriterionId)
-                                            : null;
-                                        const alreadyApplied = vocabItem.linkedSubItemId
-                                            ? appliedSubItems.has(vocabItem.linkedSubItemId)
-                                            : false;
+                                <span
+                                    style={{
+                                        fontWeight: 700,
+                                        fontSize: '1.1rem',
+                                        color: foundCount > 0 ? 'var(--accent)' : 'var(--text-muted)',
+                                    }}
+                                >
+                                    {foundCount}
+                                </span>
+                                <span className="text-muted text-xs">
+                                    {' '}
+                                    / {totalCount} {t('analysis.items_found', 'items found')}
+                                </span>
+                            </div>
+                            <div className="text-xs text-muted" style={{ marginLeft: 4 }}>
+                                {result.grammarErrors.length} {t('analysis.grammar_issues', 'grammar issues')}
+                                {' · '}
+                                {result.grammarCheckerUsed === 'languagetool' ? (
+                                    <a
+                                        href={LT_ATTRIBUTION_URL}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ color: 'var(--accent)' }}
+                                    >
+                                        LanguageTool
+                                    </a>
+                                ) : (
+                                    <span>compromise.js</span>
+                                )}
+                                {result.grammarTextTruncated && (
+                                    <span
+                                        title={t(
+                                            'analysis.truncated_title',
+                                            'Document exceeded 20 KB — only the first 20 KB was checked for grammar'
+                                        )}
+                                        style={{ marginLeft: 6, color: '#f59e0b', cursor: 'help' }}
+                                    >
+                                        ⚠ {t('analysis.truncated_short', 'partial')}
+                                    </span>
+                                )}
+                            </div>
+                            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                                {foundCount > 0 && (
+                                    <button className="btn btn-secondary btn-sm" onClick={applyAll}>
+                                        <Check size={14} />
+                                        {t('analysis.apply_all', 'Apply all found')}
+                                    </button>
+                                )}
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => {
+                                        setPhase('select');
+                                        setResult(null);
+                                    }}
+                                >
+                                    {t('analysis.re_analyse', 'Re-analyse')}
+                                </button>
+                            </div>
+                        </div>
 
-                                        return (
-                                            <div
-                                                key={detected.vocabularyItemId}
-                                                className="card"
-                                                style={{
-                                                    padding: '10px 14px',
-                                                    borderLeft: `3px solid ${detected.found ? (CATEGORY_COLORS[vocabItem.category] ?? 'var(--accent)') : 'var(--border)'}`,
-                                                    opacity: detected.found ? 1 : 0.6,
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                                    <div style={{ paddingTop: 2 }}>
-                                                        {detected.found ? (
-                                                            <CheckCircle2
-                                                                size={16}
-                                                                style={{
-                                                                    color:
-                                                                        CATEGORY_COLORS[vocabItem.category] ??
-                                                                        'var(--accent)',
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <XCircle size={16} style={{ color: 'var(--text-dim)' }} />
+                        {/* Vocabulary results */}
+                        <div>
+                            <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
+                                {t('analysis.vocabulary_results', 'Vocabulary & Grammar Detection')}
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {result.detectedItems.map((detected) => {
+                                    const vocabItem = vocabularyItems.find((v) => v.id === detected.vocabularyItemId);
+                                    if (!vocabItem) return null;
+                                    const linkedCriterion = vocabItem.linkedCriterionId
+                                        ? criteria.find((c) => c.id === vocabItem.linkedCriterionId)
+                                        : null;
+                                    const alreadyApplied = vocabItem.linkedSubItemId
+                                        ? appliedSubItems.has(vocabItem.linkedSubItemId)
+                                        : false;
+
+                                    return (
+                                        <div
+                                            key={detected.vocabularyItemId}
+                                            className="card"
+                                            style={{
+                                                padding: '10px 14px',
+                                                borderLeft: `3px solid ${detected.found ? (CATEGORY_COLORS[vocabItem.category] ?? 'var(--accent)') : 'var(--border)'}`,
+                                                opacity: detected.found ? 1 : 0.6,
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                                <div style={{ paddingTop: 2 }}>
+                                                    {detected.found ? (
+                                                        <CheckCircle2
+                                                            size={16}
+                                                            style={{
+                                                                color:
+                                                                    CATEGORY_COLORS[vocabItem.category] ??
+                                                                    'var(--accent)',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <XCircle size={16} style={{ color: 'var(--text-dim)' }} />
+                                                    )}
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 8,
+                                                            flexWrap: 'wrap',
+                                                        }}
+                                                    >
+                                                        <span style={{ fontWeight: 600 }}>{vocabItem.phrase}</span>
+                                                        <span className="text-xs text-muted">{vocabItem.category}</span>
+                                                        {detected.found && (
+                                                            <span
+                                                                className="text-xs"
+                                                                style={{ color: 'var(--accent)' }}
+                                                            >
+                                                                ×{detected.occurrences}
+                                                            </span>
+                                                        )}
+                                                        {linkedCriterion && (
+                                                            <span
+                                                                className="text-xs text-muted"
+                                                                style={{ fontStyle: 'italic' }}
+                                                            >
+                                                                → {linkedCriterion.title}
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    <div style={{ flex: 1 }}>
+                                                    {detected.found && detected.contexts.length > 0 && (
                                                         <div
                                                             style={{
+                                                                marginTop: 6,
                                                                 display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 8,
-                                                                flexWrap: 'wrap',
+                                                                flexDirection: 'column',
+                                                                gap: 4,
                                                             }}
                                                         >
-                                                            <span style={{ fontWeight: 600 }}>{vocabItem.phrase}</span>
-                                                            <span className="text-xs text-muted">
-                                                                {vocabItem.category}
-                                                            </span>
-                                                            {detected.found && (
-                                                                <span
-                                                                    className="text-xs"
-                                                                    style={{ color: 'var(--accent)' }}
-                                                                >
-                                                                    ×{detected.occurrences}
-                                                                </span>
-                                                            )}
-                                                            {linkedCriterion && (
-                                                                <span
+                                                            {detected.contexts.slice(0, 3).map((ctx, i) => (
+                                                                <p
+                                                                    key={i}
                                                                     className="text-xs text-muted"
-                                                                    style={{ fontStyle: 'italic' }}
-                                                                >
-                                                                    → {linkedCriterion.title}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {detected.found && detected.contexts.length > 0 && (
-                                                            <div
-                                                                style={{
-                                                                    marginTop: 6,
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: 4,
-                                                                }}
-                                                            >
-                                                                {detected.contexts.slice(0, 3).map((ctx, i) => (
-                                                                    <p
-                                                                        key={i}
-                                                                        className="text-xs text-muted"
-                                                                        style={{
-                                                                            margin: 0,
-                                                                            fontStyle: 'italic',
-                                                                            lineHeight: 1.5,
-                                                                        }}
-                                                                    >
-                                                                        "{ctx}"
-                                                                    </p>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    {detected.found && (
-                                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                                            {vocabItem.linkedSubItemId &&
-                                                                vocabItem.linkedCriterionId && (
-                                                                    <button
-                                                                        className={`btn btn-sm ${alreadyApplied ? 'btn-ghost' : 'btn-secondary'}`}
-                                                                        style={{ fontSize: 12 }}
-                                                                        onClick={() =>
-                                                                            applySubItem(vocabItem, detected)
-                                                                        }
-                                                                        disabled={alreadyApplied}
-                                                                    >
-                                                                        {alreadyApplied ? (
-                                                                            <>
-                                                                                <Check size={13} />{' '}
-                                                                                {t('analysis.applied', 'Applied')}
-                                                                            </>
-                                                                        ) : (
-                                                                            t('analysis.apply', 'Apply')
-                                                                        )}
-                                                                    </button>
-                                                                )}
-                                                            {onAddToCommentBank && (
-                                                                <button
-                                                                    className={`btn btn-sm ${addedToBank.has(vocabItem.id) ? 'btn-ghost' : 'btn-secondary'}`}
-                                                                    style={{ fontSize: 12 }}
-                                                                    onClick={() => {
-                                                                        onAddToCommentBank(vocabItem.phrase);
-                                                                        setAddedToBank(
-                                                                            (s) => new Set([...s, vocabItem.id])
-                                                                        );
+                                                                    style={{
+                                                                        margin: 0,
+                                                                        fontStyle: 'italic',
+                                                                        lineHeight: 1.5,
                                                                     }}
-                                                                    disabled={addedToBank.has(vocabItem.id)}
                                                                 >
-                                                                    {addedToBank.has(vocabItem.id) ? (
-                                                                        <>
-                                                                            <Check size={13} />{' '}
-                                                                            {t('analysis.added_to_bank', 'Added')}
-                                                                        </>
-                                                                    ) : (
-                                                                        t('analysis.add_to_bank', 'Add to bank')
-                                                                    )}
-                                                                </button>
-                                                            )}
+                                                                    "{ctx}"
+                                                                </p>
+                                                            ))}
                                                         </div>
                                                     )}
                                                 </div>
+                                                {detected.found && (
+                                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                        {vocabItem.linkedSubItemId && vocabItem.linkedCriterionId && (
+                                                            <button
+                                                                className={`btn btn-sm ${alreadyApplied ? 'btn-ghost' : 'btn-secondary'}`}
+                                                                style={{ fontSize: 12 }}
+                                                                onClick={() => applySubItem(vocabItem, detected)}
+                                                                disabled={alreadyApplied}
+                                                            >
+                                                                {alreadyApplied ? (
+                                                                    <>
+                                                                        <Check size={13} />{' '}
+                                                                        {t('analysis.applied', 'Applied')}
+                                                                    </>
+                                                                ) : (
+                                                                    t('analysis.apply', 'Apply')
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                        {onAddToCommentBank && (
+                                                            <button
+                                                                className={`btn btn-sm ${addedToBank.has(vocabItem.id) ? 'btn-ghost' : 'btn-secondary'}`}
+                                                                style={{ fontSize: 12 }}
+                                                                onClick={() => {
+                                                                    onAddToCommentBank(vocabItem.phrase);
+                                                                    setAddedToBank(
+                                                                        (s) => new Set([...s, vocabItem.id])
+                                                                    );
+                                                                }}
+                                                                disabled={addedToBank.has(vocabItem.id)}
+                                                            >
+                                                                {addedToBank.has(vocabItem.id) ? (
+                                                                    <>
+                                                                        <Check size={13} />{' '}
+                                                                        {t('analysis.added_to_bank', 'Added')}
+                                                                    </>
+                                                                ) : (
+                                                                    t('analysis.add_to_bank', 'Add to bank')
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {extractedText && <EssayStatsPanel text={extractedText} />}
+                        {extractedText && <UdGrammarPanel state={udGrammar} />}
+
+                        {/* CEFR Text Profile */}
+                        {cefrProfile && extractedText && (
+                            <CefrProfilePanel profile={cefrProfile} extractedText={extractedText} />
+                        )}
+
+                        {/* Grammar qualification (linked grammar standards) */}
+                        {grammarQual.length > 0 && (
+                            <div>
+                                <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
+                                    {t('analysis.grammar_qualification')}
+                                </h4>
+                                {grammarQual.some((g) => g.result.engine === 'ud') && (
+                                    <p className="text-xs text-muted" style={{ margin: '0 0 10px' }}>
+                                        {t('analysis.grammar_engine_ud')}
+                                    </p>
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {grammarQual.map(({ criterion, result: qual }) => {
+                                        const applied = appliedComments.has(criterion.id);
+                                        return (
+                                            <div
+                                                key={criterion.id}
+                                                className="card"
+                                                style={{
+                                                    padding: '10px 14px',
+                                                    borderLeft: `3px solid ${
+                                                        qual.passed ? 'var(--green)' : 'var(--yellow)'
+                                                    }`,
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        marginBottom: 6,
+                                                    }}
+                                                >
+                                                    <strong style={{ fontSize: '0.875rem' }}>
+                                                        {criterion.title}
+                                                        <span
+                                                            style={{
+                                                                marginLeft: 8,
+                                                                fontSize: 12,
+                                                                fontWeight: 600,
+                                                                color: qual.passed ? 'var(--green)' : 'var(--yellow)',
+                                                            }}
+                                                        >
+                                                            {qual.foundCount}/{qual.autoDetectableCount}
+                                                        </span>
+                                                    </strong>
+                                                    {onApplyComment && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary btn-xs"
+                                                            disabled={applied}
+                                                            onClick={() => {
+                                                                onApplyComment(
+                                                                    criterion.id,
+                                                                    buildGrammarComment(qual, t, lang)
+                                                                );
+                                                                setAppliedComments((prev) =>
+                                                                    new Set(prev).add(criterion.id)
+                                                                );
+                                                            }}
+                                                        >
+                                                            {applied
+                                                                ? t('analysis.comment_applied')
+                                                                : t('analysis.apply_comment')}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                                    {qual.items.map((item) => (
+                                                        <li
+                                                            key={item.descriptorId}
+                                                            style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
+                                                        >
+                                                            {!item.autoDetectable
+                                                                ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check')})`
+                                                                : item.found
+                                                                  ? `✔ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${item.occurrences}×)`
+                                                                  : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found')}`}
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
+                        )}
 
-                            {extractedText && <EssayStatsPanel text={extractedText} />}
-                            {extractedText && <UdGrammarPanel state={udGrammar} />}
-
-                            {/* CEFR Text Profile */}
-                            {cefrProfile && extractedText && (
-                                <CefrProfilePanel profile={cefrProfile} extractedText={extractedText} />
-                            )}
-
-                            {/* Grammar qualification (linked grammar standards) */}
-                            {grammarQual.length > 0 && (
-                                <div>
-                                    <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
-                                        {t('analysis.grammar_qualification')}
-                                    </h4>
-                                    {grammarQual.some((g) => g.result.engine === 'ud') && (
-                                        <p className="text-xs text-muted" style={{ margin: '0 0 10px' }}>
-                                            {t('analysis.grammar_engine_ud')}
-                                        </p>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        {grammarQual.map(({ criterion, result: qual }) => {
-                                            const applied = appliedComments.has(criterion.id);
-                                            return (
-                                                <div
-                                                    key={criterion.id}
-                                                    className="card"
-                                                    style={{
-                                                        padding: '10px 14px',
-                                                        borderLeft: `3px solid ${
-                                                            qual.passed ? 'var(--green)' : 'var(--yellow)'
-                                                        }`,
-                                                    }}
-                                                >
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'center',
-                                                            gap: 8,
-                                                            marginBottom: 6,
-                                                        }}
-                                                    >
-                                                        <strong style={{ fontSize: '0.875rem' }}>
-                                                            {criterion.title}
-                                                            <span
-                                                                style={{
-                                                                    marginLeft: 8,
-                                                                    fontSize: 12,
-                                                                    fontWeight: 600,
-                                                                    color: qual.passed
-                                                                        ? 'var(--green)'
-                                                                        : 'var(--yellow)',
-                                                                }}
-                                                            >
-                                                                {qual.foundCount}/{qual.autoDetectableCount}
-                                                            </span>
-                                                        </strong>
-                                                        {onApplyComment && (
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-secondary btn-xs"
-                                                                disabled={applied}
-                                                                onClick={() => {
-                                                                    onApplyComment(
-                                                                        criterion.id,
-                                                                        buildGrammarComment(qual, t, lang)
-                                                                    );
-                                                                    setAppliedComments((prev) =>
-                                                                        new Set(prev).add(criterion.id)
-                                                                    );
-                                                                }}
-                                                            >
-                                                                {applied
-                                                                    ? t('analysis.comment_applied')
-                                                                    : t('analysis.apply_comment')}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                                                        {qual.items.map((item) => (
-                                                            <li
-                                                                key={item.descriptorId}
-                                                                style={{ fontSize: '0.8rem', lineHeight: 1.6 }}
-                                                            >
-                                                                {!item.autoDetectable
-                                                                    ? `⊘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${t('analysis.manual_check')})`
-                                                                    : item.found
-                                                                      ? `✔ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} (${item.occurrences}×)`
-                                                                      : `✘ ${lang === 'nl' ? item.descriptionNl : item.descriptionEn} — ${t('analysis.not_found')}`}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Grammar errors */}
-                            {result.grammarErrors.length > 0 && (
-                                <div>
-                                    <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
-                                        {t('analysis.grammar_errors', 'Grammar Issues')}
-                                        <span className="text-xs text-muted" style={{ fontWeight: 400, marginLeft: 8 }}>
-                                            {t('analysis.via', 'via')} {result.grammarCheckerUsed}
-                                        </span>
-                                    </h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {result.grammarErrors.slice(0, 20).map((err, i) => (
-                                            <div
-                                                key={i}
-                                                className="card"
-                                                style={{ padding: '10px 14px', borderLeft: '3px solid #f59e0b' }}
-                                            >
-                                                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                                                    <AlertTriangle
-                                                        size={15}
-                                                        style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 2 }}
-                                                    />
-                                                    <div>
-                                                        <p style={{ margin: 0, fontSize: '0.875rem' }}>{err.message}</p>
-                                                        {err.suggestions.length > 0 && (
-                                                            <p
-                                                                className="text-xs text-muted"
-                                                                style={{ margin: '4px 0 0' }}
-                                                            >
-                                                                {t('analysis.suggestion', 'Suggestion')}:{' '}
-                                                                {err.suggestions.join(', ')}
-                                                            </p>
-                                                        )}
-                                                    </div>
+                        {/* Grammar errors */}
+                        {result.grammarErrors.length > 0 && (
+                            <div>
+                                <h4 style={{ marginBottom: 10, fontSize: '0.9rem' }}>
+                                    {t('analysis.grammar_errors', 'Grammar Issues')}
+                                    <span className="text-xs text-muted" style={{ fontWeight: 400, marginLeft: 8 }}>
+                                        {t('analysis.via', 'via')} {result.grammarCheckerUsed}
+                                    </span>
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {result.grammarErrors.slice(0, 20).map((err, i) => (
+                                        <div
+                                            key={i}
+                                            className="card"
+                                            style={{ padding: '10px 14px', borderLeft: '3px solid #f59e0b' }}
+                                        >
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                                <AlertTriangle
+                                                    size={15}
+                                                    style={{ color: 'var(--yellow)', flexShrink: 0, marginTop: 2 }}
+                                                />
+                                                <div>
+                                                    <p style={{ margin: 0, fontSize: '0.875rem' }}>{err.message}</p>
+                                                    {err.suggestions.length > 0 && (
+                                                        <p className="text-xs text-muted" style={{ margin: '4px 0 0' }}>
+                                                            {t('analysis.suggestion', 'Suggestion')}:{' '}
+                                                            {err.suggestions.join(', ')}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ))}
-                                        {result.grammarErrors.length > 20 && (
-                                            <p className="text-xs text-muted" style={{ textAlign: 'center' }}>
-                                                +{result.grammarErrors.length - 20}{' '}
-                                                {t('analysis.more_errors', 'more issues not shown')}
-                                            </p>
-                                        )}
-                                    </div>
+                                        </div>
+                                    ))}
+                                    {result.grammarErrors.length > 20 && (
+                                        <p className="text-xs text-muted" style={{ textAlign: 'center' }}>
+                                            +{result.grammarErrors.length - 20}{' '}
+                                            {t('analysis.more_errors', 'more issues not shown')}
+                                        </p>
+                                    )}
                                 </div>
-                            )}
-
-                            {/* Extracted text (collapsible) */}
-                            <div className="card" style={{ padding: 14 }}>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ width: '100%', justifyContent: 'space-between' }}
-                                    onClick={() => setShowText((v) => !v)}
-                                >
-                                    <span>{t('analysis.extracted_text', 'Extracted text')}</span>
-                                    {showText ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                                {showText && (
-                                    <pre
-                                        style={{
-                                            marginTop: 10,
-                                            padding: 12,
-                                            background: 'var(--bg)',
-                                            borderRadius: 8,
-                                            fontSize: '0.8rem',
-                                            lineHeight: 1.6,
-                                            whiteSpace: 'pre-wrap',
-                                            wordBreak: 'break-word',
-                                            maxHeight: 300,
-                                            overflowY: 'auto',
-                                        }}
-                                    >
-                                        {result.extractedText || t('analysis.no_text', '(no text extracted)')}
-                                    </pre>
-                                )}
                             </div>
-                        </>
-                    )}
-                </div>
+                        )}
+
+                        {/* Extracted text (collapsible) */}
+                        <div className="card" style={{ padding: 14 }}>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ width: '100%', justifyContent: 'space-between' }}
+                                onClick={() => setShowText((v) => !v)}
+                            >
+                                <span>{t('analysis.extracted_text', 'Extracted text')}</span>
+                                {showText ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                            {showText && (
+                                <pre
+                                    style={{
+                                        marginTop: 10,
+                                        padding: 12,
+                                        background: 'var(--bg)',
+                                        borderRadius: 8,
+                                        fontSize: '0.8rem',
+                                        lineHeight: 1.6,
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                        maxHeight: 300,
+                                        overflowY: 'auto',
+                                    }}
+                                >
+                                    {result.extractedText || t('analysis.no_text', '(no text extracted)')}
+                                </pre>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
-        </div>
+        </Modal>
     );
 }
 

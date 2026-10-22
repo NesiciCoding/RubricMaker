@@ -255,7 +255,7 @@ afterEach(() => {
 describe('DocumentAnalysisPanel coverage', () => {
     it('runs a full attachment analysis and renders every result section', async () => {
         const onSaveResult = vi.fn();
-        const { container } = renderPanel({ onSaveResult });
+        renderPanel({ onSaveResult });
 
         // select phase
         expect(screen.getByText('Document Analysis')).toBeInTheDocument();
@@ -325,7 +325,7 @@ describe('DocumentAnalysisPanel coverage', () => {
         expect(saved.grammarCheckerUsed).toBe('languagetool');
         expect(saved.grammarTextTruncated).toBe(true);
         expect(saved.detectedItems).toEqual(detected);
-        expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
     it('applies sub-items, adds to bank, applies comments, and re-analyses from an existing result', async () => {
@@ -626,15 +626,16 @@ describe('DocumentAnalysisPanel coverage', () => {
         expect(screen.queryByText('Vocabulary level distribution')).not.toBeInTheDocument();
     });
 
-    it('closes on overlay click but not on inner clicks', () => {
+    it('closes on Escape but not on inner clicks, and via the close button', () => {
         const onClose = vi.fn();
-        const { container } = renderPanel({ onClose });
-        const overlay = container.querySelector('.modal-overlay');
-        fireEvent.click(overlay as Element);
-        expect(onClose).toHaveBeenCalledTimes(1);
+        renderPanel({ onClose });
 
-        // inner click stops propagation
+        // inner click does not close the shared Modal
         fireEvent.click(screen.getByText('Document Analysis'));
+        expect(onClose).not.toHaveBeenCalled();
+
+        // Escape closes it (delegated to the shared Modal primitive)
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
 
         // the X close button
