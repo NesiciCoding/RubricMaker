@@ -58,7 +58,9 @@ describe('CountdownTimer', () => {
         expect(screen.getByRole('status')).toHaveTextContent('tests.taking.time_remaining_1min');
     });
 
-    it('announces submission once the deadline passes and shows the visible time-up label', () => {
+    it('announces the time-up label — not a separate claim that submission succeeded', () => {
+        // onTimeUp is optional and `submitted` can still be false at this exact tick, so the
+        // announcement must not assert a submission that hasn't been confirmed (CodeRabbit #954).
         mockUseDeadlineCountdown.mockReturnValue(1);
         const { rerender } = render(
             <CountdownTimer durationMinutes={15} storageKey="k" submitted={false} timeUpLabel="Time up!" />
@@ -69,11 +71,18 @@ describe('CountdownTimer', () => {
             rerender(<CountdownTimer durationMinutes={15} storageKey="k" submitted={false} timeUpLabel="Time up!" />);
         });
         expect(screen.getByRole('timer')).toHaveTextContent('Time up!');
-        expect(screen.getByRole('status')).toHaveTextContent('tests.taking.time_up_announcement');
+        expect(screen.getByRole('status')).toHaveTextContent('Time up!');
+    });
+
+    it('never announces a threshold that was already behind at mount (CodeRabbit #954)', () => {
+        // A 4-minute test starts below the 5-minute mark — it must not claim "5 minutes remaining".
+        mockUseDeadlineCountdown.mockReturnValue(239);
+        render(<CountdownTimer durationMinutes={4} storageKey="k" submitted={false} timeUpLabel="Time up" />);
+        expect(screen.getByRole('status')).toHaveTextContent('');
     });
 
     it('resets the announced thresholds when resetSignal changes (e.g. a retake)', () => {
-        mockUseDeadlineCountdown.mockReturnValue(30);
+        mockUseDeadlineCountdown.mockReturnValue(70);
         const { rerender } = render(
             <CountdownTimer
                 durationMinutes={15}
@@ -83,6 +92,21 @@ describe('CountdownTimer', () => {
                 resetSignal={0}
             />
         );
+        expect(screen.getByRole('status')).toHaveTextContent('');
+
+        // Cross the 1-minute threshold for real before testing the reset.
+        mockUseDeadlineCountdown.mockReturnValue(30);
+        act(() => {
+            rerender(
+                <CountdownTimer
+                    durationMinutes={15}
+                    storageKey="k"
+                    submitted={false}
+                    timeUpLabel="Time up"
+                    resetSignal={0}
+                />
+            );
+        });
         expect(screen.getByRole('status')).toHaveTextContent('tests.taking.time_remaining_1min');
 
         mockUseDeadlineCountdown.mockReturnValue(900);

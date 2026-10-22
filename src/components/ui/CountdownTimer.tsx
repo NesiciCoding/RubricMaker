@@ -51,28 +51,42 @@ export default function CountdownTimer({
     // Tracks which thresholds have already been announced for the current deadline, so a
     // screen reader hears each one once rather than on every tick once it's crossed.
     const announcedRef = useRef<Set<number>>(new Set());
+    // The previous tick's value, so a threshold only announces when actually crossed — a test
+    // that starts with under 5 minutes left must never claim "5 minutes remaining".
+    const prevSecondsRef = useRef<number | null>(null);
     const [announcement, setAnnouncement] = useState('');
 
     useEffect(() => {
         announcedRef.current = new Set();
+        prevSecondsRef.current = null;
         setAnnouncement('');
     }, [resetSignal, storageKey]);
 
     useEffect(() => {
         if (secondsLeft === null) return;
-        if (secondsLeft <= FIVE_MINUTES && !announcedRef.current.has(FIVE_MINUTES)) {
+        const prev = prevSecondsRef.current;
+        if (
+            prev !== null &&
+            prev > FIVE_MINUTES &&
+            secondsLeft <= FIVE_MINUTES &&
+            !announcedRef.current.has(FIVE_MINUTES)
+        ) {
             announcedRef.current.add(FIVE_MINUTES);
             setAnnouncement(t('tests.taking.time_remaining_5min'));
         }
-        if (secondsLeft <= ONE_MINUTE && !announcedRef.current.has(ONE_MINUTE)) {
+        if (prev !== null && prev > ONE_MINUTE && secondsLeft <= ONE_MINUTE && !announcedRef.current.has(ONE_MINUTE)) {
             announcedRef.current.add(ONE_MINUTE);
             setAnnouncement(t('tests.taking.time_remaining_1min'));
         }
         if (secondsLeft <= 0 && !announcedRef.current.has(0)) {
             announcedRef.current.add(0);
-            setAnnouncement(t('tests.taking.time_up_announcement'));
+            // Reuse the caller's own time-up copy rather than a separate message, since
+            // `onTimeUp` is optional and `submitted` may still be false at this exact tick —
+            // this announcement must not claim a submission that hasn't been confirmed yet.
+            setAnnouncement(timeUpLabel);
         }
-    }, [secondsLeft, t]);
+        prevSecondsRef.current = secondsLeft;
+    }, [secondsLeft, t, timeUpLabel]);
 
     if (secondsLeft === null) return null;
 

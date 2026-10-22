@@ -1101,7 +1101,6 @@
             "time_remaining_label": "Tiempo restante",
             "time_remaining_5min": "Quedan 5 minutos",
             "time_remaining_1min": "Queda 1 minuto",
-            "time_up_announcement": "Se acabó el tiempo. Tu examen ha sido enviado.",
             "question_label": "Pregunta {{current}} de {{total}}",
             "question_label_no_total": "Pregunta {{current}}",
             "short_answer_placeholder": "Escribe tu respuesta…",

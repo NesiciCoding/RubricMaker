@@ -1101,7 +1101,6 @@
             "time_remaining_label": "Verbleibende Zeit",
             "time_remaining_5min": "Noch 5 Minuten",
             "time_remaining_1min": "Noch 1 Minute",
-            "time_up_announcement": "Die Zeit ist abgelaufen. Dein Test wurde abgegeben.",
             "question_label": "Frage {{current}} von {{total}}",
             "question_label_no_total": "Frage {{current}}",
             "short_answer_placeholder": "Geben Sie Ihre Antwort ein…",
