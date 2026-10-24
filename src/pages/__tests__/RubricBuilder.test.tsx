@@ -2348,4 +2348,44 @@ describe('RubricBuilder', () => {
         expect(within(overlay).getByText(/No notation standard/)).toBeInTheDocument();
         expect(within(overlay).getByText('Sub no notation')).toBeInTheDocument();
     });
+
+    it('does not re-serialize the criteria tree when typing in an unrelated field (#670)', () => {
+        const manyCriteria: RubricCriterion[] = Array.from({ length: 60 }, (_, i) => ({
+            id: `c${i}`,
+            title: `Criterion ${i}`,
+            description: '',
+            weight: 100 / 60,
+            levels: [
+                { id: `c${i}-l1`, label: 'Excellent', minPoints: 4, maxPoints: 4, description: '', subItems: [] },
+                { id: `c${i}-l2`, label: 'Good', minPoints: 3, maxPoints: 3, description: '', subItems: [] },
+            ],
+        }));
+        appOverrides = { rubrics: [{ ...mockRubric, criteria: manyCriteria }] };
+        renderEdit();
+
+        const stringifySpy = vi.spyOn(JSON, 'stringify');
+        try {
+            // Catches the full criteria tree being walked either directly (a memoized
+            // `JSON.stringify(criteria)`) or as a field of a larger snapshot object — so this
+            // stays a meaningful regression check regardless of which shape the fix takes.
+            const criteriaSerializations = () =>
+                stringifySpy.mock.calls.filter(
+                    (call) =>
+                        call[0] === manyCriteria ||
+                        (call[0] !== null &&
+                            typeof call[0] === 'object' &&
+                            !Array.isArray(call[0]) &&
+                            (call[0] as Record<string, unknown>).criteria === manyCriteria)
+                ).length;
+            const initialCriteriaSerializations = criteriaSerializations();
+
+            // Typing in the name field is unrelated to the 60 criteria, so the unsaved-changes
+            // snapshot must reuse its cached criteria serialization instead of walking all 60
+            // criteria/levels again on every keystroke.
+            fireEvent.change(screen.getByDisplayValue('Essay Rubric'), { target: { value: 'Essay Rubric!' } });
+            expect(criteriaSerializations()).toBe(initialCriteriaSerializations);
+        } finally {
+            stringifySpy.mockRestore();
+        }
+    });
 });

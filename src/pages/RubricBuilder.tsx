@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { saveAs } from 'file-saver';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
@@ -240,6 +240,14 @@ function RubricBuilderEditor() {
     // (and refreshed on Save), rather than "any change after the first render". Comparing values
     // keeps a pristine form clean even when React double-invokes effects in dev/StrictMode,
     // where the old mount-skip ref raised a bogus 'unsaved changes' dialog.
+    // Stringifying `criteria` is the expensive part of this snapshot (it walks every criterion's
+    // levels and sub-items), so it's cached on its own and only recomputed when `criteria` itself
+    // changes — otherwise every keystroke in name/subject/description re-serialized the whole
+    // criteria tree on a large rubric for no reason (#670).
+    const criteriaSnapshot = useMemo(() => JSON.stringify(criteria), [criteria]);
+    // Keep criteriaSnapshot out of this JSON.stringify — it's already a serialized string, and
+    // folding it back into an outer stringify call re-copies/escapes all of it on every keystroke
+    // in an unrelated field, which is proportional to criteria size and defeats the point above.
     const formSnapshot = JSON.stringify({
         // `handleSave` persists the trimmed name, so the baseline has to compare the trimmed value:
         // saving " Essay " and then tidying the field to "Essay" is not an unsaved change, and
@@ -247,7 +255,6 @@ function RubricBuilderEditor() {
         name: name.trim(),
         subject,
         description,
-        criteria,
         gradeScaleId,
         format,
         scoringMode,
@@ -256,15 +263,18 @@ function RubricBuilderEditor() {
         cefrSkill,
         cefrAchieveThreshold,
     });
-    const savedSnapshotRef = useRef<string | null>(null);
+    const savedSnapshotRef = useRef<{ formSnapshot: string; criteriaSnapshot: string } | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     useEffect(() => {
         if (savedSnapshotRef.current === null) {
-            savedSnapshotRef.current = formSnapshot;
+            savedSnapshotRef.current = { formSnapshot, criteriaSnapshot };
             return;
         }
-        setIsDirty(formSnapshot !== savedSnapshotRef.current);
-    }, [formSnapshot]);
+        setIsDirty(
+            formSnapshot !== savedSnapshotRef.current.formSnapshot ||
+                criteriaSnapshot !== savedSnapshotRef.current.criteriaSnapshot
+        );
+    }, [formSnapshot, criteriaSnapshot]);
     const { dialogProps: unsavedDialogProps } = useUnsavedChangesGuard(isDirty);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
 
@@ -442,7 +452,7 @@ function RubricBuilderEditor() {
                 setSyncDialogRubric(savedRubric);
             }
             flushSync(() => {
-                savedSnapshotRef.current = formSnapshot;
+                savedSnapshotRef.current = { formSnapshot, criteriaSnapshot };
                 setIsDirty(false);
             });
         } else {
@@ -450,7 +460,7 @@ function RubricBuilderEditor() {
             // Flush only after the create succeeds, and before navigate so
             // useBlocker doesn't see stale isDirty=true.
             flushSync(() => {
-                savedSnapshotRef.current = formSnapshot;
+                savedSnapshotRef.current = { formSnapshot, criteriaSnapshot };
                 setIsDirty(false);
             });
             navigate(`/rubrics/${newR.id}`, { replace: true });
