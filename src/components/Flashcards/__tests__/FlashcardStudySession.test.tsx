@@ -57,6 +57,28 @@ describe('FlashcardStudySession', () => {
         expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '33');
     });
 
+    it('shows the rating hint and wires it to each rating button as an accessible description', () => {
+        render(<FlashcardStudySession deck={deck} initialStates={{}} />);
+        fireEvent.click(screen.getByText('flashcards.show_answer'));
+        expect(screen.getByText('flashcards.rate_hint')).toBeInTheDocument();
+        for (const key of [
+            'flashcards.rate_again',
+            'flashcards.rate_hard',
+            'flashcards.rate_good',
+            'flashcards.rate_easy',
+        ]) {
+            expect(screen.getByText(key).closest('button')).toHaveAttribute('aria-describedby', 'flashcard-rate-hint');
+        }
+    });
+
+    it('lays the four rating buttons out as an even grid, not a flex row that wraps one alone', () => {
+        render(<FlashcardStudySession deck={deck} initialStates={{}} />);
+        fireEvent.click(screen.getByText('flashcards.show_answer'));
+        const easyButton = screen.getByText('flashcards.rate_easy').closest('button');
+        const row = easyButton?.parentElement;
+        expect(row).toHaveStyle({ display: 'grid' });
+    });
+
     it('re-queues a card rated Good (the 10-minute step) but drops one rated Easy (8 days)', () => {
         const first = render(<FlashcardStudySession deck={deck} initialStates={{}} />);
         fireEvent.click(screen.getByText('flashcards.show_answer'));

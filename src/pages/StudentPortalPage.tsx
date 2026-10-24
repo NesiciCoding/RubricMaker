@@ -84,6 +84,7 @@ import type {
     GradeScale,
 } from '../types';
 import { isLocalMode } from '../store/storage';
+import { useToast } from '../hooks/useToast';
 
 // Sections scroll to just below the sticky tab bar, whose height grows when the tabs wrap on phones.
 const SECTION_SCROLL_MARGIN = 'calc(var(--portal-nav-h, 62px) + 8px)';
@@ -203,6 +204,7 @@ export default function StudentPortalPage() {
     } = useStoreActions();
 
     const { t, i18n } = useTranslation();
+    const { showToast } = useToast();
     // Grammar items only carry Dutch and English labels (labelNl / labelEn); other languages show English.
     const lang = i18n.language.startsWith('nl') ? 'nl' : 'en';
     const [linkCopied, setLinkCopied] = useState(false);
@@ -696,10 +698,16 @@ export default function StudentPortalPage() {
 
     const isTeacherPreview = settings.userRole !== 'student';
 
-    function handleCopyLink() {
-        navigator.clipboard.writeText(portalUrl);
-        setLinkCopied(true);
-        setTimeout(() => setLinkCopied(false), 2000);
+    async function handleCopyLink() {
+        try {
+            await navigator.clipboard.writeText(portalUrl);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch {
+            // Clipboard API can reject (or be unavailable) on an insecure/http host — surface
+            // it instead of showing a false-positive "Copied" toast (#705).
+            showToast(t('studentPortal.copy_link_failed'), 'error');
+        }
     }
 
     return (
@@ -780,6 +788,7 @@ export default function StudentPortalPage() {
                             onClick={() => updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
                             aria-label={t('studentPortal.toggle_theme')}
                             title={t('studentPortal.toggle_theme')}
+                            style={{ minWidth: 44, minHeight: 44 }}
                         >
                             {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
                         </button>
@@ -804,6 +813,7 @@ export default function StudentPortalPage() {
                             data-tour="portal-copy-link"
                             onClick={handleCopyLink}
                             title={t('studentPortal.copy_link')}
+                            style={{ minHeight: 44 }}
                         >
                             {linkCopied ? <Check size={14} /> : <Copy size={14} />}
                             {linkCopied ? t('studentPortal.link_copied') : t('studentPortal.copy_link')}

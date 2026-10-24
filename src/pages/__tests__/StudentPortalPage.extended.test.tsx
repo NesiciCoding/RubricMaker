@@ -367,6 +367,11 @@ vi.mock('../../components/Statistics/CriterionRadarChart', () => ({
     ),
 }));
 
+const mockShowToast = vi.fn();
+vi.mock('../../hooks/useToast', () => ({
+    useToast: () => ({ showToast: mockShowToast }),
+}));
+
 vi.mock('../../services/database', () => ({
     loadSupabaseConfig: () => ({ supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'anon' }),
     storageSync: { adapter: {} },
@@ -576,6 +581,7 @@ describe('StudentPortalPage extended coverage', () => {
         mockMarkNewsFlashReadAsStudent.mockResolvedValue({ success: true });
         mockSaveRubricSelfAssessment.mockClear();
         mockUpdateSettings.mockClear();
+        mockShowToast.mockClear();
         mockEncodeTest.mockClear();
         mockEncodeTest.mockReturnValue('test-code');
         Object.defineProperty(navigator, 'clipboard', {
@@ -587,11 +593,23 @@ describe('StudentPortalPage extended coverage', () => {
         StudentPortalPageComp = mod.default;
     });
 
-    it('copies the portal link and shows the copied state', () => {
+    it('copies the portal link and shows the copied state', async () => {
         renderAt('s1');
         fireEvent.click(screen.getByTitle('studentPortal.copy_link'));
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('#/portal/s1'));
-        expect(screen.getByText('studentPortal.link_copied')).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByText('studentPortal.link_copied')).toBeInTheDocument());
+        expect(mockShowToast).not.toHaveBeenCalled();
+    });
+
+    it('shows an error toast instead of the copied state when the clipboard write rejects', async () => {
+        Object.defineProperty(navigator, 'clipboard', {
+            value: { writeText: vi.fn().mockRejectedValue(new Error('clipboard unavailable')) },
+            configurable: true,
+        });
+        renderAt('s1');
+        fireEvent.click(screen.getByTitle('studentPortal.copy_link'));
+        await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('studentPortal.copy_link_failed', 'error'));
+        expect(screen.queryByText('studentPortal.link_copied')).not.toBeInTheDocument();
     });
 
     it('toggles the theme via the header button', () => {
@@ -1035,11 +1053,14 @@ describe('StudentPortalPage extended coverage', () => {
         await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
     });
 
-    it('reverts the copied state after two seconds', () => {
+    it('reverts the copied state after two seconds', async () => {
         vi.useFakeTimers();
         try {
             renderAt('s1');
             fireEvent.click(screen.getByTitle('studentPortal.copy_link'));
+            // The clipboard write resolves as a real microtask, independent of the fake
+            // macrotask timers below, so flush it before asserting the copied state.
+            await act(async () => {});
             expect(screen.getByText('studentPortal.link_copied')).toBeInTheDocument();
             act(() => vi.advanceTimersByTime(2000));
             expect(screen.getByText('studentPortal.copy_link')).toBeInTheDocument();
