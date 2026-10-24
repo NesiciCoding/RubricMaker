@@ -51,7 +51,7 @@ export default function PortalGradeHistoryChart({ history }: { history: Array<{ 
                 <tbody>
                     {history.map((h, i) => (
                         <tr key={`${h.dateStr}-${i}`}>
-                            <td>{h.dateStr}</td>
+                            <th scope="row">{h.dateStr}</th>
                             <td>{percentFormat.format(h.score)}%</td>
                         </tr>
                     ))}

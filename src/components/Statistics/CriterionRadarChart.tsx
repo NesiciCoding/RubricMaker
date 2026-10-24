@@ -32,29 +32,35 @@ interface Props {
     height?: number;
 }
 
-/** Long criterion names (e.g. "Coherence & Cohesion") get clipped against the polar
- * axis edge at narrow viewports (#705) — split them onto two lines near their midpoint
- * so neither line runs as far past the label's anchor point. */
-function wrapAxisLabel(label: string, maxLineChars = 12): [string] | [string, string] {
+/** Long criterion names (e.g. "Grammatical Range and Accuracy") get clipped against
+ * the polar axis edge at narrow viewports (#705) — greedily wrap them onto as many
+ * lines as needed, each within maxLineChars, so no line runs past the anchor point. */
+function wrapAxisLabel(label: string, maxLineChars = 12): string[] {
     if (label.length <= maxLineChars) return [label];
     const words = label.split(' ');
     if (words.length < 2) return [label];
-    let line1 = '';
+    const lines: string[] = [];
+    let current = '';
     for (const word of words) {
-        const next = line1 ? `${line1} ${word}` : word;
-        if (line1 && next.length > maxLineChars) break;
-        line1 = next;
+        const next = current ? `${current} ${word}` : word;
+        if (current && next.length > maxLineChars) {
+            lines.push(current);
+            current = word;
+        } else {
+            current = next;
+        }
     }
-    const line2 = label.slice(line1.length).trim();
-    return line2 ? [line1, line2] : [label];
+    if (current) lines.push(current);
+    return lines.length > 1 ? lines : [label];
 }
 
 function renderAngleAxisTick({ x, y, payload, textAnchor }: BaseTickContentProps) {
     const lines = wrapAxisLabel(String(payload.value));
+    const startDy = lines.length > 1 ? -5 - (lines.length - 2) * 13 : 0;
     return (
         <text x={x} y={y} textAnchor={textAnchor} fill="var(--text-muted)" fontSize={11}>
             {lines.map((line, i) => (
-                <tspan key={i} x={x} dy={i === 0 ? (lines.length > 1 ? -5 : 0) : 13}>
+                <tspan key={i} x={x} dy={i === 0 ? startDy : 13}>
                     {line}
                 </tspan>
             ))}
@@ -145,7 +151,7 @@ export default function CriterionRadarChart({
                 <tbody>
                     {data.map((row) => (
                         <tr key={row.name}>
-                            <td>{row.name}</td>
+                            <th scope="row">{row.name}</th>
                             <td>{percentFormat.format(row.avg)}%</td>
                             {hasStudents &&
                                 selectedStudents!.map((s) => (
