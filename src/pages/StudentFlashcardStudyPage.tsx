@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useFlashcards, useSettings, useStudents } from '../context/AppContext';
 import { useDbStatus } from '../hooks/useDbStatus';
@@ -37,10 +37,17 @@ export default function StudentFlashcardStudyPage() {
     const [remoteReview, setRemoteReview] = useState<FlashcardReview | null>(null);
     const [loading, setLoading] = useState(isConnected);
     const [saveFailed, setSaveFailed] = useState(false);
+    // Tracks a genuine fetch failure separately from "no deck exists" — swallowing the
+    // rejection here previously collapsed both into the same deck-not-found UI, hiding the
+    // fact that a retry (not a teacher re-assigning the deck) is what the student needs.
+    const [fetchFailed, setFetchFailed] = useState(false);
+    const [retryNonce, setRetryNonce] = useState(0);
 
     useEffect(() => {
         if (!isConnected || !deckId || !studentId) return;
         let cancelled = false;
+        setLoading(true);
+        setFetchFailed(false);
         Promise.all([fetchAssignedFlashcardDeck(deckId), fetchMyFlashcardReview(deckId, studentId)])
             .then(([deck, review]) => {
                 if (cancelled) return;
@@ -48,14 +55,16 @@ export default function StudentFlashcardStudyPage() {
                 if (review) setRemoteReview(review);
             })
             .catch(() => {
-                /* fall back to app state below */
+                // A local deck (below) can still cover this — only surfaced once we know
+                // whether `deck` ends up null after this fetch fails.
+                if (!cancelled) setFetchFailed(true);
             })
             .finally(() => !cancelled && setLoading(false));
         return () => {
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deckId, studentId, isConnected]);
+    }, [deckId, studentId, isConnected, retryNonce]);
 
     const deck = remoteDeck ?? localDeck;
     const initialReview = remoteReview ?? localReview;
@@ -164,6 +173,18 @@ export default function StudentFlashcardStudyPage() {
                 )}
                 {loading ? (
                     <FlashcardCardSkeleton fullPage={false} />
+                ) : !deck && fetchFailed ? (
+                    <div className="empty-state">
+                        <AlertTriangle size={32} />
+                        <h2>{t('flashcards.deck_load_error')}</h2>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setRetryNonce((n) => n + 1)}
+                        >
+                            <RefreshCw size={14} /> {t('flashcards.retry_button')}
+                        </button>
+                    </div>
                 ) : !deck ? (
                     <div className="empty-state">
                         <h2>{t('flashcards.deck_not_found')}</h2>
