@@ -288,7 +288,9 @@ export default function RubricList() {
 
     const requestDelete = useCallback(
         async (r: Rubric) => {
-            const gradeCount = studentRubrics.filter((sr) => sr.rubricId === r.id && !sr.deletedAt).length;
+            const gradeCount = latest.current.studentRubrics.filter(
+                (sr) => sr.rubricId === r.id && !sr.deletedAt
+            ).length;
             const ok = await confirm({
                 title: t('rubricList.delete_rubric_title'),
                 message: t('rubricList.delete_rubric_warning', { count: gradeCount }),
@@ -306,7 +308,7 @@ export default function RubricList() {
             pendingDeletes.current.set(r.id, { timer, toastId });
             setPendingDeleteIds((prev) => new Set(prev).add(r.id));
         },
-        [studentRubrics, confirm, t, showToast, settlePendingDelete]
+        [confirm, t, showToast, settlePendingDelete]
     );
 
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
