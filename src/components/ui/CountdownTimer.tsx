@@ -104,7 +104,7 @@ export default function CountdownTimer({
                     fontWeight: 700,
                     fontSize: '1.05rem',
                     fontVariantNumeric: 'tabular-nums',
-                    color: secondsLeft < 120 ? '#ef4444' : 'var(--text)',
+                    color: secondsLeft < 120 ? 'var(--red, #ef4444)' : 'var(--text)',
                 }}
             >
                 <Clock size={17} aria-hidden="true" />
