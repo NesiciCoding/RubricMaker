@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
     BookOpen,
@@ -25,7 +25,6 @@ import {
     GraduationCap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import SegmentedToggle from '../components/ui/SegmentedToggle';
 import Avatar from '../components/ui/Avatar';
 import LanguageSelect from '../components/ui/LanguageSelect';
 import PageTour from '../components/Tour/PageTour';
@@ -230,6 +229,26 @@ export default function StudentPortalPage() {
         if (tab) setActiveTab(tab);
         requestAnimationFrame(() => scrollToSection(sectionId));
     };
+
+    // Roving tabindex targets for the ARIA tablist below (index-aligned with PORTAL_TABS).
+    const tabButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+    // The four sections swap in place with no page navigation, so a screen-reader user gets no
+    // cue a "page" changed unless we announce it (live region) alongside the tab/tabpanel ARIA wiring.
+    const [tabAnnouncement, setTabAnnouncement] = useState('');
+    const hasAnnouncedOnce = useRef(false);
+    useEffect(() => {
+        if (!hasAnnouncedOnce.current) {
+            hasAnnouncedOnce.current = true;
+            return;
+        }
+        const tabLabel = {
+            home: t('studentPortal.tab_home'),
+            assignments: t('studentPortal.tab_assignments'),
+            feedback: t('studentPortal.tab_feedback'),
+            progress: t('studentPortal.tab_progress'),
+        }[activeTab];
+        setTabAnnouncement(t('studentPortal.tab_panel_announcement', { tab: tabLabel }));
+    }, [activeTab, t]);
 
     const [essayRows, setEssayRows] = useState<StudentEssayAssignmentSummary[]>([]);
     const [essayLoadError, setEssayLoadError] = useState<string | null>(null);
@@ -702,6 +721,29 @@ export default function StudentPortalPage() {
         setTimeout(() => setLinkCopied(false), 2000);
     }
 
+    const portalTabs: { value: PortalTab; label: string; icon: React.ReactNode }[] = [
+        { value: 'home', label: t('studentPortal.tab_home'), icon: <Home size={14} /> },
+        { value: 'assignments', label: t('studentPortal.tab_assignments'), icon: <ListChecks size={14} /> },
+        { value: 'feedback', label: t('studentPortal.tab_feedback'), icon: <MessageSquare size={14} /> },
+        { value: 'progress', label: t('studentPortal.tab_progress'), icon: <TrendingUp size={14} /> },
+    ];
+
+    // Standard ARIA tabs roving-tabindex: arrow keys move focus (and, with automatic
+    // activation, select) between tabs; only the active tab sits in the normal tab order.
+    function handleTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+        let nextIndex: number | null = null;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextIndex = (index + 1) % portalTabs.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
+            nextIndex = (index - 1 + portalTabs.length) % portalTabs.length;
+        else if (e.key === 'Home') nextIndex = 0;
+        else if (e.key === 'End') nextIndex = portalTabs.length - 1;
+        /* v8 ignore next -- every other key falls through untouched */
+        if (nextIndex === null) return;
+        e.preventDefault();
+        setActiveTab(portalTabs[nextIndex].value);
+        tabButtonRefs.current[nextIndex]?.focus();
+    }
+
     return (
         <div
             style={
@@ -839,31 +881,72 @@ export default function StudentPortalPage() {
                     padding: '8px 16px',
                 }}
             >
-                <SegmentedToggle
-                    ariaLabel={t('studentPortal.section_nav_label')}
-                    value={activeTab}
-                    onChange={setActiveTab}
-                    wrap
-                    minTargetHeight={44}
-                    options={[
-                        { value: 'home', label: t('studentPortal.tab_home'), icon: <Home size={14} /> },
-                        {
-                            value: 'assignments',
-                            label: t('studentPortal.tab_assignments'),
-                            icon: <ListChecks size={14} />,
-                        },
-                        {
-                            value: 'feedback',
-                            label: t('studentPortal.tab_feedback'),
-                            icon: <MessageSquare size={14} />,
-                        },
-                        { value: 'progress', label: t('studentPortal.tab_progress'), icon: <TrendingUp size={14} /> },
-                    ]}
-                />
+                <div
+                    role="tablist"
+                    aria-label={t('studentPortal.section_nav_label')}
+                    style={{
+                        display: 'inline-flex',
+                        gap: 2,
+                        padding: 2,
+                        borderRadius: 22,
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        maxWidth: '100%',
+                        background: 'var(--bg-raised)',
+                        border: '1px solid var(--border)',
+                    }}
+                >
+                    {portalTabs.map((tabDef, index) => {
+                        const active = tabDef.value === activeTab;
+                        return (
+                            <button
+                                key={tabDef.value}
+                                ref={(el) => {
+                                    tabButtonRefs.current[index] = el;
+                                }}
+                                type="button"
+                                role="tab"
+                                id={`portal-tab-${tabDef.value}`}
+                                aria-selected={active}
+                                aria-controls={`portal-panel-${tabDef.value}`}
+                                tabIndex={active ? 0 : -1}
+                                onClick={() => setActiveTab(tabDef.value)}
+                                onKeyDown={(e) => handleTabKeyDown(e, index)}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    minHeight: 44,
+                                    flex: '1 0 auto',
+                                    padding: '7px 14px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    lineHeight: 1,
+                                    borderRadius: 999,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: active ? 'var(--accent)' : 'transparent',
+                                    color: active ? 'var(--accent-fg)' : 'var(--text-muted)',
+                                    transition: 'background var(--transition), color var(--transition)',
+                                }}
+                            >
+                                {tabDef.icon}
+                                {tabDef.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </nav>
+            <span aria-live="polite" aria-atomic="true" className="sr-only">
+                {tabAnnouncement}
+            </span>
 
             <div
                 data-tour="portal-content"
+                id={`portal-panel-${activeTab}`}
+                role="tabpanel"
+                aria-labelledby={`portal-tab-${activeTab}`}
                 style={{
                     maxWidth: 820,
                     margin: '0 auto',
