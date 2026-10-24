@@ -2,6 +2,26 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import { displayedUiLanguage } from './utils/uiLanguage';
+import { resetLanguageDetectorCache } from './utils/languageDetectorCache';
+
+// Automatic mode (settings.languageChosen === false) means "always follow the browser", but
+// the detector caches whatever it last detected under LANGUAGE_DETECTOR_CACHE_KEY, and that
+// cached value — not navigator — wins on the next detect() (it's earlier in the lookup order).
+// Left alone, switching the OS/browser language while Automatic is selected has no visible
+// effect until the user re-opens the picker, because a plain reload just reads the stale cache
+// straight back. Settings load from the same 'rm_settings' key storage.ts uses (read directly,
+// not via storage.ts's loadStore(), which does unrelated migration work this early boot path
+// shouldn't trigger) — if Automatic was selected, clear the cache before init() so detect()
+// falls through to navigator fresh on every boot, not just the moment the option was picked.
+try {
+    const raw = localStorage.getItem('rm_settings');
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object' && (parsed as { languageChosen?: unknown }).languageChosen === false) {
+        resetLanguageDetectorCache();
+    }
+} catch {
+    // Corrupt settings JSON or blocked storage — leave the detector cache as is.
+}
 
 i18n.use(LanguageDetector)
     .use(initReactI18next)

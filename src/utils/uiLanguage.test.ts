@@ -39,6 +39,11 @@ describe('chosenUiLanguage', () => {
         expect(chosenUiLanguage({ language: 'fr', languageChosen: true })).toBe('fr');
     });
 
+    it('follows the browser again once reset to Automatic, even with a non-English language left over', () => {
+        expect(chosenUiLanguage({ language: 'nl', languageChosen: false })).toBeNull();
+        expect(chosenUiLanguage({ language: 'fr', languageChosen: false })).toBeNull();
+    });
+
     it('ignores a language the app does not ship', () => {
         expect(chosenUiLanguage({ language: 'ar', languageChosen: true })).toBeNull();
         expect(chosenUiLanguage({ language: '', languageChosen: true })).toBeNull();
