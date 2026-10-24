@@ -28,7 +28,7 @@ describe('CountdownTimer', () => {
         );
         const display = screen.getByText('01:00');
         expect(display).toBeInTheDocument();
-        expect(display).toHaveStyle({ color: '#ef4444' });
+        expect(display).toHaveStyle({ color: 'var(--red, #ef4444)' });
     });
 
     it('clears the running interval on unmount mid-countdown', () => {
