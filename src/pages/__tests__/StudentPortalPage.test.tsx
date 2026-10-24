@@ -403,6 +403,21 @@ describe('StudentPortalPage', () => {
         expect(progressTab).toHaveAttribute('aria-selected', 'true');
     });
 
+    it('ignores Alt/Ctrl/Meta tab-navigation keys so browser shortcuts still work (#972)', () => {
+        renderAt('s1');
+        const homeTab = screen.getByRole('tab', { name: /studentPortal.tab_home/ });
+
+        homeTab.focus();
+        fireEvent.keyDown(homeTab, { key: 'ArrowRight', altKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'Home', ctrlKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'ArrowLeft', metaKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+    });
+
     it('offers a way back to the teacher role only in local mode (#623)', () => {
         renderAt('s1');
         expect(screen.queryByText('studentPortal.switch_back_to_teacher')).not.toBeInTheDocument();

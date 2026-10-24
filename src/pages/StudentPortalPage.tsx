@@ -731,6 +731,7 @@ export default function StudentPortalPage() {
     // Standard ARIA tabs roving-tabindex: arrow keys move focus (and, with automatic
     // activation, select) between tabs; only the active tab sits in the normal tab order.
     function handleTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
         let nextIndex: number | null = null;
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextIndex = (index + 1) % portalTabs.length;
         else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
