@@ -60,6 +60,7 @@ pnpm-debug.log*
 *.sln
 *.sw?
 .claude/scheduled_tasks.lock
+.claude/worktrees/
 
 # Codegraph daemon runtime files
 .codegraph/
