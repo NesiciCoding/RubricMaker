@@ -117,7 +117,7 @@ export default function StudentFlashcardStudyPage() {
                     <Link
                         to={`/portal/${studentId}`}
                         className="btn btn-ghost btn-sm"
-                        style={{ marginBottom: 8, display: 'inline-flex' }}
+                        style={{ marginBottom: 8, display: 'inline-flex', minHeight: 44, alignItems: 'center' }}
                     >
                         <ArrowLeft size={15} /> {t('flashcards.back_to_portal')}
                     </Link>
@@ -125,7 +125,12 @@ export default function StudentFlashcardStudyPage() {
                         <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
                             {deck?.name ?? t('flashcards.deck_title')}
                         </h1>
-                        <button className="btn btn-ghost btn-sm" onClick={tour.start}>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={tour.start}
+                            style={{ minHeight: 44 }}
+                        >
                             {t('tutorial.page_tour_button')}
                         </button>
                     </div>
