@@ -1075,6 +1075,8 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categorieën",
+                "question_image_alt": "Afbeelding bij vraag",
+                "option_image_alt": "Afbeelding bij optie",
                 "recorded_answer_note": "Opgenomen antwoord — geen geschreven antwoord nodig.",
                 "audio_note": "Luister naar de opname.",
                 "point_label_one": "{{count}}p",
