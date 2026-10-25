@@ -300,12 +300,15 @@ async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<Fet
     }
 }
 
+// altText === '' marks the image decorative (docx has no dedicated flag for this, unlike the HTML
+// export's alt=""): an explicit empty name/description tells Word the image carries no information,
+// rather than leaving docProps unset the way an image nobody passed altText to does.
 const docxImageRun = ({ type, data, width, height }: FetchedDocxImage, altText?: string) =>
     new ImageRun({
         type,
         data,
         transformation: { width, height },
-        ...(altText ? { altText: { name: altText, description: altText } } : {}),
+        ...(altText !== undefined ? { altText: { name: altText, description: altText } } : {}),
     });
 
 async function questionImageRun(imageUrl: string, maxWidthPx = 380, altText?: string): Promise<ImageRun | null> {
@@ -382,7 +385,7 @@ async function questionParagraphs(
                     })
                 );
                 const optionImage = o.imageUrl
-                    ? await questionImageRun(o.imageUrl, 160, o.text ? undefined : tx('option_image_alt'))
+                    ? await questionImageRun(o.imageUrl, 160, o.text ? '' : tx('option_image_alt'))
                     : null;
                 if (optionImage) blocks.push(new Paragraph({ children: [optionImage], indent: { left: 360 } }));
             }
