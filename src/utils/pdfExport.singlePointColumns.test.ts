@@ -48,4 +48,15 @@ describe('single-point rubric grid column widths (#960)', () => {
         expect(html).toContain('min-width:240px');
         expect(html).toContain('min-width:90px');
     });
+
+    it('maps each width to its own column rather than letting either value appear anywhere in the grid', () => {
+        // Guards against a criterionColWidth/levelColWidth swap: the not-yet/exceeds columns must
+        // get levelColWidth and only the center (criterion) column gets criterionColWidth, in both
+        // the header row and the one criterion row below it.
+        const { rubric, student, sr } = fixtures();
+        const html = buildRubricHTML(sr, rubric, student, null);
+        const widths = Array.from(html.matchAll(/min-width:(\d+)px/g)).map((m) => Number(m[1]));
+
+        expect(widths).toEqual([90, 240, 90, 90, 240, 90]);
+    });
 });
