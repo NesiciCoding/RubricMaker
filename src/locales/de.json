@@ -3092,7 +3092,9 @@
         "pause": "Vorlesen pausieren",
         "resume": "Fortsetzen",
         "stop": "Stopp",
-        "progress": "Lesefortschritt"
+        "progress": "Lesefortschritt",
+        "now_reading": "Wird vorgelesen…",
+        "reading_paused": "Vorlesen pausiert"
     },
     "onboarding": {
         "title": "Willkommen bei RubricMaker",
@@ -3817,6 +3819,8 @@
         "gr_portal_intro_suffix": "auf der Schülerseite, oder lass den Schüler sich selbst anmelden (E-Mail-OTP oder ein von der Lehrkraft festgelegtes Passwort) — auch direkt erreichbar unter",
         "gr_portal_work_title": "Meine Aufgaben",
         "gr_portal_work_body": "Eine kombinierte Aufgabenliste aus jedem zugewiesenen Aufsatz und Test, gruppiert nach Überfällig, Geplant und Abgeschlossen. Jeder Eintrag zeigt seinen Status (nicht begonnen, in Bearbeitung, eingereicht) und die Frist, sofern die Lehrkraft eine festgelegt hat. Tests öffnen sich mit einem Klick aus der Liste — kein Suchen nach einem Link mit Testcode mehr nötig.",
+        "gr_portal_read_aloud_title": "Feedback vorlesen lassen",
+        "gr_portal_read_aloud_body": "Neben jedem Feedback der Lehrkraft — dem Kommentar zu einem einzelnen Kriterium und dem Gesamtkommentar — steht eine Schaltfläche „Vorlesen“, die die eingebaute Stimme des Browsers nutzt. Das funktioniert offline, sobald das Portal geladen ist, sendet keine Audiodaten, und ist auch über einen geteilten Feedback-Link (/feedback/:code) verfügbar. Hilfreich für jüngere Schüler, Zweitsprachenlerner oder alle, die lieber hören als lesen.",
         "gr_portal_progress_title": "Mein Fortschritt",
         "gr_portal_progress_body": "Ein Radardiagramm der eigenen Punktzahlen des Schülers pro Kriterium, entweder kombiniert über alle bewerteten Rubrics (Kriterien mit demselben Namen werden gemittelt) oder gefiltert auf eine einzelne Rubric — sichtbar, sobald mindestens 3 verschiedene bewertete Kriterien vorliegen.",
         "gr_portal_messages_title": "Nachrichten",
