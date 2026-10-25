@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PassageReadAloud from '../PassageReadAloud';
-import { useTTS } from '../../../hooks/useTTS';
+import { useTTS, htmlToPlainText } from '../../../hooks/useTTS';
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -77,5 +77,28 @@ describe('PassageReadAloud aria-live status (#886)', () => {
         mockStatus('idle');
         rerender(<PassageReadAloud contentHtml="<p>Hello</p>" lang="en" />);
         expect(screen.getByRole('status', { hidden: true })).toHaveTextContent('');
+    });
+
+    it('speaks the plain-text content when idle and the button is clicked', () => {
+        mockStatus('idle');
+        render(<PassageReadAloud contentHtml="<p>Hello</p>" lang="en" />);
+        fireEvent.click(screen.getByRole('button', { name: 'tts.read_aloud' }));
+        expect(mockSpeak).toHaveBeenCalledWith(htmlToPlainText('<p>Hello</p>'));
+    });
+
+    it('pauses when clicked while speaking', () => {
+        mockStatus('speaking');
+        render(<PassageReadAloud contentHtml="<p>Hello</p>" lang="en" />);
+        fireEvent.click(screen.getByRole('button', { name: 'tts.pause' }));
+        expect(mockPause).toHaveBeenCalledTimes(1);
+        expect(mockSpeak).not.toHaveBeenCalled();
+    });
+
+    it('resumes when clicked while paused', () => {
+        mockStatus('paused');
+        render(<PassageReadAloud contentHtml="<p>Hello</p>" lang="en" />);
+        fireEvent.click(screen.getByRole('button', { name: 'tts.resume' }));
+        expect(mockResume).toHaveBeenCalledTimes(1);
+        expect(mockSpeak).not.toHaveBeenCalled();
     });
 });
