@@ -70,7 +70,7 @@
     "@tiptap/react": "^3.28.0",
     "@tiptap/starter-kit": "^3.32.0",
     "@types/qrcode": "^1.5.6",
-    "compromise": "^14.18.0",
+    "compromise": "^14.19.0",
     "docx": "^9.9.0",
     "docx-preview": "^0.4.1",
     "dompurify": "^3.4.17",
