@@ -4722,7 +4722,8 @@
         "warn_untitled_row": "Se omitió una fila con texto de nivel pero sin título de criterio (¿una celda combinada?).",
         "warn_cell_count": "La fila «{{title}}» tiene {{found}} celdas de nivel, pero el encabezado tiene {{expected}} niveles; revise sus descripciones.",
         "warn_weights_scaled": "Los pesos de los criterios sumaban {{total}} % y se ajustaron al 100 %.",
-        "warn_weights_partial": "Solo algunos criterios indican un peso; el {{remaining}} % restante se repartió entre los demás."
+        "warn_weights_partial": "Solo algunos criterios indican un peso; el {{remaining}} % restante se repartió entre los demás.",
+        "warn_json_tiered_invalid": "La configuración de rúbrica por niveles del archivo está incompleta o no es válida, así que se importó como una rúbrica normal."
     },
     "standardsPicker": {
         "title": "Vincular estándar",

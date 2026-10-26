@@ -4722,7 +4722,8 @@
         "warn_untitled_row": "A row with level text but no criterion title (a merged cell?) was skipped.",
         "warn_cell_count": "Row \"{{title}}\" has {{found}} level cells but the header has {{expected}} levels — check its descriptions.",
         "warn_weights_scaled": "Criterion weights added up to {{total}}% and were scaled to 100%.",
-        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others."
+        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others.",
+        "warn_json_tiered_invalid": "The file's tiered rubric settings are incomplete or invalid, so it was imported as an ordinary rubric."
     },
     "standardsPicker": {
         "title": "Link Standard",

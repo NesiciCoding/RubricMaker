@@ -4722,7 +4722,8 @@
         "warn_untitled_row": "Une ligne avec du texte de niveau mais sans titre de critère (une cellule fusionnée ?) a été ignorée.",
         "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
         "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
-        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."
+        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres.",
+        "warn_json_tiered_invalid": "Les paramètres de rubrique par niveaux du fichier sont incomplets ou invalides ; elle a été importée comme une rubrique ordinaire."
     },
     "standardsPicker": {
         "title": "Associer une norme",
