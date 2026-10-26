@@ -2081,7 +2081,12 @@
         "tiered_issue_no_points": "Die höchste Stufe muss mehr als 0 Punkte wert sein.",
         "tiered_issue_duplicate_band": "Zwei Stufen haben dieselbe ID; entferne eine und füge sie neu hinzu.",
         "tiered_issue_duplicate_tier": "Zwei Niveaustufen haben dasselbe Schuljahr und denselben Zweig.",
-        "tiered_issue_track_without_tracks": "Groep 7 und 8 haben keinen VO-Zweig; lass den Zweig dort leer."
+        "tiered_issue_track_without_tracks": "Groep 7 und 8 haben keinen VO-Zweig; lass den Zweig dort leer.",
+        "tiered_pairing_title": "Vergleichendes Bewerten",
+        "tiered_pairing_tier": "Schüler innerhalb ihres Niveaus paaren",
+        "tiered_pairing_tier_help": "Beide Schüler werden an denselben Aussagen gemessen.",
+        "tiered_pairing_all": "Schüler über Niveaus hinweg paaren",
+        "tiered_pairing_all_help": "Beliebige zwei Schüler der Klasse; jeder sieht weiterhin die Aussagen seines Niveaus."
     },
     "peerReview": {
         "round_label": "Runde",
@@ -2456,7 +2461,10 @@
         "duplicate_records_keep": "Nur diese behalten",
         "duplicate_records_keep_hint": "Die anderen Bewertungen werden nach Admin → Archiv → Kürzlich gelöschte Noten verschoben und können dort wiederhergestellt werden.",
         "per_student_limit_unlimited_one": "Kein Limit — {{count}} Vergleich",
-        "per_student_limit_unlimited_other": "Kein Limit — {{count}} Vergleiche"
+        "per_student_limit_unlimited_other": "Kein Limit — {{count}} Vergleiche",
+        "pairing_label": "Paaren:",
+        "pairing_tier": "innerhalb eines Niveaus",
+        "pairing_all": "über Niveaus hinweg"
     },
     "tour": {
         "back": "Zurück",
@@ -4214,7 +4222,8 @@
         "gr_tiered_item_tier": "Jeder Schüler wird auf seinem eigenen Niveau bewertet, gewählt nach Jahrgang und VO-Zweig der Klasse (oder dem eigenen Zweig des Schülers). Es werden nur die Aussagen dieses Niveaus angezeigt. Wechsle das Niveau für eine Bewertung über das Menü Niveau über den Kriterien; beim Speichern bleibt das Niveau an der Bewertung.",
         "gr_tiered_item_verdict": "Das Urteil ist eine Stufe (z. B. IO, B oder E), berechnet aus den Punkten, sobald jedes Kriterium bewertet ist. Markiere eine Voraussetzung als Nicht erfüllt für die niedrigste Stufe, oder wähle unter Urteil festlegen eine Stufe, um es zu überschreiben. Das Urteil ersetzt die Note der Notenskala in der Bewertung, im Schülerportal und im Schülerprofil.",
         "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus.",
-        "an_export_item_tiered": "Gestufte Bewertungsraster werden (PDF, DOCX und DOCX-Vorlage) im Layout des Papierbogens exportiert: Voraussetzungen, eine Leiste Schüler / Niveau / Urteil, dann pro Kriterium eine Spalte je Niveau mit den Aussagen jeder Stufe als Kontrollkästchen. Ein leeres Raster zeigt alle Niveaus, im Querformat und im DOCX ein Kriterium pro Seite. Ein bewertetes Raster zeigt nur das Niveau des Schülers, mit angekreuzten Aussagen, der gewählten Stufe je Kriterium, ob die Voraussetzungen erfüllt sind, und dem Urteil. Eine Tabellenvorlage liefert nur die Farbe der Kopfzeile. Die Vorschau im Editor und der geteilte Vorschaulink zeigen dasselbe Layout."
+        "an_export_item_tiered": "Gestufte Bewertungsraster werden (PDF, DOCX und DOCX-Vorlage) im Layout des Papierbogens exportiert: Voraussetzungen, eine Leiste Schüler / Niveau / Urteil, dann pro Kriterium eine Spalte je Niveau mit den Aussagen jeder Stufe als Kontrollkästchen. Ein leeres Raster zeigt alle Niveaus, im Querformat und im DOCX ein Kriterium pro Seite. Ein bewertetes Raster zeigt nur das Niveau des Schülers, mit angekreuzten Aussagen, der gewählten Stufe je Kriterium, ob die Voraussetzungen erfüllt sind, und dem Urteil. Eine Tabellenvorlage liefert nur die Farbe der Kopfzeile. Die Vorschau im Editor und der geteilte Vorschaulink zeigen dasselbe Layout.",
+        "gr_tiered_item_pairing": "Vergleichendes Bewerten paart standardmäßig Schüler desselben Niveaus, damit beide an denselben Aussagen gemessen werden, und zeigt das Niveau jedes Schülers. Wechsle in der Sitzung (Paaren: über Niveaus hinweg) oder in den Niveau-Einstellungen des Rasters zum Paaren über Niveaus; der Fortschritt zählt dann alle möglichen Paare."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

@@ -1016,6 +1016,7 @@ function GradingTab() {
                     items={[
                         t('docs.gr_tiered_item_tier'),
                         t('docs.gr_tiered_item_verdict'),
+                        t('docs.gr_tiered_item_pairing'),
                         t('docs.gr_tiered_item_feedback'),
                     ]}
                 />

@@ -297,8 +297,10 @@ describe('ComparativeGrading', () => {
             mockStudentRubricsArr.length = 0;
         });
 
+        const acrossTiers: Rubric = { ...tieredRubric, tiered: { ...tieredRubric.tiered!, comparativePairing: 'all' } };
+
         it("shows each student their own tier's statements and saves that tier on each grade", () => {
-            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.rubrics = [acrossTiers];
             mockAppValue.classes = [{ ...mockClassA, year: 'jaar-1', voTrack: 'havo' }];
             mockAppValue.students = [{ ...mockStudentA, voTrack: 'vmbo-tl' }, mockStudentB];
             mockStudentRubricsArr.push(graded('sr-alice', 's1'), graded('sr-bob', 's2'));
@@ -308,6 +310,25 @@ describe('ComparativeGrading', () => {
             fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
             const tiers = Object.fromEntries(mockSaveStudentRubric.mock.calls.map(([sr]) => [sr.studentId, sr.tierId]));
             expect(tiers).toEqual({ s1: 'mavo', s2: 'havo' });
+        });
+
+        it('pairs students within their tier by default, tags their tiers, and can switch to pairing across tiers', () => {
+            const carl: Student = { id: 's3', name: 'Carl', classId: 'c1', voTrack: 'vmbo-tl' };
+            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.classes = [{ ...mockClassA, year: 'jaar-1', voTrack: 'havo' }];
+            // Alice and Carl are mavo; Bob takes the class's havo track and has no one to pair with.
+            mockAppValue.students = [{ ...mockStudentA, voTrack: 'vmbo-tl' }, mockStudentB, carl];
+            renderAt('/grade-comparative/c1/r1');
+            expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);
+            expect(screen.getAllByText('Carl').length).toBeGreaterThan(0);
+            expect(screen.queryByRole('heading', { name: 'Bob' })).toBeNull();
+            expect(screen.getAllByText('Mavo')).toHaveLength(2);
+            expect(screen.getByText(/comparativeGrading.progress_matchups:.*"total":1/)).toBeInTheDocument();
+
+            fireEvent.change(screen.getByLabelText('comparativeGrading.pairing_label'), { target: { value: 'all' } });
+            expect(mockUpdateRubric).toHaveBeenCalledWith(
+                expect.objectContaining({ tiered: expect.objectContaining({ comparativePairing: 'all' }) })
+            );
         });
     });
 

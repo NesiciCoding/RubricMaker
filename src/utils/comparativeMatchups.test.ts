@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countMatchupsPerStudent, getMatchKey, pickNextMatchupPair } from './comparativeMatchups';
+import { countMatchupsPerStudent, getMatchKey, matchupCapacity, pickNextMatchupPair } from './comparativeMatchups';
 import type { ComparativeMatchup } from '../types';
 
 function makeMatchup(rubricId: string, studentAId: string, studentBId: string): ComparativeMatchup {
@@ -73,5 +73,40 @@ describe('pickNextMatchupPair', () => {
     it('treats a non-positive limit as unlimited', () => {
         const matchups = [makeMatchup('r1', 's1', 's2'), makeMatchup('r1', 's1', 's3'), makeMatchup('r1', 's1', 's4')];
         expect(pickNextMatchupPair(students, matchups, 0, null)).not.toBeNull();
+    });
+});
+
+describe('pairing within groups (tiered rubrics)', () => {
+    const tier: Record<string, string> = { m1: 'mavo', m2: 'mavo', h1: 'havo', h2: 'havo', v1: 'vwo' };
+    const students = Object.keys(tier).map((id) => ({ id }));
+    const groupOf = (s: { id: string }) => tier[s.id];
+
+    it('pairs a student only with someone of the same group, and never picks a student with no partner', () => {
+        for (let i = 0; i < 25; i++) {
+            const pick = pickNextMatchupPair(students, [], 0, null, groupOf)!;
+            expect(groupOf(pick.a)).toBe(groupOf(pick.b));
+            expect(pick.a.id).not.toBe('v1');
+        }
+        expect(pickNextMatchupPair(students, [], 0, 'v1', groupOf)!.a.id).not.toBe('v1');
+        expect(pickNextMatchupPair(students, [], 0, 'h1', groupOf)).toEqual({ a: { id: 'h1' }, b: { id: 'h2' } });
+    });
+
+    it('repeats a pair within a group once every pair there is done, and ends when no group has two eligible', () => {
+        expect(pickNextMatchupPair(students, [makeMatchup('r1', 'm1', 'm2')], 0, 'm1', groupOf)).toEqual({
+            a: { id: 'm1' },
+            b: { id: 'm2' },
+        });
+        const capped = [makeMatchup('r1', 'm1', 'm2'), makeMatchup('r1', 'h1', 'h2')];
+        expect(pickNextMatchupPair(students, capped, 1, null, groupOf)).toBeNull();
+    });
+
+    it("counts the matchups a session can hold and each student's partners per group", () => {
+        expect(matchupCapacity(students, 0, groupOf)).toEqual({
+            sessionMax: 2,
+            partners: { m1: 1, m2: 1, h1: 1, h2: 1, v1: 0 },
+        });
+        expect(matchupCapacity(students, 0).sessionMax).toBe(10);
+        expect(matchupCapacity(students, 1).sessionMax).toBe(2);
+        expect(matchupCapacity(students, 1).partners.v1).toBe(4);
     });
 });

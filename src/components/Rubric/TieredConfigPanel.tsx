@@ -285,6 +285,36 @@ export default function TieredConfigPanel({ config, onChange }: Props) {
                 <Plus size={13} /> {t('rubricBuilder.tiered_add_requirement')}
             </button>
 
+            <div id="tiered-pairing-title" style={sectionTitle}>
+                {t('rubricBuilder.tiered_pairing_title')}
+            </div>
+            <div
+                role="radiogroup"
+                aria-labelledby="tiered-pairing-title"
+                style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+            >
+                {(['tier', 'all'] as const).map((mode) => (
+                    <label
+                        key={mode}
+                        className="sub-item-check"
+                        style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}
+                    >
+                        <input
+                            type="radio"
+                            name="tiered-pairing"
+                            checked={(config.comparativePairing ?? 'tier') === mode}
+                            onChange={() => onChange({ ...config, comparativePairing: mode })}
+                        />
+                        <span>
+                            {t(`rubricBuilder.tiered_pairing_${mode}`)}
+                            <span className="text-xs text-muted" style={{ display: 'block' }}>
+                                {t(`rubricBuilder.tiered_pairing_${mode}_help`)}
+                            </span>
+                        </span>
+                    </label>
+                ))}
+            </div>
+
             {issues.length > 0 && (
                 <ul
                     role="alert"

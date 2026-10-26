@@ -168,3 +168,17 @@ describe('TieredConfigPanel — requirements', () => {
         expect(screen.getByText('rubricBuilder.tiered_requirements_help:{"band":""}')).toBeInTheDocument();
     });
 });
+
+describe('TieredConfigPanel — comparative grading', () => {
+    it('pairs within a tier by default and can switch to pairing across tiers', () => {
+        const { last } = setup();
+        const group = screen.getByRole('radiogroup', { name: 'rubricBuilder.tiered_pairing_title' });
+        const [withinTier, acrossTiers] = within(group).getAllByRole('radio');
+        expect(withinTier).toBeChecked();
+        expect(withinTier.closest('label')).toHaveTextContent('rubricBuilder.tiered_pairing_tier_help');
+        fireEvent.click(acrossTiers);
+        expect(last().comparativePairing).toBe('all');
+        fireEvent.click(withinTier);
+        expect(last().comparativePairing).toBe('tier');
+    });
+});

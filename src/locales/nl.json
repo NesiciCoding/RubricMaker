@@ -2081,7 +2081,12 @@
         "tiered_issue_no_points": "Het hoogste beoordelingsniveau moet meer dan 0 punten waard zijn.",
         "tiered_issue_duplicate_band": "Twee beoordelingsniveaus hebben hetzelfde id; verwijder er één en voeg het opnieuw toe.",
         "tiered_issue_duplicate_tier": "Twee niveaus hebben hetzelfde leerjaar en VO-niveau.",
-        "tiered_issue_track_without_tracks": "Groep 7 en 8 hebben geen VO-niveau; laat het VO-niveau daar leeg."
+        "tiered_issue_track_without_tracks": "Groep 7 en 8 hebben geen VO-niveau; laat het VO-niveau daar leeg.",
+        "tiered_pairing_title": "Vergelijkend beoordelen",
+        "tiered_pairing_tier": "Leerlingen binnen hun niveau koppelen",
+        "tiered_pairing_tier_help": "Beide leerlingen worden langs dezelfde uitspraken beoordeeld.",
+        "tiered_pairing_all": "Leerlingen over niveaus heen koppelen",
+        "tiered_pairing_all_help": "Elke twee leerlingen uit de klas; ieder ziet nog steeds de uitspraken van het eigen niveau."
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -2456,7 +2461,10 @@
         "duplicate_records_keep": "Alleen deze bewaren",
         "duplicate_records_keep_hint": "De andere beoordelingen gaan naar Beheer → Archief → Onlangs verwijderde cijfers, waar je ze kunt herstellen.",
         "per_student_limit_unlimited_one": "Geen limiet — {{count}} vergelijking",
-        "per_student_limit_unlimited_other": "Geen limiet — {{count}} vergelijkingen"
+        "per_student_limit_unlimited_other": "Geen limiet — {{count}} vergelijkingen",
+        "pairing_label": "Koppelen:",
+        "pairing_tier": "binnen een niveau",
+        "pairing_all": "over niveaus heen"
     },
     "tour": {
         "back": "Terug",
@@ -4214,7 +4222,8 @@
         "gr_tiered_item_tier": "Elke leerling wordt beoordeeld in het eigen niveau, op basis van het leerjaar en VO-niveau van de klas (of het eigen niveau van de leerling). Je ziet alleen de uitspraken van dat niveau. Wissel het niveau voor één beoordeling via het menu Niveau boven de criteria; bij opslaan blijft het niveau bij de beoordeling.",
         "gr_tiered_item_verdict": "Het eindoordeel is een band (bijv. IO, B of E), berekend uit de punten zodra elk criterium is beoordeeld. Zet een voorwaarde op Niet voldaan voor de laagste band, of kies een band bij Eindoordeel kiezen om het te overschrijven. Het eindoordeel vervangt het cijfer van de cijferschaal bij de beoordeling, in het leerlingportaal en op het leerlingprofiel.",
         "gr_tiered_item_feedback": "Vergelijkend beoordelen en leerlingfeedback (portaal en gedeelde links) tonen elke leerling ook alleen de uitspraken van het eigen niveau.",
-        "an_export_item_tiered": "Niveaurubrieken worden geëxporteerd (PDF, DOCX en DOCX-sjabloon) in de opmaak van het papieren formulier: voorwaarden, een balk met Leerling / Niveau / Eindoordeel, en per criterium een kolom per niveau met de uitspraken van elke band als selectievakjes. Een lege rubric toont alle niveaus, liggend en in DOCX één criterium per pagina. Een beoordeelde rubric toont alleen het niveau van de leerling, met aangevinkte uitspraken, de gekozen band per criterium, of de voorwaarden zijn gehaald, en het eindoordeel. Een tabelsjabloon levert alleen de kleur van de kopregel. De voorbeeldweergave in de bouwer en de gedeelde voorbeeldlink tonen dezelfde opmaak."
+        "an_export_item_tiered": "Niveaurubrieken worden geëxporteerd (PDF, DOCX en DOCX-sjabloon) in de opmaak van het papieren formulier: voorwaarden, een balk met Leerling / Niveau / Eindoordeel, en per criterium een kolom per niveau met de uitspraken van elke band als selectievakjes. Een lege rubric toont alle niveaus, liggend en in DOCX één criterium per pagina. Een beoordeelde rubric toont alleen het niveau van de leerling, met aangevinkte uitspraken, de gekozen band per criterium, of de voorwaarden zijn gehaald, en het eindoordeel. Een tabelsjabloon levert alleen de kleur van de kopregel. De voorbeeldweergave in de bouwer en de gedeelde voorbeeldlink tonen dezelfde opmaak.",
+        "gr_tiered_item_pairing": "Vergelijkend beoordelen koppelt standaard leerlingen binnen hetzelfde niveau, zodat beiden langs dezelfde uitspraken worden beoordeeld, en toont het niveau van elke leerling. Kies koppelen over niveaus heen in de sessie (Koppelen: over niveaus heen) of in de niveau-instellingen van de rubric; de voortgang telt dan alle mogelijke paren."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

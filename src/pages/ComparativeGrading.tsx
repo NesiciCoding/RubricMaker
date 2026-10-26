@@ -21,11 +21,11 @@ import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
-import { gradeTier, levelForTier } from '../utils/tieredRubric';
+import { gradeTier, levelForTier, tierLabel } from '../utils/tieredRubric';
 import SubItemChecklist from '../components/Grading/SubItemChecklist';
-import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
+import { countMatchupsPerStudent, matchupCapacity, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
-import { ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../types';
+import { ComparativeMatchup, ScoreEntry, Student, StudentRubric, TieredConfig } from '../types';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
@@ -187,6 +187,17 @@ function ClassPicker({ rubricId }: { rubricId: string }) {
     );
 }
 
+function TierTag({ config, tierId }: { config: TieredConfig; tierId: string }) {
+    const tier = config.tiers.find((x) => x.id === tierId);
+    // v8 ignore next 1 -- tierA/tierB only ever name a tier of this config
+    if (!tier) return null;
+    return (
+        <span className="badge badge-blue" style={{ fontSize: '0.72rem' }}>
+            {tierLabel(tier)}
+        </span>
+    );
+}
+
 // ─── Grading session ─────────────────────────────────────────────────────────
 // classId is either a real class ID or COMBINED_ID for all linked classes.
 function ComparativeGradingSession({ classId, rubricId }: { classId: string; rubricId: string }) {
@@ -244,6 +255,25 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         () => (rubric ? comparativeMatchups.filter((m) => m.rubricId === rubric.id) : []),
         [comparativeMatchups, rubric]
     );
+
+    // A tiered rubric pairs students within their tier unless set to pair across tiers. A student's
+    // tier is the one on their grade for this rubric, else their class tier ('' while unknown).
+    const pairing = rubric?.tiered ? (rubric.tiered.comparativePairing ?? 'tier') : 'all';
+    const tierKey = useCallback(
+        (s: Student) => {
+            if (!rubric?.tiered) return '';
+            const sr = studentRubrics.find((r) => r.rubricId === rubric.id && r.studentId === s.id && !r.isPeerReview);
+            const cls = classes.find((c) => c.id === s.classId);
+            return gradeTier(rubric.tiered, sr ?? {}, s, cls)?.id ?? '';
+        },
+        [rubric, studentRubrics, classes]
+    );
+    const groupOf = pairing === 'tier' ? tierKey : undefined;
+
+    function setPairing(next: 'tier' | 'all') {
+        if (!rubric?.tiered) return;
+        updateRubric({ ...rubric, tiered: { ...rubric.tiered, comparativePairing: next } });
+    }
 
     function commitMatchupLimit(limit: number) {
         if (!rubric || (rubric.comparativeMatchupLimit ?? 0) === limit) return;
@@ -333,7 +363,13 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
 
         // Eligibility and pairing preference are both based on rubricMatchups — the persisted
         // history for this rubric — so they hold up across reloads/devices, not just this session.
-        const pick = pickNextMatchupPair(classStudents, matchupsOverride ?? rubricMatchups, matchupLimit, anchorId);
+        const pick = pickNextMatchupPair(
+            classStudents,
+            matchupsOverride ?? rubricMatchups,
+            matchupLimit,
+            anchorId,
+            groupOf
+        );
         if (!pick) {
             setSessionDone(true);
             return;
@@ -547,16 +583,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         });
     }
 
-    const n = classStudents.length;
-    const totalPossibleMatchups = (n * (n - 1)) / 2;
     const matchupsDone = rubricMatchups.length;
     // Per-student limit: each student can appear in at most matchupLimit matchups.
     // Maximum matchups given that limit = floor(n * matchupLimit / 2), capped at totalPossible.
-    const sessionMax =
-        matchupLimit > 0 ? Math.min(Math.floor((n * matchupLimit) / 2), totalPossibleMatchups) : totalPossibleMatchups;
+    const { sessionMax, partners } = matchupCapacity(classStudents, matchupLimit, groupOf);
     const matchupsLeft = Math.max(0, sessionMax - matchupsDone);
     const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
-    const maxPerStudent = n - 1;
 
     const perStudentDone = useMemo(() => countMatchupsPerStudent(rubricMatchups), [rubricMatchups]);
 
@@ -698,6 +730,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                         {/* Student A */}
                         <div style={{ flex: 1 }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentA.name}</h2>
+                            {tierA && <TierTag config={rubric.tiered!} tierId={tierA} />}
                             {otherRecords(srA).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srA).length + 1 })}{' '}
@@ -718,7 +751,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {t('comparativeGrading.matchups_done', {
                                     /* v8 ignore next 1 -- the current matchup guarantees an entry for student A */
                                     done: perStudentDone[studentA.id] ?? 0,
-                                    max: maxPerStudent,
+                                    max: partners[studentA.id],
                                 })}
                             </div>
                         </div>
@@ -786,11 +819,35 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                     </span>
                                 )}
                             </div>
+                            {rubric.tiered && (
+                                <label
+                                    className="text-xs text-muted"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        marginTop: 4,
+                                        textTransform: 'none',
+                                        letterSpacing: 'normal',
+                                    }}
+                                >
+                                    {t('comparativeGrading.pairing_label')}
+                                    <select
+                                        value={pairing}
+                                        onChange={(e) => setPairing(e.target.value as 'tier' | 'all')}
+                                        style={{ fontSize: '0.8rem', padding: '2px 4px' }}
+                                    >
+                                        <option value="tier">{t('comparativeGrading.pairing_tier')}</option>
+                                        <option value="all">{t('comparativeGrading.pairing_all')}</option>
+                                    </select>
+                                </label>
+                            )}
                         </div>
 
                         {/* Student B */}
                         <div style={{ flex: 1, textAlign: 'right' }}>
                             <h2 style={{ fontSize: '1.2rem' }}>{studentB.name}</h2>
+                            {tierB && <TierTag config={rubric.tiered!} tierId={tierB} />}
                             {otherRecords(srB).length > 0 && (
                                 <div className="text-xs" role="status" style={{ color: 'var(--warning, #b45309)' }}>
                                     {t('comparativeGrading.duplicate_records', { count: otherRecords(srB).length + 1 })}{' '}
@@ -811,7 +868,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                 {t('comparativeGrading.matchups_done', {
                                     /* v8 ignore next 1 -- the current matchup guarantees an entry for student B */
                                     done: perStudentDone[studentB.id] ?? 0,
-                                    max: maxPerStudent,
+                                    max: partners[studentB.id],
                                 })}
                             </div>
                         </div>
@@ -890,7 +947,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                         .map((s) => {
                                             const done = perStudentDone[s.id] ?? 0;
                                             // v8 ignore next 1 -- the progress panel only renders with 2+ students
-                                            const pct = maxPerStudent > 0 ? (done / maxPerStudent) * 100 : 0;
+                                            const max = partners[s.id] ?? 0;
+                                            const pct = max > 0 ? (done / max) * 100 : 0;
                                             const isCurrent = s.id === studentA?.id || s.id === studentB?.id;
                                             return (
                                                 <div key={s.id}>
@@ -911,7 +969,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                             {s.name}
                                                         </span>
                                                         <span className="text-muted">
-                                                            {done} / {maxPerStudent}
+                                                            {done} / {max}
                                                         </span>
                                                     </div>
                                                     <div

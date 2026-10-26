@@ -2081,7 +2081,12 @@
         "tiered_issue_no_points": "The highest level must be worth more than 0 points.",
         "tiered_issue_duplicate_band": "Two levels share an id; remove one and add it again.",
         "tiered_issue_duplicate_tier": "Two tiers have the same year and track.",
-        "tiered_issue_track_without_tracks": "Groep 7 and 8 have no VO track; leave the track empty for them."
+        "tiered_issue_track_without_tracks": "Groep 7 and 8 have no VO track; leave the track empty for them.",
+        "tiered_pairing_title": "Comparative grading",
+        "tiered_pairing_tier": "Pair students within their tier",
+        "tiered_pairing_tier_help": "Both students are judged against the same statements.",
+        "tiered_pairing_all": "Pair students across tiers",
+        "tiered_pairing_all_help": "Any two students of the class; each still sees their own tier's statements."
     },
     "peerReview": {
         "round_label": "Round",
@@ -2456,7 +2461,10 @@
         "duplicate_records_keep": "Keep the one shown",
         "duplicate_records_keep_hint": "The other records move to Admin → Archive → Recently deleted grades, where they can be restored.",
         "per_student_limit_unlimited_one": "No limit — {{count}} matchup",
-        "per_student_limit_unlimited_other": "No limit — {{count}} matchups"
+        "per_student_limit_unlimited_other": "No limit — {{count}} matchups",
+        "pairing_label": "Pair:",
+        "pairing_tier": "within a tier",
+        "pairing_all": "across tiers"
     },
     "tour": {
         "back": "Back",
@@ -4214,7 +4222,8 @@
         "gr_tiered_item_tier": "Each student is graded in their own tier, picked from their class's year and VO track (or the student's own track). Only that tier's statements are shown. Switch the tier for one grade with the Tier menu above the criteria; saving keeps the tier on the grade.",
         "gr_tiered_item_verdict": "The verdict is a band (e.g. IO, B or E), worked out from the points once every criterion is scored. Mark a requirement as Not met to give the lowest band, or pick a band under Set verdict to override it. The verdict replaces the grade-scale letter on the grade, in the student portal and on the student profile.",
         "gr_tiered_item_feedback": "Comparative grading and student feedback (portal and shared links) also show each student only their own tier's statements.",
-        "an_export_item_tiered": "Tiered rubrics export (PDF, DOCX and template DOCX) in the layout of the paper sheet: requirements, a Student / Tier / Verdict bar, then per criterion a column per tier with each band's statements as checkboxes. A blank rubric prints every tier, in landscape and one criterion per page in DOCX. A graded rubric prints only the student's tier, with ticked statements, the chosen band per criterion, the requirements met or not, and the verdict. A table template only lends its header colour. The rubric preview in the builder and the shared preview link show the same layout."
+        "an_export_item_tiered": "Tiered rubrics export (PDF, DOCX and template DOCX) in the layout of the paper sheet: requirements, a Student / Tier / Verdict bar, then per criterion a column per tier with each band's statements as checkboxes. A blank rubric prints every tier, in landscape and one criterion per page in DOCX. A graded rubric prints only the student's tier, with ticked statements, the chosen band per criterion, the requirements met or not, and the verdict. A table template only lends its header colour. The rubric preview in the builder and the shared preview link show the same layout.",
+        "gr_tiered_item_pairing": "Comparative grading pairs students within the same tier by default, so both are judged against the same statements, and shows each student's tier. Switch to pairing across tiers in the session (Pair: across tiers) or in the rubric's tiered setup; progress then counts every possible pair."
     },
     "studentProfile": {
         "tab_overview": "Overview",

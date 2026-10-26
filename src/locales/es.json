@@ -2081,7 +2081,12 @@
         "tiered_issue_no_points": "El grado más alto debe valer más de 0 puntos.",
         "tiered_issue_duplicate_band": "Dos grados comparten id; elimina uno y vuelve a añadirlo.",
         "tiered_issue_duplicate_tier": "Dos niveles tienen el mismo curso y la misma vía.",
-        "tiered_issue_track_without_tracks": "Groep 7 y 8 no tienen vía VO; deja la vía vacía para ellos."
+        "tiered_issue_track_without_tracks": "Groep 7 y 8 no tienen vía VO; deja la vía vacía para ellos.",
+        "tiered_pairing_title": "Calificación comparativa",
+        "tiered_pairing_tier": "Emparejar alumnos dentro de su nivel",
+        "tiered_pairing_tier_help": "Ambos alumnos se evalúan con los mismos enunciados.",
+        "tiered_pairing_all": "Emparejar alumnos entre niveles",
+        "tiered_pairing_all_help": "Dos alumnos cualesquiera de la clase; cada uno sigue viendo los enunciados de su nivel."
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -2456,7 +2461,10 @@
         "duplicate_records_keep": "Conservar la mostrada",
         "duplicate_records_keep_hint": "Las demás calificaciones pasan a Admin → Archivo → Calificaciones eliminadas recientemente, donde se pueden restaurar.",
         "per_student_limit_unlimited_one": "Sin límite — {{count}} comparación",
-        "per_student_limit_unlimited_other": "Sin límite — {{count}} comparaciones"
+        "per_student_limit_unlimited_other": "Sin límite — {{count}} comparaciones",
+        "pairing_label": "Emparejar:",
+        "pairing_tier": "dentro de un nivel",
+        "pairing_all": "entre niveles"
     },
     "tour": {
         "back": "Atrás",
@@ -4214,7 +4222,8 @@
         "gr_tiered_item_tier": "Cada alumno se califica en su propio nivel, elegido según el curso y el itinerario VO de su clase (o el itinerario propio del alumno). Solo se muestran los enunciados de ese nivel. Cambia el nivel de una calificación con el menú Nivel sobre los criterios; al guardar, el nivel queda en la calificación.",
         "gr_tiered_item_verdict": "El veredicto es una banda (p. ej. IO, B o E), calculada a partir de los puntos cuando cada criterio está calificado. Marca un requisito como No cumplido para dar la banda más baja, o elige una banda en Fijar veredicto para imponerla. El veredicto sustituye la letra de la escala de notas en la calificación, el portal del alumno y el perfil del alumno.",
         "gr_tiered_item_feedback": "La calificación comparativa y la retroalimentación al alumno (portal y enlaces compartidos) también muestran a cada alumno solo los enunciados de su nivel.",
-        "an_export_item_tiered": "Las rúbricas por niveles se exportan (PDF, DOCX y DOCX con plantilla) con el formato de la hoja en papel: requisitos, una barra Alumno / Nivel / Veredicto y, por cada criterio, una columna por nivel con los enunciados de cada banda como casillas. Una rúbrica en blanco muestra todos los niveles, en horizontal y con un criterio por página en DOCX. Una rúbrica calificada muestra solo el nivel del alumno, con los enunciados marcados, la banda elegida por criterio, si se cumplen los requisitos y el veredicto. Una plantilla de tabla solo aporta el color del encabezado. La vista previa del editor y el enlace de vista previa compartido muestran el mismo formato."
+        "an_export_item_tiered": "Las rúbricas por niveles se exportan (PDF, DOCX y DOCX con plantilla) con el formato de la hoja en papel: requisitos, una barra Alumno / Nivel / Veredicto y, por cada criterio, una columna por nivel con los enunciados de cada banda como casillas. Una rúbrica en blanco muestra todos los niveles, en horizontal y con un criterio por página en DOCX. Una rúbrica calificada muestra solo el nivel del alumno, con los enunciados marcados, la banda elegida por criterio, si se cumplen los requisitos y el veredicto. Una plantilla de tabla solo aporta el color del encabezado. La vista previa del editor y el enlace de vista previa compartido muestran el mismo formato.",
+        "gr_tiered_item_pairing": "La calificación comparativa empareja por defecto a alumnos del mismo nivel, para que se evalúen con los mismos enunciados, y muestra el nivel de cada alumno. Cambia a emparejar entre niveles en la sesión (Emparejar: entre niveles) o en la configuración por niveles de la rúbrica; el progreso cuenta entonces todas las parejas posibles."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

@@ -2081,7 +2081,12 @@
         "tiered_issue_no_points": "L'échelon le plus haut doit valoir plus de 0 point.",
         "tiered_issue_duplicate_band": "Deux échelons ont le même identifiant ; supprimez-en un et ajoutez-le à nouveau.",
         "tiered_issue_duplicate_tier": "Deux niveaux ont la même année et la même filière.",
-        "tiered_issue_track_without_tracks": "Les groupes 7 et 8 n'ont pas de filière VO ; laissez la filière vide pour eux."
+        "tiered_issue_track_without_tracks": "Les groupes 7 et 8 n'ont pas de filière VO ; laissez la filière vide pour eux.",
+        "tiered_pairing_title": "Notation comparative",
+        "tiered_pairing_tier": "Associer les élèves au sein de leur niveau",
+        "tiered_pairing_tier_help": "Les deux élèves sont évalués selon les mêmes énoncés.",
+        "tiered_pairing_all": "Associer les élèves entre niveaux",
+        "tiered_pairing_all_help": "N'importe quels deux élèves de la classe ; chacun voit toujours les énoncés de son niveau."
     },
     "peerReview": {
         "round_label": "Tour",
@@ -2456,7 +2461,10 @@
         "duplicate_records_keep": "Garder celle affichée",
         "duplicate_records_keep_hint": "Les autres évaluations sont déplacées dans Admin → Archiver → Notes récemment supprimées, où elles peuvent être restaurées.",
         "per_student_limit_unlimited_one": "Sans limite — {{count}} comparaison",
-        "per_student_limit_unlimited_other": "Sans limite — {{count}} comparaisons"
+        "per_student_limit_unlimited_other": "Sans limite — {{count}} comparaisons",
+        "pairing_label": "Associer :",
+        "pairing_tier": "au sein d'un niveau",
+        "pairing_all": "entre niveaux"
     },
     "tour": {
         "back": "Retour",
@@ -4214,7 +4222,8 @@
         "gr_tiered_item_tier": "Chaque élève est noté dans son propre niveau, choisi d'après l'année et la filière VO de sa classe (ou la filière propre de l'élève). Seuls les énoncés de ce niveau s'affichent. Changez le niveau d'une note avec le menu Niveau au-dessus des critères ; l'enregistrement conserve le niveau dans la note.",
         "gr_tiered_item_verdict": "Le verdict est une bande (p. ex. IO, B ou E), calculée d'après les points une fois chaque critère évalué. Marquez une exigence comme Non remplie pour donner la bande la plus faible, ou choisissez une bande sous Fixer le verdict pour l'imposer. Le verdict remplace la lettre de l'échelle de notes dans la note, le portail élève et le profil de l'élève.",
         "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève.",
-        "an_export_item_tiered": "Les grilles à niveaux différenciés s'exportent (PDF, DOCX et DOCX modèle) dans la mise en page de la feuille papier : exigences, une barre Élève / Niveau / Verdict, puis pour chaque critère une colonne par niveau avec les énoncés de chaque bande sous forme de cases à cocher. Une grille vierge affiche tous les niveaux, en paysage et un critère par page en DOCX. Une grille notée n'affiche que le niveau de l'élève, avec les énoncés cochés, la bande choisie par critère, les exigences remplies ou non et le verdict. Un modèle de tableau ne fournit que la couleur de l'en-tête. L'aperçu dans l'éditeur et le lien d'aperçu partagé montrent la même mise en page."
+        "an_export_item_tiered": "Les grilles à niveaux différenciés s'exportent (PDF, DOCX et DOCX modèle) dans la mise en page de la feuille papier : exigences, une barre Élève / Niveau / Verdict, puis pour chaque critère une colonne par niveau avec les énoncés de chaque bande sous forme de cases à cocher. Une grille vierge affiche tous les niveaux, en paysage et un critère par page en DOCX. Une grille notée n'affiche que le niveau de l'élève, avec les énoncés cochés, la bande choisie par critère, les exigences remplies ou non et le verdict. Un modèle de tableau ne fournit que la couleur de l'en-tête. L'aperçu dans l'éditeur et le lien d'aperçu partagé montrent la même mise en page.",
+        "gr_tiered_item_pairing": "La notation comparative associe par défaut les élèves d'un même niveau, pour qu'ils soient évalués selon les mêmes énoncés, et affiche le niveau de chaque élève. Passez à l'association entre niveaux dans la session (Associer : entre niveaux) ou dans les réglages de niveaux de la grille ; la progression compte alors toutes les paires possibles."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
