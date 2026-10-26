@@ -13,10 +13,12 @@ import {
     type RubricCriterion,
     type RubricFormat,
     type ScoringMode,
+    type TieredConfig,
     type VocabularyItem,
 } from '../types';
 import { CEFR_LEVELS } from '../data/cefrDescriptors';
 import { nanoid } from './nanoid';
+import { sanitizeTiered } from './tieredRubric';
 import { encodeUrlSafeBase64, decodeUrlSafeBase64 } from './urlSafeBase64';
 import type { ImportWarning } from './questionBankImport';
 
@@ -33,6 +35,7 @@ interface RawRubricJson {
     cefrSkill?: unknown;
     cefrAchieveThreshold?: unknown;
     vocabularyItems?: unknown;
+    tiered?: unknown;
     criteria?: Array<{
         id?: string;
         title?: string;
@@ -75,6 +78,7 @@ export interface ParsedRubric {
     cefrSkill?: CefrSkill;
     cefrAchieveThreshold?: number;
     vocabularyItems?: VocabularyItem[];
+    tiered?: TieredConfig;
 }
 
 interface RawTable {
@@ -544,6 +548,8 @@ function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedR
               )
         : undefined;
     const scoringMode = SCORING_MODES.find((m) => m === data.scoringMode);
+    // Band and tier ids are rubric-local, so levels (bandId) and sub-items (tierId) keep pointing at them.
+    const tiered = sanitizeTiered(data.tiered);
     const cefrTargetLevel = CEFR_LEVELS.find((l) => l === data.cefrTargetLevel);
 
     return {
@@ -565,6 +571,7 @@ function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedR
         cefrAchieveThreshold:
             cefrTargetLevel && isNumber(data.cefrAchieveThreshold) ? data.cefrAchieveThreshold : undefined,
         ...(vocabularyItems?.length ? { vocabularyItems } : {}),
+        ...(tiered && { tiered }),
     };
 }
 
@@ -596,6 +603,7 @@ export function encodeRubricShareCode(rubric: Rubric): string {
         scoringMode: rubric.scoringMode,
         totalMaxPoints: rubric.totalMaxPoints,
         format: rubric.format,
+        tiered: rubric.tiered,
     };
     return encodeUrlSafeBase64(JSON.stringify(shareable));
 }

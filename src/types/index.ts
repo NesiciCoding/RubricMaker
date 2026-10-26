@@ -151,6 +151,8 @@ export interface SubItem {
     minPoints?: number;
     maxPoints?: number;
     linkedStandards?: LinkedStandard[];
+    /** Tiered rubrics: the tier (column) this statement belongs to. Unset means it applies to every tier. */
+    tierId?: string;
 }
 
 export interface RubricLevel {
@@ -162,6 +164,8 @@ export interface RubricLevel {
     subItems: SubItem[]; // optional fine-grain checklist (alongside range)
     /** CEFR level this performance level maps to. Used for per-criterion CEFR aggregation. */
     cefrLevel?: CefrLevel;
+    /** Tiered rubrics: the band this level is derived from. Level ids are rekeyed on copy; band ids are not. */
+    bandId?: string;
 }
 
 export interface LinkedStandard {
@@ -627,6 +631,51 @@ export interface Rubric {
     sharedWithSchool?: boolean;
     /** Comparative grading: max matchups per student for this rubric (0/undefined = unlimited) */
     comparativeMatchupLimit?: number;
+    /** Present when this is a tiered rubric: one column per tier, the same bands (levels) in each. */
+    tiered?: TieredConfig;
+}
+
+/**
+ * One shared level of a tiered rubric, e.g. IO / B / E. Ordered worst → best in TieredConfig.bands;
+ * every criterion has one level per band (RubricLevel.bandId).
+ */
+export interface RubricBand {
+    /** Rubric-local and never rekeyed, so copies and share codes keep levels and grades attached. */
+    id: string;
+    /** Short code shown on buttons and exports, e.g. 'IO'. */
+    code: string;
+    label: string;
+    /** Points every criterion's level for this band is worth; strictly increasing worst → best. */
+    points: number;
+    /** Lowest overall percentage that earns this band as the final verdict; defaults to the midpoint rule. */
+    minPercentage?: number;
+    color?: string;
+}
+
+/** A column of a tiered rubric: a school year, optionally narrowed to one VO track. */
+export interface RubricTier {
+    id: string;
+    year: SchoolYear;
+    /** Only for years that have tracks (SCHOOL_YEAR_HAS_TRACK). */
+    track?: VoTrack;
+    /** Header override, e.g. 'Mavo' for jaar-1 vmbo-tl. */
+    label?: string;
+}
+
+/** A must-pass condition ("verplichte eis"); failing one caps the computed verdict at the lowest band. */
+export interface TieredRequirement {
+    id: string;
+    text: string;
+}
+
+export interface TieredConfig {
+    /** Left → right. */
+    tiers: RubricTier[];
+    /** Worst → best. */
+    bands: RubricBand[];
+    requirements?: TieredRequirement[];
+    /** Comparative grading: pair students only within the same tier (default) or across tiers. */
+    comparativePairing?: 'tier' | 'all';
 }
 
 /**
@@ -777,6 +826,12 @@ export interface StudentRubric {
     groupId?: string;
     /** ISO timestamp set when the grade was soft-deleted by a teacher; presence hides it from grading/analytics. */
     deletedAt?: string;
+    /** Tiered rubrics: the tier this grade was given in, kept so a later track change doesn't rewrite it. */
+    tierId?: string;
+    /** Tiered rubrics: requirement id → met. Only an explicit false counts as unmet. */
+    requirementsMet?: Record<string, boolean>;
+    /** Tiered rubrics: a band id the teacher chose as the final verdict instead of the computed one. */
+    verdictOverride?: string;
 }
 
 export interface CommentSnippet {

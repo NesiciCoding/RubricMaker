@@ -218,7 +218,9 @@ function summarizeRubricEntries(entries: PeriodReportEntry[]): RubricGradeSummar
 
     return sorted.map((e) => ({
         ...e,
-        summary: calcGradeSummary(e.sr, (e.sr.rubricSnapshot ?? e.rubric).criteria, e.scale),
+        summary: calcGradeSummary(e.sr, (e.sr.rubricSnapshot ?? e.rubric).criteria, e.scale, {
+            tiered: (e.sr.rubricSnapshot ?? e.rubric).tiered,
+        }),
         dateStr: e.sr.gradedAt ? new Date(e.sr.gradedAt).toLocaleDateString() : '—',
     }));
 }

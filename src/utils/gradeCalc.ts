@@ -11,6 +11,7 @@ import type {
     SubItemMode,
 } from '../types';
 import { scoresSubItems, subItemEarned } from './subItems';
+import { DEFAULT_BAND_COLOR, tieredVerdict, type TieredVerdict } from './tieredRubric';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
 
@@ -233,13 +234,15 @@ export interface GradeSummary {
     gradeColor: string;
     gradedCount: number;
     totalCriteria: number;
+    /** Tiered rubrics: the band given as the final verdict and why; letterGrade is its code. */
+    verdict?: TieredVerdict;
 }
 
 export function calcGradeSummary(
     sr: StudentRubric,
     criteria: RubricCriterion[],
     scale: GradeScale | null,
-    rubric?: Pick<Rubric, 'scoringMode' | 'totalMaxPoints'>
+    rubric?: Partial<Pick<Rubric, 'scoringMode' | 'totalMaxPoints' | 'tiered'>>
 ): GradeSummary {
     // A grade keeps the scale it was given with; only records saved before snapshots existed fall
     // back to the caller's (live) scale.
@@ -249,7 +252,9 @@ export function calcGradeSummary(
 
     // In 'total-points' mode use the teacher-configured max; otherwise use calc max
     const configuredMax =
-        rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints > 0 ? rubric.totalMaxPoints : calculatedMax;
+        rubric?.scoringMode === 'total-points' && rubric.totalMaxPoints && rubric.totalMaxPoints > 0
+            ? rubric.totalMaxPoints
+            : calculatedMax;
 
     // totalMaxPoints can be configured below the raw maximum, which would push past 100%.
     const pct = clamp(
@@ -272,6 +277,11 @@ export function calcGradeSummary(
         (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
+    // A tiered rubric's verdict is one of its bands, not a grade-scale letter. Callers that score
+    // against the live rubric pass it; older call sites rely on the snapshot saved with the grade.
+    const tiered = rubric?.tiered ?? sr.rubricSnapshot?.tiered;
+    const verdict = tiered ? (tieredVerdict(sr, tiered, modified) ?? undefined) : undefined;
+
     return {
         rawScore: raw,
         maxRawScore: calculatedMax,
@@ -279,10 +289,15 @@ export function calcGradeSummary(
         percentage: pct,
         modifiedPercentage: modified,
         modifiedPoints,
-        letterGrade: gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
-        gradeColor: gradeScale ? calcGradeColor(modified, gradeScale) : '#6b7280',
+        letterGrade: verdict ? verdict.band.code : gradeScale ? calcLetterGrade(modified, gradeScale) : '—',
+        gradeColor: verdict
+            ? (verdict.band.color ?? DEFAULT_BAND_COLOR)
+            : gradeScale
+              ? calcGradeColor(modified, gradeScale)
+              : '#6b7280',
         gradedCount,
         totalCriteria: criteria.length,
+        ...(verdict && { verdict }),
     };
 }
 
