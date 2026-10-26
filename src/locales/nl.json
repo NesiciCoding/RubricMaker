@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Grammatica",
         "snapshot_header_vocabulary": "Woordenschat",
         "snapshot_header_needs_attention": "Extra aandacht",
-        "snapshot_open_cefr": "Open het ERK-overzicht van {{name}}",
+        "snapshot_open_cefr": "{{level}}: open het ERK-overzicht van {{name}}",
         "snapshot_open_grammar": "Open het leerpad van {{name}}",
         "snapshot_open_vocab": "Open het profiel van {{name}}",
         "snapshot_open_profile": "Open het profiel van {{name}}",
@@ -2979,7 +2979,7 @@
         "open_panel": "Leerlingdocument analyseren"
     },
     "notifications": {
-        "bell_title": "Meldingen ({{count}} achterstallig)",
+        "bell_title": "Meldingen: {{count}} achterstallig",
         "panel_title": "Achterstallig nakijkwerk",
         "panel_label": "Meldingenpaneel",
         "all_up_to_date": "Geen ingeleverde toets of essay wacht langer dan {{threshold}} dagen op nakijken.",

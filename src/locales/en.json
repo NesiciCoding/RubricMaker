@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Grammar",
         "snapshot_header_vocabulary": "Vocabulary",
         "snapshot_header_needs_attention": "Needs attention",
-        "snapshot_open_cefr": "Open {{name}}'s CEFR overview",
+        "snapshot_open_cefr": "{{level}}: open {{name}}'s CEFR overview",
         "snapshot_open_grammar": "Open {{name}}'s learning path",
         "snapshot_open_vocab": "Open {{name}}'s profile",
         "snapshot_open_profile": "Open {{name}}'s profile",
@@ -2979,7 +2979,7 @@
         "open_panel": "Analyse student document"
     },
     "notifications": {
-        "bell_title": "Notifications ({{count}} overdue)",
+        "bell_title": "Notifications: {{count}} overdue",
         "panel_title": "Overdue Grading",
         "panel_label": "Notifications panel",
         "all_up_to_date": "No handed-in test or essay has waited more than {{threshold}} days for grading.",
