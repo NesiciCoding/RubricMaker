@@ -3,7 +3,7 @@ import type { RubricCriterion, RubricLevel, ScoreEntry, SubItem, SubItemMode } f
 type SubItemState = Pick<ScoreEntry, 'subItemScores' | 'checkedSubItems'>;
 
 export function subItemMode(criterion: Pick<RubricCriterion, 'subItemMode'>): SubItemMode {
-    return criterion.subItemMode ?? 'points';
+    return criterion.subItemMode === 'checklist' ? 'checklist' : 'points';
 }
 
 /**

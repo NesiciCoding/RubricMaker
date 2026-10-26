@@ -44,6 +44,7 @@ const checklistLevels = [
 describe('subItemMode / scoresSubItems', () => {
     it('treats a criterion without a mode as points mode', () => {
         expect(subItemMode({})).toBe('points');
+        expect(subItemMode({ subItemMode: 'scale' as RubricCriterion['subItemMode'] })).toBe('points');
         expect(subItemMode({ subItemMode: 'checklist' })).toBe('checklist');
     });
 
