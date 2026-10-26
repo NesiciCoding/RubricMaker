@@ -252,14 +252,16 @@ npm run build
 
 Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
 
-| Secret name              | Value                                       |
-| ------------------------ | ------------------------------------------- |
-| `VITE_SUPABASE_URL`      | Your Supabase project URL                   |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key             |
-| `VPS_USER`               | HestiaCP Unix username, e.g. `rubricmaker`  |
-| `VPS_HOST`               | Your VPS IP address or hostname             |
-| `VPS_DOMAIN`             | Your domain, e.g. `rubricmaker.example.com` |
-| `VPS_SSH_KEY`            | Private SSH key (see §9.1)                  |
+| Secret name              | Value                                         |
+| ------------------------ | --------------------------------------------- |
+| `VITE_SUPABASE_URL`      | Your Supabase project URL (optional)          |
+| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon (public) key (optional)    |
+| `SUPABASE_PUBLIC_URL`    | Public URL of the Supabase API (optional)     |
+| `VPS_HOST`               | Your VPS IP address or hostname               |
+| `VPS_DOMAIN`             | Your domain, e.g. `rubricmaker.example.com`   |
+| `VPS_SSH_KEY`            | Private key of the deploy key pair (see §9.1) |
+
+The workflows deploy as `root` into the `rubricmaker` user's web root, so there is no `VPS_USER` secret; see §9 for using a different HestiaCP user.
 
 ---
 
@@ -289,34 +291,33 @@ ssh rubricmaker@YOUR_VPS_IP "echo connected"
 
 ### 8.2 Configure `deploy.sh`
 
-`deploy.sh` in the project root was written for Virtualmin's web root (`/home/<user>/public_html/`). For HestiaCP, the web root path is different. Edit the two relevant lines:
+The repository ships a template, `scripts/deploy.example.sh`. Copy it to the project root (`deploy.sh` is git-ignored, so your values are never committed):
 
 ```bash
-# Change this:
-REMOTE_PATH="/home/${VPS_USER}/public_html"
-
-# To this (HestiaCP web root):
-REMOTE_PATH="/home/${VPS_USER}/web/${DOMAIN}/public_html"
+cp scripts/deploy.example.sh deploy.sh
+chmod +x deploy.sh
 ```
 
-Also fill in your actual values at the top of the file:
+Fill in your values at the top of the file:
 
 ```bash
 DOMAIN="rubricmaker.example.com"
 VPS_USER="rubricmaker"
 VPS_HOST="YOUR_VPS_IP"
+SSH_KEY=""          # optional, e.g. ~/.ssh/id_ed25519
 ```
+
+The HestiaCP web root is already the active `REMOTE_PATH` (`/home/${VPS_USER}/web/${DOMAIN}/public_html`); the Virtualmin line above it stays commented out. The script refuses to run while `DOMAIN` or `VPS_HOST` still hold the example values.
 
 ### 8.3 Run the deploy script
 
 ```bash
-chmod +x deploy.sh
 ./deploy.sh
 ```
 
 The script will:
 
-1. Run `npm run build` to produce `dist/`
+1. Load the `VITE_*` values from `.env` (if present) and run `npm run build` to produce `dist/`
 2. Rsync `dist/` → `/home/rubricmaker/web/rubricmaker.example.com/public_html/` on the VPS (with `--delete` to clean stale files)
 3. Upload `deploy/.htaccess` → web root
 
@@ -333,63 +334,22 @@ Open `https://rubricmaker.example.com` in a browser. You should see the RubricMa
 
 ## 9. Automated CI/CD with GitHub Actions
 
-The repository's HestiaCP workflow is `.github/workflows/deploy-hestiacp.yml`. A minimal version looks like this:
+Two jobs deploy to the VPS:
 
-```yaml
-name: Deploy to HestiaCP VPS
+| Where                                               | When it runs                                                                                                                                                                                                                                         |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy-hestiacp` job in `.github/workflows/ci.yml` | Automatically on a push to `main`, but only after **every** CI job passed (type-check, lint, unit tests, all e2e shards, Supabase e2e, the accessibility gate, bundle analysis) **and** the push changed app files. Docs- or CI-only pushes skip it. |
+| `.github/workflows/deploy-hestiacp.yml`             | Manually only (**Actions → Deploy to HestiaCP VPS → Run workflow**), to deploy without waiting on CI.                                                                                                                                                |
 
-on:
-    push:
-        branches: ['main']
-    workflow_dispatch:
+Both run in the `production` GitHub environment (add required reviewers there under **Settings → Environments** if you want to approve each deploy) and do the same thing:
 
-concurrency:
-    group: 'hestiacp-deploy'
-    cancel-in-progress: false
+1. `npm ci` and `npm run build` on Node 24, with the `VITE_SUPABASE_*`, `SUPABASE_PUBLIC_URL` secrets and the `VITE_STRESS_TEST_LOGGING` variable.
+2. Rsync `dist/` to `/home/rubricmaker/web/<VPS_DOMAIN>/public_html/` with `--delete`, connecting as **`root`**.
+3. Rsync `deploy/.htaccess` into the same web root.
 
-jobs:
-    deploy:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+Both rsync steps pass `--chown=rubricmaker:rubricmaker`. Without it the files keep the runner's uid/gid 1001, which is `hestiamail` on a HestiaCP server, and a later HestiaCP domain rebuild can drop the default skeleton `index.html` back into the web root.
 
-            - name: Set up Node
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build
-              run: npm run build
-              env:
-                  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-                  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-
-            - name: Deploy via rsync
-              uses: burnett01/rsync-deployments@7.0.1
-              with:
-                  switches: -avz --delete
-                  path: dist/
-                  # HestiaCP web root: /home/<user>/web/<domain>/public_html/
-                  remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/
-                  remote_host: ${{ secrets.VPS_HOST }}
-                  remote_user: ${{ secrets.VPS_USER }}
-                  remote_key: ${{ secrets.VPS_SSH_KEY }}
-
-            - name: Upload .htaccess
-              uses: burnett01/rsync-deployments@7.0.1
-              with:
-                  switches: -avz
-                  path: deploy/.htaccess
-                  remote_path: /home/${{ secrets.VPS_USER }}/web/${{ secrets.VPS_DOMAIN }}/public_html/.htaccess
-                  remote_host: ${{ secrets.VPS_HOST }}
-                  remote_user: ${{ secrets.VPS_USER }}
-                  remote_key: ${{ secrets.VPS_SSH_KEY }}
-```
+**Different HestiaCP user?** The user name `rubricmaker` is written into both workflows (`remote_path` and `--chown`). If your web domain belongs to another user, change it in both files.
 
 ### 9.1 Create a dedicated deploy SSH key
 
@@ -399,11 +359,13 @@ Generate a key pair that GitHub Actions will use (do **not** use your personal k
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/rubricmaker_deploy -N ""
 ```
 
-Add the **public key** to the VPS:
+Add the **public key** to **root's** `authorized_keys` on the VPS, since the workflows connect as `root`:
 
 ```bash
-cat ~/.ssh/rubricmaker_deploy.pub | ssh rubricmaker@YOUR_VPS_IP "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+cat ~/.ssh/rubricmaker_deploy.pub | ssh root@YOUR_VPS_IP "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys"
 ```
+
+Use this key for deploys only. To limit what it can do, prefix its line in `authorized_keys` with `restrict` (no port, agent or X11 forwarding and no terminal; rsync still works).
 
 Add the **private key** as a GitHub secret:
 
@@ -414,23 +376,23 @@ Secret value: (paste the entire contents of ~/.ssh/rubricmaker_deploy, including
 
 ### 9.2 Add the remaining secrets
 
-Go to **GitHub → repo → Settings → Secrets and variables → Actions → New repository secret** and add:
+Add these as repository secrets (**GitHub → repo → Settings → Secrets and variables → Actions → New repository secret**) or as secrets of the `production` environment (**Settings → Environments → production**); the deploy jobs can read both:
 
 ```
-VPS_USER   = rubricmaker
 VPS_HOST   = YOUR_VPS_IP
 VPS_DOMAIN = rubricmaker.example.com
 VITE_SUPABASE_URL      = https://xxxx.supabase.co   (optional)
 VITE_SUPABASE_ANON_KEY = eyJ...                     (optional)
+SUPABASE_PUBLIC_URL    = https://supabase.example.com (optional)
 ```
 
 ### 9.3 Trigger a deployment
 
-Push any commit to `main`, or go to **Actions → Deploy to HestiaCP VPS → Run workflow**.
+Push an app change to `main` and wait for CI to pass, or go to **Actions → Deploy to HestiaCP VPS → Run workflow** to deploy straight away.
 
 ### 9.4 Keep `.htaccess` in the build output (optional)
 
-Place `deploy/.htaccess` in `public/` so Vite includes it in every build automatically. This means the CI/CD workflow's separate "Upload .htaccess" step becomes redundant:
+Place `deploy/.htaccess` in `public/` so Vite includes it in every build automatically. The workflows' separate "Upload .htaccess" step then becomes redundant (it is harmless to keep):
 
 ```bash
 cp deploy/.htaccess public/.htaccess
@@ -471,7 +433,7 @@ In Supabase dashboard → **Authentication → URL Configuration**:
 - **Site URL:** `https://rubricmaker.example.com`
 - **Redirect URLs:** `https://rubricmaker.example.com/#/`
 
-Enable **Email (magic-link)** under **Authentication → Providers**.
+Enable the sign-in providers you want under **Authentication → Providers**: Email (one-time code), Google, and Azure (Microsoft personal and Entra ID accounts). The login page shows one button per provider listed in the `auth_providers` row of `public.site_config`; see _Login providers_ in [SELF_HOSTING_OPS.md](SELF_HOSTING_OPS.md#login-providers).
 
 ### 10.4 Connect in the app
 
@@ -480,6 +442,8 @@ Users can enter credentials under **Settings → Database** inside RubricMaker, 
 ---
 
 ## 11. Maintenance
+
+This section covers the web domain. For the backend (migrations, edge functions, backups, the health-check script and recommended cron jobs) see the wiki page [HestiaCP: updates & maintenance](https://github.com/NesiciCoding/RubricMaker/wiki/HestiaCP-Maintenance) and [SELF_HOSTING_OPS.md](SELF_HOSTING_OPS.md).
 
 ### Updating the application
 
@@ -491,7 +455,7 @@ git pull origin main
 ./deploy.sh
 ```
 
-Or push to `main` and let GitHub Actions handle it automatically.
+Or push to `main` and let CI deploy it once every check has passed (§9).
 
 ### Renewing the SSL certificate
 
@@ -598,10 +562,11 @@ sudo systemctl restart apache2
 
 | File                                    | Purpose                                                                                |
 | --------------------------------------- | -------------------------------------------------------------------------------------- |
-| `deploy.sh`                             | Local build + rsync deploy script (update `REMOTE_PATH` for HestiaCP — see §8.2)       |
+| `scripts/deploy.example.sh`             | Template for the local build + rsync deploy script; copy to `deploy.sh` (see §8.2)     |
 | `deploy/.htaccess`                      | Apache SPA config, security headers, caching (works with both Virtualmin and HestiaCP) |
 | `deploy/apache-hestiacp.conf`           | Apache `<Directory>` block for HestiaCP vhost extension (`apache2.conf_after`)         |
 | `deploy/nginx-hestiacp.conf`            | Nginx snippet for HestiaCP (`nginx.ssl.conf_after`) + Nginx-only reference block       |
-| `.github/workflows/deploy-hestiacp.yml` | GitHub Actions CI/CD pipeline for HestiaCP                                             |
+| `.github/workflows/ci.yml`              | CI; its `deploy-hestiacp` job deploys after every check passes on `main` (see §9)      |
+| `.github/workflows/deploy-hestiacp.yml` | Manual deploy to HestiaCP that skips CI                                                |
 | `.env.example`                          | Template for local environment variables                                               |
 | `supabase/migrations/`                  | Database schema SQL files                                                              |
