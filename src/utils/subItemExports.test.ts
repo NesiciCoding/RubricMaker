@@ -50,6 +50,14 @@ const pointsCriterion: RubricCriterion = {
             description: '',
             subItems: [{ id: 'p1', label: 'Thesis', minPoints: 0, maxPoints: 2 }],
         },
+        {
+            id: 'q',
+            label: 'Weak',
+            minPoints: 0,
+            maxPoints: 1,
+            description: '',
+            subItems: [{ id: 'q1', label: 'Topic', minPoints: 0, maxPoints: 1 }],
+        },
     ],
 };
 
@@ -93,6 +101,8 @@ describe('sub-items in exports', () => {
         expect(html).toContain('☑ Ticked statement');
         expect(html).toContain('☐ Open statement');
         expect(html).toMatch(/• Thesis <span[^>]*>\[pts\(1\/2\)\]<\/span>/);
+        // A level the student didn't reach shows its ranges, not scores.
+        expect(html).toMatch(/☐ Topic <span[^>]*>\(pts\(0-1\)\)<\/span>/);
         // A checklist statement never gets a points label.
         expect(html).not.toMatch(/statement <span/);
     });
