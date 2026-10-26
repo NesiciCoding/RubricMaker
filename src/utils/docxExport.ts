@@ -45,6 +45,8 @@ import {
 } from './testAnswerText';
 import { sanitizeFilename, formatPointsRange, stripHtmlTags, stripCommentHtml } from './exportDataPrep';
 import { plainQuestionPromptText } from './clozeParse';
+import { buildTieredSheet } from './tieredSheet';
+import { tieredSheetDocument, tieredSheetDocxChildren } from './tieredSheetDocx';
 
 const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
 
@@ -110,6 +112,12 @@ export function buildDocxStyles(
 }
 
 export async function exportRubricToDocx(rubric: Rubric) {
+    const sheet = buildTieredSheet(rubric);
+    if (sheet) {
+        const doc = tieredSheetDocument(sheet, rubric.format, buildDocxStyles(rubric.format.fontFamily));
+        saveAs(await Packer.toBlob(doc), `${sanitizeFilename(rubric.name)}_rubric.docx`);
+        return;
+    }
     const fmt = rubric.format;
     const getLevels = (c: RubricCriterion) => orderedLevels(c, fmt);
 
@@ -346,6 +354,8 @@ export function buildRubricGridDocxChildren(
     const fmt = rubric.format;
     const children: (Paragraph | Table)[] = [];
     const effectiveRubric = sr.rubricSnapshot ?? rubric;
+    const sheet = buildTieredSheet(effectiveRubric, { sr, studentName: student.name, scale });
+    if (sheet) return tieredSheetDocxChildren(sheet, effectiveRubric.format);
     const summary = calcGradeSummary(sr, effectiveRubric.criteria, scale, effectiveRubric);
 
     children.push(

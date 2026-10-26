@@ -4213,7 +4213,8 @@
         "gr_tiered_title": "Beoordelen met een niveaurubriek",
         "gr_tiered_item_tier": "Elke leerling wordt beoordeeld in het eigen niveau, op basis van het leerjaar en VO-niveau van de klas (of het eigen niveau van de leerling). Je ziet alleen de uitspraken van dat niveau. Wissel het niveau voor één beoordeling via het menu Niveau boven de criteria; bij opslaan blijft het niveau bij de beoordeling.",
         "gr_tiered_item_verdict": "Het eindoordeel is een band (bijv. IO, B of E), berekend uit de punten zodra elk criterium is beoordeeld. Zet een voorwaarde op Niet voldaan voor de laagste band, of kies een band bij Eindoordeel kiezen om het te overschrijven. Het eindoordeel vervangt het cijfer van de cijferschaal bij de beoordeling, in het leerlingportaal en op het leerlingprofiel.",
-        "gr_tiered_item_feedback": "Vergelijkend beoordelen en leerlingfeedback (portaal en gedeelde links) tonen elke leerling ook alleen de uitspraken van het eigen niveau."
+        "gr_tiered_item_feedback": "Vergelijkend beoordelen en leerlingfeedback (portaal en gedeelde links) tonen elke leerling ook alleen de uitspraken van het eigen niveau.",
+        "an_export_item_tiered": "Niveaurubrieken worden geëxporteerd (PDF, DOCX en DOCX-sjabloon) in de opmaak van het papieren formulier: voorwaarden, een balk met Leerling / Niveau / Eindoordeel, en per criterium een kolom per niveau met de uitspraken van elke band als selectievakjes. Een lege rubric toont alle niveaus, liggend en in DOCX één criterium per pagina. Een beoordeelde rubric toont alleen het niveau van de leerling, met aangevinkte uitspraken, de gekozen band per criterium, of de voorwaarden zijn gehaald, en het eindoordeel. Een tabelsjabloon levert alleen de kleur van de kopregel. De voorbeeldweergave in de bouwer en de gedeelde voorbeeldlink tonen dezelfde opmaak."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -4934,6 +4935,11 @@
         "generated_by": "Gegenereerd door Rubric Maker · {{date}}",
         "peer_review": "Peerreview",
         "areas_for_growth": "Aandachtspunten",
-        "exceeds_standard": "Overtreft de norm"
+        "exceeds_standard": "Overtreft de norm",
+        "tiered_requirements": "Voorwaarden",
+        "tiered_requirement_not_met": "niet voldaan",
+        "tiered_tier": "Niveau:",
+        "tiered_verdict": "Eindoordeel:",
+        "tiered_chosen": "gekozen"
     }
 }

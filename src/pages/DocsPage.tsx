@@ -1808,6 +1808,7 @@ function AnalyticsTab() {
                     items={[
                         t('docs.an_export_item_pdf'),
                         t('docs.an_export_item_docx', { interpolation: { prefix: '⟦', suffix: '⟧' } }),
+                        t('docs.an_export_item_tiered'),
                         t('docs.an_export_item_csv'),
                         t('docs.an_export_item_csv_presets'),
                         t('docs.an_export_item_period'),

@@ -4213,7 +4213,8 @@
         "gr_tiered_title": "Calificar con una rúbrica por niveles",
         "gr_tiered_item_tier": "Cada alumno se califica en su propio nivel, elegido según el curso y el itinerario VO de su clase (o el itinerario propio del alumno). Solo se muestran los enunciados de ese nivel. Cambia el nivel de una calificación con el menú Nivel sobre los criterios; al guardar, el nivel queda en la calificación.",
         "gr_tiered_item_verdict": "El veredicto es una banda (p. ej. IO, B o E), calculada a partir de los puntos cuando cada criterio está calificado. Marca un requisito como No cumplido para dar la banda más baja, o elige una banda en Fijar veredicto para imponerla. El veredicto sustituye la letra de la escala de notas en la calificación, el portal del alumno y el perfil del alumno.",
-        "gr_tiered_item_feedback": "La calificación comparativa y la retroalimentación al alumno (portal y enlaces compartidos) también muestran a cada alumno solo los enunciados de su nivel."
+        "gr_tiered_item_feedback": "La calificación comparativa y la retroalimentación al alumno (portal y enlaces compartidos) también muestran a cada alumno solo los enunciados de su nivel.",
+        "an_export_item_tiered": "Las rúbricas por niveles se exportan (PDF, DOCX y DOCX con plantilla) con el formato de la hoja en papel: requisitos, una barra Alumno / Nivel / Veredicto y, por cada criterio, una columna por nivel con los enunciados de cada banda como casillas. Una rúbrica en blanco muestra todos los niveles, en horizontal y con un criterio por página en DOCX. Una rúbrica calificada muestra solo el nivel del alumno, con los enunciados marcados, la banda elegida por criterio, si se cumplen los requisitos y el veredicto. Una plantilla de tabla solo aporta el color del encabezado. La vista previa del editor y el enlace de vista previa compartido muestran el mismo formato."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
@@ -4934,6 +4935,11 @@
         "generated_by": "Generado por Rubric Maker · {{date}}",
         "peer_review": "Revisión por pares",
         "areas_for_growth": "Áreas de mejora",
-        "exceeds_standard": "Supera el estándar"
+        "exceeds_standard": "Supera el estándar",
+        "tiered_requirements": "Requisitos",
+        "tiered_requirement_not_met": "no cumplido",
+        "tiered_tier": "Nivel:",
+        "tiered_verdict": "Veredicto:",
+        "tiered_chosen": "elegido"
     }
 }

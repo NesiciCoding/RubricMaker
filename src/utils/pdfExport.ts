@@ -21,6 +21,8 @@ import { formatPointsRange, stripCommentHtml, stripHtmlTags, escapeHtml } from '
 import { plainQuestionPromptText } from './clozeParse';
 import { orderedLevels as sharedOrderedLevels } from './gradeCalc';
 import type { DocxStyleTemplateOverrides } from './docxExport';
+import { buildTieredSheet, type TieredSheet } from './tieredSheet';
+import { tieredSheetHtml } from './tieredSheetHtml';
 
 /**
  * Minimal emphasis parser for the free text that reaches a printout: `**bold**` and `*italic*`.
@@ -182,6 +184,8 @@ export function buildRubricHTML(
     scale: GradeScale | null,
     breakBeforeRight = false
 ): string {
+    const sheet = buildTieredSheet(rubric, { sr, studentName: student.name, scale });
+    if (sheet) return tieredPageHtml(sheet, rubric, breakBeforeRight, sr);
     const summary = calcGradeSummary(sr, rubric.criteria, scale, { tiered: rubric.tiered });
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
@@ -244,7 +248,20 @@ export function buildRubricHTML(
   </div>`;
 }
 
+function tieredPageHtml(sheet: TieredSheet, rubric: Rubric, breakBeforeRight = false, sr?: StudentRubric): string {
+    return `
+  <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${rubric.format.fontFamily}; background: #fff;">
+      ${tieredSheetHtml(sheet, rubric.format)}
+      <div style="margin-top:12px;font-size:11px;color:#94a3b8;text-align:right">
+        ${sr ? `${sr.gradedAt ? docLabel('graded', { date: new Date(sr.gradedAt).toLocaleDateString(i18n.language) }) : docLabel('not_graded')} · ` : ''}${docLabel('generated_by', { date: new Date().toLocaleDateString(i18n.language) })}
+        ${sr?.isPeerReview ? ` · ${docLabel('peer_review')}` : ''}
+      </div>
+  </div>`;
+}
+
 function buildEmptyRubricHTML(rubric: Rubric): string {
+    const sheet = buildTieredSheet(rubric);
+    if (sheet) return tieredPageHtml(sheet, rubric);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric);
 
@@ -568,7 +585,9 @@ export async function exportBatchPdf(
 
 export async function exportRubricGridPdf(rubric: Rubric, styleTemplate?: DocxStyleTemplateOverrides): Promise<void> {
     const htmlStr = buildEmptyRubricHTML(rubric);
-    await printForExport(htmlStr, rubric.format.orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
+    // A blank tiered sheet has a column per tier, like the paper original: landscape.
+    const orientation = rubric.tiered && rubric.tiered.tiers.length > 1 ? 'landscape' : rubric.format.orientation;
+    await printForExport(htmlStr, orientation || 'portrait', rubric.format.fontFamily, styleTemplate);
 }
 
 /** Same thresholds as bucketForAccuracy() in testSummaryAggregator.ts — keep these in sync. */

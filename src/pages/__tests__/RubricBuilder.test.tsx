@@ -2485,6 +2485,19 @@ describe('RubricBuilder — tiered rubrics', () => {
         RubricBuilderLazy = (await import('../RubricBuilder')).default;
     });
 
+    it('previews a tiered rubric as its sheet, a column per tier', () => {
+        renderTieredEdit();
+        fireEvent.click(screen.getByText('rubricBuilder.action_preview'));
+        const sheet = document.querySelector('.tiered-sheet-view') as HTMLElement;
+        expect(
+            within(sheet)
+                .getAllByRole('heading')
+                .map((h) => h.textContent)
+        ).toEqual(['Spelling', 'Mavo', 'Havo']);
+        expect(within(sheet).getByText('IO Mavo')).toBeInTheDocument();
+        expect(within(sheet).getByText('E Havo')).toBeInTheDocument();
+    });
+
     it('switches a standard rubric to tiered after confirming, and back again', async () => {
         const router = createMemoryRouter([{ path: '/rubrics/:id', element: <RubricBuilderLazy /> }], {
             initialEntries: ['/rubrics/r1'],

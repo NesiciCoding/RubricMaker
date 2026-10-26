@@ -4213,7 +4213,8 @@
         "gr_tiered_title": "Noter avec une grille à niveaux différenciés",
         "gr_tiered_item_tier": "Chaque élève est noté dans son propre niveau, choisi d'après l'année et la filière VO de sa classe (ou la filière propre de l'élève). Seuls les énoncés de ce niveau s'affichent. Changez le niveau d'une note avec le menu Niveau au-dessus des critères ; l'enregistrement conserve le niveau dans la note.",
         "gr_tiered_item_verdict": "Le verdict est une bande (p. ex. IO, B ou E), calculée d'après les points une fois chaque critère évalué. Marquez une exigence comme Non remplie pour donner la bande la plus faible, ou choisissez une bande sous Fixer le verdict pour l'imposer. Le verdict remplace la lettre de l'échelle de notes dans la note, le portail élève et le profil de l'élève.",
-        "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève."
+        "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève.",
+        "an_export_item_tiered": "Les grilles à niveaux différenciés s'exportent (PDF, DOCX et DOCX modèle) dans la mise en page de la feuille papier : exigences, une barre Élève / Niveau / Verdict, puis pour chaque critère une colonne par niveau avec les énoncés de chaque bande sous forme de cases à cocher. Une grille vierge affiche tous les niveaux, en paysage et un critère par page en DOCX. Une grille notée n'affiche que le niveau de l'élève, avec les énoncés cochés, la bande choisie par critère, les exigences remplies ou non et le verdict. Un modèle de tableau ne fournit que la couleur de l'en-tête. L'aperçu dans l'éditeur et le lien d'aperçu partagé montrent la même mise en page."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -4934,6 +4935,11 @@
         "generated_by": "Généré par Rubric Maker · {{date}}",
         "peer_review": "Évaluation par les pairs",
         "areas_for_growth": "Axes d'amélioration",
-        "exceeds_standard": "Dépasse la norme"
+        "exceeds_standard": "Dépasse la norme",
+        "tiered_requirements": "Exigences",
+        "tiered_requirement_not_met": "non remplie",
+        "tiered_tier": "Niveau :",
+        "tiered_verdict": "Verdict :",
+        "tiered_chosen": "choisi"
     }
 }

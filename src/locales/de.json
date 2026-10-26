@@ -4213,7 +4213,8 @@
         "gr_tiered_title": "Bewerten mit einem gestuften Bewertungsraster",
         "gr_tiered_item_tier": "Jeder Schüler wird auf seinem eigenen Niveau bewertet, gewählt nach Jahrgang und VO-Zweig der Klasse (oder dem eigenen Zweig des Schülers). Es werden nur die Aussagen dieses Niveaus angezeigt. Wechsle das Niveau für eine Bewertung über das Menü Niveau über den Kriterien; beim Speichern bleibt das Niveau an der Bewertung.",
         "gr_tiered_item_verdict": "Das Urteil ist eine Stufe (z. B. IO, B oder E), berechnet aus den Punkten, sobald jedes Kriterium bewertet ist. Markiere eine Voraussetzung als Nicht erfüllt für die niedrigste Stufe, oder wähle unter Urteil festlegen eine Stufe, um es zu überschreiben. Das Urteil ersetzt die Note der Notenskala in der Bewertung, im Schülerportal und im Schülerprofil.",
-        "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus."
+        "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus.",
+        "an_export_item_tiered": "Gestufte Bewertungsraster werden (PDF, DOCX und DOCX-Vorlage) im Layout des Papierbogens exportiert: Voraussetzungen, eine Leiste Schüler / Niveau / Urteil, dann pro Kriterium eine Spalte je Niveau mit den Aussagen jeder Stufe als Kontrollkästchen. Ein leeres Raster zeigt alle Niveaus, im Querformat und im DOCX ein Kriterium pro Seite. Ein bewertetes Raster zeigt nur das Niveau des Schülers, mit angekreuzten Aussagen, der gewählten Stufe je Kriterium, ob die Voraussetzungen erfüllt sind, und dem Urteil. Eine Tabellenvorlage liefert nur die Farbe der Kopfzeile. Die Vorschau im Editor und der geteilte Vorschaulink zeigen dasselbe Layout."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -4934,6 +4935,11 @@
         "generated_by": "Erstellt mit Rubric Maker · {{date}}",
         "peer_review": "Peer-Review",
         "areas_for_growth": "Entwicklungsbereiche",
-        "exceeds_standard": "Übertrifft den Standard"
+        "exceeds_standard": "Übertrifft den Standard",
+        "tiered_requirements": "Voraussetzungen",
+        "tiered_requirement_not_met": "nicht erfüllt",
+        "tiered_tier": "Niveau:",
+        "tiered_verdict": "Urteil:",
+        "tiered_chosen": "gewählt"
     }
 }

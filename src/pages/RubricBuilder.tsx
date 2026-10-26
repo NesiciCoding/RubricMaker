@@ -59,6 +59,8 @@ import { nanoid } from '../utils/nanoid';
 import { subItemMode, subItemRange } from '../utils/subItems';
 import { createTieredConfig, newTieredCriterion, syncBandLevels } from '../utils/tieredRubric';
 import TieredConfigPanel from '../components/Rubric/TieredConfigPanel';
+import TieredSheetView from '../components/Rubric/TieredSheetView';
+import { buildTieredSheet } from '../utils/tieredSheet';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
@@ -1972,12 +1974,25 @@ function RubricBuilderEditor() {
                                     </button>
                                 </div>
                             </div>
-                            <RubricPreviewTable
-                                name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
-                                criteria={criteria}
-                                format={format}
-                                showDescriptions={showPreviewStdDesc}
-                            />
+                            {tiered ? (
+                                <>
+                                    <h2 style={{ margin: '0 0 12px', fontSize: '1.2rem' }}>
+                                        {name || t('rubricBuilder.placeholder_name').replace('...', '')}
+                                    </h2>
+                                    <TieredSheetView
+                                        sheet={buildTieredSheet({ name, subject, criteria, tiered, format })!}
+                                        headerColor={format.headerColor}
+                                        headerTextColor={format.headerTextColor}
+                                    />
+                                </>
+                            ) : (
+                                <RubricPreviewTable
+                                    name={name || t('rubricBuilder.placeholder_name').replace('...', '')}
+                                    criteria={criteria}
+                                    format={format}
+                                    showDescriptions={showPreviewStdDesc}
+                                />
+                            )}
                         </div>
                     </div>
                 )}

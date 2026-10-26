@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { decodeRubricShareCode } from '../utils/rubricImport';
+import TieredSheetView from '../components/Rubric/TieredSheetView';
+import { buildTieredSheet } from '../utils/tieredSheet';
 import { SharedPageInvalid, SharedPageShell, sharedCardStyle } from '../components/ui/SharedPageShell';
 
 export default function RubricPreviewPage() {
@@ -70,100 +72,112 @@ export default function RubricPreviewPage() {
                 )}
             </header>
 
-            {rubric.criteria.map((criterion, ci) => (
-                <section
-                    key={criterion.id ?? ci}
-                    aria-labelledby={`preview-criterion-${ci}`}
-                    style={{ ...sharedCardStyle, padding: 0, marginBottom: 14, overflow: 'hidden' }}
-                >
-                    <div
-                        style={{
-                            background: headerColor,
-                            color: headerTextColor,
-                            padding: '12px 20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                        }}
+            {rubric.tiered && (
+                <TieredSheetView
+                    sheet={buildTieredSheet(rubric)!}
+                    headerColor={headerColor}
+                    headerTextColor={headerTextColor}
+                    headingLevel={2}
+                />
+            )}
+            {!rubric.tiered &&
+                rubric.criteria.map((criterion, ci) => (
+                    <section
+                        key={criterion.id ?? ci}
+                        aria-labelledby={`preview-criterion-${ci}`}
+                        style={{ ...sharedCardStyle, padding: 0, marginBottom: 14, overflow: 'hidden' }}
                     >
-                        <div>
-                            <h2 id={`preview-criterion-${ci}`} style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>
-                                {criterion.title}
-                            </h2>
-                            {criterion.description && (
-                                <div style={{ fontSize: '0.85rem', marginTop: 2 }}>{criterion.description}</div>
+                        <div
+                            style={{
+                                background: headerColor,
+                                color: headerTextColor,
+                                padding: '12px 20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <div>
+                                <h2
+                                    id={`preview-criterion-${ci}`}
+                                    style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}
+                                >
+                                    {criterion.title}
+                                </h2>
+                                {criterion.description && (
+                                    <div style={{ fontSize: '0.85rem', marginTop: 2 }}>{criterion.description}</div>
+                                )}
+                            </div>
+                            {criterion.weight !== undefined && (
+                                <div style={{ fontSize: '0.85rem', marginInlineStart: 16, whiteSpace: 'nowrap' }}>
+                                    {t('rubricPreview.weight', { weight: criterion.weight })}
+                                </div>
                             )}
                         </div>
-                        {criterion.weight !== undefined && (
-                            <div style={{ fontSize: '0.85rem', marginInlineStart: 16, whiteSpace: 'nowrap' }}>
-                                {t('rubricPreview.weight', { weight: criterion.weight })}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Levels wrap onto extra rows on narrow screens instead of being clipped; the 1px
+                        {/* Levels wrap onto extra rows on narrow screens instead of being clipped; the 1px
                         gap over the tinted background draws the cell borders for any wrap. */}
-                    <ul
-                        style={{
-                            listStyle: 'none',
-                            margin: 0,
-                            padding: 0,
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                            gap: 1,
-                            background: 'var(--border)',
-                            borderTop: '1px solid var(--border)',
-                        }}
-                    >
-                        {(criterion.levels ?? []).map((level, li) => (
-                            <li
-                                key={level.id ?? li}
-                                style={{
-                                    padding: '14px 16px',
-                                    background: 'var(--bg-card)',
-                                    minWidth: 0,
-                                }}
-                            >
-                                <div
+                        <ul
+                            style={{
+                                listStyle: 'none',
+                                margin: 0,
+                                padding: 0,
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                                gap: 1,
+                                background: 'var(--border)',
+                                borderTop: '1px solid var(--border)',
+                            }}
+                        >
+                            {(criterion.levels ?? []).map((level, li) => (
+                                <li
+                                    key={level.id ?? li}
                                     style={{
-                                        fontWeight: 700,
-                                        fontSize: '0.9rem',
-                                        color: 'var(--text)',
-                                        marginBottom: 6,
+                                        padding: '14px 16px',
+                                        background: 'var(--bg-card)',
+                                        minWidth: 0,
                                     }}
                                 >
-                                    {level.label}
-                                    {showPoints && (
-                                        <span
-                                            style={{
-                                                fontWeight: 400,
-                                                color: 'var(--text-muted)',
-                                                fontSize: '0.8rem',
-                                                marginInlineStart: 6,
-                                                display: 'inline-block',
-                                                maxWidth: '100%',
-                                                overflowWrap: 'anywhere',
-                                            }}
-                                        >
-                                            {level.minPoints === level.maxPoints
-                                                ? t('rubricPreview.points_single', { points: level.maxPoints })
-                                                : t('rubricPreview.points_range', {
-                                                      min: level.minPoints,
-                                                      max: level.maxPoints,
-                                                  })}
-                                        </span>
-                                    )}
-                                </div>
-                                {level.description && (
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
-                                        {level.description}
+                                    <div
+                                        style={{
+                                            fontWeight: 700,
+                                            fontSize: '0.9rem',
+                                            color: 'var(--text)',
+                                            marginBottom: 6,
+                                        }}
+                                    >
+                                        {level.label}
+                                        {showPoints && (
+                                            <span
+                                                style={{
+                                                    fontWeight: 400,
+                                                    color: 'var(--text-muted)',
+                                                    fontSize: '0.8rem',
+                                                    marginInlineStart: 6,
+                                                    display: 'inline-block',
+                                                    maxWidth: '100%',
+                                                    overflowWrap: 'anywhere',
+                                                }}
+                                            >
+                                                {level.minPoints === level.maxPoints
+                                                    ? t('rubricPreview.points_single', { points: level.maxPoints })
+                                                    : t('rubricPreview.points_range', {
+                                                          min: level.minPoints,
+                                                          max: level.maxPoints,
+                                                      })}
+                                            </span>
+                                        )}
                                     </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            ))}
+                                    {level.description && (
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: 1.5 }}>
+                                            {level.description}
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                ))}
         </SharedPageShell>
     );
 }
