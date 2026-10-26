@@ -15,6 +15,8 @@ interface Props {
     /** Other levels of the same criterion a sub-item can be moved to. */
     moveTargets: { id: string; label: string }[];
     onMove: (subItemId: string, levelId: string) => void;
+    /** Drops the heading and keyboard hint, for grids that show one hint for many lists. */
+    compact?: boolean;
 }
 
 /**
@@ -30,6 +32,7 @@ export default function SubItemListEditor({
     onUnlinkStandard,
     moveTargets,
     onMove,
+    compact = false,
 }: Props) {
     const { t } = useTranslation();
     const inputs = useRef(new Map<string, HTMLTextAreaElement>());
@@ -102,15 +105,17 @@ export default function SubItemListEditor({
     const iconBtn = { height: 26, width: 26 } as const;
 
     return (
-        <div style={{ marginTop: 8 }}>
-            <div
-                className="text-xs text-muted"
-                style={{ textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}
-            >
-                {mode === 'checklist'
-                    ? t('rubricBuilder.sub_items_checklist_heading')
-                    : t('rubricBuilder.label_sub_items')}
-            </div>
+        <div style={{ marginTop: compact ? 0 : 8 }}>
+            {!compact && (
+                <div
+                    className="text-xs text-muted"
+                    style={{ textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}
+                >
+                    {mode === 'checklist'
+                        ? t('rubricBuilder.sub_items_checklist_heading')
+                        : t('rubricBuilder.label_sub_items')}
+                </div>
+            )}
             <ul
                 aria-label={t('rubricBuilder.sub_items_list_label', { level: levelLabel })}
                 style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}
@@ -340,7 +345,7 @@ export default function SubItemListEditor({
             >
                 <Plus size={12} /> {t('rubricBuilder.action_add_sub_item')}
             </button>
-            {items.length > 0 && (
+            {!compact && items.length > 0 && (
                 <div className="text-xs text-muted" style={{ marginTop: 2 }}>
                     {t('rubricBuilder.sub_items_keyboard_hint')}
                 </div>

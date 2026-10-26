@@ -792,6 +792,22 @@ function RubricsTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.rb_tiered_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 12 }}>
+                    {t('docs.rb_tiered_intro')}
+                </p>
+                <FeatureList
+                    items={[
+                        t('docs.rb_tiered_item_tiers'),
+                        t('docs.rb_tiered_item_bands'),
+                        t('docs.rb_tiered_item_grid'),
+                        t('docs.rb_tiered_item_requirements'),
+                    ]}
+                />
+                <InfoBox>{t('docs.rb_tiered_note')}</InfoBox>
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.rb_standards_title')}
                 </h3>
                 <FeatureList

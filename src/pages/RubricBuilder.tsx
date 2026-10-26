@@ -51,11 +51,14 @@ import type {
     LinkedCefrDescriptor,
     LinkedFrameworkDescriptor,
     RubricVersion,
+    TieredConfig,
 } from '../types';
 import { DEFAULT_FORMAT } from '../types';
 import { loadCriterionClipboard } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
 import { subItemMode, subItemRange } from '../utils/subItems';
+import { createTieredConfig, newTieredCriterion, syncBandLevels } from '../utils/tieredRubric';
+import TieredConfigPanel from '../components/Rubric/TieredConfigPanel';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
@@ -198,6 +201,7 @@ function RubricBuilderEditor() {
         existing?.scoringMode ?? template?.scoringMode ?? 'weighted-percentage'
     );
     const [totalMaxPoints, setTotalMaxPoints] = useState(existing?.totalMaxPoints ?? template?.totalMaxPoints ?? 100);
+    const [tiered, setTiered] = useState<TieredConfig | undefined>(existing?.tiered ?? template?.tiered);
     const [showFormat, setShowFormat] = useState(false);
     const [showVocabulary, setShowVocabulary] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -271,6 +275,7 @@ function RubricBuilderEditor() {
         cefrTargetLevel,
         cefrSkill,
         cefrAchieveThreshold,
+        tiered,
     });
     const savedSnapshotRef = useRef<{ formSnapshot: string; criteriaSnapshot: string } | null>(null);
     const [isDirty, setIsDirty] = useState(false);
@@ -325,6 +330,7 @@ function RubricBuilderEditor() {
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
             cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
+            tiered,
         }),
         [
             existing,
@@ -340,6 +346,7 @@ function RubricBuilderEditor() {
             cefrTargetLevel,
             cefrSkill,
             cefrAchieveThreshold,
+            tiered,
         ]
     );
 
@@ -399,6 +406,7 @@ function RubricBuilderEditor() {
             subject: rubric.subject,
             description: rubric.description,
             criteria: rubric.criteria,
+            ...(rubric.tiered && { tiered: rubric.tiered }),
             savedAt: new Date().toISOString(),
         };
         try {
@@ -446,6 +454,7 @@ function RubricBuilderEditor() {
             cefrTargetLevel: cefrTargetLevel || undefined,
             cefrSkill: cefrSkill || undefined,
             cefrAchieveThreshold: cefrTargetLevel ? cefrAchieveThreshold : undefined,
+            tiered,
         };
         // The field can hold surrounding whitespace the save ignores, so show what actually got
         // persisted. Comparing trimmed values above keeps that re-render from marking the form dirty.
@@ -492,6 +501,7 @@ function RubricBuilderEditor() {
         cefrTargetLevel,
         cefrSkill,
         cefrAchieveThreshold,
+        tiered,
         t,
         studentRubrics,
         peerReviews,
@@ -575,7 +585,14 @@ function RubricBuilderEditor() {
         },
         [showToast, t]
     );
-    const appendCriterion = useCallback(() => setCriteria((c) => [...c, newCriterion(remainingWeight(c))]), []);
+    const appendCriterion = useCallback(
+        () =>
+            setCriteria((c) => [
+                ...c,
+                tiered ? newTieredCriterion(tiered, remainingWeight(c)) : newCriterion(remainingWeight(c)),
+            ]),
+        [tiered]
+    );
 
     // An untouched (evenly split) set of weights is rebalanced whenever criteria are added or
     // removed, so a fresh rubric always totals 100%; a hand-tuned split is left alone. The snapshot
@@ -602,6 +619,94 @@ function RubricBuilderEditor() {
         });
     }
 
+    async function switchRubricType(toTiered: boolean) {
+        if (toTiered === !!tiered) return;
+        if (toTiered) {
+            const hasContent = criteria.some((c) =>
+                c.levels.some((l) => l.description.trim() !== '' || l.subItems.length > 0)
+            );
+            const ok =
+                !hasContent ||
+                (await confirm({
+                    title: t('rubricBuilder.tiered_switch_on_title'),
+                    message: t('rubricBuilder.tiered_switch_on_message'),
+                }));
+            if (!ok) return;
+            const config = createTieredConfig();
+            setTiered(config);
+            setScoringMode('weighted-percentage');
+            setViewMode('form');
+            setFormat((f) => ({ ...f, levelOrder: 'worst-first' }));
+            setCriteria((c) => distributeWeights(c.map((x) => syncBandLevels(x, config.bands))));
+            return;
+        }
+        const ok = await confirm({
+            title: t('rubricBuilder.tiered_switch_off_title'),
+            message: t('rubricBuilder.tiered_switch_off_message'),
+        });
+        if (ok) setTiered(undefined);
+    }
+
+    // Removing a band deletes its level (and statements) in every criterion; removing a tier deletes
+    // its statements. Both can orphan existing grades, so the teacher confirms with the counts.
+    async function changeTieredConfig(next: TieredConfig) {
+        /* v8 ignore next -- the panel only renders for a tiered rubric */
+        if (!tiered) return;
+        const removedBandIds = new Set(
+            tiered.bands.filter((b) => !next.bands.some((x) => x.id === b.id)).map((b) => b.id)
+        );
+        const removedTierIds = new Set(
+            tiered.tiers.filter((x) => !next.tiers.some((y) => y.id === x.id)).map((x) => x.id)
+        );
+        if (removedBandIds.size > 0 || removedTierIds.size > 0) {
+            const removedLevelIds = new Set(
+                criteria.flatMap((c) =>
+                    c.levels.filter((l) => l.bandId && removedBandIds.has(l.bandId)).map((l) => l.id)
+                )
+            );
+            const statements = criteria
+                .flatMap((c) => c.levels)
+                .reduce(
+                    (n, l) =>
+                        n +
+                        l.subItems.filter(
+                            (si) => removedLevelIds.has(l.id) || (!!si.tierId && removedTierIds.has(si.tierId))
+                        ).length,
+                    0
+                );
+            const grades = existing
+                ? [...studentRubrics, ...peerReviews].filter(
+                      (sr) =>
+                          sr.rubricId === existing.id &&
+                          ((!!sr.tierId && removedTierIds.has(sr.tierId)) ||
+                              sr.entries.some((e) => !!e.levelId && removedLevelIds.has(e.levelId)))
+                  ).length
+                : 0;
+            const ok =
+                (statements === 0 && grades === 0) ||
+                (await confirm({
+                    title: t('rubricBuilder.tiered_remove_title'),
+                    message: t('rubricBuilder.tiered_remove_message', { statements, grades }),
+                }));
+            if (!ok) return;
+        }
+        setTiered(next);
+        if (next.bands === tiered.bands && removedTierIds.size === 0) return;
+        setCriteria((c) =>
+            c.map((x) => {
+                const synced = syncBandLevels(x, next.bands);
+                if (removedTierIds.size === 0) return synced;
+                return {
+                    ...synced,
+                    levels: synced.levels.map((l) => ({
+                        ...l,
+                        subItems: l.subItems.filter((si) => !si.tierId || !removedTierIds.has(si.tierId)),
+                    })),
+                };
+            })
+        );
+    }
+
     function pasteFromClipboard() {
         try {
             const source = loadCriterionClipboard();
@@ -615,7 +720,7 @@ function RubricBuilderEditor() {
                     subItems: l.subItems.map((si) => ({ ...si, id: nanoid() })),
                 })),
             };
-            setCriteria((c) => [...c, clone]);
+            setCriteria((c) => [...c, tiered ? syncBandLevels(clone, tiered.bands) : clone]);
         } catch (e) {
             console.error('[rubric] paste criterion failed', e);
             showToast(t('toast.copy_paste_failed'), 'warning');
@@ -846,31 +951,33 @@ function RubricBuilderEditor() {
                             <Save size={15} />{' '}
                             {saved ? t('rubricBuilder.action_saved') : t('rubricBuilder.action_save')}
                         </button>
-                        <div
-                            style={{
-                                display: 'flex',
-                                background: 'var(--bg-elevated)',
-                                border: '1px solid var(--border)',
-                                borderRadius: 8,
-                                padding: 2,
-                                marginRight: 8,
-                            }}
-                        >
-                            <button
-                                className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`}
-                                onClick={() => setViewMode('form')}
-                                style={{ border: 'none' }}
+                        {!tiered && (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    background: 'var(--bg-elevated)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 8,
+                                    padding: 2,
+                                    marginRight: 8,
+                                }}
                             >
-                                {t('rubricBuilder.action_form_view')}
-                            </button>
-                            <button
-                                className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`}
-                                onClick={() => setViewMode('designer')}
-                                style={{ border: 'none' }}
-                            >
-                                {t('rubricBuilder.action_designer_view')}
-                            </button>
-                        </div>
+                                <button
+                                    className={`btn btn-sm ${viewMode === 'form' ? 'btn-secondary' : 'btn-ghost'}`}
+                                    onClick={() => setViewMode('form')}
+                                    style={{ border: 'none' }}
+                                >
+                                    {t('rubricBuilder.action_form_view')}
+                                </button>
+                                <button
+                                    className={`btn btn-sm ${viewMode === 'designer' ? 'btn-secondary' : 'btn-ghost'}`}
+                                    onClick={() => setViewMode('designer')}
+                                    style={{ border: 'none' }}
+                                >
+                                    {t('rubricBuilder.action_designer_view')}
+                                </button>
+                            </div>
+                        )}
                         <button className="btn btn-secondary btn-sm" onClick={() => setShowFormat(!showFormat)}>
                             <Settings size={15} /> {t('rubricBuilder.action_format')}
                         </button>
@@ -1042,9 +1149,8 @@ function RubricBuilderEditor() {
                                 </div>
                             </div>
 
-                            {/* ── Scoring mode ── */}
+                            {/* ── Rubric type ── */}
                             <div
-                                data-tour="rb-scoring-mode"
                                 style={{
                                     background: 'var(--bg-elevated)',
                                     borderRadius: 10,
@@ -1053,56 +1159,123 @@ function RubricBuilderEditor() {
                                     border: '1px solid var(--border)',
                                 }}
                             >
-                                <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>
-                                    {t('rubricBuilder.label_scoring_mode')}
+                                <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', color: 'var(--text)' }}>
+                                    {t('rubricBuilder.rubric_type_label')}
                                 </h4>
-                                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                                    {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(
-                                        (mode) => (
-                                            <label
-                                                key={mode}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 8,
-                                                    cursor: 'pointer',
-                                                    textTransform: 'none',
-                                                    letterSpacing: 0,
-                                                    fontWeight: scoringMode === mode ? 600 : 400,
-                                                }}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="scoringMode"
-                                                    value={mode}
-                                                    checked={scoringMode === mode}
-                                                    onChange={() => setScoringMode(mode)}
-                                                />
-                                                {mode === 'weighted-percentage'
-                                                    ? t('rubricBuilder.mode_weighted')
-                                                    : mode === 'total-points'
-                                                      ? t('rubricBuilder.mode_total_points')
-                                                      : t('rubricBuilder.mode_single_point')}
-                                            </label>
-                                        )
-                                    )}
+                                <div
+                                    role="radiogroup"
+                                    aria-label={t('rubricBuilder.rubric_type_label')}
+                                    style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}
+                                >
+                                    {([false, true] as const).map((isTiered) => (
+                                        <label
+                                            key={String(isTiered)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                                cursor: 'pointer',
+                                                textTransform: 'none',
+                                                letterSpacing: 'normal',
+                                                color: 'var(--text)',
+                                                fontWeight: !!tiered === isTiered ? 600 : 400,
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="rubricType"
+                                                checked={!!tiered === isTiered}
+                                                onChange={() => void switchRubricType(isTiered)}
+                                            />
+                                            {t(
+                                                isTiered
+                                                    ? 'rubricBuilder.rubric_type_tiered'
+                                                    : 'rubricBuilder.rubric_type_standard'
+                                            )}
+                                        </label>
+                                    ))}
                                 </div>
-                                {scoringMode === 'total-points' && (
-                                    <div className="form-group" style={{ marginTop: 12, maxWidth: 200 }}>
-                                        <label>{t('rubricBuilder.label_total_max_points')}</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            value={totalMaxPoints}
-                                            onChange={(e) => setTotalMaxPoints(Number(e.target.value))}
-                                            placeholder={t('rubricBuilder.total_points_placeholder')}
-                                        />
-                                        <div className="text-xs text-muted" style={{ marginTop: 4 }}>
-                                            {t('rubricBuilder.total_points_formula', { max: totalMaxPoints })}
-                                        </div>
-                                    </div>
+                                <p className="text-xs text-muted" style={{ margin: '6px 0 0' }}>
+                                    {t(
+                                        tiered
+                                            ? 'rubricBuilder.rubric_type_tiered_help'
+                                            : 'rubricBuilder.rubric_type_standard_help'
+                                    )}
+                                </p>
+                                {tiered && (
+                                    <TieredConfigPanel
+                                        config={tiered}
+                                        onChange={(next) => void changeTieredConfig(next)}
+                                    />
                                 )}
                             </div>
+                            {/* ── Scoring mode ── */}
+                            {tiered ? (
+                                <p className="text-xs text-muted" style={{ marginTop: 8 }}>
+                                    {t('rubricBuilder.tiered_scoring_note')}
+                                </p>
+                            ) : (
+                                <div
+                                    data-tour="rb-scoring-mode"
+                                    style={{
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 10,
+                                        padding: 16,
+                                        marginTop: 16,
+                                        border: '1px solid var(--border)',
+                                    }}
+                                >
+                                    <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: 'var(--text)' }}>
+                                        {t('rubricBuilder.label_scoring_mode')}
+                                    </h4>
+                                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                        {(['weighted-percentage', 'total-points', 'single-point'] as ScoringMode[]).map(
+                                            (mode) => (
+                                                <label
+                                                    key={mode}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        cursor: 'pointer',
+                                                        textTransform: 'none',
+                                                        letterSpacing: 0,
+                                                        fontWeight: scoringMode === mode ? 600 : 400,
+                                                    }}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="scoringMode"
+                                                        value={mode}
+                                                        checked={scoringMode === mode}
+                                                        onChange={() => setScoringMode(mode)}
+                                                    />
+                                                    {mode === 'weighted-percentage'
+                                                        ? t('rubricBuilder.mode_weighted')
+                                                        : mode === 'total-points'
+                                                          ? t('rubricBuilder.mode_total_points')
+                                                          : t('rubricBuilder.mode_single_point')}
+                                                </label>
+                                            )
+                                        )}
+                                    </div>
+                                    {scoringMode === 'total-points' && (
+                                        <div className="form-group" style={{ marginTop: 12, maxWidth: 200 }}>
+                                            <label>{t('rubricBuilder.label_total_max_points')}</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={totalMaxPoints}
+                                                onChange={(e) => setTotalMaxPoints(Number(e.target.value))}
+                                                placeholder={t('rubricBuilder.total_points_placeholder')}
+                                            />
+                                            <div className="text-xs text-muted" style={{ marginTop: 4 }}>
+                                                {t('rubricBuilder.total_points_formula', { max: totalMaxPoints })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* ── CEFR / ERK ── */}
                             <div
@@ -1283,6 +1456,7 @@ function RubricBuilderEditor() {
 
                         {/* Weight running total (weighted-percentage mode only) */}
                         {scoringMode === 'weighted-percentage' &&
+                            !tiered &&
                             criteria.length > 0 &&
                             (() => {
                                 const totalWeight = criteria.reduce((sum, c) => sum + (c.weight || 0), 0);
@@ -1459,6 +1633,7 @@ function RubricBuilderEditor() {
                                                 onUnlinkLegacyStandard={unlinkLegacyStandard}
                                                 onRemoveCefrDescriptor={removeCefrDescriptor}
                                                 onRemoveFrameworkDescriptor={removeFrameworkDescriptor}
+                                                tiered={tiered}
                                             />
                                         ))}
                                         {provided.placeholder}

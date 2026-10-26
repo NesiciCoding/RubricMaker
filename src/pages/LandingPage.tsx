@@ -45,7 +45,7 @@ const TEACHER_FEATURES = [
     {
         icon: BookOpen,
         title: 'Rubric Builder',
-        desc: 'Design rubrics with custom criteria, weighted scoring, tick-off checklists of what each level looks like, CEFR descriptors, grammar standards, and version history.',
+        desc: 'Design rubrics with custom criteria, weighted scoring, tick-off checklists of what each level looks like, tiered rubrics with a column per school level, CEFR descriptors, grammar standards, and version history.',
         color: '#3b82f6',
     },
     {

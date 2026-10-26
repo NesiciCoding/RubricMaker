@@ -15,12 +15,21 @@ import {
     Files,
 } from 'lucide-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import type { RubricCriterion, RubricLevel, SubItem, ScoringMode, CefrLevel, CefrSkill } from '../../types';
+import type {
+    RubricCriterion,
+    RubricLevel,
+    SubItem,
+    ScoringMode,
+    CefrLevel,
+    CefrSkill,
+    TieredConfig,
+} from '../../types';
 import { CEFR_SKILLS, CEFR_SKILL_LABELS, CEFR_LEVEL_COLORS } from '../../data/cefrDescriptors';
 import { saveCriterionClipboard } from '../../store/storage';
 import { useToast } from '../../hooks/useToast';
 import { createSubItem, splitIntoSubItemLabels, subItemMode } from '../../utils/subItems';
 import SubItemListEditor from './SubItemListEditor';
+import TieredCriterionGrid from './TieredCriterionGrid';
 
 export type CriterionStandardTarget =
     { type: 'criterion'; cid: string } | { type: 'subitem'; cid: string; lid: string; sid: string };
@@ -48,6 +57,8 @@ interface CriterionCardProps {
     onUnlinkLegacyStandard: (cid: string) => void;
     onRemoveCefrDescriptor: (cid: string, descriptorId: string) => void;
     onRemoveFrameworkDescriptor: (cid: string, descriptorId: string) => void;
+    /** Tiered rubrics: levels come from the rubric's bands and statements sit in a band × tier grid. */
+    tiered?: TieredConfig;
 }
 
 /** One editable criterion card. Memoized so editing one criterion re-renders only its own card,
@@ -75,6 +86,7 @@ export default memo(function CriterionCard({
     onUnlinkLegacyStandard,
     onRemoveCefrDescriptor,
     onRemoveFrameworkDescriptor,
+    tiered,
 }: CriterionCardProps) {
     const { t, i18n } = useTranslation();
     const { showToast } = useToast();
@@ -198,27 +210,29 @@ export default memo(function CriterionCard({
                                         placeholder={t('rubricBuilder.placeholder_description')}
                                     />
                                 </div>
-                                <div className="form-group">
-                                    <label htmlFor={`${uid}-weight`}>{t('rubricBuilder.label_weight')}</label>
-                                    <input
-                                        id={`${uid}-weight`}
-                                        type="number"
-                                        value={criterion.weight}
-                                        min={0}
-                                        max={100}
-                                        onChange={(e) =>
-                                            onUpdateCriterion(criterion.id, {
-                                                weight: Number(e.target.value),
-                                            })
-                                        }
-                                        title={
-                                            scoringMode === 'total-points'
-                                                ? t('rubricBuilder.weights_ignored_total_points')
-                                                : undefined
-                                        }
-                                        style={{ width: 70 }}
-                                    />
-                                </div>
+                                {!tiered && (
+                                    <div className="form-group">
+                                        <label htmlFor={`${uid}-weight`}>{t('rubricBuilder.label_weight')}</label>
+                                        <input
+                                            id={`${uid}-weight`}
+                                            type="number"
+                                            value={criterion.weight}
+                                            min={0}
+                                            max={100}
+                                            onChange={(e) =>
+                                                onUpdateCriterion(criterion.id, {
+                                                    weight: Number(e.target.value),
+                                                })
+                                            }
+                                            title={
+                                                scoringMode === 'total-points'
+                                                    ? t('rubricBuilder.weights_ignored_total_points')
+                                                    : undefined
+                                            }
+                                            style={{ width: 70 }}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Standard link */}
@@ -641,7 +655,7 @@ export default memo(function CriterionCard({
                     )}
 
                     {/* Single-point: simplified proficiency descriptor */}
-                    {!collapsed && scoringMode === 'single-point' && (
+                    {!collapsed && !tiered && scoringMode === 'single-point' && (
                         <div
                             style={{
                                 display: 'flex',
@@ -707,7 +721,18 @@ export default memo(function CriterionCard({
                         </div>
                     )}
 
-                    {!collapsed && scoringMode !== 'single-point' && (
+                    {!collapsed && tiered && (
+                        <TieredCriterionGrid
+                            criterion={criterion}
+                            config={tiered}
+                            onSetSubItems={onSetSubItems}
+                            onMoveSubItem={onMoveSubItem}
+                            onPickStandard={onPickStandard}
+                            onUnlinkStandard={onUnlinkStandard}
+                        />
+                    )}
+
+                    {!collapsed && !tiered && scoringMode !== 'single-point' && (
                         <div
                             role="radiogroup"
                             aria-labelledby={`${uid}-sub-item-mode`}
@@ -742,8 +767,8 @@ export default memo(function CriterionCard({
                         </div>
                     )}
 
-                    {/* Levels (hidden when collapsed or single-point) */}
-                    {!collapsed && scoringMode !== 'single-point' && (
+                    {/* Levels (hidden when collapsed, single-point or tiered) */}
+                    {!collapsed && !tiered && scoringMode !== 'single-point' && (
                         <div style={{ overflowX: 'auto' }}>
                             <Droppable droppableId={`levels-${criterion.id}`} direction="horizontal">
                                 {(levelProvided) => (

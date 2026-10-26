@@ -699,6 +699,8 @@ export interface UserTemplate {
     subject: string;
     description?: string;
     criteria: RubricCriterion[];
+    /** Set when the template was saved from a tiered rubric, so rubrics made from it are tiered too. */
+    tiered?: TieredConfig;
     savedAt: string;
 }
 

@@ -133,4 +133,45 @@ describe('CriterionCard', () => {
         renderCard('weighted-percentage');
         expect(screen.getByLabelText('rubricBuilder.label_weight')).not.toHaveAttribute('title');
     });
+
+    it('swaps the weight, mode and level cards for the band × tier grid on a tiered rubric', () => {
+        const criterion: RubricCriterion = {
+            ...makeCriterion('c1', 'Spelling'),
+            subItemMode: 'checklist',
+            levels: [
+                {
+                    id: 'lb',
+                    bandId: 'b',
+                    label: 'B',
+                    minPoints: 1,
+                    maxPoints: 1,
+                    description: '',
+                    subItems: [{ id: 's1', label: 'Spelt well', tierId: 'havo' }],
+                },
+            ],
+        };
+        render(
+            <DragDropContext onDragEnd={noop}>
+                <Droppable droppableId="criteria">
+                    {(provided) => (
+                        <div ref={provided.innerRef} {...provided.droppableProps}>
+                            <CriterionCard
+                                {...cardProps(criterion, noop)}
+                                tiered={{
+                                    tiers: [{ id: 'havo', year: 'jaar-1', track: 'havo' }],
+                                    bands: [{ id: 'b', code: 'B', label: '', points: 1 }],
+                                }}
+                            />
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
+        );
+
+        expect(screen.queryByLabelText('rubricBuilder.label_weight')).toBeNull();
+        expect(screen.queryByRole('radiogroup')).toBeNull();
+        expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toContain('Jaar 1 · HAVO');
+        expect(screen.getByRole('rowheader')).toHaveTextContent('B');
+        expect(screen.getByDisplayValue('Spelt well')).toBeInTheDocument();
+    });
 });
