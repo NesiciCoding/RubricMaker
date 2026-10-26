@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
+import { criteriaForTier } from '../utils/tieredRubric';
 import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
@@ -120,7 +121,7 @@ export default function StudentFeedbackPage() {
                 )}
             </header>
 
-            {rubric.criteria.map((criterion) => {
+            {criteriaForTier(rubric.criteria, sr.tierId).map((criterion) => {
                 const entry = sr.entries.find((e) => e.criterionId === criterion.id);
                 const audioSrc = safeAudioDataUrl(entry?.audioDataUrl);
                 const selectedLevel = criterion.levels.find((l) => l.id === entry?.levelId);

@@ -12,8 +12,10 @@ import {
     bandPreset,
     createTieredConfig,
     defaultCutoffs,
+    criteriaForTier,
     gradeTier,
     inTier,
+    levelForTier,
     isTiered,
     newTieredCriterion,
     resolveTier,
@@ -264,6 +266,26 @@ describe('tiers', () => {
         ];
         expect(items.filter(inTier(havo.id)).map((s) => s.id)).toEqual(['b', 'c']);
         expect(items.filter(inTier(undefined)).map((s) => s.id)).toEqual(['c']);
+    });
+});
+
+describe('criteriaForTier / levelForTier', () => {
+    const rubric = sheetRubric();
+
+    it("keeps each level's statements for one tier and leaves the rubric untouched", () => {
+        const havo = criteriaForTier(rubric.criteria, 'havo');
+        const spelling = havo[0].levels.find((l) => l.bandId === 'io')!;
+        expect(spelling.subItems.map((si) => si.label)).toEqual(sheet.criteria[0].cells.havo.io);
+        expect(havo[0].levels.map((l) => l.id)).toEqual(rubric.criteria[0].levels.map((l) => l.id));
+        expect(rubric.criteria[0].levels[0].subItems.length).toBeGreaterThan(spelling.subItems.length);
+    });
+
+    it('keeps every statement without a tier, and tolerates a level without sub-items', () => {
+        expect(criteriaForTier(rubric.criteria, undefined)).toBe(rubric.criteria);
+        const level = rubric.criteria[0].levels[0];
+        expect(levelForTier(level, undefined)).toBe(level);
+        const legacy = { ...level, subItems: undefined } as unknown as typeof level;
+        expect(levelForTier(legacy, 'havo').subItems).toEqual([]);
     });
 });
 

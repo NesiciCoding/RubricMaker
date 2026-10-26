@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
@@ -209,6 +209,125 @@ describe('GradeStudent', () => {
                 await router.navigate('/tests');
             });
             expect(await screen.findByText('tests page')).toBeInTheDocument();
+        });
+    });
+
+    describe('tiered rubrics', () => {
+        const level = (
+            id: string,
+            bandId: string,
+            points: number,
+            subItems: Rubric['criteria'][0]['levels'][0]['subItems']
+        ) => ({
+            id,
+            bandId,
+            label: `${bandId.toUpperCase()}-level`,
+            minPoints: points,
+            maxPoints: points,
+            description: '',
+            subItems,
+        });
+        const tieredRubric: Rubric = {
+            ...mockRubric,
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Spelling',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [
+                        level('le', 'e', 2, [{ id: 'he', label: 'Havo E statement', tierId: 'havo' }]),
+                        level('lb', 'b', 1, [
+                            { id: 'mb', label: 'Mavo B statement', tierId: 'mavo' },
+                            { id: 'hb', label: 'Havo B statement', tierId: 'havo' },
+                        ]),
+                        level('lio', 'io', 0, [{ id: 'mio', label: 'Mavo IO statement', tierId: 'mavo' }]),
+                    ],
+                },
+            ],
+            tiered: {
+                tiers: [
+                    { id: 'mavo', year: 'jaar-1', track: 'vmbo-tl', label: 'Mavo' },
+                    { id: 'havo', year: 'jaar-1', track: 'havo', label: 'Havo' },
+                ],
+                bands: [
+                    { id: 'io', code: 'IO', label: 'In ontwikkeling', points: 0 },
+                    { id: 'b', code: 'B', label: 'Beheerst', points: 1 },
+                    { id: 'e', code: 'E', label: 'Expert', points: 2 },
+                ],
+                requirements: [{ id: 'r1', text: 'Handed in on time' }],
+            },
+        };
+
+        function setup(cls: Partial<Class> = { year: 'jaar-1', voTrack: 'havo' }) {
+            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.classes = [{ ...mockClass, ...cls }];
+            renderPage();
+        }
+        const save = () => fireEvent.click(screen.getAllByText(/^gradeStudent\.action_saved?$/)[0]);
+        const saved = () => mockSaveStudentRubric.mock.calls.at(-1)![0] as StudentRubric;
+
+        afterEach(() => {
+            mockAppValue.rubrics = mockRubricsArr;
+            mockAppValue.classes = mockClassesArr;
+        });
+
+        it("shows the class tier's statements, switches tier per grade and saves the tier on it", () => {
+            setup();
+            expect(screen.getByText('Havo B statement')).toBeInTheDocument();
+            expect(screen.queryByText('Mavo B statement')).toBeNull();
+            expect(screen.getByText('gradeStudent.tiered_tier_from_class')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('B-level'));
+            save();
+            expect(saved().tierId).toBe('havo');
+
+            fireEvent.change(screen.getByLabelText('gradeStudent.tiered_tier'), { target: { value: 'mavo' } });
+            expect(screen.getByText('Mavo B statement')).toBeInTheDocument();
+            expect(screen.queryByText('Havo B statement')).toBeNull();
+            expect(screen.getByText('gradeStudent.tiered_tier_changed')).toBeInTheDocument();
+            save();
+            expect(saved().tierId).toBe('mavo');
+
+            fireEvent.click(screen.getByLabelText('gradeStudent.tiered_use_class_tier'));
+            expect(screen.getByText('Havo B statement')).toBeInTheDocument();
+        });
+
+        it('asks for a tier and shows every statement when the class matches none', () => {
+            setup({ year: 'jaar-2' });
+            expect(screen.getByText('gradeStudent.tiered_no_tier')).toBeInTheDocument();
+            expect(screen.getByText('Mavo B statement')).toBeInTheDocument();
+            expect(screen.getByText('Havo B statement')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('B-level'));
+            save();
+            expect(saved().tierId).toBeUndefined();
+        });
+
+        it('gives a verdict from points, capped by an unmet requirement, and overridable', () => {
+            setup();
+            expect(screen.getByText('gradeStudent.tiered_verdict_pending')).toBeInTheDocument();
+            fireEvent.click(screen.getByText('E-level'));
+            expect(screen.getByText('gradeStudent.tiered_verdict_reason_score:{"pct":100}')).toBeInTheDocument();
+
+            const requirement = screen.getByRole('group', { name: 'Handed in on time' });
+            fireEvent.click(within(requirement).getByText('gradeStudent.tiered_requirement_not_met'));
+            expect(screen.getByText('gradeStudent.tiered_verdict_reason_requirement:{"pct":100}')).toBeInTheDocument();
+            expect(within(requirement).getByText('gradeStudent.tiered_requirement_not_met')).toHaveAttribute(
+                'aria-pressed',
+                'true'
+            );
+
+            fireEvent.change(screen.getByLabelText(/tiered_verdict_override/), { target: { value: 'b' } });
+            expect(screen.getByText('gradeStudent.tiered_verdict_reason_override:{"pct":100}')).toBeInTheDocument();
+            save();
+            expect(saved()).toMatchObject({ requirementsMet: { r1: false }, verdictOverride: 'b', tierId: 'havo' });
+
+            // Pressing a requirement's active state again clears it; the override goes back to automatic.
+            fireEvent.click(within(requirement).getByText('gradeStudent.tiered_requirement_not_met'));
+            fireEvent.change(screen.getByLabelText(/tiered_verdict_override/), { target: { value: '' } });
+            save();
+            expect(saved().requirementsMet).toEqual({});
+            expect(saved().verdictOverride).toBeUndefined();
         });
     });
 

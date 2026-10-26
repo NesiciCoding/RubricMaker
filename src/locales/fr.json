@@ -1809,7 +1809,24 @@
         "best_fit_apply": "Appliquer",
         "best_fit_apply_label": "Choisir le niveau {{level}}",
         "grid_toggle_details": "Afficher ou masquer les détails",
-        "grid_ticks": "{{ticked}}/{{total}} cochés"
+        "grid_ticks": "{{ticked}}/{{total}} cochés",
+        "tiered_bar_label": "Niveau, exigences et verdict",
+        "tiered_tier": "Niveau",
+        "tiered_choose_tier": "Choisir un niveau…",
+        "tiered_no_tier": "Aucun niveau ne correspond à l'année et à la filière de la classe de cet élève. Choisissez-en un ; tous les énoncés s'affichent en attendant.",
+        "tiered_tier_from_class": "D'après la classe de l'élève.",
+        "tiered_tier_changed": "Choisi pour cette note.",
+        "tiered_use_class_tier": "Utiliser le niveau de la classe",
+        "tiered_requirements": "Exigences",
+        "tiered_requirement_met": "Rempli",
+        "tiered_requirement_not_met": "Non rempli",
+        "tiered_verdict": "Verdict",
+        "tiered_verdict_pending": "Évaluez chaque critère pour voir le verdict.",
+        "tiered_verdict_reason_score": "D'après les points ({{pct}} %)",
+        "tiered_verdict_reason_requirement": "Une exigence n'est pas remplie",
+        "tiered_verdict_reason_override": "Choisi par vous",
+        "tiered_verdict_override": "Fixer le verdict :",
+        "tiered_verdict_auto": "Automatique (d'après les points)"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -4192,7 +4209,11 @@
         "rb_tiered_item_bands": "Bandes — les lignes de chaque critère, de la plus faible à la plus forte (IO, B et E par défaut). Chaque bande a un code, un nom, des points et une couleur. Son pourcentage de verdict fixe la part des points nécessaire pour atteindre cette bande au total ; laissez-le vide pour utiliser le point médian entre les bandes.",
         "rb_tiered_item_grid": "Énoncés — chaque critère affiche une grille bandes × niveaux. Chaque cellule est une liste de contrôle de ce à quoi ressemble cette bande pour ce niveau : saisissez, collez une liste ou déplacez un énoncé vers une autre bande. Les énoncés servent de preuves ; les points viennent de la bande choisie.",
         "rb_tiered_item_requirements": "Exigences — conditions que le travail doit remplir, comme être rendu à temps. Une exigence marquée comme non remplie donne la bande la plus faible.",
-        "rb_tiered_note": "La suppression d'un niveau ou d'une bande demande d'abord confirmation et indique combien d'énoncés et de notes sont concernés. Passer une grille existante en grille à niveaux différenciés remplace ses niveaux par les bandes ; revenir en arrière conserve les critères et les énoncés."
+        "rb_tiered_note": "La suppression d'un niveau ou d'une bande demande d'abord confirmation et indique combien d'énoncés et de notes sont concernés. Passer une grille existante en grille à niveaux différenciés remplace ses niveaux par les bandes ; revenir en arrière conserve les critères et les énoncés.",
+        "gr_tiered_title": "Noter avec une grille à niveaux différenciés",
+        "gr_tiered_item_tier": "Chaque élève est noté dans son propre niveau, choisi d'après l'année et la filière VO de sa classe (ou la filière propre de l'élève). Seuls les énoncés de ce niveau s'affichent. Changez le niveau d'une note avec le menu Niveau au-dessus des critères ; l'enregistrement conserve le niveau dans la note.",
+        "gr_tiered_item_verdict": "Le verdict est une bande (p. ex. IO, B ou E), calculée d'après les points une fois chaque critère évalué. Marquez une exigence comme Non remplie pour donner la bande la plus faible, ou choisissez une bande sous Fixer le verdict pour l'imposer. Le verdict remplace la lettre de l'échelle de notes dans la note, le portail élève et le profil de l'élève.",
+        "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",

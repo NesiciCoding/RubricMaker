@@ -1809,7 +1809,24 @@
         "best_fit_apply": "Aplicar",
         "best_fit_apply_label": "Seleccionar el nivel {{level}}",
         "grid_toggle_details": "Mostrar u ocultar detalles",
-        "grid_ticks": "{{ticked}}/{{total}} marcados"
+        "grid_ticks": "{{ticked}}/{{total}} marcados",
+        "tiered_bar_label": "Nivel, requisitos y veredicto",
+        "tiered_tier": "Nivel",
+        "tiered_choose_tier": "Elige un nivel…",
+        "tiered_no_tier": "Ningún nivel coincide con el curso y el itinerario de la clase de este alumno. Elige uno; hasta entonces se muestran todos los enunciados.",
+        "tiered_tier_from_class": "Según la clase del alumno.",
+        "tiered_tier_changed": "Elegido para esta calificación.",
+        "tiered_use_class_tier": "Usar el nivel de la clase",
+        "tiered_requirements": "Requisitos",
+        "tiered_requirement_met": "Cumplido",
+        "tiered_requirement_not_met": "No cumplido",
+        "tiered_verdict": "Veredicto",
+        "tiered_verdict_pending": "Califica cada criterio para ver el veredicto.",
+        "tiered_verdict_reason_score": "Según los puntos ({{pct}} %)",
+        "tiered_verdict_reason_requirement": "No se cumple un requisito",
+        "tiered_verdict_reason_override": "Elegido por ti",
+        "tiered_verdict_override": "Fijar veredicto:",
+        "tiered_verdict_auto": "Automático (según los puntos)"
     },
     "rubricBuilder": {
         "action_back": "Volver",
@@ -4192,7 +4209,11 @@
         "rb_tiered_item_bands": "Bandas — las filas de cada criterio, de la más baja a la más alta (IO, B y E por defecto). Cada banda tiene un código, un nombre, puntos y un color. Su porcentaje de veredicto fija la parte de los puntos necesaria para alcanzar esa banda en total; déjalo vacío para usar el punto medio entre bandas.",
         "rb_tiered_item_grid": "Enunciados — cada criterio muestra una cuadrícula de bandas × niveles. Cada celda es una lista de comprobación de cómo es esa banda en ese nivel: escribe, pega una lista o mueve un enunciado a otra banda. Los enunciados son evidencias; los puntos vienen de la banda que elijas.",
         "rb_tiered_item_requirements": "Requisitos — condiciones que el trabajo debe cumplir, como entregarlo a tiempo. Un requisito marcado como no cumplido da la banda más baja.",
-        "rb_tiered_note": "Al quitar un nivel o una banda se pide confirmación y se indica cuántos enunciados y calificaciones afecta. Convertir una rúbrica existente en rúbrica por niveles sustituye sus niveles por las bandas; volver atrás conserva los criterios y los enunciados."
+        "rb_tiered_note": "Al quitar un nivel o una banda se pide confirmación y se indica cuántos enunciados y calificaciones afecta. Convertir una rúbrica existente en rúbrica por niveles sustituye sus niveles por las bandas; volver atrás conserva los criterios y los enunciados.",
+        "gr_tiered_title": "Calificar con una rúbrica por niveles",
+        "gr_tiered_item_tier": "Cada alumno se califica en su propio nivel, elegido según el curso y el itinerario VO de su clase (o el itinerario propio del alumno). Solo se muestran los enunciados de ese nivel. Cambia el nivel de una calificación con el menú Nivel sobre los criterios; al guardar, el nivel queda en la calificación.",
+        "gr_tiered_item_verdict": "El veredicto es una banda (p. ej. IO, B o E), calculada a partir de los puntos cuando cada criterio está calificado. Marca un requisito como No cumplido para dar la banda más baja, o elige una banda en Fijar veredicto para imponerla. El veredicto sustituye la letra de la escala de notas en la calificación, el portal del alumno y el perfil del alumno.",
+        "gr_tiered_item_feedback": "La calificación comparativa y la retroalimentación al alumno (portal y enlaces compartidos) también muestran a cada alumno solo los enunciados de su nivel."
     },
     "studentProfile": {
         "tab_overview": "Resumen",

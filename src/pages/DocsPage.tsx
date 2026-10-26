@@ -1010,6 +1010,17 @@ function GradingTab() {
                 />
 
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_tiered_title')}
+                </h3>
+                <FeatureList
+                    items={[
+                        t('docs.gr_tiered_item_tier'),
+                        t('docs.gr_tiered_item_verdict'),
+                        t('docs.gr_tiered_item_feedback'),
+                    ]}
+                />
+
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_layout_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>

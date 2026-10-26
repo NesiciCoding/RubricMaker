@@ -3,6 +3,7 @@ import { usePortalFeedbackAudioSrc } from '../../hooks/usePortalFeedbackAudioSrc
 import PassageReadAloud from '../Tests/PassageReadAloud';
 import type { Rubric, ScoreEntry } from '../../types';
 import SubItemFeedback from './SubItemFeedback';
+import { criteriaForTier } from '../../utils/tieredRubric';
 
 function CriterionAudio({
     studentRubricId,
@@ -34,13 +35,16 @@ export function PortalCriterionFeedback({
     rubric,
     entries,
     studentRubricId,
+    tierId,
 }: {
     rubric: Pick<Rubric, 'criteria'>;
     entries: ScoreEntry[];
     studentRubricId: string;
+    /** A tiered grade's tier: only its statements are shown. */
+    tierId?: string;
 }) {
     const { t, i18n } = useTranslation();
-    const rows = rubric.criteria
+    const rows = criteriaForTier(rubric.criteria, tierId)
         .map((criterion) => {
             const entry = entries.find((e) => e.criterionId === criterion.id);
             const level = criterion.levels.find((l) => l.id === entry?.levelId);

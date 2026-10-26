@@ -21,10 +21,11 @@ import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
+import { gradeTier, levelForTier } from '../utils/tieredRubric';
 import SubItemChecklist from '../components/Grading/SubItemChecklist';
 import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
-import { ComparativeMatchup, ScoreEntry } from '../types';
+import { ComparativeMatchup, ScoreEntry, Student, StudentRubric } from '../types';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 
@@ -351,17 +352,42 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         setIsDirty(false);
     }
 
+    // A tiered grade is in its saved tier, else the student's class tier; saving pins it.
+    const tierOf = (student: Student, sr: StudentRubric) =>
+        rubric?.tiered
+            ? gradeTier(
+                  rubric.tiered,
+                  sr,
+                  student,
+                  classes.find((c) => c.id === student.classId)
+              )?.id
+            : undefined;
+
     function handleSaveAndNext() {
         // v8 ignore next 1 -- the save button only renders once every student/score pair is set
         if (!srA || !srB || !studentA || !studentB || !rubric) return;
+        const tierA = tierOf(studentA, srA);
+        const tierB = tierOf(studentB, srB);
         const snap = JSON.parse(JSON.stringify(rubric));
         const snapScaleId = rubric.gradeScaleId ?? settings.defaultGradeScaleId;
         const snapScale =
             snapScaleId === 'none' ? null : (gradeScales.find((g) => g.id === snapScaleId) ?? gradeScales[0]);
         const gradeScaleSnapshot = snapScale ? JSON.parse(JSON.stringify(snapScale)) : undefined;
         const gradedAt = new Date().toISOString();
-        const savedSrA = { ...srA, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
-        const savedSrB = { ...srB, gradedAt, rubricSnapshot: snap, gradeScaleSnapshot };
+        const savedSrA = {
+            ...srA,
+            ...(tierA && { tierId: tierA }),
+            gradedAt,
+            rubricSnapshot: snap,
+            gradeScaleSnapshot,
+        };
+        const savedSrB = {
+            ...srB,
+            ...(tierB && { tierId: tierB }),
+            gradedAt,
+            rubricSnapshot: snap,
+            gradeScaleSnapshot,
+        };
         saveStudentRubric(savedSrA);
         saveStudentRubric(savedSrB);
         // Only a completed (saved) comparison counts against the per-student cap — an abandoned
@@ -629,6 +655,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     const scale = scaleId === 'none' ? null : (gradeScales.find((g) => g.id === scaleId) ?? gradeScales[0]);
     const sumA = calcGradeSummary(srA, rubric.criteria, scale, rubric);
     const sumB = calcGradeSummary(srB, rubric.criteria, scale, rubric);
+    const tierA = tierOf(studentA, srA);
+    const tierB = tierOf(studentB, srB);
 
     return (
         <>
@@ -1014,7 +1042,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                     {eA && (
                                                         <SubItemChecklist
                                                             criterion={c}
-                                                            level={lvlA}
+                                                            level={levelForTier(lvlA, tierA)}
                                                             entry={eA}
                                                             accentColor="var(--accent)"
                                                             selected
@@ -1277,7 +1305,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                     {eB && (
                                                         <SubItemChecklist
                                                             criterion={c}
-                                                            level={lvlB}
+                                                            level={levelForTier(lvlB, tierB)}
                                                             entry={eB}
                                                             accentColor="var(--accent)"
                                                             selected

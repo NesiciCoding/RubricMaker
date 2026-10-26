@@ -1809,7 +1809,24 @@
         "best_fit_apply": "Übernehmen",
         "best_fit_apply_label": "Stufe {{level}} wählen",
         "grid_toggle_details": "Details ein- oder ausblenden",
-        "grid_ticks": "{{ticked}}/{{total}} abgehakt"
+        "grid_ticks": "{{ticked}}/{{total}} abgehakt",
+        "tiered_bar_label": "Niveau, Voraussetzungen und Urteil",
+        "tiered_tier": "Niveau",
+        "tiered_choose_tier": "Niveau wählen…",
+        "tiered_no_tier": "Kein Niveau passt zu Jahrgang und Zweig der Klasse dieses Schülers. Wähle eines; bis dahin werden alle Aussagen angezeigt.",
+        "tiered_tier_from_class": "Aus der Klasse des Schülers.",
+        "tiered_tier_changed": "Für diese Bewertung gewählt.",
+        "tiered_use_class_tier": "Niveau der Klasse verwenden",
+        "tiered_requirements": "Voraussetzungen",
+        "tiered_requirement_met": "Erfüllt",
+        "tiered_requirement_not_met": "Nicht erfüllt",
+        "tiered_verdict": "Urteil",
+        "tiered_verdict_pending": "Bewerte jedes Kriterium, um das Urteil zu sehen.",
+        "tiered_verdict_reason_score": "Aus den Punkten ({{pct}} %)",
+        "tiered_verdict_reason_requirement": "Eine Voraussetzung ist nicht erfüllt",
+        "tiered_verdict_reason_override": "Von dir festgelegt",
+        "tiered_verdict_override": "Urteil festlegen:",
+        "tiered_verdict_auto": "Automatisch (aus den Punkten)"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -4192,7 +4209,11 @@
         "rb_tiered_item_bands": "Stufen — die Zeilen jedes Kriteriums, von schwach nach stark (standardmäßig IO, B und E). Jede Stufe hat ein Kürzel, einen Namen, Punkte und eine Farbe. Ihr Urteilsprozentsatz legt fest, welcher Anteil der Punkte insgesamt für diese Stufe nötig ist; leer lassen für die Mitte zwischen den Stufen.",
         "rb_tiered_item_grid": "Aussagen — jedes Kriterium zeigt ein Raster aus Stufen × Niveaus. Jede Zelle ist eine Checkliste, wie diese Stufe auf diesem Niveau aussieht: tippen, eine Liste einfügen oder eine Aussage in eine andere Stufe verschieben. Aussagen sind Belege; die Punkte kommen von der gewählten Stufe.",
         "rb_tiered_item_requirements": "Voraussetzungen — Bedingungen, die die Arbeit erfüllen muss, etwa die pünktliche Abgabe. Eine als nicht erfüllt markierte Voraussetzung ergibt die niedrigste Stufe.",
-        "rb_tiered_note": "Beim Entfernen eines Niveaus oder einer Stufe wird zuerst nachgefragt und angezeigt, wie viele Aussagen und Bewertungen betroffen sind. Ein bestehendes Raster in ein gestuftes Raster umzuwandeln ersetzt seine Leistungsstufen durch die Stufen; das Zurückstellen behält Kriterien und Aussagen."
+        "rb_tiered_note": "Beim Entfernen eines Niveaus oder einer Stufe wird zuerst nachgefragt und angezeigt, wie viele Aussagen und Bewertungen betroffen sind. Ein bestehendes Raster in ein gestuftes Raster umzuwandeln ersetzt seine Leistungsstufen durch die Stufen; das Zurückstellen behält Kriterien und Aussagen.",
+        "gr_tiered_title": "Bewerten mit einem gestuften Bewertungsraster",
+        "gr_tiered_item_tier": "Jeder Schüler wird auf seinem eigenen Niveau bewertet, gewählt nach Jahrgang und VO-Zweig der Klasse (oder dem eigenen Zweig des Schülers). Es werden nur die Aussagen dieses Niveaus angezeigt. Wechsle das Niveau für eine Bewertung über das Menü Niveau über den Kriterien; beim Speichern bleibt das Niveau an der Bewertung.",
+        "gr_tiered_item_verdict": "Das Urteil ist eine Stufe (z. B. IO, B oder E), berechnet aus den Punkten, sobald jedes Kriterium bewertet ist. Markiere eine Voraussetzung als Nicht erfüllt für die niedrigste Stufe, oder wähle unter Urteil festlegen eine Stufe, um es zu überschreiben. Das Urteil ersetzt die Note der Notenskala in der Bewertung, im Schülerportal und im Schülerprofil.",
+        "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",

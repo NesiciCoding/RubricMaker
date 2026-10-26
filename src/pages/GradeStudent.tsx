@@ -71,7 +71,9 @@ import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
 import { scoresSubItems, subItemMode, toggleTick } from '../utils/subItems';
+import { criteriaForTier, gradeTier, resolveTier } from '../utils/tieredRubric';
 import SubItemChecklist, { BestFitHint } from '../components/Grading/SubItemChecklist';
+import TieredGradingBar, { type TieredGradePatch } from '../components/Grading/TieredGradingBar';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
@@ -327,6 +329,17 @@ export default function GradeStudent() {
         return calcGradeSummary(sr, rubric.criteria, scale, rubric);
     }, [sr, rubric, scale]);
 
+    // A tiered grade shows only its tier's statements: the tier saved on the grade, else the
+    // student's class tier. Saving pins the tier so a later class change can't regrade it.
+    const studentClass = classes.find((c) => c.id === student?.classId);
+    const classTierId = rubric?.tiered ? resolveTier(rubric.tiered, student, studentClass)?.id : undefined;
+    const tierId = rubric?.tiered && sr ? gradeTier(rubric.tiered, sr, student, studentClass)?.id : undefined;
+    const criteria = useMemo(() => criteriaForTier(rubric?.criteria ?? [], tierId), [rubric, tierId]);
+    const updateTiered = useCallback((patch: TieredGradePatch) => {
+        setSr((prev) => (prev ? { ...prev, ...patch } : prev));
+        setIsDirty(true);
+    }, []);
+
     // A letter is only shown once every criterion is scored: a half-graded record used to show a
     // red "F" straight away, which reads as a final mark rather than work in progress (#681).
     const gradingComplete = !!summary && summary.totalCriteria > 0 && summary.gradedCount === summary.totalCriteria;
@@ -399,6 +412,7 @@ export default function GradeStudent() {
         if (toSave !== sr) setSr(toSave);
         saveStudentRubric({
             ...toSave,
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -428,6 +442,7 @@ export default function GradeStudent() {
         }
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         nothingScored,
@@ -460,6 +475,7 @@ export default function GradeStudent() {
         }
         saveStudentRubric({
             ...clearNotHandedInIfScored(sr, cannedNhiComment, existingSR),
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -472,6 +488,7 @@ export default function GradeStudent() {
         navigate(`/rubrics/${rubricId}/grade/${nextStudent.id}`, { replace: true });
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         saveStudentRubric,
@@ -507,6 +524,7 @@ export default function GradeStudent() {
             return;
         const nhiSR = {
             ...markNotHandedIn(sr, cannedNhiComment),
+            ...(tierId && { tierId }),
             feedbackOnly,
             isAnchor,
             rubricSnapshot: JSON.parse(JSON.stringify(rubric)),
@@ -523,6 +541,7 @@ export default function GradeStudent() {
         }
     }, [
         sr,
+        tierId,
         rubric,
         scale,
         saveStudentRubric,
@@ -1254,10 +1273,24 @@ export default function GradeStudent() {
                     </div>
                 )}
 
+                {rubric.tiered && summary && (
+                    <TieredGradingBar
+                        config={rubric.tiered}
+                        tierId={tierId}
+                        classTierId={classTierId}
+                        requirementsMet={sr.requirementsMet}
+                        verdictOverride={sr.verdictOverride}
+                        verdict={summary.verdict}
+                        percentage={summary.modifiedPercentage}
+                        complete={gradingComplete}
+                        onChange={updateTiered}
+                    />
+                )}
+
                 {/* Rubric — grid layout (multi-level rubrics) */}
                 {useGrid && (
                     <GradingGrid
-                        criteria={rubric.criteria}
+                        criteria={criteria}
                         sr={sr}
                         fmt={fmt}
                         orderedLevels={orderedLevels}
@@ -1288,7 +1321,7 @@ export default function GradeStudent() {
                             fontSize: fmt.fontSize,
                         }}
                     >
-                        {rubric.criteria.map((c, criterionIndex) => {
+                        {criteria.map((c, criterionIndex) => {
                             const entry = sr.entries.find((e) => e.criterionId === c.id)!;
                             const levels = orderedLevels(c);
                             const isCriterionFocused = focusedCriterionIdx === criterionIndex;

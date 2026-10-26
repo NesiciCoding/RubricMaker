@@ -1809,7 +1809,24 @@
         "best_fit_apply": "Toepassen",
         "best_fit_apply_label": "Niveau {{level}} kiezen",
         "grid_toggle_details": "Details tonen of verbergen",
-        "grid_ticks": "{{ticked}}/{{total}} aangevinkt"
+        "grid_ticks": "{{ticked}}/{{total}} aangevinkt",
+        "tiered_bar_label": "Niveau, voorwaarden en eindoordeel",
+        "tiered_tier": "Niveau",
+        "tiered_choose_tier": "Kies een niveau…",
+        "tiered_no_tier": "Geen niveau past bij het leerjaar en niveau van de klas van deze leerling. Kies er een; tot dan zie je alle uitspraken.",
+        "tiered_tier_from_class": "Volgens de klas van de leerling.",
+        "tiered_tier_changed": "Gekozen voor deze beoordeling.",
+        "tiered_use_class_tier": "Niveau van de klas gebruiken",
+        "tiered_requirements": "Voorwaarden",
+        "tiered_requirement_met": "Voldaan",
+        "tiered_requirement_not_met": "Niet voldaan",
+        "tiered_verdict": "Eindoordeel",
+        "tiered_verdict_pending": "Beoordeel elk criterium om het eindoordeel te zien.",
+        "tiered_verdict_reason_score": "Op basis van punten ({{pct}}%)",
+        "tiered_verdict_reason_requirement": "Er is niet aan een voorwaarde voldaan",
+        "tiered_verdict_reason_override": "Door jou gekozen",
+        "tiered_verdict_override": "Eindoordeel kiezen:",
+        "tiered_verdict_auto": "Automatisch (op basis van punten)"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -4192,7 +4209,11 @@
         "rb_tiered_item_bands": "Banden — de rijen van elk criterium, van laag naar hoog (standaard IO, B en E). Elke band heeft een code, een naam, punten en een kleur. Het oordeelpercentage bepaalt welk deel van de punten nodig is om die band in totaal te halen; laat het leeg voor het midden tussen de banden.",
         "rb_tiered_item_grid": "Uitspraken — elk criterium toont een raster van banden × niveaus. Elke cel is een checklist van hoe die band er voor dat niveau uitziet: typ, plak een lijst of verplaats een uitspraak naar een andere band. Uitspraken zijn bewijs; de punten komen van de band die je kiest.",
         "rb_tiered_item_requirements": "Voorwaarden — eisen waaraan het werk moet voldoen, zoals op tijd inleveren. Een voorwaarde die niet is gehaald, geeft de laagste band.",
-        "rb_tiered_note": "Bij het verwijderen van een niveau of band wordt eerst gevraagd hoeveel uitspraken en beoordelingen het raakt. Een bestaande rubric omzetten naar een niveaurubriek vervangt de niveaus door de banden; terugzetten behoudt de criteria en uitspraken."
+        "rb_tiered_note": "Bij het verwijderen van een niveau of band wordt eerst gevraagd hoeveel uitspraken en beoordelingen het raakt. Een bestaande rubric omzetten naar een niveaurubriek vervangt de niveaus door de banden; terugzetten behoudt de criteria en uitspraken.",
+        "gr_tiered_title": "Beoordelen met een niveaurubriek",
+        "gr_tiered_item_tier": "Elke leerling wordt beoordeeld in het eigen niveau, op basis van het leerjaar en VO-niveau van de klas (of het eigen niveau van de leerling). Je ziet alleen de uitspraken van dat niveau. Wissel het niveau voor één beoordeling via het menu Niveau boven de criteria; bij opslaan blijft het niveau bij de beoordeling.",
+        "gr_tiered_item_verdict": "Het eindoordeel is een band (bijv. IO, B of E), berekend uit de punten zodra elk criterium is beoordeeld. Zet een voorwaarde op Niet voldaan voor de laagste band, of kies een band bij Eindoordeel kiezen om het te overschrijven. Het eindoordeel vervangt het cijfer van de cijferschaal bij de beoordeling, in het leerlingportaal en op het leerlingprofiel.",
+        "gr_tiered_item_feedback": "Vergelijkend beoordelen en leerlingfeedback (portaal en gedeelde links) tonen elke leerling ook alleen de uitspraken van het eigen niveau."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",

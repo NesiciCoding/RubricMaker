@@ -247,6 +247,70 @@ describe('ComparativeGrading', () => {
         });
     });
 
+    describe('tiered rubrics', () => {
+        const tieredRubric: Rubric = {
+            ...mockRubric,
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Spelling',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [
+                        {
+                            id: 'lb',
+                            bandId: 'b',
+                            label: 'B',
+                            minPoints: 1,
+                            maxPoints: 1,
+                            description: '',
+                            subItems: [
+                                { id: 'mb', label: 'Mavo B statement', tierId: 'mavo' },
+                                { id: 'hb', label: 'Havo B statement', tierId: 'havo' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+            tiered: {
+                tiers: [
+                    { id: 'mavo', year: 'jaar-1', track: 'vmbo-tl', label: 'Mavo' },
+                    { id: 'havo', year: 'jaar-1', track: 'havo', label: 'Havo' },
+                ],
+                bands: [{ id: 'b', code: 'B', label: '', points: 1 }],
+            },
+        };
+        const graded = (id: string, studentId: string): StudentRubric => ({
+            id,
+            rubricId: 'r1',
+            studentId,
+            entries: [{ criterionId: 'c1', levelId: 'lb', comment: '', checkedSubItems: [] }],
+            overallComment: '',
+            isPeerReview: false,
+        });
+
+        afterEach(() => {
+            mockAppValue.rubrics = mockRubricsArr;
+            mockAppValue.classes = mockClassesArr;
+            mockAppValue.students = mockStudentsArr;
+            mockStudentRubricsArr.length = 0;
+        });
+
+        it("shows each student their own tier's statements and saves that tier on each grade", () => {
+            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.classes = [{ ...mockClassA, year: 'jaar-1', voTrack: 'havo' }];
+            mockAppValue.students = [{ ...mockStudentA, voTrack: 'vmbo-tl' }, mockStudentB];
+            mockStudentRubricsArr.push(graded('sr-alice', 's1'), graded('sr-bob', 's2'));
+            renderAt('/grade-comparative/c1/r1');
+            expect(screen.getAllByText('Mavo B statement')).toHaveLength(1);
+            expect(screen.getAllByText('Havo B statement')).toHaveLength(1);
+            fireEvent.click(screen.getByText(/comparativeGrading.action_save_next/));
+            const tiers = Object.fromEntries(mockSaveStudentRubric.mock.calls.map(([sr]) => [sr.studentId, sr.tierId]));
+            expect(tiers).toEqual({ s1: 'mavo', s2: 'havo' });
+        });
+    });
+
     it('renders the combined-classes session scope', () => {
         renderAt('/grade-comparative/__combined__/r1');
         expect(screen.getAllByText('Alice').length).toBeGreaterThan(0);

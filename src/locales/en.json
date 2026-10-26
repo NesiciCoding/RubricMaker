@@ -1809,7 +1809,24 @@
         "best_fit_apply": "Apply",
         "best_fit_apply_label": "Select level {{level}}",
         "grid_toggle_details": "Show or hide details",
-        "grid_ticks": "{{ticked}}/{{total}} ticked"
+        "grid_ticks": "{{ticked}}/{{total}} ticked",
+        "tiered_bar_label": "Tier, requirements and verdict",
+        "tiered_tier": "Tier",
+        "tiered_choose_tier": "Choose a tier…",
+        "tiered_no_tier": "No tier matches this student's class year and track. Choose one; all statements show until you do.",
+        "tiered_tier_from_class": "From the student's class.",
+        "tiered_tier_changed": "Chosen for this grade.",
+        "tiered_use_class_tier": "Use the class tier",
+        "tiered_requirements": "Requirements",
+        "tiered_requirement_met": "Met",
+        "tiered_requirement_not_met": "Not met",
+        "tiered_verdict": "Verdict",
+        "tiered_verdict_pending": "Score every criterion to see the verdict.",
+        "tiered_verdict_reason_score": "From points ({{pct}}%)",
+        "tiered_verdict_reason_requirement": "A requirement is not met",
+        "tiered_verdict_reason_override": "Set by you",
+        "tiered_verdict_override": "Set verdict:",
+        "tiered_verdict_auto": "Automatic (from points)"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -4192,7 +4209,11 @@
         "rb_tiered_item_bands": "Bands — the rows of every criterion, worst first (IO, B and E by default). Each band has a code, a name, points and a colour. Its verdict percentage sets the share of points needed to reach that band overall; leave it empty to use the midpoint between bands.",
         "rb_tiered_item_grid": "Statements — every criterion shows a band × tier grid. Each cell is a checklist of what that band looks like for that tier: type, paste a list, or move a statement to another band. Statements are evidence; the points come from the band you choose.",
         "rb_tiered_item_requirements": "Requirements — conditions the work must meet, such as handing it in on time. A requirement marked as not met gives the lowest band.",
-        "rb_tiered_note": "Removing a tier or band asks first and says how many statements and grades it affects. Switching an existing rubric to tiered replaces its levels with the bands; switching back keeps the criteria and statements."
+        "rb_tiered_note": "Removing a tier or band asks first and says how many statements and grades it affects. Switching an existing rubric to tiered replaces its levels with the bands; switching back keeps the criteria and statements.",
+        "gr_tiered_title": "Grading a tiered rubric",
+        "gr_tiered_item_tier": "Each student is graded in their own tier, picked from their class's year and VO track (or the student's own track). Only that tier's statements are shown. Switch the tier for one grade with the Tier menu above the criteria; saving keeps the tier on the grade.",
+        "gr_tiered_item_verdict": "The verdict is a band (e.g. IO, B or E), worked out from the points once every criterion is scored. Mark a requirement as Not met to give the lowest band, or pick a band under Set verdict to override it. The verdict replaces the grade-scale letter on the grade, in the student portal and on the student profile.",
+        "gr_tiered_item_feedback": "Comparative grading and student feedback (portal and shared links) also show each student only their own tier's statements."
     },
     "studentProfile": {
         "tab_overview": "Overview",

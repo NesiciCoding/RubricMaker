@@ -3,6 +3,7 @@ import type {
     Rubric,
     RubricBand,
     RubricCriterion,
+    RubricLevel,
     RubricTier,
     SchoolYear,
     Student,
@@ -178,6 +179,20 @@ export function gradeTier(
 /** Sub-item filter for one tier: its own statements plus any shared by every tier. */
 export function inTier(tierId: string | undefined): (si: SubItem) => boolean {
     return (si) => !si.tierId || si.tierId === tierId;
+}
+
+/**
+ * The criteria as one tier sees them: each level keeps only that tier's statements.
+ * Without a tier every statement stays, so a grade whose tier is still unknown shows them all.
+ */
+export function criteriaForTier(criteria: RubricCriterion[], tierId: string | undefined): RubricCriterion[] {
+    if (!tierId) return criteria;
+    return criteria.map((c) => ({ ...c, levels: c.levels.map((l) => levelForTier(l, tierId)) }));
+}
+
+/** One level as a tier sees it; see criteriaForTier. */
+export function levelForTier(level: RubricLevel, tierId: string | undefined): RubricLevel {
+    return tierId ? { ...level, subItems: (level.subItems ?? []).filter(inTier(tierId)) } : level;
 }
 
 export interface TieredVerdict {

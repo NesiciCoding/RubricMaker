@@ -1525,6 +1525,7 @@ export default function StudentPortalPage() {
                                         rubric={h.rubric}
                                         entries={h.sr.entries}
                                         studentRubricId={h.sr.id}
+                                        tierId={h.sr.tierId}
                                     />
 
                                     {/* Self-assessment */}
