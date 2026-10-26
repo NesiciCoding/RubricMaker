@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Gramática",
         "snapshot_header_vocabulary": "Vocabulario",
         "snapshot_header_needs_attention": "Necesita atención",
-        "snapshot_open_cefr": "Abrir el resumen MCER de {{name}}",
+        "snapshot_open_cefr": "{{level}}: abrir el resumen MCER de {{name}}",
         "snapshot_open_grammar": "Abrir la ruta de aprendizaje de {{name}}",
         "snapshot_open_vocab": "Abrir el perfil de {{name}}",
         "snapshot_open_profile": "Abrir el perfil de {{name}}",
@@ -1075,6 +1075,8 @@
                 "scores_col": "Puntos",
                 "max_score_short": "máx. {{points}}",
                 "categories_label": "Categorías",
+                "question_image_alt": "Imagen de la pregunta",
+                "option_image_alt": "Imagen de la opción",
                 "recorded_answer_note": "Respuesta grabada — no se necesita respuesta escrita.",
                 "audio_note": "Escucha la grabación.",
                 "point_label_one": "{{count}} pt",
@@ -2979,7 +2981,7 @@
         "open_panel": "Analizar el documento del alumno"
     },
     "notifications": {
-        "bell_title": "Notificaciones ({{count}} pendientes)",
+        "bell_title": "Notificaciones: {{count}} pendientes",
         "panel_title": "Calificaciones pendientes",
         "panel_label": "Panel de notificaciones",
         "all_up_to_date": "Ninguna prueba o ensayo entregado lleva más de {{threshold}} días esperando calificación.",
@@ -3279,7 +3281,9 @@
         "pause": "Pausar lectura",
         "resume": "Reanudar",
         "stop": "Detener",
-        "progress": "Progreso de lectura"
+        "progress": "Progreso de lectura",
+        "now_reading": "Leyendo en voz alta…",
+        "reading_paused": "Lectura en pausa"
     },
     "essay": {
         "email_gate_title": "Ingrese su correo electrónico escolar",
@@ -3817,6 +3821,8 @@
         "gr_portal_intro_suffix": "de la página de Estudiantes, o deja que el propio estudiante inicie sesión (OTP por correo o una contraseña definida por el profesor) — también accesible directamente en",
         "gr_portal_work_title": "Mi trabajo",
         "gr_portal_work_body": "Una lista combinada de tareas de cada ensayo y examen asignado, agrupados en Atrasado, Planificado y Completado. Cada elemento muestra su estado (no iniciado, en curso, enviado) y la fecha límite cuando el profesor la haya definido. Los exámenes se abren con un clic desde la lista — sin necesidad de buscar un enlace con código.",
+        "gr_portal_read_aloud_title": "Escuchar la retroalimentación en voz alta",
+        "gr_portal_read_aloud_body": "Junto a cada comentario del profesor — el comentario sobre un criterio individual y el comentario general — hay un botón \"Leer en voz alta\" que usa la voz integrada del navegador. Funciona sin conexión una vez cargado el portal, no envía audio a ningún lugar, y también está disponible en un enlace de retroalimentación compartido (/feedback/:code). Útil para estudiantes más jóvenes, estudiantes de segunda lengua, o cualquiera que prefiera escuchar en vez de leer.",
         "gr_portal_progress_title": "Mi progreso",
         "gr_portal_progress_body": "Un gráfico de radar con las propias puntuaciones del estudiante por criterio, combinado en todas las rúbricas calificadas (los criterios con el mismo nombre se promedian) o filtrado a una sola rúbrica — se muestra en cuanto haya al menos 3 criterios calificados distintos.",
         "gr_portal_messages_title": "Mensajes",

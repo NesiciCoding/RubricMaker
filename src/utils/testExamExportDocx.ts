@@ -300,12 +300,20 @@ async function fetchDocxImage(imageUrl: string, maxWidthPx: number): Promise<Fet
     }
 }
 
-const docxImageRun = ({ type, data, width, height }: FetchedDocxImage) =>
-    new ImageRun({ type, data, transformation: { width, height } });
+// altText === '' marks the image decorative (docx has no dedicated flag for this, unlike the HTML
+// export's alt=""): an explicit empty name/description tells Word the image carries no information,
+// rather than leaving docProps unset the way an image nobody passed altText to does.
+const docxImageRun = ({ type, data, width, height }: FetchedDocxImage, altText?: string) =>
+    new ImageRun({
+        type,
+        data,
+        transformation: { width, height },
+        ...(altText !== undefined ? { altText: { name: altText, description: altText } } : {}),
+    });
 
-async function questionImageRun(imageUrl: string, maxWidthPx = 380): Promise<ImageRun | null> {
+async function questionImageRun(imageUrl: string, maxWidthPx = 380, altText?: string): Promise<ImageRun | null> {
     const image = await fetchDocxImage(imageUrl, maxWidthPx);
-    return image ? docxImageRun(image) : null;
+    return image ? docxImageRun(image, altText) : null;
 }
 
 /** Fetches every <img> in a rich-text fragment up front (the converters are synchronous); an image that can't be loaded is simply absent from the map. */
@@ -362,7 +370,7 @@ async function questionParagraphs(
     ];
 
     if (question.imageUrl) {
-        const imageRun = await questionImageRun(question.imageUrl);
+        const imageRun = await questionImageRun(question.imageUrl, 380, tx('question_image_alt'));
         if (imageRun) blocks.push(new Paragraph({ children: [imageRun], spacing: { after: 80 } }));
     }
 
@@ -376,7 +384,9 @@ async function questionParagraphs(
                         indent: { left: 360 },
                     })
                 );
-                const optionImage = o.imageUrl ? await questionImageRun(o.imageUrl, 160) : null;
+                const optionImage = o.imageUrl
+                    ? await questionImageRun(o.imageUrl, 160, o.text ? '' : tx('option_image_alt'))
+                    : null;
                 if (optionImage) blocks.push(new Paragraph({ children: [optionImage], indent: { left: 360 } }));
             }
             break;
