@@ -186,9 +186,11 @@ export function buildRubricHTML(
     scale: GradeScale | null,
     breakBeforeRight = false
 ): string {
-    const sheet = buildTieredSheet(rubric, { sr, studentName: student.name, scale });
+    // The verdict is the one given at grading time, so it comes from the rubric saved with the grade.
+    const gradedRubric = sr.rubricSnapshot ?? rubric;
+    const sheet = buildTieredSheet(gradedRubric, { sr, studentName: student.name, scale });
     if (sheet) return tieredPageHtml(sheet, rubric, breakBeforeRight, sr);
-    const summary = calcGradeSummary(sr, rubric.criteria, scale, { tiered: rubric.tiered });
+    const summary = calcGradeSummary(sr, gradedRubric.criteria, scale, gradedRubric);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
     const modifierSign = sr.globalModifier && sr.globalModifier.value > 0 ? '+' : '';

@@ -550,6 +550,7 @@ function normaliseRubricJson(data: RawRubricJson, fallbackName: string): ParsedR
     const scoringMode = SCORING_MODES.find((m) => m === data.scoringMode);
     // Band and tier ids are rubric-local, so levels (bandId) and sub-items (tierId) keep pointing at them.
     const tiered = sanitizeTiered(data.tiered);
+    if (data.tiered !== undefined && !tiered) warnings.push({ key: 'importRubric.warn_json_tiered_invalid' });
     const cefrTargetLevel = CEFR_LEVELS.find((l) => l === data.cefrTargetLevel);
 
     return {
