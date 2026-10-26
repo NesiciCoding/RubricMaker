@@ -2008,7 +2008,11 @@
         "description_converted_other": "Beschrijving omgezet naar {{count}} sub-items",
         "sub_item_mode_label": "Sub-items:",
         "sub_item_mode_points_help": "Elk sub-item telt punten op binnen het bereik van het niveau.",
-        "sub_item_mode_checklist_help": "Sub-items zijn uitspraken die je als bewijs aanvinkt; ze veranderen de score niet."
+        "sub_item_mode_checklist_help": "Sub-items zijn uitspraken die je als bewijs aanvinkt; ze veranderen de score niet.",
+        "action_all_checklist": "Checklist voor alle criteria",
+        "action_all_checklist_title": "Zet de sub-items van elk criterium in Checklist-modus",
+        "all_checklist_done_one": "{{count}} criterium omgezet naar Checklist",
+        "all_checklist_done_other": "{{count}} criteria omgezet naar Checklist"
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -3589,7 +3593,7 @@
         "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde. Criteria van 0 punten tellen niet mee in het gemiddelde. Nieuwe criteria verdelen het gewicht gelijk en het totaal blijft 100% terwijl u criteria toevoegt of verwijdert, totdat u zelf een gewicht aanpast.",
         "rb_scoring_modes_item_single": "Single-point rubriek — elk criterium heeft één descriptor (de standaard). Bij het beoordelen kies je Overtreft, Behaalt of Nog niet: Overtreft en Behaalt leveren allebei de volle punten van het criterium op, Nog niet levert 0 op.",
         "rb_level_options_title": "Niveau-opties",
-        "rb_level_options_item_checklist": "Sub-items binnen een niveau, in een van twee modi die je per criterium kiest: Punten (elk sub-item telt punten op binnen het bereik van het niveau) of Checklist (uitspraken die je tijdens het beoordelen als bewijs aanvinkt; ze veranderen de score nooit).",
+        "rb_level_options_item_checklist": "Sub-items binnen een niveau, in een van twee modi die je per criterium kiest: Punten (elk sub-item telt punten op binnen het bereik van het niveau) of Checklist (uitspraken die je tijdens het beoordelen als bewijs aanvinkt; ze veranderen de score nooit). Checklist voor alle criteria, boven de lijst met criteria, zet alle criteria in één keer om.",
         "rb_level_options_item_ranges": "Puntbereiken — stel een minimum en maximum in; de docent kiest tijdens het beoordelen een waarde binnen het bereik.",
         "rb_level_options_item_modifiers": "Scoremodificaties — pas %-, punt- of niveau-aanpassingen toe met een optionele reden.",
         "rb_standards_title": "Standaarden & raamwerkkoppelingen",

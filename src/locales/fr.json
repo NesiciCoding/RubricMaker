@@ -2008,7 +2008,11 @@
         "description_converted_other": "Description convertie en {{count}} sous-éléments",
         "sub_item_mode_label": "Sous-éléments :",
         "sub_item_mode_points_help": "Chaque sous-élément ajoute des points dans la plage du niveau.",
-        "sub_item_mode_checklist_help": "Les sous-éléments sont des énoncés à cocher comme preuves ; ils ne changent pas la note."
+        "sub_item_mode_checklist_help": "Les sous-éléments sont des énoncés à cocher comme preuves ; ils ne changent pas la note.",
+        "action_all_checklist": "Liste de contrôle pour tous les critères",
+        "action_all_checklist_title": "Passer les sous-éléments de chaque critère en mode Liste de contrôle",
+        "all_checklist_done_one": "{{count}} critère passé en Liste de contrôle",
+        "all_checklist_done_other": "{{count}} critères passés en Liste de contrôle"
     },
     "peerReview": {
         "round_label": "Tour",
@@ -3589,7 +3593,7 @@
         "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée. Les critères valant 0 point sont exclus de la moyenne. Les nouveaux critères se partagent le poids à parts égales et le total reste à 100 % quand vous en ajoutez ou en retirez, jusqu'à ce que vous modifiiez vous-même un poids.",
         "rb_scoring_modes_item_single": "Rubrique à point unique — chaque critère a un seul descripteur (la norme). Lors de la notation, vous choisissez Dépasse, Atteint ou Pas encore : Dépasse et Atteint rapportent tous deux la totalité des points du critère, Pas encore rapporte 0.",
         "rb_level_options_title": "Options de niveau",
-        "rb_level_options_item_checklist": "Sous-éléments dans un niveau, selon l'un de deux modes choisis par critère : Points (chaque sous-élément ajoute des points dans la plage du niveau) ou Liste de contrôle (énoncés à cocher comme preuves pendant la correction ; ils ne changent jamais la note).",
+        "rb_level_options_item_checklist": "Sous-éléments dans un niveau, selon l'un de deux modes choisis par critère : Points (chaque sous-élément ajoute des points dans la plage du niveau) ou Liste de contrôle (énoncés à cocher comme preuves pendant la correction ; ils ne changent jamais la note). Liste de contrôle pour tous les critères, au-dessus de la liste des critères, les bascule tous d'un coup.",
         "rb_level_options_item_ranges": "Plages de points — définissez un minimum et un maximum ; l'enseignant choisit une valeur dans la plage lors de la notation.",
         "rb_level_options_item_modifiers": "Modificateurs de score — appliquez des ajustements en %, en points ou de niveau avec une raison facultative.",
         "rb_standards_title": "Référentiels & liens vers les cadres",

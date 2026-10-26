@@ -31,6 +31,7 @@ import {
     GitCompare,
     Printer,
     Info,
+    ListChecks,
 } from 'lucide-react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
@@ -587,6 +588,19 @@ function RubricBuilderEditor() {
         if (criteria.length === prev.length) return;
         if (hasEvenWeights(prev) && !hasEvenWeights(criteria)) setCriteria(distributeWeights(criteria));
     }, [criteria, scoringMode]);
+
+    function setAllToChecklist() {
+        const before = new Map(criteria.map((c) => [c.id, c.subItemMode]));
+        const changed = criteria.filter((c) => subItemMode(c) !== 'checklist').length;
+        setCriteria((c) => c.map((x) => ({ ...x, subItemMode: 'checklist' })));
+        showToast(t('rubricBuilder.all_checklist_done', { count: changed }), 'info', {
+            action: {
+                label: t('common.undo'),
+                onClick: () =>
+                    setCriteria((c) => c.map((x) => (before.has(x.id) ? { ...x, subItemMode: before.get(x.id) } : x))),
+            },
+        });
+    }
 
     function pasteFromClipboard() {
         try {
@@ -1372,6 +1386,16 @@ function RubricBuilderEditor() {
                                             {t('rubricBuilder.action_collapse_all')}
                                         </button>
                                     ))}
+                                {scoringMode !== 'single-point' &&
+                                    criteria.some((c) => subItemMode(c) !== 'checklist') && (
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={setAllToChecklist}
+                                            title={t('rubricBuilder.action_all_checklist_title')}
+                                        >
+                                            <ListChecks size={14} /> {t('rubricBuilder.action_all_checklist')}
+                                        </button>
+                                    )}
                                 {(cefrSkill === 'speaking_production' || cefrSkill === 'speaking_interaction') && (
                                     <button
                                         className="btn btn-secondary btn-sm"

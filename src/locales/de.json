@@ -2008,7 +2008,11 @@
         "description_converted_other": "Beschreibung in {{count}} Teilelemente umgewandelt",
         "sub_item_mode_label": "Teilelemente:",
         "sub_item_mode_points_help": "Jedes Teilelement addiert Punkte innerhalb des Bereichs der Stufe.",
-        "sub_item_mode_checklist_help": "Teilelemente sind Aussagen, die du als Beleg abhakst; sie ändern die Punktzahl nicht."
+        "sub_item_mode_checklist_help": "Teilelemente sind Aussagen, die du als Beleg abhakst; sie ändern die Punktzahl nicht.",
+        "action_all_checklist": "Checkliste für alle Kriterien",
+        "action_all_checklist_title": "Die Teilelemente aller Kriterien in den Checklisten-Modus schalten",
+        "all_checklist_done_one": "{{count}} Kriterium auf Checkliste umgestellt",
+        "all_checklist_done_other": "{{count}} Kriterien auf Checkliste umgestellt"
     },
     "peerReview": {
         "round_label": "Runde",
@@ -3589,7 +3593,7 @@
         "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt. Kriterien mit 0 Punkten zählen im Durchschnitt nicht mit. Neue Kriterien teilen sich die Gewichtung gleichmäßig, und die Summe bleibt beim Hinzufügen oder Entfernen bei 100 %, bis Sie selbst eine Gewichtung ändern.",
         "rb_scoring_modes_item_single": "Single-Point-Rubrik — jedes Kriterium hat einen Deskriptor (den Standard). Beim Bewerten wählst du Übertrifft, Erfüllt oder Noch nicht: Übertrifft und Erfüllt bringen beide die volle Punktzahl des Kriteriums, Noch nicht bringt 0.",
         "rb_level_options_title": "Stufenoptionen",
-        "rb_level_options_item_checklist": "Teilelemente innerhalb einer Stufe, in einem von zwei Modi pro Kriterium: Punkte (jedes Teilelement addiert Punkte innerhalb des Bereichs der Stufe) oder Checkliste (Aussagen, die du beim Bewerten als Beleg abhakst; sie ändern die Punktzahl nie).",
+        "rb_level_options_item_checklist": "Teilelemente innerhalb einer Stufe, in einem von zwei Modi pro Kriterium: Punkte (jedes Teilelement addiert Punkte innerhalb des Bereichs der Stufe) oder Checkliste (Aussagen, die du beim Bewerten als Beleg abhakst; sie ändern die Punktzahl nie). Checkliste für alle Kriterien, über der Kriterienliste, stellt alle Kriterien auf einmal um.",
         "rb_level_options_item_ranges": "Punktbereiche — Minimum und Maximum festlegen; der Lehrer wählt während der Bewertung einen Wert innerhalb des Bereichs.",
         "rb_level_options_item_modifiers": "Bewertungsmodifikatoren — %-, Punkt- oder Stufenanpassungen mit optionaler Begründung anwenden.",
         "rb_standards_title": "Standards & Rahmenwerk-Verknüpfungen",

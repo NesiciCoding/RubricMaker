@@ -2008,7 +2008,11 @@
         "description_converted_other": "Descripción convertida en {{count}} subelementos",
         "sub_item_mode_label": "Subelementos:",
         "sub_item_mode_points_help": "Cada subelemento suma puntos dentro del rango del nivel.",
-        "sub_item_mode_checklist_help": "Los subelementos son afirmaciones que marcas como evidencia; no cambian la puntuación."
+        "sub_item_mode_checklist_help": "Los subelementos son afirmaciones que marcas como evidencia; no cambian la puntuación.",
+        "action_all_checklist": "Lista de verificación para todos los criterios",
+        "action_all_checklist_title": "Cambiar los subelementos de cada criterio al modo Lista de verificación",
+        "all_checklist_done_one": "{{count}} criterio cambiado a Lista de verificación",
+        "all_checklist_done_other": "{{count}} criterios cambiados a Lista de verificación"
     },
     "peerReview": {
         "round_label": "Ronda",
@@ -3589,7 +3593,7 @@
         "rb_scoring_modes_item_weighted": "Porcentaje ponderado — cada criterio tiene una ponderación (%). La nota final es el promedio ponderado. Los criterios de 0 puntos no cuentan en el promedio. Los criterios nuevos reparten la ponderación por igual y el total se mantiene en 100 % al añadir o quitar criterios, hasta que usted cambie una ponderación.",
         "rb_scoring_modes_item_single": "Rúbrica de punto único — cada criterio tiene un solo descriptor (el estándar). Al calificar marcas Supera, Cumple o Aún no: Supera y Cumple dan los puntos completos del criterio y Aún no da 0.",
         "rb_level_options_title": "Opciones de nivel",
-        "rb_level_options_item_checklist": "Subelementos dentro de un nivel, en uno de dos modos que eliges por criterio: Puntos (cada subelemento suma puntos dentro del rango del nivel) o Lista de verificación (afirmaciones que marcas como evidencia al calificar; nunca cambian la puntuación).",
+        "rb_level_options_item_checklist": "Subelementos dentro de un nivel, en uno de dos modos que eliges por criterio: Puntos (cada subelemento suma puntos dentro del rango del nivel) o Lista de verificación (afirmaciones que marcas como evidencia al calificar; nunca cambian la puntuación). Lista de verificación para todos los criterios, encima de la lista de criterios, los cambia todos a la vez.",
         "rb_level_options_item_ranges": "Rangos de puntos — establece un mínimo y un máximo; el profesor elige un valor dentro del rango durante la calificación.",
         "rb_level_options_item_modifiers": "Modificadores de puntuación — aplica ajustes en %, puntos o nivel con un motivo opcional.",
         "rb_standards_title": "Estándares y enlaces a marcos",

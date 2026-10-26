@@ -732,6 +732,23 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByPlaceholderText('rubricBuilder.placeholder_level_name')).toHaveLength(before);
     });
 
+    it('switches every criterion to checklist mode at once, with undo', () => {
+        renderEdit();
+        mockShowToast.mockClear();
+        const checklistRadios = () => screen.getAllByRole('radio', { name: 'rubricBuilder.sub_item_mode_checklist' });
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+
+        fireEvent.click(screen.getByText('rubricBuilder.action_all_checklist'));
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'true')).toBe(true);
+        // Nothing left to switch, so the action goes away.
+        expect(screen.queryByText('rubricBuilder.action_all_checklist')).toBeNull();
+
+        const [, type, options] = mockShowToast.mock.calls.at(-1)!;
+        expect(type).toBe('info');
+        act(() => options.action.onClick());
+        expect(checklistRadios().every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true);
+    });
+
     it('adds a sub-item inline and moves it to another level', () => {
         renderEdit();
         const before = screen.queryAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label').length;

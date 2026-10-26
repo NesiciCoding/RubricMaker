@@ -2008,7 +2008,11 @@
         "description_converted_other": "Turned the description into {{count}} sub-items",
         "sub_item_mode_label": "Sub-items:",
         "sub_item_mode_points_help": "Each sub-item adds points within the level's range.",
-        "sub_item_mode_checklist_help": "Sub-items are statements you tick as evidence; they don't change the score."
+        "sub_item_mode_checklist_help": "Sub-items are statements you tick as evidence; they don't change the score.",
+        "action_all_checklist": "Checklist for all criteria",
+        "action_all_checklist_title": "Switch every criterion's sub-items to Checklist mode",
+        "all_checklist_done_one": "Switched {{count}} criterion to Checklist",
+        "all_checklist_done_other": "Switched {{count}} criteria to Checklist"
     },
     "peerReview": {
         "round_label": "Round",
@@ -3589,7 +3593,7 @@
         "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average. Criteria worth 0 points are left out of the average. New criteria share the weight evenly and the total is kept at 100% as you add or remove them, until you change a weight yourself.",
         "rb_scoring_modes_item_single": "Single-Point Rubric — each criterion has one descriptor (the standard). While grading you mark it Exceeds, Meets or Not yet: Exceeds and Meets both earn the criterion's full points, Not yet earns 0.",
         "rb_level_options_title": "Level options",
-        "rb_level_options_item_checklist": "Sub-items within a level, in one of two modes chosen per criterion: Points (each sub-item adds points within the level's range) or Checklist (statements you tick as evidence while grading; they never change the score).",
+        "rb_level_options_item_checklist": "Sub-items within a level, in one of two modes chosen per criterion: Points (each sub-item adds points within the level's range) or Checklist (statements you tick as evidence while grading; they never change the score). Checklist for all criteria, above the criteria list, switches every criterion at once.",
         "rb_level_options_item_ranges": "Point ranges — set a min and max; teacher picks a value inside the range during grading.",
         "rb_level_options_item_modifiers": "Score modifiers — apply %, point, or level adjustments with an optional reason.",
         "rb_standards_title": "Standards & framework links",
