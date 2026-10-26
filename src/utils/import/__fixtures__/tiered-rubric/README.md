@@ -17,4 +17,4 @@ Regenerate the redesigned files after editing the JSON:
 npm run fixtures:tiered            # set PW_CHROMIUM_PATH if Playwright's bundled browser is missing
 ```
 
-`src/utils/import/tieredFixtures.test.ts` checks that all five files agree.
+`src/utils/import/tieredFixtures.test.ts` checks the JSON's structure and statement count, the checkbox count in the original DOCX, and every statement, criterion, checkbox control and the landscape orientation in the redesigned DOCX. It only checks that the two PDFs are PDF files; it doesn't read their text, so regenerate them whenever the JSON changes.
