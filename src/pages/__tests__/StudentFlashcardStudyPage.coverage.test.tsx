@@ -218,6 +218,32 @@ describe('StudentFlashcardStudyPage coverage', () => {
         expect(screen.getByTestId('insights-panel')).toBeInTheDocument();
     });
 
+    it('shows a distinct load-error (not deck-not-found) when the fetch rejects with no local deck, and Retry re-fetches', async () => {
+        state.isConnected = true;
+        state.deck = null;
+        mocks.fetchAssignedFlashcardDeck.mockRejectedValueOnce(new Error('offline'));
+        renderPage();
+
+        expect(await screen.findByText('flashcards.deck_load_error')).toBeInTheDocument();
+        expect(screen.queryByText('flashcards.deck_not_found')).not.toBeInTheDocument();
+
+        mocks.fetchAssignedFlashcardDeck.mockResolvedValueOnce(deck);
+        fireEvent.click(screen.getByText('flashcards.retry_button'));
+
+        expect(await screen.findByText('Animals')).toBeInTheDocument();
+        expect(mocks.fetchAssignedFlashcardDeck).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the genuine not-found state (not a load error) when the fetch succeeds but returns no deck at all', async () => {
+        state.isConnected = true;
+        state.deck = null;
+        mocks.fetchAssignedFlashcardDeck.mockResolvedValueOnce(null);
+        renderPage();
+
+        expect(await screen.findByText('flashcards.deck_not_found')).toBeInTheDocument();
+        expect(screen.queryByText('flashcards.deck_load_error')).not.toBeInTheDocument();
+    });
+
     it('persists a student review locally when not connected', async () => {
         state.isConnected = false;
         state.userRole = 'student';

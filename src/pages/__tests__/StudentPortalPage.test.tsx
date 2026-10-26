@@ -345,6 +345,79 @@ describe('StudentPortalPage', () => {
         expect(screen.getByText('studentPortal.tab_empty_progress')).toBeInTheDocument();
     });
 
+    it('wires the section tabs with ARIA tabs semantics (#709)', () => {
+        renderAt('s1');
+        const tablist = screen.getByRole('tablist', { name: 'studentPortal.section_nav_label' });
+        const tabs = within(tablist).getAllByRole('tab');
+        expect(tabs).toHaveLength(4);
+
+        const homeTab = screen.getByRole('tab', { name: /studentPortal.tab_home/ });
+        const assignmentsTab = screen.getByRole('tab', { name: /studentPortal.tab_assignments/ });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+        expect(homeTab).toHaveAttribute('tabindex', '0');
+        expect(assignmentsTab).toHaveAttribute('aria-selected', 'false');
+        expect(assignmentsTab).toHaveAttribute('tabindex', '-1');
+        expect(homeTab).toHaveAttribute('aria-controls', homeTab.id.replace('tab', 'panel'));
+
+        const panel = screen.getByRole('tabpanel');
+        expect(panel).toHaveAttribute('aria-labelledby', homeTab.id);
+
+        fireEvent.click(assignmentsTab);
+        expect(assignmentsTab).toHaveAttribute('aria-selected', 'true');
+        expect(assignmentsTab).toHaveAttribute('tabindex', '0');
+        expect(homeTab).toHaveAttribute('aria-selected', 'false');
+        expect(homeTab).toHaveAttribute('tabindex', '-1');
+        const newPanel = screen.getByRole('tabpanel');
+        expect(newPanel).toHaveAttribute('aria-labelledby', assignmentsTab.id);
+        // Activating a tab announces the change for screen-reader users (#709).
+        expect(
+            screen.getByText('studentPortal.tab_panel_announcement:{"tab":"studentPortal.tab_assignments"}')
+        ).toBeInTheDocument();
+    });
+
+    it('moves roving tabindex and selection with arrow keys, wrapping at the ends (#709)', () => {
+        renderAt('s1');
+        const homeTab = screen.getByRole('tab', { name: /studentPortal.tab_home/ });
+        const assignmentsTab = screen.getByRole('tab', { name: /studentPortal.tab_assignments/ });
+        const progressTab = screen.getByRole('tab', { name: /studentPortal.tab_progress/ });
+
+        homeTab.focus();
+        fireEvent.keyDown(homeTab, { key: 'ArrowRight' });
+        expect(assignmentsTab).toHaveFocus();
+        expect(assignmentsTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(assignmentsTab, { key: 'ArrowLeft' });
+        expect(homeTab).toHaveFocus();
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'ArrowLeft' });
+        expect(progressTab).toHaveFocus();
+        expect(progressTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(progressTab, { key: 'Home' });
+        expect(homeTab).toHaveFocus();
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'End' });
+        expect(progressTab).toHaveFocus();
+        expect(progressTab).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('ignores Alt/Ctrl/Meta tab-navigation keys so browser shortcuts still work (#972)', () => {
+        renderAt('s1');
+        const homeTab = screen.getByRole('tab', { name: /studentPortal.tab_home/ });
+
+        homeTab.focus();
+        fireEvent.keyDown(homeTab, { key: 'ArrowRight', altKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'Home', ctrlKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+
+        fireEvent.keyDown(homeTab, { key: 'ArrowLeft', metaKey: true });
+        expect(homeTab).toHaveAttribute('aria-selected', 'true');
+    });
+
     it('offers a way back to the teacher role only in local mode (#623)', () => {
         renderAt('s1');
         expect(screen.queryByText('studentPortal.switch_back_to_teacher')).not.toBeInTheDocument();

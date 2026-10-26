@@ -82,10 +82,50 @@ describe('CriterionRadarChart', () => {
         expect(() => render(<CriterionRadarChart data={threePoint} accentColor="var(--accent)" />)).not.toThrow();
     });
 
-    it('formats the tooltip value with a percent sign', () => {
+    it('formats the tooltip value with a percent sign, localized to one decimal', () => {
         render(<CriterionRadarChart data={threePoint} accentColor="#3b82f6" />);
         const out = screen.getByTestId('tooltip').textContent ?? '';
-        expect(out).toContain('75%');
+        expect(out).toContain('75.0%');
         expect(out).toContain(''); // null → ''
+    });
+
+    it('formats percentages with the viewer locale decimal separator', async () => {
+        vi.resetModules();
+        vi.doMock('react-i18next', () => ({
+            useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'nl' } }),
+        }));
+        const { default: LocalizedRadarChart } = await import('../CriterionRadarChart');
+        render(<LocalizedRadarChart data={threePoint} accentColor="#3b82f6" />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('75,0%');
+        vi.doUnmock('react-i18next');
+        vi.resetModules();
+    });
+
+    it('exposes a visually-hidden data table as a text alternative to the chart', () => {
+        const { container } = render(<CriterionRadarChart data={threePoint} accentColor="#3b82f6" />);
+        expect(container.querySelector('div[role="img"]')).toBeTruthy();
+        const table = container.querySelector('table.sr-only');
+        expect(table).toBeTruthy();
+        expect(table?.textContent).toContain('Writing');
+        expect(table?.textContent).toContain('70.0%');
+    });
+
+    it('wraps a long criterion name onto two lines instead of letting it run off the axis', () => {
+        const { container } = render(
+            <CriterionRadarChart
+                data={[
+                    { name: 'Coherence & Cohesion', avg: 70 },
+                    { name: 'Grammar', avg: 55 },
+                    { name: 'Vocabulary', avg: 80 },
+                ]}
+                accentColor="#3b82f6"
+            />
+        );
+        const tick = Array.from(container.querySelectorAll('tspan')).find((el) =>
+            (el.textContent ?? '').startsWith('Coherence')
+        );
+        expect(tick).toBeTruthy();
+        expect(tick?.textContent).not.toBe('Coherence & Cohesion');
     });
 });

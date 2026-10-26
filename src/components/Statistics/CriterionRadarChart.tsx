@@ -9,6 +9,7 @@ import {
     Tooltip,
     Legend,
     ResponsiveContainer,
+    type BaseTickContentProps,
 } from 'recharts';
 
 export interface CriterionRadarDataPoint {
@@ -31,6 +32,42 @@ interface Props {
     height?: number;
 }
 
+/** Long criterion names (e.g. "Grammatical Range and Accuracy") get clipped against
+ * the polar axis edge at narrow viewports (#705) — greedily wrap them onto as many
+ * lines as needed, each within maxLineChars, so no line runs past the anchor point. */
+function wrapAxisLabel(label: string, maxLineChars = 12): string[] {
+    if (label.length <= maxLineChars) return [label];
+    const words = label.split(' ');
+    if (words.length < 2) return [label];
+    const lines: string[] = [];
+    let current = '';
+    for (const word of words) {
+        const next = current ? `${current} ${word}` : word;
+        if (current && next.length > maxLineChars) {
+            lines.push(current);
+            current = word;
+        } else {
+            current = next;
+        }
+    }
+    if (current) lines.push(current);
+    return lines.length > 1 ? lines : [label];
+}
+
+function renderAngleAxisTick({ x, y, payload, textAnchor }: BaseTickContentProps) {
+    const lines = wrapAxisLabel(String(payload.value));
+    const startDy = lines.length > 1 ? -5 - (lines.length - 2) * 13 : 0;
+    return (
+        <text x={x} y={y} textAnchor={textAnchor} fill="var(--text-muted)" fontSize={11}>
+            {lines.map((line, i) => (
+                <tspan key={i} x={x} dy={i === 0 ? startDy : 13}>
+                    {line}
+                </tspan>
+            ))}
+        </text>
+    );
+}
+
 export default function CriterionRadarChart({
     data,
     accentColor,
@@ -38,8 +75,10 @@ export default function CriterionRadarChart({
     classAverageLabel,
     height = 420,
 }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const averageLabel = classAverageLabel ?? t('statistics.class_average_label');
+    // nl/fr/de use a comma decimal separator — a raw `${value}%` always rendered a dot (#705).
+    const percentFormat = new Intl.NumberFormat(i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     if (data.length < 3) {
         return (
             <p className="text-muted text-sm" style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -51,38 +90,79 @@ export default function CriterionRadarChart({
     const hasStudents = selectedStudents && selectedStudents.length > 0;
 
     return (
-        <ResponsiveContainer width="100%" height={height}>
-            <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                <PolarGrid strokeOpacity={0.3} />
-                <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
-                <PolarRadiusAxis
-                    domain={[0, 100]}
-                    tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
-                    tickCount={5}
-                    tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip
-                    contentStyle={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                    }}
-                    formatter={(value: unknown) => (value != null ? `${value}%` : '')}
-                />
-                <Radar name={averageLabel} dataKey="avg" stroke={accentColor} fill={accentColor} fillOpacity={0.25} />
-                {hasStudents &&
-                    selectedStudents!.map((s) => (
-                        <Radar
-                            key={s.id}
-                            name={s.name}
-                            dataKey={s.id}
-                            stroke={s.color}
-                            fill={s.color}
-                            fillOpacity={0.18}
+        <div>
+            <div role="img" aria-label={t('statistics.criterion_radar_aria_label')}>
+                <ResponsiveContainer width="100%" height={height}>
+                    <RadarChart data={data} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                        <PolarGrid strokeOpacity={0.3} />
+                        <PolarAngleAxis dataKey="name" tick={renderAngleAxisTick} />
+                        <PolarRadiusAxis
+                            domain={[0, 100]}
+                            tick={{ fill: 'var(--text-dim)', fontSize: 10 }}
+                            tickCount={5}
+                            tickFormatter={(v: number) => `${v}%`}
                         />
+                        <Tooltip
+                            contentStyle={{
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 8,
+                            }}
+                            formatter={(value: unknown) =>
+                                value != null ? `${percentFormat.format(Number(value))}%` : ''
+                            }
+                        />
+                        <Radar
+                            name={averageLabel}
+                            dataKey="avg"
+                            stroke={accentColor}
+                            fill={accentColor}
+                            fillOpacity={0.25}
+                        />
+                        {hasStudents &&
+                            selectedStudents!.map((s) => (
+                                <Radar
+                                    key={s.id}
+                                    name={s.name}
+                                    dataKey={s.id}
+                                    stroke={s.color}
+                                    fill={s.color}
+                                    fillOpacity={0.18}
+                                />
+                            ))}
+                        {hasStudents && <Legend />}
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+            <table className="sr-only">
+                <caption>{t('statistics.criterion_radar_aria_label')}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{t('statistics.label_criterion_chart')}</th>
+                        <th scope="col">{averageLabel}</th>
+                        {hasStudents &&
+                            selectedStudents!.map((s) => (
+                                <th key={s.id} scope="col">
+                                    {s.name}
+                                </th>
+                            ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((row) => (
+                        <tr key={row.name}>
+                            <th scope="row">{row.name}</th>
+                            <td>{percentFormat.format(row.avg)}%</td>
+                            {hasStudents &&
+                                selectedStudents!.map((s) => (
+                                    <td key={s.id}>
+                                        {row[s.id] != null ? `${percentFormat.format(Number(row[s.id]))}%` : '—'}
+                                    </td>
+                                ))}
+                        </tr>
                     ))}
-                {hasStudents && <Legend />}
-            </RadarChart>
-        </ResponsiveContainer>
+                </tbody>
+            </table>
+        </div>
     );
 }

@@ -179,25 +179,46 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                 </div>
                 <div style={{ marginTop: 16 }}>
                     {revealed ? (
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                            {RATING_BUTTONS.map(({ rating, labelKey, color }) => (
-                                <button
-                                    key={rating}
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    style={{ minWidth: 96, borderColor: color, flexDirection: 'column', gap: 2 }}
-                                    onClick={() => handleRate(rating)}
-                                >
-                                    <span style={{ color, fontWeight: 600 }}>{t(labelKey)}</span>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                                        {intervals?.[rating]}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
+                        <>
+                            <p
+                                id="flashcard-rate-hint"
+                                className="text-dim text-sm"
+                                style={{ textAlign: 'center', margin: '0 0 8px' }}
+                            >
+                                {t('flashcards.rate_hint')}
+                            </p>
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                                    gap: 8,
+                                }}
+                            >
+                                {RATING_BUTTONS.map(({ rating, labelKey, color }) => (
+                                    <button
+                                        key={rating}
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        aria-describedby="flashcard-rate-hint"
+                                        style={{ borderColor: color, flexDirection: 'column', gap: 2 }}
+                                        onClick={() => handleRate(rating)}
+                                    >
+                                        <span style={{ color, fontWeight: 600 }}>{t(labelKey)}</span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+                                            {intervals?.[rating]}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
                     ) : (
                         <div style={{ textAlign: 'center' }}>
-                            <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => setRevealed(true)}
+                                style={{ minHeight: 44 }}
+                            >
                                 <RotateCcw size={15} /> {t('flashcards.show_answer')}
                             </button>
                         </div>

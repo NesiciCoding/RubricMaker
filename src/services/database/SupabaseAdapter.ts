@@ -1861,7 +1861,8 @@ export class SupabaseAdapter {
     /** Full deck content for a deck assigned to the logged-in student (RLS: flashcard_decks_student_select). */
     async fetchAssignedFlashcardDeck(deckId: string): Promise<FlashcardDeck | null> {
         const { data, error } = await this.db().from('flashcard_decks').select('data').eq('id', deckId).maybeSingle();
-        if (error || !data) return null;
+        if (error) throw new Error(error.message);
+        if (!data) return null;
         return data.data as FlashcardDeck;
     }
 

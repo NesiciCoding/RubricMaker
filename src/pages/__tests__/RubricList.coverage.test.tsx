@@ -281,6 +281,9 @@ describe('RubricList coverage', () => {
     it('hides the speaking launcher when there are no students and resets the select', () => {
         renderPage();
         const selects = screen.getAllByLabelText('rubricList.speaking_select_student');
+        // The student options are rendered lazily on first interaction (#670), so open the
+        // control before picking a value — matching how a real click/keyboard open behaves.
+        fireEvent.mouseDown(selects[0]);
         fireEvent.change(selects[0], { target: { value: 's1' } });
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
         // Clearing the selection back to the disabled placeholder does not navigate.

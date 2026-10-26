@@ -81,6 +81,18 @@ describe('CountdownTimer', () => {
         expect(screen.getByRole('status')).toHaveTextContent('');
     });
 
+    it('uses the themed --red custom property for the low-time warning color, not a hard-coded hex value', () => {
+        mockUseDeadlineCountdown.mockReturnValue(119); // under the 120s low-time threshold
+        render(<CountdownTimer durationMinutes={15} storageKey="k" submitted={false} timeUpLabel="Time up" />);
+        expect(screen.getByRole('timer')).toHaveStyle({ color: 'var(--red, #ef4444)' });
+    });
+
+    it('keeps the default themed text color at or above the low-time threshold', () => {
+        mockUseDeadlineCountdown.mockReturnValue(120);
+        render(<CountdownTimer durationMinutes={15} storageKey="k" submitted={false} timeUpLabel="Time up" />);
+        expect(screen.getByRole('timer')).toHaveStyle({ color: 'var(--text)' });
+    });
+
     it('resets the announced thresholds when resetSignal changes (e.g. a retake)', () => {
         mockUseDeadlineCountdown.mockReturnValue(70);
         const { rerender } = render(

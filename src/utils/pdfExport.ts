@@ -28,6 +28,10 @@ import type { DocxStyleTemplateOverrides } from './docxExport';
  * arithmetic in a comment (`3 * 4`, `2*3 = 6`) is left alone instead of turning into italics — the
  * old `\*(.*?)\*` regex italicised everything between the first two asterisks on the line (#701).
  */
+// Shares the `exportDoc.*` keys docxExport.ts's own docLabel() uses, so the same label is
+// identical across the DOCX and PDF/HTML rubric exports.
+const docLabel = (key: string, opts?: Record<string, unknown>): string => i18n.t(`exportDoc.${key}`, opts);
+
 function parseMd(text: string) {
     if (!text) return text;
     let html = text.replace(/\*\*([^*\s](?:[^*]*[^*\s])?)\*\*/g, '<strong>$1</strong>');
@@ -53,7 +57,7 @@ function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
             const stripeBg = (sr && fmt.rowStriping && i % 2 !== 0) || !sr ? '#f8fafc' : '#ffffff';
 
             const notYetCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isNotYet ? `background:${notYetColor}18;border:2px solid ${notYetColor};` : `background:${stripeBg};`}">
-      ${sr ? `<div style="font-size:10px;font-weight:700;color:${notYetColor};margin-bottom:4px;">✗ Not Yet</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Areas for Growth</div>'}
+      ${sr ? `<div style="font-size:10px;font-weight:700;color:${notYetColor};margin-bottom:4px;">✗ ${docLabel('not_yet')}</div>` : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">${docLabel('areas_for_growth')}</div>`}
       ${isNotYet && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
     </td>`;
 
@@ -61,12 +65,12 @@ function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
             const centerCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:40%;${isMeets ? `background:${fmt.accentColor}18;border:2px solid ${fmt.accentColor};` : ''}">
       <div style="font-weight:700;margin-bottom:4px;">${parseMd(c.title)}</div>
       ${proficiencyDesc ? `<div style="font-size:11px;color:#6b7280">${parseMd(proficiencyDesc)}</div>` : ''}
-      ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">Weight: ${c.weight}%</div>` : ''}
+      ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">${docLabel('weight', { weight: c.weight })}</div>` : ''}
       ${isMeets && comment ? `<div style="font-size:11px;color:#374151;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb">${parseMd(comment)}</div>` : ''}
     </td>`;
 
             const exceedsCell = `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;width:30%;${isExceeds ? `background:${exceedsColor}18;border:2px solid ${exceedsColor};` : `background:${stripeBg};`}">
-      ${sr ? `<div style="font-size:10px;font-weight:700;color:${exceedsColor};margin-bottom:4px;">▲ Exceeds</div>` : '<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">Exceeds Standard</div>'}
+      ${sr ? `<div style="font-size:10px;font-weight:700;color:${exceedsColor};margin-bottom:4px;">▲ ${docLabel('exceeds')}</div>` : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:4px;">${docLabel('exceeds_standard')}</div>`}
       ${isExceeds && comment ? `<div style="font-size:11px;color:#374151;font-style:italic">${parseMd(comment)}</div>` : ''}
     </td>`;
 
@@ -78,9 +82,9 @@ function buildSinglePointGridHtml(rubric: Rubric, sr?: StudentRubric): string {
     <table style="width:100%;border-collapse:collapse;margin-top:16px;">
       <thead>
         <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
-          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">Not Yet</th>
-          <th style="padding:10px 12px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:40%">Proficiency Standard</th>
-          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">Exceeds</th>
+          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">${docLabel('not_yet')}</th>
+          <th style="padding:10px 12px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:40%">${docLabel('proficiency_standard')}</th>
+          <th style="padding:10px 12px;text-align:center;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};width:30%">${docLabel('exceeds')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -113,9 +117,9 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
                   let scoreLabel: string;
                   if (entry) {
                       const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
-                      scoreLabel = `[${currentScore}/${max} pts]`;
+                      scoreLabel = `[${docLabel('points', { points: `${currentScore}/${max}` })}]`;
                   } else {
-                      scoreLabel = `(${si.minPoints ?? 0}-${max} pts)`;
+                      scoreLabel = `(${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`;
                   }
                   return `<div style="margin-bottom:3px;">${entry ? '•' : '[ ]'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
               })
@@ -126,7 +130,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
 
                     return `<td style="padding:10px 12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};vertical-align:top;font-size:12px;${selected ? `background:${fmt.accentColor}22;border-color:${fmt.accentColor};border-style:solid;border-width:2px;font-weight:600;` : ''}">
         ${parseMd(l.description) || '–'}
-        ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${formatPointsRange(l.minPoints, l.maxPoints)}pts</small>` : ''}
+        ${fmt.showPoints ? `<br/><small style="color:${selected ? fmt.accentColor : '#6b7280'}">${docLabel('points', { points: formatPointsRange(l.minPoints, l.maxPoints) })}</small>` : ''}
         ${subItemsHtml}
       </td>`;
                 })
@@ -142,7 +146,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         ${parseMd(c.title)}
         ${c.description ? `<div style="font-size:10px;color:#6b7280;font-weight:400">${parseMd(c.description)}</div>` : ''}
         ${comment}
-        ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">Weight: ${c.weight}%</div>` : ''}
+        ${fmt.showWeights ? `<div style="font-size:10px;color:#6b7280;margin-top:4px">${docLabel('weight', { weight: c.weight })}</div>` : ''}
       </td>
       ${cells}
     </tr>`;
@@ -153,7 +157,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         .map(
             (l) =>
                 `<th style="padding:12px 14px;text-align:${fmt.headerTextAlign || 'center'};border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.levelColWidth}px;font-size:12px">
-      ${parseMd(l.label)}${fmt.showPoints ? ` (${formatPointsRange(l.minPoints, l.maxPoints)}pts)` : ''}
+      ${parseMd(l.label)}${fmt.showPoints ? ` (${docLabel('points', { points: formatPointsRange(l.minPoints, l.maxPoints) })})` : ''}
     </th>`
         )
         .join('');
@@ -162,7 +166,7 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
       <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
         <thead>
           <tr style="background:${fmt.headerColor};color:${fmt.headerTextColor}">
-            <th style="padding:12px 14px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.criterionColWidth}px">Criterion</th>
+            <th style="padding:12px 14px;text-align:left;font-size:12px;border:${fmt.showBorders ? '1px solid #d1d5db' : 'none'};min-width:${fmt.criterionColWidth}px">${docLabel('criterion')}</th>
             ${headerCells}
           </tr>
         </thead>
@@ -181,6 +185,12 @@ export function buildRubricHTML(
     const summary = calcGradeSummary(sr, rubric.criteria, scale);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
+    const modifierSign = sr.globalModifier && sr.globalModifier.value > 0 ? '+' : '';
+    const modifierValueLabel = sr.globalModifier
+        ? sr.globalModifier.type === 'percentage'
+            ? `${modifierSign}${sr.globalModifier.value}%`
+            : docLabel('points', { points: `${modifierSign}${sr.globalModifier.value}` })
+        : '';
 
     return `
   <div class="print-page" style="${breakBeforeRight ? 'break-before: right; page-break-before: right; ' : ''}page-break-after: always; font-family: ${fmt.fontFamily}; color: #1e293b; background: #fff;">
@@ -188,9 +198,9 @@ export function buildRubricHTML(
         <div>
           <h1 style="margin:0;font-size:20px">${escapeHtml(rubric.name)}</h1>
           ${rubric.subject ? `<div style="color:#6b7280;margin-top:4px;font-size:13px">${escapeHtml(rubric.subject)}</div>` : ''}
-          <div style="margin-top:8px;font-size:14px"><strong>Student:</strong> ${escapeHtml(student.name)}</div>
+          <div style="margin-top:8px;font-size:14px"><strong>${docLabel('student')}</strong> ${escapeHtml(student.name)}</div>
           ${student.email ? `<div style="font-size:13px;color:#6b7280">${escapeHtml(student.email)}</div>` : ''}
-          <div style="font-size:12px;color:#6b7280;margin-top:4px">Graded: ${sr.gradedAt ? new Date(sr.gradedAt).toLocaleDateString() : 'N/A'}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px">${sr.gradedAt ? docLabel('graded', { date: new Date(sr.gradedAt).toLocaleDateString(i18n.language) }) : docLabel('not_graded')}</div>
         </div>
         <div style="text-align:right">
           ${
@@ -205,10 +215,10 @@ export function buildRubricHTML(
           `
                     : ''
           }
-          <div style="font-size:12px;color:#6b7280">${summary.rawScore}/${summary.maxRawScore} pts</div>
+          <div style="font-size:12px;color:#6b7280">${docLabel('points', { points: `${summary.rawScore}/${summary.maxRawScore}` })}</div>
           ${
               sr.globalModifier && sr.globalModifier.value !== 0
-                  ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">Modifier: ${sr.globalModifier.value > 0 ? '+' : ''}${sr.globalModifier.value}${sr.globalModifier.type === 'percentage' ? '%' : 'pts'}
+                  ? `<div style="font-size:11px;color:#f59e0b;margin-top:4px">${docLabel('modifier', { value: modifierValueLabel })}
                ${sr.globalModifier.reason ? `(${escapeHtml(sr.globalModifier.reason)})` : ''}</div>`
                   : ''
           }
@@ -221,15 +231,15 @@ export function buildRubricHTML(
           sr.overallComment
               ? `
         <div style="margin-top:18px;page-break-inside: avoid;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
-          <strong style="font-size:12px;color:#374151">Overall Comment:</strong>
+          <strong style="font-size:12px;color:#374151">${docLabel('overall_comment')}</strong>
           <p style="margin:6px 0 0;font-size:13px;color:#475569">${parseMd(sr.overallComment)}</p>
         </div>`
               : ''
       }
 
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
-        Generated by Rubric Maker · ${new Date().toLocaleDateString()}
-        ${sr.isPeerReview ? ' · Peer Review' : ''}
+        ${docLabel('generated_by', { date: new Date().toLocaleDateString(i18n.language) })}
+        ${sr.isPeerReview ? ` · ${docLabel('peer_review')}` : ''}
       </div>
   </div>`;
 }
@@ -249,7 +259,7 @@ function buildEmptyRubricHTML(rubric: Rubric): string {
       ${gridHtml}
 
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
-        Generated by Rubric Maker · ${new Date().toLocaleDateString()}
+        ${docLabel('generated_by', { date: new Date().toLocaleDateString(i18n.language) })}
       </div>
   </div>`;
 }
@@ -328,13 +338,23 @@ function sanitizePrintHtml(html: string): string {
  * padding) — used for per-sheet scan markers, which a `position: fixed` element could not do since
  * that would repeat one sheet's marker across every student's pages. `breakAfter` starts the next
  * table on a fresh page.
+ *
+ * `headerHeightMm`/`footerHeightMm` default to PRINT_MARGIN_MM but can be widened — e.g. for scan
+ * markers, whose fiducials/QR are drawn inside this same header band but are physically larger than
+ * the default margin (see scanMarkerMarginsMm() in testExamContent.ts) and would otherwise bleed
+ * past it into the real content below/above.
  */
 export function withoutBrowserPrintChrome(
     html: string,
-    { headerExtra = '', breakAfter = false }: { headerExtra?: string; breakAfter?: boolean } = {}
+    {
+        headerExtra = '',
+        breakAfter = false,
+        headerHeightMm = PRINT_MARGIN_MM,
+        footerHeightMm = PRINT_MARGIN_MM,
+    }: { headerExtra?: string; breakAfter?: boolean; headerHeightMm?: number; footerHeightMm?: number } = {}
 ): string {
-    const top = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0;position:relative">${headerExtra}</td></tr>`;
-    const bottom = `<tr><td style="height:${PRINT_MARGIN_MM}mm;padding:0"></td></tr>`;
+    const top = `<tr><td style="height:${headerHeightMm}mm;padding:0;position:relative">${headerExtra}</td></tr>`;
+    const bottom = `<tr><td style="height:${footerHeightMm}mm;padding:0"></td></tr>`;
     return `<style>.print-page:last-child{page-break-after:auto !important}</style><table style="width:100%;border-collapse:collapse${breakAfter ? ';page-break-after:always' : ''}"><thead>${top}</thead><tbody><tr><td style="padding:0">${html}</td></tr></tbody><tfoot>${bottom}</tfoot></table>`;
 }
 
@@ -727,7 +747,7 @@ function buildTestSummaryHTML(
       }
 
       <div style="margin-top:16px;font-size:11px;color:#94a3b8;text-align:right">
-        ${escapeHtml(tx('generated_by', { date: new Date().toLocaleDateString() }))}
+        ${escapeHtml(tx('generated_by', { date: new Date().toLocaleDateString(i18n.language) }))}
       </div>
   </div>`;
 }

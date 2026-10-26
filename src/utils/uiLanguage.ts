@@ -25,6 +25,11 @@ export function displayedUiLanguage(tag: string | undefined): UiLanguage {
 export function chosenUiLanguage(settings: Pick<AppSettings, 'language' | 'languageChosen'>): UiLanguage | null {
     const language = settings.language?.toLowerCase();
     if (!language || !isUiLanguage(language)) return null;
-    if (settings.languageChosen || language !== 'en') return language;
+    if (settings.languageChosen) return language;
+    // `languageChosen` was introduced after the picker existed, so a non-English value saved with no
+    // flag at all predates it and must have been chosen by hand. An explicit `false` — chosen, then
+    // reset back to Automatic — must not fall into that same fallback, hence the `undefined` check
+    // rather than a plain falsy one.
+    if (settings.languageChosen === undefined && language !== 'en') return language;
     return null;
 }
