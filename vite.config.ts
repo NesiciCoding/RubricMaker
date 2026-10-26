@@ -22,7 +22,13 @@ export default defineConfig({
             : []),
         VitePWA({
             registerType: 'prompt',
-            includeAssets: ['rubric-icon.svg', 'pwa-192.png', 'pwa-512.png', 'pwa-512-maskable.png'],
+            includeAssets: [
+                'rubric-icon.svg',
+                'pwa-192.png',
+                'pwa-512.png',
+                'pwa-512-maskable.png',
+                'apple-touch-icon.png',
+            ],
             manifest: {
                 name: 'RubricMaker',
                 short_name: 'RubricMaker',

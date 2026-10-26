@@ -5,6 +5,12 @@
         <link rel="icon" type="image/svg+xml" href="./rubric-icon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Rubric Maker — Create, fill, and export educational rubrics with ease" />
+        <!-- iOS ignores the web manifest; "Add to Home Screen" relies on these instead, so the
+         icon and the standalone (no-browser-chrome) launch come from here on iOS specifically. -->
+        <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="RubricMaker" />
         <title>Rubric Maker</title>
         <!-- Fonts are self-hosted (see scripts/vendor-fonts.mjs) so no page load or print frame ever
          calls out to fonts.googleapis.com. -->

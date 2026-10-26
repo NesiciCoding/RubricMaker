@@ -91,6 +91,7 @@ const mockAppValue = {
     updateRubric: mockUpdateRubric,
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
+    userTemplates: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -195,11 +196,12 @@ describe('RubricList coverage', () => {
         RubricListComp = mod.default;
     });
 
-    it('creates a rubric from the empty-state button', () => {
+    it('creates a rubric from the empty-state button via the chooser', () => {
         const orig = mockAppValue.rubrics;
         (mockAppValue as Record<string, unknown>).rubrics = [];
         renderPage();
         fireEvent.click(screen.getByText('rubricList.create_rubric'));
+        fireEvent.click(screen.getByText('rubricList.chooser_blank_title'));
         expect(mockNavigate).toHaveBeenCalledWith('/rubrics/new');
         (mockAppValue as Record<string, unknown>).rubrics = orig;
     });
@@ -279,6 +281,9 @@ describe('RubricList coverage', () => {
     it('hides the speaking launcher when there are no students and resets the select', () => {
         renderPage();
         const selects = screen.getAllByLabelText('rubricList.speaking_select_student');
+        // The student options are rendered lazily on first interaction (#670), so open the
+        // control before picking a value — matching how a real click/keyboard open behaves.
+        fireEvent.mouseDown(selects[0]);
         fireEvent.change(selects[0], { target: { value: 's1' } });
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
         // Clearing the selection back to the disabled placeholder does not navigate.

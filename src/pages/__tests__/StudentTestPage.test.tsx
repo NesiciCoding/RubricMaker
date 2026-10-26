@@ -207,6 +207,8 @@ describe('StudentTestPage — answering and offline submission', () => {
         });
 
         expect(screen.getByText('4 is the sum of 2 and 2.')).toBeInTheDocument();
+        expect(screen.getByText('4 is the sum of 2 and 2.').getAttribute('lang')).toBe('en');
+        expect(screen.getByText('What is 2 + 2?').getAttribute('lang')).toBe('en');
     });
 
     it('shows the sanitized instruction instead of raw cloze markup in the practice review', async () => {
@@ -231,6 +233,7 @@ describe('StudentTestPage — answering and offline submission', () => {
 
         expect(screen.getByText('tests.taking.cloze_instruction')).toBeInTheDocument();
         expect(screen.queryByText(/\{\{Paris\}\}/)).not.toBeInTheDocument();
+        expect(screen.getByText('tests.taking.cloze_instruction').closest('[lang]:not(html)')).toBeNull();
     });
 
     it('does not show explanations after submitting an assessment-mode test', async () => {

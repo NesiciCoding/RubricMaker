@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest';
 import '../i18n';
 import type { Student, Test } from '../types';
 import { buildAnswerSheetHtml, buildExamAttachmentHtml, buildExamBookletHtml } from './testExamExportHtml';
-import { CHOICE_CELL_WIDTH_MM, CHOICE_CELL_GAP_MM, DEFAULT_EXAM_EXPORT_OPTIONS } from './testExamContent';
+import {
+    CHOICE_CELL_WIDTH_MM,
+    CHOICE_CELL_GAP_MM,
+    DEFAULT_EXAM_EXPORT_OPTIONS,
+    scanMarkerMarginsMm,
+} from './testExamContent';
+import { PRINT_MARGIN_MM } from './pdfExport';
 
 function makeTest(): Test {
     return {
@@ -137,6 +143,27 @@ describe('answer sheet scan markers', () => {
     it('omits the markers when the option is off', async () => {
         const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS, students);
         expect(html).not.toContain('position:absolute');
+    });
+
+    it('widens the header/footer band enough that the fiducials/QR never bleed into real content', async () => {
+        const html = await buildAnswerSheetHtml(
+            makeTest(),
+            { ...DEFAULT_EXAM_EXPORT_OPTIONS, scanMarkers: true },
+            students
+        );
+        const margins = scanMarkerMarginsMm();
+        // The markers' own size/inset genuinely exceed the default print margin — pinning this
+        // guards against the regression where scan markers overlapped page content.
+        expect(margins.top).toBeGreaterThan(PRINT_MARGIN_MM);
+        expect(margins.bottom).toBeGreaterThan(PRINT_MARGIN_MM);
+        expect(html).toContain(`height:${margins.top}mm`);
+        expect(html).toContain(`height:${margins.bottom}mm`);
+    });
+
+    it('keeps the default print margin when scan markers are off', async () => {
+        const html = await buildAnswerSheetHtml(makeTest(), DEFAULT_EXAM_EXPORT_OPTIONS, students);
+        expect(html).toContain(`height:${PRINT_MARGIN_MM}mm`);
+        expect(html).not.toContain(`height:${scanMarkerMarginsMm().top}mm`);
     });
 });
 

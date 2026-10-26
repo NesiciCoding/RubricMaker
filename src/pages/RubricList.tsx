@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import PageTour from '../components/Tour/PageTour';
 import { usePageTourState } from '../hooks/usePageTourState';
@@ -17,16 +17,12 @@ import {
     ClipboardPaste,
     Check,
     Layers,
-    Link2,
     Users2,
-    GripVertical,
     X,
-    ExternalLink,
-    UsersRound,
     LayoutGrid,
     List,
 } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, type DropResult } from '@hello-pangea/dnd';
 import Topbar from '../components/Layout/Topbar';
 import { useTranslation } from 'react-i18next';
 import { useAssessment, useAuthoring, useClasses, useGrading, useSettings, useStudents } from '../context/AppContext';
@@ -41,6 +37,8 @@ import { VO_TRACKS, VO_TRACK_LABELS, VO_TRACK_COLORS, VO_TRACK_DEFAULT_CEFR } fr
 import { CEFR_LEVEL_COLORS } from '../data/cefrDescriptors';
 import CefrBadge from '../components/CEFR/CefrBadge';
 import ImportRubricModal from '../components/Rubric/ImportRubricModal';
+import NewRubricChooserModal from '../components/Rubric/NewRubricChooserModal';
+import RubricCard, { type RubricCardActions } from '../components/Rubric/RubricCard';
 import Modal from '../components/ui/Modal';
 import SegmentedToggle from '../components/ui/SegmentedToggle';
 import type { ParsedRubric } from '../utils/rubricImport';
@@ -64,7 +62,7 @@ export default function RubricList() {
     const { studentRubrics, createGroupStudentRubrics } = useGrading();
     const { peerReviews } = useAssessment();
 
-    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric } = useAuthoring();
+    const { rubrics, gradeScales = [], addRubric, updateRubric, deleteRubric, userTemplates } = useAuthoring();
     const { settings } = useSettings();
 
     const [search, setSearch] = useState('');
@@ -73,6 +71,7 @@ export default function RubricList() {
     const [cohortFilter, setCohortFilter] = useState<CohortFilterValue>(ALL_COHORTS);
     const { confirm, dialogProps: confirmDialogProps } = useConfirm();
     const [showImport, setShowImport] = useState(false);
+    const [showNewChooser, setShowNewChooser] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [showCodeImport, setShowCodeImport] = useState(false);
     const [pastedCode, setPastedCode] = useState('');
@@ -109,22 +108,25 @@ export default function RubricList() {
     >([]);
     const [shareListLoading, setShareListLoading] = useState(false);
 
-    async function openShareModal(rubricId: string, rubricName: string) {
-        setShareModal({ rubricId, rubricName });
-        setShareEmail('');
-        setShareStatus('idle');
-        setShareList([]);
-        /* v8 ignore next -- provably dead: the share button only renders when dbStatus.isConnected */
-        if (!dbStatus.isConnected) return;
-        setShareListLoading(true);
-        try {
-            const list = await storageSync.adapter.fetchRubricShares(rubricId);
-            setShareList(list);
-        } catch {
-            /* ignore */
-        }
-        setShareListLoading(false);
-    }
+    const openShareModal = useCallback(
+        async (rubricId: string, rubricName: string) => {
+            setShareModal({ rubricId, rubricName });
+            setShareEmail('');
+            setShareStatus('idle');
+            setShareList([]);
+            /* v8 ignore next -- provably dead: the share button only renders when dbStatus.isConnected */
+            if (!dbStatus.isConnected) return;
+            setShareListLoading(true);
+            try {
+                const list = await storageSync.adapter.fetchRubricShares(rubricId);
+                setShareList(list);
+            } catch {
+                /* ignore */
+            }
+            setShareListLoading(false);
+        },
+        [dbStatus.isConnected]
+    );
 
     async function handleShare() {
         if (!shareModal || !shareEmail.trim()) return;
@@ -177,24 +179,30 @@ export default function RubricList() {
         if (r) updateRubric({ ...r, sharedWithSchool: shared });
     }
 
-    function handleCopyShareCode(rubricId: string) {
-        const rubric = rubrics.find((r) => r.id === rubricId);
-        /* v8 ignore next -- provably dead: the copy button only renders for live rubrics */
-        if (!rubric) return;
-        navigator.clipboard.writeText(encodeRubricShareCode(rubric));
-        setCopiedId(rubricId);
-        setTimeout(() => setCopiedId(null), 2000);
-    }
+    const handleCopyShareCode = useCallback(
+        (rubricId: string) => {
+            const rubric = rubrics.find((r) => r.id === rubricId);
+            /* v8 ignore next -- provably dead: the copy button only renders for live rubrics */
+            if (!rubric) return;
+            navigator.clipboard.writeText(encodeRubricShareCode(rubric));
+            setCopiedId(rubricId);
+            setTimeout(() => setCopiedId(null), 2000);
+        },
+        [rubrics]
+    );
 
-    function handleSharePreview(rubricId: string) {
-        const rubric = rubrics.find((r) => r.id === rubricId);
-        /* v8 ignore next -- provably dead: the preview button only renders for live rubrics */
-        if (!rubric) return;
-        const url = `${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(rubric)}`;
-        navigator.clipboard.writeText(url);
-        setCopiedId('preview-' + rubricId);
-        setTimeout(() => setCopiedId(null), 2000);
-    }
+    const handleSharePreview = useCallback(
+        (rubricId: string) => {
+            const rubric = rubrics.find((r) => r.id === rubricId);
+            /* v8 ignore next -- provably dead: the preview button only renders for live rubrics */
+            if (!rubric) return;
+            const url = `${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(rubric)}`;
+            navigator.clipboard.writeText(url);
+            setCopiedId('preview-' + rubricId);
+            setTimeout(() => setCopiedId(null), 2000);
+        },
+        [rubrics]
+    );
 
     // An exported grade scale id only means something in the workspace it came from.
     function rubricFromImport(parsed: ParsedRubric): RubricInput {
@@ -272,31 +280,36 @@ export default function RubricList() {
         };
     }, []);
 
-    function settlePendingDelete(id: string) {
+    const settlePendingDelete = useCallback((id: string) => {
         clearTimeout(pendingDeletes.current.get(id)?.timer);
         pendingDeletes.current.delete(id);
         setPendingDeleteIds((prev) => new Set([...prev].filter((x) => x !== id)));
-    }
+    }, []);
 
-    async function requestDelete(r: Rubric) {
-        const gradeCount = studentRubrics.filter((sr) => sr.rubricId === r.id && !sr.deletedAt).length;
-        const ok = await confirm({
-            title: t('rubricList.delete_rubric_title'),
-            message: t('rubricList.delete_rubric_warning', { count: gradeCount }),
-            confirmLabel: t('common.delete'),
-        });
-        if (!ok) return;
-        const toastId = showToast(t('rubricList.deleted_toast', { name: r.name }), 'info', {
-            durationMs: UNDO_DELETE_MS,
-            action: { label: t('common.undo'), onClick: () => settlePendingDelete(r.id) },
-        });
-        const timer = setTimeout(() => {
-            settlePendingDelete(r.id);
-            latest.current.deleteRubric(r.id);
-        }, UNDO_DELETE_MS);
-        pendingDeletes.current.set(r.id, { timer, toastId });
-        setPendingDeleteIds((prev) => new Set(prev).add(r.id));
-    }
+    const requestDelete = useCallback(
+        async (r: Rubric) => {
+            const gradeCount = latest.current.studentRubrics.filter(
+                (sr) => sr.rubricId === r.id && !sr.deletedAt
+            ).length;
+            const ok = await confirm({
+                title: t('rubricList.delete_rubric_title'),
+                message: t('rubricList.delete_rubric_warning', { count: gradeCount }),
+                confirmLabel: t('common.delete'),
+            });
+            if (!ok) return;
+            const toastId = showToast(t('rubricList.deleted_toast', { name: r.name }), 'info', {
+                durationMs: UNDO_DELETE_MS,
+                action: { label: t('common.undo'), onClick: () => settlePendingDelete(r.id) },
+            });
+            const timer = setTimeout(() => {
+                settlePendingDelete(r.id);
+                latest.current.deleteRubric(r.id);
+            }, UNDO_DELETE_MS);
+            pendingDeletes.current.set(r.id, { timer, toastId });
+            setPendingDeleteIds((prev) => new Set(prev).add(r.id));
+        },
+        [confirm, t, showToast, settlePendingDelete]
+    );
 
     const uniqueSubjects = Array.from(new Set(rubrics.map((r) => r.subject).filter(Boolean))).sort();
 
@@ -324,12 +337,12 @@ export default function RubricList() {
         }
     }
 
-    function openDifferentiate(rubricId: string) {
+    const openDifferentiate = useCallback((rubricId: string) => {
         const defaultTrack: VoTrack = 'havo';
         setDifferentiateId(rubricId);
         setDiffTrack(defaultTrack);
         setDiffCefr(VO_TRACK_DEFAULT_CEFR[defaultTrack]);
-    }
+    }, []);
 
     function handleDifferentiate() {
         const r = rubrics.find((x) => x.id === differentiateId);
@@ -342,21 +355,97 @@ export default function RubricList() {
         navigate(`/rubrics/${newR.id}`);
     }
 
-    function handleDuplicate(rubricId: string) {
-        const sorted = sortByDisplayOrder(rubrics);
-        const index = sorted.findIndex((x) => x.id === rubricId);
-        /* v8 ignore next -- provably dead: the duplicate button only renders for live rubrics */
-        if (index < 0) return;
-        const r = sorted[index];
-        const { order, updates } = displayOrderAfter(sorted, index);
-        for (const [rubric, displayOrder] of updates) updateRubric({ ...rubric, displayOrder });
-        const copy = addRubric(
-            cloneRubricForCopy(r, { name: t('rubricList.copy_name', { name: r.name }), displayOrder: order })
-        );
-        showToast(t('rubricList.duplicated_toast', { name: copy.name }), 'success', {
-            action: { label: t('rubricList.open_copy'), onClick: () => navigate(`/rubrics/${copy.id}`) },
-        });
-    }
+    const handleDuplicate = useCallback(
+        (rubricId: string) => {
+            const sorted = sortByDisplayOrder(rubrics);
+            const index = sorted.findIndex((x) => x.id === rubricId);
+            /* v8 ignore next -- provably dead: the duplicate button only renders for live rubrics */
+            if (index < 0) return;
+            const r = sorted[index];
+            const { order, updates } = displayOrderAfter(sorted, index);
+            for (const [rubric, displayOrder] of updates) updateRubric({ ...rubric, displayOrder });
+            const copy = addRubric(
+                cloneRubricForCopy(r, { name: t('rubricList.copy_name', { name: r.name }), displayOrder: order })
+            );
+            showToast(t('rubricList.duplicated_toast', { name: copy.name }), 'success', {
+                action: { label: t('rubricList.open_copy'), onClick: () => navigate(`/rubrics/${copy.id}`) },
+            });
+        },
+        [rubrics, updateRubric, addRubric, t, showToast, navigate]
+    );
+
+    // Hoisted so every card reads a cheap lookup instead of each one filtering/deduping the full
+    // studentRubrics array itself — O(rubrics × studentRubrics) turns into O(studentRubrics) once
+    // per render instead of once per card (#670).
+    const gradedCountByRubric = useMemo(() => {
+        const studentIdsByRubric = new Map<string, Set<string>>();
+        for (const sr of studentRubrics) {
+            let ids = studentIdsByRubric.get(sr.rubricId);
+            if (!ids) {
+                ids = new Set();
+                studentIdsByRubric.set(sr.rubricId, ids);
+            }
+            ids.add(sr.studentId);
+        }
+        const counts = new Map<string, number>();
+        for (const [rubricId, ids] of studentIdsByRubric) counts.set(rubricId, ids.size);
+        return counts;
+    }, [studentRubrics]);
+
+    // Also hoisted above the card loop: every card showed the same speaking-session roster, so
+    // this was being recomputed (and its options re-rendered) once per card rather than once
+    // for the whole page (#670).
+    const classStudents = useMemo(
+        () => (settings.activeClassId ? students.filter((s) => s.classId === settings.activeClassId) : students),
+        [students, settings.activeClassId]
+    );
+
+    const goToRubric = useCallback((rubricId: string) => navigate(`/rubrics/${rubricId}`), [navigate]);
+    const goToStudents = useCallback(() => navigate('/students'), [navigate]);
+    const goToCompare = useCallback(
+        (rubricId: string) => {
+            const activeClass = classes.find((c) => c.id === settings.activeClassId);
+            navigate(`/grade-comparative/${activeClass ? activeClass.id : 'all'}/${rubricId}`);
+        },
+        [classes, settings.activeClassId, navigate]
+    );
+    const goToSpeaking = useCallback(
+        (rubricId: string, studentId: string) => navigate(`/speaking/${rubricId}/${studentId}`),
+        [navigate]
+    );
+    const openGroupGradeModal = useCallback((rubric: Rubric) => {
+        setGroupModalRubric(rubric);
+        setGroupStudentIds(new Set());
+    }, []);
+
+    const cardActions: RubricCardActions = useMemo(
+        () => ({
+            onEdit: goToRubric,
+            onDuplicate: handleDuplicate,
+            onDelete: requestDelete,
+            onDifferentiate: openDifferentiate,
+            onCopyShareCode: handleCopyShareCode,
+            onSharePreview: handleSharePreview,
+            onOpenShareModal: openShareModal,
+            onGradeStudents: goToStudents,
+            onCompare: goToCompare,
+            onGroupGrade: openGroupGradeModal,
+            onSpeakingSelect: goToSpeaking,
+        }),
+        [
+            goToRubric,
+            handleDuplicate,
+            requestDelete,
+            openDifferentiate,
+            handleCopyShareCode,
+            handleSharePreview,
+            openShareModal,
+            goToStudents,
+            goToCompare,
+            openGroupGradeModal,
+            goToSpeaking,
+        ]
+    );
 
     function handleImport(parsed: ParsedRubric & { name: string; subject: string }) {
         const newR = addRubric(rubricFromImport(parsed));
@@ -391,7 +480,7 @@ export default function RubricList() {
                         <button
                             data-tour="rl-new"
                             className="btn btn-primary btn-sm"
-                            onClick={() => navigate('/rubrics/new')}
+                            onClick={() => setShowNewChooser(true)}
                         >
                             <Plus size={15} /> {t('rubricList.new_rubric')}
                         </button>
@@ -457,7 +546,7 @@ export default function RubricList() {
                         <BookOpen size={40} />
                         <h3>{t('rubricList.no_rubrics')}</h3>
                         <p className="text-muted text-sm">{t('rubricList.create_first_instruction')}</p>
-                        <button className="btn btn-primary" onClick={() => navigate('/rubrics/new')}>
+                        <button className="btn btn-primary" onClick={() => setShowNewChooser(true)}>
                             <Plus size={16} /> {t('rubricList.create_rubric')}
                         </button>
                     </div>
@@ -477,13 +566,7 @@ export default function RubricList() {
                             </thead>
                             <tbody>
                                 {filtered.map((r) => {
-                                    const gradedStudents = [
-                                        ...new Set(
-                                            studentRubrics
-                                                .filter((sr) => sr.rubricId === r.id)
-                                                .map((sr) => sr.studentId)
-                                        ),
-                                    ];
+                                    const gradedCount = gradedCountByRubric.get(r.id) ?? 0;
                                     return (
                                         <tr
                                             key={r.id}
@@ -494,7 +577,7 @@ export default function RubricList() {
                                             <td className="text-muted text-sm">{r.subject || '—'}</td>
                                             <td>{r.criteria.length}</td>
                                             <td>{r.criteria[0]?.levels.length ?? 0}</td>
-                                            <td>{gradedStudents.length}</td>
+                                            <td>{gradedCount}</td>
                                             <td>
                                                 {r.cefrTargetLevel ? (
                                                     <CefrBadge level={r.cefrTargetLevel} size="sm" />
@@ -576,364 +659,21 @@ export default function RubricList() {
                                         gap: 16,
                                     }}
                                 >
-                                    {filtered.map((r, idx) => {
-                                        const gradedStudents = [
-                                            ...new Set(
-                                                studentRubrics
-                                                    .filter((sr) => sr.rubricId === r.id)
-                                                    .map((sr) => sr.studentId)
-                                            ),
-                                        ];
-                                        return (
-                                            <Draggable
-                                                key={r.id}
-                                                draggableId={r.id}
-                                                index={idx}
-                                                isDragDisabled={!reorderable}
-                                            >
-                                                {(dragProvided) => (
-                                                    <div
-                                                        ref={dragProvided.innerRef}
-                                                        {...dragProvided.draggableProps}
-                                                        className="card"
-                                                        style={{
-                                                            cursor: 'pointer',
-                                                            transition: 'border-color var(--transition)',
-                                                            flex: '1 1 320px',
-                                                            maxWidth: 480,
-                                                            ...dragProvided.draggableProps.style,
-                                                        }}
-                                                        onMouseEnter={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--accent)')
-                                                        }
-                                                        onMouseLeave={(e) =>
-                                                            (e.currentTarget.style.borderColor = 'var(--border)')
-                                                        }
-                                                    >
-                                                        {/* The title gets its own full-width line so a long name wraps instead of
-                                                            squeezing the action row off the card. */}
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: 8,
-                                                                marginBottom: 12,
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'flex-start',
-                                                                    gap: 6,
-                                                                    minWidth: 0,
-                                                                }}
-                                                            >
-                                                                {reorderable && (
-                                                                    <span
-                                                                        {...dragProvided.dragHandleProps}
-                                                                        aria-label={t('rubricList.drag_to_reorder')}
-                                                                        style={{
-                                                                            cursor: 'grab',
-                                                                            color: 'var(--text-dim)',
-                                                                            marginTop: 3,
-                                                                        }}
-                                                                    >
-                                                                        <GripVertical size={15} />
-                                                                    </span>
-                                                                )}
-                                                                <div style={{ minWidth: 0 }}>
-                                                                    <h3
-                                                                        title={r.name}
-                                                                        style={{
-                                                                            overflowWrap: 'anywhere',
-                                                                            display: '-webkit-box',
-                                                                            WebkitLineClamp: 2,
-                                                                            WebkitBoxOrient: 'vertical',
-                                                                            overflow: 'hidden',
-                                                                        }}
-                                                                    >
-                                                                        {r.name}
-                                                                    </h3>
-                                                                    {r.subject && (
-                                                                        <div
-                                                                            className="text-muted text-xs"
-                                                                            style={{ marginTop: 2 }}
-                                                                        >
-                                                                            {r.subject}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div
-                                                                style={{
-                                                                    display: 'flex',
-                                                                    gap: 4,
-                                                                    justifyContent: 'flex-end',
-                                                                    flexWrap: 'nowrap',
-                                                                }}
-                                                            >
-                                                                {dbStatus.isConnected && (
-                                                                    <button
-                                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                                        title={t('rubricList.action_share_colleague')}
-                                                                        aria-label={t(
-                                                                            'rubricList.action_share_colleague'
-                                                                        )}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            openShareModal(r.id, r.name);
-                                                                        }}
-                                                                    >
-                                                                        <Users2 size={14} />
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tooltips.copy_share_code')}
-                                                                    aria-label={t('tooltips.copy_share_code')}
-                                                                    style={{
-                                                                        color:
-                                                                            copiedId === r.id
-                                                                                ? 'var(--green, #22c55e)'
-                                                                                : undefined,
-                                                                    }}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleCopyShareCode(r.id);
-                                                                    }}
-                                                                >
-                                                                    {copiedId === r.id ? (
-                                                                        <Check size={14} />
-                                                                    ) : (
-                                                                        <Share2 size={14} />
-                                                                    )}
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('tooltips.share_preview')}
-                                                                    aria-label={t('tooltips.share_preview')}
-                                                                    style={{
-                                                                        color:
-                                                                            copiedId === 'preview-' + r.id
-                                                                                ? 'var(--green, #22c55e)'
-                                                                                : undefined,
-                                                                    }}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleSharePreview(r.id);
-                                                                    }}
-                                                                >
-                                                                    {copiedId === 'preview-' + r.id ? (
-                                                                        <Check size={14} />
-                                                                    ) : (
-                                                                        <Link2 size={14} />
-                                                                    )}
-                                                                </button>
-                                                                {import.meta.env.DEV && (
-                                                                    <a
-                                                                        className="btn btn-ghost btn-icon btn-sm"
-                                                                        title={t('rubricList.dev_open_preview')}
-                                                                        aria-label={t('rubricList.dev_open_preview')}
-                                                                        href={`${window.location.origin}${window.location.pathname}#/preview/${encodeRubricShareCode(r)}`}
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                    >
-                                                                        <ExternalLink size={14} />
-                                                                    </a>
-                                                                )}
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('voTrack.differentiate_title')}
-                                                                    aria-label={t('voTrack.differentiate_title')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        openDifferentiate(r.id);
-                                                                    }}
-                                                                >
-                                                                    <Layers size={14} />
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('rubricList.action_duplicate')}
-                                                                    aria-label={t('rubricList.action_duplicate')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDuplicate(r.id);
-                                                                    }}
-                                                                >
-                                                                    <Copy size={14} />
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('rubricList.action_edit')}
-                                                                    aria-label={t('rubricList.action_edit')}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        navigate(`/rubrics/${r.id}`);
-                                                                    }}
-                                                                >
-                                                                    <Edit2 size={14} />
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-ghost btn-icon btn-sm"
-                                                                    title={t('rubricList.action_delete')}
-                                                                    aria-label={t('rubricList.action_delete')}
-                                                                    style={{ color: 'var(--red)' }}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        requestDelete(r);
-                                                                    }}
-                                                                >
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div
-                                                            style={{
-                                                                display: 'flex',
-                                                                gap: 8,
-                                                                flexWrap: 'wrap',
-                                                                marginBottom: 14,
-                                                            }}
-                                                        >
-                                                            <span className="badge badge-blue">
-                                                                {t('rubricList.criteria_badge', {
-                                                                    count: r.criteria.length,
-                                                                })}
-                                                            </span>
-                                                            <span className="badge badge-purple">
-                                                                {t('rubricList.levels_badge', {
-                                                                    count: r.criteria[0]?.levels.length ?? 0,
-                                                                })}
-                                                            </span>
-                                                            <span className="badge badge-green">
-                                                                {t('rubricList.students_graded_badge', {
-                                                                    count: gradedStudents.length,
-                                                                })}
-                                                            </span>
-                                                            {r.cefrTargetLevel && (
-                                                                <CefrBadge level={r.cefrTargetLevel} size="sm" />
-                                                            )}
-                                                        </div>
-
-                                                        {r.description && (
-                                                            <p
-                                                                className="text-muted text-sm truncate"
-                                                                style={{ marginBottom: 14 }}
-                                                            >
-                                                                {r.description}
-                                                            </p>
-                                                        )}
-
-                                                        <div
-                                                            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                                                        >
-                                                            <button
-                                                                className="btn btn-primary btn-sm"
-                                                                onClick={() => navigate(`/rubrics/${r.id}`)}
-                                                            >
-                                                                <Edit2 size={14} /> {t('rubricList.edit_rubric')}
-                                                            </button>
-                                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                                <button
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    style={{ flex: '1 1 auto' }}
-                                                                    onClick={() => navigate('/students')}
-                                                                >
-                                                                    <Users size={14} /> {t('rubricList.grade_students')}
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-secondary btn-sm compare-btn-tutorial"
-                                                                    style={{ flex: '1 1 auto' }}
-                                                                    title={
-                                                                        settings.activeClassId
-                                                                            ? 'Start Comparative Grading'
-                                                                            : "You'll choose a class on the next screen"
-                                                                    }
-                                                                    onClick={() => {
-                                                                        const activeClass = classes.find(
-                                                                            (c) => c.id === settings.activeClassId
-                                                                        );
-                                                                        navigate(
-                                                                            `/grade-comparative/${activeClass ? activeClass.id : 'all'}/${r.id}`
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <GitCompare size={14} />{' '}
-                                                                    {t('rubricList.action_compare')}
-                                                                </button>
-                                                                <button
-                                                                    className="btn btn-secondary btn-sm"
-                                                                    style={{ flex: '1 1 auto' }}
-                                                                    onClick={() => {
-                                                                        setGroupModalRubric(r);
-                                                                        setGroupStudentIds(new Set());
-                                                                    }}
-                                                                >
-                                                                    <UsersRound size={14} />{' '}
-                                                                    {t('rubricList.action_group_grade')}
-                                                                </button>
-                                                                {/* Speaking session launcher */}
-                                                                {(() => {
-                                                                    const classStudents = settings.activeClassId
-                                                                        ? students.filter(
-                                                                              (s) =>
-                                                                                  s.classId === settings.activeClassId
-                                                                          )
-                                                                        : students;
-                                                                    if (classStudents.length === 0) return null;
-                                                                    return (
-                                                                        <div
-                                                                            style={{
-                                                                                position: 'relative',
-                                                                                flex: '1 1 auto',
-                                                                            }}
-                                                                        >
-                                                                            <select
-                                                                                value=""
-                                                                                aria-label={t(
-                                                                                    'rubricList.speaking_select_student'
-                                                                                )}
-                                                                                onChange={(e) => {
-                                                                                    if (e.target.value)
-                                                                                        navigate(
-                                                                                            `/speaking/${r.id}/${e.target.value}`
-                                                                                        );
-                                                                                }}
-                                                                                style={{
-                                                                                    width: '100%',
-                                                                                    padding: '5px 8px',
-                                                                                    borderRadius: 6,
-                                                                                    border: '1px solid var(--border)',
-                                                                                    background: 'var(--bg-elevated)',
-                                                                                    color: 'var(--text)',
-                                                                                    fontSize: '0.8rem',
-                                                                                    cursor: 'pointer',
-                                                                                }}
-                                                                            >
-                                                                                <option value="" disabled>
-                                                                                    {t(
-                                                                                        'rubricList.speaking_select_student'
-                                                                                    )}
-                                                                                </option>
-                                                                                {classStudents.map((s) => (
-                                                                                    <option key={s.id} value={s.id}>
-                                                                                        {s.name}
-                                                                                    </option>
-                                                                                ))}
-                                                                            </select>
-                                                                        </div>
-                                                                    );
-                                                                })()}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        );
-                                    })}
+                                    {filtered.map((r, idx) => (
+                                        <RubricCard
+                                            key={r.id}
+                                            rubric={r}
+                                            index={idx}
+                                            reorderable={reorderable}
+                                            gradedCount={gradedCountByRubric.get(r.id) ?? 0}
+                                            dbConnected={dbStatus.isConnected}
+                                            isCopied={copiedId === r.id}
+                                            isPreviewCopied={copiedId === 'preview-' + r.id}
+                                            classStudents={classStudents}
+                                            hasActiveClass={!!settings.activeClassId}
+                                            actions={cardActions}
+                                        />
+                                    ))}
                                     {droppableProvided.placeholder}
                                 </div>
                             )}
@@ -1082,6 +822,25 @@ export default function RubricList() {
                 )}
 
                 <ConfirmDialog {...confirmDialogProps} />
+
+                {showNewChooser && (
+                    <NewRubricChooserModal
+                        userTemplates={userTemplates}
+                        onClose={() => setShowNewChooser(false)}
+                        onBlank={() => {
+                            setShowNewChooser(false);
+                            navigate('/rubrics/new');
+                        }}
+                        onImport={() => {
+                            setShowNewChooser(false);
+                            setShowImport(true);
+                        }}
+                        onPickTemplate={(template) => {
+                            setShowNewChooser(false);
+                            navigate('/rubrics/new', { state: { template } });
+                        }}
+                    />
+                )}
 
                 {showImport && <ImportRubricModal onClose={() => setShowImport(false)} onImport={handleImport} />}
 

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../ui/Modal';
+import TagFilterChips from './TagFilterChips';
 import { useAuthoring } from '../../context/AppContext';
 import { nanoid } from '../../utils/nanoid';
 import { seededShuffle } from '../../utils/seededShuffle';
@@ -17,13 +18,13 @@ interface GenerateTestModalProps {
 interface CriterionRow {
     id: string;
     kind: 'question' | 'section';
-    tag: string;
+    tags: string[];
     cefrLevel: CefrLevel | '';
     count: number;
 }
 
 function newRow(): CriterionRow {
-    return { id: nanoid(), kind: 'question', tag: '', cefrLevel: '', count: 5 };
+    return { id: nanoid(), kind: 'question', tags: [], cefrLevel: '', count: 5 };
 }
 
 export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
@@ -36,8 +37,24 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
     const [organizeByLevel, setOrganizeByLevel] = useState(false);
     const [rows, setRows] = useState<CriterionRow[]>([newRow()]);
 
+    const allTags = useMemo(() => {
+        const tags = new Set<string>();
+        questionBank.forEach((item) => item.tags.forEach((tag) => tags.add(tag)));
+        return Array.from(tags).sort();
+    }, [questionBank]);
+
     function updateRow(id: string, patch: Partial<CriterionRow>) {
         setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    }
+
+    function toggleRowTag(id: string, tag: string) {
+        setRows((prev) =>
+            prev.map((r) => {
+                if (r.id !== id) return r;
+                const tags = r.tags.includes(tag) ? r.tags.filter((t2) => t2 !== tag) : [...r.tags, tag];
+                return { ...r, tags };
+            })
+        );
     }
 
     function removeRow(id: string) {
@@ -52,13 +69,12 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
         const usedItemIds = new Set<string>();
 
         rows.forEach((row, index) => {
-            const tag = row.tag.trim().toLowerCase();
             const pool = questionBank.filter((item) => {
                 if (usedItemIds.has(item.id)) return false;
                 const itemKind = item.kind ?? 'question';
                 if (itemKind !== row.kind) return false;
                 if (row.cefrLevel && item.cefrLevel !== row.cefrLevel) return false;
-                if (tag && !item.tags.some((t2) => t2.toLowerCase().includes(tag))) return false;
+                if (row.tags.length > 0 && !item.tags.some((t2) => row.tags.includes(t2))) return false;
                 return true;
             });
             const shuffled = seededShuffle(pool, nanoid());
@@ -188,64 +204,74 @@ export default function GenerateTestModal({ onClose }: GenerateTestModalProps) {
                                 key={row.id}
                                 style={{
                                     display: 'flex',
+                                    flexDirection: 'column',
                                     gap: 8,
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
                                     padding: 8,
                                     border: '1px solid var(--border)',
                                     borderRadius: 8,
                                 }}
                             >
-                                <select
-                                    aria-label={t('generateTest.criterion_kind_label')}
-                                    value={row.kind}
-                                    onChange={(e) =>
-                                        updateRow(row.id, { kind: e.target.value as 'question' | 'section' })
-                                    }
-                                >
-                                    <option value="question">{t('generateTest.criterion_kind_question')}</option>
-                                    <option value="section">{t('generateTest.criterion_kind_section')}</option>
-                                </select>
-                                <select
-                                    aria-label={t('questionBank.cefr_level_label')}
-                                    value={row.cefrLevel}
-                                    onChange={(e) => updateRow(row.id, { cefrLevel: e.target.value as CefrLevel | '' })}
-                                >
-                                    <option value="">{t('tests.section_cefr_level_none')}</option>
-                                    {CEFR_LEVELS.map((lvl) => (
-                                        <option key={lvl} value={lvl}>
-                                            {lvl}
-                                        </option>
-                                    ))}
-                                </select>
-                                <input
-                                    type="text"
-                                    value={row.tag}
-                                    onChange={(e) => updateRow(row.id, { tag: e.target.value })}
-                                    placeholder={t('generateTest.criterion_tag_placeholder')}
-                                    aria-label={t('generateTest.criterion_tag_label')}
-                                    style={{ flex: 1, minWidth: 100 }}
-                                />
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={row.count}
-                                    onChange={(e) =>
-                                        updateRow(row.id, { count: Math.max(1, Number(e.target.value) || 1) })
-                                    }
-                                    style={{ width: 64 }}
-                                    aria-label={t('generateTest.criterion_count_label')}
-                                />
-                                {rows.length > 1 && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-icon btn-sm"
-                                        aria-label={t('common.delete')}
-                                        style={{ color: 'var(--red)' }}
-                                        onClick={() => removeRow(row.id)}
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <select
+                                        aria-label={t('generateTest.criterion_kind_label')}
+                                        value={row.kind}
+                                        onChange={(e) =>
+                                            updateRow(row.id, { kind: e.target.value as 'question' | 'section' })
+                                        }
                                     >
-                                        <Trash2 size={14} />
-                                    </button>
+                                        <option value="question">{t('generateTest.criterion_kind_question')}</option>
+                                        <option value="section">{t('generateTest.criterion_kind_section')}</option>
+                                    </select>
+                                    <select
+                                        aria-label={t('questionBank.cefr_level_label')}
+                                        value={row.cefrLevel}
+                                        onChange={(e) =>
+                                            updateRow(row.id, { cefrLevel: e.target.value as CefrLevel | '' })
+                                        }
+                                    >
+                                        <option value="">{t('tests.section_cefr_level_none')}</option>
+                                        {CEFR_LEVELS.map((lvl) => (
+                                            <option key={lvl} value={lvl}>
+                                                {lvl}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={row.count}
+                                        onChange={(e) =>
+                                            updateRow(row.id, { count: Math.max(1, Number(e.target.value) || 1) })
+                                        }
+                                        style={{ width: 64 }}
+                                        aria-label={t('generateTest.criterion_count_label')}
+                                    />
+                                    {rows.length > 1 && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-ghost btn-icon btn-sm"
+                                            aria-label={t('common.delete')}
+                                            style={{ color: 'var(--red)', marginLeft: 'auto' }}
+                                            onClick={() => removeRow(row.id)}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                                {allTags.length > 0 && (
+                                    <div>
+                                        <span
+                                            className="text-muted text-xs"
+                                            style={{ display: 'block', marginBottom: 4 }}
+                                        >
+                                            {t('generateTest.criterion_tags_label')}
+                                        </span>
+                                        <TagFilterChips
+                                            tags={allTags}
+                                            isSelected={(tag) => row.tags.includes(tag)}
+                                            onToggle={(tag) => toggleRowTag(row.id, tag)}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         ))}

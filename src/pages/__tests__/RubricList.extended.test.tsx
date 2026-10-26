@@ -78,6 +78,7 @@ const mockAppValue = {
     updateRubric: mockUpdateRubric,
     deleteRubric: mockDeleteRubric,
     createGroupStudentRubrics: mockCreateGroupStudentRubrics,
+    userTemplates: [],
 };
 
 vi.mock('../../context/AppContext', () => ({
@@ -262,9 +263,10 @@ describe('RubricList extended', () => {
 
     it('launches a speaking session for a selected student', () => {
         renderPage();
-        fireEvent.change(screen.getAllByLabelText('rubricList.speaking_select_student')[0], {
-            target: { value: 's1' },
-        });
+        const select = screen.getAllByLabelText('rubricList.speaking_select_student')[0];
+        // The student options are rendered lazily on first interaction (#670).
+        fireEvent.mouseDown(select);
+        fireEvent.change(select, { target: { value: 's1' } });
         expect(mockNavigate).toHaveBeenCalledWith('/speaking/r1/s1');
     });
 

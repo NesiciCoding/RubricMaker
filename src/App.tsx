@@ -130,7 +130,7 @@ export default function App() {
     if (role === 'student' || autoLinkStudent) {
         if (!linkedStudent) {
             return (
-                <div
+                <main
                     style={{
                         minHeight: '100vh',
                         display: 'flex',
@@ -144,15 +144,26 @@ export default function App() {
                     }}
                 >
                     <GraduationCap size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                    <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                    <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
                         {t('studentPortal.no_linked_account')}
-                    </p>
+                    </h1>
+                    {settings.userEmail && (
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            {t('studentPortal.no_linked_account_signed_in_as', { email: settings.userEmail })}
+                        </p>
+                    )}
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360 }}>
-                        {t('studentPortal.no_linked_account_detail')}
+                        {settings.userEmail
+                            ? t('studentPortal.no_linked_account_detail_email', { email: settings.userEmail })
+                            : t('studentPortal.no_linked_account_detail')}
                     </p>
                     {isLocalMode() ? (
                         // Local mode has no account to sign out of, and the role lives in local settings;
-                        // without this the role switch is a one-way lock-out (#623).
+                        // without this the role switch is a one-way lock-out (#623). This intentionally
+                        // lands back on the teacher dashboard rather than a "signed out" state — local
+                        // mode has no sign-in to begin with, so there's no clean signed-out screen to land
+                        // on instead. Tracked as a known local-mode artefact under the #623 role-lockout
+                        // work rather than fixed here (issue #709).
                         <button
                             className="btn btn-primary btn-sm"
                             onClick={() => updateSettings({ userRole: 'teacher' })}
@@ -164,20 +175,30 @@ export default function App() {
                             {t('studentPortal.sign_out')}
                         </button>
                     )}
-                </div>
+                </main>
             );
         }
 
         return (
             <ErrorBoundary>
                 <PageViewLogger />
+                {/* No Sidebar/<main> shell here (unlike the teacher dashboard below) — each route
+                    supplies its own `<main id="portal-main-content">` landmark so the skip link has
+                    one consistent target. PrivacyPage already renders its own when given
+                    studentPortalPath, so it isn't wrapped again here (that would double up the
+                    landmark instead of fixing its absence). */}
+                <a href="#portal-main-content" className="skip-nav">
+                    {t('a11y.skip_to_content')}
+                </a>
                 <Suspense fallback={<RouteSkeleton />}>
                     <Routes>
                         <Route
                             path="/portal/:studentId"
                             element={
                                 <OwnPortalGuard ownStudentId={linkedStudent.id}>
-                                    <StudentPortalPage />
+                                    <main id="portal-main-content">
+                                        <StudentPortalPage />
+                                    </main>
                                 </OwnPortalGuard>
                             }
                         />
@@ -185,7 +206,9 @@ export default function App() {
                             path="/portal/:studentId/flashcards/:deckId"
                             element={
                                 <OwnPortalGuard ownStudentId={linkedStudent.id}>
-                                    <StudentFlashcardStudyPage />
+                                    <main id="portal-main-content">
+                                        <StudentFlashcardStudyPage />
+                                    </main>
                                 </OwnPortalGuard>
                             }
                         />

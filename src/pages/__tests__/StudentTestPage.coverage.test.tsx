@@ -312,6 +312,34 @@ describe('StudentTestPage — safe media helpers', () => {
         expect(audio?.getAttribute('src')).toBe('https://example.com/section.mp3');
     });
 
+    it('marks passages, prompts and options as English whatever the interface language is', () => {
+        document.documentElement.lang = 'nl';
+        renderPage(
+            makeAssignment(
+                {},
+                makeTest({
+                    sections: [{ id: 'sec1', title: 'Reading', content: '<p>Shared passage</p>' }],
+                    questions: [
+                        {
+                            id: 'q1',
+                            prompt: 'About the passage',
+                            type: 'multiple-choice',
+                            points: 1,
+                            sectionId: 'sec1',
+                            options: [{ id: 'a', text: 'OK', isCorrect: true }],
+                        },
+                    ],
+                })
+            )
+        );
+        expect(screen.getByText('Shared passage').closest('[lang]')?.getAttribute('lang')).toBe('en');
+        for (const title of screen.getAllByText('Reading')) expect(title.getAttribute('lang')).toBe('en');
+        expect(screen.getByText('About the passage').closest('[lang]')?.getAttribute('lang')).toBe('en');
+        expect(screen.getByText('OK').closest('[lang]')?.getAttribute('lang')).toBe('en');
+        expect(screen.getByText(/^tests\.taking\.question_label/).closest('[lang]')).toBe(document.documentElement);
+        document.documentElement.lang = 'en';
+    });
+
     it('shows a timeline group without a title for a question with an unknown section id', () => {
         renderPage(
             makeAssignment(

@@ -337,7 +337,12 @@ export default function PrivacyPage({ studentPortalPath }: { studentPortalPath?:
                     </Link>
                     <span className="topbar-title">{title}</span>
                 </header>
-                <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>{content}</main>
+                <main
+                    id="portal-main-content"
+                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                >
+                    {content}
+                </main>
             </div>
         );
     }

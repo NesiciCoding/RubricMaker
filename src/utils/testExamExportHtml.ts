@@ -31,6 +31,9 @@ import {
     optionLetter,
     orderingBookletItems,
     partialCreditLadder,
+    scanMarkerMarginsMm,
+    SCAN_QR_INSET_MM,
+    SCAN_QR_SIZE_MM,
     EXAM_BASE_FONT_PT,
     EXAM_BASE_LINE_SPACING,
     type AnswerSpaceSpec,
@@ -347,9 +350,7 @@ async function scanMarkerHtml(test: Test, studentId?: string): Promise<string> {
                 `<div style="position:absolute;left:${m.x - PRINT_MARGIN_MM}mm;top:${m.y}mm;width:${m.size}mm;height:${m.size}mm;background:#000"></div>`
         )
         .join('');
-    const qrSize = 18;
-    const qrInset = 6;
-    return `${markers}<img src="${dataUrl}" style="position:absolute;left:${EXAM_PAGE_MM.width - qrInset - qrSize - PRINT_MARGIN_MM}mm;top:${EXAM_PAGE_MM.height - qrInset - qrSize}mm;width:${qrSize}mm;height:${qrSize}mm" />`;
+    return `${markers}<img src="${dataUrl}" style="position:absolute;left:${EXAM_PAGE_MM.width - SCAN_QR_INSET_MM - SCAN_QR_SIZE_MM - PRINT_MARGIN_MM}mm;top:${EXAM_PAGE_MM.height - SCAN_QR_INSET_MM - SCAN_QR_SIZE_MM}mm;width:${SCAN_QR_SIZE_MM}mm;height:${SCAN_QR_SIZE_MM}mm" />`;
 }
 
 /** Renders one question's answer space per its AnswerSpaceSpec — empty bubbles, ruled lines, a half-page box, or numbered sub-lines. */
@@ -425,11 +426,16 @@ export async function buildAnswerSheetHtml(
     students: Student[] = []
 ): Promise<string> {
     const sheets: (Student | undefined)[] = students.length > 0 ? students : [undefined];
+    // Scan markers need a wider header/footer band than the default print margin, or they bleed
+    // into the real content (see scanMarkerMarginsMm()'s doc comment).
+    const margins = options.scanMarkers ? scanMarkerMarginsMm() : undefined;
     const pages = await Promise.all(
         sheets.map(async (student, i) =>
             withoutBrowserPrintChrome(await answerSheetPageHtml(test, options, student), {
                 headerExtra: options.scanMarkers ? await scanMarkerHtml(test, student?.id) : '',
                 breakAfter: i < sheets.length - 1,
+                headerHeightMm: margins?.top,
+                footerHeightMm: margins?.bottom,
             })
         )
     );

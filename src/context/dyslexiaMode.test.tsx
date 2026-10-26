@@ -180,4 +180,21 @@ describe('Interface language', () => {
         });
         expect(i18n.language).toBe('nl-BE');
     });
+
+    it('does not re-apply a stale chosen language once reset to Automatic (#955)', async () => {
+        const { result } = renderHook(() => useSettings(), { wrapper });
+        await act(async () => {
+            result.current.updateSettings({ language: 'fr', languageChosen: true });
+        });
+        expect(i18n.language).toBe('fr');
+
+        // settings.language is still the stale 'fr' once reset to Automatic (LanguageSelect itself
+        // re-detects the browser language; this effect's job is simply to stop forcing 'fr').
+        const changeLanguageSpy = vi.spyOn(i18n, 'changeLanguage');
+        await act(async () => {
+            result.current.updateSettings({ languageChosen: false });
+        });
+        expect(changeLanguageSpy).not.toHaveBeenCalled();
+        changeLanguageSpy.mockRestore();
+    });
 });

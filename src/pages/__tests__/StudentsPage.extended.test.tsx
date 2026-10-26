@@ -820,9 +820,11 @@ describe('StudentsPage extended', () => {
 
     it('closes every modal via overlay, close and cancel buttons', () => {
         renderPage();
-        // Add-student modal: overlay, close (✕), cancel.
+        // Add-student modal (migrated to the shared Radix-backed Modal): Escape, close (✕), cancel.
+        // Backdrop dismissal is Radix's own pointerdown-based outside-interaction detection, already
+        // covered by Modal.test.tsx — a bare fireEvent.click on .modal-overlay doesn't trigger it.
         fireEvent.click(screen.getAllByText('studentsPage.add_student')[0]);
-        fireEvent.click(document.querySelector('.modal-overlay')!);
+        fireEvent.keyDown(document.body, { key: 'Escape' });
         expect(screen.queryByText('studentsPage.add_student_title')).not.toBeInTheDocument();
         fireEvent.click(screen.getAllByText('studentsPage.add_student')[0]);
         fireEvent.click(screen.getByLabelText('Close'));

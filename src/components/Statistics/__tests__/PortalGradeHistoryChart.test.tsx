@@ -6,6 +6,7 @@ import PortalGradeHistoryChart from '../PortalGradeHistoryChart';
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string) => key,
+        i18n: { language: 'en' },
     }),
 }));
 
@@ -37,7 +38,33 @@ describe('PortalGradeHistoryChart', () => {
         const history = [{ dateStr: '2024-01-01', score: 70 }];
         render(<PortalGradeHistoryChart history={history} />);
         const out = screen.getByTestId('tooltip').textContent ?? '';
-        expect(out).toContain('80%');
+        expect(out).toContain('80.0%');
         expect(out).toContain('studentPortal.score');
+    });
+
+    it('formats the tooltip percentage with the viewer locale decimal separator', async () => {
+        vi.resetModules();
+        vi.doMock('react-i18next', () => ({
+            useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'nl' } }),
+        }));
+        const { default: LocalizedChart } = await import('../PortalGradeHistoryChart');
+        render(<LocalizedChart history={[{ dateStr: '2024-01-01', score: 70 }]} />);
+        const out = screen.getByTestId('tooltip').textContent ?? '';
+        expect(out).toContain('80,0%');
+        vi.doUnmock('react-i18next');
+        vi.resetModules();
+    });
+
+    it('exposes a visually-hidden data table as a text alternative to the chart', () => {
+        const history = [
+            { dateStr: '2024-01-01', score: 70 },
+            { dateStr: '2024-02-01', score: 85.5 },
+        ];
+        const { container } = render(<PortalGradeHistoryChart history={history} />);
+        expect(container.querySelector('div[role="img"]')).toBeTruthy();
+        const table = container.querySelector('table.sr-only');
+        expect(table).toBeTruthy();
+        expect(table?.textContent).toContain('2024-01-01');
+        expect(table?.textContent).toContain('85.5%');
     });
 });

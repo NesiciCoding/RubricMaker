@@ -21,6 +21,10 @@ import EssayTTSControls from '../components/Essay/EssayTTSControls';
 // Memoized so the 1Hz exam countdown tick doesn't re-render the whole TipTap editor
 // (all props passed here are stable between renders).
 const MemoizedEssayEditor = React.memo(EssayEditor);
+
+// Essays are English unless a teacher setting says otherwise (#956), whatever the interface language: the read-aloud
+// voice, spellcheck and screen readers must not treat an English essay as Dutch because the student picked Dutch.
+const ESSAY_CONTENT_LANG = 'en';
 import { decodeEssayAssignment } from '../utils/shareCode';
 import { encodeEssaySubmission } from '../utils/shareCode';
 import { downloadSebConfig } from '../utils/sebConfig';
@@ -205,7 +209,7 @@ function isShortCode(code: string): boolean {
 }
 
 export default function StudentEssayPage() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { code } = useParams<{ code: string }>();
     const navigate = useNavigate();
 
@@ -864,7 +868,7 @@ export default function StudentEssayPage() {
                         <EssayTTSControls
                             promptText={resolvedContent?.prompt ?? assignment.prompt}
                             contentHtml={html}
-                            lang={i18n.language}
+                            lang={ESSAY_CONTENT_LANG}
                         />
                     )}
                 </div>
@@ -1004,6 +1008,7 @@ export default function StudentEssayPage() {
                         placeholder={t('essay.editor_placeholder')}
                         showDragHandle
                         showTableOfContents
+                        lang={ESSAY_CONTENT_LANG}
                     />
 
                     {/* Submit row */}
@@ -1106,7 +1111,7 @@ export default function StudentEssayPage() {
                                 >
                                     {t('essay.prompt_label')}
                                 </div>
-                                {resolvedContent?.prompt ?? assignment.prompt}
+                                <span lang={ESSAY_CONTENT_LANG}>{resolvedContent?.prompt ?? assignment.prompt}</span>
                             </div>
                         )}
 
