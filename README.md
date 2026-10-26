@@ -471,7 +471,7 @@ The deep operational detail is in the [self-hosting docs](docs/SELF_HOSTING_OPS.
 
 - [Contributing guide](https://github.com/NesiciCoding/RubricMaker/wiki/Contributing) — how to report issues, propose changes, and open pull requests
 - [Development Guide](https://github.com/NesiciCoding/RubricMaker/wiki/Development-Guide) — codebase conventions and workflow
-- [Roadmap](https://github.com/NesiciCoding/RubricMaker/wiki/Roadmap) — where the project is heading
+- [Roadmap](https://github.com/NesiciCoding/RubricMaker/projects) — where the project is heading, tracked in [issues](https://github.com/NesiciCoding/RubricMaker/issues) and the project board
 - [Security policy](SECURITY.md) — responsible disclosure
 - [Privacy statement](PRIVACY.md) — what the app collects and stores, and when it stays fully local
 
