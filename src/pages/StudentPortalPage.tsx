@@ -347,7 +347,7 @@ export default function StudentPortalPage() {
                     gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
                     gradeScales[0];
                 /* v8 ignore stop */
-                const summary = calcGradeSummary(sr, rubric.criteria, scale, { tiered: rubric.tiered });
+                const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
                 return {
                     sr,
                     rubric,
@@ -1498,7 +1498,9 @@ export default function StudentPortalPage() {
                                                 </div>
                                                 {h.summary.letterGrade && (
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                        {letterGradeExplanation(h.summary.letterGrade, h.scale)}
+                                                        {h.summary.verdict
+                                                            ? h.summary.letterGrade
+                                                            : letterGradeExplanation(h.summary.letterGrade, h.scale)}
                                                     </div>
                                                 )}
                                             </div>
