@@ -876,6 +876,13 @@ select.input-error {
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-grow {
+        animation: none;
+    }
+}
+
 .modal-header {
     display: flex;
     align-items: center;
