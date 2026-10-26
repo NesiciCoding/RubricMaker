@@ -4743,7 +4743,8 @@
         "warn_untitled_row": "Een rij met niveautekst maar zonder criteriumtitel (een samengevoegde cel?) is overgeslagen.",
         "warn_cell_count": "Rij \"{{title}}\" heeft {{found}} niveaucellen maar de kop heeft {{expected}} niveaus — controleer de beschrijvingen.",
         "warn_weights_scaled": "De wegingen van de criteria telden op tot {{total}}% en zijn omgerekend naar 100%.",
-        "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld."
+        "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld.",
+        "warn_json_tiered_invalid": "De niveaurubriekinstellingen in het bestand zijn onvolledig of ongeldig; het is geïmporteerd als gewone rubric."
     },
     "standardsPicker": {
         "title": "Standaard koppelen",

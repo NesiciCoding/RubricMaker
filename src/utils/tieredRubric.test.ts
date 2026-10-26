@@ -5,6 +5,7 @@ import sheet from './import/__fixtures__/tiered-rubric/grote-opdracht-y1-p1.json
 import { calcGradeSummary } from './gradeCalc';
 import { cloneRubricForCopy } from './rubricClone';
 import { decodeRubricShareCode, encodeRubricShareCode } from './rubricImport';
+import { buildRubricHTML } from './pdfExport';
 import {
     DEFAULT_BAND_COLOR,
     applyBands,
@@ -358,6 +359,22 @@ describe('verdict in calcGradeSummary', () => {
     });
 });
 
+describe('PDF grade summary', () => {
+    it('prints the verdict from the rubric saved with the grade, not the live one', () => {
+        const saved = sheetRubric();
+        const [, , e] = saved.tiered!.bands;
+        const sr = gradeAt(saved, [e.id, e.id, e.id, e.id], { rubricSnapshot: saved });
+        const live = {
+            ...saved,
+            tiered: { ...saved.tiered!, bands: saved.tiered!.bands.map((b) => ({ ...b, code: `${b.code}*` })) },
+        };
+        const scale = { id: 'g', name: 'G', type: 'letter' as const, ranges: [] };
+        const html = buildRubricHTML(sr, live, { id: 's1', name: 'Alice', classId: 'c1' }, scale);
+        expect(html).toContain(`line-height:1">${e.code}</div>`);
+        expect(html).not.toContain(`${e.code}*`);
+    });
+});
+
 describe('copies and share codes', () => {
     const levelBands = (c: RubricCriterion) => c.levels.map((l) => l.bandId);
     const tierCounts = (r: Pick<Rubric, 'criteria'>) =>
@@ -382,6 +399,16 @@ describe('copies and share codes', () => {
         const havo = parsed.tiered!.tiers[1].id;
         const spelling = parsed.criteria[0].levels.find((l) => l.label === 'IO')!;
         expect(spelling.subItems.filter(inTier(havo)).map((si) => si.label)).toEqual(sheet.criteria[0].cells.havo.io);
+    });
+
+    it('warns when a share code carries a tiered config it cannot use', () => {
+        const rubric = { ...sheetRubric(), tiered: { tiers: [], bands: [] } as TieredConfig };
+        const parsed = decodeRubricShareCode(encodeRubricShareCode(rubric));
+        expect(parsed.tiered).toBeUndefined();
+        expect(parsed.warnings).toContainEqual({ key: 'importRubric.warn_json_tiered_invalid' });
+        expect(decodeRubricShareCode(encodeRubricShareCode(sheetRubric())).warnings).not.toContainEqual({
+            key: 'importRubric.warn_json_tiered_invalid',
+        });
     });
 });
 
