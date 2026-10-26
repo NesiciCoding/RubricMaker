@@ -64,12 +64,15 @@ export default function SubItemFeedback({ criterion, entry }: { criterion: Rubri
             {level.subItems.map((si) => (
                 <li key={si.id} style={{ display: 'flex', gap: 8, fontSize: '0.8rem' }}>
                     <span style={{ flex: 1 }}>{si.label}</span>
-                    <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                        {t('sharedFeedback.sub_item_points', {
-                            score: subItemScore(entry, si) ?? 0,
-                            max: subItemRange(si).max,
-                        })}
-                    </span>
+                    {/* An override replaces the sub-item scores, so they would not add up to the grade. */}
+                    {entry.overridePoints === undefined && (
+                        <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            {t('sharedFeedback.sub_item_points', {
+                                score: subItemScore(entry, si) ?? 0,
+                                max: subItemRange(si).max,
+                            })}
+                        </span>
+                    )}
                 </li>
             ))}
         </ul>

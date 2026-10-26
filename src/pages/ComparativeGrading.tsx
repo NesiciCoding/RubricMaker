@@ -1112,7 +1112,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                             onScore={(id, v) => setSubItemScore(true, c.id, id, v)}
                                                         />
                                                     )}
-                                                    {(lvlA.minPoints !== lvlA.maxPoints || !scoresSubItems(c)) && (
+                                                    {(lvlA.minPoints !== lvlA.maxPoints ||
+                                                        lvlA.subItems.length === 0) && (
                                                         <div
                                                             className="text-xs"
                                                             style={{
@@ -1375,7 +1376,8 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                             onScore={(id, v) => setSubItemScore(false, c.id, id, v)}
                                                         />
                                                     )}
-                                                    {(lvlB.minPoints !== lvlB.maxPoints || !scoresSubItems(c)) && (
+                                                    {(lvlB.minPoints !== lvlB.maxPoints ||
+                                                        lvlB.subItems.length === 0) && (
                                                         <div
                                                             className="text-xs"
                                                             style={{

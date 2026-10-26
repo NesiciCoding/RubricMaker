@@ -120,10 +120,12 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
                       return `<div style="margin-bottom:3px;">${box} ${parseMd(si.label)}</div>`;
                   }
                   const { min, max } = subItemRange(si);
-                  const scoreLabel = entry
+                  // Only the level the student reached carries their sub-item scores.
+                  const scored = !!entry && selected;
+                  const scoreLabel = scored
                       ? `[${docLabel('points', { points: `${subItemScore(entry, si) ?? 0}/${max}` })}]`
                       : `(${docLabel('points', { points: `${min}-${max}` })})`;
-                  return `<div style="margin-bottom:3px;">${entry ? '•' : '☐'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
+                  return `<div style="margin-bottom:3px;">${scored ? '•' : '☐'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
               })
               .join('')}
         </div>
