@@ -27,6 +27,7 @@
     "e2e:supabase": "bash scripts/e2e-preflight.sh && playwright test --project=supabase --workers=1",
     "e2e:a11y": "playwright test --project=a11y",
     "e2e:a11y:baseline": "node scripts/a11y-baseline.mjs",
+    "fixtures:tiered": "node scripts/build-tiered-fixtures.mjs",
     "loadtest": "bash scripts/loadtest.sh",
     "loadtest:smoke": "bash scripts/loadtest.sh smoke",
     "loadtest:stress": "bash scripts/loadtest.sh stress",
