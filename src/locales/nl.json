@@ -4759,7 +4759,8 @@
         "warn_sheet_year": "De titel noemt geen leerjaar, dus de niveaus staan op Jaar 1. Pas het leerjaar aan in de bouwer als dat niet klopt.",
         "warn_sheet_tier_names": "Sommige niveaukolommen hebben geen kop en krijgen een naam op basis van leerjaar en niveau. Hernoem ze in de bouwer.",
         "warn_sheet_criterion_names": "Sommige criteriumnamen konden niet worden gelezen en zijn genummerd. Hernoem ze in de bouwer.",
-        "warn_sheet_ligatures": "Deze pdf bewaart sommige lettercombinaties (zoals \"tt\", \"ft\" en \"ti\") als symbolen. Die zijn hersteld, maar controleer de uitspraken op verkeerd gelezen woorden."
+        "warn_sheet_ligatures": "Deze pdf bewaart sommige lettercombinaties (zoals \"tt\", \"ft\" en \"ti\") als symbolen. Die zijn hersteld, maar controleer de uitspraken op verkeerd gelezen woorden.",
+        "warn_json_tiered_invalid": "De niveaurubriekinstellingen in het bestand zijn onvolledig of ongeldig; het is geïmporteerd als gewone rubric."
     },
     "standardsPicker": {
         "title": "Standaard koppelen",

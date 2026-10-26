@@ -4759,7 +4759,8 @@
         "warn_sheet_year": "Der Titel nennt kein Schuljahr, daher stehen die Niveaus auf Jaar 1. Ändere das Jahr im Editor, falls es ein anderes ist.",
         "warn_sheet_tier_names": "Einige Niveauspalten haben keine Überschrift und werden nach Jahr und Zweig benannt. Benenne sie im Editor um.",
         "warn_sheet_criterion_names": "Einige Kriteriennamen konnten nicht gelesen werden und sind nummeriert. Benenne sie im Editor um.",
-        "warn_sheet_ligatures": "Diese PDF speichert manche Buchstabenpaare (wie „tt“, „ft“ und „ti“) als Symbole. Sie wurden repariert, prüfe die Aussagen aber auf falsch gelesene Wörter."
+        "warn_sheet_ligatures": "Diese PDF speichert manche Buchstabenpaare (wie „tt“, „ft“ und „ti“) als Symbole. Sie wurden repariert, prüfe die Aussagen aber auf falsch gelesene Wörter.",
+        "warn_json_tiered_invalid": "Die Einstellungen der Stufenrubrik in der Datei sind unvollständig oder ungültig; sie wurde als gewöhnliche Rubrik importiert."
     },
     "standardsPicker": {
         "title": "Standard verknüpfen",

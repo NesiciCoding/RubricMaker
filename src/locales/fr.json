@@ -4759,7 +4759,8 @@
         "warn_sheet_year": "Le titre n'indique pas d'année scolaire : les niveaux sont réglés sur Jaar 1. Changez l'année dans l'éditeur si besoin.",
         "warn_sheet_tier_names": "Certaines colonnes de niveau n'ont pas d'en-tête et sont nommées d'après l'année et la filière. Renommez-les dans l'éditeur.",
         "warn_sheet_criterion_names": "Certains noms de critères n'ont pas pu être lus et sont numérotés. Renommez-les dans l'éditeur.",
-        "warn_sheet_ligatures": "Ce PDF enregistre certaines paires de lettres (comme « tt », « ft » et « ti ») sous forme de symboles. Elles ont été réparées, mais vérifiez les énoncés."
+        "warn_sheet_ligatures": "Ce PDF enregistre certaines paires de lettres (comme « tt », « ft » et « ti ») sous forme de symboles. Elles ont été réparées, mais vérifiez les énoncés.",
+        "warn_json_tiered_invalid": "Les paramètres de rubrique par niveaux du fichier sont incomplets ou invalides ; elle a été importée comme une rubrique ordinaire."
     },
     "standardsPicker": {
         "title": "Associer une norme",

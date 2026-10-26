@@ -4759,7 +4759,8 @@
         "warn_sheet_year": "The title names no school year, so the tiers are set to Jaar 1. Change the year in the builder if it's another.",
         "warn_sheet_tier_names": "Some tier columns have no header, so they are named by year and track. Rename them in the builder.",
         "warn_sheet_criterion_names": "Some criterion names could not be read and are numbered instead. Rename them in the builder.",
-        "warn_sheet_ligatures": "This PDF stores some letter pairs (like \"tt\", \"ft\" and \"ti\") as symbols. They were repaired, but check the statements for misread words."
+        "warn_sheet_ligatures": "This PDF stores some letter pairs (like \"tt\", \"ft\" and \"ti\") as symbols. They were repaired, but check the statements for misread words.",
+        "warn_json_tiered_invalid": "The file's tiered rubric settings are incomplete or invalid, so it was imported as an ordinary rubric."
     },
     "standardsPicker": {
         "title": "Link Standard",

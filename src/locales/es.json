@@ -4759,7 +4759,8 @@
         "warn_sheet_year": "El título no indica curso, así que los niveles quedan en Jaar 1. Cámbialo en el editor si es otro.",
         "warn_sheet_tier_names": "Algunas columnas de nivel no tienen encabezado y se nombran por curso e itinerario. Cámbialas en el editor.",
         "warn_sheet_criterion_names": "Algunos nombres de criterios no se pudieron leer y se han numerado. Cámbialos en el editor.",
-        "warn_sheet_ligatures": "Este PDF guarda algunos pares de letras (como «tt», «ft» y «ti») como símbolos. Se han reparado, pero revisa los enunciados por si hay palabras mal leídas."
+        "warn_sheet_ligatures": "Este PDF guarda algunos pares de letras (como «tt», «ft» y «ti») como símbolos. Se han reparado, pero revisa los enunciados por si hay palabras mal leídas.",
+        "warn_json_tiered_invalid": "La configuración de rúbrica por niveles del archivo está incompleta o no es válida, así que se importó como una rúbrica normal."
     },
     "standardsPicker": {
         "title": "Vincular estándar",
