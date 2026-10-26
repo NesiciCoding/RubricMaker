@@ -54,6 +54,7 @@ import type {
 import { DEFAULT_FORMAT } from '../types';
 import { loadCriterionClipboard } from '../store/storage';
 import { nanoid } from '../utils/nanoid';
+import { subItemMode, subItemRange } from '../utils/subItems';
 import StandardsPickerModal from '../components/Standards/StandardsPickerModal';
 import RubricVersionDiffModal from '../components/Modals/RubricVersionDiffModal';
 import CefrPickerModal from '../components/CEFR/CefrPickerModal';
@@ -98,6 +99,13 @@ function insertLevel(criterion: RubricCriterion, index: number, level: RubricLev
     const levels = [...criterion.levels];
     levels.splice(Math.min(index, levels.length), 0, level);
     return { ...criterion, levels };
+}
+
+/** "☐ label" for a checklist item, "label (2 pts)" or "label (1–3 pts)" for a points item. */
+function subItemPreview(c: RubricCriterion, si: SubItem, unit: string): string {
+    if (subItemMode(c) === 'checklist') return `☐ ${si.label}`;
+    const { min, max } = subItemRange(si);
+    return `${si.label} (${min > 0 ? `${min}–${max}` : max} ${unit})`;
 }
 
 function newCriterion(weight: number): RubricCriterion {
@@ -649,56 +657,31 @@ function RubricBuilderEditor() {
     );
 
     // ── Sub-item operations ─────────────────────────────────────────────────────
-    const addSubItem = useCallback((cid: string, lid: string) => {
+    const setSubItems = useCallback((cid: string, lid: string, items: SubItem[]) => {
         setCriteria((c) =>
             c.map((x) =>
-                x.id === cid
-                    ? {
-                          ...x,
-                          levels: x.levels.map((l) =>
-                              l.id === lid
-                                  ? {
-                                        ...l,
-                                        subItems: [
-                                            ...l.subItems,
-                                            { id: nanoid(), label: '', points: 1, minPoints: 0, maxPoints: 1 },
-                                        ],
-                                    }
-                                  : l
-                          ),
-                      }
-                    : x
+                x.id === cid ? { ...x, levels: x.levels.map((l) => (l.id === lid ? { ...l, subItems: items } : l)) } : x
             )
         );
     }, []);
-    const updateSubItem = useCallback((cid: string, lid: string, sid: string, patch: Partial<SubItem>) => {
+    const moveSubItem = useCallback((cid: string, fromLid: string, sid: string, toLid: string) => {
         setCriteria((c) =>
-            c.map((x) =>
-                x.id === cid
-                    ? {
-                          ...x,
-                          levels: x.levels.map((l) =>
-                              l.id === lid
-                                  ? { ...l, subItems: l.subItems.map((s) => (s.id === sid ? { ...s, ...patch } : s)) }
-                                  : l
-                          ),
-                      }
-                    : x
-            )
-        );
-    }, []);
-    const deleteSubItem = useCallback((cid: string, lid: string, sid: string) => {
-        setCriteria((c) =>
-            c.map((x) =>
-                x.id === cid
-                    ? {
-                          ...x,
-                          levels: x.levels.map((l) =>
-                              l.id === lid ? { ...l, subItems: l.subItems.filter((s) => s.id !== sid) } : l
-                          ),
-                      }
-                    : x
-            )
+            c.map((x) => {
+                if (x.id !== cid) return x;
+                const item = x.levels.find((l) => l.id === fromLid)?.subItems.find((s) => s.id === sid);
+                /* v8 ignore next -- the move menu only lists sub-items that exist */
+                if (!item) return x;
+                return {
+                    ...x,
+                    levels: x.levels.map((l) =>
+                        l.id === fromLid
+                            ? { ...l, subItems: l.subItems.filter((s) => s.id !== sid) }
+                            : l.id === toLid
+                              ? { ...l, subItems: [...l.subItems, item] }
+                              : l
+                    ),
+                };
+            })
         );
     }, []);
 
@@ -1443,9 +1426,8 @@ function RubricBuilderEditor() {
                                                 onAddLevel={addLevel}
                                                 onDeleteLevel={deleteLevel}
                                                 onUpdateLevel={updateLevel}
-                                                onAddSubItem={addSubItem}
-                                                onUpdateSubItem={updateSubItem}
-                                                onDeleteSubItem={deleteSubItem}
+                                                onSetSubItems={setSubItems}
+                                                onMoveSubItem={moveSubItem}
                                                 onToggleCollapse={toggleCollapseCriterion}
                                                 onPickStandard={setPickingStandardFor}
                                                 onPickCefr={setPickingCefrFor}
@@ -2250,7 +2232,7 @@ function RubricPreviewTable({
                                         >
                                             {l.subItems.map((si) => (
                                                 <li key={si.id}>
-                                                    {si.label} ({si.points} {t('rubricBuilder.points_unit')})
+                                                    {subItemPreview(c, si, t('rubricBuilder.points_unit'))}
                                                     {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                         <div
                                                             style={{
@@ -2996,7 +2978,7 @@ function RubricWysiwygEditor({
                                                 >
                                                     {l.subItems.map((si) => (
                                                         <li key={si.id}>
-                                                            {si.label} ({si.points} {t('rubricBuilder.points_unit')})
+                                                            {subItemPreview(c, si, t('rubricBuilder.points_unit'))}
                                                             {si.linkedStandards && si.linkedStandards.length > 0 && (
                                                                 <div
                                                                     style={{

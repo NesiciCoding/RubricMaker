@@ -70,7 +70,8 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
-import { subItemMode } from '../utils/subItems';
+import { scoresSubItems, subItemMode, toggleTick } from '../utils/subItems';
+import SubItemChecklist, { BestFitHint } from '../components/Grading/SubItemChecklist';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
@@ -1375,6 +1376,15 @@ export default function GradeStudent() {
                                                     {t('gradeStudent.table_points')}
                                                 </div>
                                             )}
+                                            <BestFitHint
+                                                criterion={c}
+                                                entry={entry}
+                                                accentColor={fmt.accentColor}
+                                                style={{ marginTop: 6 }}
+                                                onApply={(levelId) =>
+                                                    updateEntry(c.id, { levelId, overridePoints: undefined })
+                                                }
+                                            />
                                         </div>
                                         <div
                                             className="no-print"
@@ -1650,7 +1660,6 @@ export default function GradeStudent() {
                                                                 </p>
                                                             )}
                                                         </button>
-                                                        {/* Sub-items */}
                                                         {level.subItems.length > 0 && (
                                                             <div
                                                                 style={{
@@ -1659,123 +1668,22 @@ export default function GradeStudent() {
                                                                     borderTop: `1px solid ${isSelected ? fmt.accentColor + '40' : 'var(--border)'}`,
                                                                 }}
                                                             >
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        flexDirection: 'column',
-                                                                        gap: 8,
-                                                                    }}
-                                                                >
-                                                                    {level.subItems.map((si) => {
-                                                                        /* v8 ignore next -- calcGradeSummary crashes on missing checkedSubItems first */
-                                                                        const legacyChecked = (
-                                                                            entry.checkedSubItems ?? []
-                                                                        ).includes(si.id);
-                                                                        const defaultScore = legacyChecked
-                                                                            ? (si.maxPoints ?? si.points ?? 0)
-                                                                            : (si.minPoints ?? 0);
-                                                                        const currentScore =
-                                                                            entry.subItemScores?.[si.id] ??
-                                                                            defaultScore;
-                                                                        const min = si.minPoints ?? 0;
-                                                                        const max = si.maxPoints ?? si.points ?? 1;
-                                                                        return (
-                                                                            <div
-                                                                                key={si.id}
-                                                                                style={{
-                                                                                    display: 'flex',
-                                                                                    flexDirection: 'column',
-                                                                                    gap: 4,
-                                                                                    fontSize: '0.75em',
-                                                                                    lineHeight: 1.3,
-                                                                                }}
-                                                                            >
-                                                                                <div
-                                                                                    style={{
-                                                                                        display: 'flex',
-                                                                                        justifyContent: 'space-between',
-                                                                                        alignItems: 'flex-end',
-                                                                                    }}
-                                                                                >
-                                                                                    <div style={{ paddingRight: 8 }}>
-                                                                                        {si.label}
-                                                                                    </div>
-                                                                                    <div
-                                                                                        style={{
-                                                                                            fontWeight: 600,
-                                                                                            color: 'var(--accent)',
-                                                                                            flexShrink: 0,
-                                                                                        }}
-                                                                                    >
-                                                                                        {currentScore} / {max}{' '}
-                                                                                        {t('gradeStudent.table_points')}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <input
-                                                                                    type="range"
-                                                                                    min={min}
-                                                                                    max={max}
-                                                                                    step={0.5}
-                                                                                    value={currentScore}
-                                                                                    onChange={(e) =>
-                                                                                        setSubItemScore(
-                                                                                            entry,
-                                                                                            si.id,
-                                                                                            Number(e.target.value)
-                                                                                        )
-                                                                                    }
-                                                                                    style={{
-                                                                                        width: '100%',
-                                                                                        cursor: 'pointer',
-                                                                                        height: 4,
-                                                                                        accentColor: fmt.accentColor,
-                                                                                    }}
-                                                                                />
-                                                                                <TouchStepper
-                                                                                    value={currentScore}
-                                                                                    min={min}
-                                                                                    max={max}
-                                                                                    step={0.5}
-                                                                                    accentColor={fmt.accentColor}
-                                                                                    label={si.label}
-                                                                                    onChange={(v) =>
-                                                                                        setSubItemScore(entry, si.id, v)
-                                                                                    }
-                                                                                />
-                                                                                {si.linkedStandards &&
-                                                                                    si.linkedStandards.length > 0 && (
-                                                                                        <div
-                                                                                            style={{
-                                                                                                color: 'var(--accent)',
-                                                                                                opacity: 0.8,
-                                                                                                display: 'flex',
-                                                                                                flexWrap: 'wrap',
-                                                                                                gap: 3,
-                                                                                            }}
-                                                                                        >
-                                                                                            {si.linkedStandards.map(
-                                                                                                (std, idx) => (
-                                                                                                    <span
-                                                                                                        key={idx}
-                                                                                                        title={
-                                                                                                            showStdDesc
-                                                                                                                ? (std.statementNotation ??
-                                                                                                                  '')
-                                                                                                                : std.description
-                                                                                                        }
-                                                                                                    >
-                                                                                                        {showStdDesc
-                                                                                                            ? std.description
-                                                                                                            : `[${std.statementNotation ?? std.guid}]`}
-                                                                                                    </span>
-                                                                                                )
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
+                                                                <SubItemChecklist
+                                                                    criterion={c}
+                                                                    level={level}
+                                                                    entry={entry}
+                                                                    accentColor={fmt.accentColor}
+                                                                    selected={isSelected}
+                                                                    standardsDisplay={
+                                                                        showStdDesc ? 'description' : 'notation'
+                                                                    }
+                                                                    onToggleTick={(id) =>
+                                                                        updateEntry(c.id, {
+                                                                            checkedSubItems: toggleTick(entry, id),
+                                                                        })
+                                                                    }
+                                                                    onScore={(id, v) => setSubItemScore(entry, id, v)}
+                                                                />
                                                             </div>
                                                         )}
                                                         {/* Base-points range slider (selected only, when range exists) */}
@@ -1803,7 +1711,7 @@ export default function GradeStudent() {
                                                                                 textTransform: 'uppercase',
                                                                             }}
                                                                         >
-                                                                            {c.levels.some((l) => l.subItems.length > 0)
+                                                                            {scoresSubItems(c)
                                                                                 ? t('gradeStudent.label_base_points')
                                                                                 : t('gradeStudent.label_points')}
                                                                         </label>
@@ -1858,9 +1766,7 @@ export default function GradeStudent() {
                                                                             step={0.5}
                                                                             accentColor={fmt.accentColor}
                                                                             label={
-                                                                                c.levels.some(
-                                                                                    (l) => l.subItems.length > 0
-                                                                                )
+                                                                                scoresSubItems(c)
                                                                                     ? t(
                                                                                           'gradeStudent.label_base_points'
                                                                                       )

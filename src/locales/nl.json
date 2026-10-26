@@ -1800,7 +1800,16 @@
         "regrade_latest_done_removed_one": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderd criterium blijft bewaard. Sla op om dit te behouden.",
         "regrade_latest_done_removed_other": "Je beoordeelt nu op de nieuwste versie — de feedback van {{count}} verwijderde criteria blijft bewaard. Sla op om dit te behouden.",
         "nav_scope_switch_all": "Naar alle gekoppelde klassen",
-        "nav_scope_switch_current": "Alleen naar deze klas"
+        "nav_scope_switch_current": "Alleen naar deze klas",
+        "sub_items_checklist_label": "Bewijschecklist",
+        "sub_items_select_level_to_score": "Kies dit niveau om de sub-items te scoren.",
+        "sub_items_breakdown": "Basis {{base}} + sub-items {{items}} = {{total}} ptn",
+        "sub_items_clamped": "binnen het bereik van het niveau gehouden ({{min}}–{{max}} ptn)",
+        "best_fit": "Past het best bij je vinkjes: {{level}}",
+        "best_fit_apply": "Toepassen",
+        "best_fit_apply_label": "Niveau {{level}} kiezen",
+        "grid_toggle_details": "Details tonen of verbergen",
+        "grid_ticks": "{{ticked}}/{{total}} aangevinkt"
     },
     "rubricBuilder": {
         "action_back": "Terug",
@@ -1984,7 +1993,22 @@
         "standards_modal_desc": "Om onderwijsstandaarden te koppelen hebt u een <2>Common Standards Project API-sleutel</2> nodig.",
         "diff_field_subItemMode": "Modus sub-items",
         "sub_item_mode_points": "Punten",
-        "sub_item_mode_checklist": "Checklist"
+        "sub_item_mode_checklist": "Checklist",
+        "sub_items_checklist_heading": "Checklist",
+        "sub_items_list_label": "Sub-items voor {{level}}",
+        "label_sub_item_n": "Sub-item {{n}}",
+        "sub_item_range_toggle": "Puntenbereik toestaan",
+        "sub_item_move_up": "Sub-item omhoog",
+        "sub_item_move_down": "Sub-item omlaag",
+        "sub_item_move_to_level": "Sub-item naar een ander niveau verplaatsen",
+        "sub_item_move_to_level_short": "Verplaats naar…",
+        "sub_items_keyboard_hint": "Enter voegt het volgende item toe · plak een lijst om er meerdere toe te voegen · Alt+↑/↓ verplaatst",
+        "action_description_to_sub_items": "Omzetten naar sub-items",
+        "description_converted_one": "Beschrijving omgezet naar {{count}} sub-item",
+        "description_converted_other": "Beschrijving omgezet naar {{count}} sub-items",
+        "sub_item_mode_label": "Sub-items:",
+        "sub_item_mode_points_help": "Elk sub-item telt punten op binnen het bereik van het niveau.",
+        "sub_item_mode_checklist_help": "Sub-items zijn uitspraken die je als bewijs aanvinkt; ze veranderen de score niet."
     },
     "peerReview": {
         "round_label": "Ronde",
@@ -3565,7 +3589,7 @@
         "rb_scoring_modes_item_weighted": "Gewogen percentage — elk criterium heeft een gewicht (%). De eindscore is het gewogen gemiddelde. Criteria van 0 punten tellen niet mee in het gemiddelde. Nieuwe criteria verdelen het gewicht gelijk en het totaal blijft 100% terwijl u criteria toevoegt of verwijdert, totdat u zelf een gewicht aanpast.",
         "rb_scoring_modes_item_single": "Single-point rubriek — elk criterium heeft één descriptor (de standaard). Bij het beoordelen kies je Overtreft, Behaalt of Nog niet: Overtreft en Behaalt leveren allebei de volle punten van het criterium op, Nog niet levert 0 op.",
         "rb_level_options_title": "Niveau-opties",
-        "rb_level_options_item_checklist": "Subitem-checklists binnen een niveau (leerlingen moeten specifieke items afronden).",
+        "rb_level_options_item_checklist": "Sub-items binnen een niveau, in een van twee modi die je per criterium kiest: Punten (elk sub-item telt punten op binnen het bereik van het niveau) of Checklist (uitspraken die je tijdens het beoordelen als bewijs aanvinkt; ze veranderen de score nooit).",
         "rb_level_options_item_ranges": "Puntbereiken — stel een minimum en maximum in; de docent kiest tijdens het beoordelen een waarde binnen het bereik.",
         "rb_level_options_item_modifiers": "Scoremodificaties — pas %-, punt- of niveau-aanpassingen toe met een optionele reden.",
         "rb_standards_title": "Standaarden & raamwerkkoppelingen",
@@ -3663,7 +3687,7 @@
         "gr_scoring_title": "Scoren",
         "gr_scoring_item_select": "Klik op een niveaucel om deze te selecteren. Klik opnieuw om te deselecteren.",
         "gr_scoring_item_slider": "Voor puntbereiken gebruik je de schuifregelaar om een waarde binnen het toegestane bereik te kiezen.",
-        "gr_scoring_item_subitems": "Subonderdelen binnen het gekozen niveau hebben elk een eigen puntenschuif (stappen van een halve punt), met − / + knoppen voor touchscreens.",
+        "gr_scoring_item_subitems": "Punten-sub-items scoor je op het gekozen niveau: een vinkvakje voor een item van één punt, een schuif (halve punten, met − / + knoppen op touchscreens) voor een groter bereik, en een regel met basis + sub-items = totaal. Checklist-sub-items vink je op elk niveau aan, blijven aangevinkt als je van niveau wisselt, en stellen een best passend niveau voor dat je met één klik toepast.",
         "gr_scoring_item_modifiers": "Beter/Slechter Modificator: kies \"% offset\" of \"Punten offset\", vul een positieve of negatieve waarde in en geef een reden. Een punten-offset telt mee ten opzichte van het maximum van de rubriek: +10 punten op een rubriek van 200 punten is 5% extra.",
         "gr_mobile_title": "Mobiel beoordelen",
         "gr_mobile_body_prefix": "Op telefoons en iPad in portretstand is het beoordelingsscherm aanraak-geoptimaliseerd. Puntbereik- en subitemschuifregelaars krijgen een",
@@ -4044,7 +4068,7 @@
         "gr_generate_test_item_organize": "Organiseer het resultaat optioneel in ERK-niveausecties — dit levert precies de niveaupool-vorm op die de Staircase-plaatsingsengine verwacht, direct bruikbaar.",
         "gr_generate_test_item_review": "De gegenereerde toets opent in de normale toetsenbouwer, vooraf ingevuld en klaar om te bekijken, aan te passen en op te slaan zoals elke andere toets.",
         "gr_layout_title": "Kaart- en rasterweergave",
-        "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving; klik op een cel om een detailpaneel te openen met een puntenschuif, subonderdeel-chips, een overschrijfregeling en het opmerkingenveld. Rubrieken met één punt gebruiken altijd de kaartweergave.",
+        "gr_layout_body": "Wissel tussen de gestapelde kaarten en een compact criterium×niveau-raster met de knop Kaarten/Raster. In het raster toont elke cel het niveau en een korte beschrijving (en bij een checklist-criterium hoeveel uitspraken zijn aangevinkt); klik op een cel om dat niveau te kiezen en een detailpaneel te openen met een puntenschuif, de sub-items, een overschrijfregeling en het opmerkingenveld. Klik op de naam van een criterium om het paneel te openen zonder een niveau te kiezen, bijvoorbeeld om eerst bewijs aan te vinken. Rubrieken met één punt gebruiken altijd de kaartweergave.",
         "gr_keyboard_title": "Sneltoetsen",
         "gr_keyboard_body": "Druk op cijfertoetsen 1–5 om een niveau te kiezen voor het gefocuste criterium. Druk op een criteriumletter en dan een cijfer — A+1, B+2 — om direct naar een criterium te springen en het niveau in te stellen. Is een criterium geselecteerd, dan wisselen ↑ / ↓ tussen criteria (Tab en Shift+Tab gaan zoals gewoonlijk langs alle knoppen en velden), Ctrl+S slaat op en blijft bij de leerling, Ctrl+Enter slaat op en gaat naar de volgende leerling, en ? toont alle sneltoetsen. Opslaan & volgende vervangt de pagina in je geschiedenis, zodat Terug je terugbrengt naar waar je begon, en als je de laatste onbeoordeelde leerling opslaat zie je de melding 'Alle leerlingen zijn beoordeeld'.",
         "gr_portal_tabs_body": "Het portaal is verdeeld over vier tabbladen — Start (nieuws en meldingen), Opdrachten (essays, toetsen en flashcardsets), Feedback (cijfers, reacties van de docent en peerreviews) en Voortgang (cijfergeschiedenis, ERK en oefentips). Een logo, themaknop en de avatar van de leerling staan in de kop.",
@@ -4102,7 +4126,10 @@
         "gr_scoring_item_anchor": "Markeer als anker (menu Beoordelingsopties): bewaart dit beoordeelde werk als referentie voor de rubriek. Bij het beoordelen van andere leerlingen toont de knop Ankerwerk in de voettekst het niveau van het anker per criterium.",
         "gr_scoring_item_nothing_scored": "Opslaan zonder voor een criterium een niveau te kiezen vraagt eerst om bevestiging en legt dan een beoordeeld resultaat van 0% vast; Opslaan & volgende slaat zo'n leerling over zonder een cijfer op te slaan.",
         "gr_nav_scope_note": "Opslaan & volgende gaat naar de volgende leerling zonder cijfer; in het tandwielmenu wissel je tussen de huidige klas en \"Alle gekoppelde klassen\" (alle klassen waaraan de rubriek gekoppeld is).",
-        "gr_feedback_item_audio_record": "Ingesproken feedback — met de knop Opnemen onder het commentaar van een criterium neem je een kort gesproken commentaar voor dat criterium op, dat de leerling op de gedeelde feedbackpagina kan afspelen."
+        "gr_feedback_item_audio_record": "Ingesproken feedback — met de knop Opnemen onder het commentaar van een criterium neem je een kort gesproken commentaar voor dat criterium op, dat de leerling op de gedeelde feedbackpagina kan afspelen.",
+        "rb_level_options_item_sub_item_editing": "Sub-items staan in elke niveaukaart. Druk op Enter om het volgende toe te voegen, Backspace op een leeg item om het te verwijderen, Alt+↑/↓ om te verplaatsen, of plak een lijst om er per regel één toe te voegen (opsommingstekens, vinkvakjes en nummering worden weggehaald). Verplaats er een naar een ander niveau met het menu Verplaats naar…, of gebruik Omzetten naar sub-items om een niveaubeschrijving in sub-items te splitsen.",
+        "gr_portal_sub_items_title": "Sub-items in feedback",
+        "gr_portal_sub_items_body": "Leerlingen zien de sub-items van elk criterium op hun cijferkaart in het portaal en op de gedeelde feedbackpagina: de checklist-uitspraken die je aanvinkte (met het niveau erbij als dat niet het behaalde niveau is), of elk punten-sub-item met de behaalde punten."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -4761,7 +4788,10 @@
         "audio_feedback": "Gesproken feedback",
         "audio_feedback_for": "Gesproken feedback bij {{criterion}}",
         "overall_feedback": "Algemene feedback",
-        "footer": "Gemaakt met RubricMaker · Vragen? Stel ze aan je docent."
+        "footer": "Gemaakt met RubricMaker · Vragen? Stel ze aan je docent.",
+        "ticked_statements": "Aangevinkte uitspraken voor {{criterion}}",
+        "sub_item_scores": "Scores van sub-items voor {{criterion}}",
+        "sub_item_points": "{{score}}/{{max}} ptn"
     },
     "rubricPreview": {
         "invalid_title": "Deze rubrieklink kan niet worden geopend",

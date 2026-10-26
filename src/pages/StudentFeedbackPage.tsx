@@ -7,6 +7,7 @@ import { calcGradeSummary } from '../utils/gradeCalc';
 import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
 import PassageReadAloud from '../components/Tests/PassageReadAloud';
+import SubItemFeedback from '../components/Students/SubItemFeedback';
 
 export default function StudentFeedbackPage() {
     const { code } = useParams<{ code: string }>();
@@ -228,6 +229,8 @@ export default function StudentFeedbackPage() {
                                 );
                             })}
                         </ul>
+
+                        <SubItemFeedback criterion={criterion} entry={entry} />
 
                         {entry?.comment && (
                             <>

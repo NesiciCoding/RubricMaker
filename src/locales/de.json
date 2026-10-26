@@ -1800,7 +1800,16 @@
         "regrade_latest_done_removed_one": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entferntem Kriterium bleibt erhalten. Zum Behalten speichern.",
         "regrade_latest_done_removed_other": "Jetzt wird mit der neuesten Fassung bewertet — das Feedback zu {{count}} entfernten Kriterien bleibt erhalten. Zum Behalten speichern.",
         "nav_scope_switch_all": "Zu allen verknüpften Klassen wechseln",
-        "nav_scope_switch_current": "Nur zu dieser Klasse wechseln"
+        "nav_scope_switch_current": "Nur zu dieser Klasse wechseln",
+        "sub_items_checklist_label": "Beleg-Checkliste",
+        "sub_items_select_level_to_score": "Wähle diese Stufe, um ihre Teilelemente zu bewerten.",
+        "sub_items_breakdown": "Basis {{base}} + Teilelemente {{items}} = {{total}} Pkt.",
+        "sub_items_clamped": "auf den Bereich der Stufe begrenzt ({{min}}–{{max}} Pkt.)",
+        "best_fit": "Passt am besten zu deinen Häkchen: {{level}}",
+        "best_fit_apply": "Übernehmen",
+        "best_fit_apply_label": "Stufe {{level}} wählen",
+        "grid_toggle_details": "Details ein- oder ausblenden",
+        "grid_ticks": "{{ticked}}/{{total}} abgehakt"
     },
     "rubricBuilder": {
         "action_back": "Zurück",
@@ -1984,7 +1993,22 @@
         "standards_modal_desc": "Um Bildungsstandards zu verknüpfen, benötigen Sie einen <2>Common Standards Project API-Schlüssel</2>.",
         "diff_field_subItemMode": "Teilelement-Modus",
         "sub_item_mode_points": "Punkte",
-        "sub_item_mode_checklist": "Checkliste"
+        "sub_item_mode_checklist": "Checkliste",
+        "sub_items_checklist_heading": "Checkliste",
+        "sub_items_list_label": "Teilelemente für {{level}}",
+        "label_sub_item_n": "Teilelement {{n}}",
+        "sub_item_range_toggle": "Punktebereich erlauben",
+        "sub_item_move_up": "Teilelement nach oben",
+        "sub_item_move_down": "Teilelement nach unten",
+        "sub_item_move_to_level": "Teilelement in eine andere Stufe verschieben",
+        "sub_item_move_to_level_short": "Verschieben nach…",
+        "sub_items_keyboard_hint": "Enter fügt das nächste Element hinzu · eine Liste einfügen fügt mehrere hinzu · Alt+↑/↓ sortiert um",
+        "action_description_to_sub_items": "In Teilelemente umwandeln",
+        "description_converted_one": "Beschreibung in {{count}} Teilelement umgewandelt",
+        "description_converted_other": "Beschreibung in {{count}} Teilelemente umgewandelt",
+        "sub_item_mode_label": "Teilelemente:",
+        "sub_item_mode_points_help": "Jedes Teilelement addiert Punkte innerhalb des Bereichs der Stufe.",
+        "sub_item_mode_checklist_help": "Teilelemente sind Aussagen, die du als Beleg abhakst; sie ändern die Punktzahl nicht."
     },
     "peerReview": {
         "round_label": "Runde",
@@ -3565,7 +3589,7 @@
         "rb_scoring_modes_item_weighted": "Gewichteter Prozentsatz — jedes Kriterium hat eine Gewichtung (%). Die Endnote ist der gewichtete Durchschnitt. Kriterien mit 0 Punkten zählen im Durchschnitt nicht mit. Neue Kriterien teilen sich die Gewichtung gleichmäßig, und die Summe bleibt beim Hinzufügen oder Entfernen bei 100 %, bis Sie selbst eine Gewichtung ändern.",
         "rb_scoring_modes_item_single": "Single-Point-Rubrik — jedes Kriterium hat einen Deskriptor (den Standard). Beim Bewerten wählst du Übertrifft, Erfüllt oder Noch nicht: Übertrifft und Erfüllt bringen beide die volle Punktzahl des Kriteriums, Noch nicht bringt 0.",
         "rb_level_options_title": "Stufenoptionen",
-        "rb_level_options_item_checklist": "Unterpunkt-Checklisten innerhalb einer Stufe (Schüler müssen bestimmte Punkte erfüllen).",
+        "rb_level_options_item_checklist": "Teilelemente innerhalb einer Stufe, in einem von zwei Modi pro Kriterium: Punkte (jedes Teilelement addiert Punkte innerhalb des Bereichs der Stufe) oder Checkliste (Aussagen, die du beim Bewerten als Beleg abhakst; sie ändern die Punktzahl nie).",
         "rb_level_options_item_ranges": "Punktbereiche — Minimum und Maximum festlegen; der Lehrer wählt während der Bewertung einen Wert innerhalb des Bereichs.",
         "rb_level_options_item_modifiers": "Bewertungsmodifikatoren — %-, Punkt- oder Stufenanpassungen mit optionaler Begründung anwenden.",
         "rb_standards_title": "Standards & Rahmenwerk-Verknüpfungen",
@@ -3663,7 +3687,7 @@
         "gr_scoring_title": "Bewertung",
         "gr_scoring_item_select": "Klicke auf eine Stufenzelle, um sie auszuwählen. Klicke erneut, um die Auswahl aufzuheben.",
         "gr_scoring_item_slider": "Verwende für Punktbereiche den Schieberegler, um einen Wert innerhalb des zulässigen Bereichs zu wählen.",
-        "gr_scoring_item_subitems": "Unterpunkte innerhalb der gewählten Stufe haben jeweils einen eigenen Punkteschieberegler (in halben Punkten), mit − / + Schaltflächen für Touchscreens.",
+        "gr_scoring_item_subitems": "Punkte-Teilelemente bewertest du in der gewählten Stufe: ein Kästchen für ein Ein-Punkt-Element, ein Schieberegler (halbe Punkte, mit − / + Schaltflächen auf Touchscreens) für einen größeren Bereich, und eine Zeile mit Basis + Teilelemente = Summe. Checklisten-Teilelemente hakst du in jeder Stufe ab; sie bleiben beim Stufenwechsel erhalten und schlagen eine passende Stufe vor, die du mit einem Klick übernimmst.",
         "gr_scoring_item_modifiers": "Besser/Schlechter-Modifikator: Wähle „% Versatz\" oder „Punkte Versatz\", gib einen positiven oder negativen Wert ein und nenne einen Grund. Ein Punkteversatz zählt gegenüber der Höchstpunktzahl der Rubrik: +10 Punkte bei einer 200-Punkte-Rubrik ergeben 5 % mehr.",
         "gr_mobile_title": "Mobile Bewertung",
         "gr_mobile_body_prefix": "Auf Telefonen und iPad im Hochformat ist die Bewertungsansicht touch-optimiert. Punktbereich- und Unterpunkt-Schieberegler erhalten einen",
@@ -4044,7 +4068,7 @@
         "gr_generate_test_item_organize": "Organisieren Sie das Ergebnis optional in GER-Niveau-Abschnitte — das erzeugt genau die Niveau-Pool-Struktur, die die Staircase-Einstufungs-Engine erwartet, sofort einsatzbereit.",
         "gr_generate_test_item_review": "Der generierte Test öffnet sich im normalen Test-Builder, vorausgefüllt und bereit zur Überprüfung, Anpassung und Speicherung wie jeder andere Test.",
         "gr_layout_title": "Karten- und Rasteransicht",
-        "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung; ein Klick auf eine Zelle öffnet ein Detailfeld mit einem Punkte-Schieberegler, Unterpunkt-Chips, einer Überschreibung und dem Kommentarfeld. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
+        "gr_layout_body": "Wechseln Sie mit dem Umschalter Karten/Raster zwischen den gestapelten Karten und einem kompakten Kriterium×Stufe-Raster. Im Raster zeigt jede Zelle die Stufe und eine kurze Beschreibung (bei einem Checklisten-Kriterium auch, wie viele Aussagen abgehakt sind); ein Klick auf eine Zelle wählt die Stufe und öffnet ein Detailfeld mit einem Punkte-Schieberegler, den Teilelementen, einer Überschreibung und dem Kommentarfeld. Klicken Sie auf den Namen eines Kriteriums, um das Feld ohne Stufenwahl zu öffnen, etwa um zuerst Belege abzuhaken. Einzelpunkt-Rubriken verwenden immer die Kartenansicht.",
         "gr_keyboard_title": "Tastaturkürzel",
         "gr_keyboard_body": "Drücken Sie die Zifferntasten 1–5, um eine Stufe für das fokussierte Kriterium zu wählen. Drücken Sie einen Kriteriumsbuchstaben und dann eine Ziffer — A+1, B+2 — um direkt zu einem Kriterium zu springen und seine Stufe festzulegen. Ist ein Kriterium ausgewählt, wechseln ↑ / ↓ zwischen Kriterien (Tab und Umschalt+Tab gehen wie gewohnt durch alle Schaltflächen und Felder), Strg+S speichert und bleibt beim Schüler, Strg+Enter speichert und wechselt zum nächsten Schüler, und ? listet alle Kürzel auf. Speichern & Weiter ersetzt die Seite im Verlauf, sodass Zurück Sie dorthin bringt, wo Sie mit dem Bewerten begonnen haben, und beim Speichern des letzten unbewerteten Schülers erscheint die Meldung „Alle Schüler sind bewertet“.",
         "gr_portal_tabs_body": "Das Portal ist in vier Registerkarten gegliedert — Start (Neuigkeiten und Hinweise), Aufgaben (Aufsätze, Tests und Karteikarten-Stapel), Feedback (Noten, Lehrerantworten und Peer-Reviews) und Fortschritt (Notenverlauf, GER und Übungsvorschläge). Logo, Themenumschalter und der Avatar der Lernenden befinden sich im Kopfbereich.",
@@ -4102,7 +4126,10 @@
         "gr_scoring_item_anchor": "Als Anker markieren (Menü Bewertungsoptionen): behält diese bewertete Arbeit als Referenz für die Rubrik. Beim Bewerten anderer Schüler zeigt die Schaltfläche Ankerarbeit in der Fußzeile die Stufe des Ankers pro Kriterium.",
         "gr_scoring_item_nothing_scored": "Speichern, ohne für ein Kriterium eine Stufe zu wählen, fragt zuerst nach einer Bestätigung und speichert dann ein bewertetes Ergebnis von 0 %; Speichern & Weiter überspringt einen solchen Schüler, ohne eine Note zu speichern.",
         "gr_nav_scope_note": "Speichern & Weiter springt zum nächsten Schüler ohne Note; im Zahnradmenü wechselst du zwischen der aktuellen Klasse und „Alle verknüpften Klassen\" (alle Klassen, mit denen die Rubrik verknüpft ist).",
-        "gr_feedback_item_audio_record": "Aufgenommenes Feedback — mit der Schaltfläche Aufnehmen unter dem Kommentar eines Kriteriums nimmst du einen kurzen gesprochenen Kommentar für dieses Kriterium auf, den der Schüler auf der geteilten Feedbackseite abspielen kann."
+        "gr_feedback_item_audio_record": "Aufgenommenes Feedback — mit der Schaltfläche Aufnehmen unter dem Kommentar eines Kriteriums nimmst du einen kurzen gesprochenen Kommentar für dieses Kriterium auf, den der Schüler auf der geteilten Feedbackseite abspielen kann.",
+        "rb_level_options_item_sub_item_editing": "Teilelemente stehen in jeder Stufenkarte. Drücke Enter für das nächste, Rücktaste in einem leeren Element zum Entfernen, Alt+↑/↓ zum Umsortieren, oder füge eine Liste ein, um pro Zeile eines hinzuzufügen (Aufzählungszeichen, Kästchen und Nummerierung werden entfernt). Verschiebe eines mit dem Menü Verschieben nach… in eine andere Stufe, oder nutze In Teilelemente umwandeln, um eine Stufenbeschreibung aufzuteilen.",
+        "gr_portal_sub_items_title": "Teilelemente im Feedback",
+        "gr_portal_sub_items_body": "Schüler sehen die Teilelemente jedes Kriteriums auf ihrer Notenkarte im Portal und auf der geteilten Feedbackseite: die abgehakten Checklisten-Aussagen (mit ihrer Stufe, wenn es nicht die erreichte ist) oder jedes Punkte-Teilelement mit den erreichten Punkten."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -4761,7 +4788,10 @@
         "audio_feedback": "Audio-Feedback",
         "audio_feedback_for": "Audio-Feedback zu {{criterion}}",
         "overall_feedback": "Gesamtfeedback",
-        "footer": "Erstellt mit RubricMaker · Fragen? Wende dich an deine Lehrkraft."
+        "footer": "Erstellt mit RubricMaker · Fragen? Wende dich an deine Lehrkraft.",
+        "ticked_statements": "Abgehakte Aussagen für {{criterion}}",
+        "sub_item_scores": "Teilelement-Punkte für {{criterion}}",
+        "sub_item_points": "{{score}}/{{max}} Pkt."
     },
     "rubricPreview": {
         "invalid_title": "Dieser Rubrik-Link kann nicht geöffnet werden",

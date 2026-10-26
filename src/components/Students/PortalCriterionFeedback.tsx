@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { usePortalFeedbackAudioSrc } from '../../hooks/usePortalFeedbackAudioSrc';
 import PassageReadAloud from '../Tests/PassageReadAloud';
 import type { Rubric, ScoreEntry } from '../../types';
+import SubItemFeedback from './SubItemFeedback';
 
 function CriterionAudio({
     studentRubricId,
@@ -26,8 +27,8 @@ function CriterionAudio({
 }
 
 /**
- * Per-criterion feedback on a portal grade card: the level reached (with its description), the
- * teacher's comment and voice feedback — the same information as the /feedback share page (#622).
+ * Per-criterion feedback on a portal grade card: the level reached (with its description), its
+ * sub-items, the teacher's comment and voice feedback — the same information as the /feedback share page (#622).
  */
 export function PortalCriterionFeedback({
     rubric,
@@ -45,7 +46,14 @@ export function PortalCriterionFeedback({
             const level = criterion.levels.find((l) => l.id === entry?.levelId);
             return { criterion, entry, level };
         })
-        .filter(({ entry, level }) => level || entry?.comment || entry?.audioDataUrl || entry?.audioStoragePath);
+        .filter(
+            ({ entry, level }) =>
+                level ||
+                entry?.comment ||
+                entry?.audioDataUrl ||
+                entry?.audioStoragePath ||
+                (entry?.checkedSubItems?.length ?? 0) > 0
+        );
     if (rows.length === 0) return null;
 
     return (
@@ -81,6 +89,7 @@ export function PortalCriterionFeedback({
                     {level?.description && (
                         <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>{level.description}</div>
                     )}
+                    <SubItemFeedback criterion={criterion} entry={entry} />
                     {entry?.comment && (
                         <>
                             <PassageReadAloud contentHtml={entry.comment} lang={i18n.language} />

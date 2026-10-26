@@ -27,6 +27,7 @@ import type {
     TestStrengthBucket,
 } from '../types';
 import { calcGradeSummary, orderedLevels } from './gradeCalc';
+import { subItemMode, subItemRange } from './subItems';
 import {
     calcQuestionBreakdowns,
     calcSkillBreakdowns,
@@ -231,17 +232,22 @@ export async function exportRubricToDocx(rubric: Rubric) {
                 }),
                 // Level Cells
                 ...levels.map((l) => {
+                    const checklist = subItemMode(c) === 'checklist';
                     const subItemParagraphs = l.subItems.map((si) => {
-                        const max = si.maxPoints ?? si.points ?? 1;
+                        const { min, max } = subItemRange(si);
                         return new Paragraph({
                             children: [
-                                new TextRun({ text: '[ ] ', size: 18, color: '666666' }),
+                                new TextRun({ text: '☐ ', size: 18, color: '666666' }),
                                 new TextRun({ text: si.label, size: 18, color: '666666' }),
-                                new TextRun({
-                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
-                                    size: 16,
-                                    color: '888888',
-                                }),
+                                ...(checklist
+                                    ? []
+                                    : [
+                                          new TextRun({
+                                              text: ` (${docLabel('points', { points: `${min}-${max}` })})`,
+                                              size: 16,
+                                              color: '888888',
+                                          }),
+                                      ]),
                             ],
                             spacing: { before: 60 },
                         });

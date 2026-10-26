@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import CriterionCard from '../CriterionCard';
+import { ToastContext } from '../../../context/ToastContext';
 import type { RubricCriterion } from '../../../types';
 
 const { mockSaveCriterionClipboard, mockI18n } = vi.hoisted(() => ({
@@ -84,9 +85,8 @@ function makeCallbacks() {
         onAddLevel: vi.fn(),
         onDeleteLevel: vi.fn(),
         onUpdateLevel: vi.fn(),
-        onAddSubItem: vi.fn(),
-        onUpdateSubItem: vi.fn(),
-        onDeleteSubItem: vi.fn(),
+        onSetSubItems: vi.fn(),
+        onMoveSubItem: vi.fn(),
         onToggleCollapse: vi.fn(),
         onPickStandard: vi.fn(),
         onPickCefr: vi.fn(),
@@ -123,9 +123,8 @@ function renderCard(
                             onAddLevel={cb.onAddLevel}
                             onDeleteLevel={cb.onDeleteLevel}
                             onUpdateLevel={cb.onUpdateLevel}
-                            onAddSubItem={cb.onAddSubItem}
-                            onUpdateSubItem={cb.onUpdateSubItem}
-                            onDeleteSubItem={cb.onDeleteSubItem}
+                            onSetSubItems={cb.onSetSubItems}
+                            onMoveSubItem={cb.onMoveSubItem}
                             onToggleCollapse={cb.onToggleCollapse}
                             onPickStandard={cb.onPickStandard}
                             onPickCefr={cb.onPickCefr}
@@ -282,6 +281,7 @@ describe('CriterionCard coverage', () => {
         const cb = makeCallbacks();
         renderCard(
             makeCriterion({
+                levels: [{ ...l1, subItems: [] }, l2],
                 linkedStandards: [
                     std('guid-1', 'CCSS.ELA-LITERACY.W.8.2'),
                     std('guid-2'), // no statementNotation → guid fallback
@@ -417,7 +417,7 @@ describe('CriterionCard coverage', () => {
 
     it('edits levels: labels, points, descriptions, CEFR level, delete, and quality tips', () => {
         const cb = makeCallbacks();
-        renderCard(makeCriterion(), cb);
+        renderCard(makeCriterion({ levels: [{ ...l1, subItems: [] }, l2] }), cb);
 
         // Quality tip renders for "Excellent work overall." (quality word, no student word).
         expect(screen.getByText('rubricBuilder.level_quality_tip')).toBeInTheDocument();
@@ -458,69 +458,184 @@ describe('CriterionCard coverage', () => {
         expect(cb.onAddLevel).toHaveBeenCalledWith('c1');
     });
 
-    it('expands sub-items and edits, links, and deletes them', () => {
+    it('lists sub-items inline and edits, links, moves and deletes them', () => {
         const cb = makeCallbacks();
         renderCard(makeCriterion(), cb);
 
-        // Expand the sub-items of l1.
-        const subToggle = screen.getByText('rubricBuilder.label_sub_items (3)');
-        fireEvent.click(subToggle);
         const subLabel = screen.getByDisplayValue('Uses varied sentence structure');
-        expect(subLabel).toBeInTheDocument();
-        const subRow = subLabel.closest('div') as HTMLElement;
+        const subRow = subLabel.closest('li') as HTMLElement;
 
-        // Sub-item label edit.
         fireEvent.change(subLabel, { target: { value: 'Varies sentence structure' } });
-        expect(cb.onUpdateSubItem).toHaveBeenCalledWith('c1', 'l1', 'si1', { label: 'Varies sentence structure' });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [
+            { ...si1, label: 'Varies sentence structure' },
+            si2,
+            si3,
+        ]);
 
-        // Sub-item min/max points, scoped to the si1 row.
+        // si1 has a minimum, so its range is open: [min, max].
         const subInputs = within(subRow).getAllByRole('spinbutton');
         fireEvent.change(subInputs[0], { target: { value: '0' } });
-        expect(cb.onUpdateSubItem).toHaveBeenCalledWith('c1', 'l1', 'si1', { minPoints: 0 });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [{ ...si1, minPoints: 0 }, si2, si3]);
         fireEvent.change(subInputs[1], { target: { value: '4' } });
-        expect(cb.onUpdateSubItem).toHaveBeenCalledWith('c1', 'l1', 'si1', { maxPoints: 4 });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [{ ...si1, maxPoints: 4, points: 4 }, si2, si3]);
 
-        // Legacy fallbacks: si2 shows min 0 / max from points (2); si3 shows min 0 / max 1.
-        const si2Row = screen.getByDisplayValue('Legacy sub item').closest('div') as HTMLElement;
-        const si2Inputs = within(si2Row).getAllByRole('spinbutton');
-        expect(si2Inputs[0]).toHaveValue(0);
-        expect(si2Inputs[1]).toHaveValue(2);
-        const si3Row = screen.getByDisplayValue('Bare sub item').closest('div') as HTMLElement;
-        const si3Inputs = within(si3Row).getAllByRole('spinbutton');
-        expect(si3Inputs[0]).toHaveValue(0);
-        expect(si3Inputs[1]).toHaveValue(1);
+        // Legacy si2 shows its points as the max; the bare si3 is worth 0. Neither shows a min until asked.
+        const si2Row = screen.getByDisplayValue('Legacy sub item').closest('li') as HTMLElement;
+        expect(
+            within(si2Row)
+                .getAllByRole('spinbutton')
+                .map((el) => (el as HTMLInputElement).value)
+        ).toEqual(['2']);
+        const si3Row = screen.getByDisplayValue('Bare sub item').closest('li') as HTMLElement;
+        expect(
+            within(si3Row)
+                .getAllByRole('spinbutton')
+                .map((el) => (el as HTMLInputElement).value)
+        ).toEqual(['0']);
+        fireEvent.click(within(si2Row).getByLabelText('rubricBuilder.sub_item_range_toggle'));
+        expect(within(si2Row).getAllByRole('spinbutton')).toHaveLength(2);
+        fireEvent.click(within(si2Row).getByLabelText('rubricBuilder.sub_item_range_toggle'));
+        expect(within(si2Row).getAllByRole('spinbutton')).toHaveLength(1);
 
-        // Sub-item linked standard chips + unlink (both, incl. the guid fallback). The chips
-        // render below the row, so scope to the whole sub-items section.
-        expect(screen.getByText('CCSS.ELA-LITERACY.W.8.2')).toBeInTheDocument();
-        expect(screen.getByText('sub-guid-2')).toBeInTheDocument();
-        const subUnlinks = screen.getAllByLabelText('rubricBuilder.action_unlink_standard');
-        expect(subUnlinks).toHaveLength(2);
+        // Linked standard chips + unlink (both, incl. the guid fallback).
+        expect(within(subRow).getByText('CCSS.ELA-LITERACY.W.8.2')).toBeInTheDocument();
+        expect(within(subRow).getByText('sub-guid-2')).toBeInTheDocument();
+        const subUnlinks = within(subRow).getAllByLabelText('rubricBuilder.action_unlink_standard');
         fireEvent.click(subUnlinks[0]);
         expect(cb.onUnlinkStandard).toHaveBeenCalledWith({ type: 'subitem', cid: 'c1', lid: 'l1', sid: 'si1' }, 0);
         fireEvent.click(subUnlinks[1]);
         expect(cb.onUnlinkStandard).toHaveBeenCalledWith({ type: 'subitem', cid: 'c1', lid: 'l1', sid: 'si1' }, 1);
-
-        // Link a standard to the sub-item.
         fireEvent.click(within(subRow).getByLabelText('rubricBuilder.sub_item_link_standard_title'));
         expect(cb.onPickStandard).toHaveBeenCalledWith({ type: 'subitem', cid: 'c1', lid: 'l1', sid: 'si1' });
 
-        // Delete the sub-item.
+        // Reorder, move to another level, delete.
+        fireEvent.click(within(si2Row).getByLabelText('rubricBuilder.sub_item_move_up'));
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [si2, si1, si3]);
+        fireEvent.click(within(si2Row).getByLabelText('rubricBuilder.sub_item_move_down'));
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [si1, si3, si2]);
+        expect(within(subRow).getByLabelText('rubricBuilder.sub_item_move_up')).toBeDisabled();
+        fireEvent.change(within(si2Row).getByLabelText('rubricBuilder.sub_item_move_to_level'), {
+            target: { value: 'l2' },
+        });
+        expect(cb.onMoveSubItem).toHaveBeenCalledWith('c1', 'l1', 'si2', 'l2');
         fireEvent.click(within(subRow).getByLabelText('rubricBuilder.sub_item_delete_title'));
-        expect(cb.onDeleteSubItem).toHaveBeenCalledWith('c1', 'l1', 'si1');
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [si2, si3]);
 
-        // Collapse again — the sub-item editor disappears.
-        fireEvent.click(subToggle);
-        expect(screen.queryByDisplayValue('Uses varied sentence structure')).not.toBeInTheDocument();
+        // Each level has its own add button; points-mode items start at 0–1.
+        const addButtons = screen.getAllByText('rubricBuilder.action_add_sub_item');
+        fireEvent.click(addButtons[1]);
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l2', [
+            { id: expect.any(String), label: '', points: 1, minPoints: 0, maxPoints: 1 },
+        ]);
+    });
 
-        // Re-expand l1 and add a sub-item.
-        fireEvent.click(screen.getByText('rubricBuilder.label_sub_items (3)'));
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
-        expect(cb.onAddSubItem).toHaveBeenCalledWith('c1', 'l1');
+    it('adds, removes and pastes sub-items from the keyboard', () => {
+        const cb = makeCallbacks();
+        const empty = { id: 'e1', label: '' };
+        renderCard(makeCriterion({ subItemMode: 'checklist', levels: [{ ...l1, subItems: [si1, empty] }, l2] }), cb);
+        const first = screen.getByDisplayValue('Uses varied sentence structure');
 
-        // Expand the empty sub-items of l2 and add there too (second add button).
-        fireEvent.click(screen.getByText('rubricBuilder.label_sub_items (0)'));
-        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[1]);
-        expect(cb.onAddSubItem).toHaveBeenCalledWith('c1', 'l2');
+        // Checklist items have no points inputs.
+        expect(within(first.closest('li') as HTMLElement).queryAllByRole('spinbutton')).toHaveLength(0);
+
+        fireEvent.keyDown(first, { key: 'Enter' });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [
+            si1,
+            { id: expect.any(String), label: '' },
+            empty,
+        ]);
+        fireEvent.keyDown(first, { key: 'Enter', shiftKey: true });
+        expect(cb.onSetSubItems).toHaveBeenCalledTimes(1);
+        fireEvent.keyDown(first, { key: 'ArrowDown', altKey: true });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [empty, si1]);
+        fireEvent.keyDown(first, { key: 'ArrowUp', altKey: true });
+        expect(cb.onSetSubItems).toHaveBeenCalledTimes(2);
+
+        const emptyInput = screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label')[1];
+        fireEvent.keyDown(emptyInput, { key: 'Backspace' });
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [si1]);
+        fireEvent.keyDown(first, { key: 'Backspace' });
+        expect(cb.onSetSubItems).toHaveBeenCalledTimes(3);
+
+        // A multi-line paste into an empty item fills it and adds the rest; into a filled one it inserts after.
+        const paste = (el: HTMLElement, text: string) =>
+            fireEvent.paste(el, { clipboardData: { getData: () => text } });
+        paste(emptyInput, '☐ One\n• Two');
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [
+            si1,
+            { ...empty, label: 'One' },
+            { id: expect.any(String), label: 'Two' },
+        ]);
+        paste(first, '1. Three\n2. Four');
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [
+            si1,
+            { id: expect.any(String), label: 'Three' },
+            { id: expect.any(String), label: 'Four' },
+            empty,
+        ]);
+        // A single line pastes normally.
+        paste(first, 'just text');
+        expect(cb.onSetSubItems).toHaveBeenCalledTimes(5);
+    });
+
+    it('offers an undo after turning a description into sub-items', () => {
+        const cb = makeCallbacks();
+        const showToast = vi.fn<
+            (message: string, type?: string, options?: { action?: { onClick: () => void } }) => number
+        >(() => 1);
+        const existing = { id: 'x1', label: 'Existing' };
+        render(
+            <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+                <DragDropContext onDragEnd={noop}>
+                    <Droppable droppableId="criteria">
+                        {(provided) => (
+                            <div ref={provided.innerRef} {...provided.droppableProps}>
+                                <CriterionCard
+                                    {...cb}
+                                    criterion={makeCriterion({
+                                        subItemMode: 'checklist',
+                                        levels: [{ ...l1, description: '• Alpha', subItems: [existing] }],
+                                    })}
+                                    cIdx={0}
+                                    isFirst
+                                    isLast
+                                    collapsed={false}
+                                    scoringMode="weighted-percentage"
+                                />
+                                {provided.placeholder}
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+            </ToastContext.Provider>
+        );
+        fireEvent.click(screen.getByText('rubricBuilder.action_description_to_sub_items'));
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [
+            existing,
+            { id: expect.any(String), label: 'Alpha' },
+        ]);
+        expect(showToast).toHaveBeenCalledWith('rubricBuilder.description_converted', 'info', expect.anything());
+
+        showToast.mock.calls[0][2]!.action!.onClick();
+        expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [existing]);
+        expect(cb.onUpdateLevel).toHaveBeenLastCalledWith('c1', 'l1', { description: '• Alpha' });
+    });
+
+    it('switches the sub-item mode and turns a description into sub-items', () => {
+        const cb = makeCallbacks();
+        renderCard(makeCriterion({ levels: [{ ...l1, description: 'First\nSecond', subItems: [] }] }), cb);
+
+        const checklist = screen.getByRole('radio', { name: 'rubricBuilder.sub_item_mode_checklist' });
+        expect(checklist).toHaveAttribute('aria-checked', 'false');
+        expect(screen.getByText('rubricBuilder.sub_item_mode_points_help')).toBeInTheDocument();
+        fireEvent.click(checklist);
+        expect(cb.onUpdateCriterion).toHaveBeenCalledWith('c1', { subItemMode: 'checklist' });
+
+        fireEvent.click(screen.getByText('rubricBuilder.action_description_to_sub_items'));
+        expect(cb.onSetSubItems).toHaveBeenCalledWith('c1', 'l1', [
+            { id: expect.any(String), label: 'First', points: 1, minPoints: 0, maxPoints: 1 },
+            { id: expect.any(String), label: 'Second', points: 1, minPoints: 0, maxPoints: 1 },
+        ]);
+        expect(cb.onUpdateLevel).toHaveBeenCalledWith('c1', 'l1', { description: '' });
     });
 });

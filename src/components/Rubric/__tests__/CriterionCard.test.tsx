@@ -53,9 +53,8 @@ function cardProps(
         onAddLevel: noop,
         onDeleteLevel: noop,
         onUpdateLevel: noop,
-        onAddSubItem: noop,
-        onUpdateSubItem: noop,
-        onDeleteSubItem: noop,
+        onSetSubItems: noop,
+        onMoveSubItem: noop,
         onToggleCollapse: noop,
         onPickStandard: noop,
         onPickCefr: noop,
@@ -102,9 +101,9 @@ describe('CriterionCard', () => {
 
         // The edited card shows the new title; the untouched card's props are reference-stable,
         // so the memoized CriterionCard is not re-rendered. useTranslation runs once per card
-        // render: card 1 re-renders (+1), card 2 bails out (no change).
+        // render plus once per level's sub-item editor: card 1 re-renders, card 2 bails out.
         expect(screen.getByDisplayValue('Alpha updated')).toBeInTheDocument();
-        expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1);
+        expect(i18nMock.useTranslationCalls).toBe(rendersAfterMount + 1 + c1.levels.length);
     });
 
     it('flags the weight field as ignored in total points mode (#681)', () => {

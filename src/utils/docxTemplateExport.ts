@@ -25,6 +25,7 @@ import { saveAs } from 'file-saver';
 import i18n from 'i18next';
 import type { Rubric, RubricCriterion, ExportTemplate } from '../types';
 import { sanitizeFilename } from './exportDataPrep';
+import { subItemMode, subItemRange } from './subItems';
 import { orderedLevels } from './gradeCalc';
 import { contrastRatio } from './contrastCheck';
 
@@ -207,17 +208,22 @@ export async function exportRubricWithTemplate(rubric: Rubric, template: ExportT
                 }),
                 // Level cells
                 ...levels.map((l) => {
+                    const checklist = subItemMode(c) === 'checklist';
                     const subItemParagraphs = l.subItems.map((si) => {
-                        const max = si.maxPoints ?? si.points ?? 1;
+                        const { min, max } = subItemRange(si);
                         return new Paragraph({
                             children: [
-                                new TextRun({ text: '[ ] ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
+                                new TextRun({ text: '☐ ', size: (fmt.fontSize - 2) * 2, color: '666666' }),
                                 new TextRun({ text: si.label, size: (fmt.fontSize - 2) * 2, color: '666666' }),
-                                new TextRun({
-                                    text: ` (${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`,
-                                    size: (fmt.fontSize - 3) * 2,
-                                    color: '888888',
-                                }),
+                                ...(checklist
+                                    ? []
+                                    : [
+                                          new TextRun({
+                                              text: ` (${docLabel('points', { points: `${min}-${max}` })})`,
+                                              size: (fmt.fontSize - 3) * 2,
+                                              color: '888888',
+                                          }),
+                                      ]),
                             ],
                             spacing: { before: 60 },
                         });

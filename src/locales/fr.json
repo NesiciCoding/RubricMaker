@@ -1800,7 +1800,16 @@
         "regrade_latest_done_removed_one": "Notation sur la dernière version — le commentaire de {{count}} critère supprimé est conservé. Enregistrez pour le garder.",
         "regrade_latest_done_removed_other": "Notation sur la dernière version — les commentaires de {{count}} critères supprimés sont conservés. Enregistrez pour les garder.",
         "nav_scope_switch_all": "Passer à toutes les classes liées",
-        "nav_scope_switch_current": "Passer à cette classe uniquement"
+        "nav_scope_switch_current": "Passer à cette classe uniquement",
+        "sub_items_checklist_label": "Liste de preuves",
+        "sub_items_select_level_to_score": "Choisissez ce niveau pour noter ses sous-éléments.",
+        "sub_items_breakdown": "Base {{base}} + sous-éléments {{items}} = {{total}} pts",
+        "sub_items_clamped": "limité à la plage du niveau ({{min}}–{{max}} pts)",
+        "best_fit": "Meilleure correspondance avec vos coches : {{level}}",
+        "best_fit_apply": "Appliquer",
+        "best_fit_apply_label": "Choisir le niveau {{level}}",
+        "grid_toggle_details": "Afficher ou masquer les détails",
+        "grid_ticks": "{{ticked}}/{{total}} cochés"
     },
     "rubricBuilder": {
         "action_back": "Retour",
@@ -1984,7 +1993,22 @@
         "standards_modal_desc": "Pour lier des normes scolaires, vous avez besoin d'une <2>clé API Common Standards Project</2>.",
         "diff_field_subItemMode": "Mode des sous-éléments",
         "sub_item_mode_points": "Points",
-        "sub_item_mode_checklist": "Liste de contrôle"
+        "sub_item_mode_checklist": "Liste de contrôle",
+        "sub_items_checklist_heading": "Liste de contrôle",
+        "sub_items_list_label": "Sous-éléments pour {{level}}",
+        "label_sub_item_n": "Sous-élément {{n}}",
+        "sub_item_range_toggle": "Autoriser une plage de points",
+        "sub_item_move_up": "Monter le sous-élément",
+        "sub_item_move_down": "Descendre le sous-élément",
+        "sub_item_move_to_level": "Déplacer le sous-élément vers un autre niveau",
+        "sub_item_move_to_level_short": "Déplacer vers…",
+        "sub_items_keyboard_hint": "Entrée ajoute l'élément suivant · collez une liste pour en ajouter plusieurs · Alt+↑/↓ réordonne",
+        "action_description_to_sub_items": "Convertir en sous-éléments",
+        "description_converted_one": "Description convertie en {{count}} sous-élément",
+        "description_converted_other": "Description convertie en {{count}} sous-éléments",
+        "sub_item_mode_label": "Sous-éléments :",
+        "sub_item_mode_points_help": "Chaque sous-élément ajoute des points dans la plage du niveau.",
+        "sub_item_mode_checklist_help": "Les sous-éléments sont des énoncés à cocher comme preuves ; ils ne changent pas la note."
     },
     "peerReview": {
         "round_label": "Tour",
@@ -3565,7 +3589,7 @@
         "rb_scoring_modes_item_weighted": "Pourcentage pondéré — chaque critère a un poids (%). La note finale est la moyenne pondérée. Les critères valant 0 point sont exclus de la moyenne. Les nouveaux critères se partagent le poids à parts égales et le total reste à 100 % quand vous en ajoutez ou en retirez, jusqu'à ce que vous modifiiez vous-même un poids.",
         "rb_scoring_modes_item_single": "Rubrique à point unique — chaque critère a un seul descripteur (la norme). Lors de la notation, vous choisissez Dépasse, Atteint ou Pas encore : Dépasse et Atteint rapportent tous deux la totalité des points du critère, Pas encore rapporte 0.",
         "rb_level_options_title": "Options de niveau",
-        "rb_level_options_item_checklist": "Listes de sous-éléments dans un niveau (les élèves doivent compléter des éléments spécifiques).",
+        "rb_level_options_item_checklist": "Sous-éléments dans un niveau, selon l'un de deux modes choisis par critère : Points (chaque sous-élément ajoute des points dans la plage du niveau) ou Liste de contrôle (énoncés à cocher comme preuves pendant la correction ; ils ne changent jamais la note).",
         "rb_level_options_item_ranges": "Plages de points — définissez un minimum et un maximum ; l'enseignant choisit une valeur dans la plage lors de la notation.",
         "rb_level_options_item_modifiers": "Modificateurs de score — appliquez des ajustements en %, en points ou de niveau avec une raison facultative.",
         "rb_standards_title": "Référentiels & liens vers les cadres",
@@ -3663,7 +3687,7 @@
         "gr_scoring_title": "Notation",
         "gr_scoring_item_select": "Cliquez sur n'importe quelle cellule de niveau pour la sélectionner. Cliquez à nouveau pour la désélectionner.",
         "gr_scoring_item_slider": "Pour les plages de points, utilisez le curseur pour choisir une valeur dans la plage autorisée.",
-        "gr_scoring_item_subitems": "Les sous-éléments du niveau choisi ont chacun leur propre curseur de points (par demi-point), avec des boutons − / + pour les écrans tactiles.",
+        "gr_scoring_item_subitems": "Les sous-éléments à points se notent sur le niveau choisi : une case pour un élément d'un point, un curseur (par demi-point, avec des boutons − / + sur écran tactile) pour une plage plus large, et une ligne base + sous-éléments = total. Les sous-éléments en liste de contrôle se cochent sur tous les niveaux, restent cochés quand vous changez de niveau et suggèrent le niveau le plus adapté, applicable en un clic.",
         "gr_scoring_item_modifiers": "Modificateur Mieux/Moins bien : choisissez « % de décalage » ou « Points de décalage », saisissez une valeur positive ou négative et indiquez une raison. Un décalage en points se compte par rapport au maximum de la rubrique : +10 points sur une rubrique de 200 points ajoutent 5 %.",
         "gr_mobile_title": "Notation mobile",
         "gr_mobile_body_prefix": "Sur téléphones et iPad en mode portrait, la vue de notation est optimisée pour le tactile. Les curseurs de plage de points et de sous-éléments gagnent un",
@@ -4044,7 +4068,7 @@
         "gr_generate_test_item_organize": "Organisez éventuellement le résultat en sections par niveau CECRL — cela produit exactement la structure de pools de niveau attendue par le moteur de placement Staircase, prête à l'emploi.",
         "gr_generate_test_item_review": "Le test généré s'ouvre dans le générateur de test habituel, pré-rempli et prêt à être vérifié, ajusté et enregistré comme n'importe quel autre test.",
         "gr_layout_title": "Dispositions carte et grille",
-        "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description ; cliquez sur une cellule pour ouvrir un panneau de détail avec un curseur de points, des puces de sous-éléments, un contrôle de remplacement et le composeur de commentaires. Les grilles à point unique utilisent toujours la disposition en cartes.",
+        "gr_layout_body": "Basculez entre les cartes empilées et une grille compacte critère×niveau avec le sélecteur Cartes/Grille. Dans la grille, chaque cellule affiche le niveau et une courte description (et, pour un critère en liste de contrôle, le nombre d'énoncés cochés) ; cliquer sur une cellule choisit ce niveau et ouvre un panneau de détail avec un curseur de points, les sous-éléments, un contrôle de remplacement et le composeur de commentaires. Cliquez sur le nom d'un critère pour ouvrir son panneau sans choisir de niveau, par exemple pour cocher d'abord les preuves. Les grilles à point unique utilisent toujours la disposition en cartes.",
         "gr_keyboard_title": "Raccourcis clavier",
         "gr_keyboard_body": "Appuyez sur les touches 1–5 pour choisir un niveau pour le critère ciblé. Appuyez sur une lettre de critère puis un chiffre — A+1, B+2 — pour accéder directement à un critère et définir son niveau. Une fois un critère sélectionné, ↑ / ↓ passent d'un critère à l'autre (Tab et Maj+Tab parcourent tous les boutons et champs comme d'habitude), Ctrl+S enregistre et reste sur l'élève, Ctrl+Entrée enregistre et passe à l'élève suivant, et ? liste tous les raccourcis. Enregistrer & suivant remplace la page dans votre historique, donc Retour vous ramène là où vous avez commencé, et enregistrer le dernier élève non noté affiche le message « Tous les élèves sont notés ».",
         "gr_portal_tabs_body": "Le portail est organisé en quatre onglets — Accueil (actualités et avis), Devoirs (rédactions, tests et paquets de cartes à étudier), Retours (notes, réponses de l’enseignant et évaluations par les pairs) et Progrès (historique des notes, CECR et suggestions d’entraînement). Un logo, un sélecteur de thème et l’avatar de l’élève figurent dans l’en-tête.",
@@ -4102,7 +4126,10 @@
         "gr_scoring_item_anchor": "Marquer comme ancre (menu Options de notation) : conserve ce travail noté comme référence pour la rubrique. Pendant la notation des autres élèves, le bouton Copie d'ancre en bas de page affiche le niveau de l'ancre pour chaque critère.",
         "gr_scoring_item_nothing_scored": "Enregistrer sans avoir choisi de niveau pour aucun critère demande d'abord une confirmation, puis enregistre un résultat noté de 0 % ; Enregistrer et suivant passe un tel élève sans enregistrer de note.",
         "gr_nav_scope_note": "Enregistrer et suivant passe à l'élève suivant sans note ; le menu engrenage permet de choisir entre la classe actuelle et « Toutes les classes liées » (toutes les classes auxquelles la rubrique est liée).",
-        "gr_feedback_item_audio_record": "Retour enregistré — le bouton Enregistrer sous le commentaire d'un critère enregistre un court commentaire oral pour ce critère, que l'élève peut écouter sur la page de retour partagée."
+        "gr_feedback_item_audio_record": "Retour enregistré — le bouton Enregistrer sous le commentaire d'un critère enregistre un court commentaire oral pour ce critère, que l'élève peut écouter sur la page de retour partagée.",
+        "rb_level_options_item_sub_item_editing": "Les sous-éléments figurent dans chaque carte de niveau. Appuyez sur Entrée pour ajouter le suivant, Retour arrière sur un élément vide pour le supprimer, Alt+↑/↓ pour réordonner, ou collez une liste pour en ajouter un par ligne (puces, cases et numérotation sont retirées). Déplacez-en un vers un autre niveau avec le menu Déplacer vers…, ou utilisez Convertir en sous-éléments pour découper une description de niveau.",
+        "gr_portal_sub_items_title": "Sous-éléments dans le retour",
+        "gr_portal_sub_items_body": "Les élèves voient les sous-éléments de chaque critère sur leur carte de note du portail et sur la page de retour partagée : les énoncés cochés (avec leur niveau quand ce n'est pas le niveau atteint), ou chaque sous-élément à points avec les points obtenus."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -4761,7 +4788,10 @@
         "audio_feedback": "Commentaire audio",
         "audio_feedback_for": "Commentaire audio pour {{criterion}}",
         "overall_feedback": "Commentaire général",
-        "footer": "Créé avec RubricMaker · Des questions ? Demande à ton enseignant."
+        "footer": "Créé avec RubricMaker · Des questions ? Demande à ton enseignant.",
+        "ticked_statements": "Énoncés cochés pour {{criterion}}",
+        "sub_item_scores": "Notes des sous-éléments pour {{criterion}}",
+        "sub_item_points": "{{score}}/{{max}} pts"
     },
     "rubricPreview": {
         "invalid_title": "Ce lien de rubrique ne peut pas être ouvert",

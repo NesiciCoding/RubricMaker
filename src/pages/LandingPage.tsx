@@ -45,7 +45,7 @@ const TEACHER_FEATURES = [
     {
         icon: BookOpen,
         title: 'Rubric Builder',
-        desc: 'Design rubrics with custom criteria, weighted scoring, CEFR descriptors, grammar standards, and version history.',
+        desc: 'Design rubrics with custom criteria, weighted scoring, tick-off checklists of what each level looks like, CEFR descriptors, grammar standards, and version history.',
         color: '#3b82f6',
     },
     {
@@ -162,7 +162,7 @@ const STUDENT_FEATURES = [
     {
         icon: Eye,
         title: 'View Feedback',
-        desc: 'See your grades, teacher comments, and attached files via your personal portal link — organised into Home, Assignments, Feedback, and Progress tabs, no login needed.',
+        desc: 'See your grades, teacher comments, the checklist points your teacher ticked, and attached files via your personal portal link — organised into Home, Assignments, Feedback, and Progress tabs, no login needed.',
         color: '#10b981',
     },
     {

@@ -7,6 +7,8 @@ import {
     bestFitLevel,
     isTicked,
     keepExistingTicks,
+    splitIntoSubItemLabels,
+    stripListMarker,
     scoresSubItems,
     subItemBreakdown,
     subItemEarned,
@@ -45,6 +47,7 @@ describe('subItemMode / scoresSubItems', () => {
     it('treats a criterion without a mode as points mode', () => {
         expect(subItemMode({})).toBe('points');
         expect(subItemMode({ subItemMode: 'checklist' })).toBe('checklist');
+        expect(subItemMode({ subItemMode: 'bogus' as never })).toBe('points');
     });
 
     it('only scores sub-items in points mode when some level has them', () => {
@@ -182,5 +185,32 @@ describe('checklist mode in the grading engine', () => {
         const remapped = remapEntriesToRubric([removedLevel], rubric);
         expect(remapped.clearedCount).toBe(1);
         expect(remapped.entries[0].checkedSubItems).toEqual(['b1']);
+    });
+});
+
+describe('splitIntoSubItemLabels', () => {
+    it('splits lines and strips bullets, checkboxes and numbering', () => {
+        const pasted = [
+            '☐ De teksten bevatten meer dan 8 spelfouten.',
+            '',
+            '• Heeft minimaal 5-8 woorden gebruikt.',
+            '  2. Numbered line',
+            'a) Lettered line',
+            '- dash line',
+            'Plain line',
+        ].join('\r\n');
+        expect(splitIntoSubItemLabels(pasted)).toEqual([
+            'De teksten bevatten meer dan 8 spelfouten.',
+            'Heeft minimaal 5-8 woorden gebruikt.',
+            'Numbered line',
+            'Lettered line',
+            'dash line',
+            'Plain line',
+        ]);
+    });
+
+    it('leaves text that merely starts with a number or letter alone', () => {
+        expect(stripListMarker('5 verplichte onderwerpen')).toBe('5 verplichte onderwerpen');
+        expect(stripListMarker('A clear introduction')).toBe('A clear introduction');
     });
 });

@@ -20,7 +20,8 @@ import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
-import { subItemMode } from '../utils/subItems';
+import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
+import SubItemChecklist from '../components/Grading/SubItemChecklist';
 import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry } from '../types';
@@ -1010,47 +1011,22 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </select>
                                             {lvlA && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    {lvlA.subItems.map((si) => {
-                                                        const currentScore =
-                                                            eA?.subItemScores?.[si.id] ?? si.minPoints ?? 0;
-                                                        return (
-                                                            <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
-                                                                    <span>{si.label}</span>
-                                                                    <span style={{ fontWeight: 600 }}>
-                                                                        {currentScore}/{si.maxPoints ?? si.points ?? 1}
-                                                                    </span>
-                                                                </div>
-                                                                <input
-                                                                    type="range"
-                                                                    min={si.minPoints ?? 0}
-                                                                    max={si.maxPoints ?? si.points ?? 1}
-                                                                    step={0.5}
-                                                                    value={currentScore}
-                                                                    onChange={(e) =>
-                                                                        setSubItemScore(
-                                                                            true,
-                                                                            c.id,
-                                                                            si.id,
-                                                                            Number(e.target.value)
-                                                                        )
-                                                                    }
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        accentColor: 'var(--accent)',
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {(lvlA.minPoints !== lvlA.maxPoints ||
-                                                        lvlA.subItems.length === 0) && (
+                                                    {eA && (
+                                                        <SubItemChecklist
+                                                            criterion={c}
+                                                            level={lvlA}
+                                                            entry={eA}
+                                                            accentColor="var(--accent)"
+                                                            selected
+                                                            onToggleTick={(id) =>
+                                                                updateEntry(true, c.id, {
+                                                                    checkedSubItems: toggleTick(eA, id),
+                                                                })
+                                                            }
+                                                            onScore={(id, v) => setSubItemScore(true, c.id, id, v)}
+                                                        />
+                                                    )}
+                                                    {(lvlA.minPoints !== lvlA.maxPoints || !scoresSubItems(c)) && (
                                                         <div
                                                             className="text-xs"
                                                             style={{
@@ -1129,7 +1105,12 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                 eA.levelId === eB?.levelId &&
                                                 (() => {
                                                     const sharedLevel = c.levels.find((l) => l.id === eA.levelId);
-                                                    if (!sharedLevel || sharedLevel.subItems.length === 0) return null;
+                                                    if (
+                                                        !sharedLevel ||
+                                                        sharedLevel.subItems.length === 0 ||
+                                                        !scoresSubItems(c)
+                                                    )
+                                                        return null;
                                                     return (
                                                         <div
                                                             style={{
@@ -1152,8 +1133,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                                                 {t('comparativeGrading.sub_criteria')}
                                                             </div>
                                                             {sharedLevel.subItems.map((si) => {
-                                                                const min = si.minPoints ?? 0;
-                                                                const max = si.maxPoints ?? si.points ?? 1;
+                                                                const { min, max } = subItemRange(si);
                                                                 return (
                                                                     <div
                                                                         key={si.id}
@@ -1294,47 +1274,22 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
                                             </select>
                                             {lvlB && (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    {lvlB.subItems.map((si) => {
-                                                        const currentScore =
-                                                            eB?.subItemScores?.[si.id] ?? si.minPoints ?? 0;
-                                                        return (
-                                                            <div key={si.id} className="text-xs">
-                                                                <div
-                                                                    style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'space-between',
-                                                                        marginBottom: 2,
-                                                                    }}
-                                                                >
-                                                                    <span>{si.label}</span>
-                                                                    <span style={{ fontWeight: 600 }}>
-                                                                        {currentScore}/{si.maxPoints ?? si.points ?? 1}
-                                                                    </span>
-                                                                </div>
-                                                                <input
-                                                                    type="range"
-                                                                    min={si.minPoints ?? 0}
-                                                                    max={si.maxPoints ?? si.points ?? 1}
-                                                                    step={0.5}
-                                                                    value={currentScore}
-                                                                    onChange={(e) =>
-                                                                        setSubItemScore(
-                                                                            false,
-                                                                            c.id,
-                                                                            si.id,
-                                                                            Number(e.target.value)
-                                                                        )
-                                                                    }
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        accentColor: 'var(--accent)',
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {(lvlB.minPoints !== lvlB.maxPoints ||
-                                                        lvlB.subItems.length === 0) && (
+                                                    {eB && (
+                                                        <SubItemChecklist
+                                                            criterion={c}
+                                                            level={lvlB}
+                                                            entry={eB}
+                                                            accentColor="var(--accent)"
+                                                            selected
+                                                            onToggleTick={(id) =>
+                                                                updateEntry(false, c.id, {
+                                                                    checkedSubItems: toggleTick(eB, id),
+                                                                })
+                                                            }
+                                                            onScore={(id, v) => setSubItemScore(false, c.id, id, v)}
+                                                        />
+                                                    )}
+                                                    {(lvlB.minPoints !== lvlB.maxPoints || !scoresSubItems(c)) && (
                                                         <div
                                                             className="text-xs"
                                                             style={{

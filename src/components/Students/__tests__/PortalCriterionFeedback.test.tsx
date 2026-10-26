@@ -50,6 +50,30 @@ describe('PortalCriterionFeedback (#622)', () => {
         expect(screen.queryByText('Language')).toBeNull();
     });
 
+    it('shows a criterion whose only feedback is ticked checklist statements', () => {
+        const checklistRubric = {
+            criteria: [
+                {
+                    id: 'c1',
+                    title: 'Spelling',
+                    description: '',
+                    weight: 100,
+                    subItemMode: 'checklist',
+                    levels: [{ ...level('l1', 'B'), subItems: [{ id: 'k1', label: 'Fewer than 8 errors' }] }],
+                },
+            ],
+        } as unknown as Pick<Rubric, 'criteria'>;
+        render(
+            <PortalCriterionFeedback
+                rubric={checklistRubric}
+                entries={[{ criterionId: 'c1', levelId: null, checkedSubItems: ['k1'], comment: '' }]}
+                studentRubricId="sr1"
+            />
+        );
+        expect(screen.getByText('Spelling')).toBeInTheDocument();
+        expect(screen.getByText('Fewer than 8 errors')).toBeInTheDocument();
+    });
+
     it('plays inline and storage-backed voice feedback with an accessible name', () => {
         render(
             <PortalCriterionFeedback

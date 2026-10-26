@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import type { Rubric, Student, StudentRubric, GradeScale, StudentTest, Test, TestStrengthBucket } from '../types';
 import { calcGradeSummary } from './gradeCalc';
+import { isTicked, subItemMode, subItemRange, subItemScore } from './subItems';
 import {
     calcQuestionBreakdowns,
     calcSkillBreakdowns,
@@ -112,16 +113,15 @@ function buildRubricGridHtml(rubric: Rubric, sr?: StudentRubric): string {
         <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;font-size:10px;">
           ${l.subItems
               .map((si) => {
-                  const legacyChecked = (entry?.checkedSubItems ?? []).includes(si.id);
-                  const max = si.maxPoints ?? si.points ?? 1;
-                  let scoreLabel: string;
-                  if (entry) {
-                      const currentScore = entry.subItemScores?.[si.id] ?? (legacyChecked ? max : (si.minPoints ?? 0));
-                      scoreLabel = `[${docLabel('points', { points: `${currentScore}/${max}` })}]`;
-                  } else {
-                      scoreLabel = `(${docLabel('points', { points: `${si.minPoints ?? 0}-${max}` })})`;
+                  if (subItemMode(c) === 'checklist') {
+                      const box = entry && isTicked(entry, si.id) ? '☑' : '☐';
+                      return `<div style="margin-bottom:3px;">${box} ${parseMd(si.label)}</div>`;
                   }
-                  return `<div style="margin-bottom:3px;">${entry ? '•' : '[ ]'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
+                  const { min, max } = subItemRange(si);
+                  const scoreLabel = entry
+                      ? `[${docLabel('points', { points: `${subItemScore(entry, si) ?? 0}/${max}` })}]`
+                      : `(${docLabel('points', { points: `${min}-${max}` })})`;
+                  return `<div style="margin-bottom:3px;">${entry ? '•' : '☐'} ${parseMd(si.label)} <span style="color:#6b7280;font-size:9px">${scoreLabel}</span></div>`;
               })
               .join('')}
         </div>

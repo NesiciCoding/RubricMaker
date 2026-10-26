@@ -1800,7 +1800,16 @@
         "regrade_latest_done_removed_one": "Now grading on the latest version — feedback for {{count}} removed criterion is kept. Save to keep it.",
         "regrade_latest_done_removed_other": "Now grading on the latest version — feedback for {{count}} removed criteria is kept. Save to keep it.",
         "nav_scope_switch_all": "Switch to all linked classes",
-        "nav_scope_switch_current": "Switch to this class only"
+        "nav_scope_switch_current": "Switch to this class only",
+        "sub_items_checklist_label": "Evidence checklist",
+        "sub_items_select_level_to_score": "Select this level to score its sub-items.",
+        "sub_items_breakdown": "Base {{base}} + sub-items {{items}} = {{total}} pts",
+        "sub_items_clamped": "kept within the level's {{min}}–{{max}} pts",
+        "best_fit": "Best fit from your ticks: {{level}}",
+        "best_fit_apply": "Apply",
+        "best_fit_apply_label": "Select level {{level}}",
+        "grid_toggle_details": "Show or hide details",
+        "grid_ticks": "{{ticked}}/{{total}} ticked"
     },
     "rubricBuilder": {
         "action_back": "Back",
@@ -1984,7 +1993,22 @@
         "standards_modal_desc": "To link academic standards you need a <2>Common Standards Project API key</2>.",
         "diff_field_subItemMode": "Sub-item mode",
         "sub_item_mode_points": "Points",
-        "sub_item_mode_checklist": "Checklist"
+        "sub_item_mode_checklist": "Checklist",
+        "sub_items_checklist_heading": "Checklist",
+        "sub_items_list_label": "Sub-items for {{level}}",
+        "label_sub_item_n": "Sub-item {{n}}",
+        "sub_item_range_toggle": "Allow a range of points",
+        "sub_item_move_up": "Move sub-item up",
+        "sub_item_move_down": "Move sub-item down",
+        "sub_item_move_to_level": "Move sub-item to another level",
+        "sub_item_move_to_level_short": "Move to…",
+        "sub_items_keyboard_hint": "Enter adds the next item · paste a list to add several · Alt+↑/↓ reorders",
+        "action_description_to_sub_items": "Turn into sub-items",
+        "description_converted_one": "Turned the description into {{count}} sub-item",
+        "description_converted_other": "Turned the description into {{count}} sub-items",
+        "sub_item_mode_label": "Sub-items:",
+        "sub_item_mode_points_help": "Each sub-item adds points within the level's range.",
+        "sub_item_mode_checklist_help": "Sub-items are statements you tick as evidence; they don't change the score."
     },
     "peerReview": {
         "round_label": "Round",
@@ -3565,7 +3589,7 @@
         "rb_scoring_modes_item_weighted": "Weighted Percentage — each criterion has a weight (%). Final score is the weighted average. Criteria worth 0 points are left out of the average. New criteria share the weight evenly and the total is kept at 100% as you add or remove them, until you change a weight yourself.",
         "rb_scoring_modes_item_single": "Single-Point Rubric — each criterion has one descriptor (the standard). While grading you mark it Exceeds, Meets or Not yet: Exceeds and Meets both earn the criterion's full points, Not yet earns 0.",
         "rb_level_options_title": "Level options",
-        "rb_level_options_item_checklist": "Sub-item checklists within a level (students must complete specific items).",
+        "rb_level_options_item_checklist": "Sub-items within a level, in one of two modes chosen per criterion: Points (each sub-item adds points within the level's range) or Checklist (statements you tick as evidence while grading; they never change the score).",
         "rb_level_options_item_ranges": "Point ranges — set a min and max; teacher picks a value inside the range during grading.",
         "rb_level_options_item_modifiers": "Score modifiers — apply %, point, or level adjustments with an optional reason.",
         "rb_standards_title": "Standards & framework links",
@@ -3661,7 +3685,7 @@
         "gr_scoring_title": "Scoring",
         "gr_scoring_item_select": "Click any level cell to select it. Click again to deselect.",
         "gr_scoring_item_slider": "For point ranges, use the slider to choose a value within the allowed range.",
-        "gr_scoring_item_subitems": "Sub-items inside the selected level each have their own points slider (half-point steps), with − / + buttons for touch screens.",
+        "gr_scoring_item_subitems": "Points sub-items are scored on the selected level: a tick box for a one-point item, a slider (half-point steps, with − / + buttons on touch screens) for a wider range, and a line that shows base + sub-items = total. Checklist sub-items can be ticked on every level, stay ticked when you change the level, and suggest a best-fit level you can apply with one click.",
         "gr_scoring_item_modifiers": "Better/Worse Modifier: choose \"% offset\" or \"Points offset\", enter a positive or negative value and give a reason. A points offset counts against the rubric's maximum: +10 points on a 200-point rubric adds 5%.",
         "gr_mobile_title": "Mobile grading",
         "gr_mobile_body_prefix": "On phones and iPad portrait the grading view is touch-optimised. Point-range and sub-item sliders gain a",
@@ -4042,7 +4066,7 @@
         "gr_generate_test_item_organize": "Optionally organize the result into CEFR-level sections — produces exactly the level-pool shape the Staircase placement engine expects, ready to use immediately.",
         "gr_generate_test_item_review": "The generated test opens in the normal Test Builder, pre-filled and ready to review, adjust, and save like any other test.",
         "gr_layout_title": "Card & grid layouts",
-        "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor; clicking a cell opens a detail panel with a fine-tune points slider, sub-item chips, an override control, and the comment composer. Single-point rubrics always use the card layout.",
+        "gr_layout_body": "Switch between the stacked cards and a compact criterion×level grid using the Cards/Grid toggle. In the grid, each cell shows the level and a short descriptor (and, for a checklist criterion, how many of its statements are ticked); clicking a cell picks that level and opens a detail panel with a fine-tune points slider, the sub-items, an override control, and the comment composer. Click a criterion's name to open its panel without picking a level, for example to tick evidence first. Single-point rubrics always use the card layout.",
         "gr_keyboard_title": "Keyboard shortcuts",
         "gr_keyboard_body": "Press number keys 1–5 to pick a level for the focused criterion. Press a criterion letter then a number — A+1, B+2 — to jump straight to any criterion and set its level. Once a criterion is selected, ↑ / ↓ move between criteria (Tab and Shift+Tab move through every button and field as usual), Ctrl+S saves and stays on the student, Ctrl+Enter saves and moves to the next student, and ? lists every shortcut. Save & Next replaces the page in your history, so Back returns to where you started grading, and saving the last ungraded student shows an 'All students are graded' message.",
         "gr_portal_tabs_body": "The portal is organised into four tabs — Home (news and notices), Assignments (essays, tests and flashcard decks to do), Feedback (grades, teacher replies and peer reviews), and Progress (score history, CEFR and practice suggestions). A logo, theme toggle and the student’s avatar sit in the header.",
@@ -4102,7 +4126,10 @@
         "gr_scoring_item_anchor": "Mark as anchor (Grade options menu): keeps this graded submission as the reference for the rubric. While grading other students, the Anchor Paper button in the footer shows the anchor's level per criterion.",
         "gr_scoring_item_nothing_scored": "Saving without a level for any criterion asks for confirmation first and then records a graded 0% result; Save & Next skips such a student without saving a grade.",
         "gr_nav_scope_note": "Save & Next goes to the next ungraded student; the settings-cog menu switches between the current class and \"All linked classes\" (every class the rubric is linked to).",
-        "gr_feedback_item_audio_record": "Recorded feedback — the Record button under a criterion's comment records a short spoken comment for that criterion, which the student can play on the shared feedback page."
+        "gr_feedback_item_audio_record": "Recorded feedback — the Record button under a criterion's comment records a short spoken comment for that criterion, which the student can play on the shared feedback page.",
+        "rb_level_options_item_sub_item_editing": "Sub-items are listed in every level card. Press Enter to add the next one, Backspace on an empty one to remove it, Alt+↑/↓ to reorder, or paste a list to add one per line (bullets, checkboxes and numbering are stripped). Move one to another level with its Move to… menu, or use Turn into sub-items to split a level description into sub-items.",
+        "gr_portal_sub_items_title": "Sub-items in feedback",
+        "gr_portal_sub_items_body": "Students see the sub-items behind each criterion on their portal grade card and on the shared feedback page: the checklist statements you ticked (with the level each belongs to when it isn't the level reached), or each points sub-item with the points it earned."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -4761,7 +4788,10 @@
         "audio_feedback": "Audio feedback",
         "audio_feedback_for": "Audio feedback for {{criterion}}",
         "overall_feedback": "Overall feedback",
-        "footer": "Made with RubricMaker · Questions? Ask your teacher."
+        "footer": "Made with RubricMaker · Questions? Ask your teacher.",
+        "ticked_statements": "Ticked statements for {{criterion}}",
+        "sub_item_scores": "Sub-item scores for {{criterion}}",
+        "sub_item_points": "{{score}}/{{max}} pts"
     },
     "rubricPreview": {
         "invalid_title": "This rubric link can't be opened",

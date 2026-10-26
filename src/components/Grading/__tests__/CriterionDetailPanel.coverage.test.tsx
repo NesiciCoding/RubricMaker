@@ -170,7 +170,7 @@ describe('CriterionDetailPanel coverage', () => {
         expect(updateEntry).not.toHaveBeenCalled();
     });
 
-    it('renders sub-item chips alongside base points and toggles single chips', () => {
+    it('scores points-mode sub-items with checkboxes and sliders and shows the clamped sum', () => {
         const levelE = makeLevel('lvE', 6, 10, '', [bareSubItem, singleSubItem, rangeSubItem, legacySubItem]);
         const criterion = makeCriterion('c2', [levelE]);
         const updateEntry = vi.fn();
@@ -183,26 +183,30 @@ describe('CriterionDetailPanel coverage', () => {
         // hasAnySubItems → base-points label variant.
         expect(screen.getAllByLabelText('gradeStudent.label_base_points').length).toBeGreaterThan(0);
 
-        // Single chip: score 1 < max 2 → not selected; click scores max.
-        const singleChip = screen.getByRole('button', { name: /Clarity/ });
-        expect(singleChip).toHaveAttribute('aria-pressed', 'false');
-        fireEvent.click(singleChip);
+        // A fixed-value item is a checkbox: score 1 < max 2 → unchecked; ticking scores its max.
+        const single = screen.getByRole('checkbox', { name: /Clarity/ });
+        expect(single).not.toBeChecked();
+        fireEvent.click(single);
         expect(setSubItemScore).toHaveBeenCalledWith('si-single', 2);
+        expect(screen.getByRole('checkbox', { name: /Bare/ })).toBeInTheDocument();
 
-        // Selected state renders aria-pressed true.
+        // A legacy tick on a points-only item is worth its points.
+        expect((screen.getAllByLabelText('Legacy')[0] as HTMLInputElement).value).toBe('5');
+
+        // base 6 + items 6 (single 1, legacy 5) is cut to the level's 10.
+        expect(screen.getByTestId('sub-item-breakdown')).toHaveTextContent(
+            'gradeStudent.sub_items_breakdown · gradeStudent.sub_items_clamped'
+        );
+
         rerender(makeEntry({ levelId: 'lvE', subItemScores: { 'si-single': 2 } }));
-        const selectedChip = screen.getByRole('button', { name: /Clarity/ });
-        expect(selectedChip).toHaveAttribute('aria-pressed', 'true');
-        fireEvent.click(selectedChip);
-        expect(setSubItemScore).toHaveBeenCalledWith('si-single', 2);
-
-        // Legacy chip (points-only sub item): currentScore falls back to legacy max when checked.
-        expect(screen.getByRole('button', { name: /Legacy/ })).toBeInTheDocument();
-        // Bare chip (no maxPoints, no points): falls back to 1.
-        expect(screen.getByRole('button', { name: /Bare/ })).toBeInTheDocument();
+        const earned = screen.getByRole('checkbox', { name: /Clarity/ });
+        expect(earned).toBeChecked();
+        fireEvent.click(earned);
+        expect(setSubItemScore).toHaveBeenLastCalledWith('si-single', 2);
+        expect(screen.getByTestId('sub-item-breakdown')).not.toHaveTextContent('clamped');
     });
 
-    it('expands a range sub-item, drives its scorer, and collapses it', () => {
+    it('drives a range sub-item through its slider and stepper', () => {
         const levelE = makeLevel('lvE', 6, 10, '', [singleSubItem, rangeSubItem, legacySubItem]);
         const criterion = makeCriterion('c2', [levelE]);
         const { rerender, setSubItemScore } = renderPanel(
@@ -211,27 +215,15 @@ describe('CriterionDetailPanel coverage', () => {
             vi.fn()
         );
 
-        const rangeChip = screen.getByRole('button', { name: /Depth/ });
-        expect(rangeChip).toHaveAttribute('aria-expanded', 'false');
-        fireEvent.click(rangeChip);
-        expect(rangeChip).toHaveAttribute('aria-expanded', 'true');
-
         const rangeSlider = screen.getAllByLabelText('Depth')[0] as HTMLInputElement;
         expect(rangeSlider).toHaveAttribute('min', '1');
         fireEvent.change(rangeSlider, { target: { value: '3' } });
         expect(setSubItemScore).toHaveBeenCalledWith('si-range', 3);
 
-        // Stepper inside the expanded scorer.
         rerender(makeEntry({ levelId: 'lvE', subItemScores: { 'si-range': 3 } }));
         const scorerGroup = screen.getAllByLabelText('Depth')[1] as HTMLElement;
         fireEvent.click(within(scorerGroup).getByLabelText('gradeStudent.stepper_increase'));
         expect(setSubItemScore).toHaveBeenCalledWith('si-range', 3.5);
-
-        // Collapse.
-        fireEvent.click(screen.getByRole('button', { name: /Depth/ }));
-        const collapsedChip = screen.getByRole('button', { name: /Depth/ });
-        expect(collapsedChip).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByLabelText('Depth')).toBeNull();
     });
 
     it('hides the base-points editor when the selected level is a sub-item-only single point', () => {
@@ -240,7 +232,39 @@ describe('CriterionDetailPanel coverage', () => {
         renderPanel(criterion, makeEntry({ levelId: 'lvD' }), vi.fn());
         expect(screen.queryByLabelText('gradeStudent.label_base_points')).toBeNull();
         expect(screen.queryByLabelText('gradeStudent.label_points')).toBeNull();
-        expect(screen.getByRole('button', { name: /Clarity/ })).toBeInTheDocument();
+        expect(screen.getByRole('checkbox', { name: /Clarity/ })).toBeInTheDocument();
+    });
+
+    it('lists every level as a checklist and offers the best-fit level', () => {
+        const high = makeLevel('hi', 2, 2, '', [
+            { id: 'h1', label: 'Uses all five topics' },
+            { id: 'h2', label: 'Adds pictures' },
+        ]);
+        const low = makeLevel('lo', 0, 0, '', [{ id: 'o1', label: 'Misses topics' }]);
+        const criterion: RubricCriterion = { ...makeCriterion('c5', [high, low]), subItemMode: 'checklist' };
+        const updateEntry = vi.fn();
+        const { rerender } = renderPanel(criterion, makeEntry({ checkedSubItems: ['h1'] }), updateEntry);
+
+        expect(screen.getByText('gradeStudent.sub_items_checklist_label')).toBeInTheDocument();
+        expect(screen.getByText('Level hi')).toBeInTheDocument();
+        expect(screen.getByText('Level lo')).toBeInTheDocument();
+        expect(screen.getByRole('checkbox', { name: 'Uses all five topics' })).toBeChecked();
+
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Misses topics' }));
+        expect(updateEntry).toHaveBeenCalledWith({ checkedSubItems: ['h1', 'o1'] });
+
+        // h1 ticked: half of "hi" vs none of "lo" → hi.
+        expect(screen.getByText('gradeStudent.best_fit')).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('gradeStudent.best_fit_apply_label'));
+        expect(updateEntry).toHaveBeenCalledWith({ levelId: 'hi', overridePoints: undefined });
+
+        // Once that level is chosen the hint goes away. A fixed-point level has nothing to fine-tune,
+        // and checklist ticks add no points, so neither a points slider nor a sum is shown.
+        rerender(makeEntry({ levelId: 'hi', checkedSubItems: ['h1'] }));
+        expect(screen.queryByText('gradeStudent.best_fit')).toBeNull();
+        expect(screen.queryByLabelText('gradeStudent.label_base_points')).toBeNull();
+        expect(screen.queryByLabelText('gradeStudent.label_points')).toBeNull();
+        expect(screen.queryByTestId('sub-item-breakdown')).toBeNull();
     });
 
     it('shows base points for a single-point level with no sub-items', () => {

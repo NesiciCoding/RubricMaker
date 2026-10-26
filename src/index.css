@@ -2061,3 +2061,24 @@ select.input-error {
     padding-inline-start: 1.25rem;
     margin-bottom: 8px;
 }
+
+/* Sub-item editor rows grow with their text instead of scrolling. */
+.sub-item-input {
+    field-sizing: content;
+    min-height: 28px;
+}
+
+.grading-grid-table .grid-cell-ticks {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Checklist statements are sentences, not form-field captions. */
+label.sub-item-check {
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: normal;
+}

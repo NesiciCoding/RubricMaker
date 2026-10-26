@@ -732,11 +732,24 @@ describe('RubricBuilder', () => {
         expect(screen.getAllByPlaceholderText('rubricBuilder.placeholder_level_name')).toHaveLength(before);
     });
 
-    it('expands sub-items and adds one', () => {
+    it('adds a sub-item inline and moves it to another level', () => {
         renderEdit();
-        fireEvent.click(screen.getAllByText(/rubricBuilder.label_sub_items/)[0]);
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
-        expect(screen.getAllByText(/rubricBuilder.label_sub_items.*\(1\)/).length).toBeGreaterThan(0);
+        const before = screen.queryAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label').length;
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
+        const inputs = screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label');
+        expect(inputs).toHaveLength(before + 1);
+        fireEvent.change(inputs[0], { target: { value: 'Moving item' } });
+        const row = screen.getByDisplayValue('Moving item').closest('li') as HTMLElement;
+        const moveSelect = within(row).getByLabelText('rubricBuilder.sub_item_move_to_level') as HTMLSelectElement;
+        const target = moveSelect.options[1].value;
+        fireEvent.change(moveSelect, { target: { value: target } });
+        // Now listed under the other level, which offers the first level as its move target.
+        const movedRow = screen.getByDisplayValue('Moving item').closest('li') as HTMLElement;
+        expect(
+            Array.from(
+                (within(movedRow).getByLabelText('rubricBuilder.sub_item_move_to_level') as HTMLSelectElement).options
+            ).map((o) => o.value)
+        ).not.toContain(target);
     });
 
     // ── Standards linking ────────────────────────────────────────────────────────
@@ -1049,13 +1062,12 @@ describe('RubricBuilder', () => {
         // Delete a level from c2.
         fireEvent.click(screen.getAllByLabelText('rubricBuilder.action_delete_level')[2]);
         // Sub-item round trip on c1 (walks c2's non-matching branches).
-        fireEvent.click(screen.getAllByText(/rubricBuilder.label_sub_items/)[0]);
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
         const subLabel = screen.getByPlaceholderText('rubricBuilder.placeholder_sub_item_label');
         fireEvent.change(subLabel, { target: { value: 'Detailed' } });
         expect(subLabel).toHaveValue('Detailed');
         // A second sub-item so editing one walks the other's non-matching branch.
-        fireEvent.click(screen.getByText('rubricBuilder.action_add_sub_item'));
+        fireEvent.click(screen.getAllByText('rubricBuilder.action_add_sub_item')[0]);
         fireEvent.change(screen.getAllByPlaceholderText('rubricBuilder.placeholder_sub_item_label')[1], {
             target: { value: 'Second detail' },
         });

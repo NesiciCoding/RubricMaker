@@ -1,9 +1,11 @@
 import type { RubricCriterion, RubricLevel, ScoreEntry, SubItem, SubItemMode } from '../types';
+import { nanoid } from './nanoid';
 
 type SubItemState = Pick<ScoreEntry, 'subItemScores' | 'checkedSubItems'>;
 
+/** Anything but 'checklist' — including an unknown value from an imported file — scores as points. */
 export function subItemMode(criterion: Pick<RubricCriterion, 'subItemMode'>): SubItemMode {
-    return criterion.subItemMode ?? 'points';
+    return criterion.subItemMode === 'checklist' ? 'checklist' : 'points';
 }
 
 /**
@@ -12,6 +14,11 @@ export function subItemMode(criterion: Pick<RubricCriterion, 'subItemMode'>): Su
  */
 export function scoresSubItems(criterion: Pick<RubricCriterion, 'subItemMode' | 'levels'>): boolean {
     return subItemMode(criterion) === 'points' && criterion.levels.some((l) => (l.subItems?.length ?? 0) > 0);
+}
+
+/** A blank sub-item; checklist items carry no points. */
+export function createSubItem(mode: SubItemMode, label = ''): SubItem {
+    return mode === 'points' ? { id: nanoid(), label, points: 1, minPoints: 0, maxPoints: 1 } : { id: nanoid(), label };
 }
 
 /** Point range of a points-mode sub-item; `points` is the pre-range single value older records carry. */
@@ -76,8 +83,34 @@ export function bestFitLevel(
     return best?.level ?? null;
 }
 
+/** Ticked / total for a level's checklist, for compact displays such as grid cells. */
+export function tickCount(
+    level: RubricLevel,
+    entry: Pick<ScoreEntry, 'checkedSubItems'>
+): { ticked: number; total: number } {
+    return {
+        ticked: level.subItems.filter((si) => isTicked(entry, si.id)).length,
+        total: level.subItems.length,
+    };
+}
+
 /** Ticks that still point at a sub-item somewhere in the criterion — checklist ticks span every level. */
 export function keepExistingTicks(criterion: Pick<RubricCriterion, 'levels'>, ticks: string[]): string[] {
     const ids = new Set(criterion.levels.flatMap((l) => l.subItems.map((si) => si.id)));
     return ticks.filter((id) => ids.has(id));
+}
+
+const LIST_MARKER = /^\s*(?:[☐☑☒□■▪◦•‣·*–—-]|\(?(?:\d{1,2}|[a-zA-Z])[.)])\s+/u;
+
+/** A pasted or typed line without its bullet, checkbox or numbering. */
+export function stripListMarker(line: string): string {
+    return line.replace(LIST_MARKER, '').trim();
+}
+
+/** One sub-item label per non-empty line of a pasted list or level description. */
+export function splitIntoSubItemLabels(text: string): string[] {
+    return text
+        .split(/\r?\n/)
+        .map(stripListMarker)
+        .filter((line) => line.length > 0);
 }
