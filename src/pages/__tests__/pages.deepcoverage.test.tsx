@@ -16,6 +16,23 @@ import {
 } from '../../types';
 import { encodeFeedbackCode } from '../../utils/shareCode';
 import { encodeRubricShareCode } from '../../utils/rubricImport';
+import { useTTS } from '../../hooks/useTTS';
+
+// StudentFeedbackPage's read-aloud controls (#886) depend on window.speechSynthesis, which jsdom
+// doesn't implement — force an 'idle' status so those controls render instead of silently bailing.
+vi.mock('../../hooks/useTTS', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../hooks/useTTS')>();
+    return { ...actual, useTTS: vi.fn() };
+});
+vi.mocked(useTTS).mockReturnValue({
+    status: 'idle',
+    charIndex: 0,
+    totalChars: 0,
+    speak: vi.fn(),
+    pause: vi.fn(),
+    resume: vi.fn(),
+    stop: vi.fn(),
+});
 
 // ─── Test data ───────────────────────────────────────────────────────────────
 
@@ -435,6 +452,11 @@ describe('StudentFeedbackPage — valid feedback code', () => {
     it('renders overall comment', () => {
         renderPage(<StudentFeedbackPage />, `/feedback/${validCode}`, '/feedback/:code');
         expect(screen.getByText('Good work overall')).toBeInTheDocument();
+    });
+
+    it('offers a read-aloud control for both the criterion comment and the overall comment (#886)', () => {
+        renderPage(<StudentFeedbackPage />, `/feedback/${validCode}`, '/feedback/:code');
+        expect(screen.getAllByRole('button', { name: 'tts.read_aloud' })).toHaveLength(2);
     });
 
     it('falls back to the invalid-link view when no code is provided', () => {

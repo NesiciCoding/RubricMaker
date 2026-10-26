@@ -80,6 +80,9 @@ export default function PassageReadAloud({ contentHtml, lang }: PassageReadAloud
                     <div style={{ width: `${progressPct}%`, height: '100%', background: 'var(--accent)' }} />
                 </div>
             )}
+            <span role="status" aria-live="polite" className="sr-only">
+                {status === 'speaking' ? t('tts.now_reading') : status === 'paused' ? t('tts.reading_paused') : ''}
+            </span>
         </div>
     );
 }
