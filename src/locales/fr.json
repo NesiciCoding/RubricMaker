@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Grammaire",
         "snapshot_header_vocabulary": "Vocabulaire",
         "snapshot_header_needs_attention": "À surveiller",
-        "snapshot_open_cefr": "Ouvrir l'aperçu CECR de {{name}}",
+        "snapshot_open_cefr": "{{level}} : ouvrir l'aperçu CECR de {{name}}",
         "snapshot_open_grammar": "Ouvrir le parcours d'apprentissage de {{name}}",
         "snapshot_open_vocab": "Ouvrir le profil de {{name}}",
         "snapshot_open_profile": "Ouvrir le profil de {{name}}",
@@ -1075,6 +1075,8 @@
                 "scores_col": "Points",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Catégories",
+                "question_image_alt": "Image de la question",
+                "option_image_alt": "Image de l'option",
                 "recorded_answer_note": "Réponse enregistrée — aucune réponse écrite nécessaire.",
                 "audio_note": "Écoutez l’enregistrement.",
                 "point_label_one": "{{count}} pt",
@@ -2979,7 +2981,7 @@
         "open_panel": "Analyser le document de l'élève"
     },
     "notifications": {
-        "bell_title": "Notifications ({{count}} en retard)",
+        "bell_title": "Notifications : {{count}} en retard",
         "panel_title": "Corrections en retard",
         "panel_label": "Panneau de notifications",
         "all_up_to_date": "Aucun test ou essai rendu n'attend d'être corrigé depuis plus de {{threshold}} jours.",
@@ -3092,7 +3094,9 @@
         "pause": "Pause",
         "resume": "Reprendre",
         "stop": "Arrêter",
-        "progress": "Progression de lecture"
+        "progress": "Progression de lecture",
+        "now_reading": "Lecture à voix haute en cours…",
+        "reading_paused": "Lecture en pause"
     },
     "onboarding": {
         "title": "Bienvenue sur RubricMaker",
@@ -3817,6 +3821,8 @@
         "gr_portal_intro_suffix": "de la page Élèves, ou laissez l'élève se connecter lui-même (OTP par e-mail ou mot de passe défini par l'enseignant) — également accessible directement à",
         "gr_portal_work_title": "Mon travail",
         "gr_portal_work_body": "Une liste de tâches combinant chaque essai et test attribués, regroupés en En retard, Prévu et Terminé. Chaque élément affiche son statut (non commencé, en cours, soumis) et sa date limite lorsque l'enseignant en a défini une. Les tests s'ouvrent en un clic depuis la liste — plus besoin de retrouver un lien de code d'accès.",
+        "gr_portal_read_aloud_title": "Lire la rétroaction à voix haute",
+        "gr_portal_read_aloud_body": "Chaque commentaire de l'enseignant — le commentaire sur un critère et le commentaire général — a un bouton « Lire à voix haute » à côté, utilisant la voix intégrée du navigateur. Cela fonctionne hors ligne une fois le portail chargé, n'envoie aucun audio, et est aussi disponible sur un lien de rétroaction partagé (/feedback/:code). Utile pour les élèves plus jeunes, les apprenants d'une langue seconde, ou toute personne préférant écouter plutôt que lire.",
         "gr_portal_progress_title": "Ma progression",
         "gr_portal_progress_body": "Un graphique radar des propres scores de l'élève par critère, combiné sur tous les référentiels évalués (les critères de même nom sont moyennés) ou filtré sur un seul référentiel — affiché dès qu'au moins 3 critères distincts ont été évalués.",
         "gr_portal_messages_title": "Messages",

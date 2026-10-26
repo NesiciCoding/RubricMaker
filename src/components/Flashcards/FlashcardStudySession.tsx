@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { RotateCcw, PartyPopper, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { FlashcardCard, FlashcardCardState, FlashcardDeck } from '../../types';
@@ -24,6 +24,7 @@ const RATING_BUTTONS: { rating: FlashcardRating; labelKey: string; color: string
 
 export default function FlashcardStudySession({ deck, initialStates, onStatesChange, onExit }: Props) {
     const { t } = useTranslation();
+    const showAnswerId = useId();
     const initialQueue = useMemo(() => {
         const review = { id: '', deckId: deck.id, studentId: '', cardStates: initialStates, updatedAt: '' };
         const q = buildStudyQueue(deck, review);
@@ -144,7 +145,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                         ? {
                               role: 'button' as const,
                               tabIndex: 0,
-                              'aria-label': t('flashcards.show_answer'),
+                              'aria-describedby': showAnswerId,
                               onKeyDown: (e: React.KeyboardEvent) => {
                                   if (e.key === 'Enter' || e.key === ' ') {
                                       e.preventDefault();
@@ -214,6 +215,7 @@ export default function FlashcardStudySession({ deck, initialStates, onStatesCha
                     ) : (
                         <div style={{ textAlign: 'center' }}>
                             <button
+                                id={showAnswerId}
                                 type="button"
                                 className="btn btn-primary"
                                 onClick={() => setRevealed(true)}

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { usePortalFeedbackAudioSrc } from '../../hooks/usePortalFeedbackAudioSrc';
+import PassageReadAloud from '../Tests/PassageReadAloud';
 import type { Rubric, ScoreEntry } from '../../types';
 
 function CriterionAudio({
@@ -37,7 +38,7 @@ export function PortalCriterionFeedback({
     entries: ScoreEntry[];
     studentRubricId: string;
 }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const rows = rubric.criteria
         .map((criterion) => {
             const entry = entries.find((e) => e.criterionId === criterion.id);
@@ -80,7 +81,12 @@ export function PortalCriterionFeedback({
                     {level?.description && (
                         <div style={{ color: 'var(--text-muted)', marginTop: 4 }}>{level.description}</div>
                     )}
-                    {entry?.comment && <div style={{ marginTop: 4 }}>{entry.comment}</div>}
+                    {entry?.comment && (
+                        <>
+                            <PassageReadAloud contentHtml={entry.comment} lang={i18n.language} />
+                            <div style={{ marginTop: 4 }}>{entry.comment}</div>
+                        </>
+                    )}
                     {entry && (
                         <CriterionAudio
                             studentRubricId={studentRubricId}
