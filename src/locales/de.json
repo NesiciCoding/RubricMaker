@@ -4744,7 +4744,8 @@
         "warn_untitled_row": "Eine Zeile mit Stufentext, aber ohne Kriteriumstitel (eine verbundene Zelle?), wurde übersprungen.",
         "warn_cell_count": "Die Zeile „{{title}}“ hat {{found}} Stufenzellen, die Kopfzeile aber {{expected}} Stufen — prüfen Sie die Beschreibungen.",
         "warn_weights_scaled": "Die Gewichtungen der Kriterien ergaben zusammen {{total}} % und wurden auf 100 % umgerechnet.",
-        "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt."
+        "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt.",
+        "warn_json_tiered_invalid": "Die Einstellungen der Stufenrubrik in der Datei sind unvollständig oder ungültig; sie wurde als gewöhnliche Rubrik importiert."
     },
     "standardsPicker": {
         "title": "Standard verknüpfen",
