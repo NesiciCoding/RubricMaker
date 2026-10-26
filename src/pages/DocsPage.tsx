@@ -1434,6 +1434,12 @@ function GradingTab() {
                     {t('docs.gr_portal_work_body')}
                 </p>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
+                    {t('docs.gr_portal_read_aloud_title')}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>
+                    {t('docs.gr_portal_read_aloud_body')}
+                </p>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', margin: '16px 0 8px' }}>
                     {t('docs.gr_portal_progress_title')}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 8 }}>

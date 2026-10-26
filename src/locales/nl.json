@@ -1075,6 +1075,8 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categorieën",
+                "question_image_alt": "Afbeelding bij vraag",
+                "option_image_alt": "Afbeelding bij optie",
                 "recorded_answer_note": "Opgenomen antwoord — geen geschreven antwoord nodig.",
                 "audio_note": "Luister naar de opname.",
                 "point_label_one": "{{count}}p",
@@ -3279,7 +3281,9 @@
         "pause": "Pauzeer voorlezen",
         "resume": "Hervatten",
         "stop": "Stop",
-        "progress": "Leesvoortgang"
+        "progress": "Leesvoortgang",
+        "now_reading": "Voorlezen…",
+        "reading_paused": "Voorlezen gepauzeerd"
     },
     "essay": {
         "email_gate_title": "Voer je schoole-mailadres in",
@@ -3817,6 +3821,8 @@
         "gr_portal_intro_suffix": "op de leerlingenpagina, of laat de leerling zelf inloggen (e-mail-OTP of een door de docent ingesteld wachtwoord) — ook rechtstreeks bereikbaar via",
         "gr_portal_work_title": "Mijn werk",
         "gr_portal_work_body": "Een gecombineerde takenlijst van elk toegewezen essay en elke toets, gegroepeerd in Te laat, Gepland en Voltooid. Elk item toont de status (nog niet begonnen, bezig, ingediend) en de deadline indien de docent die heeft ingesteld. Toetsen openen met één klik vanuit de lijst — geen link met toetscode meer nodig.",
+        "gr_portal_read_aloud_title": "Feedback laten voorlezen",
+        "gr_portal_read_aloud_body": "Bij elk stukje feedback van de docent — de opmerking bij een afzonderlijk criterium en de algemene opmerking — staat een knop 'Voorlezen', die de ingebouwde stem van de browser gebruikt. Dit werkt offline zodra het portaal geladen is, verstuurt geen audio, en is ook beschikbaar via een gedeelde feedbacklink (/feedback/:code). Handig voor jongere leerlingen, taalleerders, of iedereen die liever luistert dan leest.",
         "gr_portal_progress_title": "Mijn voortgang",
         "gr_portal_progress_body": "Een radargrafiek van de eigen scores per criterium van de leerling, gecombineerd over alle beoordeelde rubrics (criteria met dezelfde naam worden gemiddeld) of gefilterd op één rubric — zichtbaar zodra er minstens 3 verschillende beoordeelde criteria zijn.",
         "gr_portal_messages_title": "Berichten",

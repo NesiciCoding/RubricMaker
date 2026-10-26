@@ -105,7 +105,7 @@ function questionBodyHtml(
 
     if (question.audioUrl) extra += audioNoteHtml();
     if (question.imageUrl) {
-        extra += `<div style="margin:8px 0"><img src="${escapeHtml(question.imageUrl)}" style="max-width:100%;max-height:220px" /></div>`;
+        extra += `<div style="margin:8px 0"><img src="${escapeHtml(question.imageUrl)}" alt="${escapeHtml(tx('question_image_alt'))}" style="max-width:100%;max-height:220px" /></div>`;
     }
 
     switch (question.type) {
@@ -116,7 +116,7 @@ function questionBodyHtml(
                     (o, i) =>
                         `<div style="margin:3px 0"><strong>${optionLetter(i)}</strong>&nbsp;&nbsp;${escapeHtml(o.text)}${
                             o.imageUrl
-                                ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" style="max-width:100%;max-height:120px" /></div>`
+                                ? `<div style="margin:4px 0 4px 22px"><img src="${escapeHtml(o.imageUrl)}" alt="${o.text ? '' : escapeHtml(tx('option_image_alt'))}" style="max-width:100%;max-height:120px" /></div>`
                                 : ''
                         }</div>`
                 )

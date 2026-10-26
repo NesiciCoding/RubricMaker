@@ -1075,6 +1075,8 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categories",
+                "question_image_alt": "Question image",
+                "option_image_alt": "Option image",
                 "recorded_answer_note": "Recorded answer — no written response needed.",
                 "audio_note": "Listen to the recording.",
                 "point_label_one": "{{count}} pt",
@@ -3279,7 +3281,9 @@
         "pause": "Pause reading",
         "resume": "Resume reading",
         "stop": "Stop reading",
-        "progress": "Reading progress"
+        "progress": "Reading progress",
+        "now_reading": "Reading aloud…",
+        "reading_paused": "Reading paused"
     },
     "essay": {
         "email_gate_title": "Enter your school email",
@@ -3815,6 +3819,8 @@
         "gr_portal_intro_suffix": "button on the Students page, or let the student log in themselves (email OTP or a teacher-set password) — it's also reachable directly at",
         "gr_portal_work_title": "My Work",
         "gr_portal_work_body": "A combined to-do list of every assigned essay and test, grouped into Overdue, Planned, and Completed. Each item shows its status (not started, in progress, submitted) and due date where the teacher set one. Tests open in one click from the list — no need to hunt down a share-code link.",
+        "gr_portal_read_aloud_title": "Read feedback aloud",
+        "gr_portal_read_aloud_body": "Every piece of teacher feedback — the comment on a single criterion and the overall comment — has a \"Read aloud\" button next to it, using the browser's own built-in voice. It works offline once the portal is loaded, sends no audio anywhere, and is also available on a shared feedback link (/feedback/:code). Helpful for younger students, second-language learners, or anyone who'd rather listen than read.",
         "gr_portal_progress_title": "My Progress",
         "gr_portal_progress_body": "A radar chart of the student's own per-criterion scores, either combined across every rubric they've been graded on (criteria with the same name are averaged together) or filtered to a single rubric — shown once they have at least 3 distinct graded criteria.",
         "gr_portal_messages_title": "Messages",

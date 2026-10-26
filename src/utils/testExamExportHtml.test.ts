@@ -100,6 +100,22 @@ describe('booklet images and cloze layout', () => {
         expect(html.match(/class="exam-rich"/g)?.length).toBe(2);
     });
 
+    it('gives the question image a fixed alt label and the option image an empty alt when the option already has text', () => {
+        const test = makeTest();
+        test.questions[0].imageUrl = 'data:image/png;base64,DDD';
+        test.questions[0].options![0].imageUrl = 'data:image/png;base64,CCC';
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('src="data:image/png;base64,DDD" alt="Question image"');
+        expect(html).toContain('src="data:image/png;base64,CCC" alt=""');
+    });
+
+    it('falls back to a translated alt label for an option image when the option has no text', () => {
+        const test = makeTest();
+        test.questions[0].options![0] = { id: 'o1', text: '', isCorrect: true, imageUrl: 'data:image/png;base64,CCC' };
+        const html = buildExamBookletHtml(test, DEFAULT_EXAM_EXPORT_OPTIONS);
+        expect(html).toContain('src="data:image/png;base64,CCC" alt="Option image"');
+    });
+
     it('keeps paragraph breaks in cloze questions', () => {
         const test = makeTest();
         test.questions[0] = {

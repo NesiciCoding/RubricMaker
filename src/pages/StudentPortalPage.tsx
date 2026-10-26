@@ -27,6 +27,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import Avatar from '../components/ui/Avatar';
 import LanguageSelect from '../components/ui/LanguageSelect';
+import PassageReadAloud from '../components/Tests/PassageReadAloud';
 import PageTour from '../components/Tour/PageTour';
 import { STATUS } from 'react-joyride';
 import type { EventData } from 'react-joyride';
@@ -1504,18 +1505,20 @@ export default function StudentPortalPage() {
                                         )}
                                     </div>
                                     {h.sr.overallComment && (
-                                        <div
-                                            style={{
-                                                marginTop: 8,
-                                                fontSize: '0.82rem',
-                                                color: 'var(--text-muted)',
-                                                display: 'flex',
-                                                gap: 6,
-                                                alignItems: 'flex-start',
-                                            }}
-                                        >
-                                            <MessageSquare size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-                                            <span>{h.sr.overallComment}</span>
+                                        <div style={{ marginTop: 8 }}>
+                                            <PassageReadAloud contentHtml={h.sr.overallComment} lang={i18n.language} />
+                                            <div
+                                                style={{
+                                                    fontSize: '0.82rem',
+                                                    color: 'var(--text-muted)',
+                                                    display: 'flex',
+                                                    gap: 6,
+                                                    alignItems: 'flex-start',
+                                                }}
+                                            >
+                                                <MessageSquare size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                                                <span>{h.sr.overallComment}</span>
+                                            </div>
                                         </div>
                                     )}
                                     <PortalCriterionFeedback

@@ -6,6 +6,7 @@ import { decodeFeedbackCode } from '../utils/shareCode';
 import { calcGradeSummary } from '../utils/gradeCalc';
 import { safeAudioDataUrl } from '../utils/safeUrl';
 import { SharedPageShell, SharedPageInvalid, sharedCardStyle } from '../components/ui/SharedPageShell';
+import PassageReadAloud from '../components/Tests/PassageReadAloud';
 
 export default function StudentFeedbackPage() {
     const { code } = useParams<{ code: string }>();
@@ -229,20 +230,23 @@ export default function StudentFeedbackPage() {
                         </ul>
 
                         {entry?.comment && (
-                            <div
-                                style={{
-                                    marginTop: 8,
-                                    padding: '10px 14px',
-                                    background: 'var(--bg-elevated)',
-                                    borderRadius: 8,
-                                    borderInlineStart: `3px solid ${accentColor}`,
-                                    fontSize: '0.9rem',
-                                    color: 'var(--text)',
-                                    lineHeight: 1.6,
-                                }}
-                            >
-                                {entry.comment}
-                            </div>
+                            <>
+                                <PassageReadAloud contentHtml={entry.comment} lang={i18n.language} />
+                                <div
+                                    style={{
+                                        marginTop: 8,
+                                        padding: '10px 14px',
+                                        background: 'var(--bg-elevated)',
+                                        borderRadius: 8,
+                                        borderInlineStart: `3px solid ${accentColor}`,
+                                        fontSize: '0.9rem',
+                                        color: 'var(--text)',
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {entry.comment}
+                                </div>
+                            </>
                         )}
                         {audioSrc && (
                             <div style={{ marginTop: 8 }}>
@@ -269,6 +273,7 @@ export default function StudentFeedbackPage() {
                     >
                         {t('sharedFeedback.overall_feedback')}
                     </h2>
+                    <PassageReadAloud contentHtml={sr.overallComment} lang={i18n.language} />
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text)', lineHeight: 1.6 }}>
                         {sr.overallComment}
                     </p>
