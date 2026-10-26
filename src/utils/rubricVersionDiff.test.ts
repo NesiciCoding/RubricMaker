@@ -120,6 +120,16 @@ describe('diffRubricVersions', () => {
         expect(diff[0].levelDiffs[0].fieldChanges.map((c) => c.field)).toEqual(['label', 'description', 'subItems']);
     });
 
+    it('detects a sub-item mode change, reading a missing mode as points', () => {
+        const from = makeSnapshot([makeCriterion('c1')]);
+        const to = makeSnapshot([makeCriterion('c1', { subItemMode: 'checklist' })]);
+        expect(diffRubricVersions(from, to)[0].fieldChanges).toEqual([
+            { field: 'subItemMode', from: 'points', to: 'checklist' },
+        ]);
+        const explicit = makeSnapshot([makeCriterion('c1', { subItemMode: 'points' })]);
+        expect(diffRubricVersions(from, explicit)).toEqual([]);
+    });
+
     it('detects a criterion description change', () => {
         const from = makeSnapshot([makeCriterion('c1', { description: 'old desc' })]);
         const to = makeSnapshot([makeCriterion('c1', { description: 'new desc' })]);

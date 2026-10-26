@@ -70,6 +70,7 @@ import TiptapEditor, { type TiptapEditorHandle } from '../components/Editor/Tipt
 import type { ScoreEntry, Modifier, EssayAssignment, CommentBankItem } from '../types';
 import type { DbUser } from '../services/database';
 import { calcGradeSummary, orderedLevels as sharedOrderedLevels, patchScoreEntry } from '../utils/gradeCalc';
+import { subItemMode } from '../utils/subItems';
 import { mergeEditsOntoSavedGrade } from '../utils/hydratedGradeMerge';
 import { stripCommentHtml } from '../utils/exportDataPrep';
 import { getCriterionInterventionFlags } from '../utils/learningPathAggregator';
@@ -298,16 +299,27 @@ export default function GradeStudent() {
     // Stable identity (functional setState guards on prev, so no `sr` dep needed) — a changing
     // updateEntry identity would defeat React.memo on any extracted criterion card and forces the
     // comment editor / grid rows to reconcile on every keystroke.
-    const updateEntry = useCallback((criterionId: string, patch: Partial<ScoreEntry>) => {
-        setSr((prev) => {
-            // sr is never null here: the early return above gates every render path
-            /* v8 ignore next -- sr is non-null whenever this callback can run */
-            if (!prev) return prev;
-            const entries = prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e));
-            return { ...prev, entries };
-        });
-        setIsDirty(true);
-    }, []);
+    // Changes only when the rubric does (save, version switch), never per keystroke.
+    const checklistCriteria = useMemo(
+        () => new Set((rubric?.criteria ?? []).filter((c) => subItemMode(c) === 'checklist').map((c) => c.id)),
+        [rubric]
+    );
+    const updateEntry = useCallback(
+        (criterionId: string, patch: Partial<ScoreEntry>) => {
+            const mode = checklistCriteria.has(criterionId) ? 'checklist' : 'points';
+            setSr((prev) => {
+                // sr is never null here: the early return above gates every render path
+                /* v8 ignore next -- sr is non-null whenever this callback can run */
+                if (!prev) return prev;
+                const entries = prev.entries.map((e) =>
+                    e.criterionId === criterionId ? patchScoreEntry(e, patch, mode) : e
+                );
+                return { ...prev, entries };
+            });
+            setIsDirty(true);
+        },
+        [checklistCriteria]
+    );
 
     const summary = useMemo(() => {
         if (!sr || !rubric) return null;

@@ -1981,7 +1981,10 @@
         "criteria_count_one": "{{count}} critère",
         "criteria_count_other": "{{count}} critères",
         "name_required": "Le nom de la grille est obligatoire.",
-        "standards_modal_desc": "Pour lier des normes scolaires, vous avez besoin d'une <2>clé API Common Standards Project</2>."
+        "standards_modal_desc": "Pour lier des normes scolaires, vous avez besoin d'une <2>clé API Common Standards Project</2>.",
+        "diff_field_subItemMode": "Mode des sous-éléments",
+        "sub_item_mode_points": "Points",
+        "sub_item_mode_checklist": "Liste de contrôle"
     },
     "peerReview": {
         "round_label": "Tour",

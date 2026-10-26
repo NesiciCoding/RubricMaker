@@ -20,6 +20,7 @@ import { SCHOOL_YEAR_LABELS } from '../data/schoolYears';
 import { nanoid } from '../utils/nanoid';
 import { useTranslation } from 'react-i18next';
 import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
+import { subItemMode } from '../utils/subItems';
 import { countMatchupsPerStudent, pickNextMatchupPair } from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry } from '../types';
@@ -385,6 +386,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         if (!criteria || criteria.levels.length === 0) return;
 
         const sortedLevels = [...criteria.levels].sort((l1, l2) => (l1.minPoints || 0) - (l2.minPoints || 0));
+        const mode = subItemMode(criteria);
         const entryA = srA.entries.find((e) => e.criterionId === criterionId)!;
         const entryB = srB.entries.find((e) => e.criterionId === criterionId)!;
 
@@ -424,7 +426,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             ...srA,
             entries: srA.entries.map((e) =>
                 e.criterionId === criterionId
-                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined })
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxA].id, overridePoints: undefined }, mode)
                     : e
             ),
         });
@@ -432,7 +434,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
             ...srB,
             entries: srB.entries.map((e) =>
                 e.criterionId === criterionId
-                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined })
+                    ? patchScoreEntry(e, { levelId: sortedLevels[idxB].id, overridePoints: undefined }, mode)
                     : e
             ),
         });
@@ -446,16 +448,20 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         (isA: boolean, criterionId: string, patch: Partial<ScoreEntry>) => {
             const setter = isA ? setSrA : setSrB;
             setIsDirty(true);
+            const criterion = rubric?.criteria.find((c) => c.id === criterionId);
+            const mode = criterion ? subItemMode(criterion) : 'points';
             setter((prev) => {
                 // v8 ignore next 1 -- updateEntry only runs from session controls while both SRs are set
                 if (!prev) return prev;
                 return {
                     ...prev,
-                    entries: prev.entries.map((e) => (e.criterionId === criterionId ? patchScoreEntry(e, patch) : e)),
+                    entries: prev.entries.map((e) =>
+                        e.criterionId === criterionId ? patchScoreEntry(e, patch, mode) : e
+                    ),
                 };
             });
         },
-        [setSrA, setSrB]
+        [setSrA, setSrB, rubric]
     );
 
     function setSubItemScore(isA: boolean, criterionId: string, subItemId: string, score: number) {

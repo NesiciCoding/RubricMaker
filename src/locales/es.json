@@ -1981,7 +1981,10 @@
         "criteria_count_one": "{{count}} criterio",
         "criteria_count_other": "{{count}} criterios",
         "name_required": "El nombre de la rúbrica es obligatorio.",
-        "standards_modal_desc": "Para vincular estándares académicos necesita una <2>clave API de Common Standards Project</2>."
+        "standards_modal_desc": "Para vincular estándares académicos necesita una <2>clave API de Common Standards Project</2>.",
+        "diff_field_subItemMode": "Modo de subelementos",
+        "sub_item_mode_points": "Puntos",
+        "sub_item_mode_checklist": "Lista de verificación"
     },
     "peerReview": {
         "round_label": "Ronda",

@@ -1981,7 +1981,10 @@
         "criteria_count_one": "{{count}} criterion",
         "criteria_count_other": "{{count}} criteria",
         "name_required": "Rubric name is required.",
-        "standards_modal_desc": "To link academic standards you need a <2>Common Standards Project API key</2>."
+        "standards_modal_desc": "To link academic standards you need a <2>Common Standards Project API key</2>.",
+        "diff_field_subItemMode": "Sub-item mode",
+        "sub_item_mode_points": "Points",
+        "sub_item_mode_checklist": "Checklist"
     },
     "peerReview": {
         "round_label": "Round",

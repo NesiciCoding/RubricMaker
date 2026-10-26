@@ -1981,7 +1981,10 @@
         "criteria_count_one": "{{count}} criterium",
         "criteria_count_other": "{{count}} criteria",
         "name_required": "Een rubricnaam is verplicht.",
-        "standards_modal_desc": "Om onderwijsstandaarden te koppelen hebt u een <2>Common Standards Project API-sleutel</2> nodig."
+        "standards_modal_desc": "Om onderwijsstandaarden te koppelen hebt u een <2>Common Standards Project API-sleutel</2> nodig.",
+        "diff_field_subItemMode": "Modus sub-items",
+        "sub_item_mode_points": "Punten",
+        "sub_item_mode_checklist": "Checklist"
     },
     "peerReview": {
         "round_label": "Ronde",

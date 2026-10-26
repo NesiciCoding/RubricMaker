@@ -137,6 +137,13 @@ export interface GrammarCategory {
 }
 
 /** A single item inside a level — awarded via checkbox or scored via points */
+/**
+ * How a criterion's sub-items are used. 'points': each sub-item scores, added to the level's base points
+ * and capped to the level's range. 'checklist': sub-items are evidence statements the teacher ticks; they never
+ * change the score and stay ticked when the level changes.
+ */
+export type SubItemMode = 'points' | 'checklist';
+
 export interface SubItem {
     id: string;
     label: string;
@@ -201,6 +208,8 @@ export interface RubricCriterion {
     cefrSkill?: CefrSkill;
     /** When group-graded (StudentRubric.groupId), unset/true fans this criterion's entry out to every group member; false keeps it individually scored per student. */
     collaborative?: boolean;
+    /** Undefined means 'points', the behaviour of every criterion created before modes existed. */
+    subItemMode?: SubItemMode;
 }
 
 export type GradeScaleType = 'letter' | 'percentage' | 'points' | 'pass-fail' | 'custom';

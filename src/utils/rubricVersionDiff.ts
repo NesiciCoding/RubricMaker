@@ -1,9 +1,10 @@
 import type { Rubric, RubricCriterion, RubricLevel } from '../types';
+import { subItemMode } from './subItems';
 
 export type DiffStatus = 'added' | 'removed' | 'changed';
 
 export interface FieldChange {
-    field: 'title' | 'weight' | 'description' | 'label' | 'points' | 'subItems';
+    field: 'title' | 'weight' | 'description' | 'label' | 'points' | 'subItems' | 'subItemMode';
     from: string;
     to: string;
 }
@@ -70,6 +71,9 @@ function diffCriterion(
     if (a.title !== b.title) fieldChanges.push({ field: 'title', from: a.title, to: b.title });
     if (a.weight !== b.weight) fieldChanges.push({ field: 'weight', from: String(a.weight), to: String(b.weight) });
     if (a.description !== b.description) fieldChanges.push({ field: 'description', from: '', to: '' });
+    if (subItemMode(a) !== subItemMode(b)) {
+        fieldChanges.push({ field: 'subItemMode', from: subItemMode(a), to: subItemMode(b) });
+    }
     return { fieldChanges, levelDiffs: diffLevels(a.levels, b.levels) };
 }
 

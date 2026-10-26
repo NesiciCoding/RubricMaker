@@ -8,7 +8,9 @@ import type {
     StudentRubric,
     Modifier,
     Rubric,
+    SubItemMode,
 } from '../types';
+import { scoresSubItems, subItemEarned } from './subItems';
 
 // ─── Score Calculation ─────────────────────────────────────────────────────────
 
@@ -53,25 +55,14 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
     // Iterating all levels would inflate the score with stale subItemScores
     // left over from previously selected levels (e.g. after comparative grading
     // changes a student's level, old scores must not carry over).
-    const subItemTotal = level.subItems.reduce((sum, si) => {
-        if (entry.subItemScores && entry.subItemScores[si.id] !== undefined) {
-            return sum + entry.subItemScores[si.id];
-        }
-        // Fallback for older rubrics/entries that used strict checkboxes
-        if (entry.checkedSubItems.includes(si.id)) {
-            return sum + (si.maxPoints ?? si.points ?? 0);
-        }
-        return sum;
-    }, 0);
+    const subItemTotal = level.subItems.reduce((sum, si) => sum + subItemEarned(entry, si), 0);
 
     // selectedPoints: teacher chosen value within [min, max] range
     const rangePoints = entry.selectedPoints ?? level.minPoints;
 
-    const hasAnySubItems = criterion.levels.some((l) => l.subItems.length > 0);
-
     // Both branches stay inside the selected level's range: a selectedPoints left over from a
     // previously selected level must not score below the new level's minimum.
-    if (hasAnySubItems) {
+    if (scoresSubItems(criterion)) {
         return Math.max(level.minPoints, Math.min(subItemTotal + rangePoints, level.maxPoints));
     }
     return Math.max(level.minPoints, Math.min(level.maxPoints, rangePoints));
@@ -79,14 +70,19 @@ export function calcEntryPoints(entry: ScoreEntry, criterion: RubricCriterion): 
 
 /**
  * Merge a patch into a score entry. Choosing a different level drops the points picked
- * within the old level's range, so the card and the total never disagree.
+ * within the old level's range, so the card and the total never disagree. Checklist ticks
+ * are evidence across all levels and survive the change.
  */
-export function patchScoreEntry(entry: ScoreEntry, patch: Partial<ScoreEntry>): ScoreEntry {
+export function patchScoreEntry(
+    entry: ScoreEntry,
+    patch: Partial<ScoreEntry>,
+    mode: SubItemMode = 'points'
+): ScoreEntry {
     const next = { ...entry, ...patch };
     if ('levelId' in patch && patch.levelId !== entry.levelId) {
         if (!('selectedPoints' in patch)) next.selectedPoints = undefined;
         if (!('subItemScores' in patch)) next.subItemScores = undefined;
-        if (!('checkedSubItems' in patch)) next.checkedSubItems = [];
+        if (!('checkedSubItems' in patch) && mode === 'points') next.checkedSubItems = [];
     }
     return next;
 }

@@ -1981,7 +1981,10 @@
         "criteria_count_one": "{{count}} Kriterium",
         "criteria_count_other": "{{count}} Kriterien",
         "name_required": "Ein Rastername ist erforderlich.",
-        "standards_modal_desc": "Um Bildungsstandards zu verknüpfen, benötigen Sie einen <2>Common Standards Project API-Schlüssel</2>."
+        "standards_modal_desc": "Um Bildungsstandards zu verknüpfen, benötigen Sie einen <2>Common Standards Project API-Schlüssel</2>.",
+        "diff_field_subItemMode": "Teilelement-Modus",
+        "sub_item_mode_points": "Punkte",
+        "sub_item_mode_checklist": "Checkliste"
     },
     "peerReview": {
         "round_label": "Runde",
