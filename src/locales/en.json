@@ -4223,7 +4223,8 @@
         "gr_tiered_item_verdict": "The verdict is a band (e.g. IO, B or E), worked out from the points once every criterion is scored. Mark a requirement as Not met to give the lowest band, or pick a band under Set verdict to override it. The verdict replaces the grade-scale letter on the grade, in the student portal and on the student profile.",
         "gr_tiered_item_feedback": "Comparative grading and student feedback (portal and shared links) also show each student only their own tier's statements.",
         "an_export_item_tiered": "Tiered rubrics export (PDF, DOCX and template DOCX) in the layout of the paper sheet: requirements, a Student / Tier / Verdict bar, then per criterion a column per tier with each band's statements as checkboxes. A blank rubric prints every tier, in landscape and one criterion per page in DOCX. A graded rubric prints only the student's tier, with ticked statements, the chosen band per criterion, the requirements met or not, and the verdict. A table template only lends its header colour. The rubric preview in the builder and the shared preview link show the same layout.",
-        "gr_tiered_item_pairing": "Comparative grading pairs students within the same tier by default, so both are judged against the same statements, and shows each student's tier. Switch to pairing across tiers in the session (Pair: across tiers) or in the rubric's tiered setup; progress then counts every possible pair."
+        "gr_tiered_item_pairing": "Comparative grading pairs students within the same tier by default, so both are judged against the same statements, and shows each student's tier. Switch to pairing across tiers in the session (Pair: across tiers) or in the rubric's tiered setup; progress then counts every possible pair.",
+        "rb_import_export_item_tiered": "Import a tiered sheet — a Word or PDF rubric with a column per tier (e.g. Mavo / Havo / VWO), bands marked by a short code and colon (IO:, B:, E:) and their statements below — and it becomes a tiered rubric: tier columns, bands, requirements and every statement, with criterion names read from the table, the text beside it or a floating label. Tracks come from the column names and the year from the title or file name; the import preview shows the sheet and says what to check."
     },
     "studentProfile": {
         "tab_overview": "Overview",
@@ -4753,7 +4754,12 @@
         "warn_untitled_row": "A row with level text but no criterion title (a merged cell?) was skipped.",
         "warn_cell_count": "Row \"{{title}}\" has {{found}} level cells but the header has {{expected}} levels — check its descriptions.",
         "warn_weights_scaled": "Criterion weights added up to {{total}}% and were scaled to 100%.",
-        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others."
+        "warn_weights_partial": "Only some criteria state a weight; the remaining {{remaining}}% was split over the others.",
+        "tiered_detected": "Recognised as a tiered rubric: {{tiers}} tiers, {{bands}} bands and {{statements}} statements. Check the tiers' years and tracks in the builder.",
+        "warn_sheet_year": "The title names no school year, so the tiers are set to Jaar 1. Change the year in the builder if it's another.",
+        "warn_sheet_tier_names": "Some tier columns have no header, so they are named by year and track. Rename them in the builder.",
+        "warn_sheet_criterion_names": "Some criterion names could not be read and are numbered instead. Rename them in the builder.",
+        "warn_sheet_ligatures": "This PDF stores some letter pairs (like \"tt\", \"ft\" and \"ti\") as symbols. They were repaired, but check the statements for misread words."
     },
     "standardsPicker": {
         "title": "Link Standard",

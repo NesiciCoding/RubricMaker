@@ -4223,7 +4223,8 @@
         "gr_tiered_item_verdict": "Le verdict est une bande (p. ex. IO, B ou E), calculée d'après les points une fois chaque critère évalué. Marquez une exigence comme Non remplie pour donner la bande la plus faible, ou choisissez une bande sous Fixer le verdict pour l'imposer. Le verdict remplace la lettre de l'échelle de notes dans la note, le portail élève et le profil de l'élève.",
         "gr_tiered_item_feedback": "La notation comparative et les retours aux élèves (portail et liens partagés) n'affichent eux aussi que les énoncés du niveau de chaque élève.",
         "an_export_item_tiered": "Les grilles à niveaux différenciés s'exportent (PDF, DOCX et DOCX modèle) dans la mise en page de la feuille papier : exigences, une barre Élève / Niveau / Verdict, puis pour chaque critère une colonne par niveau avec les énoncés de chaque bande sous forme de cases à cocher. Une grille vierge affiche tous les niveaux, en paysage et un critère par page en DOCX. Une grille notée n'affiche que le niveau de l'élève, avec les énoncés cochés, la bande choisie par critère, les exigences remplies ou non et le verdict. Un modèle de tableau ne fournit que la couleur de l'en-tête. L'aperçu dans l'éditeur et le lien d'aperçu partagé montrent la même mise en page.",
-        "gr_tiered_item_pairing": "La notation comparative associe par défaut les élèves d'un même niveau, pour qu'ils soient évalués selon les mêmes énoncés, et affiche le niveau de chaque élève. Passez à l'association entre niveaux dans la session (Associer : entre niveaux) ou dans les réglages de niveaux de la grille ; la progression compte alors toutes les paires possibles."
+        "gr_tiered_item_pairing": "La notation comparative associe par défaut les élèves d'un même niveau, pour qu'ils soient évalués selon les mêmes énoncés, et affiche le niveau de chaque élève. Passez à l'association entre niveaux dans la session (Associer : entre niveaux) ou dans les réglages de niveaux de la grille ; la progression compte alors toutes les paires possibles.",
+        "rb_import_export_item_tiered": "Importez une feuille par niveaux — une grille Word ou PDF avec une colonne par niveau (p. ex. Mavo / Havo / VWO), des bandes marquées d'un code court suivi de deux-points (IO:, B:, E:) et leurs énoncés dessous — et elle devient une grille à niveaux différenciés : colonnes, bandes, exigences et tous les énoncés, avec les noms des critères lus dans le tableau, le texte voisin ou une étiquette flottante. Les filières viennent des noms de colonnes et l'année du titre ou du nom de fichier ; l'aperçu d'import montre la feuille et ce qu'il faut vérifier."
     },
     "studentProfile": {
         "tab_overview": "Aperçu",
@@ -4753,7 +4754,12 @@
         "warn_untitled_row": "Une ligne avec du texte de niveau mais sans titre de critère (une cellule fusionnée ?) a été ignorée.",
         "warn_cell_count": "La ligne « {{title}} » a {{found}} cellules de niveau alors que l'en-tête compte {{expected}} niveaux — vérifiez ses descriptions.",
         "warn_weights_scaled": "Les pondérations des critères totalisaient {{total}} % et ont été ramenées à 100 %.",
-        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres."
+        "warn_weights_partial": "Seuls certains critères indiquent une pondération ; les {{remaining}} % restants ont été répartis entre les autres.",
+        "tiered_detected": "Reconnue comme grille à niveaux différenciés : {{tiers}} niveaux, {{bands}} bandes et {{statements}} énoncés. Vérifiez les années et filières des niveaux dans l'éditeur.",
+        "warn_sheet_year": "Le titre n'indique pas d'année scolaire : les niveaux sont réglés sur Jaar 1. Changez l'année dans l'éditeur si besoin.",
+        "warn_sheet_tier_names": "Certaines colonnes de niveau n'ont pas d'en-tête et sont nommées d'après l'année et la filière. Renommez-les dans l'éditeur.",
+        "warn_sheet_criterion_names": "Certains noms de critères n'ont pas pu être lus et sont numérotés. Renommez-les dans l'éditeur.",
+        "warn_sheet_ligatures": "Ce PDF enregistre certaines paires de lettres (comme « tt », « ft » et « ti ») sous forme de symboles. Elles ont été réparées, mais vérifiez les énoncés."
     },
     "standardsPicker": {
         "title": "Associer une norme",

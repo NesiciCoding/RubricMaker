@@ -4223,7 +4223,8 @@
         "gr_tiered_item_verdict": "Das Urteil ist eine Stufe (z. B. IO, B oder E), berechnet aus den Punkten, sobald jedes Kriterium bewertet ist. Markiere eine Voraussetzung als Nicht erfüllt für die niedrigste Stufe, oder wähle unter Urteil festlegen eine Stufe, um es zu überschreiben. Das Urteil ersetzt die Note der Notenskala in der Bewertung, im Schülerportal und im Schülerprofil.",
         "gr_tiered_item_feedback": "Vergleichendes Bewerten und das Schülerfeedback (Portal und geteilte Links) zeigen jedem Schüler ebenfalls nur die Aussagen seines Niveaus.",
         "an_export_item_tiered": "Gestufte Bewertungsraster werden (PDF, DOCX und DOCX-Vorlage) im Layout des Papierbogens exportiert: Voraussetzungen, eine Leiste Schüler / Niveau / Urteil, dann pro Kriterium eine Spalte je Niveau mit den Aussagen jeder Stufe als Kontrollkästchen. Ein leeres Raster zeigt alle Niveaus, im Querformat und im DOCX ein Kriterium pro Seite. Ein bewertetes Raster zeigt nur das Niveau des Schülers, mit angekreuzten Aussagen, der gewählten Stufe je Kriterium, ob die Voraussetzungen erfüllt sind, und dem Urteil. Eine Tabellenvorlage liefert nur die Farbe der Kopfzeile. Die Vorschau im Editor und der geteilte Vorschaulink zeigen dasselbe Layout.",
-        "gr_tiered_item_pairing": "Vergleichendes Bewerten paart standardmäßig Schüler desselben Niveaus, damit beide an denselben Aussagen gemessen werden, und zeigt das Niveau jedes Schülers. Wechsle in der Sitzung (Paaren: über Niveaus hinweg) oder in den Niveau-Einstellungen des Rasters zum Paaren über Niveaus; der Fortschritt zählt dann alle möglichen Paare."
+        "gr_tiered_item_pairing": "Vergleichendes Bewerten paart standardmäßig Schüler desselben Niveaus, damit beide an denselben Aussagen gemessen werden, und zeigt das Niveau jedes Schülers. Wechsle in der Sitzung (Paaren: über Niveaus hinweg) oder in den Niveau-Einstellungen des Rasters zum Paaren über Niveaus; der Fortschritt zählt dann alle möglichen Paare.",
+        "rb_import_export_item_tiered": "Importiere einen gestuften Bogen — ein Word- oder PDF-Raster mit einer Spalte pro Niveau (z. B. Mavo / Havo / VWO), Stufen mit kurzem Kürzel und Doppelpunkt (IO:, B:, E:) und ihren Aussagen darunter — und er wird ein gestuftes Bewertungsraster: Niveauspalten, Stufen, Voraussetzungen und alle Aussagen, mit Kriteriennamen aus der Tabelle, dem Text daneben oder einem schwebenden Label. Zweige ergeben sich aus den Spaltennamen, das Jahr aus Titel oder Dateiname; die Importvorschau zeigt den Bogen und was zu prüfen ist."
     },
     "studentProfile": {
         "tab_overview": "Übersicht",
@@ -4753,7 +4754,12 @@
         "warn_untitled_row": "Eine Zeile mit Stufentext, aber ohne Kriteriumstitel (eine verbundene Zelle?), wurde übersprungen.",
         "warn_cell_count": "Die Zeile „{{title}}“ hat {{found}} Stufenzellen, die Kopfzeile aber {{expected}} Stufen — prüfen Sie die Beschreibungen.",
         "warn_weights_scaled": "Die Gewichtungen der Kriterien ergaben zusammen {{total}} % und wurden auf 100 % umgerechnet.",
-        "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt."
+        "warn_weights_partial": "Nur einige Kriterien nennen eine Gewichtung; die restlichen {{remaining}} % wurden auf die anderen verteilt.",
+        "tiered_detected": "Als gestuftes Bewertungsraster erkannt: {{tiers}} Niveaus, {{bands}} Stufen und {{statements}} Aussagen. Prüfe Jahrgänge und Zweige der Niveaus im Editor.",
+        "warn_sheet_year": "Der Titel nennt kein Schuljahr, daher stehen die Niveaus auf Jaar 1. Ändere das Jahr im Editor, falls es ein anderes ist.",
+        "warn_sheet_tier_names": "Einige Niveauspalten haben keine Überschrift und werden nach Jahr und Zweig benannt. Benenne sie im Editor um.",
+        "warn_sheet_criterion_names": "Einige Kriteriennamen konnten nicht gelesen werden und sind nummeriert. Benenne sie im Editor um.",
+        "warn_sheet_ligatures": "Diese PDF speichert manche Buchstabenpaare (wie „tt“, „ft“ und „ti“) als Symbole. Sie wurden repariert, prüfe die Aussagen aber auf falsch gelesene Wörter."
     },
     "standardsPicker": {
         "title": "Standard verknüpfen",

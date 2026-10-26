@@ -852,6 +852,7 @@ function RubricsTab() {
                     items={[
                         t('docs.rb_import_export_item_import'),
                         t('docs.rb_import_export_item_docx'),
+                        t('docs.rb_import_export_item_tiered'),
                         t('docs.rb_import_export_item_export'),
                         t('docs.rb_import_export_item_share_code'),
                     ]}

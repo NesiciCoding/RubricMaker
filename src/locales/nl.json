@@ -4223,7 +4223,8 @@
         "gr_tiered_item_verdict": "Het eindoordeel is een band (bijv. IO, B of E), berekend uit de punten zodra elk criterium is beoordeeld. Zet een voorwaarde op Niet voldaan voor de laagste band, of kies een band bij Eindoordeel kiezen om het te overschrijven. Het eindoordeel vervangt het cijfer van de cijferschaal bij de beoordeling, in het leerlingportaal en op het leerlingprofiel.",
         "gr_tiered_item_feedback": "Vergelijkend beoordelen en leerlingfeedback (portaal en gedeelde links) tonen elke leerling ook alleen de uitspraken van het eigen niveau.",
         "an_export_item_tiered": "Niveaurubrieken worden geëxporteerd (PDF, DOCX en DOCX-sjabloon) in de opmaak van het papieren formulier: voorwaarden, een balk met Leerling / Niveau / Eindoordeel, en per criterium een kolom per niveau met de uitspraken van elke band als selectievakjes. Een lege rubric toont alle niveaus, liggend en in DOCX één criterium per pagina. Een beoordeelde rubric toont alleen het niveau van de leerling, met aangevinkte uitspraken, de gekozen band per criterium, of de voorwaarden zijn gehaald, en het eindoordeel. Een tabelsjabloon levert alleen de kleur van de kopregel. De voorbeeldweergave in de bouwer en de gedeelde voorbeeldlink tonen dezelfde opmaak.",
-        "gr_tiered_item_pairing": "Vergelijkend beoordelen koppelt standaard leerlingen binnen hetzelfde niveau, zodat beiden langs dezelfde uitspraken worden beoordeeld, en toont het niveau van elke leerling. Kies koppelen over niveaus heen in de sessie (Koppelen: over niveaus heen) of in de niveau-instellingen van de rubric; de voortgang telt dan alle mogelijke paren."
+        "gr_tiered_item_pairing": "Vergelijkend beoordelen koppelt standaard leerlingen binnen hetzelfde niveau, zodat beiden langs dezelfde uitspraken worden beoordeeld, en toont het niveau van elke leerling. Kies koppelen over niveaus heen in de sessie (Koppelen: over niveaus heen) of in de niveau-instellingen van de rubric; de voortgang telt dan alle mogelijke paren.",
+        "rb_import_export_item_tiered": "Importeer een niveauformulier — een Word- of pdf-rubric met een kolom per niveau (bijv. Mavo / Havo / VWO), banden met een korte code en dubbele punt (IO:, B:, E:) en hun uitspraken daaronder — en het wordt een niveaurubriek: niveaukolommen, banden, voorwaarden en alle uitspraken, met criteriumnamen uit de tabel, de tekst ernaast of een zwevend label. Niveaus volgen uit de kolomnamen en het leerjaar uit de titel of bestandsnaam; de importvoorbeeldweergave toont het formulier en wat je moet controleren."
     },
     "studentProfile": {
         "tab_overview": "Overzicht",
@@ -4753,7 +4754,12 @@
         "warn_untitled_row": "Een rij met niveautekst maar zonder criteriumtitel (een samengevoegde cel?) is overgeslagen.",
         "warn_cell_count": "Rij \"{{title}}\" heeft {{found}} niveaucellen maar de kop heeft {{expected}} niveaus — controleer de beschrijvingen.",
         "warn_weights_scaled": "De wegingen van de criteria telden op tot {{total}}% en zijn omgerekend naar 100%.",
-        "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld."
+        "warn_weights_partial": "Alleen sommige criteria noemen een weging; de resterende {{remaining}}% is over de andere verdeeld.",
+        "tiered_detected": "Herkend als niveaurubriek: {{tiers}} niveaus, {{bands}} banden en {{statements}} uitspraken. Controleer de leerjaren en niveaus in de bouwer.",
+        "warn_sheet_year": "De titel noemt geen leerjaar, dus de niveaus staan op Jaar 1. Pas het leerjaar aan in de bouwer als dat niet klopt.",
+        "warn_sheet_tier_names": "Sommige niveaukolommen hebben geen kop en krijgen een naam op basis van leerjaar en niveau. Hernoem ze in de bouwer.",
+        "warn_sheet_criterion_names": "Sommige criteriumnamen konden niet worden gelezen en zijn genummerd. Hernoem ze in de bouwer.",
+        "warn_sheet_ligatures": "Deze pdf bewaart sommige lettercombinaties (zoals \"tt\", \"ft\" en \"ti\") als symbolen. Die zijn hersteld, maar controleer de uitspraken op verkeerd gelezen woorden."
     },
     "standardsPicker": {
         "title": "Standaard koppelen",

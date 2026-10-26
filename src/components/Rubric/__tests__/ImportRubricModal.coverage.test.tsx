@@ -272,3 +272,31 @@ describe('ImportRubricModal dropzone keyboard access (#703)', () => {
         expect(click).toHaveBeenCalledTimes(2);
     });
 });
+
+describe('ImportRubricModal — tiered sheet', () => {
+    it('previews a recognised tiered sheet as its sheet, a column per tier', async () => {
+        const { sheetRubric } = await import('../../../test-utils/tieredSheetRubric');
+        const rubric = sheetRubric();
+        const onImport = vi.fn();
+        mocks.parseDocxToRubric.mockResolvedValue({
+            name: rubric.name,
+            subject: '',
+            description: '',
+            criteria: rubric.criteria,
+            confidence: 'high',
+            warnings: [],
+            format: rubric.format,
+            tiered: rubric.tiered,
+        } satisfies ParsedRubric);
+        render(<ImportRubricModal onClose={vi.fn()} onImport={onImport} />);
+        fireEvent.drop(dropZone(), { dataTransfer: { files: [docxFile] } });
+
+        expect(
+            await screen.findByText(/Recognised as a tiered rubric: 3 tiers, 3 bands and 95 statements/)
+        ).toBeInTheDocument();
+        expect(screen.getAllByRole('heading', { name: 'Havo' })).toHaveLength(rubric.criteria.length);
+        expect(screen.getByRole('heading', { name: rubric.criteria[0].title })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /Create Rubric/ }));
+        expect(onImport).toHaveBeenCalledWith(expect.objectContaining({ tiered: rubric.tiered }));
+    });
+});

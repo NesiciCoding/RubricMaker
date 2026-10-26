@@ -26,6 +26,7 @@ vi.mock('pdfjs-dist', () => ({
         promise: Promise.resolve({
             numPages: 1,
             getPage: vi.fn().mockResolvedValue({
+                getViewport: () => ({ height: 800 }),
                 getTextContent: vi.fn().mockImplementation(() => Promise.resolve({ items: pdfTextItems.items })),
             }),
         }),
@@ -260,6 +261,66 @@ describe('rubricImport', () => {
             expect(result.criteria).toHaveLength(0);
             expect(result.confidence).toBe('low');
             expect(result.warnings[0].key).toBe('importRubric.warn_no_table');
+        });
+    });
+
+    describe('tiered sheets', () => {
+        it('imports a DOCX laid out as a tiered sheet as a tiered rubric', async () => {
+            const { parseDocxToRubric } = await import('./rubricImport');
+            const mammoth = await import('mammoth');
+            vi.mocked(mammoth.convertToHtml).mockResolvedValueOnce({
+                value:
+                    '<p>Essay klas 2</p><table><thead><tr><th>Onderdeel</th><th>Havo</th><th>VWO</th></tr></thead><tbody>' +
+                    '<tr><td rowspan="4">Content</td><td>IO:</td><td>IO:</td></tr>' +
+                    '<tr><td><p>Too short</p></td><td><p>Far too short</p></td></tr>' +
+                    '<tr><td>E:</td><td>E:</td></tr><tr><td><p>Rich</p></td><td><p>Very rich</p></td></tr></tbody></table>',
+                messages: [],
+            });
+            const result = await parseDocxToRubric(new File([''], 'essay.docx'));
+            expect(result.name).toBe('Essay klas 2');
+            expect(result.tiered!.tiers.map((t) => [t.year, t.track, t.label])).toEqual([
+                ['jaar-2', 'havo', 'Havo'],
+                ['jaar-2', 'vwo', 'VWO'],
+            ]);
+            expect(result.tiered!.bands.map((b) => b.code)).toEqual(['IO', 'E']);
+            expect(result.criteria[0].title).toBe('Content');
+            expect(result.criteria[0].levels.flatMap((l) => l.subItems.map((si) => si.label)).sort()).toEqual([
+                'Far too short',
+                'Rich',
+                'Too short',
+                'Very rich',
+            ]);
+        });
+
+        it('imports a PDF laid out as a tiered sheet from where its text sits', async () => {
+            const { parsePdfToRubric } = await import('./rubricImport');
+            // pdf.js y runs up from the bottom of an 800pt page.
+            const at = (str: string, x: number, top: number) => ({ str, transform: [1, 0, 0, 1, x, 800 - top] });
+            pdfTextItems.items = [
+                at('Toets jaar 3', 40, 40),
+                at('Havo', 200, 80),
+                at('VWO', 400, 80),
+                at('Lezen', 40, 100),
+                at('IO:', 200, 100),
+                at('IO:', 400, 100),
+                at('Leest traag', 200, 115),
+                at('Leest traag en', 400, 115),
+                at('onzeker', 400, 129),
+                at('B:', 200, 150),
+                at('B:', 400, 150),
+                at('Leest vlot', 200, 165),
+                at('Leest vloeiend', 400, 165),
+            ];
+            const result = await parsePdfToRubric(new File([''], 'toets.pdf'));
+            expect(result.name).toBe('Toets jaar 3');
+            expect(result.tiered!.tiers.map((t) => t.label)).toEqual(['Havo', 'VWO']);
+            expect(result.criteria.map((c) => c.title)).toEqual(['Lezen']);
+            const vwo = result.tiered!.tiers[1].id;
+            expect(
+                result.criteria[0].levels.flatMap((l) =>
+                    l.subItems.filter((si) => si.tierId === vwo).map((si) => si.label)
+                )
+            ).toEqual(['Leest vloeiend', 'Leest traag en onzeker']);
         });
     });
 
