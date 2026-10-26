@@ -75,4 +75,15 @@ describe('SubItemFeedback', () => {
         expect(screen.getByText('sharedFeedback.sub_item_points:{"score":0,"max":1}')).toBeInTheDocument();
         expect(screen.queryByText('Adds pictures')).toBeNull();
     });
+
+    it('leaves out sub-item scores when the teacher overrode the points, since they no longer add up', () => {
+        render(
+            <SubItemFeedback
+                criterion={criterion()}
+                entry={entry({ levelId: 'b', subItemScores: { b1: 1.5 }, overridePoints: 4 })}
+            />
+        );
+        expect(screen.getByText('30 words each')).toBeInTheDocument();
+        expect(screen.queryByText(/sharedFeedback.sub_item_points/)).toBeNull();
+    });
 });
