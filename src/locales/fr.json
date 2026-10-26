@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Grammaire",
         "snapshot_header_vocabulary": "Vocabulaire",
         "snapshot_header_needs_attention": "À surveiller",
-        "snapshot_open_cefr": "Ouvrir l'aperçu CECR de {{name}}",
+        "snapshot_open_cefr": "{{level}} : ouvrir l'aperçu CECR de {{name}}",
         "snapshot_open_grammar": "Ouvrir le parcours d'apprentissage de {{name}}",
         "snapshot_open_vocab": "Ouvrir le profil de {{name}}",
         "snapshot_open_profile": "Ouvrir le profil de {{name}}",
@@ -2979,7 +2979,7 @@
         "open_panel": "Analyser le document de l'élève"
     },
     "notifications": {
-        "bell_title": "Notifications ({{count}} en retard)",
+        "bell_title": "Notifications : {{count}} en retard",
         "panel_title": "Corrections en retard",
         "panel_label": "Panneau de notifications",
         "all_up_to_date": "Aucun test ou essai rendu n'attend d'être corrigé depuis plus de {{threshold}} jours.",

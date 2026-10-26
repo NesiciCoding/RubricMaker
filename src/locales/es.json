@@ -633,7 +633,7 @@
         "snapshot_header_grammar": "Gramática",
         "snapshot_header_vocabulary": "Vocabulario",
         "snapshot_header_needs_attention": "Necesita atención",
-        "snapshot_open_cefr": "Abrir el resumen MCER de {{name}}",
+        "snapshot_open_cefr": "{{level}}: abrir el resumen MCER de {{name}}",
         "snapshot_open_grammar": "Abrir la ruta de aprendizaje de {{name}}",
         "snapshot_open_vocab": "Abrir el perfil de {{name}}",
         "snapshot_open_profile": "Abrir el perfil de {{name}}",
@@ -2979,7 +2979,7 @@
         "open_panel": "Analizar el documento del alumno"
     },
     "notifications": {
-        "bell_title": "Notificaciones ({{count}} pendientes)",
+        "bell_title": "Notificaciones: {{count}} pendientes",
         "panel_title": "Calificaciones pendientes",
         "panel_label": "Panel de notificaciones",
         "all_up_to_date": "Ninguna prueba o ensayo entregado lleva más de {{threshold}} días esperando calificación.",

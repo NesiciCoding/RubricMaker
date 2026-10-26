@@ -257,7 +257,10 @@ export default function StudentSnapshotTable({
                                         type="button"
                                         style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
                                         onClick={() => navigate(`/students/${s.id}/cefr-overview`)}
-                                        aria-label={t('dashboard.snapshot_open_cefr', { name: s.name })}
+                                        aria-label={t('dashboard.snapshot_open_cefr', {
+                                            name: s.name,
+                                            level: cefrLevel.level,
+                                        })}
                                     >
                                         <CefrBadge
                                             level={cefrLevel.level}
