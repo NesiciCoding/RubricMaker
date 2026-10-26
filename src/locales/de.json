@@ -1075,6 +1075,8 @@
                 "scores_col": "Punkte",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Kategorien",
+                "question_image_alt": "Bild zur Frage",
+                "option_image_alt": "Bild zur Option",
                 "recorded_answer_note": "Aufgezeichnete Antwort — keine schriftliche Antwort erforderlich.",
                 "audio_note": "Hören Sie sich die Aufnahme an.",
                 "point_label_one": "{{count}} P.",

@@ -1075,6 +1075,8 @@
                 "scores_col": "Scores",
                 "max_score_short": "max. {{points}}",
                 "categories_label": "Categories",
+                "question_image_alt": "Question image",
+                "option_image_alt": "Option image",
                 "recorded_answer_note": "Recorded answer — no written response needed.",
                 "audio_note": "Listen to the recording.",
                 "point_label_one": "{{count}} pt",
