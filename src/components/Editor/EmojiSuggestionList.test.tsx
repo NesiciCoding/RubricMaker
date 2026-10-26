@@ -17,6 +17,12 @@ async function keyDown(ref: React.RefObject<EmojiSuggestionListRef | null>, key:
     return act(() => ref.current!.onKeyDown({ event } as unknown as SuggestionKeyDownProps));
 }
 
+// jsdom resolves var() in computed styles, so toHaveStyle can't match the unresolved
+// custom property — assert on the inline style instead.
+function expectSelected(title: string) {
+    expect(screen.getByTitle(title).style.background).toBe('var(--accent-soft)');
+}
+
 describe('EmojiSuggestionList', () => {
     it('renders a button per item with its shortcode as the title', () => {
         const command = vi.fn();
@@ -42,7 +48,7 @@ describe('EmojiSuggestionList', () => {
 
         // ArrowDown moves the selection from 0 to 1
         await expect(keyDown(ref, 'ArrowDown')).resolves.toBe(true);
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expectSelected(':heart:');
 
         // Enter confirms the selected (second) item
         await expect(keyDown(ref, 'Enter')).resolves.toBe(true);
@@ -56,11 +62,11 @@ describe('EmojiSuggestionList', () => {
 
         // ArrowUp from index 0 wraps to the last item
         await expect(keyDown(ref, 'ArrowUp')).resolves.toBe(true);
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expectSelected(':heart:');
 
         // ArrowDown from the last item wraps back to 0
         await expect(keyDown(ref, 'ArrowDown')).resolves.toBe(true);
-        expect(screen.getByTitle(':smile:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expectSelected(':smile:');
     });
 
     it('resets the selection to the first item when the item list changes', async () => {
@@ -68,7 +74,7 @@ describe('EmojiSuggestionList', () => {
         const ref = createRef<EmojiSuggestionListRef>();
         const { rerender } = render(<EmojiSuggestionList ref={ref} items={items} command={command} />);
         await keyDown(ref, 'ArrowDown');
-        expect(screen.getByTitle(':heart:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expectSelected(':heart:');
 
         rerender(
             <EmojiSuggestionList
@@ -81,7 +87,7 @@ describe('EmojiSuggestionList', () => {
                 command={command}
             />
         );
-        expect(screen.getByTitle(':smile:')).toHaveStyle({ background: 'var(--accent-soft)' });
+        expectSelected(':smile:');
     });
 
     it('renders nothing and ignores keys when there are no items', async () => {
