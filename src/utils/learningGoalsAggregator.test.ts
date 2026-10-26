@@ -257,6 +257,43 @@ describe('learningGoalsAggregator', () => {
         expect(results[0].totalMax).toBe(5);
     });
 
+    it("scores a grade in the sub-item mode it was given in, not the criterion's current mode", () => {
+        const level = {
+            id: 'l1',
+            label: 'L1',
+            minPoints: 0,
+            maxPoints: 10,
+            description: '',
+            subItems: [{ id: 'si1', label: 'Sub 1', points: 5, linkedStandards: [{ guid: 'std1', description: 'x' }] }],
+        };
+        const rubric = (subItemMode?: 'checklist') => ({
+            id: 'r1',
+            name: 'Rubric',
+            subject: 'Math',
+            description: '',
+            gradeScaleId: '1',
+            criteria: [{ id: 'c1', title: 'Crit 1', description: '', weight: 100, levels: [level], subItemMode }],
+        });
+        const studentRubrics: any[] = [
+            {
+                id: 'sr1',
+                rubricId: 'r1',
+                studentId: 's1',
+                overallComment: '',
+                gradedAt: '2023-01-01',
+                isPeerReview: false,
+                rubricSnapshot: rubric(),
+                entries: [
+                    { criterionId: 'c1', levelId: 'l1', checkedSubItems: [], subItemScores: { si1: 4 }, comment: '' },
+                ],
+            },
+        ];
+
+        const results = getStudentGoalScores('s1', studentRubrics, [rubric('checklist')] as any[]);
+        expect(results[0].totalEarned).toBe(4);
+        expect(results[0].totalMax).toBe(5);
+    });
+
     it('handles sub-item inheriting criterion standards', () => {
         const rubrics: any[] = [
             {

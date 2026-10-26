@@ -101,6 +101,9 @@ export function getStudentGoalScores(
             let criterionMax = 0;
 
             const selectedLevel = criterion.levels.find((l) => l.id === entry.levelId);
+            // The mode the grade was given in, so switching a criterion's mode later leaves its history alone.
+            const gradedMode = (submission.rubricSnapshot?.criteria.find((c) => c.id === criterion.id) ?? criterion)
+                .subItemMode;
 
             if (entry.overridePoints !== undefined) {
                 // If there's an override, we just have the override points vs max points of the criterion
@@ -119,7 +122,11 @@ export function getStudentGoalScores(
                     );
                     maxPointsPerStandard.set(std.guid, (maxPointsPerStandard.get(std.guid) || 0) + criterionMax);
                 });
-            } else if (selectedLevel && scoresSubItems(criterion) && (selectedLevel.subItems?.length ?? 0) > 0) {
+            } else if (
+                selectedLevel &&
+                scoresSubItems({ levels: criterion.levels, subItemMode: gradedMode }) &&
+                (selectedLevel.subItems?.length ?? 0) > 0
+            ) {
                 // Sub-items based scoring
                 selectedLevel.subItems.forEach((si) => {
                     const earned = subItemEarned(entry, si);
