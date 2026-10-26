@@ -72,6 +72,8 @@ export default function SubItemListEditor({
     }
 
     function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>, index: number) {
+        // Enter also confirms an IME candidate; that must not add a statement.
+        if (e.nativeEvent.isComposing) return;
         const si = items[index];
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();

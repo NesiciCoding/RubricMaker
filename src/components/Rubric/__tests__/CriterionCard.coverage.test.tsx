@@ -545,6 +545,8 @@ describe('CriterionCard coverage', () => {
             empty,
         ]);
         fireEvent.keyDown(first, { key: 'Enter', shiftKey: true });
+        // Enter that confirms an IME candidate is part of typing, not "next statement".
+        fireEvent.keyDown(first, { key: 'Enter', isComposing: true });
         expect(cb.onSetSubItems).toHaveBeenCalledTimes(1);
         fireEvent.keyDown(first, { key: 'ArrowDown', altKey: true });
         expect(cb.onSetSubItems).toHaveBeenLastCalledWith('c1', 'l1', [empty, si1]);
