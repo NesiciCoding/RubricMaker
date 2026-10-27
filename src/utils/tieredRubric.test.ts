@@ -359,6 +359,17 @@ describe('verdict in calcGradeSummary', () => {
     });
 });
 
+describe('grade summary rubric', () => {
+    it("takes the caller's rubric over the snapshot, and the snapshot only when none is passed", () => {
+        const saved = sheetRubric();
+        const [, , e] = saved.tiered!.bands;
+        const sr = gradeAt(saved, [e.id, e.id, e.id, e.id], { rubricSnapshot: saved });
+        const standard = { ...saved, tiered: undefined };
+        expect(calcGradeSummary(sr, saved.criteria, null, standard).verdict).toBeUndefined();
+        expect(calcGradeSummary(sr, saved.criteria, null).verdict?.band).toEqual(e);
+    });
+});
+
 describe('PDF grade summary', () => {
     it('prints the verdict from the rubric saved with the grade, not the live one', () => {
         const saved = sheetRubric();
