@@ -329,6 +329,14 @@ describe('GradeStudent', () => {
             expect(saved().requirementsMet).toEqual({});
             expect(saved().verdictOverride).toBeUndefined();
         });
+
+        it('saves a requirement on Save & Next instead of skipping the ungraded student', () => {
+            setup();
+            const requirement = screen.getByRole('group', { name: 'Handed in on time' });
+            fireEvent.click(within(requirement).getByText('gradeStudent.tiered_requirement_not_met'));
+            fireEvent.click(screen.getByTitle('Next: Bob'));
+            expect(saved().requirementsMet).toEqual({ r1: false });
+        });
     });
 
     it('renders the rubric and student name', () => {

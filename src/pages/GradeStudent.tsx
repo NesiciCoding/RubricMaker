@@ -360,6 +360,9 @@ export default function GradeStudent() {
         !!summary &&
         summary.gradedCount === 0 &&
         !sr.globalModifier &&
+        !sr.verdictOverride &&
+        !Object.keys(sr.requirementsMet ?? {}).length &&
+        !sr.tierId &&
         !stripCommentHtml(sr.overallComment ?? '').trim() &&
         !sr.entries.some((e) => stripCommentHtml(e.comment ?? '').trim() || e.audioDataUrl || e.audioStoragePath);
 

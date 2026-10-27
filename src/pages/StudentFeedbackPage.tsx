@@ -78,7 +78,7 @@ export default function StudentFeedbackPage() {
                     </div>
                     {showGrade && (
                         <div style={{ textAlign: 'end' }}>
-                            {scale && (
+                            {(scale || summary.verdict) && (
                                 <div
                                     style={{
                                         fontSize: '2.8rem',

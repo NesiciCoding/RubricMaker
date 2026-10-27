@@ -539,6 +539,27 @@ describe('StudentFeedbackPage — valid feedback code', () => {
         expect(document.querySelector('audio')).toBeNull();
         expect(screen.queryByText('sharedFeedback.audio_feedback')).toBeNull();
     });
+
+    it("shows a tiered rubric's verdict band even when the rubric has no grade scale", () => {
+        const tieredRubric: Rubric = {
+            ...mockRubric,
+            tiered: {
+                tiers: [{ id: 't', year: 'jaar-1' }],
+                bands: [
+                    { id: 'io', code: 'IO', label: '', points: 0 },
+                    { id: 'xe', code: 'XE', label: '', points: 1 },
+                ],
+            },
+        };
+        const code = encodeFeedbackCode({
+            sr: { ...mockSr, verdictOverride: 'xe' },
+            rubric: tieredRubric,
+            student: mockStudent,
+            scale: null,
+        });
+        renderPage(<StudentFeedbackPage />, `/feedback/${code}`, '/feedback/:code');
+        expect(screen.getByText('XE')).toBeInTheDocument();
+    });
 });
 
 // ─── PeerReviewView — deeper interactions ────────────────────────────────────
