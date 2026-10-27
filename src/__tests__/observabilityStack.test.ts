@@ -92,6 +92,14 @@ describe('observability stack (#867, #868)', () => {
         const datasources = read('docker/observability/grafana-datasources.yml');
         for (const uid of DATASOURCE_UIDS) expect(datasources).toContain(`uid: ${uid}`);
     });
+
+    it('sets the Postgres default database in jsonData, which the query editor reads', () => {
+        const postgres = read('docker/observability/grafana-datasources.yml')
+            .split(/^ {2}- name: /m)
+            .find((d) => d.includes('type: postgres'));
+        expect(postgres).toMatch(/^ {4}jsonData:\n(?: {6}#.*\n)* {6}database: "\$\{SUPABASE_DB_NAME\}"$/m);
+        expect(postgres).not.toMatch(/^ {4}database:/m);
+    });
 });
 
 describe('alerting (#869)', () => {

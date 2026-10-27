@@ -29,11 +29,13 @@ datasources:
     uid: client_logs_postgres
     access: proxy
     url: "${SUPABASE_DB_HOST}"
-    database: "${SUPABASE_DB_NAME}"
     user: "${SUPABASE_DB_USER}"
     secureJsonData:
       password: "${SUPABASE_DB_PASSWORD}"
     jsonData:
+      # Not the top-level `database` field: Grafana deprecated it, and while its connection test
+      # still falls back to it, every panel then fails with "no default database configured".
+      database: "${SUPABASE_DB_NAME}"
       sslmode: "${SUPABASE_DB_SSLMODE}"
       postgresVersion: 1500
       timescaledb: false
