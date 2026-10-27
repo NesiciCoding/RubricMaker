@@ -277,9 +277,10 @@ export function calcGradeSummary(
         (e) => !!e.levelId || e.overridePoints !== undefined || e.singlePointOutcome !== undefined
     ).length;
 
-    // A tiered rubric's verdict is one of its bands, not a grade-scale letter. Callers that score
-    // against the live rubric pass it; older call sites rely on the snapshot saved with the grade.
-    const tiered = rubric?.tiered ?? sr.rubricSnapshot?.tiered;
+    // A tiered rubric's verdict is one of its bands, not a grade-scale letter. A caller's rubric is
+    // authoritative (a grade moved onto a standard rubric has no verdict); only callers that pass
+    // none fall back to the snapshot saved with the grade.
+    const tiered = rubric ? rubric.tiered : sr.rubricSnapshot?.tiered;
     const verdict = tiered ? (tieredVerdict(sr, tiered, modified) ?? undefined) : undefined;
 
     return {
