@@ -4187,12 +4187,12 @@
         "gr_portal_sub_items_title": "Subelementos en la retroalimentación",
         "gr_portal_sub_items_body": "Los alumnos ven los subelementos de cada criterio en su tarjeta de nota del portal y en la página de retroalimentación compartida: las afirmaciones marcadas (con su nivel cuando no es el alcanzado) o cada subelemento de puntos con los puntos obtenidos.",
         "rb_tiered_title": "Rúbricas por niveles",
-        "rb_tiered_intro": "Una rúbrica por niveles muestra varios niveles uno al lado del otro en una sola rúbrica — por ejemplo Mavo, Havo y VWO en el primer año — con los mismos criterios y bandas para cada uno. Elige Rúbrica por niveles en Tipo de rúbrica en el editor.",
+        "rb_tiered_intro": "Una rúbrica por niveles muestra varios niveles uno al lado del otro en una sola rúbrica — por ejemplo Mavo, Havo y VWO en el primer año — con los mismos criterios y grados para cada uno. Elige Rúbrica por niveles en Tipo de rúbrica en el editor.",
         "rb_tiered_item_tiers": "Niveles — cada columna es un curso con un itinerario VO opcional. Dale a una columna su propio encabezado, como Mavo; si no, se muestra como Jaar 1 · HAVO.",
-        "rb_tiered_item_bands": "Bandas — las filas de cada criterio, de la más baja a la más alta (IO, B y E por defecto). Cada banda tiene un código, un nombre, puntos y un color. Su porcentaje de veredicto fija la parte de los puntos necesaria para alcanzar esa banda en total; déjalo vacío para usar el punto medio entre bandas.",
-        "rb_tiered_item_grid": "Enunciados — cada criterio muestra una cuadrícula de bandas × niveles. Cada celda es una lista de comprobación de cómo es esa banda en ese nivel: escribe, pega una lista o mueve un enunciado a otra banda. Los enunciados son evidencias; los puntos vienen de la banda que elijas.",
-        "rb_tiered_item_requirements": "Requisitos — condiciones que el trabajo debe cumplir, como entregarlo a tiempo. Un requisito marcado como no cumplido da la banda más baja.",
-        "rb_tiered_note": "Al quitar un nivel o una banda se pide confirmación y se indica cuántos enunciados y calificaciones afecta. Convertir una rúbrica existente en rúbrica por niveles sustituye sus niveles por las bandas; volver atrás conserva los criterios y los enunciados."
+        "rb_tiered_item_bands": "Grados — las filas de cada criterio, del más bajo al más alto (IO, B y E por defecto), comunes a todos los niveles. Cada grado tiene un código, un nombre, puntos y un color. Su porcentaje de valoración fija la parte de los puntos necesaria para alcanzar ese grado en total; déjalo vacío para usar el punto medio entre grados.",
+        "rb_tiered_item_grid": "Enunciados — cada criterio muestra una cuadrícula de grados × niveles. Cada celda es una lista de comprobación de cómo es ese grado en ese nivel: escribe, pega una lista o mueve un enunciado a otro grado. Los enunciados son evidencias; los puntos vienen del grado que elijas.",
+        "rb_tiered_item_requirements": "Requisitos — condiciones que el trabajo debe cumplir, como entregarlo a tiempo. Un requisito marcado como no cumplido da el grado más bajo.",
+        "rb_tiered_note": "Al quitar un nivel o un grado se pide confirmación y se indica cuántos enunciados y calificaciones afecta. Convertir una rúbrica existente en rúbrica por niveles sustituye sus propios niveles por los grados comunes; volver atrás conserva los criterios y los enunciados."
     },
     "studentProfile": {
         "tab_overview": "Resumen",
