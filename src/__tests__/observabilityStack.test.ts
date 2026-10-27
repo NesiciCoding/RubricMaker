@@ -41,6 +41,20 @@ describe('observability stack (#867, #868)', () => {
         expect(read('docker/observability/dashboards/web-logs.json')).toContain('job=~\\"webserver|docker\\"');
     });
 
+    it('ships container logs from the compose projects in ALLOY_DOCKER_PROJECTS, defaulting to rubricmaker', () => {
+        expect(alloy).not.toContain('com.docker.compose.project=');
+        expect(alloy).toContain('regex         = coalesce(sys.env("ALLOY_DOCKER_PROJECTS"), "rubricmaker")');
+        expect(alloy).toContain('targets          = discovery.relabel.docker_projects.output');
+        expect(service('alloy')).toContain('ALLOY_DOCKER_PROJECTS: "${ALLOY_DOCKER_PROJECTS:-rubricmaker}"');
+        expect(read('.env.observability.example')).toContain('ALLOY_DOCKER_PROJECTS=');
+    });
+
+    it("reads HestiaCP's <domain>.log access logs without shipping its error logs twice", () => {
+        expect(alloy).toContain('__path__         = "/var/host-logs/**/{logs,domains}/*.log"');
+        expect(alloy).toContain('__path_exclude__ = "/var/host-logs/**/*{access,error}*.log"');
+        expect(alloy).toContain('__path__ = "/var/host-logs/**/*{access,error}*.log*"');
+    });
+
     it('never mounts the rootfs with rslave, which stops Alloy (and log shipping) on some hosts', () => {
         expect(service('alloy')).toContain('- /:/host/root:ro\n');
         expect(compose).not.toMatch(/^\s+- [^#\n]*:\S*rslave/m);
@@ -169,5 +183,51 @@ describe('monitoring.failed_jobs() (migration 091)', () => {
     it('returns counts, never job commands or response bodies', () => {
         expect(migration).toMatch(/returns table \(failed_cron_runs bigint, failed_http_calls bigint\)/);
         expect(migration).not.toMatch(/select\s+[^;]*\b(command|return_message|content)\b/i);
+    });
+});
+
+describe('Application Usage reads (migration 092)', () => {
+    const migration = read('supabase/migrations/092_monitoring_dashboard_reads.sql');
+    const dashboard = JSON.parse(read('docker/observability/dashboards/application-usage.json'));
+    const queries: string[] = dashboard.panels.flatMap((p: { targets?: { rawSql: string }[] }) =>
+        (p.targets ?? []).map((t) => t.rawSql)
+    );
+    const functions = [...migration.matchAll(/create or replace function (monitoring\.\w+)\(([^)]*)\)/g)];
+
+    it('queries only the monitoring.app_* functions, never the tables row-level security hides', () => {
+        expect(queries.length).toBeGreaterThanOrEqual(24);
+        for (const query of queries) {
+            expect(query).toMatch(/\bFROM monitoring\.app_\w+\(|^SELECT monitoring\.app_\w+\(/);
+            expect(query).not.toMatch(/\b(FROM|JOIN)\s+(public\.)?[a-z_]+(\s|$)/i);
+        }
+    });
+
+    it('defines every function a panel calls', () => {
+        const defined = new Set(functions.map((m) => m[1]));
+        for (const query of queries) {
+            for (const [, name] of query.matchAll(/(monitoring\.app_\w+)\(/g)) expect(defined, name).toContain(name);
+        }
+    });
+
+    it('pins search_path on every function and lets only pg_monitor call them', () => {
+        expect(functions.length).toBe(6);
+        const bodies = migration.split(/create or replace function /).slice(1);
+        for (const body of bodies) expect(body).toMatch(/security definer\s+set search_path = ''/);
+        for (const [, name, params] of functions) {
+            const types = params
+                .split(',')
+                .map((p) => p.trim().split(/\s+/)[1])
+                .filter(Boolean)
+                .join(', ');
+            expect(migration).toContain(`revoke all on function ${name}(${types}) from public;`);
+            expect(migration).toContain(`grant execute on function ${name}(${types}) to pg_monitor;`);
+        }
+        expect(migration).not.toMatch(/to (anon|authenticated|service_role|public)\b/);
+    });
+
+    it('lets pg_monitor, and only pg_monitor, read client_logs past its row-level security', () => {
+        expect(migration).toContain('grant select on public.client_logs to pg_monitor;');
+        expect(migration).toMatch(/on public\.client_logs for select\s+to pg_monitor\s+using \(true\);/);
+        expect(read('.env.observability.example')).not.toMatch(/^#\s+GRANT SELECT ON public\.client_logs/m);
     });
 });

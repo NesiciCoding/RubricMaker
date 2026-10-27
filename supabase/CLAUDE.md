@@ -75,6 +75,7 @@ The RLS recursion bug (fixed in `013_fix_rls_recursion.sql`) was caused by polic
 ## Monitoring
 
 - `monitoring.failed_jobs(since interval default '1 day')` (091) returns two counts — failed `pg_cron` runs and failed `pg_net` calls — for the Grafana alerts in `docker/observability/alerting/`. It is `SECURITY DEFINER` because pg_cron's RLS hides the migrator's jobs from any other role, so it returns counts only (never job commands or response bodies), sits in the `monitoring` schema that PostgREST does not expose, and is executable only by `pg_monitor` members.
+- `monitoring.app_*` (092) feed Grafana's Application Usage dashboard under the same rules: `app_entity_counts()`, `app_active_teachers(from, to)`, `app_daily_activity(from, to)` (UTC days), `app_school_activity()`, `app_top_graders(max_rows)` and `app_latest_activity()` return counts, timestamps, school names and display names (or a masked email initial), never row contents. A new dashboard panel over app data gets a new function here, not a direct table query or a `BYPASSRLS` role. 092 also lets `pg_monitor` read `client_logs` (policy `client_logs_monitor_select`) for the Client Diagnostics and Web Vitals dashboards.
 
 ## Retention job
 

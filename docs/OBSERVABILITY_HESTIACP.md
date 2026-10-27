@@ -140,10 +140,11 @@ RUBRICMAKER_WEBSERVER_LOG_DIR=/var/log/apache2/domains
 > typically symlinks pointing at the latter — see `RUBRICMAKER_WEBSERVER_LOG_DIR`
 > above, which mounts that real target dir so the symlinks don't dangle inside
 > the container. To narrow to a single domain if this HestiaCP user hosts
-> multiple unrelated ones, point `RUBRICMAKER_LOG_DIR` directly at that
-> domain's own `logs/` dir (e.g.
-> `/home/rubricmaker/web/rubricmaker.example.com/logs`) — but it must be a
-> literal, existing path; wildcards don't work in a bind-mount source.
+> multiple unrelated ones, point `RUBRICMAKER_LOG_DIR` at that domain's own
+> dir (e.g. `/home/rubricmaker/web/rubricmaker.example.com`, not its `logs/`
+> subdir: Alloy recognises HestiaCP's `<domain>.log` access logs by the
+> `logs/` or `domains/` dir they sit in) — but it must be a literal, existing
+> path; wildcards don't work in a bind-mount source.
 
 ---
 
@@ -260,7 +261,10 @@ Loki and Alloy are unaffected.)
   working" check. If `SUPABASE_DB_*` was set, the Postgres `client_logs`
   datasource does too.
 - **Explore**, pick the Loki datasource, and confirm log lines from
-  `RUBRICMAKER_LOG_DIR` (or the combined Docker stack's containers) appear.
+  `RUBRICMAKER_LOG_DIR` (`{job="webserver"}`) appear. Container logs
+  (`{job="docker"}`) only appear for the compose projects in
+  `ALLOY_DOCKER_PROJECTS`; with the official Supabase stack, add its project
+  name (see `.env.observability.example`).
 
 ---
 
