@@ -18,4 +18,18 @@ describe('buildRubricHTML on a total-points rubric', () => {
         expect(html).toMatch(/line-height:1">B<\/div>/);
         expect(html).not.toContain(`${WEIGHTED_PERCENT.toFixed(1)}%`);
     });
+
+    it('scores each grade against its snapshot when the live rubric changed scoring mode', () => {
+        const student = { id: 'tp-student', name: 'Alice', classId: 'k1' } as Student;
+        const snapshot = makeTotalPointsRubric({ scoringMode: 'weighted-percentage' });
+        const html = buildRubricHTML(
+            makeTotalPointsGrade({ rubricSnapshot: snapshot }),
+            makeTotalPointsRubric(),
+            student,
+            totalPointsScale
+        );
+
+        expect(html).toContain(`${WEIGHTED_PERCENT.toFixed(1)}%`);
+        expect(html).not.toContain(`${TOTAL_POINTS_PERCENT.toFixed(1)}%`);
+    });
 });

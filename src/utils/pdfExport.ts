@@ -182,7 +182,8 @@ export function buildRubricHTML(
     scale: GradeScale | null,
     breakBeforeRight = false
 ): string {
-    const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
+    const scored = sr.rubricSnapshot ?? rubric;
+    const summary = calcGradeSummary(sr, scored.criteria, scale, scored);
     const fmt = rubric.format;
     const gridHtml = buildRubricGridHtml(rubric, sr);
     const modifierSign = sr.globalModifier && sr.globalModifier.value > 0 ? '+' : '';

@@ -737,12 +737,13 @@ describe('Dashboard page', () => {
 });
 
 describe('Dashboard at-risk panel on a total-points rubric', () => {
-    function totalPointsStore(points: [number, number]) {
+    function totalPointsStore(points: [number, number], rubricSnapshot?: Rubric) {
         const rubrics = [makeTotalPointsRubric(), makeTotalPointsRubric({ id: 'tp-rubric-2' })];
         const grade = (id: string, rubricId: string, gradedAt: string) =>
             makeTotalPointsGrade({
                 id,
                 rubricId,
+                rubricSnapshot: rubricSnapshot && { ...rubricSnapshot, id: rubricId },
                 studentId: studentA.id,
                 gradedAt,
                 entries: [
@@ -781,6 +782,14 @@ describe('Dashboard at-risk panel on a total-points rubric', () => {
         await renderPage();
         expect(screen.queryByText('At-Risk Students')).not.toBeInTheDocument();
         expect(screen.queryByText(`${WEIGHTED_PERCENT}%`)).not.toBeInTheDocument();
+    });
+
+    it('scores a saved grade against its snapshot when the live rubric changed scoring mode', async () => {
+        // Graded under weighted scoring (40%) before the rubric was switched to total points (80%).
+        store = totalPointsStore([5, 3], makeTotalPointsRubric({ scoringMode: 'weighted-percentage' }));
+        await renderPage();
+        expect(screen.getByText('At-Risk Students')).toBeInTheDocument();
+        expect(screen.getByText(`${WEIGHTED_PERCENT}%`)).toBeInTheDocument();
     });
 
     it('shows the same percentage as GradeStudent for a flagged student', async () => {
