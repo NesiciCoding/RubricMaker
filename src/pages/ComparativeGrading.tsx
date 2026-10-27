@@ -23,7 +23,12 @@ import { calcGradeSummary, patchScoreEntry } from '../utils/gradeCalc';
 import { scoresSubItems, subItemMode, subItemRange, toggleTick } from '../utils/subItems';
 import { gradeTier, levelForTier, tierLabel } from '../utils/tieredRubric';
 import SubItemChecklist from '../components/Grading/SubItemChecklist';
-import { countMatchupsPerStudent, matchupCapacity, pickNextMatchupPair } from '../utils/comparativeMatchups';
+import {
+    countPartnersPerStudent,
+    getMatchKey,
+    matchupCapacity,
+    pickNextMatchupPair,
+} from '../utils/comparativeMatchups';
 import AttachmentViewer from '../components/Attachments/AttachmentViewer';
 import { ComparativeMatchup, ScoreEntry, Student, StudentRubric, TieredConfig } from '../types';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -257,18 +262,34 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
     );
 
     // A tiered rubric pairs students within their tier unless set to pair across tiers. A student's
-    // tier is the one on their grade for this rubric, else their class tier ('' while unknown).
+    // tier is the one on their grade for this rubric, else their class tier; a student with neither
+    // gets a group of their own, so two students of unknown tier are never paired as if they matched.
     const pairing = rubric?.tiered ? (rubric.tiered.comparativePairing ?? 'tier') : 'all';
     const tierKey = useCallback(
         (s: Student) => {
             if (!rubric?.tiered) return '';
             const sr = studentRubrics.find((r) => r.rubricId === rubric.id && r.studentId === s.id && !r.isPeerReview);
             const cls = classes.find((c) => c.id === s.classId);
-            return gradeTier(rubric.tiered, sr ?? {}, s, cls)?.id ?? '';
+            return gradeTier(rubric.tiered, sr ?? {}, s, cls)?.id ?? `\u0000${s.id}`;
         },
         [rubric, studentRubrics, classes]
     );
     const groupOf = pairing === 'tier' ? tierKey : undefined;
+    // Within tiers, only same-tier matchups count toward progress and each student's limit, so
+    // cross-tier comparisons from before a switch don't use up the within-tier budget.
+    const countable = useCallback(
+        (matchups: ComparativeMatchup[]) => {
+            if (!groupOf) return matchups;
+            const byId = new Map(classStudents.map((s) => [s.id, s]));
+            return matchups.filter((m) => {
+                const a = byId.get(m.studentAId);
+                const b = byId.get(m.studentBId);
+                return !a || !b || groupOf(a) === groupOf(b);
+            });
+        },
+        [groupOf, classStudents]
+    );
+    const countedMatchups = useMemo(() => countable(rubricMatchups), [countable, rubricMatchups]);
 
     function setPairing(next: 'tier' | 'all') {
         if (!rubric?.tiered) return;
@@ -365,7 +386,7 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         // history for this rubric — so they hold up across reloads/devices, not just this session.
         const pick = pickNextMatchupPair(
             classStudents,
-            matchupsOverride ?? rubricMatchups,
+            countable(matchupsOverride ?? rubricMatchups),
             matchupLimit,
             anchorId,
             groupOf
@@ -583,14 +604,16 @@ function ComparativeGradingSession({ classId, rubricId }: { classId: string; rub
         });
     }
 
-    const matchupsDone = rubricMatchups.length;
+    // A pair compared twice (the picker repeats one once every partner is used) counts once, matching
+    // the distinct-pair capacity below.
+    const matchupsDone = new Set(countedMatchups.map((m) => getMatchKey(m.studentAId, m.studentBId))).size;
     // Per-student limit: each student can appear in at most matchupLimit matchups.
     // Maximum matchups given that limit = floor(n * matchupLimit / 2), capped at totalPossible.
     const { sessionMax, partners } = matchupCapacity(classStudents, matchupLimit, groupOf);
     const matchupsLeft = Math.max(0, sessionMax - matchupsDone);
     const matchupProgress = sessionMax > 0 ? Math.min(100, (matchupsDone / sessionMax) * 100) : 0;
 
-    const perStudentDone = useMemo(() => countMatchupsPerStudent(rubricMatchups), [rubricMatchups]);
+    const perStudentDone = useMemo(() => countPartnersPerStudent(countedMatchups), [countedMatchups]);
 
     if (!rubric) return <div className="page-content">{t('comparativeGrading.rubric_not_found')}</div>;
     if (error)

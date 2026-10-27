@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import ComparativeGradingDefault from '../ComparativeGrading';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
-import type { Class, Rubric, Student, StudentRubric, AppSettings } from '../../types';
+import type { Class, ComparativeMatchup, Rubric, Student, StudentRubric, AppSettings } from '../../types';
 
 const mockRubric: Rubric = {
     id: 'r1',
@@ -57,7 +57,7 @@ const mockStudentsArr = [mockStudentA, mockStudentB];
 const mockClassesArr = [mockClassA];
 const mockStudentRubricsArr: StudentRubric[] = [];
 const mockAttachmentsArr: never[] = [];
-const mockComparativeMatchupsArr: never[] = [];
+const mockComparativeMatchupsArr: ComparativeMatchup[] = [];
 
 const mockAppValue = {
     rubrics: mockRubricsArr,
@@ -329,6 +329,35 @@ describe('ComparativeGrading', () => {
             expect(mockUpdateRubric).toHaveBeenCalledWith(
                 expect.objectContaining({ tiered: expect.objectContaining({ comparativePairing: 'all' }) })
             );
+        });
+
+        it('within tiers, counts only same-tier matchups and each pair once', () => {
+            const carl: Student = { id: 's3', name: 'Carl', classId: 'c1', voTrack: 'vmbo-tl' };
+            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.classes = [{ ...mockClassA, year: 'jaar-1', voTrack: 'havo' }];
+            mockAppValue.students = [{ ...mockStudentA, voTrack: 'vmbo-tl' }, mockStudentB, carl];
+            // A cross-tier matchup from before a switch, and the one mavo pair compared twice.
+            mockComparativeMatchupsArr.push(
+                { id: 'x', rubricId: 'r1', studentAId: 's1', studentBId: 's2', gradedAt: '2026-01-01T00:00:00Z' },
+                { id: 'y', rubricId: 'r1', studentAId: 's1', studentBId: 's3', gradedAt: '2026-01-01T00:00:00Z' },
+                { id: 'z', rubricId: 'r1', studentAId: 's3', studentBId: 's1', gradedAt: '2026-01-02T00:00:00Z' }
+            );
+            try {
+                renderAt('/grade-comparative/c1/r1');
+                expect(
+                    screen.getByText(/comparativeGrading.progress_matchups:.*"done":1.*"total":1/)
+                ).toBeInTheDocument();
+            } finally {
+                mockComparativeMatchupsArr.length = 0;
+            }
+        });
+
+        it('does not pair two students whose tier is unknown', () => {
+            mockAppValue.rubrics = [tieredRubric];
+            mockAppValue.classes = [{ ...mockClassA, year: 'jaar-2' }];
+            mockAppValue.students = [mockStudentA, mockStudentB];
+            renderAt('/grade-comparative/c1/r1');
+            expect(screen.getByText('comparativeGrading.session_complete_title')).toBeInTheDocument();
         });
     });
 
