@@ -13,6 +13,16 @@ export function countMatchupsPerStudent(matchups: ComparativeMatchup[]): Record<
     return counts;
 }
 
+/** How many different partners each student has been compared with. */
+export function countPartnersPerStudent(matchups: ComparativeMatchup[]): Record<string, number> {
+    const partners: Record<string, Set<string>> = {};
+    for (const m of matchups) {
+        (partners[m.studentAId] ??= new Set()).add(m.studentBId);
+        (partners[m.studentBId] ??= new Set()).add(m.studentAId);
+    }
+    return Object.fromEntries(Object.entries(partners).map(([id, set]) => [id, set.size]));
+}
+
 /**
  * Picks the next pair to compare given the matchups already completed (and persisted)
  * for this rubric. `matchupLimit` caps how many matchups a single student may appear

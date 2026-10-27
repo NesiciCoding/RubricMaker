@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { countMatchupsPerStudent, getMatchKey, matchupCapacity, pickNextMatchupPair } from './comparativeMatchups';
+import {
+    countMatchupsPerStudent,
+    countPartnersPerStudent,
+    getMatchKey,
+    matchupCapacity,
+    pickNextMatchupPair,
+} from './comparativeMatchups';
 import type { ComparativeMatchup } from '../types';
 
 function makeMatchup(rubricId: string, studentAId: string, studentBId: string): ComparativeMatchup {
@@ -20,6 +26,13 @@ describe('countMatchupsPerStudent', () => {
 
     it('returns an empty record for no matchups', () => {
         expect(countMatchupsPerStudent([])).toEqual({});
+    });
+});
+
+describe('countPartnersPerStudent', () => {
+    it('counts each distinct partner once, however often a pair was compared', () => {
+        const matchups = [makeMatchup('r1', 's1', 's2'), makeMatchup('r1', 's2', 's1'), makeMatchup('r1', 's1', 's3')];
+        expect(countPartnersPerStudent(matchups)).toEqual({ s1: 2, s2: 1, s3: 1 });
     });
 });
 
