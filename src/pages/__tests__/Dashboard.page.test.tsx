@@ -4,6 +4,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderWithRouter } from '../../test-utils/renderWithProviders';
 import { DEFAULT_FORMAT } from '../../types';
 import type { Rubric, StudentRubric, EssaySubmission, FlashcardDeck, GradeScale, Student, Class } from '../../types';
+import { calcGradeSummary } from '../../utils/gradeCalc';
+import {
+    WEIGHTED_PERCENT,
+    makeTotalPointsGrade,
+    makeTotalPointsRubric,
+    totalPointsScale,
+} from '../../test-utils/totalPointsRubric';
 
 const mockNavigate = vi.fn();
 const mockShowToast = vi.fn();
@@ -726,5 +733,63 @@ describe('Dashboard page', () => {
         store = { ...makeStore(), userTemplates: [] };
         await renderPage();
         expect(screen.queryByText('dashboard.my_templates')).not.toBeInTheDocument();
+    });
+});
+
+describe('Dashboard at-risk panel on a total-points rubric', () => {
+    function totalPointsStore(points: [number, number]) {
+        const rubrics = [makeTotalPointsRubric(), makeTotalPointsRubric({ id: 'tp-rubric-2' })];
+        const grade = (id: string, rubricId: string, gradedAt: string) =>
+            makeTotalPointsGrade({
+                id,
+                rubricId,
+                studentId: studentA.id,
+                gradedAt,
+                entries: [
+                    {
+                        criterionId: 'c1',
+                        levelId: 'c1-hi',
+                        checkedSubItems: [],
+                        comment: '',
+                        selectedPoints: points[0],
+                    },
+                    {
+                        criterionId: 'c2',
+                        levelId: 'c2-hi',
+                        checkedSubItems: [],
+                        comment: '',
+                        selectedPoints: points[1],
+                    },
+                ],
+            });
+        return {
+            ...makeStore(),
+            students: [studentA],
+            rubrics,
+            gradeScales: [totalPointsScale],
+            studentRubrics: [
+                grade('tp-1', 'tp-rubric', '2026-06-20T00:00:00Z'),
+                grade('tp-2', 'tp-rubric-2', '2026-06-21T00:00:00Z'),
+            ],
+            essaySubmissions: [],
+        };
+    }
+
+    it('does not flag a student whose total-points grade is above the threshold', async () => {
+        // 8 of the configured 10 points: 80% on the grading page, 40% if scored by weight.
+        store = totalPointsStore([5, 3]);
+        await renderPage();
+        expect(screen.queryByText('At-Risk Students')).not.toBeInTheDocument();
+        expect(screen.queryByText(`${WEIGHTED_PERCENT}%`)).not.toBeInTheDocument();
+    });
+
+    it('shows the same percentage as GradeStudent for a flagged student', async () => {
+        store = totalPointsStore([2, 1]);
+        const { rubrics, studentRubrics } = store as { rubrics: Rubric[]; studentRubrics: StudentRubric[] };
+        const expected = calcGradeSummary(studentRubrics[1], rubrics[0].criteria, totalPointsScale, rubrics[0]);
+        await renderPage();
+        expect(screen.getByText('At-Risk Students')).toBeInTheDocument();
+        expect(expected.modifiedPercentage).toBe(30);
+        expect(screen.getByText('30%')).toBeInTheDocument();
     });
 });

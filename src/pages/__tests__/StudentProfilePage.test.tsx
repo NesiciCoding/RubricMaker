@@ -4,6 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
 import type { AppSettings, Class, GradeScale, Rubric, Student, StudentRubric, SpeakingSession } from '../../types';
+import { calcGradeSummary } from '../../utils/gradeCalc';
+import {
+    TOTAL_POINTS_PERCENT,
+    makeTotalPointsGrade,
+    makeTotalPointsRubric,
+    totalPointsScale,
+} from '../../test-utils/totalPointsRubric';
 
 const mockGradeScale: GradeScale = {
     id: 'gs1',
@@ -183,6 +190,30 @@ describe('StudentProfilePage', () => {
         fireEvent.click(screen.getByText('studentProfile.tab_portfolio'));
         // Portfolio renders a timeline; with one graded entry it shows the rubric grade kind.
         expect(screen.getByText('studentProfile.tab_portfolio')).toBeInTheDocument();
+    });
+
+    it('lists a total-points grade with the same percentage and letter as GradeStudent', () => {
+        const rubric = makeTotalPointsRubric();
+        const sr = makeTotalPointsGrade({ studentId: 's1' });
+        const expected = calcGradeSummary(sr, rubric.criteria, totalPointsScale, rubric);
+        const value = mockAppValue as Record<string, unknown>;
+        Object.assign(value, { rubrics: [rubric], studentRubrics: [sr], gradeScales: [totalPointsScale] });
+        try {
+            renderAt('s1');
+            const row = screen
+                .getAllByText(rubric.name)
+                .map((el) => el.closest('tr'))
+                .find((tr) => tr !== null)!;
+            expect(row).toHaveTextContent(`${TOTAL_POINTS_PERCENT.toFixed(1)}%`);
+            expect(row).toHaveTextContent(expected.letterGrade);
+            expect(expected.letterGrade).toBe('B');
+        } finally {
+            Object.assign(value, {
+                rubrics: mockRubricsArr,
+                studentRubrics: mockStudentRubricsArr,
+                gradeScales: mockGradeScalesArr,
+            });
+        }
     });
 
     it('navigates back to the students list', () => {

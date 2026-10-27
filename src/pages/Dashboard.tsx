@@ -298,7 +298,7 @@ export default function Dashboard() {
                 resolvedScaleId && resolvedScaleId !== 'none'
                     ? (gradeScales.find((g) => g.id === resolvedScaleId) ?? null)
                     : null;
-            const summary = calcGradeSummary(sr, rubric.criteria, sc);
+            const summary = calcGradeSummary(sr, rubric.criteria, sc, rubric);
             const list = gradesByStudent.get(sr.studentId) ?? [];
             list.push({ pct: summary.modifiedPercentage, gradedAt: sr.gradedAt, rubricId: sr.rubricId });
             gradesByStudent.set(sr.studentId, list);

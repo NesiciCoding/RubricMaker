@@ -119,7 +119,7 @@ export default function StudentProfilePage() {
                 const scale =
                     gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
                     gradeScales[0];
-                const summary = calcGradeSummary(sr, rubric.criteria, scale);
+                const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
                 return {
                     sr,
                     rubric,

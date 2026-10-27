@@ -27,7 +27,7 @@ export default function StudentFeedbackPage() {
     }
 
     const { sr, rubric, student, scale } = data;
-    const summary = calcGradeSummary(sr, rubric.criteria, scale);
+    const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
     const fmt = rubric.format;
     // The rubric's accent only tints borders and backgrounds; text keeps the theme colours so a light
     // accent never drops below contrast.

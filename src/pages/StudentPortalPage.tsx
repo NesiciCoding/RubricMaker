@@ -347,7 +347,7 @@ export default function StudentPortalPage() {
                     gradeScales.find((g) => g.id === (rubric.gradeScaleId ?? settings.defaultGradeScaleId)) ??
                     gradeScales[0];
                 /* v8 ignore stop */
-                const summary = calcGradeSummary(sr, rubric.criteria, scale);
+                const summary = calcGradeSummary(sr, rubric.criteria, scale, rubric);
                 return {
                     sr,
                     rubric,

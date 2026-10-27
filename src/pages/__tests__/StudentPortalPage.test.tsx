@@ -3,6 +3,14 @@ import { render, screen, fireEvent, within, cleanup, act } from '@testing-librar
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { DEFAULT_FORMAT } from '../../types';
+import { calcGradeSummary } from '../../utils/gradeCalc';
+import {
+    TOTAL_POINTS_PERCENT,
+    WEIGHTED_PERCENT,
+    makeTotalPointsGrade,
+    makeTotalPointsRubric,
+    totalPointsScale,
+} from '../../test-utils/totalPointsRubric';
 import type {
     AppSettings,
     Class,
@@ -472,6 +480,27 @@ describe('StudentPortalPage', () => {
         // overallComment from first graded record renders
         expect(screen.getByText('Well done!')).toBeInTheDocument();
         mockAppValue.studentRubrics = emptyArr;
+    });
+
+    it('lists a total-points grade with the same percentage and letter as GradeStudent', () => {
+        const rubric = makeTotalPointsRubric();
+        const sr = makeTotalPointsGrade({ studentId: 's1' });
+        const expected = calcGradeSummary(sr, rubric.criteria, totalPointsScale, rubric);
+        Object.assign(mockAppValue, { rubrics: [rubric], studentRubrics: [sr], gradeScales: [totalPointsScale] });
+        try {
+            renderAt('s1');
+            switchTab('feedback');
+            expect(screen.getByText(`${TOTAL_POINTS_PERCENT.toFixed(1)}%`)).toBeInTheDocument();
+            expect(screen.queryByText(`${WEIGHTED_PERCENT.toFixed(1)}%`)).not.toBeInTheDocument();
+            expect(expected.letterGrade).toBe('B');
+            expect(screen.getByText(new RegExp(`"grade":"${expected.letterGrade}"`))).toBeInTheDocument();
+        } finally {
+            Object.assign(mockAppValue, {
+                rubrics: mockRubricsWithCriteriaArr,
+                studentRubrics: emptyArr,
+                gradeScales: mockGradeScalesArr,
+            });
+        }
     });
 
     it('masks feedback-only grades: no average, no percentage/letter, but feedback stays visible (#606)', () => {
